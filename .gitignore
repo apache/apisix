@@ -41,3 +41,4 @@ luac.out
 
 # develop
 logs
+t/servroot
