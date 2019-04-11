@@ -4,6 +4,7 @@ local log = require("apimeta.comm.log")
 local resp = require("apimeta.comm.resp")
 local route_handler = require("apimeta.route.handler")
 local ngx_req = ngx.req
+local ngx_var = ngx.var
 
 local _M = {}
 
@@ -25,7 +26,8 @@ function _M.access()
     end
 
     api_ctx.method = api_ctx.method or ngx_req.get_method()
-    api_ctx.uri = api_ctx.uri or ngx.var.uri
+    api_ctx.uri = api_ctx.uri or ngx_var.uri
+    api_ctx.host = api_ctx.host or ngx_var.host
 
     local router = route_handler.get_router()
     local ok = router:dispatch(api_ctx.method, api_ctx.uri, api_ctx)

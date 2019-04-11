@@ -13,19 +13,28 @@ local _M = {}
 function _M.get_router()
     if router == nil then
         log.warn("generate a empty router instance")
-        return _M.load({ {methods = {"GET"}, uri = "/hello", router_id = "xx"} })
+
+        -- todo: only for test now
+        return _M.load_route({
+            {
+                methods = {"GET"},
+                uri = "/hello",
+                host = "test.com",
+                id = 1234,
+            },
+        })
     end
 
     return router
 end
 
 
-local function run_route(params, route, ...)
-    ngx.say("run route")
+local function run_route(params, route, api_ctx)
+    ngx.say("run route id: ", route.id, " host: ", api_ctx.host)
 end
 
 
-function _M.load(routes)
+function _M.load_route(routes)
     if router then
         router:tree_free()
         router = nil
@@ -37,7 +46,7 @@ function _M.load(routes)
             route.methods,
             route.uri,
             function (params, ...)
-                return run_route(params, router, ...)
+                return run_route(params, route, ...)
             end
         }
     end
