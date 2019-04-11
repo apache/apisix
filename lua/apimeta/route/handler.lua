@@ -1,5 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
+local ngx = ngx
+local ipairs = ipairs
 local r3router = require("resty.r3")
 local log = require("apimeta.comm.log")
 local insert_tab = table.insert

@@ -1,5 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
+local ngx = ngx
+local pcall = pcall
 local log = require("apimeta.comm.log")
 
 local _M = {}

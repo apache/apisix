@@ -3,6 +3,7 @@
 local log = require("apimeta.comm.log")
 local resp = require("apimeta.comm.resp")
 local route_handler = require("apimeta.route.handler")
+local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
 
