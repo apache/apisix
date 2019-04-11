@@ -8,6 +8,7 @@ local insert_tab = table.insert
 local new_tab = require("table.new")
 
 local router
+local dispatch_uri = true
 
 local _M = {}
 
@@ -27,7 +28,7 @@ function _M.get_router()
         })
     end
 
-    return router
+    return router, dispatch_uri
 end
 
 
@@ -54,7 +55,7 @@ function _M.load_route(routes)
     end
 
     router = r3router.new(items)
-    return router
+    return router, dispatch_uri
 end
 
 
