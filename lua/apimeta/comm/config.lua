@@ -15,7 +15,7 @@ local function read_file(path)
         return nil
     end
 
-    local content = file:read("*a") -- *a or *all reads the whole file
+    local content = file:read("*a") -- `*a` reads the whole file
     file:close()
     return content
 end
