@@ -14,7 +14,7 @@ local _M = {VER = 0.1}
 function _M.check_args(config)
     local ok, err = plugin.check_args(config, args_schema)
     if not ok then
-        return err
+        return nil, err
     end
 
     -- add more restriction rules if we needs

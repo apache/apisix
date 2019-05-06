@@ -10,7 +10,7 @@ local _M = {
 function _M.check_args(arg, scheme)
     for k, v in pairs(scheme) do
         if not typeof[v](arg[k]) then
-            return nil, "[" .. k .. "] should be a " .. v
+            return nil, "key [" .. k .. "] should be a " .. v
         end
     end
 
