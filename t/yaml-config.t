@@ -1,8 +1,7 @@
 use t::APIMeta 'no_plan';
 
-repeat_each(1);
+repeat_each(2);
 no_long_string();
-no_shuffle();
 log_level('info');
 
 run_tests;
@@ -26,4 +25,4 @@ GET /t
 --- response_body
 etcd host: http://127.0.0.1:2379
 etcd prefix: /v2/keys
-plugins: ["example_plugin"]
+plugins: ["example_plugin","not_exist_plugin"]
