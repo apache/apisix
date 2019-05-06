@@ -3,7 +3,7 @@ local plugin = require("apimeta.plugin")
 
 -- TODO: need a more powerful way to define the schema
 local args_schema = {
-    i = "int",          -- value list: apimeta.core.typeof#92
+    i = "int",              -- value list: apimeta.core.typeof#92
     s = "string",
     t = "table",
 }

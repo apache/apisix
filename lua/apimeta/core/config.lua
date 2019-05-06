@@ -3,13 +3,13 @@
 local ngx = ngx
 local yaml = require("apimeta.core.yaml")
 local io_open = io.open
-
+local type = type
 local config_path = ngx.config.prefix() .. "conf/config.yaml"
 
 local _M = {}
 
 local function read_file(path)
-    local file = io_open(path, "rb")   -- r read mode and b binary mode
+    local file = io_open(path, "rb")   -- read and binary mode
     if not file then
         return nil
     end
