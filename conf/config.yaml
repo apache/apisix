@@ -2,3 +2,6 @@ etcd:
   host: "http://127.0.0.1:2379"
   prefix: "/v2/keys"
   timeout: 60
+
+plugins:
+  - example_plugin

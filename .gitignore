@@ -43,3 +43,4 @@ luac.out
 logs
 t/servroot
 go
+\.*
