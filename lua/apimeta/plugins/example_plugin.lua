@@ -10,7 +10,7 @@ local args_schema = {
 
 local _M = {
     version = 0.1,
-    priority = 1000,
+    priority = 1000,        -- TODO: add a type field, may be a good idea
     name = "example_plugin",
 }
 
