@@ -8,7 +8,11 @@ local args_schema = {
 }
 
 
-local _M = {version = 0.1}
+local _M = {
+    version = 0.1,
+    priority = 1000,
+    name = "example_plugin",
+}
 
 
 function _M.check_args(config)
