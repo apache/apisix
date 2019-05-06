@@ -2,7 +2,7 @@
 
 local ngx = ngx
 local pcall = pcall
-local log = require("apimeta.comm.log")
+local log = require("apimeta.core.log")
 
 local _M = {}
 

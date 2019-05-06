@@ -2,7 +2,7 @@
 
 local ngx = ngx
 local pcall = pcall
-local yaml = require("apimeta.comm.yaml")
+local yaml = require("apimeta.core.yaml")
 local io_open = io.open
 
 local config_path = ngx.config.prefix() .. "conf/config.yaml"

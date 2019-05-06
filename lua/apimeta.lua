@@ -1,8 +1,8 @@
 -- Copyright (C) Yuansheng Wang
 
 local require = require
-local log = require("apimeta.comm.log")
-local resp = require("apimeta.comm.resp")
+local log = require("apimeta.core.log")
+local resp = require("apimeta.core.resp")
 local route_handler = require("apimeta.route.handler")
 local new_tab = require("table.new")
 local ngx = ngx
