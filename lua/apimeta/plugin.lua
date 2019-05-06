@@ -44,9 +44,7 @@ function _M.load()
             log.error("failed to load plugin ", name, " err: ", plugin)
 
         else
-            if not plugin.name then
-                plugin.name = name
-            end
+            plugin.name = name
             insert_tab(plugins, plugin)
         end
     end
