@@ -1,14 +1,19 @@
 local plugin = require("apimeta.plugin")
 
 
+-- TODO: need a more powerful way to define the schema
 local args_schema = {
-    i = "int",          -- value list: apimeta.core.typeof#92
+    i = "int",              -- value list: apimeta.core.typeof#92
     s = "string",
     t = "table",
 }
 
 
-local _M = {version = 0.1}
+local _M = {
+    version = 0.1,
+    priority = 1000,        -- TODO: add a type field, may be a good idea
+    name = "example_plugin",
+}
 
 
 function _M.check_args(config)
