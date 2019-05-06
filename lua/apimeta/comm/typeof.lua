@@ -116,15 +116,4 @@ local _M = {
 }
 
 
-function _M.comp_tab(arg, scheme)
-    for k, v in pairs(scheme) do
-        if not _M[v](arg[k]) then
-            return nil, "[" .. k .. "] should be a " .. v
-        end
-    end
-
-    return true
-end
-
-
 return _M

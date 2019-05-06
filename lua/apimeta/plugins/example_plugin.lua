@@ -1,4 +1,4 @@
-local typeof = require("apimeta.comm.typeof")
+local plugin = require("apimeta.plugin")
 
 
 local args_schema = {
@@ -12,7 +12,7 @@ local _M = {VER = 0.1}
 
 
 function _M.check_args(config)
-    local ok, err = typeof.comp_tab(config, args_schema)
+    local ok, err = plugin.check_args(config, args_schema)
     if not ok then
         return err
     end
@@ -24,11 +24,19 @@ end
 
 
 function _M.init(config)
+    plugin.log.warn("plugin init")
+
     local ok, err = _M.check_args(config)
     if not ok then
         return ok, err
     end
 
+    return true
+end
+
+
+function _M.rewrite(ctx)
+    plugin.log.warn("plugin rewrite phase")
     return true
 end
 
