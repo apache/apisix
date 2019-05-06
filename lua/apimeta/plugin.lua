@@ -66,5 +66,27 @@ function _M.load()
     return plugins
 end
 
+    -- user_config = {
+    --     example_plugin = {i = 1, s = "s", t = {1, 2}},
+    --     invalid_plugin = {a = "a"},
+    -- }
+
+function _M.filter_plugin(user_plugins, local_supported_plugins)
+    -- todo: reuse table
+    local plugins = new_tab(#local_supported_plugins * 2, 0)
+
+    for _, plugin_obj in ipairs(local_supported_plugins) do
+        local name = plugin_obj.name
+        local plugin_conf = user_plugins[name]
+
+        if plugin_conf then
+            insert_tab(plugins, plugin_obj)
+            insert_tab(plugins, plugin_conf)
+        end
+    end
+
+    return plugins
+end
+
 
 return _M

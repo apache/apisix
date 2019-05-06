@@ -4,7 +4,6 @@ local ngx = ngx
 local ipairs = ipairs
 local r3router = require("resty.r3")
 local log = require("apimeta.core.log")
-local insert_tab = table.insert
 local new_tab = require("table.new")
 
 local router
@@ -32,7 +31,7 @@ function _M.get_router()
 end
 
 
-local function run_route(params, route, api_ctx)
+local function run_route(matched_params, route, api_ctx)
     ngx.say("run route id: ", route.id, " host: ", api_ctx.host)
 end
 

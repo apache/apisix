@@ -71,3 +71,35 @@ plugin name: example_plugin priority: 1000
 --- error_log
 failed to load plugin not_exist_plugin err: module 'apimeta.plugins.not_exist_plugin' not found
 rewrite(): plugin rewrite phase
+
+
+
+=== TEST 3: filter plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apimeta.plugin")
+
+            local all_plugins, err = plugin.load()
+            if not all_plugins then
+                ngx.say("failed to load plugins: ", err)
+            end
+
+            local filter_plugins = plugin.filter_plugin({
+                example_plugin = {i = 1, s = "s", t = {1, 2}},
+                new_plugin = {a = "a"},
+                }, all_plugins)
+
+            local encode_json = require "cjson.safe" .encode
+            for i = 1, #filter_plugins, 2 do
+                local plugin = filter_plugins[i]
+                local plugin_conf = filter_plugins[i + 1]
+                ngx.say("plugin [", plugin.name, "] config: ",
+                        encode_json(plugin_conf))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+plugin [example_plugin] config: {"i":1,"s":"s","t":[1,2]}
