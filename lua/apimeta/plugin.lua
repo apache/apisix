@@ -1,5 +1,5 @@
-local typeof = require("apimeta.comm.typeof")
-local log = require("apimeta.comm.log")
+local typeof = require("apimeta.core.typeof")
+local log = require("apimeta.core.log")
 local tostring = tostring
 
 

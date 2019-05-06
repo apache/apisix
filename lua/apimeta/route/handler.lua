@@ -3,7 +3,7 @@
 local ngx = ngx
 local ipairs = ipairs
 local r3router = require("resty.r3")
-local log = require("apimeta.comm.log")
+local log = require("apimeta.core.log")
 local insert_tab = table.insert
 local new_tab = require("table.new")
 
