@@ -34,7 +34,7 @@ end
 function _M.load()
     local plugin_names = config.read().plugins
     if not plugin_names then
-        return false, "failed to read plugin list form local file"
+        return nil, "failed to read plugin list form local file"
     end
 
     local plugins = new_tab(#plugin_names, 0)
@@ -42,6 +42,15 @@ function _M.load()
         local ok, plugin = pcall(require, "apimeta.plugins." .. name)
         if not ok then
             log.error("failed to load plugin ", name, " err: ", plugin)
+
+        elseif not plugin.priority then
+            log.error("invalid plugin", name, ", missing field: priority")
+
+        elseif not plugin.check_args then
+            log.error("invalid plugin", name, ", missing method: check_args")
+
+        elseif not plugin.version then
+            log.error("invalid plugin", name, ", missing field: version")
 
         else
             plugin.name = name

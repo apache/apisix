@@ -1,7 +1,6 @@
 -- Copyright (C) Yuansheng Wang
 
 local ngx = ngx
-local pcall = pcall
 local yaml = require("apimeta.core.yaml")
 local io_open = io.open
 
