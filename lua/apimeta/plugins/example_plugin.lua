@@ -2,7 +2,7 @@ local plugin = require("apimeta.plugin")
 
 
 local args_schema = {
-    i = "int",          -- value list: apimeta.comm.typeof#92
+    i = "int",          -- value list: apimeta.core.typeof#92
     s = "string",
     t = "table",
 }
