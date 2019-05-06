@@ -60,6 +60,8 @@ done
             for _, plugin in ipairs(plugins) do
                 ngx.say("plugin name: ", plugin.name,
                         " priority: ", plugin.priority)
+
+                plugin.rewrite()
             end
         }
     }
@@ -67,3 +69,6 @@ done
 GET /t
 --- response_body
 plugin name: example_plugin priority: 1000
+--- error_log
+failed to load plugin not_exist_plugin err: module 'apimeta.plugins.not_exist_plugin' not found
+rewrite(): plugin rewrite phase

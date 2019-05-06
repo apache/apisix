@@ -2,7 +2,7 @@ local require = require
 local config = require("apimeta.core.config")
 local typeof = require("apimeta.core.typeof")
 local log = require("apimeta.core.log")
-
+local new_tab = require("table.new")
 local insert_tab = table.insert
 local sort_tab = table.sort
 local tostring = tostring
@@ -37,8 +37,7 @@ function _M.load()
         return false, "failed to read plugin list form local file"
     end
 
-    -- todo: table.new
-    local plugins = {}
+    local plugins = new_tab(#plugin_names, 0)
     for _, name in ipairs(plugin_names) do
         local ok, plugin = pcall(require, "apimeta.plugins." .. name)
         if not ok then
