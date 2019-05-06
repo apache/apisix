@@ -1,3 +1,5 @@
+-- TODO: need to support more restriction rules
+
 local INFINITE_POS = math.huge
 local INFINITE_NEG = -INFINITE_POS
 local type = type

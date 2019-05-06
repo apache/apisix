@@ -40,7 +40,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-failed to check args: key [i] should be a int
-failed to check args: key [s] should be a string
-failed to check args: key [t] should be a table
+failed to check args: args.i expect int value but got: [nil]
+failed to check args: args.s expect string value but got: [3]
+failed to check args: args.t expect table value but got: []
 done

@@ -8,13 +8,13 @@ local args_schema = {
 }
 
 
-local _M = {VER = 0.1}
+local _M = {version = 0.1}
 
 
 function _M.check_args(config)
     local ok, err = plugin.check_args(config, args_schema)
     if not ok then
-        return nil, err
+        return false, err
     end
 
     -- add more restriction rules if we needs
@@ -28,7 +28,7 @@ function _M.init(config)
 
     local ok, err = _M.check_args(config)
     if not ok then
-        return ok, err
+        return false, err
     end
 
     return true
