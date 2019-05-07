@@ -7,7 +7,7 @@ local log = require("apimeta.core.log")
 local _M = {}
 
 local function load()
-    log.warn("dd: ", ngx.time())
+    -- log.warn("dd: ", ngx.time())
 end
 
 do

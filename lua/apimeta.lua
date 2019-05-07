@@ -4,6 +4,7 @@ local require = require
 local log = require("apimeta.core.log")
 local resp = require("apimeta.core.resp")
 local route_handler = require("apimeta.route.handler")
+local base_plugin = require("apimeta.base_plugin")
 local new_tab = require("table.new")
 local ngx = ngx
 local ngx_req = ngx.req
@@ -45,9 +46,27 @@ function _M.access()
         ok = router:dispatch(api_ctx.method, api_ctx.host .. api_ctx.uri,
                              api_ctx)
     end
+
     if not ok then
         log.warn("not find any matched route")
-        resp(404)
+        return resp(404)
+    end
+
+    ngx.say("api_ctx.router: ", require "cjson.safe" .encode(api_ctx.matched_route))
+
+    -- todo: move those code to another single file
+    -- todo: need to cache `all_plugins`
+    local all_plugins, err = base_plugin.load()
+    if not all_plugins then
+        ngx.say("failed to load plugins: ", err)
+    end
+
+    local filter_plugins = base_plugin.filter_plugin(api_ctx.matched_route.plugin_config, all_plugins)
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.access then
+            plugin.access(filter_plugins[i + 1])
+        end
     end
 end
 

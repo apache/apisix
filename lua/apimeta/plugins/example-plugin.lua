@@ -30,7 +30,13 @@ end
 
 function _M.rewrite(conf)
     plugin.log.warn("plugin rewrite phase")
-    return true
 end
+
+
+function _M.access(conf)
+    plugin.log.warn("plugin access phase")
+    ngx.say("hit example access phase")
+end
+
 
 return _M
