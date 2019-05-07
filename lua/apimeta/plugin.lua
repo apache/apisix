@@ -3,6 +3,7 @@ local config = require("apimeta.core.config")
 local typeof = require("apimeta.core.typeof")
 local log = require("apimeta.core.log")
 local new_tab = require("table.new")
+local pkg_loaded = package.loaded
 local insert_tab = table.insert
 local sort_tab = table.sort
 local tostring = tostring
@@ -39,7 +40,10 @@ function _M.load()
 
     local plugins = new_tab(#plugin_names, 0)
     for _, name in ipairs(plugin_names) do
-        local ok, plugin = pcall(require, "apimeta.plugins." .. name)
+        local pkg_name = "apimeta.plugins." .. name
+        pkg_loaded[pkg_name] = nil
+
+        local ok, plugin = pcall(require, pkg_name)
         if not ok then
             log.error("failed to load plugin ", name, " err: ", plugin)
 
@@ -65,11 +69,6 @@ function _M.load()
 
     return plugins
 end
-
-    -- user_config = {
-    --     example_plugin = {i = 1, s = "s", t = {1, 2}},
-    --     invalid_plugin = {a = "a"},
-    -- }
 
 function _M.filter_plugin(user_plugins, local_supported_plugins)
     -- todo: reuse table

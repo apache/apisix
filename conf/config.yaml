@@ -4,5 +4,5 @@ etcd:
   timeout: 60
 
 plugins:
-  - example_plugin
-  - not_exist_plugin
+  - example-plugin
+  - not-exist-plugin
