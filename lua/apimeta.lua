@@ -52,16 +52,16 @@ function _M.access()
         return resp(404)
     end
 
-    ngx.say("api_ctx.router: ", require "cjson.safe" .encode(api_ctx.matched_route))
-
     -- todo: move those code to another single file
-    -- todo: need to cache `all_plugins`
+    -- todo optimize: cache `all_plugins`
     local all_plugins, err = base_plugin.load()
     if not all_plugins then
         ngx.say("failed to load plugins: ", err)
     end
 
-    local filter_plugins = base_plugin.filter_plugin(api_ctx.matched_route.plugin_config, all_plugins)
+    local filter_plugins = base_plugin.filter_plugin(
+        api_ctx.matched_route.plugin_config, all_plugins)
+    api_ctx.filter_plugins = filter_plugins
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.access then
@@ -71,11 +71,27 @@ function _M.access()
 end
 
 function _M.header_filter()
+    local api_ctx = ngx.ctx.api_ctx
+    local filter_plugins = api_ctx.filter_plugins
 
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.header_filter then
+            plugin.header_filter(filter_plugins[i + 1])
+        end
+    end
 end
 
 function _M.log()
+    local api_ctx = ngx.ctx.api_ctx
+    local filter_plugins = api_ctx.filter_plugins
 
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.log then
+            plugin.log(filter_plugins[i + 1])
+        end
+    end
 end
 
 return _M

@@ -1,6 +1,5 @@
 -- Copyright (C) Yuansheng Wang
 
-local ngx = ngx
 local ipairs = ipairs
 local r3router = require("resty.r3")
 local log = require("apimeta.core.log")
@@ -36,9 +35,10 @@ end
 
 
 local function run_route(matched_params, route, api_ctx)
-    -- ngx.say("run route id: ", route.id, " host: ", api_ctx.host)
     api_ctx.matched_params = matched_params
     api_ctx.matched_route = route
+
+    -- log.warn("run route id: ", route.id, " host: ", api_ctx.host)
 end
 
 
