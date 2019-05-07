@@ -1,4 +1,4 @@
-local plugin = require("apimeta.plugin")
+local plugin = require("apimeta.base_plugin")
 
 
 -- TODO: need a more powerful way to define the schema
