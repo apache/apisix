@@ -50,7 +50,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugins, err = require("apimeta.plugin").load()
+            local plugins, err = require("apimeta.base_plugin").load()
             if not plugins then
                 ngx.say("failed to load plugins: ", err)
             end
@@ -78,7 +78,7 @@ rewrite(): plugin rewrite phase
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apimeta.plugin")
+            local plugin = require("apimeta.base_plugin")
 
             local all_plugins, err = plugin.load()
             if not all_plugins then
