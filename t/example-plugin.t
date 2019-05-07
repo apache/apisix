@@ -12,7 +12,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apimeta.plugins.example_plugin")
+            local plugin = require("apimeta.plugins.example-plugin")
             local ok, err = plugin.check_args({i = 1, s = "s", t = {}})
             if not ok then
                 ngx.say("failed to check args: ", err)
@@ -67,9 +67,9 @@ done
 --- request
 GET /t
 --- response_body
-plugin name: example_plugin priority: 1000
+plugin name: example-plugin priority: 1000
 --- error_log
-failed to load plugin not_exist_plugin err: module 'apimeta.plugins.not_exist_plugin' not found
+failed to load plugin not-exist-plugin err: module 'apimeta.plugins.not-exist-plugin' not found
 rewrite(): plugin rewrite phase
 
 
@@ -86,8 +86,8 @@ rewrite(): plugin rewrite phase
             end
 
             local filter_plugins = plugin.filter_plugin({
-                example_plugin = {i = 1, s = "s", t = {1, 2}},
-                new_plugin = {a = "a"},
+                ["example-plugin"] = {i = 1, s = "s", t = {1, 2}},
+                ["new-plugin"] = {a = "a"},
                 }, all_plugins)
 
             local encode_json = require "cjson.safe" .encode
@@ -102,4 +102,4 @@ rewrite(): plugin rewrite phase
 --- request
 GET /t
 --- response_body
-plugin [example_plugin] config: {"i":1,"s":"s","t":[1,2]}
+plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]}

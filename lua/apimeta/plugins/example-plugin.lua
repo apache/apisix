@@ -3,7 +3,7 @@ local plugin = require("apimeta.plugin")
 
 -- TODO: need a more powerful way to define the schema
 local args_schema = {
-    i = "int",              -- value list: apimeta.core.typeof#92
+    i = "int",
     s = "string",
     t = "table",
 }
@@ -12,12 +12,12 @@ local args_schema = {
 local _M = {
     version = 0.1,
     priority = 1000,        -- TODO: add a type field, may be a good idea
-    name = "example_plugin",
+    name = "example-plugin",
 }
 
 
-function _M.check_args(config)
-    local ok, err = plugin.check_args(config, args_schema)
+function _M.check_args(conf)
+    local ok, err = plugin.check_args(conf, args_schema)
     if not ok then
         return false, err
     end
@@ -28,19 +28,7 @@ function _M.check_args(config)
 end
 
 
-function _M.init(config)
-    plugin.log.warn("plugin init")
-
-    local ok, err = _M.check_args(config)
-    if not ok then
-        return false, err
-    end
-
-    return true
-end
-
-
-function _M.rewrite(ctx)
+function _M.rewrite(conf)
     plugin.log.warn("plugin rewrite phase")
     return true
 end
