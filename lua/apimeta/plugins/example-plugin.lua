@@ -1,4 +1,5 @@
-local plugin = require("apimeta.base_plugin")
+local apimeta = require("apimeta")
+local base_plugin = apimeta.base_plugin
 
 
 -- TODO: need a more powerful way to define the schema
@@ -17,7 +18,7 @@ local _M = {
 
 
 function _M.check_args(conf)
-    local ok, err = plugin.check_args(conf, args_schema)
+    local ok, err = base_plugin.check_args(conf, args_schema)
     if not ok then
         return false, err
     end
@@ -29,12 +30,12 @@ end
 
 
 function _M.rewrite(conf)
-    plugin.log.warn("plugin rewrite phase")
+    apimeta.log.warn("plugin rewrite phase")
 end
 
 
 function _M.access(conf)
-    plugin.log.warn("plugin access phase")
+    apimeta.log.warn("plugin access phase")
     ngx.say("hit example access phase")
 end
 

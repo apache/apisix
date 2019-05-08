@@ -10,7 +10,15 @@ local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
 
-local _M = {}
+local _M = {
+    log = log,
+    resp = resp,
+    table = {
+        new = new_tab,
+        clear = require("table.clear")
+    },
+    base_plugin = base_plugin,
+}
 
 function _M.init()
     require("resty.core")
@@ -24,7 +32,7 @@ function _M.init_worker()
     require("apimeta.route.load").init_worker()
 end
 
-function _M.rewrite()
+function _M.rewrite_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
@@ -62,15 +70,16 @@ function _M.rewrite()
     local filter_plugins = base_plugin.filter_plugin(
         api_ctx.matched_route.plugin_config, all_plugins)
     api_ctx.filter_plugins = filter_plugins
+
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
-        if plugin.access then
-            plugin.access(filter_plugins[i + 1])
+        if plugin.rewrite then
+            plugin.rewrite(filter_plugins[i + 1])
         end
     end
 end
 
-function _M.access()
+function _M.access_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx.filter_plugins then
         return
@@ -85,7 +94,7 @@ function _M.access()
     end
 end
 
-function _M.header_filter()
+function _M.header_filter_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx.filter_plugins then
         return
@@ -100,7 +109,7 @@ function _M.header_filter()
     end
 end
 
-function _M.log()
+function _M.log_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx.filter_plugins then
         return

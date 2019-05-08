@@ -42,19 +42,19 @@ _EOC_
     $config .= <<_EOC_;
         location / {
             rewrite_by_lua_block {
-                apimeta.rewrite()
+                apimeta.rewrite_phase()
             }
 
             access_by_lua_block {
-                apimeta.access()
+                apimeta.access_phase()
             }
 
             header_filter_by_lua_block {
-                apimeta.header_filter()
+                apimeta.header_filter_phase()
             }
 
             log_by_lua_block {
-                apimeta.log()
+                apimeta.log_phase()
             }
         }
 _EOC_

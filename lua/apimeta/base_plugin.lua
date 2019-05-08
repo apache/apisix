@@ -12,9 +12,7 @@ local ipairs = ipairs
 local pairs = pairs
 
 
-local _M = {
-    log = log,
-}
+local _M = {version = 0.1}
 
 
 function _M.check_args(args, scheme)
@@ -28,9 +26,11 @@ function _M.check_args(args, scheme)
     return true
 end
 
+
 local function sort_plugin(l, r)
     return l.priority > r.priority
 end
+
 
 function _M.load()
     local plugin_names = config.read().plugins
@@ -69,6 +69,7 @@ function _M.load()
 
     return plugins
 end
+
 
 function _M.filter_plugin(user_plugins, local_supported_plugins)
     -- todo: reuse table
