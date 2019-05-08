@@ -12,7 +12,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local apimeta = require("apimeta")
-            apimeta.rewrite()
+            apimeta.rewrite_phase()
         }
     }
 --- request
