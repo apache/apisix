@@ -14,7 +14,6 @@ __DATA__
             local config = require("apimeta.core.config").read()
 
             ngx.say("etcd host: ", config.etcd.host)
-            ngx.say("etcd prefix: ", config.etcd.prefix)
             ngx.say("first plugin: ", encode_json(config.plugins[1]))
         }
     }
@@ -22,5 +21,4 @@ __DATA__
 GET /t
 --- response_body
 etcd host: http://127.0.0.1:2379
-etcd prefix: /v2/keys
 first plugin: "example-plugin"
