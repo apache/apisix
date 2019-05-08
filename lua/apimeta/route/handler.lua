@@ -1,6 +1,5 @@
 -- Copyright (C) Yuansheng Wang
 
-local ngx = ngx
 local ipairs = ipairs
 local r3router = require("resty.r3")
 local log = require("apimeta.core.log")
@@ -23,6 +22,10 @@ function _M.get_router()
                 uri = "/hello",
                 host = "test.com",
                 id = 1234,
+                plugin_config = {
+                    ["example-plugin"] = {i = 1, s = "s", t = {1, 2}},
+                    ["new-plugin"] = {a = "a"},
+                }
             },
         })
     end
@@ -32,7 +35,10 @@ end
 
 
 local function run_route(matched_params, route, api_ctx)
-    ngx.say("run route id: ", route.id, " host: ", api_ctx.host)
+    api_ctx.matched_params = matched_params
+    api_ctx.matched_route = route
+
+    -- log.warn("run route id: ", route.id, " host: ", api_ctx.host)
 end
 
 
@@ -48,7 +54,7 @@ function _M.load_route(routes)
             route.methods,
             route.uri,
             function (params, ...)
-                return run_route(params, route, ...)
+                run_route(params, route, ...)
             end
         }
     end

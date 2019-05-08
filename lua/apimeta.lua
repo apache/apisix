@@ -4,6 +4,7 @@ local require = require
 local log = require("apimeta.core.log")
 local resp = require("apimeta.core.resp")
 local route_handler = require("apimeta.route.handler")
+local base_plugin = require("apimeta.base_plugin")
 local new_tab = require("table.new")
 local ngx = ngx
 local ngx_req = ngx.req
@@ -23,7 +24,7 @@ function _M.init_worker()
     require("apimeta.route.load").init_worker()
 end
 
-function _M.access()
+function _M.rewrite()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
@@ -45,18 +46,73 @@ function _M.access()
         ok = router:dispatch(api_ctx.method, api_ctx.host .. api_ctx.uri,
                              api_ctx)
     end
+
     if not ok then
-        log.warn("not find any matched route")
-        resp(404)
+        log.info("not find any matched route")
+        return resp(404)
+    end
+
+    -- todo: move those code to another single file
+    -- todo optimize: cache `all_plugins`
+    local all_plugins, err = base_plugin.load()
+    if not all_plugins then
+        ngx.say("failed to load plugins: ", err)
+    end
+
+    local filter_plugins = base_plugin.filter_plugin(
+        api_ctx.matched_route.plugin_config, all_plugins)
+    api_ctx.filter_plugins = filter_plugins
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.access then
+            plugin.access(filter_plugins[i + 1])
+        end
+    end
+end
+
+function _M.access()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx.filter_plugins then
+        return
+    end
+
+    local filter_plugins = api_ctx.filter_plugins
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.access then
+            plugin.access(filter_plugins[i + 1])
+        end
     end
 end
 
 function _M.header_filter()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx.filter_plugins then
+        return
+    end
 
+    local filter_plugins = api_ctx.filter_plugins
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.header_filter then
+            plugin.header_filter(filter_plugins[i + 1])
+        end
+    end
 end
 
 function _M.log()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx.filter_plugins then
+        return
+    end
 
+    local filter_plugins = api_ctx.filter_plugins
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.log then
+            plugin.log(filter_plugins[i + 1])
+        end
+    end
 end
 
 return _M
