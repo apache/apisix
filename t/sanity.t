@@ -1,8 +1,6 @@
 use t::APIMeta 'no_plan';
 
 repeat_each(2);
-no_long_string();
-log_level('info');
 
 run_tests();
 
@@ -13,7 +11,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local apimeta = require("apimeta")
-            apimeta.access()
+            apimeta.rewrite()
         }
     }
 --- request

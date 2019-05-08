@@ -1,8 +1,6 @@
 use t::APIMeta 'no_plan';
 
 repeat_each(2);
-no_long_string();
-log_level('info');
 
 run_tests;
 
@@ -68,6 +66,10 @@ done
 GET /t
 --- response_body
 plugin name: example-plugin priority: 1000
+--- yaml_config
+plugins:
+  - example-plugin
+  - not-exist-plugin
 --- error_log
 failed to load plugin not-exist-plugin err: module 'apimeta.plugins.not-exist-plugin' not found
 rewrite(): plugin rewrite phase

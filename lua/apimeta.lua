@@ -24,7 +24,7 @@ function _M.init_worker()
     require("apimeta.route.load").init_worker()
 end
 
-function _M.access()
+function _M.rewrite()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
@@ -48,7 +48,7 @@ function _M.access()
     end
 
     if not ok then
-        log.warn("not find any matched route")
+        log.info("not find any matched route")
         return resp(404)
     end
 
@@ -70,10 +70,28 @@ function _M.access()
     end
 end
 
+function _M.access()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx.filter_plugins then
+        return
+    end
+
+    local filter_plugins = api_ctx.filter_plugins
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.access then
+            plugin.access(filter_plugins[i + 1])
+        end
+    end
+end
+
 function _M.header_filter()
     local api_ctx = ngx.ctx.api_ctx
-    local filter_plugins = api_ctx.filter_plugins
+    if not api_ctx.filter_plugins then
+        return
+    end
 
+    local filter_plugins = api_ctx.filter_plugins
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.header_filter then
@@ -84,8 +102,11 @@ end
 
 function _M.log()
     local api_ctx = ngx.ctx.api_ctx
-    local filter_plugins = api_ctx.filter_plugins
+    if not api_ctx.filter_plugins then
+        return
+    end
 
+    local filter_plugins = api_ctx.filter_plugins
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.log then

@@ -31,6 +31,9 @@ _EOC_
 
     $block->set_value("http_config", $http_config);
 
+    my $user_yaml_config = $block->yaml_config;
+    $yaml_config = $user_yaml_config if $user_yaml_config;
+
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;
 >>> ../conf/config.yaml

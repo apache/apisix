@@ -1,8 +1,6 @@
 use t::APIMeta 'no_plan';
 
 repeat_each(2);
-no_long_string();
-log_level('info');
 
 run_tests;
 
@@ -17,7 +15,7 @@ __DATA__
 
             ngx.say("etcd host: ", config.etcd.host)
             ngx.say("etcd prefix: ", config.etcd.prefix)
-            ngx.say("plugins: ", encode_json(config.plugins))
+            ngx.say("first plugin: ", encode_json(config.plugins[1]))
         }
     }
 --- request
@@ -25,4 +23,4 @@ GET /t
 --- response_body
 etcd host: http://127.0.0.1:2379
 etcd prefix: /v2/keys
-plugins: ["example-plugin","not-exist-plugin"]
+first plugin: "example-plugin"
