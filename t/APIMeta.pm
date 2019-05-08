@@ -26,10 +26,46 @@ add_block_preprocessor(sub {
 
     init_by_lua_block {
         require "resty.core"
+        apimeta = require("apimeta")
+        apimeta.init()
+    }
+
+    init_worker_by_lua_block {
+        require("apimeta").init_worker()
     }
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    my $config = $block->config;
+    if (!$config) {
+    $config .= <<_EOC_;
+        location / {
+            rewrite_by_lua_block {
+                apimeta.rewrite()
+            }
+
+            access_by_lua_block {
+                apimeta.access()
+            }
+
+            header_filter_by_lua_block {
+                apimeta.header_filter()
+            }
+
+            log_by_lua_block {
+                apimeta.log()
+            }
+        }
+_EOC_
+    }
+
+    $block->set_value("config", $config);
+
+    my $user_yaml_config = $block->yaml_config;
+    if ($user_yaml_config) {
+        $yaml_config = $user_yaml_config;
+    }
 
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;

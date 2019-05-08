@@ -5,4 +5,3 @@ etcd:
 
 plugins:
   - example-plugin
-  - not-exist-plugin
