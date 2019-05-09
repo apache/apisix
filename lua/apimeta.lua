@@ -30,6 +30,7 @@ function _M.init()
                              "maxmcode=4000", "maxirconst=1000")
 
     require("apimeta.core.config").init()
+    require("apimeta.route.handler").init()
 end
 
 function _M.init_worker()

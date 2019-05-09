@@ -35,6 +35,10 @@ end
 
 
 function _M.init(opts)
+    if etcd_cli then
+        return true
+    end
+
     local err
     etcd_cli, err = etcd.new(opts)
     return etcd_cli and true, err
