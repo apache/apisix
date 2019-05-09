@@ -92,6 +92,7 @@ end
 
 
 local _M = {
+    version = 0.1,
     ['nil'] = typeofNil,
     ['boolean'] = typeofBoolean,
     ['string'] = typeofString,

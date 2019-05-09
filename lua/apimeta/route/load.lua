@@ -2,13 +2,17 @@
 
 local ngx = ngx
 local pcall = pcall
-local log = require("apimeta.core.log")
+local apimeta = require("apimeta")
+local log = apimeta.log
 
-local _M = {}
+
+local _M = {version = 0.1}
+
 
 local function load()
-    -- log.warn("dd: ", ngx.time())
+
 end
+
 
 do
     local running
@@ -29,8 +33,10 @@ end
 
 end -- do
 
+
 function _M.init_worker()
     ngx.timer.every(1, _M.load)
 end
+
 
 return _M
