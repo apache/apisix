@@ -2,11 +2,12 @@
 
 local log = require("apimeta.core.log")
 local config = require("apimeta.core.config")
-local table_nkeys = require "table.nkeys"
+local table_nkeys = require("table.nkeys")
+local new_tab = require("table.new")
+local insert_tab = table.insert
 local ngx = ngx
 local pcall = pcall
 local pairs = pairs
-local insert_tab = table.insert
 local callback
 
 
@@ -20,7 +21,7 @@ local function load()
         return
     end
 
-    local arr_routes = apimeta.table.new(table_nkeys(routes), 0)
+    local arr_routes = new_tab(table_nkeys(routes), 0)
     for route_id, route in pairs(routes) do
         route.id = route_id
         insert_tab(arr_routes, route)
