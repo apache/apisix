@@ -30,6 +30,26 @@ local function readdir(key)
     return body.node
 end
 
+local function waitdir(key, modified_index)
+    if not etcd_cli then
+        return nil, "not inited"
+    end
+
+    local data, err = etcd_cli:waitdir(key, modified_index)
+    if not data then
+        -- log.error("failed to get key from etcd: ", err)
+        return nil, err
+    end
+
+    local body = data.body or {}
+
+    if body.message then
+        return nil, body.message
+    end
+
+    return body.node
+end
+
 do
     local routes = nil
     local routes_hash = nil
@@ -58,7 +78,27 @@ function _M.routes()
             end
         end
 
-        ngx.log(ngx.WARN, "fetch all routes")
+        return routes
+    end
+
+    local item, err = waitdir("/user_routes", prev_index + 1)
+    if not item then
+        return nil, err
+    end
+
+    -- log.warn("waitdir: ", require("cjson").encode(item))
+
+    if not item.dir then
+        if not prev_index or item.modifiedIndex > prev_index then
+            prev_index = item.modifiedIndex
+            routes_hash[item.key] = nil
+        end
+
+        if routes_hash[item.key] == nil then
+            routes_hash[item.key] = item.value
+            insert_tab(routes, item.value)
+            return routes
+        end
     end
 
     return routes
