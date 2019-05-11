@@ -3,6 +3,7 @@
 local log = require("apimeta.core.log")
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
+local json_encode = require("cjson.safe").encode
 local insert_tab = table.insert
 local etcd_cli
 
@@ -70,8 +71,8 @@ function _M.routes()
         routes_hash = new_tab(0, #node.nodes)
 
         for _, item in ipairs(node.nodes) do
-            routes_hash[item.key] = item.value
             insert_tab(routes, item.value)
+            routes_hash[item.key] = #routes
 
             if not prev_index or item.modifiedIndex > prev_index then
                 prev_index = item.modifiedIndex
@@ -86,21 +87,25 @@ function _M.routes()
         return nil, err
     end
 
+    if item.dir then
+        log.error("todo: support for parsing `dir` response structures. ",
+                  json_encode(item))
+        return routes
+    end
     -- log.warn("waitdir: ", require("cjson").encode(item))
 
-    if not item.dir then
-        if not prev_index or item.modifiedIndex > prev_index then
-            prev_index = item.modifiedIndex
-            routes_hash[item.key] = nil
-        end
-
-        if routes_hash[item.key] == nil then
-            routes_hash[item.key] = item.value
-            insert_tab(routes, item.value)
-            return routes
-        end
+    if not prev_index or item.modifiedIndex > prev_index then
+        prev_index = item.modifiedIndex
     end
 
+    local pre_index = routes_hash[item.key]
+    if pre_index then
+        routes[pre_index] = item.value
+        return routes
+    end
+
+    insert_tab(routes, item.value)
+    routes_hash[item.key] = #routes
     return routes
 end
 
