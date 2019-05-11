@@ -753,5 +753,6 @@ local function parse(source)
 end
 
 return {
+  version = 0.1,
   parse = parse,
 }
