@@ -46,7 +46,7 @@ do
     local routes = {}
 function _M.set_routes(new_routes)
     routes = new_routes
-    log.warn("update new routes: ", require("cjson.safe").encode(routes))
+    -- log.warn("update new routes: ", require("cjson.safe").encode(routes))
 end
 
 function _M.get_router()
