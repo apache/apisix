@@ -11,12 +11,14 @@ local ngx_req = ngx.req
 local ngx_var = ngx.var
 
 local _M = {
+    conf = require("apimeta.core.config"),
     log = log,
     resp = resp,
     table = {
         new = new_tab,
         clear = require("table.clear")
     },
+    json = require("cjson.safe"),
     base_plugin = base_plugin,
 }
 
@@ -26,6 +28,9 @@ function _M.init()
     require("jit.opt").start("minstitch=2", "maxtrace=4000",
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
+
+    require("apimeta.core.config").init()
+    require("apimeta.route.handler").init()
 end
 
 function _M.init_worker()

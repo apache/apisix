@@ -11,7 +11,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local encode_json = require "cjson.safe" .encode
-            local config = require("apimeta.core.config").read()
+            local config = require("apimeta.core.config").local_conf()
 
             ngx.say("etcd host: ", config.etcd.host)
             ngx.say("first plugin: ", encode_json(config.plugins[1]))

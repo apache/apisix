@@ -33,7 +33,7 @@ end
 
 
 function _M.load()
-    local plugin_names = config.read().plugins
+    local plugin_names = config.local_conf().plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
     end
