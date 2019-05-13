@@ -1,6 +1,6 @@
 -- Copyright (C) Yuansheng Wang
-local log = require("apimeta.core.log")
-local yaml = require("apimeta.core.yaml")
+local log = require("apisix.core.log")
+local yaml = require("apisix.core.yaml")
 local setmetatable = setmetatable
 local require = require
 local ngx = ngx
@@ -43,7 +43,7 @@ function _M.init()
         return
     end
 
-    local config = require("apimeta.core.config_etcd")
+    local config = require("apisix.core.config_etcd")
     local ok
     ok, err = config.init(local_conf.etcd)
     if not ok then

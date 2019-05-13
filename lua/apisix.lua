@@ -1,17 +1,17 @@
 -- Copyright (C) Yuansheng Wang
 
 local require = require
-local log = require("apimeta.core.log")
-local resp = require("apimeta.core.resp")
-local route_handler = require("apimeta.route.handler")
-local base_plugin = require("apimeta.base_plugin")
+local log = require("apisix.core.log")
+local resp = require("apisix.core.resp")
+local route_handler = require("apisix.route.handler")
+local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
 local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
 
 local _M = {
-    conf = require("apimeta.core.config"),
+    conf = require("apisix.core.config"),
     log = log,
     resp = resp,
     table = {
@@ -29,12 +29,12 @@ function _M.init()
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    require("apimeta.core.config").init()
-    require("apimeta.route.handler").init()
+    require("apisix.core.config").init()
+    require("apisix.route.handler").init()
 end
 
 function _M.init_worker()
-    require("apimeta.route.load").init_worker()
+    require("apisix.route.load").init_worker()
 end
 
 function _M.rewrite_phase()
