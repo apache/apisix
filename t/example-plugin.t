@@ -1,4 +1,4 @@
-use t::APIMeta 'no_plan';
+use t::APISix 'no_plan';
 
 repeat_each(2);
 
@@ -10,7 +10,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apimeta.plugins.example-plugin")
+            local plugin = require("apisix.plugins.example-plugin")
             local ok, err = plugin.check_args({i = 1, s = "s", t = {}})
             if not ok then
                 ngx.say("failed to check args: ", err)
@@ -48,7 +48,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugins, err = require("apimeta.base_plugin").load()
+            local plugins, err = require("apisix.base_plugin").load()
             if not plugins then
                 ngx.say("failed to load plugins: ", err)
             end
@@ -71,7 +71,7 @@ plugins:
   - example-plugin
   - not-exist-plugin
 --- error_log
-failed to load plugin not-exist-plugin err: module 'apimeta.plugins.not-exist-plugin' not found
+failed to load plugin not-exist-plugin err: module 'apisix.plugins.not-exist-plugin' not found
 rewrite(): plugin rewrite phase
 
 
@@ -80,7 +80,7 @@ rewrite(): plugin rewrite phase
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apimeta.base_plugin")
+            local plugin = require("apisix.base_plugin")
 
             local all_plugins, err = plugin.load()
             if not all_plugins then

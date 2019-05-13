@@ -1,7 +1,7 @@
 local require = require
-local config = require("apimeta.core.config")
-local typeof = require("apimeta.core.typeof")
-local log = require("apimeta.core.log")
+local config = require("apisix.core.config")
+local typeof = require("apisix.core.typeof")
+local log = require("apisix.core.log")
 local new_tab = require("table.new")
 local pkg_loaded = package.loaded
 local insert_tab = table.insert
@@ -40,7 +40,7 @@ function _M.load()
 
     local plugins = new_tab(#plugin_names, 0)
     for _, name in ipairs(plugin_names) do
-        local pkg_name = "apimeta.plugins." .. name
+        local pkg_name = "apisix.plugins." .. name
         pkg_loaded[pkg_name] = nil
 
         local ok, plugin = pcall(require, pkg_name)

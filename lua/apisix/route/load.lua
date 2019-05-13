@@ -1,7 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
-local log = require("apimeta.core.log")
-local config = require("apimeta.core.config")
+local log = require("apisix.core.log")
+local config = require("apisix.core.config")
 local table_nkeys = require("table.nkeys")
 local new_tab = require("table.new")
 local insert_tab = table.insert
@@ -27,7 +27,7 @@ local function load()
         insert_tab(arr_routes, route)
     end
 
-    -- log.warn(apimeta.json.encode(arr_routes))
+    -- log.warn(apisix.json.encode(arr_routes))
     if callback then
         callback(arr_routes)
     end

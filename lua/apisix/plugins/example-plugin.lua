@@ -1,5 +1,5 @@
-local apimeta = require("apimeta")
-local base_plugin = apimeta.base_plugin
+local apisix = require("apisix")
+local base_plugin = apisix.base_plugin
 
 
 -- TODO: need a more powerful way to define the schema
@@ -30,12 +30,12 @@ end
 
 
 function _M.rewrite(conf)
-    apimeta.log.warn("plugin rewrite phase")
+    apisix.log.warn("plugin rewrite phase")
 end
 
 
 function _M.access(conf)
-    apimeta.log.warn("plugin access phase")
+    apisix.log.warn("plugin access phase")
     ngx.say("hit example access phase")
 end
 

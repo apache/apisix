@@ -1,4 +1,4 @@
-use t::APIMeta 'no_plan';
+use t::APISix 'no_plan';
 
 repeat_each(2);
 no_root_location();
@@ -11,8 +11,8 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local apimeta = require("apimeta")
-            apimeta.rewrite_phase()
+            local apisix = require("apisix")
+            apisix.rewrite_phase()
         }
     }
 --- request
