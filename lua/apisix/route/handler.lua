@@ -2,8 +2,8 @@
 
 local r3router = require("resty.r3")
 local new_tab = require("table.new")
-local route_load = require("apimeta.route.load")
-local log = require("apimeta.core.log")
+local route_load = require("apisix.route.load")
+local log = require("apisix.core.log")
 local ipairs = ipairs
 
 local router

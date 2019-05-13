@@ -1,6 +1,6 @@
 -- Copyright (C) Yuansheng Wang
 
-local log = require("apimeta.core.log")
+local log = require("apisix.core.log")
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
 local json_encode = require("cjson.safe").encode

@@ -7,14 +7,14 @@ help:
 	@grep -E '^### [-A-Za-z0-9_]+:' Makefile | sed 's/###/   /'
 
 
-### run:		Start the apimeta server
+### run:		Start the apisix server
 .PHONY: run
 run:
 	mkdir -p logs
 	sudo $$(which openresty) -p $$PWD/
 
 
-### stop:		Stop the apimeta server
+### stop:		Stop the apisix server
 .PHONY: stop
 stop:
 	sudo $$(which openresty) -p $$PWD/ -s stop
@@ -26,7 +26,7 @@ clean:
 	rm -rf logs/
 
 
-### reload:		Reload the apimeta server
+### reload:		Reload the apisix server
 .PHONY: reload
 reload:
 	sudo $$(which openresty) -p $$PWD/ -s reload
