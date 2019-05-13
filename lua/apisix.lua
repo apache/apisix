@@ -6,9 +6,11 @@ local resp = require("apisix.core.resp")
 local route_handler = require("apisix.route.handler")
 local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
+local balancer = require("ngx.balancer")
 local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
+local ngx_exit = ngx.exit
 
 local _M = {
     conf = require("apisix.core.config"),
@@ -126,6 +128,19 @@ function _M.log_phase()
         if plugin.log then
             plugin.log(filter_plugins[i + 1])
         end
+    end
+end
+
+function _M.balancer_phase()
+    local host = "123.125.114.144"
+    local port = 80
+
+    log.warn("set peer: ", host, ":", port)
+    local ok, err = balancer.set_current_peer(host, port)
+    if not ok then
+        log.error("failed to set the current peer: ", err)
+        ngx_exit(ngx.ERROR)
+        return
     end
 end
 

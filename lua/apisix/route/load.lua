@@ -23,8 +23,10 @@ local function load()
 
     local arr_routes = new_tab(table_nkeys(routes), 0)
     for route_id, route in pairs(routes) do
-        route.id = route_id
-        insert_tab(arr_routes, route)
+        if type(route) == "table" then
+            route.id = route_id
+            insert_tab(arr_routes, route)
+        end
     end
 
     -- log.warn(apisix.json.encode(arr_routes))

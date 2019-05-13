@@ -100,12 +100,21 @@ function _M.routes()
 
     local pre_index = routes_hash[item.key]
     if pre_index then
-        routes[pre_index] = item.value
+        if item.value then
+            routes[pre_index] = item.value
+
+        else
+            routes[pre_index] = false
+        end
+
         return routes
     end
 
-    insert_tab(routes, item.value)
-    routes_hash[item.key] = #routes
+    if item.value then
+        insert_tab(routes, item.value)
+        routes_hash[item.key] = #routes
+    end
+
     return routes
 end
 
