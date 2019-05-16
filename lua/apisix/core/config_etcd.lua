@@ -9,7 +9,7 @@ local insert_tab = table.insert
 
 
 local _M = {version = 0.1}
-local mt = { __index = _M }
+local mt = {__index = _M}
 
 
 local function readdir(etcd_cli, key)
@@ -23,7 +23,11 @@ local function readdir(etcd_cli, key)
         return nil, err
     end
 
-    local body = data.body or {}
+    local body = data.body
+
+    if type(body) ~= "table" then
+        return nil, "failed to read etcd dir"
+    end
 
     if body.message then
         return nil, body.message
