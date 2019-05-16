@@ -17,7 +17,9 @@ local _M = {version = 0.1}
 local function load()
     local routes, err = config.routes()
     if not routes then
-        log.error("failed to fetch routes: ", err)
+        if err ~= "timeout" then
+            log.error("failed to fetch routes: ", err)
+        end
         return
     end
 

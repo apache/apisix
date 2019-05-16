@@ -6,11 +6,9 @@ local resp = require("apisix.core.resp")
 local route_handler = require("apisix.route.handler")
 local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
-local balancer = require("ngx.balancer")
 local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
-local ngx_exit = ngx.exit
 
 local _M = {
     conf = require("apisix.core.config"),
@@ -68,14 +66,14 @@ function _M.rewrite_phase()
     end
 
     -- todo: move those code to another single file
-    -- todo optimize: cache `all_plugins`
-    local all_plugins, err = base_plugin.load()
-    if not all_plugins then
+    -- todo optimize: cache `local_supported_plugins`
+    local local_supported_plugins, err = base_plugin.load()
+    if not local_supported_plugins then
         ngx.say("failed to load plugins: ", err)
     end
 
     local filter_plugins = base_plugin.filter_plugin(
-        api_ctx.matched_route.plugin_config, all_plugins)
+        api_ctx.matched_route.plugin_config, local_supported_plugins)
     api_ctx.filter_plugins = filter_plugins
 
     for i = 1, #filter_plugins, 2 do
@@ -132,15 +130,17 @@ function _M.log_phase()
 end
 
 function _M.balancer_phase()
-    local host = "123.125.114.144"
-    local port = 80
-
-    log.warn("set peer: ", host, ":", port)
-    local ok, err = balancer.set_current_peer(host, port)
-    if not ok then
-        log.error("failed to set the current peer: ", err)
-        ngx_exit(ngx.ERROR)
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx.filter_plugins then
         return
+    end
+
+    local filter_plugins = api_ctx.filter_plugins
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        if plugin.upstream then
+            plugin.upstream(filter_plugins[i + 1])
+        end
     end
 end
 
