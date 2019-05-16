@@ -29,7 +29,7 @@ function _M.init()
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    require("apisix.core.config").init()
+    -- require("apisix.core.config").init()
     require("apisix.route.handler").init()
 end
 

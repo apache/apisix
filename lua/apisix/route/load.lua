@@ -1,7 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local log = require("apisix.core.log")
-local config = require("apisix.core.config")
+local etcd = require("apisix.core.config_etcd")
 local table_nkeys = require("table.nkeys")
 local new_tab = require("table.new")
 local insert_tab = table.insert
@@ -14,8 +14,8 @@ local callback
 local _M = {version = 0.1}
 
 
-local function load()
-    local routes, err = config.routes()
+local function load(etcd_routes)
+    local routes, err = etcd_routes:fetch()
     if not routes then
         if err ~= "timeout" then
             log.error("failed to fetch routes: ", err)
@@ -40,14 +40,19 @@ end
 
 do
     local running
+    local etcd_routes
 
 function _M.load(premature)
     if premature or running then
         return
     end
 
+    if not etcd_routes then
+        etcd_routes = etcd.new("/user_routes")
+    end
+
     running = true
-    local ok, err = pcall(load)
+    local ok, err = pcall(load, etcd_routes)
     running = false
 
     if not ok then

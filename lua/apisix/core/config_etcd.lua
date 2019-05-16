@@ -2,16 +2,17 @@
 
 local log = require("apisix.core.log")
 local etcd = require("resty.etcd")
+local config = require("apisix.core.config")
 local new_tab = require("table.new")
 local json_encode = require("cjson.safe").encode
 local insert_tab = table.insert
-local etcd_cli
 
 
 local _M = {version = 0.1}
+local mt = { __index = _M }
 
 
-local function readdir(key)
+local function readdir(etcd_cli, key)
     if not etcd_cli then
         return nil, "not inited"
     end
@@ -31,7 +32,7 @@ local function readdir(key)
     return body.node
 end
 
-local function waitdir(key, modified_index)
+local function waitdir(etcd_cli, key, modified_index)
     if not etcd_cli then
         return nil, "not inited"
     end
@@ -51,38 +52,34 @@ local function waitdir(key, modified_index)
     return body.node
 end
 
-do
-    local routes = nil
-    local routes_hash = nil
-    local prev_index = nil
 
-function _M.routes()
-    if routes == nil then
-        local node, err = readdir("/user_routes")
+function _M.fetch(self)
+    if self.values == nil then
+        local node, err = readdir(self.etcd_cli, self.key)
         if not node then
             return nil, err
         end
 
         if not node.dir then
-            return nil, "/user_routes is not a dir"
+            return nil, self.key .. " is not a dir"
         end
 
-        routes = new_tab(#node.nodes, 0)
-        routes_hash = new_tab(0, #node.nodes)
+        self.values = new_tab(#node.nodes, 0)
+        self.values_hash = new_tab(0, #node.nodes)
 
         for _, item in ipairs(node.nodes) do
-            insert_tab(routes, item.value)
-            routes_hash[item.key] = #routes
+            insert_tab(self.values, item.value)
+            self.values_hash[item.key] = #self.values
 
-            if not prev_index or item.modifiedIndex > prev_index then
-                prev_index = item.modifiedIndex
+            if not self.prev_index or item.modifiedIndex > self.prev_index then
+                self.prev_index = item.modifiedIndex
             end
         end
 
-        return routes
+        return self.values
     end
 
-    local item, err = waitdir("/user_routes", prev_index + 1)
+    local item, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
     if not item then
         return nil, err
     end
@@ -90,45 +87,58 @@ function _M.routes()
     if item.dir then
         log.error("todo: support for parsing `dir` response structures. ",
                   json_encode(item))
-        return routes
+        return self.values
     end
     -- log.warn("waitdir: ", require("cjson").encode(item))
 
-    if not prev_index or item.modifiedIndex > prev_index then
-        prev_index = item.modifiedIndex
+    if not self.prev_index or item.modifiedIndex > self.prev_index then
+        self.prev_index = item.modifiedIndex
     end
 
-    local pre_index = routes_hash[item.key]
+    local pre_index = self.values_hash[item.key]
     if pre_index then
         if item.value then
-            routes[pre_index] = item.value
+            self.values[pre_index] = item.value
 
         else
-            routes[pre_index] = false
+            self.values[pre_index] = false
         end
 
-        return routes
+        return self.values
     end
 
     if item.value then
-        insert_tab(routes, item.value)
-        routes_hash[item.key] = #routes
+        insert_tab(self.values, item.value)
+        self.values_hash[item.key] = #self.values
     end
 
-    return routes
+    return self.values
 end
 
-end -- do
 
-
-function _M.init(opts)
-    if etcd_cli then
-        return true
+function _M.new(key)
+    if not key then
+        return nil, "missing `key` argument"
     end
 
-    local err
-    etcd_cli, err = etcd.new(opts)
-    return etcd_cli and true, err
+    local local_conf, err = config.local_conf()
+    if not local_conf then
+        return nil, err
+    end
+
+    local etcd_cli
+    etcd_cli, err = etcd.new(local_conf.etcd)
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return setmetatable({
+        etcd_cli = etcd_cli,
+        values = nil,
+        routes_hash = nil,
+        prev_index = nil,
+        key = key,
+    }, mt)
 end
 
 
