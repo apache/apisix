@@ -39,7 +39,7 @@ end
 
 function _M.access(conf)
     apisix.log.warn("plugin access phase, conf: ", encode_json(conf))
-    ngx.say("hit example plugin")
+    -- ngx.say("hit example plugin")
 end
 
 

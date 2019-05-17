@@ -98,15 +98,17 @@ rewrite(): plugin rewrite phase
             }, all_plugins)
 
             local encode_json = require "cjson.safe" .encode
-            for i = 1, #filter_plugins, 2 do
+            for i = 1, #filter_plugins, 3 do
                 local plugin = filter_plugins[i]
                 local plugin_conf = filter_plugins[i + 1]
+                local version = filter_plugins[i + 2]
                 ngx.say("plugin [", plugin.name, "] config: ",
-                        encode_json(plugin_conf))
+                        encode_json(plugin_conf),
+                        " version: ", version)
             end
         }
     }
 --- request
 GET /t
 --- response_body
-plugin [example-plugin] config: {"i":1,"t":[1,2],"s":"s","version":1}
+plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]} version: 1

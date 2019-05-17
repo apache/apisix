@@ -6,6 +6,7 @@ local resp = require("apisix.core.resp")
 local route_handler = require("apisix.route.handler")
 local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
+local load_balancer = require("apisix.base_balancer") .run
 local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
@@ -74,12 +75,15 @@ function _M.rewrite_phase()
 
     local filter_plugins = base_plugin.filter_plugin(
         api_ctx.matched_route, local_supported_plugins)
+
     api_ctx.filter_plugins = filter_plugins
+    -- log.warn("matched route: ", require("cjson").encode(api_ctx.balancer))
 
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.rewrite then
-            plugin.rewrite(filter_plugins[i + 1])
+            plugin.rewrite(filter_plugins[i + 1],
+                           api_ctx.matched_route.modifiedIndex)
         end
     end
 end
@@ -94,7 +98,8 @@ function _M.access_phase()
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.access then
-            plugin.access(filter_plugins[i + 1])
+            plugin.access(filter_plugins[i + 1],
+                          api_ctx.matched_route.modifiedIndex)
         end
     end
 end
@@ -109,7 +114,8 @@ function _M.header_filter_phase()
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.header_filter then
-            plugin.header_filter(filter_plugins[i + 1])
+            plugin.header_filter(filter_plugins[i + 1],
+                                 api_ctx.matched_route.modifiedIndex)
         end
     end
 end
@@ -124,7 +130,8 @@ function _M.log_phase()
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.log then
-            plugin.log(filter_plugins[i + 1])
+            plugin.log(filter_plugins[i + 1],
+                       api_ctx.matched_route.modifiedIndex)
         end
     end
 end
@@ -135,13 +142,8 @@ function _M.balancer_phase()
         return
     end
 
-    local filter_plugins = api_ctx.filter_plugins
-    for i = 1, #filter_plugins, 2 do
-        local plugin = filter_plugins[i]
-        if plugin.upstream then
-            plugin.upstream(filter_plugins[i + 1])
-        end
-    end
+    load_balancer(api_ctx.matched_route.value.upstream,
+                  api_ctx.matched_route.modifiedIndex)
 end
 
 return _M

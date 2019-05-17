@@ -73,23 +73,14 @@ end
 
 function _M.filter_plugin(user_routes, local_supported_plugins)
     -- todo: reuse table
-    local plugins = new_tab(#local_supported_plugins * 2, 0)
-
-    if type(user_routes) ~= "table" or
-       type(user_routes.value) ~= "table" or
-       type(user_routes.value.plugin_config) ~= "table" then
-        return plugins
-    end
-
+    local plugins = new_tab(#local_supported_plugins * 3, 0)
     local user_plugin_conf = user_routes.value.plugin_config
-    local version = user_routes.modifiedIndex
 
     for _, plugin_obj in ipairs(local_supported_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
         if type(plugin_conf) == "table" then
-            plugin_conf.version = version
             insert_tab(plugins, plugin_obj)
             insert_tab(plugins, plugin_conf)
         end
