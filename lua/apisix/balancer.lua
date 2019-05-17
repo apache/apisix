@@ -1,5 +1,5 @@
 local core = require("apisix.core")
-local resty_roundrobin = require("resty.roundrobin")
+local roundrobin = require("resty.roundrobin")
 local balancer = require("ngx.balancer")
 local lrucache = require("resty.lrucache")
 local ngx = ngx
@@ -17,16 +17,16 @@ local _M = {
 }
 
 
-local function create_obj(typ, nodes)
+local function create_server_piker(typ, nodes)
     -- core.log.info("create create_obj, type: ", typ,
     --               " nodes: ", core.json.encode(nodes))
 
     if typ == "roundrobin" then
-        local obj = resty_roundrobin:new(nodes)
-        return obj
+        return roundrobin:new(nodes)
     end
 
     if typ == "chash" then
+        -- todo: support `chash`
         return nil, "not supported balancer type: " .. typ, 0
     end
 
@@ -40,27 +40,28 @@ function _M.run(route, version)
 
     local key = upstream.type .. "#" .. route.id .. "#" .. version
 
-    local obj, stale_obj = cache:get(key)
-    if not obj then
-        if stale_obj and stale_obj.conf_version == version then
-            obj = stale_obj
+    local server_piker, stale_server_piker = cache:get(key)
+    if not server_piker then
+        if stale_server_piker and stale_server_piker.conf_version == version then
+            server_piker = stale_server_piker
+
         else
-            obj, err = create_obj(upstream.type, upstream.nodes)
-            if not obj then
-                core.log.error("failed to get balancer object: ", err)
+            server_piker, err = create_server_piker(upstream.type, upstream.nodes)
+            if not server_piker then
+                core.log.error("failed to get server piker: ", err)
                 ngx_exit(ngx_ERROR)
                 return
             end
-            obj.conf_version = version
+            server_piker.conf_version = version
         end
 
         -- todo: need a way to clean the old cache
         -- todo: config in yaml
-        cache:set(key, obj, 3600)
+        cache:set(key, server_piker, 3600)
     end
 
     local server
-    server, err = obj:find()
+    server, err = server_piker:find()
     if not server then
         core.log.error("failed to find valid upstream server", err)
         ngx_exit(ngx_ERROR)
