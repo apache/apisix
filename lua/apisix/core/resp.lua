@@ -4,6 +4,7 @@ local ngx = ngx
 local ngx_say = ngx.say
 local ngx_exit = ngx.exit
 
+
 return function (code, body)
     code = code or 200
 

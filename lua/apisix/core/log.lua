@@ -1,5 +1,6 @@
 -- Copyright (C) Yuansheng Wang
 
+local ngx = ngx
 local ngx_log  = ngx.log
 local ngx_DEBUG= ngx.DEBUG
 local DEBUG    = ngx.config.debug
@@ -7,6 +8,7 @@ local cur_level = ngx.config.subsystem == "http" and
                   require "ngx.errlog" .get_sys_filter_level()
 
 local _M = {version = 0.1}
+
 
 for name, log_level in pairs({stderr = ngx.STDERR,
                               emerg  = ngx.EMERG,
@@ -25,6 +27,7 @@ for name, log_level in pairs({stderr = ngx.STDERR,
     end
 end
 
+
 function _M.debug(...)
     if not DEBUG and cur_level and ngx_DEBUG > cur_level then
         return
@@ -32,5 +35,6 @@ function _M.debug(...)
 
     return ngx_log(ngx_DEBUG, ...)
 end
+
 
 return _M

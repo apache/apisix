@@ -6,6 +6,9 @@ local config = require("apisix.core.config")
 local new_tab = require("table.new")
 local json_encode = require("cjson.safe").encode
 local insert_tab = table.insert
+local type = type
+local ipairs = ipairs
+local setmetatable = setmetatable
 
 
 local _M = {version = 0.1}
