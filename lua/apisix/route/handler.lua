@@ -29,8 +29,8 @@ local function _load_route(routes)
     for i, route in ipairs(routes) do
         if type(route) == "table" then
             items[i] = {
-                route.methods,
-                route.uri,
+                route.value.methods,
+                route.value.uri,
                 function (params, ...)
                     run_route(params, route, ...)
                 end

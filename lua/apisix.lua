@@ -73,7 +73,7 @@ function _M.rewrite_phase()
     end
 
     local filter_plugins = base_plugin.filter_plugin(
-        api_ctx.matched_route.plugin_config, local_supported_plugins)
+        api_ctx.matched_route, local_supported_plugins)
     api_ctx.filter_plugins = filter_plugins
 
     for i = 1, #filter_plugins, 2 do

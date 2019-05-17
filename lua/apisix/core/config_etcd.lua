@@ -62,20 +62,20 @@ end
 
 function _M.fetch(self)
     if self.values == nil then
-        local node, err = readdir(self.etcd_cli, self.key)
-        if not node then
+        local dir_res, err = readdir(self.etcd_cli, self.key)
+        if not dir_res then
             return nil, err
         end
 
-        if not node.dir then
+        if not dir_res.dir then
             return nil, self.key .. " is not a dir"
         end
 
-        self.values = new_tab(#node.nodes, 0)
-        self.values_hash = new_tab(0, #node.nodes)
+        self.values = new_tab(#dir_res.nodes, 0)
+        self.values_hash = new_tab(0, #dir_res.nodes)
 
-        for _, item in ipairs(node.nodes) do
-            insert_tab(self.values, item.value)
+        for _, item in ipairs(dir_res.nodes) do
+            insert_tab(self.values, item)
             self.values_hash[item.key] = #self.values
 
             if not self.prev_index or item.modifiedIndex > self.prev_index then
@@ -86,26 +86,26 @@ function _M.fetch(self)
         return self.values
     end
 
-    local item, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
-    if not item then
+    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    if not dir_res then
         return nil, err
     end
 
-    if item.dir then
+    if dir_res.dir then
         log.error("todo: support for parsing `dir` response structures. ",
-                  json_encode(item))
+                  json_encode(dir_res))
         return self.values
     end
-    -- log.warn("waitdir: ", require("cjson").encode(item))
+    -- log.warn("waitdir: ", require("cjson").encode(dir_res))
 
-    if not self.prev_index or item.modifiedIndex > self.prev_index then
-        self.prev_index = item.modifiedIndex
+    if not self.prev_index or dir_res.modifiedIndex > self.prev_index then
+        self.prev_index = dir_res.modifiedIndex
     end
 
-    local pre_index = self.values_hash[item.key]
+    local pre_index = self.values_hash[dir_res.key]
     if pre_index then
-        if item.value then
-            self.values[pre_index] = item.value
+        if dir_res.value then
+            self.values[pre_index] = dir_res.value
 
         else
             self.values[pre_index] = false
@@ -114,9 +114,9 @@ function _M.fetch(self)
         return self.values
     end
 
-    if item.value then
-        insert_tab(self.values, item.value)
-        self.values_hash[item.key] = #self.values
+    if dir_res.value then
+        insert_tab(self.values, dir_res)
+        self.values_hash[dir_res.key] = #self.values
     end
 
     return self.values
