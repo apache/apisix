@@ -6,22 +6,12 @@ local resp = require("apisix.core.resp")
 local route_handler = require("apisix.route.handler")
 local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
-local load_balancer = require("apisix.base_balancer") .run
+local load_balancer = require("apisix.balancer") .run
 local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
 
-local _M = {
-    conf = require("apisix.core.config"),
-    log = log,
-    resp = resp,
-    table = {
-        new = new_tab,
-        clear = require("table.clear")
-    },
-    json = require("cjson.safe"),
-    base_plugin = base_plugin,
-}
+local _M = {version = 0.1}
 
 function _M.init()
     require("resty.core")
