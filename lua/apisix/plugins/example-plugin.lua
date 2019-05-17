@@ -1,5 +1,5 @@
-local apisix = require("apisix")
-local base_plugin = apisix.base_plugin
+local core = require("apisix.core")
+local base_plugin = require("apisix.base_plugin")
 local encode_json = require("cjson.safe").encode
 
 
@@ -33,12 +33,12 @@ end
 
 
 function _M.rewrite(conf)
-    apisix.log.warn("plugin rewrite phase, conf: ", encode_json(conf))
+    core.log.warn("plugin rewrite phase, conf: ", encode_json(conf))
 end
 
 
 function _M.access(conf)
-    apisix.log.warn("plugin access phase, conf: ", encode_json(conf))
+    core.log.warn("plugin access phase, conf: ", encode_json(conf))
     -- ngx.say("hit example plugin")
 end
 

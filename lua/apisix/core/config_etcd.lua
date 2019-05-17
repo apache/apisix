@@ -1,14 +1,16 @@
 -- Copyright (C) Yuansheng Wang
 
-local log = require("apisix.core.log")
+local core = require("apisix.core")
 local etcd = require("resty.etcd")
-local config = require("apisix.core.config")
 local new_tab = require("table.new")
 local json_encode = require("cjson.safe").encode
+local exiting = ngx.worker.exiting
 local insert_tab = table.insert
 local type = type
 local ipairs = ipairs
 local setmetatable = setmetatable
+local ngx_sleep = ngx.sleep
+local ngx_timer_at = ngx.timer.at
 
 
 local _M = {version = 0.1}
@@ -61,6 +63,10 @@ end
 
 
 function _M.fetch(self)
+    if self.automatic then
+        return self.values
+    end
+
     if self.values == nil then
         local dir_res, err = readdir(self.etcd_cli, self.key)
         if not dir_res then
@@ -92,8 +98,8 @@ function _M.fetch(self)
     end
 
     if dir_res.dir then
-        log.error("todo: support for parsing `dir` response structures. ",
-                  json_encode(dir_res))
+        core.log.error("todo: support for parsing `dir` response structures. ",
+                       json_encode(dir_res))
         return self.values
     end
     -- log.warn("waitdir: ", require("cjson").encode(dir_res))
@@ -123,12 +129,27 @@ function _M.fetch(self)
 end
 
 
-function _M.new(key)
+local function _automatic_fetch(premature, self)
+    if premature then
+        return
+    end
+
+    while not exiting() do
+        local ok, err = pcall(self.fetch, self)
+        if not ok then
+            core.log.error("failed to fetch data from etcd: ", err)
+            ngx_sleep(10)
+        end
+    end
+end
+
+
+function _M.new(key, opts)
     if not key then
         return nil, "missing `key` argument"
     end
 
-    local local_conf, err = config.local_conf()
+    local local_conf, err = core.config.local_conf()
     if not local_conf then
         return nil, err
     end
@@ -139,13 +160,22 @@ function _M.new(key)
         return nil, err
     end
 
-    return setmetatable({
+    local automatic = opts and opts.automatic
+
+    local obj = setmetatable({
         etcd_cli = etcd_cli,
         values = nil,
         routes_hash = nil,
         prev_index = nil,
         key = key,
+        automatic = automatic,
     }, mt)
+
+    if automatic then
+        ngx_timer_at(0, _automatic_fetch, obj)
+    end
+
+    return obj
 end
 
 
