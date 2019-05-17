@@ -11,7 +11,9 @@ local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
 
+
 local _M = {version = 0.1}
+
 
 function _M.init()
     require("resty.core")
@@ -24,9 +26,12 @@ function _M.init()
     require("apisix.route.handler").init()
 end
 
+
 function _M.init_worker()
     require("apisix.route.load").init_worker()
+    require("apisix.balancer").init_worker()
 end
+
 
 function _M.rewrite_phase()
     local ngx_ctx = ngx.ctx

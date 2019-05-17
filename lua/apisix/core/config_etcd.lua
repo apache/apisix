@@ -11,6 +11,7 @@ local ipairs = ipairs
 local setmetatable = setmetatable
 local ngx_sleep = ngx.sleep
 local ngx_timer_at = ngx.timer.at
+local sub_str = string.sub
 
 
 local _M = {version = 0.1}
@@ -62,11 +63,12 @@ local function waitdir(etcd_cli, key, modified_index)
 end
 
 
-function _M.fetch(self)
-    if self.automatic then
-        return self.values
-    end
+local function short_key(self, str)
+    return sub_str(str, #self.key + 2)
+end
 
+
+function _M.fetch(self)
     if self.values == nil then
         local dir_res, err = readdir(self.etcd_cli, self.key)
         if not dir_res then
@@ -82,7 +84,8 @@ function _M.fetch(self)
 
         for _, item in ipairs(dir_res.nodes) do
             insert_tab(self.values, item)
-            self.values_hash[item.key] = #self.values
+            local key = short_key(self, item.key)
+            self.values_hash[key] = #self.values
 
             if not self.prev_index or item.modifiedIndex > self.prev_index then
                 self.prev_index = item.modifiedIndex
@@ -108,7 +111,8 @@ function _M.fetch(self)
         self.prev_index = dir_res.modifiedIndex
     end
 
-    local pre_index = self.values_hash[dir_res.key]
+    local key = short_key(self, dir_res.key)
+    local pre_index = self.values_hash[key]
     if pre_index then
         if dir_res.value then
             self.values[pre_index] = dir_res.value
@@ -122,7 +126,7 @@ function _M.fetch(self)
 
     if dir_res.value then
         insert_tab(self.values, dir_res)
-        self.values_hash[dir_res.key] = #self.values
+        self.values_hash[key] = #self.values
     end
 
     return self.values

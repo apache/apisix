@@ -1,14 +1,18 @@
 local core = require("apisix.core")
+local config_etcd = require("apisix.core.config_etcd")
 local roundrobin = require("resty.roundrobin")
 local balancer = require("ngx.balancer")
 local lrucache = require("resty.lrucache")
+local upstreams_etcd
 local ngx = ngx
 local ngx_exit = ngx.exit
 local ngx_ERROR = ngx.ERROR
+local tostring = tostring
+local error = error
 
 
 local module_name = "balancer"
-local cache, err = lrucache.new(500)    -- todo: config in yaml
+local cache = lrucache.new(500)    -- todo: config in yaml
 
 
 local _M = {
@@ -38,7 +42,23 @@ function _M.run(route, version)
     -- core.log.warn("conf: ", core.json.encode(conf), " version: ", version)
     local upstream = route.value.upstream
 
-    local key = upstream.type .. "#" .. route.id .. "#" .. version
+    local key
+    if upstream.id then
+        if not upstreams_etcd then
+            core.log.warn("need to create a etcd instance for fetching ",
+                          "upstream information")
+            ngx_exit(ngx_ERROR)
+            return
+        end
+
+        local arr_idx = upstreams_etcd.values_hash[tostring(upstream.id)]
+        upstream = upstreams_etcd.values[arr_idx].value
+
+        key = upstream.type .. "#upstream_" .. upstream.id .. "#" .. version
+
+    else
+        key = upstream.type .. "#route_" .. route.id .. "#" .. version
+    end
 
     local server_piker, stale_server_piker = cache:get(key)
     if not server_piker then
@@ -46,6 +66,7 @@ function _M.run(route, version)
             server_piker = stale_server_piker
 
         else
+            local err
             server_piker, err = create_server_piker(upstream.type, upstream.nodes)
             if not server_piker then
                 core.log.error("failed to get server piker: ", err)
@@ -60,8 +81,7 @@ function _M.run(route, version)
         cache:set(key, server_piker, 3600)
     end
 
-    local server
-    server, err = server_piker:find()
+    local server, err = server_piker:find()
     if not server then
         core.log.error("failed to find valid upstream server", err)
         ngx_exit(ngx_ERROR)
@@ -73,6 +93,17 @@ function _M.run(route, version)
     if not ok then
         core.log.error("failed to set the current peer: ", err)
         ngx_exit(ngx_ERROR)
+        return
+    end
+end
+
+
+function _M.init_worker()
+    local err
+    upstreams_etcd, err = config_etcd.new("/user_upstreams",
+                                               {automatic = true})
+    if not upstreams_etcd then
+        error("failed to create etcd instance to fetch upstream: " .. err)
         return
     end
 end
