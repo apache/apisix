@@ -18,7 +18,8 @@ local _M = {
 
 
 local function create_obj(typ, nodes)
-    -- core.log.warn("create create_obj, type: ", typ, " nodes: ", core.json.encode(nodes))
+    -- core.log.info("create create_obj, type: ", typ,
+    --               " nodes: ", core.json.encode(nodes))
 
     if typ == "roundrobin" then
         local obj = resty_roundrobin:new(nodes)
@@ -33,9 +34,8 @@ local function create_obj(typ, nodes)
 end
 
 
-function _M.run(route)
+function _M.run(route, version)
     -- core.log.warn("conf: ", core.json.encode(conf), " version: ", version)
-    local version = route.modifiedIndex
     local upstream = route.value.upstream
 
     local key = upstream.type .. "#" .. route.id .. "#" .. version
