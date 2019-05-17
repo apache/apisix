@@ -27,13 +27,15 @@ local function _load_route(routes)
 
     local items = new_tab(#routes, 0)
     for i, route in ipairs(routes) do
-        items[i] = {
-            route.methods,
-            route.uri,
-            function (params, ...)
-                run_route(params, route, ...)
-            end
-        }
+        if type(route) == "table" then
+            items[i] = {
+                route.value.methods,
+                route.value.uri,
+                function (params, ...)
+                    run_route(params, route, ...)
+                end
+            }
+        end
     end
 
     router = r3router.new(items)

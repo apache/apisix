@@ -2,16 +2,20 @@
 
 local log = require("apisix.core.log")
 local etcd = require("resty.etcd")
+local config = require("apisix.core.config")
 local new_tab = require("table.new")
 local json_encode = require("cjson.safe").encode
 local insert_tab = table.insert
-local etcd_cli
+local type = type
+local ipairs = ipairs
+local setmetatable = setmetatable
 
 
 local _M = {version = 0.1}
+local mt = {__index = _M}
 
 
-local function readdir(key)
+local function readdir(etcd_cli, key)
     if not etcd_cli then
         return nil, "not inited"
     end
@@ -22,7 +26,11 @@ local function readdir(key)
         return nil, err
     end
 
-    local body = data.body or {}
+    local body = data.body
+
+    if type(body) ~= "table" then
+        return nil, "failed to read etcd dir"
+    end
 
     if body.message then
         return nil, body.message
@@ -31,7 +39,7 @@ local function readdir(key)
     return body.node
 end
 
-local function waitdir(key, modified_index)
+local function waitdir(etcd_cli, key, modified_index)
     if not etcd_cli then
         return nil, "not inited"
     end
@@ -51,75 +59,93 @@ local function waitdir(key, modified_index)
     return body.node
 end
 
-do
-    local routes = nil
-    local routes_hash = nil
-    local prev_index = nil
 
-function _M.routes()
-    if routes == nil then
-        local node, err = readdir("/user_routes")
-        if not node then
+function _M.fetch(self)
+    if self.values == nil then
+        local dir_res, err = readdir(self.etcd_cli, self.key)
+        if not dir_res then
             return nil, err
         end
 
-        if not node.dir then
-            return nil, "/user_routes is not a dir"
+        if not dir_res.dir then
+            return nil, self.key .. " is not a dir"
         end
 
-        routes = new_tab(#node.nodes, 0)
-        routes_hash = new_tab(0, #node.nodes)
+        self.values = new_tab(#dir_res.nodes, 0)
+        self.values_hash = new_tab(0, #dir_res.nodes)
 
-        for _, item in ipairs(node.nodes) do
-            insert_tab(routes, item.value)
-            routes_hash[item.key] = #routes
+        for _, item in ipairs(dir_res.nodes) do
+            insert_tab(self.values, item)
+            self.values_hash[item.key] = #self.values
 
-            if not prev_index or item.modifiedIndex > prev_index then
-                prev_index = item.modifiedIndex
+            if not self.prev_index or item.modifiedIndex > self.prev_index then
+                self.prev_index = item.modifiedIndex
             end
         end
 
-        return routes
+        return self.values
     end
 
-    local item, err = waitdir("/user_routes", prev_index + 1)
-    if not item then
+    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    if not dir_res then
         return nil, err
     end
 
-    if item.dir then
+    if dir_res.dir then
         log.error("todo: support for parsing `dir` response structures. ",
-                  json_encode(item))
-        return routes
+                  json_encode(dir_res))
+        return self.values
     end
-    -- log.warn("waitdir: ", require("cjson").encode(item))
+    -- log.warn("waitdir: ", require("cjson").encode(dir_res))
 
-    if not prev_index or item.modifiedIndex > prev_index then
-        prev_index = item.modifiedIndex
+    if not self.prev_index or dir_res.modifiedIndex > self.prev_index then
+        self.prev_index = dir_res.modifiedIndex
     end
 
-    local pre_index = routes_hash[item.key]
+    local pre_index = self.values_hash[dir_res.key]
     if pre_index then
-        routes[pre_index] = item.value
-        return routes
+        if dir_res.value then
+            self.values[pre_index] = dir_res.value
+
+        else
+            self.values[pre_index] = false
+        end
+
+        return self.values
     end
 
-    insert_tab(routes, item.value)
-    routes_hash[item.key] = #routes
-    return routes
+    if dir_res.value then
+        insert_tab(self.values, dir_res)
+        self.values_hash[dir_res.key] = #self.values
+    end
+
+    return self.values
 end
 
-end -- do
 
-
-function _M.init(opts)
-    if etcd_cli then
-        return true
+function _M.new(key)
+    if not key then
+        return nil, "missing `key` argument"
     end
 
-    local err
-    etcd_cli, err = etcd.new(opts)
-    return etcd_cli and true, err
+    local local_conf, err = config.local_conf()
+    if not local_conf then
+        return nil, err
+    end
+
+    local etcd_cli
+    etcd_cli, err = etcd.new(local_conf.etcd)
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return setmetatable({
+        etcd_cli = etcd_cli,
+        values = nil,
+        routes_hash = nil,
+        prev_index = nil,
+        key = key,
+    }, mt)
 end
 
 
