@@ -1,7 +1,7 @@
 use t::APISix 'no_plan';
 
 repeat_each(2);
-
+no_long_string();
 run_tests;
 
 __DATA__
@@ -88,9 +88,14 @@ rewrite(): plugin rewrite phase
             end
 
             local filter_plugins = plugin.filter_plugin({
-                ["example-plugin"] = {i = 1, s = "s", t = {1, 2}},
-                ["new-plugin"] = {a = "a"},
-                }, all_plugins)
+                value = {
+                    plugin_config = {
+                        ["example-plugin"] = {i = 1, s = "s", t = {1, 2}},
+                        ["new-plugin"] = {a = "a"},
+                    }
+                },
+                modifiedIndex = 1,
+            }, all_plugins)
 
             local encode_json = require "cjson.safe" .encode
             for i = 1, #filter_plugins, 2 do
@@ -104,4 +109,4 @@ rewrite(): plugin rewrite phase
 --- request
 GET /t
 --- response_body
-plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]}
+plugin [example-plugin] config: {"i":1,"t":[1,2],"s":"s","version":1}
