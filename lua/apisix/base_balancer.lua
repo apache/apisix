@@ -8,7 +8,7 @@ local ngx_ERROR = ngx.ERROR
 
 
 local module_name = "balancer"
-local cache, err = lrucache.new(500)
+local cache, err = lrucache.new(500)    -- todo: config in yaml
 
 
 local _M = {
@@ -18,7 +18,7 @@ local _M = {
 
 
 local function create_obj(typ, nodes)
-    core.log.warn("create create_obj, type: ", typ, " nodes: ", core.json.encode(nodes))
+    -- core.log.warn("create create_obj, type: ", typ, " nodes: ", core.json.encode(nodes))
 
     if typ == "roundrobin" then
         local obj = resty_roundrobin:new(nodes)
@@ -33,20 +33,30 @@ local function create_obj(typ, nodes)
 end
 
 
-function _M.run(conf, version)
-    core.log.warn("conf: ", core.json.encode(conf), " version: ", version)
-    local key = conf.type .. "#" .. (conf.id or "id") .. "#" .. version
+function _M.run(route)
+    -- core.log.warn("conf: ", core.json.encode(conf), " version: ", version)
+    local version = route.modifiedIndex
+    local upstream = route.value.upstream
 
-    local obj = cache:get(key)
+    local key = upstream.type .. "#" .. route.id .. "#" .. version
+
+    local obj, stale_obj = cache:get(key)
     if not obj then
-        obj, err = create_obj(conf.type, conf.nodes)
-        if not obj then
-            core.log.error("failed to get balancer object: ", err)
-            ngx_exit(ngx_ERROR)
-            return
+        if stale_obj and stale_obj.conf_version == version then
+            obj = stale_obj
+        else
+            obj, err = create_obj(upstream.type, upstream.nodes)
+            if not obj then
+                core.log.error("failed to get balancer object: ", err)
+                ngx_exit(ngx_ERROR)
+                return
+            end
+            obj.conf_version = version
         end
 
-        cache:set(key, obj)
+        -- todo: need a way to clean the old cache
+        -- todo: config in yaml
+        cache:set(key, obj, 3600)
     end
 
     local server

@@ -77,7 +77,8 @@ function _M.rewrite_phase()
         api_ctx.matched_route, local_supported_plugins)
 
     api_ctx.filter_plugins = filter_plugins
-    -- log.warn("matched route: ", require("cjson").encode(api_ctx.balancer))
+    -- todo: fetch the upstream node status, it may be stored in
+    -- different places.
 
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
@@ -142,7 +143,8 @@ function _M.balancer_phase()
         return
     end
 
-    load_balancer(api_ctx.matched_route.value.upstream,
+    -- TODO: fetch the upstream by upstream_id
+    load_balancer(api_ctx.matched_route,
                   api_ctx.matched_route.modifiedIndex)
 end
 
