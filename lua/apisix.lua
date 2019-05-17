@@ -77,6 +77,7 @@ function _M.rewrite_phase()
         api_ctx.matched_route, local_supported_plugins)
 
     api_ctx.filter_plugins = filter_plugins
+    api_ctx.conf_version = api_ctx.matched_route.modifiedIndex
     -- todo: fetch the upstream node status, it may be stored in
     -- different places.
 
@@ -84,7 +85,7 @@ function _M.rewrite_phase()
         local plugin = filter_plugins[i]
         if plugin.rewrite then
             plugin.rewrite(filter_plugins[i + 1],
-                           api_ctx.matched_route.modifiedIndex)
+                           api_ctx.conf_version)
         end
     end
 end
@@ -100,7 +101,7 @@ function _M.access_phase()
         local plugin = filter_plugins[i]
         if plugin.access then
             plugin.access(filter_plugins[i + 1],
-                          api_ctx.matched_route.modifiedIndex)
+                          api_ctx.conf_version)
         end
     end
 end
@@ -116,7 +117,7 @@ function _M.header_filter_phase()
         local plugin = filter_plugins[i]
         if plugin.header_filter then
             plugin.header_filter(filter_plugins[i + 1],
-                                 api_ctx.matched_route.modifiedIndex)
+                                 api_ctx.conf_version)
         end
     end
 end
@@ -132,7 +133,7 @@ function _M.log_phase()
         local plugin = filter_plugins[i]
         if plugin.log then
             plugin.log(filter_plugins[i + 1],
-                       api_ctx.matched_route.modifiedIndex)
+                       api_ctx.conf_version)
         end
     end
 end
@@ -144,8 +145,7 @@ function _M.balancer_phase()
     end
 
     -- TODO: fetch the upstream by upstream_id
-    load_balancer(api_ctx.matched_route,
-                  api_ctx.matched_route.modifiedIndex)
+    load_balancer(api_ctx.matched_route, api_ctx.conf_version)
 end
 
 return _M
