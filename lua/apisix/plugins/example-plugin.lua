@@ -1,5 +1,6 @@
 local apisix = require("apisix")
 local base_plugin = apisix.base_plugin
+local encode_json = require("cjson.safe").encode
 
 
 -- TODO: need a more powerful way to define the schema
@@ -10,10 +11,12 @@ local args_schema = {
 }
 
 
+local plugin_name = "example-plugin"
+
 local _M = {
     version = 0.1,
     priority = 1000,        -- TODO: add a type field, may be a good idea
-    name = "example-plugin",
+    name = plugin_name,
 }
 
 
@@ -30,13 +33,13 @@ end
 
 
 function _M.rewrite(conf)
-    apisix.log.warn("plugin rewrite phase")
+    apisix.log.warn("plugin rewrite phase, conf: ", encode_json(conf))
 end
 
 
 function _M.access(conf)
-    apisix.log.warn("plugin access phase")
-    ngx.say("hit example access phase")
+    apisix.log.warn("plugin access phase, conf: ", encode_json(conf))
+    -- ngx.say("hit example plugin")
 end
 
 

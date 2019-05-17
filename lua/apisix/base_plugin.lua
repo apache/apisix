@@ -71,15 +71,16 @@ function _M.load()
 end
 
 
-function _M.filter_plugin(user_plugins, local_supported_plugins)
+function _M.filter_plugin(user_routes, local_supported_plugins)
     -- todo: reuse table
-    local plugins = new_tab(#local_supported_plugins * 2, 0)
+    local plugins = new_tab(#local_supported_plugins * 3, 0)
+    local user_plugin_conf = user_routes.value.plugin_config
 
     for _, plugin_obj in ipairs(local_supported_plugins) do
         local name = plugin_obj.name
-        local plugin_conf = user_plugins[name]
+        local plugin_conf = user_plugin_conf[name]
 
-        if plugin_conf then
+        if type(plugin_conf) == "table" then
             insert_tab(plugins, plugin_obj)
             insert_tab(plugins, plugin_conf)
         end

@@ -23,6 +23,7 @@ add_block_preprocessor(sub {
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
     lua_package_path "$pwd/lua/?.lua;/usr/share/lua/5.1/?.lua;;";
+    lua_package_cpath '/usr/lib64/lua/5.1/?.so;;';
 
     init_by_lua_block {
         require "resty.core"
