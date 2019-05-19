@@ -115,7 +115,7 @@ function _M.fetch(self)
     local pre_index = self.values_hash[key]
     if pre_index then
         if dir_res.value then
-            self.values[pre_index] = dir_res.value
+            self.values[pre_index] = dir_res
 
         else
             self.values[pre_index] = false
@@ -127,6 +127,25 @@ function _M.fetch(self)
     if dir_res.value then
         insert_tab(self.values, dir_res)
         self.values_hash[key] = #self.values
+    end
+
+    -- avoid space waste
+    self.sync_times = self.sync_times + 1
+    if self.sync_times > 100 then
+        local idx = 0
+        for i = 1, #self.values do
+            local val = self.values[i]
+            self.values[i] = nil
+            if val then
+                idx = idx + 1
+                self.values[idx] = val
+            end
+        end
+
+        for i = 1, #self.values do
+            key = short_key(self, self.values[i].key)
+            self.values_hash[key] = i
+        end
     end
 
     return self.values
@@ -173,6 +192,7 @@ function _M.new(key, opts)
         prev_index = nil,
         key = key,
         automatic = automatic,
+        sync_times = 0,
     }, mt)
 
     if automatic then
