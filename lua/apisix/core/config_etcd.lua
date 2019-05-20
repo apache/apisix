@@ -3,7 +3,6 @@
 local core = require("apisix.core")
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
-local json_encode = require("cjson.safe").encode
 local exiting = ngx.worker.exiting
 local insert_tab = table.insert
 local type = type
@@ -11,6 +10,7 @@ local ipairs = ipairs
 local setmetatable = setmetatable
 local ngx_sleep = ngx.sleep
 local ngx_timer_at = ngx.timer.at
+local sub_str = string.sub
 
 
 local _M = {version = 0.1}
@@ -62,11 +62,12 @@ local function waitdir(etcd_cli, key, modified_index)
 end
 
 
-function _M.fetch(self)
-    if self.automatic then
-        return self.values
-    end
+local function short_key(self, str)
+    return sub_str(str, #self.key + 2)
+end
 
+
+function _M.fetch(self)
     if self.values == nil then
         local dir_res, err = readdir(self.etcd_cli, self.key)
         if not dir_res then
@@ -82,7 +83,8 @@ function _M.fetch(self)
 
         for _, item in ipairs(dir_res.nodes) do
             insert_tab(self.values, item)
-            self.values_hash[item.key] = #self.values
+            local key = short_key(self, item.key)
+            self.values_hash[key] = #self.values
 
             if not self.prev_index or item.modifiedIndex > self.prev_index then
                 self.prev_index = item.modifiedIndex
@@ -92,40 +94,68 @@ function _M.fetch(self)
         return self.values
     end
 
-    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
-    if not dir_res then
+    local res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    if not res then
         return nil, err
     end
 
-    if dir_res.dir then
+    if res.dir then
         core.log.error("todo: support for parsing `dir` response structures. ",
-                       json_encode(dir_res))
+                       core.json.encode(res))
         return self.values
     end
-    -- log.warn("waitdir: ", require("cjson").encode(dir_res))
+    -- core.log.warn("waitdir: ", core.json.encode(res))
 
-    if not self.prev_index or dir_res.modifiedIndex > self.prev_index then
-        self.prev_index = dir_res.modifiedIndex
+    if not self.prev_index or res.modifiedIndex > self.prev_index then
+        self.prev_index = res.modifiedIndex
     end
 
-    local pre_index = self.values_hash[dir_res.key]
+    local key = short_key(self, res.key)
+    local pre_index = self.values_hash[key]
     if pre_index then
-        if dir_res.value then
-            self.values[pre_index] = dir_res.value
+        if res.value then
+            self.values[pre_index] = res
 
         else
+            self.sync_times = self.sync_times + 1
             self.values[pre_index] = false
         end
 
-        return self.values
+    elseif res.value then
+        insert_tab(self.values, res)
+        self.values_hash[key] = #self.values
     end
 
-    if dir_res.value then
-        insert_tab(self.values, dir_res)
-        self.values_hash[dir_res.key] = #self.values
+    -- avoid space waste
+    -- todo: need to cover this path, it is important.
+    if self.sync_times > 100 then
+        local count = 0
+        for i = 1, #self.values do
+            local val = self.values[i]
+            self.values[i] = nil
+            if val then
+                count = count + 1
+                self.values[count] = val
+            end
+        end
+
+        for i = 1, count do
+            key = short_key(self, self.values[i].key)
+            self.values_hash[key] = i
+        end
     end
 
     return self.values
+end
+
+
+function _M.get(self, key)
+    local arr_idx = self.values_hash[tostring(key)]
+    if not arr_idx then
+        return nil
+    end
+
+    return self.values[arr_idx]
 end
 
 
@@ -169,6 +199,7 @@ function _M.new(key, opts)
         prev_index = nil,
         key = key,
         automatic = automatic,
+        sync_times = 0,
     }, mt)
 
     if automatic then

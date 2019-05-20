@@ -1,8 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local require = require
-local log = require("apisix.core.log")
-local resp = require("apisix.core.resp")
+local core = require("apisix.core")
 local route_handler = require("apisix.route.handler")
 local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
@@ -11,7 +10,9 @@ local ngx = ngx
 local ngx_req = ngx.req
 local ngx_var = ngx.var
 
+
 local _M = {version = 0.1}
+
 
 function _M.init()
     require("resty.core")
@@ -24,9 +25,12 @@ function _M.init()
     require("apisix.route.handler").init()
 end
 
+
 function _M.init_worker()
     require("apisix.route.load").init_worker()
+    require("apisix.balancer").init_worker()
 end
+
 
 function _M.rewrite_phase()
     local ngx_ctx = ngx.ctx
@@ -52,8 +56,8 @@ function _M.rewrite_phase()
     end
 
     if not ok then
-        log.info("not find any matched route")
-        return resp(404)
+        core.log.info("not find any matched route")
+        return core.resp(404)
     end
 
     -- todo: move those code to another single file
