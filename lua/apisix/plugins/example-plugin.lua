@@ -1,6 +1,5 @@
 local core = require("apisix.core")
 local base_plugin = require("apisix.base_plugin")
-local encode_json = require("cjson.safe").encode
 
 
 -- TODO: need a more powerful way to define the schema
@@ -32,13 +31,15 @@ function _M.check_args(conf)
 end
 
 
-function _M.rewrite(conf)
-    core.log.warn("plugin rewrite phase, conf: ", encode_json(conf))
+function _M.rewrite(conf, api_ctx)
+    core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf),
+                  " ctx: ", core.json.encode(api_ctx, true))
 end
 
 
-function _M.access(conf)
-    core.log.warn("plugin access phase, conf: ", encode_json(conf))
+function _M.access(conf, api_ctx)
+    core.log.warn("plugin access phase, conf: ", core.json.encode(conf),
+                  " ctx: ", core.json.encode(api_ctx, true))
     -- ngx.say("hit example plugin")
 end
 
