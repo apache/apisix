@@ -3,7 +3,7 @@
 local r3router = require("resty.r3")
 local new_tab = require("table.new")
 local route_load = require("apisix.route.load")
-local log = require("apisix.core.log")
+local core = require("apisix.core")
 local ipairs = ipairs
 
 local router
@@ -15,7 +15,7 @@ local _M = {}
 local function run_route(matched_params, route, api_ctx)
     api_ctx.matched_params = matched_params
     api_ctx.matched_route = route
-    -- log.warn("run route id: ", route.id, " host: ", api_ctx.host)
+    -- core.log.warn("run route id: ", route.id, " host: ", api_ctx.host)
 end
 
 
@@ -48,12 +48,12 @@ do
     local routes = {}
 function _M.set_routes(new_routes)
     routes = new_routes
-    log.info("update new routes: ", require("cjson.safe").encode(routes))
+    core.log.info("update new routes: ", require("cjson.safe").encode(routes))
 end
 
 function _M.get_router()
     if router == nil then
-        log.info("generate a empty router instance")
+        core.log.info("generate a empty router instance")
         return _load_route(routes)
     end
 
