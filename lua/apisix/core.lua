@@ -9,4 +9,5 @@ return {
         nkeys = require("table.nkeys"),
     },
     resp = require("apisix.core.resp"),
+    typeof = require("apisix.core.typeof"),
 }
