@@ -95,54 +95,52 @@ function _M.fetch(self)
         return self.values
     end
 
-    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
-    if not dir_res then
+    local res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    if not res then
         return nil, err
     end
 
-    if dir_res.dir then
+    if res.dir then
         core.log.error("todo: support for parsing `dir` response structures. ",
-                       json_encode(dir_res))
+                       json_encode(res))
         return self.values
     end
-    -- log.warn("waitdir: ", require("cjson").encode(dir_res))
+    -- core.log.warn("waitdir: ", core.json.encode(res))
 
-    if not self.prev_index or dir_res.modifiedIndex > self.prev_index then
-        self.prev_index = dir_res.modifiedIndex
+    if not self.prev_index or res.modifiedIndex > self.prev_index then
+        self.prev_index = res.modifiedIndex
     end
 
-    local key = short_key(self, dir_res.key)
+    local key = short_key(self, res.key)
     local pre_index = self.values_hash[key]
     if pre_index then
-        if dir_res.value then
-            self.values[pre_index] = dir_res
+        if res.value then
+            self.values[pre_index] = res
 
         else
+            self.sync_times = self.sync_times + 1
             self.values[pre_index] = false
         end
 
-        return self.values
-    end
-
-    if dir_res.value then
-        insert_tab(self.values, dir_res)
+    elseif res.value then
+        insert_tab(self.values, res)
         self.values_hash[key] = #self.values
     end
 
     -- avoid space waste
-    self.sync_times = self.sync_times + 1
+    -- todo: need to cover this path, it is important.
     if self.sync_times > 100 then
-        local idx = 0
+        local count = 0
         for i = 1, #self.values do
             local val = self.values[i]
             self.values[i] = nil
             if val then
-                idx = idx + 1
-                self.values[idx] = val
+                count = count + 1
+                self.values[count] = val
             end
         end
 
-        for i = 1, #self.values do
+        for i = 1, count do
             key = short_key(self, self.values[i].key)
             self.values_hash[key] = i
         end
