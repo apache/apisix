@@ -4,3 +4,4 @@ etcd:
 
 plugins:
   - example-plugin
+  - limit-req
