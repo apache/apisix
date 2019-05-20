@@ -7,7 +7,6 @@ local upstreams_etcd
 local ngx = ngx
 local ngx_exit = ngx.exit
 local ngx_ERROR = ngx.ERROR
-local tostring = tostring
 local error = error
 
 

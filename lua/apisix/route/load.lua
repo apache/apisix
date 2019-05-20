@@ -1,9 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
-local log = require("apisix.core.log")
+local core = require("apisix.core")
 local etcd = require("apisix.core.config_etcd")
-local table_nkeys = require("table.nkeys")
-local new_tab = require("table.new")
 local insert_tab = table.insert
 local ngx = ngx
 local pcall = pcall
@@ -18,12 +16,12 @@ local function load(etcd_routes)
     local routes, err = etcd_routes:fetch()
     if not routes then
         if err ~= "timeout" then
-            log.error("failed to fetch routes: ", err)
+            core.log.error("failed to fetch routes: ", err)
         end
         return
     end
 
-    local arr_routes = new_tab(table_nkeys(routes), 0)
+    local arr_routes = core.table.new(core.table.nkeys(routes), 0)
     for route_id, route in pairs(routes) do
         if type(route) == "table" then
             route.id = route_id
@@ -31,7 +29,7 @@ local function load(etcd_routes)
         end
     end
 
-    -- log.warn(apisix.json.encode(arr_routes))
+    -- core.log.warn(apisix.json.encode(arr_routes))
     if callback then
         callback(arr_routes)
     end
@@ -56,7 +54,7 @@ function _M.load(premature)
     running = false
 
     if not ok then
-        log.error("failed to call `load` function: ", err)
+        core.log.error("failed to call `load` function: ", err)
     end
 end
 

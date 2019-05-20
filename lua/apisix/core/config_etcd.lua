@@ -3,7 +3,6 @@
 local core = require("apisix.core")
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
-local json_encode = require("cjson.safe").encode
 local exiting = ngx.worker.exiting
 local insert_tab = table.insert
 local type = type
@@ -102,7 +101,7 @@ function _M.fetch(self)
 
     if res.dir then
         core.log.error("todo: support for parsing `dir` response structures. ",
-                       json_encode(res))
+                       core.json.encode(res))
         return self.values
     end
     -- core.log.warn("waitdir: ", core.json.encode(res))

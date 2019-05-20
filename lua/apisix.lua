@@ -1,8 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local require = require
-local log = require("apisix.core.log")
-local resp = require("apisix.core.resp")
+local core = require("apisix.core")
 local route_handler = require("apisix.route.handler")
 local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
@@ -57,8 +56,8 @@ function _M.rewrite_phase()
     end
 
     if not ok then
-        log.info("not find any matched route")
-        return resp(404)
+        core.log.info("not find any matched route")
+        return core.resp(404)
     end
 
     -- todo: move those code to another single file
