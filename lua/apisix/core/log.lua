@@ -4,6 +4,7 @@ local ngx = ngx
 local ngx_log  = ngx.log
 local ngx_DEBUG= ngx.DEBUG
 local DEBUG    = ngx.config.debug
+-- todo: support stream module
 local cur_level = ngx.config.subsystem == "http" and
                   require "ngx.errlog" .get_sys_filter_level()
 

@@ -7,8 +7,6 @@ local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
 local load_balancer = require("apisix.balancer") .run
 local ngx = ngx
-local ngx_req = ngx.req
-local ngx_var = ngx.var
 
 
 local _M = {version = 0.1}
@@ -41,17 +39,16 @@ function _M.rewrite_phase()
         ngx_ctx.api_ctx = api_ctx
     end
 
-    api_ctx.method = api_ctx.method or ngx_req.get_method()
-    api_ctx.uri = api_ctx.uri or ngx_var.uri
-    api_ctx.host = api_ctx.host or ngx_var.host
+    local method = core.ctx.get(api_ctx, "method")
+    local uri = core.ctx.get(api_ctx, "uri")
+    local host = core.ctx.get(api_ctx, "host")
 
     local router, dispatch_uri = route_handler.get_router()
     local ok
     if dispatch_uri then
-        ok = router:dispatch(api_ctx.method, api_ctx.uri, api_ctx)
+        ok = router:dispatch(method, uri, api_ctx)
     else
-        ok = router:dispatch(api_ctx.method, api_ctx.host .. api_ctx.uri,
-                             api_ctx)
+        ok = router:dispatch(method, host .. uri, api_ctx)
     end
 
     if not ok then
@@ -66,19 +63,25 @@ function _M.rewrite_phase()
         ngx.say("failed to load plugins: ", err)
     end
 
+    if api_ctx.matched_route.service_id then
+        error("todo: suppport to use service fetch user config")
+    else
+        api_ctx.conf_type = "route"
+        api_ctx.conf_version = api_ctx.matched_route.modifiedIndex
+        api_ctx.conf_id = api_ctx.matched_route.id
+    end
+
     local filter_plugins = base_plugin.filter_plugin(
         api_ctx.matched_route, local_supported_plugins)
 
     api_ctx.filter_plugins = filter_plugins
-    api_ctx.conf_version = api_ctx.matched_route.modifiedIndex
     -- todo: fetch the upstream node status, it may be stored in
     -- different places.
 
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.rewrite then
-            plugin.rewrite(filter_plugins[i + 1],
-                           api_ctx.conf_version)
+            plugin.rewrite(filter_plugins[i + 1], api_ctx)
         end
     end
 end
@@ -93,8 +96,7 @@ function _M.access_phase()
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.access then
-            plugin.access(filter_plugins[i + 1],
-                          api_ctx.conf_version)
+            plugin.access(filter_plugins[i + 1], api_ctx)
         end
     end
 end
@@ -109,8 +111,7 @@ function _M.header_filter_phase()
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.header_filter then
-            plugin.header_filter(filter_plugins[i + 1],
-                                 api_ctx.conf_version)
+            plugin.header_filter(filter_plugins[i + 1], api_ctx)
         end
     end
 end
@@ -125,8 +126,7 @@ function _M.log_phase()
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.log then
-            plugin.log(filter_plugins[i + 1],
-                       api_ctx.conf_version)
+            plugin.log(filter_plugins[i + 1], api_ctx)
         end
     end
 end
