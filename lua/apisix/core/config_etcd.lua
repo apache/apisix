@@ -152,6 +152,16 @@ function _M.fetch(self)
 end
 
 
+function _M.get(self, key)
+    local arr_idx = self.values_hash[tostring(key)]
+    if not arr_idx then
+        return nil
+    end
+
+    return self.values[arr_idx]
+end
+
+
 local function _automatic_fetch(premature, self)
     if premature then
         return

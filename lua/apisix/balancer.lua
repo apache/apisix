@@ -41,9 +41,10 @@ end
 function _M.run(route, version)
     -- core.log.warn("conf: ", core.json.encode(conf), " version: ", version)
     local upstream = route.value.upstream
+    local up_id = upstream.id
 
     local key
-    if upstream.id then
+    if up_id then
         if not upstreams_etcd then
             core.log.warn("need to create a etcd instance for fetching ",
                           "upstream information")
@@ -51,10 +52,17 @@ function _M.run(route, version)
             return
         end
 
-        local arr_idx = upstreams_etcd.values_hash[tostring(upstream.id)]
-        upstream = upstreams_etcd.values[arr_idx].value
+        local upstream_obj = upstreams_etcd:get(up_id)
+        if not upstream_obj then
+            core.log.warn("failed to find upstream by id: ", up_id)
+            ngx_exit(ngx_ERROR)
+            return
+        end
+        -- core.log.info("upstream: ", core.json.encode(upstream_obj))
 
-        key = upstream.type .. "#upstream_" .. upstream.id .. "#" .. version
+        upstream = upstream_obj.value
+        key = upstream.type .. "#upstream_" .. up_id .. "#"
+              .. upstream_obj.modifiedIndex
 
     else
         key = upstream.type .. "#route_" .. route.id .. "#" .. version
@@ -101,7 +109,7 @@ end
 function _M.init_worker()
     local err
     upstreams_etcd, err = config_etcd.new("/user_upstreams",
-                                               {automatic = true})
+                                          {automatic = true})
     if not upstreams_etcd then
         error("failed to create etcd instance to fetch upstream: " .. err)
         return
