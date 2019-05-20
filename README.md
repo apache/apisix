@@ -2,6 +2,32 @@
 
 # Design Doc
 
+### How to load the plugin?
+
+![](doc/flow-load-plugin.png)
+
+### Plugin
+
+![](doc/flow-plugin-internal.png)
+
+
+# Development
+
+### Source Install
+
+> Dependent library
+
+* [lua-resty-r3] Setups the [resty-r3#install](https://github.com/iresty/lua-resty-r3#install) library.
+* [lua-resty-mlcache] Setups the [resty-mlcache#install](https://github.com/iresty/lua-resty-mlcache#installation) library.
+* [lua-resty-etcd] Setups the [resty-etcd#install](https://github.com/iresty/lua-resty-etcd#install) library.
+* [lua-resty-balancer] Setups the [resty-balancer#install](https://github.com/iresty/lua-resty-balancer#installation) library.
+
+> install by luarocks
+
+```shell
+luarocks install lua-resty-r3 lua-resty-mlcache lua-resty-etcd lua-resty-balancer
+```
+
 ### User routes with plugins config in etcd
 
 Here is example for one route and one upstream:
@@ -43,30 +69,4 @@ $ curl http://127.0.0.1:2379/v2/keys/user_routes/1 | python -m json.tool
         "value": "{\"host\":\"test.com\",\"methods\":[\"GET\"],\"uri\":\"/hello\",\"id\":3333,\"plugin_config\":{\"example-plugin\":{\"i\":1,\"s\":\"s\",\"t\":[1,2]},\"new-plugin\":{\"a\":\"a\"}},\"upstream\":{\"type\":\"roundrobin\",\"nodes\":{\"220.181.57.215:80\":1,\"220.181.57.216:80\":1,\"220.181.57.217:80\":1}}}"
     }
 }
-```
-
-### How to load the plugin?
-
-![](doc/flow-load-plugin.png)
-
-### Plugin
-
-![](doc/flow-plugin-internal.png)
-
-
-# Development
-
-### Source Install
-
-> Dependent library
-
-* [lua-resty-r3] Setups the [resty-r3#install](https://github.com/iresty/lua-resty-r3#install) library.
-* [lua-resty-mlcache] Setups the [resty-mlcache#install](https://github.com/iresty/lua-resty-mlcache#installation) library.
-* [lua-resty-etcd] Setups the [resty-etcd#install](https://github.com/iresty/lua-resty-etcd#install) library.
-* [lua-resty-balancer] Setups the [resty-balancer#install](https://github.com/iresty/lua-resty-balancer#installation) library.
-
-> install by luarocks
-
-```shell
-luarocks install lua-resty-r3 lua-resty-mlcache lua-resty-etcd lua-resty-balancer
 ```
