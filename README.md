@@ -22,7 +22,7 @@
 * [lua-resty-etcd] Setups the [resty-etcd#install](https://github.com/iresty/lua-resty-etcd#install) library.
 * [lua-resty-balancer] Setups the [resty-balancer#install](https://github.com/iresty/lua-resty-balancer#installation) library.
 
-> install by luarocks
+> Install by luarocks
 
 ```shell
 luarocks install lua-resty-r3 lua-resty-mlcache lua-resty-etcd lua-resty-balancer
