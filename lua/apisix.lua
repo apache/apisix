@@ -3,7 +3,7 @@
 local require = require
 local core = require("apisix.core")
 local router = require("apisix.route").get
-local base_plugin = require("apisix.base_plugin")
+local plugin = require("apisix.plugin")
 local new_tab = require("table.new")
 local load_balancer = require("apisix.balancer") .run
 local ngx = ngx
@@ -49,7 +49,7 @@ function _M.rewrite_phase()
 
     -- todo: move those code to another single file
     -- todo optimize: cache `local_supported_plugins`
-    local local_supported_plugins, err = base_plugin.load()
+    local local_supported_plugins, err = plugin.load()
     if not local_supported_plugins then
         ngx.say("failed to load plugins: ", err)
     end
@@ -62,7 +62,7 @@ function _M.rewrite_phase()
         api_ctx.conf_id = api_ctx.matched_route.value.id
     end
 
-    local filter_plugins = base_plugin.filter_plugin(
+    local filter_plugins = plugin.filter_plugin(
         api_ctx.matched_route, local_supported_plugins)
 
     api_ctx.filter_plugins = filter_plugins

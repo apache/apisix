@@ -1,5 +1,4 @@
 local core = require("apisix.core")
-local base_plugin = require("apisix.base_plugin")
 
 
 -- TODO: need a more powerful way to define the schema
@@ -20,12 +19,10 @@ local _M = {
 
 
 function _M.check_args(conf)
-    local ok, err = base_plugin.check_args(conf, args_schema)
+    local ok, err = core.schema.check_args(conf, args_schema)
     if not ok then
         return false, err
     end
-
-    -- add more restriction rules if we needs
 
     return true
 end
