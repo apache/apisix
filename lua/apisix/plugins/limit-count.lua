@@ -11,6 +11,7 @@ local _M = {
 
 
 function _M.check_args(conf)
+    -- todo: check arguments
     return true
 end
 
