@@ -1,4 +1,4 @@
-local limit_req = require("resty.limit.req")
+local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
 local plugin_name = "limit-req"
 
@@ -14,19 +14,18 @@ function _M.check_args(conf)
     return true
 end
 
+
 local function create_limit_obj(conf)
-    core.log.info("create new plugin ins")
-    return limit_req.new("plugin-limit-req",
-                         conf.rate, conf.burst)
+    core.log.info("create new limit-req plugin instance")
+    return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
 end
 
 
-function _M.access(conf, api_ctx)
-    -- todo: support to config it in yaml
-    local limit_ins = core.lrucache.plugin_ctx(plugin_name, api_ctx,
+function _M.access(conf, ctx)
+    local limit_ins = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
 
-    local key = core.ctx.get(api_ctx, conf.key)
+    local key = core.ctx.get(ctx, conf.key)
     if not key or key == "" then
         key = ""
         core.log.warn("fetched empty string value as key to limit the request ",
