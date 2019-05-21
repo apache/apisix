@@ -24,13 +24,13 @@ end
 function _M.access(conf, api_ctx)
     -- todo: support to config it in yaml
     local limit_ins = core.lrucache.plugin_ctx(plugin_name, api_ctx,
-                        create_limit_obj, conf)
+                                               create_limit_obj, conf)
 
     local key = core.ctx.get(api_ctx, conf.key)
     if not key or key == "" then
         key = ""
-        core.log.warn("fetched empty string value to limit the request maybe ",
-                      "wrong, please pay attention to this.")
+        core.log.warn("fetched empty string value as key to limit the request ",
+                      "maybe wrong, please pay attention to this.")
     end
 
     local delay, err = limit_ins:incoming(key, true)
