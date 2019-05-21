@@ -2,7 +2,7 @@
 
 local require = require
 local core = require("apisix.core")
-local route_handler = require("apisix.route.handler")
+local router = require("apisix.route").get
 local base_plugin = require("apisix.base_plugin")
 local new_tab = require("table.new")
 local load_balancer = require("apisix.balancer") .run
@@ -18,13 +18,11 @@ function _M.init()
     require("jit.opt").start("minstitch=2", "maxtrace=4000",
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
-
-    require("apisix.route.handler").init()
 end
 
 
 function _M.init_worker()
-    require("apisix.route.load").init_worker()
+    require("apisix.route").init_worker()
     require("apisix.balancer").init_worker()
 end
 
@@ -41,16 +39,9 @@ function _M.rewrite_phase()
 
     local method = core.ctx.get(api_ctx, "method")
     local uri = core.ctx.get(api_ctx, "uri")
-    local host = core.ctx.get(api_ctx, "host")
+    -- local host = core.ctx.get(api_ctx, "host") -- todo: support host
 
-    local router, dispatch_uri = route_handler.get_router()
-    local ok
-    if dispatch_uri then
-        ok = router:dispatch(method, uri, api_ctx)
-    else
-        ok = router:dispatch(method, host .. uri, api_ctx)
-    end
-
+    local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
         return core.resp.say(404)
@@ -68,7 +59,7 @@ function _M.rewrite_phase()
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = api_ctx.matched_route.modifiedIndex
-        api_ctx.conf_id = api_ctx.matched_route.id
+        api_ctx.conf_id = api_ctx.matched_route.value.id
     end
 
     local filter_plugins = base_plugin.filter_plugin(
