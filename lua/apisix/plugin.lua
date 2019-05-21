@@ -3,26 +3,12 @@ local core = require("apisix.core")
 local pkg_loaded = package.loaded
 local insert_tab = table.insert
 local sort_tab = table.sort
-local tostring = tostring
 local pcall = pcall
 local ipairs = ipairs
-local pairs = pairs
 local type = type
 
 
 local _M = {version = 0.1}
-
-
-function _M.check_args(args, scheme)
-    for k, v in pairs(scheme) do
-        if not core.typeof[v](args[k]) then
-            return nil, "args." .. k .. " expect " .. v .. " value but got: ["
-                        .. tostring(args[k]) .. "]"
-        end
-    end
-
-    return true
-end
 
 
 local function sort_plugin(l, r)

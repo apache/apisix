@@ -48,7 +48,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugins, err = require("apisix.base_plugin").load()
+            local plugins, err = require("apisix.plugin").load()
             if not plugins then
                 ngx.say("failed to load plugins: ", err)
             end
@@ -80,7 +80,7 @@ rewrite(): plugin rewrite phase
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.base_plugin")
+            local plugin = require("apisix.plugin")
 
             local all_plugins, err = plugin.load()
             if not all_plugins then
