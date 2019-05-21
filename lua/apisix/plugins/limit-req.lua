@@ -1,13 +1,12 @@
 local limit_req = require("resty.limit.req")
 local core = require("apisix.core")
--- todo: support to config it in yaml
-local cache = core.global_lru.fetch("/plugin/limit-req", 200)
+local plugin_name = "limit-req"
 
 
 local _M = {
     version = 0.1,
     priority = 1001,        -- TODO: add a type field, may be a good idea
-    name = "limit-req",
+    name = plugin_name,
 }
 
 
@@ -15,18 +14,24 @@ function _M.check_args(conf)
     return true
 end
 
+local function create_limit_obj(conf)
+    core.log.info("create new plugin ins")
+    return limit_req.new("plugin-limit-req",
+                         conf.rate, conf.burst)
+end
+
 
 function _M.access(conf, api_ctx)
-    local key = api_ctx.conf_type .. "#" .. api_ctx.conf_id
-    -- core.log.warn("key: ", key, " conf: ", core.json.encode(conf))
+    -- todo: support to config it in yaml
+    local limit_ins = core.lrucache.plugin_ctx(plugin_name, api_ctx,
+                        create_limit_obj, conf)
 
-    local limit_ins = cache:get(key)
-    if not limit_ins or limit_ins.version ~= api_ctx.conf_version then
-        limit_ins = limit_req.new("plugin-limit-req", conf.rate, conf.burst)
-        cache:set(key, limit_ins)
+    local key = core.ctx.get(api_ctx, conf.key)
+    if not key or key == "" then
+        key = ""
+        core.log.warn("fetched empty string value to limit the request maybe ",
+                      "wrong, please pay attention to this.")
     end
-
-    key = core.ctx.get(api_ctx, conf.key)
 
     local delay, err = limit_ins:incoming(key, true)
     if not delay then
