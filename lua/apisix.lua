@@ -53,7 +53,7 @@ function _M.rewrite_phase()
 
     if not ok then
         core.log.info("not find any matched route")
-        return core.resp(404)
+        return core.resp.say(404)
     end
 
     -- todo: move those code to another single file

@@ -22,6 +22,7 @@ end
 
 
 function _M.access(conf, ctx)
+    core.log.warn("ver: ", ctx.conf_version)
     local limit_ins = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
 
@@ -36,15 +37,15 @@ function _M.access(conf, ctx)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            return core.resp(conf.rejected_code)
+            return core.resp.say(conf.rejected_code)
         end
 
         core.log.error("failed to limit req: ", err)
-        return core.resp(500)
+        return core.resp.say(500)
     end
 
-    ngx.header["X-RateLimit-Limit"] = conf.count
-    ngx.header["X-RateLimit-Remaining"] = remaining
+    core.resp.set_header("X-RateLimit-Limit", conf.count)
+    core.resp.set_header("X-RateLimit-Remaining", remaining)
 
     core.log.info("hit limit-count access")
 end

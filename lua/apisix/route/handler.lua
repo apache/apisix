@@ -20,11 +20,6 @@ end
 
 
 local function _load_route(routes)
-    if router then
-        router:tree_free()
-        router = nil
-    end
-
     local items = new_tab(#routes, 0)
     for i, route in ipairs(routes) do
         if type(route) == "table" then
@@ -38,6 +33,7 @@ local function _load_route(routes)
         end
     end
 
+    core.log.info("created new r3 router")
     router = r3router.new(items)
     return router, dispatch_uri
 end
@@ -48,12 +44,18 @@ do
     local routes = {}
 function _M.set_routes(new_routes)
     routes = new_routes
-    core.log.info("update new routes: ", require("cjson.safe").encode(routes))
+
+    if router then
+        router:tree_free()
+        router = nil
+    end
+
+    core.log.info("update new routes")
 end
 
 function _M.get_router()
     if router == nil then
-        core.log.info("generate a empty router instance")
+        core.log.notice("generate a empty router instance")
         return _load_route(routes)
     end
 
