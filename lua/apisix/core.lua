@@ -51,6 +51,6 @@ return {
     },
     resp = require("apisix.core.resp"),
     typeof = require("apisix.core.typeof"),
-    global_lru = require("apisix.core.global_lrucache"),
+    lrucache = require("apisix.core.lrucache"),
     ctx = require("apisix.core.ctx"),
 }

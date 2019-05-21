@@ -1,11 +1,16 @@
 -- Copyright (C) Yuansheng Wang
 
-local ngx_req = ngx.req
 local ngx_var = ngx.var
 local new_tab = require("table.new")
 
 
 local _M = {version = 0.1}
+
+
+local var_methods = {
+    -- todo: support more type
+    method = ngx.req.get_method
+}
 
 
 function _M.get(api_ctx, name)
@@ -20,8 +25,10 @@ function _M.get(api_ctx, name)
         return val
     end
 
-    if name == "method" then
-        val = ngx_req.get_method()
+    -- todo: added more data type
+    local method = var_methods[name]
+    if method then
+        val = method()
     else
         val = ngx_var[name]
     end
