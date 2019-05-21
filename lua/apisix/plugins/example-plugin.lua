@@ -32,14 +32,14 @@ end
 
 
 function _M.rewrite(conf, api_ctx)
-    core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf),
-                  " ctx: ", core.json.encode(api_ctx, true))
+    core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf))
+    -- core.log.warn(" ctx: ", core.json.encode(api_ctx, true))
 end
 
 
 function _M.access(conf, api_ctx)
-    core.log.warn("plugin access phase, conf: ", core.json.encode(conf),
-                  " ctx: ", core.json.encode(api_ctx, true))
+    core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
+    -- core.log.warn(" ctx: ", core.json.encode(api_ctx, true))
     -- ngx.say("hit example plugin")
 end
 
