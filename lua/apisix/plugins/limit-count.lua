@@ -17,13 +17,13 @@ end
 
 
 local function create_limit_obj(conf)
-    core.log.warn("create new limit-count plugin instance")
+    core.log.info("create new limit-count plugin instance")
     return limit_count_new("plugin-limit-count", conf.count, conf.time_window)
 end
 
 
 function _M.access(conf, ctx)
-    core.log.warn("ver: ", ctx.conf_version)
+    core.log.info("ver: ", ctx.conf_version)
     local limit_ins = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
 

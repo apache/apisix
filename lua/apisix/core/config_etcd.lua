@@ -1,6 +1,8 @@
 -- Copyright (C) Yuansheng Wang
 
-local core = require("apisix.core")
+local log = require("apisix.core.log")
+local config = require("apisix.core.config")
+local encode_json = require("cjson.safe").encode
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
 local exiting = ngx.worker.exiting
@@ -100,11 +102,11 @@ function _M.fetch(self)
     end
 
     if res.dir then
-        core.log.error("todo: support for parsing `dir` response structures. ",
-                       core.json.encode(res))
+        log.error("todo: support for parsing `dir` response structures. ",
+                  encode_json(res))
         return self.values
     end
-    -- core.log.warn("waitdir: ", core.json.encode(res))
+    -- log.warn("waitdir: ", encode_json(res))
 
     if not self.prev_index or res.modifiedIndex > self.prev_index then
         self.prev_index = res.modifiedIndex
@@ -145,6 +147,7 @@ function _M.fetch(self)
         end
     end
 
+    self.version = self.version + 1
     return self.values
 end
 
@@ -164,11 +167,16 @@ local function _automatic_fetch(premature, self)
         return
     end
 
-    while not exiting() do
-        local ok, err = pcall(self.fetch, self)
+    while not exiting() and self.running do
+        local ok, res, err = pcall(self.fetch, self)
         if not ok then
-            core.log.error("failed to fetch data from etcd: ", err)
+            err = res
+            log.error("failed to fetch data from etcd: ", err)
             ngx_sleep(10)
+
+        elseif not res and err ~= "timeout" then
+            log.error("failed to fetch data from etcd: ", err)
+            ngx_sleep(5)
         end
     end
 end
@@ -179,7 +187,7 @@ function _M.new(key, opts)
         return nil, "missing `key` argument"
     end
 
-    local local_conf, err = core.config.local_conf()
+    local local_conf, err = config.local_conf()
     if not local_conf then
         return nil, err
     end
@@ -200,6 +208,8 @@ function _M.new(key, opts)
         key = key,
         automatic = automatic,
         sync_times = 0,
+        running = true,
+        version = 0,
     }, mt)
 
     if automatic then
@@ -207,6 +217,11 @@ function _M.new(key, opts)
     end
 
     return obj
+end
+
+
+function _M.close(self)
+    self.running = false
 end
 
 
