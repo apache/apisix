@@ -1,5 +1,4 @@
 local core = require("apisix.core")
-local config_etcd = require("apisix.core.config_etcd")
 local roundrobin = require("resty.roundrobin")
 local balancer = require("ngx.balancer")
 local lrucache = require("resty.lrucache")
@@ -107,7 +106,7 @@ end
 
 function _M.init_worker()
     local err
-    upstreams_etcd, err = config_etcd.new("/user_upstreams",
+    upstreams_etcd, err = core.config.new("/user_upstreams",
                                           {automatic = true})
     if not upstreams_etcd then
         error("failed to create etcd instance to fetch upstream: " .. err)
