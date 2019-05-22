@@ -3,7 +3,7 @@
 local r3router = require("resty.r3")
 local core = require("apisix.core")
 local ipairs = ipairs
-local etcd_routes
+local conf_routes
 
 
 local _M = {}
@@ -29,16 +29,16 @@ end
 
 
 function _M.get()
-    core.log.warn("etcd_routes.version: ", etcd_routes.version)
-    return core.lrucache.global("/user_routes", etcd_routes.version,
-                                create_r3_router, etcd_routes.values)
+    core.log.warn("conf_routes.version: ", conf_routes.version)
+    return core.lrucache.global("/user_routes", conf_routes.version,
+                                create_r3_router, conf_routes.values)
 end
 
 
 function _M.init_worker()
     local err
-    etcd_routes, err = core.config_etcd.new("/user_routes", {automatic = true})
-    if not etcd_routes then
+    conf_routes, err = core.config.new("/user_routes", {automatic = true})
+    if not conf_routes then
         error("failed to create etcd instance to fetch /user_routes "
               .. "automaticly: " .. err)
     end

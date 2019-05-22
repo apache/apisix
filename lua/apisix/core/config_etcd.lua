@@ -1,7 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local log = require("apisix.core.log")
-local config = require("apisix.core.config")
+local fetch_local_conf = require("apisix.core.config_local").local_conf
 local encode_json = require("cjson.safe").encode
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
@@ -15,7 +15,10 @@ local ngx_timer_at = ngx.timer.at
 local sub_str = string.sub
 
 
-local _M = {version = 0.1}
+local _M = {
+    version = 0.1,
+    local_conf = fetch_local_conf,
+}
 local mt = {__index = _M}
 
 
@@ -187,7 +190,7 @@ function _M.new(key, opts)
         return nil, "missing `key` argument"
     end
 
-    local local_conf, err = config.local_conf()
+    local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, err
     end
