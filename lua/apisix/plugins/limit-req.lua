@@ -25,7 +25,7 @@ function _M.access(conf, ctx)
     local limit_ins = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
 
-    local key = core.ctx.get(ctx, conf.key)
+    local key = core.ctx.get_var(ctx, conf.key)
     if not key or key == "" then
         key = ""
         core.log.warn("fetched empty string value as key to limit the request ",
@@ -35,11 +35,11 @@ function _M.access(conf, ctx)
     local delay, err = limit_ins:incoming(key, true)
     if not delay then
         if err == "rejected" then
-            return core.resp.say(conf.rejected_code)
+            return core.response.say(conf.rejected_code)
         end
 
         core.log.error("failed to limit req: ", err)
-        return core.resp.say(500)
+        return core.response.say(500)
     end
 
     core.log.info("hit limit-req access")

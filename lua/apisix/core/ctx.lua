@@ -13,7 +13,7 @@ local var_methods = {
 }
 
 
-function _M.get(api_ctx, name)
+function _M.get_var(api_ctx, name)
     local vars = api_ctx.vars
     if not vars then
         vars = new_tab(0, 8)
