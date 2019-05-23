@@ -13,6 +13,8 @@ local setmetatable = setmetatable
 local ngx_sleep = ngx.sleep
 local ngx_timer_at = ngx.timer.at
 local sub_str = string.sub
+local tostring = tostring
+local pcall=pcall
 
 
 local _M = {
@@ -170,6 +172,7 @@ local function _automatic_fetch(premature, self)
         return
     end
 
+    -- optimize: avoid to use this timer always.
     while not exiting() and self.running do
         local ok, res, err = pcall(self.fetch, self)
         if not ok then

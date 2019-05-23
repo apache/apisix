@@ -25,7 +25,7 @@ function _M.init_worker()
     require("apisix.route").init_worker()
     require("apisix.balancer").init_worker()
 
-    plugin_module.load()
+    core.lrucache.global("/local_plugins", nil, plugin_module.load)
 end
 
 
@@ -49,13 +49,8 @@ function _M.rewrite_phase()
         return core.response.say(404)
     end
 
-    -- todo: move those code to another single file
-    -- todo optimize: cache `local_supported_plugins`
-    local local_supported_plugins, err = plugin_module.load()
-    if not local_supported_plugins then
-        core.log.error("failed to load plugins: ", err)
-        return core.response.say(500)
-    end
+    local local_plugins = core.lrucache.global("/local_plugins", nil,
+                                               plugin_module.load)
 
     if api_ctx.matched_route.service_id then
         error("todo: suppport to use service fetch user config")
@@ -66,7 +61,7 @@ function _M.rewrite_phase()
     end
 
     local filter_plugins = plugin_module.filter_plugin(
-        api_ctx.matched_route, local_supported_plugins)
+        api_ctx.matched_route, local_plugins)
 
     api_ctx.filter_plugins = filter_plugins
     -- todo: fetch the upstream node status, it may be stored in
@@ -90,7 +85,10 @@ function _M.access_phase()
     for i = 1, #filter_plugins, 2 do
         local plugin = filter_plugins[i]
         if plugin.access then
-            plugin.access(filter_plugins[i + 1], api_ctx)
+            local code, body = plugin.access(filter_plugins[i + 1], api_ctx)
+            if code then
+                core.response.exit(code, body)
+            end
         end
     end
 end

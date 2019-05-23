@@ -44,6 +44,10 @@ function _M.load()
             plugin.name = name
             insert_tab(plugins, plugin)
         end
+
+        if plugin.init then
+            plugin.init()
+        end
     end
 
     -- sort by plugin's priority
