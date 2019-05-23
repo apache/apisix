@@ -49,7 +49,7 @@ return {
         clear = require("table.clear"),
         nkeys = require("table.nkeys"),
     },
-    resp = require("apisix.core.resp"),
+    response = require("apisix.core.response"),
     typeof = require("apisix.core.typeof"),
     lrucache = require("apisix.core.lrucache"),
     ctx = require("apisix.core.ctx"),

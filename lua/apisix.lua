@@ -37,14 +37,14 @@ function _M.rewrite_phase()
         ngx_ctx.api_ctx = api_ctx
     end
 
-    local method = core.ctx.get(api_ctx, "method")
-    local uri = core.ctx.get(api_ctx, "uri")
-    -- local host = core.ctx.get(api_ctx, "host") -- todo: support host
+    local method = core.ctx.get_var(api_ctx, "method")
+    local uri = core.ctx.get_var(api_ctx, "uri")
+    -- local host = core.ctx.get_var(api_ctx, "host") -- todo: support host
 
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
-        return core.resp.say(404)
+        return core.response.say(404)
     end
 
     -- todo: move those code to another single file
