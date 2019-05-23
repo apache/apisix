@@ -1,16 +1,12 @@
 local core = require("apisix.core")
 local roundrobin = require("resty.roundrobin")
 local balancer = require("ngx.balancer")
-local lrucache = require("resty.lrucache")
 local upstreams_etcd
 local ngx = ngx
 local ngx_exit = ngx.exit
 local ngx_ERROR = ngx.ERROR
 local error = error
-
-
 local module_name = "balancer"
-local cache = lrucache.new(500)    -- todo: config in yaml
 
 
 local _M = {
@@ -36,10 +32,11 @@ local function create_server_piker(typ, nodes)
 end
 
 
-function _M.run(route, version)
+function _M.run(route, ctx)
     -- core.log.warn("conf: ", core.json.encode(conf), " version: ", version)
     local upstream = route.value.upstream
     local up_id = upstream.id
+    local version
 
     local key
     if up_id then
@@ -59,34 +56,17 @@ function _M.run(route, version)
         -- core.log.info("upstream: ", core.json.encode(upstream_obj))
 
         upstream = upstream_obj.value
+        version = upstream_obj.modifiedIndex
         key = upstream.type .. "#upstream_" .. up_id .. "#"
-              .. upstream_obj.modifiedIndex
+              .. version
 
     else
+        version = ctx.conf_version
         key = upstream.type .. "#route_" .. route.id .. "#" .. version
     end
 
-    local server_piker, stale_server_piker = cache:get(key)
-    if not server_piker then
-        if stale_server_piker and stale_server_piker.conf_version == version then
-            server_piker = stale_server_piker
-
-        else
-            local err
-            server_piker, err = create_server_piker(upstream.type, upstream.nodes)
-            if not server_piker then
-                core.log.error("failed to get server piker: ", err)
-                ngx_exit(ngx_ERROR)
-                return
-            end
-            server_piker.conf_version = version
-        end
-
-        -- todo: need a way to clean the old cache
-        -- todo: config in yaml
-        cache:set(key, server_piker, 3600)
-    end
-
+    local server_piker = core.lrucache.plugin(module_name, key, version,
+                            create_server_piker, upstream.type, upstream.nodes)
     local server, err = server_piker:find()
     if not server then
         core.log.error("failed to find valid upstream server", err)
