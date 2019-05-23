@@ -9,7 +9,6 @@ local select = select
 local type = type
 local ngx_exit = ngx.exit
 local insert_tab = table.insert
-local clear_tab = table.clear
 local concat_tab = table.concat
 
 
@@ -19,9 +18,10 @@ local _M = {version = 0.1}
 local resp_exit
 do
     local t = {}
+    local idx = 1
 
 function resp_exit(code, ...)
-    clear_tab(t)
+    idx = 0
 
     if type(code) ~= "number" then
         insert_tab(t, code)
@@ -39,15 +39,19 @@ function resp_exit(code, ...)
             if err then
                 error("failed to encode data: " .. err, -2)
             else
-                insert_tab(t, body)
+                idx = idx + 1
+                insert_tab(t, idx, body)
             end
 
         else
-            insert_tab(t, v)
+            idx = idx + 1
+            insert_tab(t, idx, v)
         end
     end
 
-    ngx_say(concat_tab(t))
+    if idx > 0 then
+        ngx_say(concat_tab(t, "", 1, idx))
+    end
 
     if code then
         ngx_exit(code)

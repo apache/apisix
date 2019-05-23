@@ -36,8 +36,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
-    -- core.log.warn(" ctx: ", core.json.encode(ctx, true))
-    ngx.say("hit example plugin")
+    -- return 200, {message = "hit example plugin"}
 end
 
 

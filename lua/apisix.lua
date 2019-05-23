@@ -31,6 +31,10 @@ end
 
 local function run_plugin(phase, filter_plugins, api_ctx)
     api_ctx = api_ctx or ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
     filter_plugins = filter_plugins or api_ctx.filter_plugins
     if not filter_plugins then
         return
@@ -66,7 +70,7 @@ function _M.rewrite_phase()
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
         core.log.warn("not find any matched route")
-        return core.response.say(404)
+        return core.response.exit(404)
     end
 
     local local_plugins = core.lrucache.global("/local_plugins", nil,
@@ -103,7 +107,7 @@ end
 
 function _M.balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx.filter_plugins then
+    if not api_ctx or not api_ctx.filter_plugins then
         return
     end
 
