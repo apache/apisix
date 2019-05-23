@@ -29,6 +29,26 @@ function _M.init_worker()
 end
 
 
+local function run_plugin(phase, filter_plugins, api_ctx)
+    api_ctx = api_ctx or ngx.ctx.api_ctx
+    filter_plugins = filter_plugins or api_ctx.filter_plugins
+    if not filter_plugins then
+        return
+    end
+
+    for i = 1, #filter_plugins, 2 do
+        local plugin = filter_plugins[i]
+        local phase_fun = plugin[phase]
+        if  phase_fun then
+            local code, body = phase_fun(filter_plugins[i + 1], api_ctx)
+            if type(code) == "number" or body then
+                core.response.exit(code, body)
+            end
+        end
+    end
+end
+
+
 function _M.rewrite_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -51,7 +71,6 @@ function _M.rewrite_phase()
 
     local local_plugins = core.lrucache.global("/local_plugins", nil,
                                                plugin_module.load)
-
     if api_ctx.matched_route.service_id then
         error("todo: suppport to use service fetch user config")
     else
@@ -67,60 +86,19 @@ function _M.rewrite_phase()
     -- todo: fetch the upstream node status, it may be stored in
     -- different places.
 
-    for i = 1, #filter_plugins, 2 do
-        local plugin = filter_plugins[i]
-        if plugin.rewrite then
-            plugin.rewrite(filter_plugins[i + 1], api_ctx)
-        end
-    end
+    run_plugin("rewrite", filter_plugins, api_ctx)
 end
 
 function _M.access_phase()
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx.filter_plugins then
-        return
-    end
-
-    local filter_plugins = api_ctx.filter_plugins
-    for i = 1, #filter_plugins, 2 do
-        local plugin = filter_plugins[i]
-        if plugin.access then
-            local code, body = plugin.access(filter_plugins[i + 1], api_ctx)
-            if code then
-                core.response.exit(code, body)
-            end
-        end
-    end
+    run_plugin("access")
 end
 
 function _M.header_filter_phase()
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx.filter_plugins then
-        return
-    end
-
-    local filter_plugins = api_ctx.filter_plugins
-    for i = 1, #filter_plugins, 2 do
-        local plugin = filter_plugins[i]
-        if plugin.header_filter then
-            plugin.header_filter(filter_plugins[i + 1], api_ctx)
-        end
-    end
+    run_plugin("header_filter")
 end
 
 function _M.log_phase()
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx.filter_plugins then
-        return
-    end
-
-    local filter_plugins = api_ctx.filter_plugins
-    for i = 1, #filter_plugins, 2 do
-        local plugin = filter_plugins[i]
-        if plugin.log then
-            plugin.log(filter_plugins[i + 1], api_ctx)
-        end
-    end
+    run_plugin("log")
 end
 
 function _M.balancer_phase()
