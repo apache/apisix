@@ -6,3 +6,4 @@ plugins:
   - example-plugin
   - limit-req
   - limit-count
+  - key-auth
