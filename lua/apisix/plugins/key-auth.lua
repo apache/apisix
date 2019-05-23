@@ -56,6 +56,7 @@ function _M.access(conf, ctx)
         return 401, {message = "Invalid API key in request"}
     end
 
+    ctx.consumer_id = consumer_id
     core.log.warn("hit key-auth access")
 end
 
