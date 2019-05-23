@@ -12,7 +12,7 @@ local _M = {version = 0.1}
 
 
 local function sort_plugin(l, r)
-    return l.priority > r.priority
+    return l.priority >= r.priority
 end
 
 

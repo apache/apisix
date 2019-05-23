@@ -3,7 +3,7 @@
 local require = require
 local core = require("apisix.core")
 local router = require("apisix.route").get
-local plugin = require("apisix.plugin")
+local plugin_module = require("apisix.plugin")
 local new_tab = require("table.new")
 local load_balancer = require("apisix.balancer") .run
 local ngx = ngx
@@ -24,6 +24,8 @@ end
 function _M.init_worker()
     require("apisix.route").init_worker()
     require("apisix.balancer").init_worker()
+
+    plugin_module.load()
 end
 
 
@@ -37,21 +39,22 @@ function _M.rewrite_phase()
         ngx_ctx.api_ctx = api_ctx
     end
 
-    local method = core.ctx.get_var(api_ctx, "method")
-    local uri = core.ctx.get_var(api_ctx, "uri")
-    -- local host = core.ctx.get_var(api_ctx, "host") -- todo: support host
+    local method = core.request.var(api_ctx, "method")
+    local uri = core.request.var(api_ctx, "uri")
+    -- local host = core.request.var(api_ctx, "host") -- todo: support host
 
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
-        core.log.info("not find any matched route")
+        core.log.warn("not find any matched route")
         return core.response.say(404)
     end
 
     -- todo: move those code to another single file
     -- todo optimize: cache `local_supported_plugins`
-    local local_supported_plugins, err = plugin.load()
+    local local_supported_plugins, err = plugin_module.load()
     if not local_supported_plugins then
-        ngx.say("failed to load plugins: ", err)
+        core.log.error("failed to load plugins: ", err)
+        return core.response.say(500)
     end
 
     if api_ctx.matched_route.service_id then
@@ -62,7 +65,7 @@ function _M.rewrite_phase()
         api_ctx.conf_id = api_ctx.matched_route.value.id
     end
 
-    local filter_plugins = plugin.filter_plugin(
+    local filter_plugins = plugin_module.filter_plugin(
         api_ctx.matched_route, local_supported_plugins)
 
     api_ctx.filter_plugins = filter_plugins
