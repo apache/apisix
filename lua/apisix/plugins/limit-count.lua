@@ -24,8 +24,8 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
-    local limit_ins = core.lrucache.plugin_ctx(plugin_name, ctx,
-                                               create_limit_obj, conf)
+    local limit = core.lrucache.plugin_ctx(plugin_name, ctx,
+                                           create_limit_obj, conf)
 
     local key = core.request.var(ctx, conf.key)
     if not key or key == "" then
@@ -34,7 +34,7 @@ function _M.access(conf, ctx)
                       "maybe wrong, please pay attention to this.")
     end
 
-    local delay, remaining = limit_ins:incoming(key, true)
+    local delay, remaining = limit:incoming(key, true)
     if not delay then
         local err = remaining
         if err == "rejected" then
