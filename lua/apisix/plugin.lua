@@ -1,4 +1,5 @@
 local require = require
+local r3_new = require("resty.r3").new
 local core = require("apisix.core")
 local pkg_loaded = package.loaded
 local insert_tab = table.insert
@@ -65,7 +66,7 @@ end
 _M.load = load
 
 
-function _M.api_routes()
+local function create_api_router()
     local routes = {}
     for _, plugin in ipairs(_M.plugins) do
         local api_fun = plugin.api
@@ -78,8 +79,22 @@ function _M.api_routes()
         end
     end
 
+    if #routes == 0 then
+        return routes -- fake r3 object, `lrucache` only support to cache table
+    end
+
+    local r3 = r3_new(routes)
+
+    -- don't forget!!!
+    r3:compile()
+
     -- core.log.warn("api routes: ", core.json.encode(routes, true))
-    return routes
+    return r3
+end
+
+
+function _M.api_router()
+    return core.lrucache.global("api_router", _M.load_times, create_api_router)
 end
 
 
