@@ -4,6 +4,10 @@ local balancer = require("ngx.balancer")
 local upstreams_etcd
 local error = error
 local module_name = "balancer"
+local lrucache = core.lrucache.new{
+        plugin_ttl = 300,
+        plugin_count = 256
+    }
 
 
 local _M = {
@@ -57,7 +61,7 @@ function _M.run(route, ctx)
         key = upstream.type .. "#route_" .. route.id
     end
 
-    local server_piker = core.lrucache.plugin(module_name, key, version,
+    local server_piker = lrucache:plugin(module_name, key, version,
                             create_server_piker, upstream.type, upstream.nodes)
     if not server_piker then
         error("failed to fetch server picker")
