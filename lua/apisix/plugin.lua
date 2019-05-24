@@ -23,6 +23,8 @@ end
 
 
 local function load()
+    core.table.clear(local_supported_plugins)
+
     local plugin_names = core.config.local_conf().plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
