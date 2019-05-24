@@ -149,20 +149,34 @@ Prometheus.initialized = false
 --   label_values: (array) a list of label values.
 -- Returns:
 --   (string) full metric name.
-local function full_metric_name(name, label_names, label_values)
+local full_metric_name
+do
+    local lru = require("resty.lrucache").new(128)
+    local insert_tab = table.insert
+    local label_parts = {}
+    local clear_tab = require("table.clear")
+    local concat = table.concat
+
+function full_metric_name(name, label_names, label_values)
   if not label_names then
     return name
   end
-  local label_parts = {}
+  clear_tab(label_parts)
   for idx, key in ipairs(label_names) do
-    local label_value = (string.format("%s", label_values[idx])
-      :gsub("[^\032-\126]", "")  -- strip non-printable characters
-      :gsub("\\", "\\\\")
-      :gsub('"', '\\"'))
-    table.insert(label_parts, key .. '="' .. label_value .. '"')
+    local label_value = lru:get(label_values[idx])
+    if not label_value then
+        label_value = (string.format("%s", label_values[idx])
+            :gsub("[^\032-\126]", "")  -- strip non-printable characters
+            :gsub("\\", "\\\\")
+            :gsub('"', '\\"'))
+        lru:set(label_values[idx], label_value)
+    end
+    insert_tab(label_parts, key .. '="' .. label_value .. '"')
   end
-  return name .. "{" .. table.concat(label_parts, ",") .. "}"
+  return name .. "{" .. concat(label_parts, ",") .. "}"
 end
+
+end -- do
 
 -- Construct bucket format for a list of buckets.
 --

@@ -14,13 +14,13 @@ function _M.init()
 
     -- across all services
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
-                                         "Number of HTTP connections",
-                                         {"state"})
+                                           "Number of HTTP connections",
+                                           {"state"})
 end
 
 
 function _M.log(conf, ctx)
-    metrics.connections:set(ngx.time(), { "unix time" })
+    metrics.connections:set(ngx.time(), {"unix time"})
     core.log.warn("hit prometheuse plugin")
 end
 
