@@ -2,9 +2,6 @@ local core = require("apisix.core")
 local roundrobin = require("resty.roundrobin")
 local balancer = require("ngx.balancer")
 local upstreams_etcd
-local ngx = ngx
-local ngx_exit = ngx.exit
-local ngx_ERROR = ngx.ERROR
 local error = error
 local module_name = "balancer"
 
@@ -41,45 +38,40 @@ function _M.run(route, ctx)
     local key
     if up_id then
         if not upstreams_etcd then
-            core.log.warn("need to create a etcd instance for fetching ",
-                          "upstream information")
-            ngx_exit(ngx_ERROR)
-            return
+            error("need to create a etcd instance for fetching ",
+                  "upstream information")
         end
 
         local upstream_obj = upstreams_etcd:get(up_id)
         if not upstream_obj then
-            core.log.warn("failed to find upstream by id: ", up_id)
-            ngx_exit(ngx_ERROR)
-            return
+            error("failed to find upstream by id: " .. up_id)
         end
         -- core.log.info("upstream: ", core.json.encode(upstream_obj))
 
         upstream = upstream_obj.value
         version = upstream_obj.modifiedIndex
-        key = upstream.type .. "#upstream_" .. up_id .. "#"
-              .. version
+        key = upstream.type .. "#upstream_" .. up_id
 
     else
         version = ctx.conf_version
-        key = upstream.type .. "#route_" .. route.id .. "#" .. version
+        key = upstream.type .. "#route_" .. route.id
     end
 
     local server_piker = core.lrucache.plugin(module_name, key, version,
                             create_server_piker, upstream.type, upstream.nodes)
+    if not server_piker then
+        error("failed to fetch server picker")
+    end
+
     local server, err = server_piker:find()
     if not server then
-        core.log.error("failed to find valid upstream server", err)
-        ngx_exit(ngx_ERROR)
-        return
+        error("failed to find valid upstream server" .. err)
     end
 
     local ok
     ok, err = balancer.set_current_peer(server)
     if not ok then
-        core.log.error("failed to set the current peer: ", err)
-        ngx_exit(ngx_ERROR)
-        return
+        error("failed to set server peer: " .. err)
     end
 end
 
