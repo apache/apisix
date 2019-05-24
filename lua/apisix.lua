@@ -59,27 +59,23 @@ function _M.rewrite_phase()
     if api_ctx == nil then
         -- todo: reuse this table
         api_ctx = new_tab(0, 32)
-        ngx_ctx.api_ctx = api_ctx
     end
 
     local method = core.request.var(api_ctx, "method")
     local uri = core.request.var(api_ctx, "uri")
     -- local host = core.request.var(api_ctx, "host") -- todo: support host
 
-    -- todo: try to run the api in
-    local api_routes = plugin_module.api_routes()
-    if api_routes then
-        local r3 = require("resty.r3").new(api_routes)
-        -- don't forget!!!
-        r3:compile()
-
+    local api_router = plugin_module.api_router()
+    if api_router and api_router.dispatch then
         -- dispatch
-        local ok = r3:dispatch(method, uri, api_ctx)
+        local ok = api_router:dispatch(method, uri, api_ctx)
         if ok then
             core.log.warn("finish api route")
             return
         end
     end
+
+    ngx_ctx.api_ctx = api_ctx
 
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
