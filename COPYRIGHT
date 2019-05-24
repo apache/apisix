@@ -37,3 +37,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 %%%%%%%%%
+
+prometheus
+
+https://github.com/knyar/nginx-lua-prometheus
+https://github.com/knyar/nginx-lua-prometheus/blob/master/README.md
+
+Licensed under MIT license.
+
+%%%%%%%%%

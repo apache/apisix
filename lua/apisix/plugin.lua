@@ -6,9 +6,14 @@ local sort_tab = table.sort
 local pcall = pcall
 local ipairs = ipairs
 local type = type
+local local_supported_plugins = {}
 
 
-local _M = {version = 0.1}
+local _M = {
+    version = 0.1,
+    load_times = 0,
+    plugins = local_supported_plugins,
+}
 
 
 local function sort_plugin(l, r)
@@ -16,13 +21,12 @@ local function sort_plugin(l, r)
 end
 
 
-function _M.load()
+local function load()
     local plugin_names = core.config.local_conf().plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
     end
 
-    local plugins = core.table.new(#plugin_names, 0)
     for _, name in ipairs(plugin_names) do
         local pkg_name = "apisix.plugins." .. name
         pkg_loaded[pkg_name] = nil
@@ -42,7 +46,7 @@ function _M.load()
 
         else
             plugin.name = name
-            insert_tab(plugins, plugin)
+            insert_tab(local_supported_plugins, plugin)
         end
 
         if plugin.init then
@@ -51,15 +55,35 @@ function _M.load()
     end
 
     -- sort by plugin's priority
-    if #plugins > 1 then
-        sort_tab(plugins, sort_plugin)
+    if #local_supported_plugins > 1 then
+        sort_tab(local_supported_plugins, sort_plugin)
     end
 
-    return plugins
+    _M.load_times = _M.load_times + 1
+    return local_supported_plugins
+end
+_M.load = load
+
+
+function _M.api_routes()
+    local routes = {}
+    for _, plugin in ipairs(_M.plugins) do
+        local api_fun = plugin.api
+        if api_fun then
+            local api_routes = api_fun()
+            for _, route in ipairs(api_routes) do
+                core.table.insert(routes, {route.methods, route.uri,
+                                           route.handler})
+            end
+        end
+    end
+
+    -- core.log.warn("api routes: ", core.json.encode(routes, true))
+    return routes
 end
 
 
-function _M.filter_plugin(user_routes, local_supported_plugins)
+function _M.filter_plugin(user_routes)
     -- todo: reuse table
     local plugins = core.table.new(#local_supported_plugins * 2, 0)
     local user_plugin_conf = user_routes.value.plugin_config
@@ -75,6 +99,11 @@ function _M.filter_plugin(user_routes, local_supported_plugins)
     end
 
     return plugins
+end
+
+
+function _M.init_worker()
+    load()
 end
 
 

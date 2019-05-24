@@ -7,3 +7,4 @@ plugins:
   - limit-req
   - limit-count
   - key-auth
+  - prometheus
