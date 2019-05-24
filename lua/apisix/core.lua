@@ -11,6 +11,7 @@ local function serialise_obj(data)
     return data
 end
 
+
 local function tab_clone_with_serialise(data)
     if type(data) ~= "table" then
         return data
@@ -45,13 +46,15 @@ return {
         decode = require("cjson.safe").decode,
     },
     table = {
-        new   = require("table.new"),
-        clear = require("table.clear"),
-        nkeys = require("table.nkeys"),
+        new    = require("table.new"),
+        clear  = require("table.clear"),
+        nkeys  = require("table.nkeys"),
+        insert = table.insert,
+        concat = table.concat,
     },
-    request = require("apisix.core.request"),
+    request  = require("apisix.core.request"),
     response = require("apisix.core.response"),
-    typeof = require("apisix.core.typeof"),
+    typeof   = require("apisix.core.typeof"),
     lrucache = require("apisix.core.lrucache"),
-    schema = require("apisix.core.schema"),
+    schema   = require("apisix.core.schema"),
 }

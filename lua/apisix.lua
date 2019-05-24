@@ -24,8 +24,7 @@ end
 function _M.init_worker()
     require("apisix.route").init_worker()
     require("apisix.balancer").init_worker()
-
-    core.lrucache.global("/local_plugins", nil, plugin_module.load)
+    require("apisix.plugin").init_worker()
 end
 
 
@@ -45,7 +44,7 @@ local function run_plugin(phase, filter_plugins, api_ctx)
         local phase_fun = plugin[phase]
         if  phase_fun then
             local code, body = phase_fun(filter_plugins[i + 1], api_ctx)
-            if type(code) == "number" or body then
+            if phase ~= "log" and type(code) == "number" or body then
                 core.response.exit(code, body)
             end
         end
@@ -67,14 +66,27 @@ function _M.rewrite_phase()
     local uri = core.request.var(api_ctx, "uri")
     -- local host = core.request.var(api_ctx, "host") -- todo: support host
 
+    -- todo: try to run the api in
+    local api_routes = plugin_module.api_routes()
+    if api_routes then
+        local r3 = require("resty.r3").new(api_routes)
+        -- don't forget!!!
+        r3:compile()
+
+        -- dispatch
+        local ok = r3:dispatch(method, uri, api_ctx)
+        if ok then
+            core.log.warn("finish api route")
+            return
+        end
+    end
+
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
         core.log.warn("not find any matched route")
         return core.response.exit(404)
     end
 
-    local local_plugins = core.lrucache.global("/local_plugins", nil,
-                                               plugin_module.load)
     if api_ctx.matched_route.service_id then
         error("todo: suppport to use service fetch user config")
     else
@@ -84,11 +96,9 @@ function _M.rewrite_phase()
     end
 
     local filter_plugins = plugin_module.filter_plugin(
-        api_ctx.matched_route, local_plugins)
+        api_ctx.matched_route)
 
     api_ctx.filter_plugins = filter_plugins
-    -- todo: fetch the upstream node status, it may be stored in
-    -- different places.
 
     run_plugin("rewrite", filter_plugins, api_ctx)
 end
