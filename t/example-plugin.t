@@ -87,7 +87,7 @@ rewrite(): plugin rewrite phase
                 ngx.say("failed to load plugins: ", err)
             end
 
-            local filter_plugins = plugin.filter_plugin({
+            local filter_plugins = plugin.filter({
                 value = {
                     plugin_config = {
                         ["example-plugin"] = {i = 1, s = "s", t = {1, 2}},
