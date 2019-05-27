@@ -11,30 +11,38 @@ local _M = {version = 0.1}
 
 function _M.init()
     core.table.clear(metrics)
-
-    -- across all services
-    metrics.connections = prometheus:gauge("nginx_http_current_connections",
-                                           "Number of HTTP connections",
-                                           {"state"})
+    -- per service
+    metrics.status = prometheus:counter("http_status",
+                                        "HTTP status codes per service in Kong",
+                                        {"code", "service"})
 end
 
 
+do
+    local tmp_tab = {}
+
 function _M.log(conf, ctx)
-    metrics.connections:set(ngx.time(), {"unix time"})
+    core.table.clear(tmp_tab)
+    tmp_tab[1] = ngx.status
+    tmp_tab[2] = ngx.var.host
+    metrics.status:inc(1, tmp_tab)
+
     core.log.warn("hit prometheuse plugin")
 end
 
+end -- do
+
 
 function _M.collect()
-  if not prometheus or not metrics then
-    core.log.err("prometheus: plugin is not initialized, please make sure ",
-                 " 'prometheus_metrics' shared dict is present in nginx template")
-    return 500, { message = "An unexpected error occurred" }
-  end
+    if not prometheus or not metrics then
+        core.log.err("prometheus: plugin is not initialized, please make sure ",
+                     " 'prometheus_metrics' shared dict is present in nginx template")
+        return 500, { message = "An unexpected error occurred" }
+    end
 
-  metrics.connections:set(ngx.time(), { "active" })
+    -- metrics.connections:set(ngx.time(), label_values.active)
 
-  prometheus:collect()
+    prometheus:collect()
 end
 
 
