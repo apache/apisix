@@ -3,9 +3,10 @@
 local require = require
 local core = require("apisix.core")
 local router = require("apisix.route").get
-local plugin_module = require("apisix.plugin")
+local plugin = require("apisix.plugin")
 local new_tab = require("table.new")
 local load_balancer = require("apisix.balancer") .run
+local service_fetch = require("apisix.service").get
 local ngx = ngx
 
 
@@ -25,6 +26,7 @@ function _M.init_worker()
     require("apisix.route").init_worker()
     require("apisix.balancer").init_worker()
     require("apisix.plugin").init_worker()
+    require("apisix.service").init_worker()
 end
 
 
@@ -40,8 +42,7 @@ local function run_plugin(phase, filter_plugins, api_ctx)
     end
 
     for i = 1, #filter_plugins, 2 do
-        local plugin = filter_plugins[i]
-        local phase_fun = plugin[phase]
+        local phase_fun = filter_plugins[i][phase]
         if  phase_fun then
             local code, body = phase_fun(filter_plugins[i + 1], api_ctx)
             if phase ~= "log" and type(code) == "number" or body then
@@ -65,12 +66,12 @@ function _M.rewrite_phase()
     local uri = core.request.var(api_ctx, "uri")
     -- local host = core.request.var(api_ctx, "host") -- todo: support host
 
-    local api_router = plugin_module.api_router()
+    -- run the api router
+    local api_router = plugin.api_router()
     if api_router and api_router.dispatch then
-        -- dispatch
         local ok = api_router:dispatch(method, uri, api_ctx)
         if ok then
-            core.log.warn("finish api route")
+            -- core.log.warn("finish api route")
             return
         end
     end
@@ -83,20 +84,37 @@ function _M.rewrite_phase()
         return core.response.exit(404)
     end
 
-    if api_ctx.matched_route.service_id then
-        error("todo: suppport to use service fetch user config")
+    -- core.log.warn("route: ",
+    --               core.json.encode(api_ctx.matched_route, true))
+
+    local route = api_ctx.matched_route
+    if route.value.service_id then
+        -- core.log.warn("matched route: ", core.json.encode(route.value))
+        local service = service_fetch(route.value.service_id)
+        local changed
+        route, changed = plugin.merge_service_route(service, route)
+
+        if changed then
+            api_ctx.conf_type = "route&service"
+            api_ctx.conf_version = route.modifiedIndex .. "&"
+                                   .. service.modifiedIndex
+            api_ctx.conf_id = route.value.id .. "&"
+                              .. service.value.id
+        else
+            api_ctx.conf_type = "route"
+            api_ctx.conf_version = route.modifiedIndex
+            api_ctx.conf_id = route.value.id
+        end
+
     else
         api_ctx.conf_type = "route"
-        api_ctx.conf_version = api_ctx.matched_route.modifiedIndex
-        api_ctx.conf_id = api_ctx.matched_route.value.id
+        api_ctx.conf_version = route.modifiedIndex
+        api_ctx.conf_id = route.value.id
     end
 
-    local filter_plugins = plugin_module.filter_plugin(
-        api_ctx.matched_route)
+    api_ctx.filter_plugins = plugin.filter(route)
 
-    api_ctx.filter_plugins = filter_plugins
-
-    run_plugin("rewrite", filter_plugins, api_ctx)
+    run_plugin("rewrite", api_ctx.filter_plugins, api_ctx)
 end
 
 function _M.access_phase()

@@ -100,7 +100,7 @@ function _M.api_router()
 end
 
 
-function _M.filter_plugin(user_routes)
+function _M.filter(user_routes)
     -- todo: reuse table
     local plugins = core.table.new(#local_supported_plugins * 2, 0)
     local user_plugin_conf = user_routes.value.plugin_config
@@ -116,6 +116,29 @@ function _M.filter_plugin(user_routes)
     end
 
     return plugins
+end
+
+
+function _M.merge_service_route(service_conf, route_conf)
+    -- core.log.warn("base conf: ", core.json.encode(base_conf))
+    -- core.log.warn("new  conf: ", core.json.encode(new_conf))
+    local new_conf = false
+    if service_conf.plugin_config and
+       core.table.nkeys(service_conf.plugin_config) then
+        for name, conf in pairs(service_conf.plugin_config) do
+            route_conf.plugin_config[name] = conf
+        end
+        new_conf = true
+    end
+
+    if service_conf.upstream and core.table.nkeys(service_conf.upstream) then
+        route_conf.upstream = service_conf.upstream
+        new_conf = true
+    end
+
+    route_conf.service = service_conf.value
+
+    return service_conf, new_conf
 end
 
 
