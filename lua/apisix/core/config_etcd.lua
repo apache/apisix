@@ -85,6 +85,10 @@ function _M.fetch(self)
             return nil, self.key .. " is not a dir"
         end
 
+        if not dir_res.nodes then
+            return nil
+        end
+
         self.values = new_tab(#dir_res.nodes, 0)
         self.values_hash = new_tab(0, #dir_res.nodes)
 
@@ -180,7 +184,7 @@ local function _automatic_fetch(premature, self)
             log.error("failed to fetch data from etcd: ", err)
             ngx_sleep(10)
 
-        elseif not res and err ~= "timeout" then
+        elseif not res and err and err ~= "timeout" then
             log.error("failed to fetch data from etcd: ", err)
             ngx_sleep(5)
         end
