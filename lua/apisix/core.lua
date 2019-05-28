@@ -57,4 +57,5 @@ return {
     typeof   = require("apisix.core.typeof"),
     lrucache = require("apisix.core.lrucache"),
     schema   = require("apisix.core.schema"),
+    ctx      = require("apisix.core.ctx"),
 }

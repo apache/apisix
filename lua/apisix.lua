@@ -43,7 +43,7 @@ local function run_plugin(phase, filter_plugins, api_ctx)
 
     for i = 1, #filter_plugins, 2 do
         local phase_fun = filter_plugins[i][phase]
-        if  phase_fun then
+        if phase_fun then
             local code, body = phase_fun(filter_plugins[i + 1], api_ctx)
             if phase ~= "log" and type(code) == "number" or body then
                 core.response.exit(code, body)
@@ -62,9 +62,10 @@ function _M.rewrite_phase()
         api_ctx = new_tab(0, 32)
     end
 
-    local method = core.request.var(api_ctx, "method")
-    local uri = core.request.var(api_ctx, "uri")
-    -- local host = core.request.var(api_ctx, "host") -- todo: support host
+    core.ctx.set_vars_meta(api_ctx)
+    local method = api_ctx.var["method"]
+    local uri =  api_ctx.var["uri"]
+    -- local host = api_ctx.var["host"] -- todo: support host
 
     -- run the api router
     local api_router = plugin.api_router()
