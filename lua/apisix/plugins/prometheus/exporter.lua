@@ -23,8 +23,8 @@ do
 
 function _M.log(conf, ctx)
     core.table.clear(tmp_tab)
-    tmp_tab[1] = ngx.status
-    tmp_tab[2] = ngx.var.host
+    tmp_tab[1] = ctx.var.status
+    tmp_tab[2] = ctx.var.host
     metrics.status:inc(1, tmp_tab)
 
     core.log.warn("hit prometheuse plugin")
