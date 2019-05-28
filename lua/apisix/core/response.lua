@@ -43,7 +43,7 @@ function resp_exit(code, ...)
                 insert_tab(t, idx, body)
             end
 
-        else
+        elseif v ~= nil then
             idx = idx + 1
             insert_tab(t, idx, v)
         end
