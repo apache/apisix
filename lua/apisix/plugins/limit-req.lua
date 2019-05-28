@@ -35,11 +35,11 @@ function _M.access(conf, ctx)
     local delay, err = limit_ins:incoming(key, true)
     if not delay then
         if err == "rejected" then
-            return core.response.say(conf.rejected_code)
+            return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)
-        return core.response.say(500)
+        return 500
     end
 
     core.log.info("hit limit-req access")

@@ -23,6 +23,7 @@ do
 
 function _M.log(conf, ctx)
     core.table.clear(t)
+
     core.table.insert_tail(t, ctx.var.status, ctx.var.host)
     metrics.status:inc(1, t)
 
@@ -36,7 +37,7 @@ function _M.collect()
     if not prometheus or not metrics then
         core.log.err("prometheus: plugin is not initialized, please make sure ",
                      " 'prometheus_metrics' shared dict is present in nginx template")
-        return 500, { message = "An unexpected error occurred" }
+        return 500, {message = "An unexpected error occurred"}
     end
 
     -- metrics.connections:set(ngx.time(), label_values.active)
