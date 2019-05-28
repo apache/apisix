@@ -1,5 +1,7 @@
-local tostring = tostring
 local json_encode = require("cjson.safe").encode
+local tostring = tostring
+local type = type
+local pairs = pairs
 
 
 local function serialise_obj(data)
@@ -45,13 +47,7 @@ return {
         end,
         decode = require("cjson.safe").decode,
     },
-    table = {
-        new    = require("table.new"),
-        clear  = require("table.clear"),
-        nkeys  = require("table.nkeys"),
-        insert = table.insert,
-        concat = table.concat,
-    },
+    table = require("apisix.core.table"),
     request  = require("apisix.core.request"),
     response = require("apisix.core.response"),
     typeof   = require("apisix.core.typeof"),

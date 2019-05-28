@@ -19,13 +19,12 @@ end
 
 
 do
-    local tmp_tab = {}
+    local t = {}
 
 function _M.log(conf, ctx)
-    core.table.clear(tmp_tab)
-    tmp_tab[1] = ctx.var.status
-    tmp_tab[2] = ctx.var.host
-    metrics.status:inc(1, tmp_tab)
+    core.table.clear(t)
+    core.table.insert_tail(t, ctx.var.status, ctx.var.host)
+    metrics.status:inc(1, t)
 
     core.log.warn("hit prometheuse plugin")
 end
