@@ -18,14 +18,13 @@
 > Dependent library
 
 * [lua-resty-r3] Setups the [resty-r3#install](https://github.com/iresty/lua-resty-r3#install) library.
-* [lua-resty-mlcache] Setups the [resty-mlcache#install](https://github.com/iresty/lua-resty-mlcache#installation) library.
 * [lua-resty-etcd] Setups the [resty-etcd#install](https://github.com/iresty/lua-resty-etcd#install) library.
 * [lua-resty-balancer] Setups the [resty-balancer#install](https://github.com/iresty/lua-resty-balancer#installation) library.
 
 > Install by luarocks
 
 ```shell
-luarocks install lua-resty-r3 lua-resty-mlcache lua-resty-etcd lua-resty-balancer
+luarocks install lua-resty-r3 lua-resty-etcd lua-resty-balancer
 ```
 
 ### User routes with plugins config in etcd
