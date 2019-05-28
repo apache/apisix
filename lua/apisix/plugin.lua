@@ -6,6 +6,7 @@ local insert_tab = table.insert
 local sort_tab = table.sort
 local pcall = pcall
 local ipairs = ipairs
+local pairs = pairs
 local type = type
 local local_supported_plugins = {}
 
@@ -42,7 +43,8 @@ local function load()
             core.log.error("invalid plugin", name, ", missing field: priority")
 
         elseif not plugin.check_args then
-            core.log.error("invalid plugin", name, ", missing method: check_args")
+            core.log.error("invalid plugin", name,
+                           ", missing method: check_args")
 
         elseif not plugin.version then
             core.log.error("invalid plugin", name, ", missing field: version")

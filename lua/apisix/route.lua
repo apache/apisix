@@ -3,6 +3,8 @@
 local r3router = require("resty.r3")
 local core = require("apisix.core")
 local ipairs = ipairs
+local type = type
+local error = error
 local conf_routes
 
 

@@ -2,6 +2,7 @@
 -- only support to cache lua table object
 
 local lru_new = require("resty.lrucache").new
+local setmetatable = setmetatable
 -- todo: support to config it in YAML.
 local GLOBAL_TTL = 60 * 60          -- 60 min
 local GLOBAL_ITEMS_COUNT = 1024
@@ -33,7 +34,8 @@ end
 _M.global = global_lru
 
 
-local function _plugin(count, ttl, plugin_name, key, version, create_obj_fun, ...)
+local function _plugin(count, ttl, plugin_name, key, version, create_obj_fun,
+                       ...)
     local lru_global = global_lru("/plugin/" .. plugin_name, nil,
             lru_new, count)
 

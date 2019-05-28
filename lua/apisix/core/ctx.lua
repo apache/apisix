@@ -1,5 +1,6 @@
 local new_tab = require("table.new")
 local ngx_var = ngx.var
+local setmetatable = setmetatable
 
 
 local _M = {version = 0.1}
