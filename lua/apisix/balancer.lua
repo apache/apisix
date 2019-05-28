@@ -82,7 +82,7 @@ end
 
 function _M.init_worker()
     local err
-    upstreams_etcd, err = core.config.new("/user_upstreams",
+    upstreams_etcd, err = core.config.new("/upstreams",
                                           {automatic = true})
     if not upstreams_etcd then
         error("failed to create etcd instance to fetch upstream: " .. err)

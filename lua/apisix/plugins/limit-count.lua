@@ -38,11 +38,11 @@ function _M.access(conf, ctx)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            return core.response.say(conf.rejected_code)
+            return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)
-        return core.response.say(500)
+        return 500
     end
 
     core.response.set_header("X-RateLimit-Limit", conf.count)

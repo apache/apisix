@@ -21,7 +21,12 @@ local _M = {
     version = 0.1,
     local_conf = fetch_local_conf,
 }
-local mt = {__index = _M}
+local mt = {
+    __index = _M,
+    __tostring = function(self)
+        return " etcd key: " .. self.key
+    end
+}
 
 
 local function readdir(etcd_cli, key)
@@ -176,18 +181,28 @@ local function _automatic_fetch(premature, self)
         return
     end
 
-    -- optimize: avoid to use this timer always.
-    while not exiting() and self.running do
+    local i = 0
+    while not exiting() and self.running and i <= 32 do
+        i = i + 1
         local ok, res, err = pcall(self.fetch, self)
         if not ok then
             err = res
-            log.error("failed to fetch data from etcd: ", err)
+            log.error("failed to fetch data from etcd: ", err, ", ",
+                      tostring(self))
             ngx_sleep(10)
+            break
 
-        elseif not res and err and err ~= "timeout" then
-            log.error("failed to fetch data from etcd: ", err)
+        elseif not res and err and err ~= "timeout"
+            and err ~= "Key not found" then
+            log.error("failed to fetch data from etcd: ", err, ", ",
+                      tostring(self))
             ngx_sleep(5)
+            break
         end
+    end
+
+    if not exiting() and self.running then
+        ngx_timer_at(0, _automatic_fetch, self)
     end
 end
 

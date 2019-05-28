@@ -32,16 +32,16 @@ end
 
 function _M.get()
     -- core.log.warn("conf_routes.version: ", conf_routes.version)
-    return core.lrucache.global("/user_routes", conf_routes.version,
+    return core.lrucache.global("/routes", conf_routes.version,
                                 create_r3_router, conf_routes.values)
 end
 
 
 function _M.init_worker()
     local err
-    conf_routes, err = core.config.new("/user_routes", {automatic = true})
+    conf_routes, err = core.config.new("/routes", {automatic = true})
     if not conf_routes then
-        error("failed to create etcd instance to fetch /user_routes "
+        error("failed to create etcd instance to fetch /routes "
               .. "automaticly: " .. err)
     end
 end
