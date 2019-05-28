@@ -13,7 +13,7 @@ function _M.init()
     core.table.clear(metrics)
     -- per service
     metrics.status = prometheus:counter("http_status",
-                                        "HTTP status codes per service in Kong",
+                                        "HTTP status codes per service in APIsix",
                                         {"code", "service"})
 end
 
