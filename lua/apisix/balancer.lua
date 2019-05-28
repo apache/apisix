@@ -16,7 +16,7 @@ local _M = {
 }
 
 
-local function create_server_piker(typ, nodes)
+local function create_server_picker(typ, nodes)
     -- core.log.info("create create_obj, type: ", typ,
     --               " nodes: ", core.json.encode(nodes))
 
@@ -61,13 +61,13 @@ function _M.run(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    local server_piker = lrucache:plugin(module_name, key, version,
-                            create_server_piker, upstream.type, upstream.nodes)
-    if not server_piker then
+    local server_picker = lrucache:plugin(module_name, key, version,
+                            create_server_picker, upstream.type, upstream.nodes)
+    if not server_picker then
         error("failed to fetch server picker")
     end
 
-    local server, err = server_piker:find()
+    local server, err = server_picker:find()
     if not server then
         error("failed to find valid upstream server" .. err)
     end
