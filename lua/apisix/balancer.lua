@@ -58,7 +58,7 @@ function _M.run(route, ctx)
 
     else
         version = ctx.conf_version
-        key = upstream.type .. "#route_" .. route.id
+        key = upstream.type .. "#route_" .. route.value.id
     end
 
     local server_piker = lrucache:plugin(module_name, key, version,
