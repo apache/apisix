@@ -12,6 +12,7 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 ### CentOS
 #### Dependencies
+
 - OpenResty
 ```shell
 sudo yum install yum-utils
@@ -76,7 +77,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='{"methods":[
 ```
 
 ```shell
-curl -i -H 'host:baidu.com' 127.0.0.1:9080/hello
+curl -i -H 'Host: baidu.com' 127.0.0.1:9080/hello
 ```
 
 
