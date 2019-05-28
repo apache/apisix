@@ -54,17 +54,31 @@ luarocks install lua-resty-r3 lua-resty-etcd lua-resty-balancer
 systemctl start etcd
 ```
 
-2. start APISIX:
+2. init etcd:
+```shell
+curl http://127.0.0.1:2379/v2/keys/apisix/routes -X PUT -d dir=true
+
+curl http://127.0.0.1:2379/v2/keys/apisix/upstreams -X PUT -d dir=true
+
+curl http://127.0.0.1:2379/v2/keys/apisix/services -X PUT -d dir=true
+```
+
+3. start APISIX:
 ```shell
 sudo openresty -p /usr/share/lua/5.1/apisix -c /usr/share/lua/5.1/apisix/conf/nginx.conf
 ```
 
-3.
+4. try limit count plugin
+
+For the convenience of testing, we set up a maximum of 2 visits in 60 seconds, and return 503 if the threshold is exceeded:
 ```shell
-curl http://127.0.0.1:2379/v2/keys/user_routes -XPUT -d dir=true
-
-
+curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='{"methods":["GET"],"uri":"/hello","id":1,"plugin_config":{"limit-count":{"count":2,"time_window":60,"rejected_code":503,"key":"remote_addr"}},"upstream":{"type":"roundrobin","nodes":{"220.181.57.215:80":1,"220.181.57.216:80":1}}}'
 ```
+
+```shell
+curl -i -H 'host:baidu.com' 127.0.0.1:9080/hello
+```
+
 
 ## Distributions
 
