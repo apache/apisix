@@ -25,7 +25,7 @@ function _M.access(conf, ctx)
     local limit_ins = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
 
-    local key = core.request.var(ctx, conf.key)
+    local key = ctx.var[conf.key]
     if not key or key == "" then
         key = ""
         core.log.warn("fetched empty string value as key to limit the request ",

@@ -120,25 +120,23 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    -- core.log.warn("base conf: ", core.json.encode(base_conf))
-    -- core.log.warn("new  conf: ", core.json.encode(new_conf))
-    local new_conf = false
-    if service_conf.plugin_config and
-       core.table.nkeys(service_conf.plugin_config) then
-        for name, conf in pairs(service_conf.plugin_config) do
-            route_conf.plugin_config[name] = conf
+    local changed = false
+    if route_conf.value.plugin_config and
+       core.table.nkeys(route_conf.value.plugin_config) then
+        for name, conf in pairs(route_conf.value.plugin_config) do
+            service_conf.value.plugin_config[name] = conf
         end
-        new_conf = true
+        changed = true
     end
 
-    if service_conf.upstream and core.table.nkeys(service_conf.upstream) then
-        route_conf.upstream = service_conf.upstream
-        new_conf = true
+    if route_conf.upstream and core.table.nkeys(route_conf.upstream) then
+        service_conf.upstream = route_conf.upstream
+        changed = true
     end
 
     route_conf.service = service_conf.value
 
-    return service_conf, new_conf
+    return service_conf, changed
 end
 
 
