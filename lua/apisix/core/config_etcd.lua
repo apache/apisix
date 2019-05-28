@@ -91,6 +91,7 @@ function _M.fetch(self)
         end
 
         if not dir_res.nodes then
+            ngx_sleep(1)
             return nil
         end
 
@@ -189,14 +190,15 @@ local function _automatic_fetch(premature, self)
             err = res
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
-            ngx_sleep(10)
+            ngx_sleep(5)
             break
 
-        elseif not res and err and err ~= "timeout"
-            and err ~= "Key not found" then
-            log.error("failed to fetch data from etcd: ", err, ", ",
-                      tostring(self))
-            ngx_sleep(5)
+        elseif not res and err then
+            if err ~= "timeout" and err ~= "Key not found" then
+                log.error("failed to fetch data from etcd: ", err, ", ",
+                          tostring(self))
+            end
+            ngx_sleep(3)
             break
         end
     end
