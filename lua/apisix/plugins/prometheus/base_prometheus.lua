@@ -153,28 +153,40 @@ Prometheus.initialized = false
 local full_metric_name
 do
     local lru = require("resty.lrucache").new(128)
-    local insert_tab = table.insert
-    local label_parts = {}
-    local clear_tab = require("table.clear")
+    local items = {}
+    local idx = 0
     local concat = table.concat
 
 function full_metric_name(name, label_names, label_values)
   if not label_names then
     return name
   end
-  clear_tab(label_parts)
-  for idx, key in ipairs(label_names) do
-    local label_value = lru:get(label_values[idx])
+
+  idx = 0
+  for i, key in ipairs(label_names) do
+    local org_label_value = label_values[i]
+    local label_value = lru:get(org_label_value)
     if not label_value then
-        label_value = (string.format("%s", label_values[idx])
-            :gsub("[^\032-\126]", "")  -- strip non-printable characters
-            :gsub("\\", "\\\\")
-            :gsub('"', '\\"'))
-        lru:set(label_values[idx], label_value)
+        if type(org_label_value) == "string" then
+            label_value = tostring(org_label_value)
+                :gsub("[^\032-\126]", "")  -- strip non-printable characters
+                :gsub("\\", "\\\\")
+                :gsub('"', '\\"')
+        end
+        lru:set(org_label_value, label_value)
     end
-    insert_tab(label_parts, key .. '="' .. label_value .. '"')
+
+    if idx > 0 then
+        idx = idx + 1
+        items[idx] = ","
+    end
+    items[idx + 1] = key
+    items[idx + 2] = [[="]]
+    items[idx + 3] = label_value
+    items[idx + 4] = [["]]
+    idx = idx + 4
   end
-  return name .. "{" .. concat(label_parts, ",") .. "}"
+  return name .. "{" .. concat(items) .. "}"
 end
 
 end -- do
