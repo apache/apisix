@@ -67,6 +67,7 @@ function _M.run(route, ctx)
         error("failed to fetch server picker")
     end
 
+    --todo: parse the server info to fetch host and port
     local server, err = server_picker:find()
     if not server then
         error("failed to find valid upstream server" .. err)
