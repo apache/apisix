@@ -2,6 +2,7 @@
 
 local r3router = require("resty.r3")
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
@@ -12,10 +13,21 @@ local _M = {}
 
 
 local function create_r3_router(routes)
-    local items = core.table.new(#routes, 0)
-    for i, route in ipairs(routes) do
+    local api_routes = plugin.api_routes()
+    local items = core.table.new(#api_routes + #routes, 0)
+    local idx = 0
+
+    for _, route in ipairs(api_routes) do
         if type(route) == "table" then
-            items[i] = {
+            idx = idx + 1
+            items[idx] = route
+        end
+    end
+
+    for _, route in ipairs(routes) do
+        if type(route) == "table" then
+            idx = idx + 1
+            items[idx] = {
                 route.value.methods,
                 route.value.uri,
                 function (params, api_ctx)

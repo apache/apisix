@@ -73,22 +73,11 @@ function _M.rewrite_phase()
     end
 
     core.ctx.set_vars_meta(api_ctx)
+    ngx_ctx.api_ctx = api_ctx
+
     local method = api_ctx.var["method"]
     local uri =  api_ctx.var["uri"]
     -- local host = api_ctx.var["host"] -- todo: support host
-
-    -- run the api router
-    local api_router = plugin.api_router()
-    if api_router and api_router.dispatch then
-        local ok = api_router:dispatch(method, uri, api_ctx)
-        if ok then
-            -- core.log.warn("finish api route")
-            return
-        end
-    end
-
-    ngx_ctx.api_ctx = api_ctx
-
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
         core.log.warn("not find any matched route")
@@ -99,6 +88,10 @@ function _M.rewrite_phase()
     --               core.json.encode(api_ctx.matched_route, true))
 
     local route = api_ctx.matched_route
+    if not route then
+        return
+    end
+
     if route.value.service_id then
         -- core.log.warn("matched route: ", core.json.encode(route.value))
         local service = service_fetch(route.value.service_id)
