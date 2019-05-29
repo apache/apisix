@@ -4,8 +4,7 @@ local require = require
 local core = require("apisix.core")
 local router = require("apisix.route").get
 local plugin = require("apisix.plugin")
-local new_tab = require("table.new")
-local load_balancer = require("apisix.balancer") .run
+local load_balancer = require("apisix.balancer").run
 local service_fetch = require("apisix.service").get
 local ngx = ngx
 
@@ -38,18 +37,30 @@ local function run_plugin(phase, filter_plugins, api_ctx)
 
     filter_plugins = filter_plugins or api_ctx.filter_plugins
     if not filter_plugins then
-        return
+        return api_ctx
+    end
+
+    if phase ~= "log" then
+        for i = 1, #filter_plugins, 2 do
+            local phase_fun = filter_plugins[i][phase]
+            if phase_fun then
+                local code, body = phase_fun(filter_plugins[i + 1], api_ctx)
+                if code or body then
+                    core.response.exit(code, body)
+                end
+            end
+        end
+        return api_ctx
     end
 
     for i = 1, #filter_plugins, 2 do
         local phase_fun = filter_plugins[i][phase]
         if phase_fun then
-            local code, body = phase_fun(filter_plugins[i + 1], api_ctx)
-            if phase ~= "log" and type(code) == "number" or body then
-                core.response.exit(code, body)
-            end
+            phase_fun(filter_plugins[i + 1], api_ctx)
         end
     end
+
+    return api_ctx
 end
 
 
@@ -58,8 +69,7 @@ function _M.rewrite_phase()
     local api_ctx = ngx_ctx.api_ctx
 
     if api_ctx == nil then
-        -- todo: reuse this table
-        api_ctx = new_tab(0, 32)
+        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     end
 
     core.ctx.set_vars_meta(api_ctx)
@@ -127,7 +137,11 @@ function _M.header_filter_phase()
 end
 
 function _M.log_phase()
-    run_plugin("log")
+    local api_ctx = run_plugin("log")
+    if api_ctx then
+        core.ctx.release_vars(api_ctx)
+        core.tablepool.release("api_ctx", api_ctx)
+    end
 end
 
 function _M.balancer_phase()

@@ -34,10 +34,10 @@ end
 
 
 return {
-    version = 0.1,
-    log = require("apisix.core.log"),
-    config = require("apisix.core.config_etcd"),
-    json = {
+    version  = 0.1,
+    log      = require("apisix.core.log"),
+    config   = require("apisix.core.config_etcd"),
+    json     = {
         encode = function(data, force)
             if force then
                 data = tab_clone_with_serialise(data)
@@ -47,11 +47,12 @@ return {
         end,
         decode = require("cjson.safe").decode,
     },
-    table = require("apisix.core.table"),
+    table    = require("apisix.core.table"),
     request  = require("apisix.core.request"),
     response = require("apisix.core.response"),
     typeof   = require("apisix.core.typeof"),
     lrucache = require("apisix.core.lrucache"),
     schema   = require("apisix.core.schema"),
     ctx      = require("apisix.core.ctx"),
+    tablepool= require("tablepool"),
 }
