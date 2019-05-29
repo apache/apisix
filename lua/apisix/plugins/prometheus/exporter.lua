@@ -27,7 +27,7 @@ function _M.log(conf, ctx)
     core.table.insert_tail(t, ctx.var.status, ctx.var.host)
     metrics.status:inc(1, t)
 
-    core.log.warn("hit prometheuse plugin")
+    core.log.info("hit prometheuse plugin")
 end
 
 end -- do

@@ -40,6 +40,7 @@
 -- https://github.com/knyar/nginx-lua-prometheus
 -- Released under MIT license.
 
+local ipairs = ipairs
 
 -- Default set of latency buckets, 5ms to 10s:
 local DEFAULT_BUCKETS = {0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.2, 0.3,

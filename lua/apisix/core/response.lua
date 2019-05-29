@@ -1,9 +1,9 @@
 -- Copyright (C) Yuansheng Wang
 
+local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local ngx_say = ngx.say
 local ngx_header = ngx.header
-local encode_json = require("cjson.safe").encode
 local error = error
 local select = select
 local type = type
@@ -67,12 +67,14 @@ function _M.say(...)
 end
 
 
-function _M.set_header(name, value)
+function _M.set_header(...)
     if ngx.headers_sent then
       error("headers have already been sent", 2)
     end
 
-    ngx_header[name] = value
+    for i = 1, select('#', ...), 2 do
+        ngx_header[select(i, ...)] = select(i + 1, ...)
+    end
 end
 
 
