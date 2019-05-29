@@ -1,3 +1,4 @@
+local tablepool = require "tablepool"
 local new_tab = require("table.new")
 local ngx_var = ngx.var
 local setmetatable = setmetatable
@@ -31,8 +32,17 @@ do
     }
 
 function _M.set_vars_meta(ctx)
-    ctx.var = new_tab(0, 32)
+    ctx.var = tablepool.fetch("ctx_var", 0, 32)
     setmetatable(ctx.var, mt)
+end
+
+function _M.release_vars(ctx)
+    if ctx.var == nil then
+        return
+    end
+
+    tablepool.release("ctx_var", ctx.var)
+    ctx.var = nil
 end
 
 end -- do
