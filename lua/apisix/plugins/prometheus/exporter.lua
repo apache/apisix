@@ -26,18 +26,27 @@ function _M.init()
 
     -- per service
     metrics.status = prometheus:counter("http_status",
-                                        "HTTP status codes per service in APIsix",
+                                        "HTTP status codes per service in Apisix",
                                         {"code", "service"})
+
+    metrics.bandwidth = prometheus:counter("bandwidth",
+            "Total bandwidth in bytes consumed per service in Apisix",
+            {"type", "service"})
 end
 
 
 function _M.log(conf, ctx)
     core.table.clear(tmp_tab)
 
-    core.table.insert_tail(tmp_tab, ctx.var.status, ctx.var.host)
+    local host = ctx.var.host
+    core.table.set(tmp_tab, ctx.var.status, host)
     metrics.status:inc(1, tmp_tab)
 
-    core.log.info("hit prometheuse plugin")
+    tmp_tab[1] = "ingress"
+    metrics.bandwidth:inc(ctx.var.request_length, tmp_tab)
+
+    tmp_tab[1] = "egress"
+    metrics.bandwidth:inc(ctx.var.bytes_sent, tmp_tab)
 end
 
 

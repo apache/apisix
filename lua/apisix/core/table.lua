@@ -20,4 +20,11 @@ function _M.insert_tail(tab, ...)
 end
 
 
+function _M.set(tab, ...)
+    for i = 1, select('#', ...) do
+        tab[i] = select(i, ...)
+    end
+end
+
+
 return _M
