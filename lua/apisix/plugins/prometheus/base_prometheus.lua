@@ -162,7 +162,10 @@ function full_metric_name(name, label_names, label_values)
     return name
   end
 
-  idx = 0
+  items[1] = name
+  items[2] = "{"
+  idx = 2
+
   for i, key in ipairs(label_names) do
     local label_value = label_values[i]
     if type(label_value) == "string" then
@@ -177,7 +180,7 @@ function full_metric_name(name, label_names, label_values)
         end
     end
 
-    if idx > 0 then
+    if idx > 2 then
         idx = idx + 1
         items[idx] = ","
     end
@@ -188,7 +191,8 @@ function full_metric_name(name, label_names, label_values)
     items[idx + 4] = [["]]
     idx = idx + 4
   end
-  return name .. "{" .. concat(items) .. "}"
+  items[idx + 1] = "}"
+  return (concat(items))
 end
 
 end -- do
