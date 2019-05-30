@@ -23,7 +23,7 @@ do
                 val = get_var(name, t._request)
             end
 
-            if val then
+            if val ~= nil then
                 t[name] = val
             end
 
