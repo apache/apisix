@@ -42,11 +42,12 @@ Now, you can try APISIX, go to [**Quickstart**](#quickstart).
 * [lua-resty-r3] Setups the [resty-r3#install](https://github.com/iresty/lua-resty-r3#install) library.
 * [lua-resty-etcd] Setups the [resty-etcd#install](https://github.com/iresty/lua-resty-etcd#install) library.
 * [lua-resty-balancer] Setups the [resty-balancer#install](https://github.com/iresty/lua-resty-balancer#installation) library.
+* [lua-var-nginx-module] Setups the [lua-var-nginx-module#install](https://github.com/iresty/lua-var-nginx-module#install) library, this C module is optional, it will use `ngx.var.*` if the C module is not found.
 
 > Install by luarocks
 
 ```shell
-luarocks install lua-resty-r3 lua-resty-etcd lua-resty-balancer
+luarocks install lua-resty-r3 lua-resty-etcd lua-resty-balancer lua-resty-ngxvar
 ```
 
 ## Quickstart
