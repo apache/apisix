@@ -3,7 +3,15 @@
 local base_prometheus = require("apisix.plugins.prometheus.base_prometheus")
 local prometheus = base_prometheus.init("prometheus_metrics", "apisix_")
 local core = require("apisix.core")
+local ipairs = ipairs
+local ngx_capture = ngx.location.capture
+local re_gmatch = ngx.re.gmatch
+
+
+local ngx_statu_items = {"active", "accepted", "handled", "total", "reading",
+                         "writing", "waiting"}
 local metrics = {}
+local tmp_tab = {}
 
 
 local _M = {version = 0.1}
@@ -11,6 +19,11 @@ local _M = {version = 0.1}
 
 function _M.init()
     core.table.clear(metrics)
+    -- across all services
+    metrics.connections = prometheus:gauge("nginx_http_current_connections",
+                                           "Number of HTTP connections",
+                                           {"state"})
+
     -- per service
     metrics.status = prometheus:counter("http_status",
                                         "HTTP status codes per service in APIsix",
@@ -18,19 +31,44 @@ function _M.init()
 end
 
 
-do
-    local t = {}
-
 function _M.log(conf, ctx)
-    core.table.clear(t)
+    core.table.clear(tmp_tab)
 
-    core.table.insert_tail(t, ctx.var.status, ctx.var.host)
-    metrics.status:inc(1, t)
+    core.table.insert_tail(tmp_tab, ctx.var.status, ctx.var.host)
+    metrics.status:inc(1, tmp_tab)
 
     core.log.info("hit prometheuse plugin")
 end
 
-end -- do
+
+local function nginx_status()
+    local res = ngx_capture("/apisix.com/nginx_status")
+    if not res or res.status ~= 200 then
+        return
+    end
+
+    -- Active connections: 2
+    -- server accepts handled requests
+    --   26 26 84
+    -- Reading: 0 Writing: 1 Waiting: 1
+
+    local iterator, err = re_gmatch(res.body, [[(\d+)]], "jmo")
+    if not iterator then
+        core.log.error("failed to re.gmatch Nginx status: ", err)
+        return
+    end
+
+    core.table.clear(tmp_tab)
+    for _, name in ipairs(ngx_statu_items) do
+        local val = iterator()
+        if not val then
+            break
+        end
+
+        tmp_tab[1] = name
+        metrics.connections:set(val[0], tmp_tab)
+    end
+end
 
 
 function _M.collect()
@@ -41,6 +79,7 @@ function _M.collect()
     end
 
     -- metrics.connections:set(ngx.time(), label_values.active)
+    nginx_status()
 
     prometheus:collect()
 end
