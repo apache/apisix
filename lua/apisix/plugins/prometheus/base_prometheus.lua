@@ -164,22 +164,24 @@ function full_metric_name(name, label_names, label_values)
 
   idx = 0
   for i, key in ipairs(label_names) do
-    local org_label_value = label_values[i]
-    local label_value = lru:get(org_label_value)
-    if not label_value then
-        if type(org_label_value) == "string" then
+    local label_value = label_values[i]
+    if type(label_value) == "string" then
+        local org_label_value = label_value
+        label_value = lru:get(org_label_value)
+        if not label_value then
             label_value = tostring(org_label_value)
-                :gsub("[^\032-\126]", "")  -- strip non-printable characters
-                :gsub("\\", "\\\\")
-                :gsub('"', '\\"')
+                    :gsub("[^\032-\126]", "")  -- strip non-printable characters
+                    :gsub("\\", "\\\\")
+                    :gsub('"', '\\"')
+            lru:set(org_label_value, label_value)
         end
-        lru:set(org_label_value, label_value)
     end
 
     if idx > 0 then
         idx = idx + 1
         items[idx] = ","
     end
+
     items[idx + 1] = key
     items[idx + 2] = [[="]]
     items[idx + 3] = label_value
