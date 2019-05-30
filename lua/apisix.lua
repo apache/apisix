@@ -75,9 +75,9 @@ function _M.rewrite_phase()
     core.ctx.set_vars_meta(api_ctx)
     ngx_ctx.api_ctx = api_ctx
 
-    local method = api_ctx.var["method"]
-    local uri =  api_ctx.var["uri"]
-    -- local host = api_ctx.var["host"] -- todo: support host
+    local method = api_ctx.var.method
+    local uri =  api_ctx.var.uri
+    -- local host = api_ctx.var.host -- todo: support host
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
         core.log.warn("not find any matched route")
