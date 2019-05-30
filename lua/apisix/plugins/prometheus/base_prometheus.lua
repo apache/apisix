@@ -192,7 +192,7 @@ function full_metric_name(name, label_names, label_values)
     idx = idx + 4
   end
   items[idx + 1] = "}"
-  return (concat(items))
+  return (concat(items, "", 1, idx + 1))
 end
 
 end -- do
