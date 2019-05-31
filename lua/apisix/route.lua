@@ -11,8 +11,10 @@ local conf_routes
 
 local _M = {}
 
-
+    local empty_tab = {}
 local function create_r3_router(routes)
+    routes = routes or empty_tab
+
     local api_routes = plugin.api_routes()
     local items = core.table.new(#api_routes + #routes, 0)
     local idx = 0
