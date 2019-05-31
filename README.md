@@ -137,12 +137,15 @@ which is the HTTP benchmarking tool.
 Only used APISIX as the reverse proxy server, with no logging, limit rate, or other plugins enabled,
 and the response size was 1KB.
 
+#### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
 ![](doc/benchmark-1.jpg)
 
-Note the x-axis latency in **microsecond(μs)** not millisecond.
+#### Latency
+Note the y-axis latency in **microsecond(μs)** not millisecond.
 ![](doc/latency-1.jpg)
 
+#### Flame Graph
 The result of Flame Graph:
 ![](doc/flamegraph-1.jpg)
 
@@ -175,12 +178,15 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 Only used APISIX as the reverse proxy server, enabled the limit rate and prometheus plugins,
 and the response size was 1KB.
 
+#### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
 ![](doc/benchmark-2.jpg)
 
-Note the x-axis latency in **microsecond(μs)** not millisecond.
+#### Latency
+Note the y-axis latency in **microsecond(μs)** not millisecond.
 ![](doc/latency-2.jpg)
 
+#### Flame Graph
 The result of Flame Graph:
 ![](doc/flamegraph-2.jpg)
 
