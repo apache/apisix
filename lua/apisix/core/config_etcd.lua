@@ -18,7 +18,7 @@ local pcall=pcall
 
 
 local _M = {
-    _version = 0.1,
+    version = 0.1,
     local_conf = fetch_local_conf,
 }
 local mt = {
@@ -165,7 +165,7 @@ function _M.fetch(self)
         end
     end
 
-    self.version = self.version + 1
+    self.conf_version = self.conf_version + 1
     return self.values
 end
 
@@ -235,7 +235,7 @@ function _M.new(key, opts)
         automatic = automatic,
         sync_times = 0,
         running = true,
-        version = 0,
+        conf_version = 0,
     }, mt)
 
     if automatic then
@@ -255,7 +255,7 @@ function _M.close(self)
 end
 
 
-local function read_version(etcd_cli)
+local function read_etcd_version(etcd_cli)
     if not etcd_cli then
         return nil, "not inited"
     end
@@ -279,7 +279,7 @@ function _M.server_version(self)
         return nil, "stoped"
     end
 
-    return read_version(self.etcd_cli)
+    return read_etcd_version(self.etcd_cli)
 end
 
 
