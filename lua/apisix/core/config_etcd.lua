@@ -18,7 +18,7 @@ local pcall=pcall
 
 
 local _M = {
-    version = 0.1,
+    _version = 0.1,
     local_conf = fetch_local_conf,
 }
 local mt = {
@@ -27,7 +27,6 @@ local mt = {
         return " etcd key: " .. self.key
     end
 }
-
 
 local function readdir(etcd_cli, key)
     if not etcd_cli then
@@ -80,6 +79,10 @@ end
 
 
 function _M.fetch(self)
+    if not self.key then
+        return nil, "missing 'key' arguments"
+    end
+
     if self.values == nil then
         local dir_res, err = readdir(self.etcd_cli, self.key)
         if not dir_res then
@@ -210,10 +213,6 @@ end
 
 
 function _M.new(key, opts)
-    if not key then
-        return nil, "missing `key` argument"
-    end
-
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, err
@@ -240,6 +239,10 @@ function _M.new(key, opts)
     }, mt)
 
     if automatic then
+        if not key then
+            return nil, "missing `key` argument"
+        end
+
         ngx_timer_at(0, _automatic_fetch, obj)
     end
 
@@ -249,6 +252,34 @@ end
 
 function _M.close(self)
     self.running = false
+end
+
+
+local function read_version(etcd_cli)
+    if not etcd_cli then
+        return nil, "not inited"
+    end
+
+    local data, err = etcd_cli:version()
+    if not data then
+        return nil, err
+    end
+
+    local body = data.body
+    if type(body) ~= "table" then
+        return nil, "failed to read response body when try to fetch etcd "
+                    .. "version"
+    end
+
+    return body
+end
+
+function _M.server_version(self)
+    if not self.running then
+        return nil, "stoped"
+    end
+
+    return read_version(self.etcd_cli)
 end
 
 

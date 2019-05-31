@@ -8,8 +8,6 @@ local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
 
 
-local ngx_statu_items = {"active", "accepted", "handled", "total", "reading",
-                         "writing", "waiting"}
 local metrics = {}
 local tmp_tab = {}
 
@@ -21,13 +19,16 @@ function _M.init()
     core.table.clear(metrics)
     -- across all services
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
-                                           "Number of HTTP connections",
-                                           {"state"})
+            "Number of HTTP connections",
+            {"state"})
+
+    metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
+            "Config server etcd reachable from Apisix, 0 is unreachable")
 
     -- per service
     metrics.status = prometheus:counter("http_status",
-                                        "HTTP status codes per service in Apisix",
-                                        {"code", "service"})
+            "HTTP status codes per service in Apisix",
+            {"code", "service"})
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in Apisix",
@@ -50,6 +51,8 @@ function _M.log(conf, ctx)
 end
 
 
+    local ngx_statu_items = {"active", "accepted", "handled", "total",
+                             "reading", "writing", "waiting"}
 local function nginx_status()
     local res = ngx_capture("/apisix.com/nginx_status")
     if not res or res.status ~= 200 then
@@ -87,8 +90,20 @@ function _M.collect()
         return 500, {message = "An unexpected error occurred"}
     end
 
-    -- metrics.connections:set(ngx.time(), label_values.active)
+    -- across all services
     nginx_status()
+
+    -- config server status
+    local config = core.config.new()
+    local version, err = config:server_version()
+    if version then
+        metrics.etcd_reachable:set(1)
+
+    else
+        metrics.etcd_reachable:set(0)
+        core.log.err("prometheus: failed to reach config server while processing",
+                     "metrics endpoint: ", err)
+    end
 
     prometheus:collect()
 end

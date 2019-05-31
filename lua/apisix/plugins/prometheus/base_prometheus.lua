@@ -153,8 +153,8 @@ Prometheus.initialized = false
 local full_metric_name
 do
     local lru = require("resty.lrucache").new(128)
-    local items = {}
-    local idx = 0
+    local name_items = {}
+    local name_idx = 0
     local concat = table.concat
 
 function full_metric_name(name, label_names, label_values)
@@ -162,9 +162,9 @@ function full_metric_name(name, label_names, label_values)
     return name
   end
 
-  items[1] = name
-  items[2] = "{"
-  idx = 2
+  name_items[1] = name
+  name_items[2] = "{"
+  name_idx = 2
 
   for i, key in ipairs(label_names) do
     local label_value = label_values[i]
@@ -180,19 +180,19 @@ function full_metric_name(name, label_names, label_values)
         end
     end
 
-    if idx > 2 then
-        idx = idx + 1
-        items[idx] = ","
+    if name_idx > 2 then
+        name_idx = name_idx + 1
+        name_items[name_idx] = ","
     end
 
-    items[idx + 1] = key
-    items[idx + 2] = [[="]]
-    items[idx + 3] = label_value
-    items[idx + 4] = [["]]
-    idx = idx + 4
+    name_items[name_idx + 1] = key
+    name_items[name_idx + 2] = [[="]]
+    name_items[name_idx + 3] = label_value
+    name_items[name_idx + 4] = [["]]
+    name_idx = name_idx + 4
   end
-  items[idx + 1] = "}"
-  return (concat(items, "", 1, idx + 1))
+  name_items[name_idx + 1] = "}"
+  return concat(name_items, "", 1, name_idx + 1)
 end
 
 end -- do
