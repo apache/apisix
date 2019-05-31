@@ -43,8 +43,8 @@ end
 
 
 function _M.get()
-    -- core.log.warn("conf_routes.version: ", conf_routes.version)
-    return core.lrucache.global("/routes", conf_routes.version,
+    -- core.log.warn("conf_routes.conf_version: ", conf_routes.conf_version)
+    return core.lrucache.global("/routes", conf_routes.conf_version,
                                 create_r3_router, conf_routes.values)
 end
 

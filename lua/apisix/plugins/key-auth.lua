@@ -49,7 +49,7 @@ function _M.access(conf, ctx)
     end
 
     local consumers_hash = core.lrucache.plugin(plugin_name, "consumers_key",
-                                consumers.version, create_consume_cache)
+                                consumers.conf_version, create_consume_cache)
 
     local consumer_id = consumers_hash[key]
     if not consumer_id then
