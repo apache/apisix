@@ -80,7 +80,7 @@ function _M.rewrite_phase()
     -- local host = api_ctx.var.host -- todo: support host
     local ok = router():dispatch(method, uri, api_ctx)
     if not ok then
-        core.log.warn("not find any matched route")
+        core.log.info("not find any matched route")
         return core.response.exit(404)
     end
 
