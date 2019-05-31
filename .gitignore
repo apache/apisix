@@ -40,7 +40,7 @@ luac.out
 *.hex
 
 # develop
-logs
+logs/*.log
 t/servroot
 go
 \.*
