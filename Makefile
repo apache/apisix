@@ -1,3 +1,7 @@
+INST_PREFIX ?= /usr
+INST_LIBDIR ?= $(INST_PREFIX)/lib64/lua/5.1
+INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
+INSTALL ?= install
 
 ### help:		Show Makefile rules.
 .PHONY: help
@@ -30,3 +34,18 @@ clean:
 .PHONY: reload
 reload:
 	sudo $$(which openresty) -p $$PWD/ -s reload
+
+
+### install:		Install the Apisix
+.PHONY: install
+install:
+	$(INSTALL) -d $(INST_LUADIR)/apisix/logs/
+	$(INSTALL) logs/placehold.txt $(INST_LUADIR)/apisix/logs/
+	cp -r lua $(INST_LUADIR)/apisix/
+	cp -r conf $(INST_LUADIR)/apisix/
+	cp -r lua $(INST_LUADIR)/apisix/
+	cp -r doc $(INST_LUADIR)/apisix/doc
+	chmod 644 $(INST_LUADIR)/apisix/conf/config.yaml
+	$(INSTALL) COPYRIGHT $(INST_LUADIR)/apisix/
+	$(INSTALL) README.md $(INST_LUADIR)/apisix/
+	$(INSTALL) README_CN.md $(INST_LUADIR)/apisix/
