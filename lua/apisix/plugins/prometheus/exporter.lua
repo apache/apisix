@@ -56,6 +56,7 @@ end
 local function nginx_status()
     local res = ngx_capture("/apisix.com/nginx_status")
     if not res or res.status ~= 200 then
+        core.log.error("failed to fetch Nginx status")
         return
     end
 
