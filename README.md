@@ -48,7 +48,7 @@ Now, you can try APISIX, go to [**Quickstart**](#quickstart).
 > Install by luarocks
 
 ```shell
-luarocks install lua-resty-libr3 lua-resty-etcd lua-resty-balancer lua-resty-ngxvar
+luarocks install apisix
 ```
 
 ## Quickstart
