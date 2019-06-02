@@ -11,8 +11,7 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 ## Install
 
-### CentOS
-#### Dependencies
+### Dependencies
 
 - OpenResty
 ```shell
@@ -26,7 +25,7 @@ sudo yum install openresty
 sudo yum install etcd
 ```
 
-#### Install from RPM
+### Install from RPM
 ```shell
 wget http://39.97.63.215/download/apisix-0.1-2.noarch.rpm
 sudo rpm -ivh apisix-0.1-2.noarch.rpm
@@ -36,20 +35,22 @@ If no error has occurred, APISIX is already installed in this directory: `/usr/s
 
 Now, you can try APISIX, go to [**Quickstart**](#quickstart).
 
-### Source Install
+### Install from Source
+Now OpenResty and etcd are installed, we can use Luarocks to install APISIX’s Lua sources:
 
-> Dependent library
+#### Install by Luarocks
+
+```shell
+luarocks install apisix
+```
+
+If you want to know more details, the Luarocks will clone and compile the following dependencies:
 
 * [lua-resty-r3] Setups the [resty-r3#install](https://github.com/iresty/lua-resty-r3#install) library.
 * [lua-resty-etcd] Setups the [resty-etcd#install](https://github.com/iresty/lua-resty-etcd#install) library.
 * [lua-resty-balancer] Setups the [resty-balancer#install](https://github.com/iresty/lua-resty-balancer#installation) library.
 * [lua-var-nginx-module] Setups the [lua-var-nginx-module#install](https://github.com/iresty/lua-var-nginx-module#install) library, this C module is optional, it will use `ngx.var.*` if the C module is not found.
 
-> Install by luarocks
-
-```shell
-luarocks install apisix
-```
 
 ## Quickstart
 1. start etcd:
@@ -106,12 +107,6 @@ Content-Length: 222
 Connection: keep-alive
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 0
-Date: Thu, 30 May 2019 08:44:03 GMT
-Server: APISIX web server
-Location: http://www.baidu.com/search/error.html
-Cache-Control: max-age=86400
-Expires: Fri, 31 May 2019 08:44:03 GMT
-
 ...
 ```
 
@@ -119,6 +114,7 @@ Expires: Fri, 31 May 2019 08:44:03 GMT
 ## Distributions
 
 - Docker: TODO
+- LuaRocks: luarocks install apisix
 - CentOS: [RPM for CentOS 7](http://39.97.63.215/download/apisix-0.1-2.noarch.rpm)
 - RedHat: TODO
 - Ubuntu: TODO
