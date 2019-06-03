@@ -5,10 +5,10 @@ local template = require "resty.template"
 local ngx_tpl = [=[
 master_process on;
 
-worker_processes 1;
+worker_processes auto;
 worker_cpu_affinity auto;
 
-error_log logs/error.log warn;
+error_log logs/error.log error;
 pid logs/nginx.pid;
 
 worker_rlimit_nofile 20480;
@@ -24,9 +24,9 @@ http {
     lua_package_path "{*lua_path*};$prefix/lua/?.lua;;";
     lua_package_cpath "{*lua_cpath*};;";
 
-    lua_shared_dict plugin-limit-req 10m;
-    lua_shared_dict plugin-limit-count 10m;
-    lua_shared_dict prometheus_metrics 10m;
+    lua_shared_dict plugin-limit-req    10m;
+    lua_shared_dict plugin-limit-count  10m;
+    lua_shared_dict prometheus_metrics  10m;
 
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
@@ -41,8 +41,6 @@ http {
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
 
     access_log logs/access.log main buffer=32768 flush=3;
-
-    open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
 
     server_tokens off;
@@ -117,7 +115,7 @@ http {
 local function write_file(file_path, data)
     local file = io.open(file_path, "w+")
     if not file then
-        return false, "faled to open file: " .. file_path
+        return false, "failed to open file: " .. file_path
     end
 
     file:write(data)
@@ -184,7 +182,7 @@ function _M.start()
         return error("failed to find home path of apisix")
     end
 
-    os.execute([[sudo openresty -p ]] .. home_path)
+    os.execute([[openresty -p ]] .. home_path)
 end
 
 function _M.stop()
@@ -193,7 +191,8 @@ function _M.stop()
         return error("failed to find home path of apisix")
     end
 
-    os.execute([[sudo openresty -p ]] .. home_path .. [[ -s stop]])
+    -- todo: use single to reload
+    os.execute([[openresty -p ]] .. home_path .. [[ -s stop]])
 end
 
 function _M.reload()
@@ -202,7 +201,8 @@ function _M.reload()
         return error("failed to find home path of apisix")
     end
 
-    os.execute([[sudo openresty -p ]] .. home_path .. [[ -s reload]])
+    -- todo: use single to reload
+    os.execute([[openresty -p ]] .. home_path .. [[ -s reload]])
 end
 
 local cmd_action = arg[1]
