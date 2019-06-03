@@ -1,9 +1,15 @@
 # Summary
 
+[![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
+
 APISIX 是一个基于云原生、高速可扩展的开源微服务网关节点实现，其自身主要优势是高性能和强大的扩展性。
 
 APISIX 从 `etcd` 中订阅获取所需的配置并以热更新的方式来更改自身行为，更改 `etcd` 中的配置即可完成对 APISIX
 网关节点的控制，比如：动态上游、请求限速等。
+
+如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
+![](doc/qq-group.png)
 
 ## Route
 
