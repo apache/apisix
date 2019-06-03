@@ -1,6 +1,7 @@
 INST_PREFIX ?= /usr
 INST_LIBDIR ?= $(INST_PREFIX)/lib64/lua/5.1
 INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
+LUA_BINDIR ?= /usr/bin
 INSTALL ?= install
 
 ### help:		Show Makefile rules.
@@ -44,8 +45,11 @@ install:
 	cp -r lua $(INST_LUADIR)/apisix/
 	cp -r conf $(INST_LUADIR)/apisix/
 	cp -r lua $(INST_LUADIR)/apisix/
-	cp -r doc $(INST_LUADIR)/apisix/doc
+	cp -r doc $(INST_LUADIR)/apisix/
+	cp -r cli $(INST_LUADIR)/apisix/cli
 	chmod 644 $(INST_LUADIR)/apisix/conf/config.yaml
 	$(INSTALL) COPYRIGHT $(INST_LUADIR)/apisix/
 	$(INSTALL) README.md $(INST_LUADIR)/apisix/
 	$(INSTALL) README_CN.md $(INST_LUADIR)/apisix/
+	$(INSTALL) init.lua $(INST_LUADIR)/apisix/
+	$(INSTALL) cli/apisix.lua $(LUA_BINDIR)/apisix
