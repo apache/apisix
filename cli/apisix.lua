@@ -151,7 +151,7 @@ function _M.help()
 Usage: apisix <argument>
 
 help:       show this message, then exit
-run:        start the apisix server
+start:      start the apisix server
 stop:       stop the apisix server
 reload:     reload the apisix server
 ]])
@@ -176,6 +176,33 @@ function _M.init()
     else
         print("succeed to update nginx.conf")
     end
+end
+
+function _M.start()
+    local home_path = apisix_home()
+    if not home_path then
+        return error("failed to find home path of apisix")
+    end
+
+    os.execute([[sudo openresty -p ]] .. home_path)
+end
+
+function _M.stop()
+    local home_path = apisix_home()
+    if not home_path then
+        return error("failed to find home path of apisix")
+    end
+
+    os.execute([[sudo openresty -p ]] .. home_path .. [[ -s stop]])
+end
+
+function _M.reload()
+    local home_path = apisix_home()
+    if not home_path then
+        return error("failed to find home path of apisix")
+    end
+
+    os.execute([[sudo openresty -p ]] .. home_path .. [[ -s reload]])
 end
 
 local cmd_action = arg[1]
