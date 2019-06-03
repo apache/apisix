@@ -146,7 +146,8 @@ local function apisix_home()
     for k, _ in string_gmatch(package.path, "[^;]+") do
         local fpath = string_match(k, "(.*/)")
         fpath = fpath .. "apisix"
-        local f = io_open(fpath .. "/conf/nginx.conf")
+        -- print("fpath: ", fpath .. "/conf/config.yaml")
+        local f = io_open(fpath .. "/conf/config.yaml")
         if f ~= nil then
             io_close(f)
             return fpath
@@ -191,7 +192,7 @@ reload:     reload the apisix server
 ]])
 end
 
-function _M.init()
+local function init()
     -- read_yaml_conf
     local yaml_conf, err = read_yaml_conf()
     if not yaml_conf then
@@ -218,12 +219,12 @@ function _M.init()
     local ok, err = write_file(home_path .. "/conf/nginx.conf", ngxconf)
     if not ok then
         error("failed to update nginx.conf: " .. err)
-    else
-        print("succeed to update nginx.conf")
     end
 end
+_M.init = init
 
 function _M.start()
+    init()
     local home_path = apisix_home()
     if not home_path then
         error("failed to find home path of apisix")
