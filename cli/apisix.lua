@@ -6,7 +6,7 @@ local ngx_tpl = [=[
 master_process on;
 
 worker_processes auto;
-worker_cpu_affinity auto;
+# worker_cpu_affinity auto;
 
 error_log logs/error.log error;
 pid logs/nginx.pid;
