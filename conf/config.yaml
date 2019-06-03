@@ -1,3 +1,6 @@
+apisix:
+  node_listen: 9080
+
 etcd:
   host: "http://127.0.0.1:2379"
   prefix: "/v2/keys/apisix"
