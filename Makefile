@@ -42,8 +42,11 @@ reload:
 install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/logs/
 	$(INSTALL) logs/placehold.txt $(INST_LUADIR)/apisix/logs/
+	$(INSTALL) -d $(INST_LUADIR)/apisix/conf/
+	$(INSTALL) conf/mime.types $(INST_LUADIR)/apisix/conf/mime.types
+	$(INSTALL) conf/nginx.conf $(INST_LUADIR)/apisix/conf/nginx.conf
+	./utils/install_nginx_conf.sh $(INST_LUADIR)/apisix/conf/config.yaml
 	cp -r lua $(INST_LUADIR)/apisix/
-	cp -r conf $(INST_LUADIR)/apisix/
 	cp -r lua $(INST_LUADIR)/apisix/
 	cp -r doc $(INST_LUADIR)/apisix/
 	cp -r cli $(INST_LUADIR)/apisix/cli
