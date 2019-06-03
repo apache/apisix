@@ -12,6 +12,7 @@ local ipairs = ipairs
 local setmetatable = setmetatable
 local ngx_sleep = ngx.sleep
 local ngx_timer_at = ngx.timer.at
+local ngx_time = ngx.time
 local sub_str = string.sub
 local tostring = tostring
 local pcall=pcall
@@ -197,11 +198,23 @@ local function _automatic_fetch(premature, self)
             break
 
         elseif not res and err then
-            if err ~= "timeout" and err ~= "Key not found" then
+            if err ~= "timeout" and err ~= "Key not found"
+               and self.last_err ~= err then
                 log.error("failed to fetch data from etcd: ", err, ", ",
                           tostring(self))
             end
+
             ngx_sleep(3)
+
+            if err ~= self.last_err then
+                self.last_err = err
+                self.last_err_time = ngx_time()
+            else
+                if ngx_time() - self.last_err_time >= 30 then
+                    self.last_err = nil
+                end
+            end
+
             break
         end
     end
@@ -236,6 +249,8 @@ function _M.new(key, opts)
         sync_times = 0,
         running = true,
         conf_version = 0,
+        last_err = nil,
+        last_err_time = nil,
     }, mt)
 
     if automatic then
