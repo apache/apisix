@@ -101,12 +101,18 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 
 ```shell
 $ curl -i http://127.0.0.1:9080/index.html
-HTTP/1.1 302 Found
-Content-Type: text/html; charset=iso-8859-1
-Content-Length: 222
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 13175
 Connection: keep-alive
 X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 0
+X-RateLimit-Remaining: 1
+Server: APISIX web server
+Date: Mon, 03 Jun 2019 09:38:32 GMT
+Last-Modified: Wed, 24 Apr 2019 00:14:17 GMT
+ETag: "5cbfaa59-3377"
+Accept-Ranges: bytes
+
 ...
 ```
 
