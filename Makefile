@@ -52,3 +52,6 @@ install:
 	$(INSTALL) README.md $(INST_LUADIR)/apisix/
 	$(INSTALL) README_CN.md $(INST_LUADIR)/apisix/
 	$(INSTALL) cli/apisix.lua $(INST_BINDIR)/apisix
+
+test:
+	prove -I../test-nginx/lib -r -s t/
