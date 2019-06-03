@@ -149,6 +149,7 @@ function _M.help()
 Usage: apisix <argument>
 
 help:       show this message, then exit
+init:       initialize all configurations
 start:      start the apisix server
 stop:       stop the apisix server
 reload:     reload the apisix server
