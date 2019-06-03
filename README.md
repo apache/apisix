@@ -80,7 +80,7 @@ For the convenience of testing, we set up a maximum of 2 visits in 60 seconds, a
 curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
 	"methods": ["GET"],
-	"uri": "/hello",
+	"uri": "/index.html",
 	"id": 1,
 	"plugin_config": {
 		"limit-count": {
@@ -93,15 +93,14 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 	"upstream": {
 		"type": "roundrobin",
 		"nodes": {
-			"220.181.57.215:80": 1,
-			"220.181.57.216:80": 1
+			"39.97.63.215:80": 1
 		}
 	}
 }'
 ```
 
 ```shell
-$ curl -i -H 'Host: baidu.com' http://127.0.0.1:9080/hello
+$ curl -i http://127.0.0.1:9080/index.html
 HTTP/1.1 302 Found
 Content-Type: text/html; charset=iso-8859-1
 Content-Length: 222
