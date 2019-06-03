@@ -22,7 +22,6 @@ cache:
 
 env:
   global:
-    - JOBS=2
     - OPENRESTY_PREFIX=/usr/local/openresty
 
 install:
@@ -50,4 +49,4 @@ script:
   - curl http://127.0.0.1:2379/v2/keys/apisix/routes -X PUT -d dir=true
   - curl http://127.0.0.1:2379/v2/keys/apisix/upstreams -X PUT -d dir=true
   - curl http://127.0.0.1:2379/v2/keys/apisix/services -X PUT -d dir=true
-  - make test jobs=$JOBS
+  - make test
