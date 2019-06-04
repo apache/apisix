@@ -20,7 +20,7 @@ please see: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install
 ### Install apisix
 
 ```shell
-luarocks install apisix
+sudo luarocks install apisix
 ```
 
 If you see `apisix *** is now built and installed`, the apisix is already
