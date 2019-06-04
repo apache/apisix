@@ -12,10 +12,11 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 ## Install
 
-### Dependencies
+APISIX Installed and tested in the following systems: CentOS 7、Ubuntu 18.04 and Debian 9.
+We will add support for Docker and more OS shortly.
 
-For different system depending on the different compilation tools,
-please see: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
+### Dependencies
+We recommend that you use luarocks to install APISIX, and for different operating systems have different dependencies, details are here: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
 
 ### Install apisix
 
@@ -23,8 +24,10 @@ please see: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install
 sudo luarocks install apisix
 ```
 
-If you see `apisix *** is now built and installed`, the apisix is already
-installed to your machine.
+If all goes well, you will see the message like this:
+> apisix is now built and installed in /usr (license: Apache License 2.0)
+
+Congratulations, you have already installed APISIX successfully.
 
 ## Quickstart
 
