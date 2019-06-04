@@ -17,7 +17,7 @@ description = {
 dependencies = {
    "lua-resty-libr3 = 0.2",
    "lua-resty-template = 1.9-1",
-   "lua-resty-etcd = 0.4",
+   "lua-resty-etcd = 0.5",
    "lua-resty-balancer = 0.02rc5",
    "lua-resty-ngxvar = 0.2",
 }
