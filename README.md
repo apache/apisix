@@ -28,12 +28,16 @@ sudo service etcd start
 
 sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.3/apisix-0.3-1.el7.noarch.rpm
 ```
+
 You can try APISIX with the [**Quickstart**](#quickstart) now.
 
 ### Install from Luarocks
 
 #### Dependencies
-We recommend that you use luarocks to install APISIX, and for different operating systems have different dependencies, details are here: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
+
+Apisix is based on [openresty](http://openresty.org/), the configures data storage and distribution via [etcd](https://github.com/etcd-io/etcd).
+
+We recommend that you use luarocks to install APISIX, and for different operating systems have different dependencies, see more: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
 
 #### Install apisix
 
