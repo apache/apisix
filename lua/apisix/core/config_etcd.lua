@@ -112,6 +112,7 @@ function _M.fetch(self)
             end
         end
 
+        self.conf_version = self.conf_version + 1
         return self.values
     end
 
