@@ -13,12 +13,29 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 ## Install
 
 APISIX Installed and tested in the following systems: CentOS 7、Ubuntu 18.04 and Debian 9.
+
+You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
+
 We will add support for Docker and more OS shortly.
 
-### Dependencies
+### Install from RPM for CentOS 7
+
+```shell
+sudo yum install yum-utils
+sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+sudo yum install -y openresty etcd
+sudo service etcd start
+
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.3/apisix-0.3-1.el7.noarch.rpm
+```
+You can try APISIX with the [**Quickstart**](#quickstart) now.
+
+### Install from Luarocks
+
+#### Dependencies
 We recommend that you use luarocks to install APISIX, and for different operating systems have different dependencies, details are here: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
 
-### Install apisix
+#### Install apisix
 
 ```shell
 sudo luarocks install apisix
@@ -86,7 +103,7 @@ Accept-Ranges: bytes
 
 - Docker: TODO
 - LuaRocks: luarocks install apisix
-- CentOS: [RPM for CentOS 7](http://39.97.63.215/download/apisix-0.1-2.noarch.rpm)
+- CentOS: [RPM for CentOS 7](https://github.com/iresty/apisix/releases/download/v0.3/apisix-0.3-1.el7.noarch.rpm)
 - RedHat: TODO
 - Ubuntu: TODO
 - Homebrew:TODO
