@@ -14,68 +14,30 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 ### Dependencies
 
-- OpenResty
-```shell
-sudo yum install yum-utils
-sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-sudo yum install openresty
-```
+For different system depending on the different compilation tools,
+please see: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
 
-- etcd
-```shell
-sudo yum install etcd
-```
-
-### Install from RPM
-```shell
-wget http://39.97.63.215/download/apisix-0.1-2.noarch.rpm
-sudo rpm -ivh apisix-0.1-2.noarch.rpm
-```
-
-If no error has occurred, APISIX is already installed in this directory: `/usr/share/lua/5.1/apisix`.
-
-Now, you can try APISIX, go to [**Quickstart**](#quickstart).
-
-### Install from Source
-Now OpenResty and etcd are installed, we can use Luarocks to install APISIX’s Lua sources:
-
-#### Install by Luarocks
+### Install apisix
 
 ```shell
 luarocks install apisix
 ```
 
-If you want to know more details, the Luarocks will clone and compile the following dependencies:
-
-* [lua-resty-r3] Setups the [resty-r3#install](https://github.com/iresty/lua-resty-r3#install) library.
-* [lua-resty-etcd] Setups the [resty-etcd#install](https://github.com/iresty/lua-resty-etcd#install) library.
-* [lua-resty-balancer] Setups the [resty-balancer#install](https://github.com/iresty/lua-resty-balancer#installation) library.
-* [lua-var-nginx-module] Setups the [lua-var-nginx-module#install](https://github.com/iresty/lua-var-nginx-module#install) library, this C module is optional, it will use `ngx.var.*` if the C module is not found.
-
+If you see `apisix *** is now built and installed`, the apisix is already
+installed to your machine.
 
 ## Quickstart
-1. start etcd:
+
+1. start server:
 ```shell
-systemctl start etcd
+sudo apisix start
 ```
 
-2. init etcd:
-```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes -X PUT -d dir=true
+2. try limit count plugin
 
-curl http://127.0.0.1:2379/v2/keys/apisix/upstreams -X PUT -d dir=true
+For the convenience of testing, we set up a maximum of 2 visits in 60 seconds,
+and return 503 if the threshold is exceeded:
 
-curl http://127.0.0.1:2379/v2/keys/apisix/services -X PUT -d dir=true
-```
-
-3. start APISIX:
-```shell
-sudo openresty -p /usr/share/lua/5.1/apisix -c /usr/share/lua/5.1/apisix/conf/nginx.conf
-```
-
-4. try limit count plugin
-
-For the convenience of testing, we set up a maximum of 2 visits in 60 seconds, and return 503 if the threshold is exceeded:
 ```shell
 curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
