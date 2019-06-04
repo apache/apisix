@@ -37,7 +37,7 @@ reload:
 	sudo $$(which openresty) -p $$PWD/ -s reload
 
 
-### install:      Install the Apisix
+### install:      Install the apisix
 .PHONY: install
 install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/logs/
@@ -45,16 +45,9 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/conf/
 	$(INSTALL) conf/mime.types $(INST_LUADIR)/apisix/conf/mime.types
 	$(INSTALL) conf/nginx.conf $(INST_LUADIR)/apisix/conf/nginx.conf
-	./utils/install_nginx_conf.sh $(INST_LUADIR)/apisix/conf/config.yaml
+	./utils/install_yaml_conf.sh $(INST_LUADIR)/apisix/conf/config.yaml
 	cp -r lua $(INST_LUADIR)/apisix/
-	cp -r lua $(INST_LUADIR)/apisix/
-	cp -r doc $(INST_LUADIR)/apisix/
-	cp -r cli $(INST_LUADIR)/apisix/cli
-	chmod 644 $(INST_LUADIR)/apisix/conf/config.yaml
-	$(INSTALL) COPYRIGHT $(INST_LUADIR)/apisix/
-	$(INSTALL) README.md $(INST_LUADIR)/apisix/
-	$(INSTALL) README_CN.md $(INST_LUADIR)/apisix/
-	$(INSTALL) cli/apisix.lua $(INST_BINDIR)/apisix
+	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
 test:
 	prove -I../test-nginx/lib -r -s t/
