@@ -2,6 +2,7 @@
 
 local yaml = require("apisix.lua.apisix.core.yaml")
 local template = require("resty.template")
+local apisix_home = "/usr/local/apisix"
 
 local ngx_tpl = [=[
 master_process on;
@@ -24,7 +25,7 @@ events {
 worker_shutdown_timeout 1;
 
 http {
-    lua_package_path "$prefix/lua/?.lua;;{*lua_path*};";
+    lua_package_path "{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
     lua_package_cpath "{*lua_cpath*};;";
 
     lua_shared_dict plugin-limit-req    10m;
@@ -137,7 +138,7 @@ local function read_file(file_path)
     return data
 end
 
-local function apisix_home()
+local function apisix_lua_home()
     local string_gmatch = string.gmatch
     local string_match = string.match
     local io_open = io.open
@@ -147,7 +148,7 @@ local function apisix_home()
         local fpath = string_match(k, "(.*/)")
         fpath = fpath .. "apisix"
         -- print("fpath: ", fpath .. "/conf/config.yaml")
-        local f = io_open(fpath .. "/conf/config.yaml")
+        local f = io_open(fpath .. "/lua/apisix.lua")
         if f ~= nil then
             io_close(f)
             return fpath
@@ -156,6 +157,7 @@ local function apisix_home()
 
     return
 end
+
 
 local function trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
@@ -169,8 +171,7 @@ local function exec(command)
 end
 
 local function read_yaml_conf()
-    local home_path = apisix_home()
-    local ymal_conf, err = read_file(home_path .. "/conf/config.yaml")
+    local ymal_conf, err = read_file(apisix_home .. "/conf/config.yaml")
     if not ymal_conf then
         return nil, err
     end
@@ -201,6 +202,11 @@ local function init()
     end
     -- print("etcd: ", yaml_conf.etcd.host)
 
+    local apisix_src_path =  apisix_lua_home()
+    if not apisix_src_path then
+        error("failed to find the Lua source code home path")
+    end
+
     -- -- Using template.render
     local func = template.compile(ngx_tpl)
     local ngxconf = func({
@@ -208,16 +214,12 @@ local function init()
         lua_cpath = package.cpath,
         os_name = exec("uname"),
         node_listen = yaml_conf.apisix.node_listen,
+        apisix_lua_home = apisix_src_path
     })
 
     -- print(ngxconf)
 
-    local home_path = apisix_home()
-    if not home_path then
-        error("failed to find home path of apisix")
-    end
-
-    local ok, err = write_file(home_path .. "/conf/nginx.conf", ngxconf)
+    local ok, err = write_file(apisix_home .. "/conf/nginx.conf", ngxconf)
     if not ok then
         error("failed to update nginx.conf: " .. err)
     end
@@ -255,32 +257,17 @@ function _M.start(...)
     init(...)
     init_etcd(...)
 
-    local home_path = apisix_home()
-    if not home_path then
-        error("failed to find home path of apisix")
-    end
-
-    os.execute([[openresty -p ]] .. home_path)
+    os.execute([[openresty -p ]] .. apisix_home)
 end
 
 function _M.stop()
-    local home_path = apisix_home()
-    if not home_path then
-        error("failed to find home path of apisix")
-    end
-
     -- todo: use single to reload
-    os.execute([[openresty -p ]] .. home_path .. [[ -s stop]])
+    os.execute([[openresty -p ]] .. apisix_home .. [[ -s stop]])
 end
 
 function _M.reload()
-    local home_path = apisix_home()
-    if not home_path then
-        error("failed to find home path of apisix")
-    end
-
     -- todo: use single to reload
-    os.execute([[openresty -p ]] .. home_path .. [[ -s reload]])
+    os.execute([[openresty -p ]] .. apisix_home .. [[ -s reload]])
 end
 
 local cmd_action = arg[1]
