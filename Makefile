@@ -47,6 +47,8 @@ install:
 	$(INSTALL) conf/nginx.conf $(INST_LUADIR)/apisix/conf/nginx.conf
 	./utils/install_yaml_conf.sh $(INST_LUADIR)/apisix/conf/config.yaml
 	cp -r lua $(INST_LUADIR)/apisix/
+	$(INSTALL) COPYRIGHT $(INST_CONFDIR)/COPYRIGHT
+	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
 test:
