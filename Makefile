@@ -40,12 +40,9 @@ reload:
 ### install:      Install the apisix
 .PHONY: install
 install:
-	$(INSTALL) -d $(INST_LUADIR)/apisix/logs/
-	$(INSTALL) logs/placehold.txt $(INST_LUADIR)/apisix/logs/
-	$(INSTALL) -d $(INST_LUADIR)/apisix/conf/
-	$(INSTALL) conf/mime.types $(INST_LUADIR)/apisix/conf/mime.types
-	$(INSTALL) conf/nginx.conf $(INST_LUADIR)/apisix/conf/nginx.conf
-	./utils/install_yaml_conf.sh $(INST_LUADIR)/apisix/conf/config.yaml
+	$(INSTALL) -D logs/placehold.txt $(INST_LUADIR)/apisix/logs/placehold.txt
+	$(INSTALL) -D conf/mime.types $(INST_LUADIR)/apisix/conf/mime.types
+	$(INSTALL) -D conf/nginx.conf $(INST_LUADIR)/apisix/conf/nginx.conf
 
 	$(INSTALL) -D lua/apisix.lua $(INST_LUADIR)/apisix/lua/apisix.lua
 	$(INSTALL) -D lua/apisix/core/response.lua $(INST_LUADIR)/apisix/lua/apisix/core/response.lua
