@@ -232,3 +232,5 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 ### Plugin
 
 ![](doc/flow-plugin-internal.png)
+
+inspired by Kong
