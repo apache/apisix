@@ -182,10 +182,11 @@ local _M = {version = 0.1}
 
 function _M.help()
     print([[
-Usage: apisix <argument>
+Usage: apisix [action] <argument>
 
 help:       show this message, then exit
-init:       initialize all configurations
+init:       initialize the local nginx.conf
+init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
 reload:     reload the apisix server
@@ -223,8 +224,37 @@ local function init()
 end
 _M.init = init
 
-function _M.start()
-    init()
+local function init_etcd(show_output)
+    -- read_yaml_conf
+    local yaml_conf, err = read_yaml_conf()
+    if not yaml_conf then
+        error("failed to read local yaml config of apisix: " .. err)
+    end
+
+    local etcd_conf = yaml_conf.etcd
+    local uri = etcd_conf.host .. etcd_conf.prefix
+
+    for _, dir_name in ipairs({"/routes", "/upstreams", "/services"}) do
+        local cmd = "curl " .. uri .. dir_name
+                    .. "?prev_exist=false -X PUT -d dir=true 2>&1"
+        local res = exec(cmd)
+        if not res:find([[index]], 1, true)
+           and not res:find([[createdIndex]], 1, true) then
+            error(cmd .. "\n" .. res)
+        end
+
+        if show_output then
+            print(cmd)
+            print(res)
+        end
+    end
+end
+_M.init_etcd = init_etcd
+
+function _M.start(...)
+    init(...)
+    init_etcd(...)
+
     local home_path = apisix_home()
     if not home_path then
         error("failed to find home path of apisix")
@@ -263,4 +293,4 @@ if not _M[cmd_action] then
     return
 end
 
-_M[cmd_action]()
+_M[cmd_action](arg[2])
