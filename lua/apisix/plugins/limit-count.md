@@ -1,13 +1,13 @@
 # limit-count
 [中文](limit-count-cn.md)
 
-### Attributes
-* `conn` is the maximum number of concurrent requests allowed. Requests exceeding this ratio (and below `conn` + `burst`)
-will get delayed to conform to this threshold.
-* `burst` is the number of excessive concurrent requests (or connections) allowed to be delayed.
-* `rejected_code` is the response code when the current request was rejected.
-* `key` is the user specified key to limit the concurrency level.`
+### Parameters
+* `count`：指定时间窗口内的请求数量阈值
+* `time_window`：时间窗口的大小（以秒为单位），超过这个时间就会重置
+* `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503
+* `key`：是用来做请求计数的依据，当前只接受终端 IP 做为 key，即 "remote_addr"
 
+### example
 Here is an example of binding to route:
 
 ```json
