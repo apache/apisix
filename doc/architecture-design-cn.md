@@ -30,7 +30,7 @@ plugins:                        # plugin name list
 
 目前读写 `etcd` 操作使用的是 v2 协议，所有配置均存储在 `/v2/keys` 目录下。
 
-[Back to TOC](#summary)
+[返回目录](#summary)
 
 ## Route
 
@@ -70,7 +70,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
 |service_id|optional |绑定的 Service 配置，详见 [Service](#service)|
 
 
-[Back to TOC](#summary)
+[返回目录](#summary)
 
 ## Service
 
@@ -144,7 +144,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 
 也就是说，当 route 和 server 的配置出现冲突时，route 的优先级是要高于 service 的。
 
-[Back to TOC](#summary)
+[返回目录](#summary)
 
 ## Consumer
 
@@ -153,7 +153,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 `Consumer` 是某类具体服务的消费者，主要用来表述不同用户的概念。比如不用的客户请求同一个 API，
 经过用户认证体系，网关服务需知道当前请求用户身份信息，针对不同的消费用户，会有不同的限制处理逻辑。
 
-[Back to TOC](#summary)
+[返回目录](#summary)
 
 ## Plugin
 
@@ -200,7 +200,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 * [limit-req](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/limit-req.md)
 * [prometheus](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/prometheus.md)
 
-[Back to TOC](#summary)
+[返回目录](#summary)
 
 ## Upstream
 
@@ -230,4 +230,4 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 }
 ```
 
-[Back to TOC](#summary)
+[返回目录](#summary)
