@@ -1,5 +1,9 @@
 # key-auth
 
+*NOTE* not finished yet.
+
+Key-auth is an authentication plugin, it should work with `consumer` together.
+
 Here is an example of binding to specified plugin, such as `key-auth`:
 
 ```shell
@@ -16,7 +20,7 @@ $ curl http://127.0.0.1:2379/v2/keys/plugins/key-auth/consumers\?recursive\=true
                 "createdIndex": 1603,
                 "key": "/plugins/key-auth/consumers/ShunFeng",
                 "modifiedIndex": 1603,
-                "value": "{\"key\":\"dddxxyyy\",\"id\":\"ShunFeng\"}"
+                "value": "{\"key\":\"kkkey\",\"id\":\"ShunFeng\"}"
             }
         ]
     }
