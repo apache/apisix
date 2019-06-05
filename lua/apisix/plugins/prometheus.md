@@ -55,6 +55,19 @@ And we can check the status at prometheus console:
 
 ![](../../../doc/images/plugin/prometheus02.jpg)
 
+
+### Grafana dashboard
+
+Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard: https://grafana.com/dashboards/7424 .
+
+
+### Available metrics
+
+* `Status codes`: HTTP status codes returned by upstream services. These are available per service and across all services.
+* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
+* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
+* `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
+
 Here is the original metric data of apisix:
 
 ```
