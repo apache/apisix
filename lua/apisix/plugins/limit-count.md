@@ -1,5 +1,7 @@
 # limit-count
+[中文](limit-count-cn.md)
 
+### Attributes
 * `conn` is the maximum number of concurrent requests allowed. Requests exceeding this ratio (and below `conn` + `burst`)
 will get delayed to conform to this threshold.
 * `burst` is the number of excessive concurrent requests (or connections) allowed to be delayed.
