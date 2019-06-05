@@ -169,7 +169,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 优先级更高。
 
 一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 route 或 service）。
-插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/example-plugin.lua#L16)。
+插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../lua/apisix/plugins/example-plugin.lua#L16)。
 
 插件配置作为 route 或 service 的一部分提交的，放到 `plugin_config` 下。它内部是使用插件
 名字作为哈希的 key 来保存不同插件的配置项。
@@ -195,10 +195,10 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 
 目前自带的插件，有下面几个：
 
-* [key-auth](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/key-auth.md)
-* [limit-count](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/limit-count.md)
-* [limit-req](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/limit-req.md)
-* [prometheus](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/prometheus.md)
+* [key-auth](../lua/apisix/plugins/key-auth.md)
+* [limit-count](../lua/apisix/plugins/limit-count.md)
+* [limit-req](../lua/apisix/plugins/limit-req.md)
+* [prometheus](../lua/apisix/plugins/prometheus.md)
 
 [返回目录](#summary)
 
