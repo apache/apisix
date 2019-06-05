@@ -172,9 +172,71 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 `Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service` 或 `Consumer`上。而对于同一
 个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Service`。
 
+在 `conf/config.yaml` 中，可以声明本地 apisix 节点都支持哪些插件。这是个白名单机制，不在该
+白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
+
+插件的配置可以被直接绑定在指定 route 中，也可以被绑定在 service 中，不过 route 中的插件配置
+优先级更高。
+
+一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 route 或 service）。
+插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/example-plugin.lua#L16)。
+
+插件配置作为 route 或 service 的一部分提交的，放到 `plugin_config` 下。它内部是使用插件
+名字作为哈希的 key 来保存不同插件的配置项。
+
+```json
+{
+    ...
+    "plugin_config": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        },
+        "prometheus": {}
+    }
+    ...
+}
+```
+
+并不是所有插件都有具体配置项，比如 `prometheus` 下是没有任何具体配置项，这时候用一个空的对象
+标识即可。
+
+目前自带的插件，有下面几个：
+
+* [key-auth](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/key-auth.md)
+* [limit-count](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/limit-count.md)
+* [limit-req](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/limit-req.md)
+* [prometheus](https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/prometheus.md)
+
 [Back to TOC](#summary)
 
 ## Upstream
+
+上游对象表示虚拟主机名，可用于通过多个服务（目标）对传入请求进行负载均衡。
+
+上游的配置使用，与 plugin 非常相似。也可以同时被绑定到 route 或 service 上，并根据优先级决
+定优先使用谁。
+
+* type
+    * roundrobin：支持权重的负载
+    * chash：一致性 hash (TODO)
+* nodes: 上游机器地址列表（暂不支持域名）
+
+```json
+{
+    ...
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.100:80": 1,
+            "39.97.63.200:80": 2
+        }
+    }
+    ...
+}
+```
 
 [Back to TOC](#summary)
 
