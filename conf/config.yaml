@@ -3,7 +3,7 @@ apisix:
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
-  prefix: "/v2/keys/apisix"     # etcd prefix
+  prefix: "/apisix"             # apisix configurations prefix
   timeout: 60
 
 plugins:                        # plugin name list

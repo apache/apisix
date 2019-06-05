@@ -232,6 +232,9 @@ function _M.new(key, opts)
         return nil, err
     end
 
+    local prefix = local_conf.etcd.prefix
+    local_conf.etcd.prefix = nil
+
     local etcd_cli
     etcd_cli, err = etcd.new(local_conf.etcd)
     if not etcd_cli then
@@ -242,14 +245,14 @@ function _M.new(key, opts)
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
-        values = nil,
-        routes_hash = nil,
-        prev_index = nil,
-        key = key,
+        key = key and prefix .. key,
         automatic = automatic,
         sync_times = 0,
         running = true,
         conf_version = 0,
+        values = nil,
+        routes_hash = nil,
+        prev_index = nil,
         last_err = nil,
         last_err_time = nil,
     }, mt)
