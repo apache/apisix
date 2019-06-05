@@ -40,35 +40,21 @@ reload:
 ### install:      Install the apisix
 .PHONY: install
 install:
-	$(INSTALL) -d logs/ /usr/local/apisix/logs/
-	$(INSTALL) -D conf/mime.types /usr/local/apisix/conf/mime.types
+	$(INSTALL) -d /usr/local/apisix/logs/
+	$(INSTALL) -d /usr/local/apisix/conf/
+	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 
-	$(INSTALL) -D lua/apisix.lua $(INST_LUADIR)/apisix/lua/apisix.lua
-	$(INSTALL) -D lua/apisix/core/response.lua $(INST_LUADIR)/apisix/lua/apisix/core/response.lua
-	$(INSTALL)    lua/apisix/core/config_etcd.lua $(INST_LUADIR)/apisix/lua/apisix/core/config_etcd.lua
-	$(INSTALL)    lua/apisix/core/table.lua $(INST_LUADIR)/apisix/lua/apisix/core/table.lua
-	$(INSTALL)    lua/apisix/core/request.lua $(INST_LUADIR)/apisix/lua/apisix/core/request.lua
-	$(INSTALL)    lua/apisix/core/config_local.lua $(INST_LUADIR)/apisix/lua/apisix/core/config_local.lua
-	$(INSTALL)    lua/apisix/core/schema.lua $(INST_LUADIR)/apisix/lua/apisix/core/schema.lua
-	$(INSTALL)    lua/apisix/core/yaml.lua $(INST_LUADIR)/apisix/lua/apisix/core/yaml.lua
-	$(INSTALL)    lua/apisix/core/lrucache.lua $(INST_LUADIR)/apisix/lua/apisix/core/lrucache.lua
-	$(INSTALL)    lua/apisix/core/ctx.lua $(INST_LUADIR)/apisix/lua/apisix/core/ctx.lua
-	$(INSTALL)    lua/apisix/core/typeof.lua $(INST_LUADIR)/apisix/lua/apisix/core/typeof.lua
-	$(INSTALL)    lua/apisix/core/log.lua $(INST_LUADIR)/apisix/lua/apisix/core/log.lua
-	$(INSTALL)    lua/apisix/route.lua $(INST_LUADIR)/apisix/lua/apisix/route.lua
-	$(INSTALL)    lua/apisix/balancer.lua $(INST_LUADIR)/apisix/lua/apisix/balancer.lua
-	$(INSTALL)    lua/apisix/plugin.lua $(INST_LUADIR)/apisix/lua/apisix/plugin.lua
-	$(INSTALL)    lua/apisix/core.lua $(INST_LUADIR)/apisix/lua/apisix/core.lua
-	$(INSTALL)    lua/apisix/service.lua $(INST_LUADIR)/apisix/lua/apisix/service.lua
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/core
+	$(INSTALL) lua/*.lua $(INST_LUADIR)/apisix/lua/
+	$(INSTALL) lua/apisix/core/*.lua $(INST_LUADIR)/apisix/lua/apisix/core/
+	$(INSTALL) lua/apisix/*.lua $(INST_LUADIR)/apisix/lua/apisix/
 
-	$(INSTALL) -D lua/apisix/plugins/prometheus/base_prometheus.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/base_prometheus.lua
-	$(INSTALL)    lua/apisix/plugins/prometheus/exporter.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/exporter.lua
-	$(INSTALL)    lua/apisix/plugins/example-plugin.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/example-plugin.lua
-	$(INSTALL)    lua/apisix/plugins/prometheus.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus.lua
-	$(INSTALL)    lua/apisix/plugins/limit-count.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/limit-count.lua
-	$(INSTALL)    lua/apisix/plugins/limit-req.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/limit-req.lua
-	$(INSTALL)    lua/apisix/plugins/key-auth.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/key-auth.lua
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
+	$(INSTALL) lua/apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins
+	$(INSTALL) lua/apisix/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/
 
 	$(INSTALL) COPYRIGHT $(INST_CONFDIR)/COPYRIGHT
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
