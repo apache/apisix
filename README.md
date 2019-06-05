@@ -57,6 +57,8 @@ If all goes well, you will see the message like this:
 
 Congratulations, you have already installed APISIX successfully.
 
+[Back to TOC](#summary)
+
 ## Quickstart
 
 1. start server:
@@ -109,6 +111,7 @@ Accept-Ranges: bytes
 ...
 ```
 
+[Back to TOC](#summary)
 
 ## Distributions
 
@@ -120,6 +123,7 @@ Accept-Ranges: bytes
 - Homebrew:TODO
 - Nightly Builds: TODO
 
+[Back to TOC](#summary)
 
 ## Benchmark
 ### Benchmark Environments
@@ -219,6 +223,8 @@ then run wrk:
 wrk -d 60 --latency http://127.0.0.1:9080/hello
 ```
 
+[Back to TOC](#summary)
+
 ## Development
 ### How to load the plugin?
 
@@ -229,3 +235,5 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 ![](doc/flow-plugin-internal.png)
 
 inspired by Kong
+
+[Back to TOC](#summary)
