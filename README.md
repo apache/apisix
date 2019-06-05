@@ -161,7 +161,6 @@ then run wrk:
 wrk -d 60 --latency http://127.0.0.1:9080/hello
 ```
 
-
 ### Benchmark Test for reverse proxy, enabled 2 plugins
 Only used APISIX as the reverse proxy server, enabled the limit rate and prometheus plugins,
 and the response size was 1KB.

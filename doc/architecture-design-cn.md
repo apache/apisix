@@ -193,7 +193,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 并不是所有插件都有具体配置项，比如 `prometheus` 下是没有任何具体配置项，这时候用一个空的对象
 标识即可。
 
-目前自带的插件，有下面几个：
+目前 apisix 已支持插件：
 
 * [key-auth](../lua/apisix/plugins/key-auth.md)
 * [limit-count](../lua/apisix/plugins/limit-count.md)
