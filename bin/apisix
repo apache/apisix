@@ -234,9 +234,10 @@ local function init_etcd(show_output)
     end
 
     local etcd_conf = yaml_conf.etcd
-    local uri = etcd_conf.host .. etcd_conf.prefix
+    local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
-    for _, dir_name in ipairs({"/routes", "/upstreams", "/services"}) do
+    for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
+                               "/plugins", "/consumers"}) do
         local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true 2>&1"
         local res = exec(cmd)

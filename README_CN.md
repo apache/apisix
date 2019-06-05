@@ -28,7 +28,7 @@ apisix:
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
-  prefix: "/v2/keys/apisix"     # etcd prefix
+  prefix: "apisix"              # apisix configurations prefix
   timeout: 60
 
 plugins:                        # plugin name list
@@ -41,11 +41,13 @@ plugins:                        # plugin name list
 *注意* 不要手工修改 Apisix 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
 
+目前读写 `etcd` 操作使用的是 v2 协议，所有配置均存储在 `/v2/keys` 目录下。
+
 [Back to TOC](#summary)
 
 ## Route
 
-默认路径：`/v2/keys/apisix/routes/****`
+默认路径：`/apisix/routes/****`
 
 `Route` 是如何匹配用户请求的具体描述。目前 Apisix 支持 `URI` 和 `Method` 两种方式匹配
 用户请求。其他比如 `Host` 方式，将会持续增加。
