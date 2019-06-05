@@ -1,17 +1,17 @@
 ## Summary
-- [**APISIX Config**](#apisix-config)
+- [**apisix Config**](#apisix-config)
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
 
-## APISIX Config
+## apisix Config
 
-通过修改本地 `conf/config.yaml` 文件完成对 APISIX 服务本身的基本配置。
+通过修改本地 `conf/config.yaml` 文件完成对 apisix 服务本身的基本配置。
 
 ```yaml
 apisix:
-  node_listen: 9080             # APISIX listening port
+  node_listen: 9080             # apisix listening port
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
@@ -25,7 +25,7 @@ plugins:                        # plugin name list
   - ...
 ```
 
-*注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
+*注意* 不要手工修改 apisix 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
 
 目前读写 `etcd` 操作使用的是 v2 协议，所有配置均存储在 `/v2/keys` 目录下。
@@ -36,7 +36,7 @@ plugins:                        # plugin name list
 
 默认路径：`/apisix/routes/`
 
-`Route` 是如何匹配用户请求的具体描述。目前 APISIX 支持 `URI` 和 `Method` 两种方式匹配
+`Route` 是如何匹配用户请求的具体描述。目前 apisix 支持 `URI` 和 `Method` 两种方式匹配
 用户请求。其他比如 `Host` 方式，将会持续增加。
 
 路径中的 `key` 会被用作路由 `id` 做唯一标识，比如下面示例的路由 `id` 是 `100`。
@@ -158,10 +158,11 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 ## Plugin
 
 `Plugin` 表示将在 `HTTP` 请求/响应生命周期期间执行的插件配置。
+
 `Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service` 或 `Consumer`上。而对于同一
 个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Service`。
 
-在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该
+在 `conf/config.yaml` 中，可以声明本地 apisix 节点都支持哪些插件。这是个白名单机制，不在该
 白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
 
 插件的配置可以被直接绑定在指定 route 中，也可以被绑定在 service 中，不过 route 中的插件配置
@@ -205,13 +206,15 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 
 上游对象表示虚拟主机名，可用于通过多个服务（目标）对传入请求进行负载均衡。
 
-上游的配置使用，与 plugin 非常相似。也可以同时被绑定到 route 或 service 上，并根据优先级决
-定优先使用谁。
+上游的配置使用方法，与 `plugin` 非常相似，也可以同时被绑定到 `route` 或 `service` 上，并根据优先级决
+定执行顺序。
 
-* type
+#### 配置参数
+
+* type：`roundrobin` 或 `chash`
     * roundrobin：支持权重的负载
     * chash：一致性 hash (TODO)
-* nodes: 上游机器地址列表（暂不支持域名）
+* nodes: 上游机器地址列表（目前仅支持 IP+Port 方式）
 
 ```json
 {
