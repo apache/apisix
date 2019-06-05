@@ -101,6 +101,7 @@ function _M.rewrite_phase()
         local service = service_fetch(route.value.service_id)
         local changed
         route, changed = plugin.merge_service_route(service, route)
+        api_ctx.matched_route = route
 
         if changed then
             api_ctx.conf_type = "route&service"
@@ -109,7 +110,7 @@ function _M.rewrite_phase()
             api_ctx.conf_id = route.value.id .. "&"
                               .. service.value.id
         else
-            api_ctx.conf_type = "route"
+            api_ctx.conf_type = "service"
             api_ctx.conf_version = route.modifiedIndex
             api_ctx.conf_id = route.value.id
         end
