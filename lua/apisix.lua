@@ -81,8 +81,9 @@ function _M.rewrite_phase()
 
     local method = api_ctx.var.method
     local uri =  api_ctx.var.uri
+    api_ctx.uri_parse_param = core.tablepool.fetch("uri_parse_param", 0, 4)
     -- local host = api_ctx.var.host -- todo: support host
-    local ok = router():dispatch(method, uri, api_ctx)
+    local ok = router():dispatch2(api_ctx.uri_parse_param, method, uri, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
         return core.response.exit(404)
@@ -137,6 +138,7 @@ end
 function _M.log_phase()
     local api_ctx = run_plugin("log")
     if api_ctx then
+        core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
         core.ctx.release_vars(api_ctx)
         core.tablepool.release("api_ctx", api_ctx)
     end
