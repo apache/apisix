@@ -51,9 +51,9 @@ scrape_configs:
 
 And we can check the status at prometheus console:
 
-![](../../../doc/images/plugin/prometheus01.jpg)
+![](../../../doc/images/plugin/prometheus01.png)
 
-![](../../../doc/images/plugin/prometheus02.jpg)
+![](../../../doc/images/plugin/prometheus02.png)
 
 
 ### Grafana dashboard
