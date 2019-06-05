@@ -8,13 +8,13 @@ APISIX 是一个基于云原生、高速可扩展的开源微服务网关节点�
 APISIX 从 `etcd` 中订阅获取所需的配置并以热更新的方式来更改自身行为，更改 `etcd` 中的配置即可完成对 APISIX
 网关节点的控制，比如：动态上游、请求限速等。
 
-[Documentation](doc/architecture-design.md)
+[Documentation](doc/images/architecture-design-cn.md)
 
 ## Summary
-- [**安装**](#install)
-- [**快速上手**](#quickstart)
-- [**性能测试**](#benchmark)
-- [**参与社区**](#join-us)
+- [**安装**](#安装)
+- [**快速上手**](#快速上手)
+- [**性能测试**](#性能测试)
+- [**参与社区**](#参与社区)
 
 ## 安装
 
@@ -116,6 +116,7 @@ Accept-Ranges: bytes
 ...
 ```
 
+[Back to TOC](#summary)
 
 ## 性能测试
 ### 测试环境
@@ -128,15 +129,15 @@ Accept-Ranges: bytes
 
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-![](doc/benchmark-1.jpg)
+![](doc/images/benchmark-1.jpg)
 
 #### 延时
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-![](doc/latency-1.jpg)
+![](doc/images/latency-1.jpg)
 
 #### 火焰图
 火焰图的采样结果:
-![](doc/flamegraph-1.jpg)
+![](doc/images/flamegraph-1.jpg)
 
 
 ### 测试反向代理，开启 2 个插件
@@ -144,20 +145,22 @@ Accept-Ranges: bytes
 
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-![](doc/benchmark-2.jpg)
+![](doc/images/benchmark-2.jpg)
 
 #### Latency
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-![](doc/latency-2.jpg)
+![](doc/images/latency-2.jpg)
 
 #### 火焰图
 火焰图的采样结果:
-![](doc/flamegraph-2.jpg)
+![](doc/images/flamegraph-2.jpg)
 
 [Back to TOC](#summary)
 
-## 技术交流
+## 参与社区
 
 如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
 
-![](doc/qq-group.png)
+![](doc/images/qq-group.png)
+
+[Back to TOC](#summary)
