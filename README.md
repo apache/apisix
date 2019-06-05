@@ -33,7 +33,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.3/apisix-0.3-1.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4/apisix-0.4-0.el7.noarch.rpm
 ```
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
@@ -117,7 +117,7 @@ Accept-Ranges: bytes
 
 - Docker: TODO
 - LuaRocks: luarocks install apisix
-- CentOS: [RPM for CentOS 7](https://github.com/iresty/apisix/releases/download/v0.3/apisix-0.3-1.el7.noarch.rpm)
+- CentOS: [RPM for CentOS 7](https://github.com/iresty/apisix/releases/download/v0.4/apisix-0.4-0.el7.noarch.rpm)
 - RedHat: TODO
 - Ubuntu: TODO
 - Homebrew:TODO
