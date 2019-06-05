@@ -6,13 +6,12 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 ## Summary
 - [**Install**](#install)
 - [**Quickstart**](#quickstart)
-- [**Distributions**](#distributions)
 - [**Benchmark**](#benchmark)
 - [**Development**](#development)
 
 ## Install
 
-APISIX Installed and tested in the following systems:.
+APISIX Installed and tested in the following systems:
 
 |OS          |Status|
 |------------|------|
@@ -42,11 +41,11 @@ You can try APISIX with the [**Quickstart**](#quickstart) now.
 
 #### Dependencies
 
-Apisix is based on [openresty](http://openresty.org/), the configures data storage and distribution via [etcd](https://github.com/etcd-io/etcd).
+APISIX is based on [OpenResty](https://openresty.org/), the configures data storage and distribution via [etcd](https://github.com/etcd-io/etcd).
 
-We recommend that you use luarocks to install APISIX, and for different operating systems have different dependencies, see more: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
+We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, and for different operating systems have different dependencies, see more: [Install Dependencies](https://github.com/iresty/apisix/wiki/Install-Dependencies)
 
-#### Install apisix
+#### Install APISIX
 
 ```shell
 sudo luarocks install apisix
@@ -110,18 +109,6 @@ Accept-Ranges: bytes
 
 ...
 ```
-
-[Back to TOC](#summary)
-
-## Distributions
-
-- Docker: TODO
-- LuaRocks: luarocks install apisix
-- CentOS: [RPM for CentOS 7](https://github.com/iresty/apisix/releases/download/v0.4/apisix-0.4-0.el7.noarch.rpm)
-- RedHat: TODO
-- Ubuntu: TODO
-- Homebrew:TODO
-- Nightly Builds: TODO
 
 [Back to TOC](#summary)
 
