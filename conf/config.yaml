@@ -1,12 +1,12 @@
 apisix:
-  node_listen: 9080
+  node_listen: 9080             # Apisix listening port
 
 etcd:
-  host: "http://127.0.0.1:2379"
-  prefix: "/v2/keys/apisix"
+  host: "http://127.0.0.1:2379" # etcd address
+  prefix: "/v2/keys/apisix"     # etcd prefix
   timeout: 60
 
-plugins:
+plugins:                        # plugin name list
   - example-plugin
   - limit-req
   - limit-count
