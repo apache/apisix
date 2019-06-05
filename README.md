@@ -12,7 +12,14 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 ## Install
 
-APISIX Installed and tested in the following systems: CentOS 7、Ubuntu 18.04 and Debian 9.
+APISIX Installed and tested in the following systems:.
+
+|OS          |Status|
+|------------|------|
+|CentOS 7    |√     |
+|Ubuntu 18.04|√     |
+|Debian 9    |√     |
+|CentOS 6    |✘     |
 
 You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
 
@@ -168,10 +175,12 @@ and the response size was 1KB.
 
 #### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
+
 ![](doc/benchmark-2.jpg)
 
 #### Latency
 Note the y-axis latency in **microsecond(μs)** not millisecond.
+
 ![](doc/latency-2.jpg)
 
 #### Flame Graph
