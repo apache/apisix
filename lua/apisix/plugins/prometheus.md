@@ -10,12 +10,12 @@ none.
 
 ## How to enable it
 
-`prometheus` plugin can be enable with empty table, If you want to disable it,
-you can not configure it.
+`prometheus` plugin can be enable with empty table, because it doesn't have
+any options yet.
 
 For example:
 
-```
+```shell
 curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
     "methods": ["GET"],
@@ -37,7 +37,8 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 
 We fetch the metric data from the specified url `/apisix.com/prometheus/metrics`.
 
-You can put this uri address into prometheus, and it will automatically get these metric data.
+Puts this uri address into prometheus, and it will automatically fetch
+these metric data.
 
 For example like this:
 
