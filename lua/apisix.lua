@@ -30,6 +30,7 @@ function _M.init_worker()
     require("apisix.balancer").init_worker()
     require("apisix.plugin").init_worker()
     require("apisix.service").init_worker()
+    require("apisix.consumer").init_worker()
 end
 
 
