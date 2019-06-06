@@ -59,7 +59,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 下面是一个正常通过 `key-auth` 验证的请求:
 
 ```shell
-curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
+$ curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
 HTTP/1.1 200 OK
 ...
 ```
@@ -83,7 +83,7 @@ HTTP/1.1 401 Unauthorized
 当你想去掉 `key-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
 	"methods": ["GET"],
 	"uri": "/index.html",
