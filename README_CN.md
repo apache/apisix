@@ -1,22 +1,13 @@
-[English](README.md)  [中文](README_CN.md)
-
 ## APISIX
 
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
 
+- **QQ 交流群**: 552030619
+
+## 什么是 APISIX？
+
 APISIX 是一个基于云原生、高速可扩展的开源微服务网关节点实现，其自身主要优势是高性能和强大的扩展性。
-
-APISIX 从 `etcd` 中订阅获取所需的配置并以热更新的方式来更改自身行为，更改 `etcd` 中的配置即可完成对 APISIX
-网关节点的控制，比如：动态上游、请求限速等。
-
-[详细设计文档](doc/architecture-design-cn.md)
-
-## 目录
-- [**安装**](#安装)
-- [**快速上手**](#快速上手)
-- [**性能测试**](#性能测试)
-- [**参与社区**](#参与社区)
 
 ## 安装
 
@@ -30,7 +21,6 @@ APISIX 在以下操作系统中做过安装和运行测试:
 
 现在有两种方式来安装: 如果你是 CentOS 7 的系统，推荐使用 RPM 包安装；其他的系统推荐使用 Luarocks 安装。
 
-我们正在增加对 docker 和更多系统的支持。
 
 #### 通过 RPM 包安装（CentOS 7）
 ```shell
@@ -64,7 +54,6 @@ sudo luarocks install apisix
 
 恭喜你，APISIX 已经安装成功了。
 
-[返回目录](#目录)
 
 ## 快速上手
 
@@ -118,51 +107,14 @@ Accept-Ranges: bytes
 ...
 ```
 
-[返回目录](#目录)
-
 ## 性能测试
-### 测试环境
-使用谷歌云的服务器进行测试，型号为 n1-highcpu-8 (8 vCPUs, 7.2 GB memory)
+使用谷歌云的 4 核心服务器来运行 APISIX，QPS 可以达到 60000，同时延时只有 0.5 毫秒。
 
-我们最多只使用 4 核去运行 APISIX, 剩下的 4 核用与系统和压力测试工具 [wrk](https://github.com/wg/wrk)。
-
-### 测试反向代理
-我们把 APISIX 当做反向代理来使用，不开启任何插件，响应体的大小为 1KB。
-
-#### QPS
-下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-
-<img src="doc/images/benchmark-1.jpg" width="70%" height="70%">
-
-#### 延时
-请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-
-<img src="doc/images/latency-1.jpg" width="70%" height="70%">
-
-#### 火焰图
-火焰图的采样结果:
-
-<img src="doc/images/flamegraph-1.jpg">
+你可以看出[性能测试文档](doc/benchmark-cn.md)来了解更多详细内容。
 
 
-### 测试反向代理，开启 2 个插件
-我们把 APISIX 当做反向代理来使用，开启限速和 prometheus 插件，响应体的大小为 1KB。
-
-#### QPS
-下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-
-<img src="doc/images/benchmark-2.jpg" width="70%" height="70%">
-
-#### Latency
-请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-
-<img src="doc/images/latency-2.jpg" width="70%" height="70%">
-
-#### 火焰图
-火焰图的采样结果:
-![](doc/images/flamegraph-2.jpg)
-
-[返回目录](#目录)
+## 开发文档
+[详细设计文档](doc/architecture-design-cn.md)
 
 ## 参与社区
 
@@ -170,6 +122,6 @@ Accept-Ranges: bytes
 
 <img src="doc/images/qq-group.png" width="302" height="302">
 
-[返回目录](#目录)
 
-inspired by Kong
+## 致谢
+灵感来自 Kong
