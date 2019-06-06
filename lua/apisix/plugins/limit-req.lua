@@ -24,27 +24,20 @@ end
 function _M.access(conf, ctx)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
-
     if not lim then
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
-        return ngx.HTTP_INTERNAL_SERVER_ERROR
-    end
-
-    if conf.key ~= 'remote_addr' then
-        core.log.error("only support 'remote_addr' as key now")
-        return ngx.HTTP_INTERNAL_SERVER_ERROR
+        return 500
     end
 
     local key = ctx.var[conf.key]
-    local rejected_code = conf.rejected_code or ngx.HTTP_SERVICE_UNAVAILABLE
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
-            return rejected_code
+            return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)
-        return ngx.HTTP_INTERNAL_SERVER_ERROR
+        return 500
     end
 
     if delay >= 0.001 then
