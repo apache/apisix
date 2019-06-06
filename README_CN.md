@@ -40,7 +40,7 @@ sudo service etcd start
 sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4/apisix-0.4-0.el7.noarch.rpm
 ```
 
-如果安装成功，就可以参考 [**快速上手**](#quickstart) 来进行体验。如果失败，欢迎反馈给我们。
+如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
 
 
 ### 通过 Luarocks 安装

@@ -27,28 +27,25 @@ function _M.access(conf, ctx)
     local limit = core.lrucache.plugin_ctx(plugin_name, ctx,
                                            create_limit_obj, conf)
 
-    local key = ctx.var[conf.key]
-    if not key or key == "" then
-        key = ""
-        core.log.warn("fetched empty string value as key to limit the request ",
-                      "maybe wrong, please pay attention to this.")
+    if conf.key ~= 'remote_addr' then
+        core.log.error("only support 'remote_addr' as key now")
     end
+    local key = ctx.var[conf.key]
+    local rejected_code = conf.rejected_code or ngx.HTTP_SERVICE_UNAVAILABLE
 
     local delay, remaining = limit:incoming(key, true)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            return conf.rejected_code
+            return rejected_code
         end
 
         core.log.error("failed to limit req: ", err)
-        return 500
+        return ngx.HTTP_INTERNAL_SERVER_ERROR
     end
 
     core.response.set_header("X-RateLimit-Limit", conf.count,
                              "X-RateLimit-Remaining", remaining)
-
-    core.log.info("hit limit-count access")
 end
 
 
