@@ -13,7 +13,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local apisix = require("apisix")
-            apisix.rewrite_phase()
+            apisix.access_phase()
         }
     }
 --- request

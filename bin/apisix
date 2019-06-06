@@ -87,10 +87,6 @@ http {
             set $upstream_connection         '';
             set $upstream_uri                '';
 
-            rewrite_by_lua_block {
-                apisix.rewrite_phase()
-            }
-
             access_by_lua_block {
                 apisix.access_phase()
             }
