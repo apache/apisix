@@ -13,11 +13,11 @@ APISIX 是一个基于云原生、高速可扩展的开源微服务网关节点�
 
 APISIX 在以下操作系统中做过安装和运行测试:
 
-|OS          |Status|
-|------------|------|
-|CentOS 7    |√     |
-|Ubuntu 18.04|√     |
-|Debian 9    |√     |
+|操作系统     |  OpenResty|状态|
+|------------|-----------|------|
+|CentOS 7    |   1.15.8.1|√     |
+|Ubuntu 18.04|   1.15.8.1|√     |
+|Debian 9    |   1.15.8.1|√     |
 
 现在有两种方式来安装: 如果你是 CentOS 7 的系统，推荐使用 RPM 包安装；其他的系统推荐使用 Luarocks 安装。
 
@@ -121,7 +121,7 @@ Accept-Ranges: bytes
 
 * [key-auth](lua/apisix/plugins/key-auth.md): 基于 Key Authentication 的用户认证。
 * [limit-count](lua/apisix/plugins/limit-count.md): 基于“固定窗口”的限速实现.
-* [limit-req](lua/apisix/plugins/limit-req.md): 基于漏洞原理的请求限速实现。
+* [limit-req](lua/apisix/plugins/limit-req.md): 基于漏桶原理的请求限速实现。
 * [prometheus](lua/apisix/plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
 
 ## 参与社区

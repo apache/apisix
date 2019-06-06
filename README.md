@@ -15,11 +15,11 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 APISIX Installed and tested in the following systems:
 
-|OS          |Status|
-|------------|------|
-|CentOS 7    |√     |
-|Ubuntu 18.04|√     |
-|Debian 9    |√     |
+|OS          |  OpenResty|Status|
+|------------|-----------|------|
+|CentOS 7    |   1.15.8.1|√     |
+|Ubuntu 18.04|   1.15.8.1|√     |
+|Debian 9    |   1.15.8.1|√     |
 
 You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
 
