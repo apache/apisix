@@ -46,8 +46,6 @@ function _M.access(conf, ctx)
 
     core.response.set_header("X-RateLimit-Limit", conf.count,
                              "X-RateLimit-Remaining", remaining)
-
-    core.log.info("hit limit-count access")
 end
 
 
