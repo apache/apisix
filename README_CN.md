@@ -1,3 +1,5 @@
+[English](README.md)  [中文](README_CN.md)
+
 ## APISIX
 
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
@@ -8,7 +10,7 @@ APISIX 是一个基于云原生、高速可扩展的开源微服务网关节点�
 APISIX 从 `etcd` 中订阅获取所需的配置并以热更新的方式来更改自身行为，更改 `etcd` 中的配置即可完成对 APISIX
 网关节点的控制，比如：动态上游、请求限速等。
 
-[设计文档](doc/architecture-design-cn.md)
+[详细设计文档](doc/architecture-design-cn.md)
 
 ## Summary
 - [**安装**](#安装)
@@ -164,3 +166,5 @@ Accept-Ranges: bytes
 ![](doc/images/qq-group.png)
 
 [Back to TOC](#summary)
+
+inspired by Kong

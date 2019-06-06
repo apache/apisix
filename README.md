@@ -1,3 +1,7 @@
+[English](README.md)  [中文](README_CN.md)
+
+## APISIX
+
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
 
@@ -212,15 +216,6 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 ```
 
 [Back to TOC](#summary)
-
-## Development
-### How to load the plugin?
-
-![](doc/images/flow-load-plugin.png)
-
-### Plugin
-
-![](doc/images/flow-plugin-internal.png)
 
 inspired by Kong
 

@@ -1,9 +1,22 @@
 ## 目录
+- [**apisix**](#apisix)
 - [**apisix Config**](#apisix-config)
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
+
+## apisix
+
+### 插件加载流程
+
+![](./images/flow-load-plugin.png)
+
+### 插件内部结构
+
+![](./images/flow-plugin-internal.png)
+
+<img src="./images/flow-plugin-internal.png" width="484" height="429">
 
 ## apisix Config
 
