@@ -132,12 +132,12 @@ Accept-Ranges: bytes
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
 
-<img src="doc/images/benchmark-1.jpg" width="100%" height="100%">
+<img src="doc/images/benchmark-1.jpg" width="70%" height="70%">
 
 #### 延时
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
 
-<img src="doc/images/latency-1.jpg" width="100%" height="100%">
+<img src="doc/images/latency-1.jpg" width="70%" height="70%">
 
 #### 火焰图
 火焰图的采样结果:
@@ -151,12 +151,12 @@ Accept-Ranges: bytes
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
 
-<img src="doc/images/benchmark-2.jpg" width="100%" height="100%">
+<img src="doc/images/benchmark-2.jpg" width="70%" height="70%">
 
 #### Latency
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
 
-<img src="doc/images/latency-2.jpg" width="100%" height="100%">
+<img src="doc/images/latency-2.jpg" width="70%" height="70%">
 
 #### 火焰图
 火焰图的采样结果:
