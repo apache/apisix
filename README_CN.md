@@ -12,7 +12,7 @@ APISIX 从 `etcd` 中订阅获取所需的配置并以热更新的方式来更�
 
 [详细设计文档](doc/architecture-design-cn.md)
 
-## Summary
+## 目录
 - [**安装**](#安装)
 - [**快速上手**](#快速上手)
 - [**性能测试**](#性能测试)
@@ -64,7 +64,7 @@ sudo luarocks install apisix
 
 恭喜你，APISIX 已经安装成功了。
 
-[Back to TOC](#summary)
+[返回目录](#目录)
 
 ## 快速上手
 
@@ -118,7 +118,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-[Back to TOC](#summary)
+[返回目录](#目录)
 
 ## 性能测试
 ### 测试环境
@@ -162,7 +162,7 @@ Accept-Ranges: bytes
 火焰图的采样结果:
 ![](doc/images/flamegraph-2.jpg)
 
-[Back to TOC](#summary)
+[返回目录](#目录)
 
 ## 参与社区
 
@@ -170,6 +170,6 @@ Accept-Ranges: bytes
 
 <img src="doc/images/qq-group.png" width="302" height="302">
 
-[Back to TOC](#summary)
+[返回目录](#目录)
 
 inspired by Kong

@@ -41,6 +41,7 @@ luac.out
 
 # develop
 logs/*.log
+logs/*.pid
 t/servroot
 go
 \.*
