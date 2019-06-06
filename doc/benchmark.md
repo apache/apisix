@@ -11,16 +11,16 @@ and the response size was 1KB.
 #### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-<img src="doc/images/benchmark-1.jpg" width="70%" height="70%">
+<img src="../doc/images/benchmark-1.jpg" width="70%" height="70%">
 
 #### Latency
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-<img src="doc/images/latency-1.jpg" width="70%" height="70%">
+<img src="../doc/images/latency-1.jpg" width="70%" height="70%">
 
 #### Flame Graph
 The result of Flame Graph:
-![](doc/images/flamegraph-1.jpg)
+![](../doc/images/flamegraph-1.jpg)
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
@@ -53,17 +53,17 @@ and the response size was 1KB.
 #### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-<img src="doc/images/benchmark-2.jpg" width="70%" height="70%">
+<img src="../doc/images/benchmark-2.jpg" width="70%" height="70%">
 
 
 #### Latency
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-<img src="doc/images/latency-2.jpg" width="70%" height="70%">
+<img src="../doc/images/latency-2.jpg" width="70%" height="70%">
 
 #### Flame Graph
 The result of Flame Graph:
-![](doc/images/flamegraph-2.jpg)
+![](../doc/images/flamegraph-2.jpg)
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
