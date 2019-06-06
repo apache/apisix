@@ -131,15 +131,18 @@ Accept-Ranges: bytes
 
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-![](doc/images/benchmark-1.jpg)
+
+<img src="doc/images/benchmark-1.jpg" width="50%" height="50%">
 
 #### 延时
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-![](doc/images/latency-1.jpg)
+
+<img src="doc/images/latency-1.jpg" width="50%" height="50%">
 
 #### 火焰图
 火焰图的采样结果:
-![](doc/images/flamegraph-1.jpg)
+
+<img src="doc/images/flamegraph-1.jpg">
 
 
 ### 测试反向代理，开启 2 个插件
@@ -147,11 +150,13 @@ Accept-Ranges: bytes
 
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-![](doc/images/benchmark-2.jpg)
+
+<img src="doc/images/benchmark-2.jpg" width="50%" height="50%">
 
 #### Latency
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-![](doc/images/latency-2.jpg)
+
+<img src="doc/images/latency-2.jpg" width="50%" height="50%">
 
 #### 火焰图
 火焰图的采样结果:
@@ -163,7 +168,7 @@ Accept-Ranges: bytes
 
 如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
 
-![](doc/images/qq-group.png)
+<img src="doc/images/qq-group.png" width="151" height="151">
 
 [Back to TOC](#summary)
 

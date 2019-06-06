@@ -14,9 +14,7 @@
 
 ### 插件内部结构
 
-![](./images/flow-plugin-internal.png)
-
-<img src="./images/flow-plugin-internal.png" width="484" height="429">
+<img src="./images/flow-plugin-internal.png" width="50%" height="50%">
 
 ## apisix Config
 
