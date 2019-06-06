@@ -54,5 +54,6 @@ return {
     lrucache = require("apisix.core.lrucache"),
     schema   = require("apisix.core.schema"),
     ctx      = require("apisix.core.ctx"),
+    consumer = require("apisix.consumer"),
     tablepool= require("tablepool"),
 }
