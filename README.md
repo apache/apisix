@@ -1,3 +1,7 @@
+[English](README.md)  [中文](README_CN.md)
+
+## APISIX
+
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
 
@@ -127,11 +131,13 @@ and the response size was 1KB.
 
 #### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
-![](doc/images/benchmark-1.jpg)
+
+<img src="doc/images/benchmark-1.jpg" width="70%" height="70%">
 
 #### Latency
 Note the y-axis latency in **microsecond(μs)** not millisecond.
-![](doc/images/latency-1.jpg)
+
+<img src="doc/images/latency-1.jpg" width="70%" height="70%">
 
 #### Flame Graph
 The result of Flame Graph:
@@ -168,12 +174,13 @@ and the response size was 1KB.
 #### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-![](doc/images/benchmark-2.jpg)
+<img src="doc/images/benchmark-2.jpg" width="70%" height="70%">
+
 
 #### Latency
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-![](doc/images/latency-2.jpg)
+<img src="doc/images/latency-2.jpg" width="70%" height="70%">
 
 #### Flame Graph
 The result of Flame Graph:
@@ -213,15 +220,10 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 
 [Back to TOC](#summary)
 
-## Development
-### How to load the plugin?
+## 参与社区
 
-![](doc/images/flow-load-plugin.png)
+If you are interested in the development and use of APISIX, please join our QQ group to communicate.:
 
-### Plugin
-
-![](doc/images/flow-plugin-internal.png)
+<img src="doc/images/qq-group.png" width="302" height="302">
 
 inspired by Kong
-
-[Back to TOC](#summary)

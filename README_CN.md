@@ -1,3 +1,5 @@
+[English](README.md)  [中文](README_CN.md)
+
 ## APISIX
 
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
@@ -8,7 +10,7 @@ APISIX 是一个基于云原生、高速可扩展的开源微服务网关节点�
 APISIX 从 `etcd` 中订阅获取所需的配置并以热更新的方式来更改自身行为，更改 `etcd` 中的配置即可完成对 APISIX
 网关节点的控制，比如：动态上游、请求限速等。
 
-[设计文档](doc/architecture-design-cn.md)
+[详细设计文档](doc/architecture-design-cn.md)
 
 ## Summary
 - [**安装**](#安装)
@@ -129,15 +131,18 @@ Accept-Ranges: bytes
 
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-![](doc/images/benchmark-1.jpg)
+
+<img src="doc/images/benchmark-1.jpg" width="70%" height="70%">
 
 #### 延时
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-![](doc/images/latency-1.jpg)
+
+<img src="doc/images/latency-1.jpg" width="70%" height="70%">
 
 #### 火焰图
 火焰图的采样结果:
-![](doc/images/flamegraph-1.jpg)
+
+<img src="doc/images/flamegraph-1.jpg">
 
 
 ### 测试反向代理，开启 2 个插件
@@ -145,11 +150,13 @@ Accept-Ranges: bytes
 
 #### QPS
 下图中 x 轴为 CPU 的使用个数，y 轴为每秒处理的请求数：
-![](doc/images/benchmark-2.jpg)
+
+<img src="doc/images/benchmark-2.jpg" width="70%" height="70%">
 
 #### Latency
 请注意 y 轴延时的单位是**微秒(μs)**，而不是毫秒：
-![](doc/images/latency-2.jpg)
+
+<img src="doc/images/latency-2.jpg" width="70%" height="70%">
 
 #### 火焰图
 火焰图的采样结果:
@@ -161,6 +168,8 @@ Accept-Ranges: bytes
 
 如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
 
-![](doc/images/qq-group.png)
+<img src="doc/images/qq-group.png" width="302" height="302">
 
 [Back to TOC](#summary)
+
+inspired by Kong
