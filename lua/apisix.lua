@@ -68,7 +68,7 @@ local function run_plugin(phase, filter_plugins, api_ctx)
 end
 
 
-function _M.rewrite_phase()
+function _M.access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
@@ -125,10 +125,7 @@ function _M.rewrite_phase()
     api_ctx.filter_plugins = plugin.filter(route)
 
     run_plugin("rewrite", api_ctx.filter_plugins, api_ctx)
-end
-
-function _M.access_phase()
-    run_plugin("access")
+    run_plugin("access", api_ctx.filter_plugins, api_ctx)
 end
 
 function _M.header_filter_phase()
