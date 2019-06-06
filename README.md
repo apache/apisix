@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
 
-- [**QQ group**]:552030619
+- **QQ group**: 552030619
 
 ## What's APISIX?
 
@@ -110,10 +110,12 @@ Accept-Ranges: bytes
 
 ## Benchmark
 Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency of only 500 microseconds.
+
 You can view the [benchmark documentation](doc/benchmark.md) for more detailed information.
 
 ## Documentation
 English Development Documentation: TODO
+
 [中文开发文档](doc/architecture-design-cn.md)
 
 ## Plugins
