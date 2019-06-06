@@ -1,6 +1,5 @@
 local core = require("apisix.core")
 local plugin_name = "key-auth"
-local consumers
 
 
 local _M = {
@@ -10,25 +9,15 @@ local _M = {
 }
 
 
-function _M.init(conf)
-    if consumers then
-        consumers.close()
-    end
-
-    consumers = core.config.new("/plugins/key-auth/consumers",
-                                {automatic = true})
-end
-
-
 local create_consume_cache
 do
     local consumer_ids = {}
 
-    function create_consume_cache()
+    function create_consume_cache(consumers)
         core.table.clear(consumer_ids)
 
-        for _, consumer in ipairs(consumers.values) do
-            consumer_ids[consumer.value.key] = consumer.value.id
+        for _, consumer in ipairs(consumers.nodes) do
+            consumer_ids[consumer.conf.key] = consumer.consumer_id
         end
 
         return consumer_ids
@@ -42,22 +31,24 @@ function _M.check_args(conf)
 end
 
 
-function _M.access(conf, ctx)
+function _M.rewrite(conf, ctx)
     local key = core.request.header(ctx, "apikey")
     if not key then
         return 401, {message = "Missing API key found in request"}
     end
 
-    local consumers_hash = core.lrucache.plugin(plugin_name, "consumers_key",
-                                consumers.conf_version, create_consume_cache)
+    local consumer_conf = core.consumer.plugin(plugin_name)
+    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
+            consumer_conf.conf_version,
+            create_consume_cache, consumer_conf)
 
-    local consumer_id = consumers_hash[key]
+    local consumer_id = consumers[key]
     if not consumer_id then
         return 401, {message = "Invalid API key in request"}
     end
 
-    ctx.consumer_id = consumer_id
-    core.log.warn("hit key-auth access")
+    -- ctx.consumer_id = consumer_id
+    core.log.info("hit key-auth access")
 end
 
 
