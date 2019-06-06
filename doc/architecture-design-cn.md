@@ -74,15 +74,13 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
 
 ## Service
 
-*还未完整覆盖测试*
-
-`Service` 某类功能的提供者，比如订单、账户服务。它通常与上游服务抽象是一对一的，`Route`
+`Service` 是某类功能的提供者，比如订单、账户服务。它通常与上游服务抽象是一对一的，`Route`
 与 `Service` 之间，通常是 N:1 的关系，既多个 `Route` 规则可以对应同一个 `Service`。
 
 多个 route 规则同时绑定到一个 service 上，这些路由将具有相同的上游和插件配置，减少冗余配置。
 
-比如下面的例子，id 分别是 `100`、`101` 的 route 都绑定了同一个 id 为 `200` 的 service
-上，它们都启用了相同的限速插件。
+比如下面的例子，先创建了一个 service，并开启了限流插件，
+然后把 id 为 `100`、`101` 的 route 都绑定在这个 service 上。
 
 ```shell
 curl http://127.0.0.1:2379/v2/keys/apisix/services/200 -X PUT -d value='
@@ -121,8 +119,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/101 -X PUT -d value='
 }'
 ```
 
-当然也可以对具体路由指定更高级别的个性插件配置。比如下面的例子，为这个新 route 设置了不同的插件
-参数：
+你也可以为 route 单独制定不同的插件和参数，比如下面这个示例设置了不同的限流参数：
 
 ```shell
 curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
@@ -142,13 +139,11 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 }'
 ```
 
-也就是说，当 route 和 server 的配置出现冲突时，route 的优先级是要高于 service 的。
+当 route 和 service 都开启同一个插件时，route 的优先级高于 service。
 
 [返回目录](#目录)
 
 ## Consumer
-
-*还未完整覆盖测试*
 
 `Consumer` 是某类具体服务的消费者，主要用来表述不同用户的概念。比如不用的客户请求同一个 API，
 经过用户认证体系，网关服务需知道当前请求用户身份信息，针对不同的消费用户，会有不同的限制处理逻辑。
