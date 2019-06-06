@@ -42,10 +42,6 @@ _EOC_
     if (!$config) {
     $config .= <<_EOC_;
         location / {
-            rewrite_by_lua_block {
-                apisix.rewrite_phase()
-            }
-
             access_by_lua_block {
                 apisix.access_phase()
             }
