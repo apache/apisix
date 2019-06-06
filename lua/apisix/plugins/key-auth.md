@@ -61,7 +61,7 @@ Two steps are required:
 Here is a correct test example:
 
 ```shell
-curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
+$ curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
 HTTP/1.1 200 OK
 ...
 ```
@@ -87,7 +87,7 @@ When you want to disable the limit req plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
 	"methods": ["GET"],
 	"uri": "/index.html",
