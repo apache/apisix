@@ -131,15 +131,18 @@ and the response size was 1KB.
 
 #### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
-![](doc/images/benchmark-1.jpg)
+
+<img src="doc/images/benchmark-1.jpg" width="70%" height="70%">
 
 #### Latency
 Note the y-axis latency in **microsecond(μs)** not millisecond.
-![](doc/images/latency-1.jpg)
+
+<img src="doc/images/latency-1.jpg" width="70%" height="70%">
 
 #### Flame Graph
 The result of Flame Graph:
-![](doc/images/flamegraph-1.jpg)
+
+<img src="doc/images/flamegraph-1.jpg" width="70%" height="70%">
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
@@ -172,16 +175,18 @@ and the response size was 1KB.
 #### QPS
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-![](doc/images/benchmark-2.jpg)
+<img src="doc/images/benchmark-2.jpg" width="70%" height="70%">
+
 
 #### Latency
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-![](doc/images/latency-2.jpg)
+<img src="doc/images/latency-2.jpg" width="70%" height="70%">
 
 #### Flame Graph
 The result of Flame Graph:
-![](doc/images/flamegraph-2.jpg)
+
+<img src="doc/images/flamegraph-2.jpg" width="70%" height="70%">
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
@@ -217,6 +222,10 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 
 [Back to TOC](#summary)
 
-inspired by Kong
+## 参与社区
 
-[Back to TOC](#summary)
+If you are interested in the development and use of APISIX, please join our QQ group to communicate.:
+
+<img src="doc/images/qq-group.png" width="50%" height="50%">
+
+inspired by Kong
