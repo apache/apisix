@@ -224,6 +224,6 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 
 If you are interested in the development and use of APISIX, please join our QQ group to communicate.:
 
-<img src="doc/images/qq-group.png" width="50%" height="50%">
+<img src="doc/images/qq-group.png" width="302" height="302">
 
 inspired by Kong

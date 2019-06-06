@@ -168,7 +168,7 @@ Accept-Ranges: bytes
 
 如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
 
-<img src="doc/images/qq-group.png" width="50%" height="50%">
+<img src="doc/images/qq-group.png" width="302" height="302">
 
 [Back to TOC](#summary)
 
