@@ -1,7 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local base_prometheus = require("apisix.plugins.prometheus.base_prometheus")
-local prometheus = base_prometheus.init("prometheus_metrics", "apisix_")
+local prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
 local core = require("apisix.core")
 local ipairs = ipairs
 local ngx_capture = ngx.location.capture
