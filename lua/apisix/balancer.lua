@@ -4,10 +4,7 @@ local balancer = require("ngx.balancer")
 local upstreams_etcd
 local error = error
 local module_name = "balancer"
-local lrucache = core.lrucache.new{
-        plugin_ttl = 300,
-        plugin_count = 256
-    }
+local lrucache_get = core.lrucache.new({ttl = 300, count = 256})
 
 
 local _M = {
@@ -17,8 +14,8 @@ local _M = {
 
 
 local function create_server_picker(typ, nodes)
-    -- core.log.info("create create_obj, type: ", typ,
-    --               " nodes: ", core.json.encode(nodes))
+    core.log.info("create create_obj, type: ", typ,
+                  " nodes: ", core.json.delay_encode(nodes))
 
     if typ == "roundrobin" then
         return roundrobin:new(nodes)
@@ -61,7 +58,7 @@ function _M.run(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    local server_picker = lrucache:plugin(module_name, key, version,
+    local server_picker = lrucache_get(key, version,
                             create_server_picker, upstream.type, upstream.nodes)
     if not server_picker then
         error("failed to fetch server picker")

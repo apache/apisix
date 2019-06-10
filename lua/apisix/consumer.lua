@@ -1,6 +1,5 @@
 local lrucache = require("apisix.core.lrucache")
 local config   = require("apisix.core.config_etcd")
-local log = require("apisix.core.log")
 local insert_tab = table.insert
 local consumers
 local error = error
