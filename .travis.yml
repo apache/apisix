@@ -39,7 +39,5 @@ script:
   - cd test-nginx && (sudo cpanm . > build.log 2>&1 || (cat build.log && exit 1)) && cd ..
   - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$PATH
   - sudo service etcd start
-  - curl http://127.0.0.1:2379/v2/keys/apisix/routes -X PUT -d dir=true
-  - curl http://127.0.0.1:2379/v2/keys/apisix/upstreams -X PUT -d dir=true
-  - curl http://127.0.0.1:2379/v2/keys/apisix/services -X PUT -d dir=true
+  - sudo apisix init_etcd
   - make test
