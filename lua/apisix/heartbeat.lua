@@ -1,17 +1,19 @@
 -- Copyright (C) Yuansheng Wang
 
+local config_etcd = require("apisix.core.config_etcd").new()
 local apisix_version = require("apisix.core.version")
 local timer = require("apisix.core.timer")
 local json = require("apisix.core.json")
 local log = require("apisix.core.log")
 local http = require("resty.http")
+local encode_args = ngx.encode_args
 
 
-local apisix_heartbeat_addr = "https://iresty.com/apisix/heartbeat"
+local apisix_heartbeat_addr = "https://iresty.com/apisix/heartbeat?"
 local _M = {version = 0.1}
 
 
-local function request_apisix_svr(body)
+local function request_apisix_svr(args)
     local http_cli, err = http.new()
     if err then
         return nil, err
@@ -20,9 +22,8 @@ local function request_apisix_svr(body)
     http_cli:set_timeout(60 * 1000)
 
     local res
-    res, err = http_cli:request_uri(apisix_heartbeat_addr, {
-        method = "POST",
-        body = body,
+    res, err = http_cli:request_uri(apisix_heartbeat_addr .. args, {
+        method = "GET",
         ssl_verify = false,
         keepalive = false,
     })
@@ -41,18 +42,26 @@ end
 
 local function report()
     -- ngx.sleep(3)
+    local etcd_version, err = config_etcd:server_version()
+    if not etcd_version then
+        log.error("failed to fetch etcd version: ", err)
+    end
+
     local info = {
         version = apisix_version,
+        plugins = config_etcd.local_conf().plugins,
+        etcd_version = etcd_version,
     }
 
-    local body, err = json.encode(info)
-    if not body then
+    local args, err = encode_args(info)
+    if not args then
         log.error("failed to encode hearbeat information: ", err)
         return
     end
+    log.debug("heartbeat body: ", args)
 
     local res
-    res, err = request_apisix_svr(body)
+    res, err = request_apisix_svr(args)
     if not res then
         log.error("failed to report heartbeat information: ", err)
     else
