@@ -119,6 +119,7 @@ Accept-Ranges: bytes
 ## 插件
 目前已支持这些插件：
 
+* [动态负载均衡](doc/architecture-design-cn.md#upstream)：跨多个上游服务的动态负载均衡。
 * [key-auth](lua/apisix/plugins/key-auth.md): 基于 Key Authentication 的用户认证。
 * [limit-count](lua/apisix/plugins/limit-count.md): 基于“固定窗口”的限速实现.
 * [limit-req](lua/apisix/plugins/limit-req.md): 基于漏桶原理的请求限速实现。
