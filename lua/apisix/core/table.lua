@@ -1,6 +1,7 @@
 local select = select
 
 local _M = {
+    version = 0.1,
     new    = require("table.new"),
     clear  = require("table.clear"),
     nkeys  = require("table.nkeys"),
