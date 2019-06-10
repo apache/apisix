@@ -9,6 +9,7 @@ local GLOBAL_ITEMS_COUNT = 1024
 local PLUGIN_TTL = 5 * 60           -- 5 min
 local PLUGIN_ITEMS_COUNT = 8
 local global_lrus = lru_new(GLOBAL_ITEMS_COUNT)
+local log = require("apisix.core.log")
 
 
 local _M = {version = 0.1}
@@ -26,10 +27,16 @@ local function global_lru(key, version, create_obj_fun, ...)
         return stale_obj
     end
 
-    obj = create_obj_fun(...)
-    obj._cache_ver = version
-    global_lrus:set(key, obj, GLOBAL_TTL)
-    return obj
+    local err
+    obj, err = create_obj_fun(...)
+    if type(obj) == 'table' then
+        obj._cache_ver = version
+        global_lrus:set(key, obj, GLOBAL_TTL)
+    else
+        log.error('failed to call create_obj_fun in global_lru(), only support to cache Lua table object.')
+    end
+
+    return obj, err
 end
 _M.global = global_lru
 
@@ -49,11 +56,16 @@ local function _plugin(count, ttl, plugin_name, key, version, create_obj_fun,
         return stale_obj
     end
 
-    obj = create_obj_fun(...)
-    obj._cache_ver = version
-    lru_global:set(key, obj, ttl)
+    local err
+    obj, err = create_obj_fun(...)
+    if type(obj) == 'table' then
+        obj._cache_ver = version
+        lru_global:set(key, obj, ttl)
+    else
+        log.error('failed to call create_obj_fun in _plugin(), only support to cache Lua table object.')
+    end
 
-    return obj
+    return obj, err
 end
 
 
