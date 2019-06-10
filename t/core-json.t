@@ -26,6 +26,7 @@ GET /t
 --- response_body
 encode: {"test":"test"}
 data: test
+--- no_error_log
 
 
 
@@ -68,3 +69,4 @@ data2 val: {"test":"test2"}
 GET /t
 --- response_body_like eval
 qr/\{"test":"test","fun":"function: 0x[0-9a-f]+"}/
+--- no_error_log

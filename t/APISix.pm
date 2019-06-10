@@ -25,6 +25,10 @@ add_block_preprocessor(sub {
     lua_package_path "$pwd/lua/?.lua;/usr/share/lua/5.1/?.lua;;";
     lua_package_cpath '/usr/lib64/lua/5.1/?.so;;';
 
+    lua_shared_dict plugin-limit-req 10m;
+    lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict prometheus-metrics 10m;
+
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
