@@ -15,6 +15,7 @@ addons:
       - perl
       - etcd
       - luarocks
+      - cmake
 
 cache:
   directories:
