@@ -22,6 +22,16 @@ function _M.init()
     require("jit.opt").start("minstitch=2", "maxtrace=4000",
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
+
+    --
+    local seed, err = core.utils.get_seed_from_urandom()
+    if not seed then
+        core.log.warn('failed to get seed from urandom: ', err)
+        seed = ngx.now() * 1000 + ngx.worker.pid()
+    end
+    math.randomseed(seed)
+
+    core.id.init()
 end
 
 

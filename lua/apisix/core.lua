@@ -11,6 +11,8 @@ return {
     schema   = require("apisix.core.schema"),
     ctx      = require("apisix.core.ctx"),
     timer    = require("apisix.core.timer"),
+    id       = require("apisix.core.id"),
+    utils    = require("apisix.core.utils"),
     consumer = require("apisix.consumer"),
     tablepool= require("tablepool"),
 }
