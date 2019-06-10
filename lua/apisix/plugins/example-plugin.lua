@@ -1,12 +1,22 @@
 local core = require("apisix.core")
+local rapidjson = require('rapidjson')
 
 
--- TODO: need a more powerful way to define the schema
-local args_schema = {
-    i = "int",
-    s = "string",
-    t = "table",
+-- You can follow this document to write schema:
+-- https://github.com/Tencent/rapidjson/blob/master/bin/draft-04/schema
+-- rapidjson not supported `format` in draft-04 yet
+local schema = {
+    type = "object",
+    properties = {
+        i = {type = "number", minimum = 0},
+        s = {type = "string"},
+        t = {type = "array", minItems = 1},
+    },
+    required = {"i"}
 }
+
+local sd = rapidjson.SchemaDocument(schema)
+local validator = rapidjson.SchemaValidator(sd)
 
 
 local plugin_name = "example-plugin"
@@ -19,7 +29,7 @@ local _M = {
 
 
 function _M.check_args(conf)
-    local ok, err = core.schema.check_args(conf, args_schema)
+    local ok, err = core.schema.check_args(validator, conf)
     if not ok then
         return false, err
     end

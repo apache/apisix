@@ -1,22 +1,15 @@
--- todo: change to https://github.com/iresty/ljsonschema
-
-local typeof = require("apisix.core.typeof")
-local tostring = tostring
-local pairs = pairs
+local rapidjson_doc = require('rapidjson').Document
 
 
 local _M = {version = 0.1}
 
 
-function _M.check_args(args, schema)
-    for k, v in pairs(schema) do
-        if not typeof[v](args[k]) then
-            return nil, "args." .. k .. " expect " .. v .. " value but got: ["
-                        .. tostring(args[k]) .. "]"
-        end
-    end
-
-    return true
+-- You can follow this document to write schema:
+-- https://github.com/Tencent/rapidjson/blob/master/bin/draft-04/schema
+-- rapidjson not supported `format` in draft-04 yet
+function _M.check_args(validator, json)
+    local d = rapidjson_doc(json)
+    return validator:validate(d)
 end
 
 return _M
