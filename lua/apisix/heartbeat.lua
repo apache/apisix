@@ -62,8 +62,9 @@ end
 
 
 function _M.init_worker()
-    local ok, err = timer.new({name = "heartbeat", callback_fun = report})
-    if not ok then
+    local res, err = timer.new("heartbeat", report,
+                               {check_interval = 60 * 60})
+    if not res then
         log.error("failed to create timer: ", err)
     else
         log.info("succed to create timer: heartbeat")
