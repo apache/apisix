@@ -1,5 +1,6 @@
 apisix:
   node_listen: 9080             # Apisix listening port
+  enable_heartbeat: true
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
