@@ -1,10 +1,9 @@
 -- Copyright (C) Yuansheng Wang
 
-
-local json = require("apisix.core.json")
-local version = require("apisix.core.version")
-local log = require("apisix.core.log")
+local apisix_version = require("apisix.core.version")
 local timer = require("apisix.core.timer")
+local json = require("apisix.core.json")
+local log = require("apisix.core.log")
 local http = require("resty.http")
 
 
@@ -32,7 +31,7 @@ local function request_apisix_svr(body)
         return nil, err
     end
 
-    if res.status >= 500 then
+    if res.status ~= 200 then
         return nil, "invalid response code: " .. res.status
     end
 
@@ -43,7 +42,7 @@ end
 local function report()
     -- ngx.sleep(3)
     local info = {
-        version = version,
+        version = apisix_version,
     }
 
     local body, err = json.encode(info)
@@ -67,7 +66,7 @@ function _M.init_worker()
     if not ok then
         log.error("failed to create timer: ", err)
     else
-        log.warn("succed to create timer: heartbeat")
+        log.info("succed to create timer: heartbeat")
     end
 end
 
