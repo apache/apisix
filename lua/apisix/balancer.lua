@@ -1,18 +1,19 @@
-local core = require("apisix.core")
 local roundrobin = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
 local balancer = require("ngx.balancer")
+local core = require("apisix.core")
 local sub_str = string.sub
 local find_str = string.find
 local upstreams_etcd
 local error = error
-local module_name = "balancer"
 local str_char = string.char
 local str_gsub = string.gsub
 local pairs = pairs
 local tonumber = tonumber
+local tostring = tostring
 
 
+local module_name = "balancer"
 local lrucache_get = core.lrucache.new({ttl = 300, count = 256})
 
 
