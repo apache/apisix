@@ -6,29 +6,14 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: check arguments
+=== TEST 1: sanity
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.example-plugin")
-            local ok, err = plugin.check_args({i = 1, s = "s", t = {}})
+            local ok, err = plugin.check_args({i = 1, s = "s", t = {1}})
             if not ok then
-                ngx.say("failed to check args: ", err)
-            end
-
-            ok, err = plugin.check_args({s = "s", t = {}})
-            if not ok then
-                ngx.say("failed to check args: ", err)
-            end
-
-            ok, err = plugin.check_args({i = 1, s = 3, t = {}})
-            if not ok then
-                ngx.say("failed to check args: ", err)
-            end
-
-            ok, err = plugin.check_args({i = 1, s = "s", t = ""})
-            if not ok then
-                ngx.say("failed to check args: ", err)
+                ngx.say(err)
             end
 
             ngx.say("done")
@@ -37,14 +22,96 @@ __DATA__
 --- request
 GET /t
 --- response_body
-failed to check args: args.i expect int value but got: [nil]
-failed to check args: args.s expect string value but got: [3]
-failed to check args: args.t expect table value but got: []
 done
 
 
 
-=== TEST 2: load plugins
+=== TEST 2: missing args
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+
+            local ok, err = plugin.check_args({s = "s", t = {1}})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid "required" in docuement at pointer "#"
+done
+
+
+
+=== TEST 3: small then minimum
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+            local ok, err = plugin.check_args({i = -1, s = "s", t = {1, 2}})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid "minimum" in docuement at pointer "#/i"
+done
+
+
+
+=== TEST 4: wrong type of string
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+            local ok, err = plugin.check_args({i = 1, s = 123, t = {1}})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid "type" in docuement at pointer "#/s"
+done
+
+
+
+=== TEST 5: the size of array < minItems
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+            local ok, err = plugin.check_args({i = 1, s = '123', t = {}})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid "type" in docuement at pointer "#/t"
+done
+
+
+
+=== TEST 6: load plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -76,7 +143,7 @@ rewrite(): plugin rewrite phase
 
 
 
-=== TEST 3: filter plugins
+=== TEST 7: filter plugins
 --- config
     location /t {
         content_by_lua_block {
