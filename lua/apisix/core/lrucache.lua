@@ -33,7 +33,7 @@ local function global_lru(key, version, create_obj_fun, ...)
         obj._cache_ver = version
         global_lrus:set(key, obj, GLOBAL_TTL)
     else
-        log.error('failed to call create_obj_fun in global_lru()')
+        log.error('failed to call create_obj_fun in global_lru(), only support to cache Lua table object.')
     end
 
     return obj, err
@@ -62,7 +62,7 @@ local function _plugin(count, ttl, plugin_name, key, version, create_obj_fun,
         obj._cache_ver = version
         lru_global:set(key, obj, ttl)
     else
-        log.error('failed to call create_obj_fun in _plugin()')
+        log.error('failed to call create_obj_fun in _plugin(), only support to cache Lua table object.')
     end
 
     return obj, err
