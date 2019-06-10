@@ -45,3 +45,4 @@ logs/*.pid
 t/servroot
 go
 \.*
+conf/apisix.uid

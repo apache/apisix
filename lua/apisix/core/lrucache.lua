@@ -2,7 +2,6 @@
 -- only support to cache lua table object
 
 local lru_new = require("resty.lrucache").new
-local setmetatable = setmetatable
 -- todo: support to config it in YAML.
 local GLOBAL_TTL = 60 * 60          -- 60 min
 local GLOBAL_ITEMS_COUNT = 1024
@@ -82,29 +81,34 @@ function _M.plugin_ctx(plugin_name, api_ctx, create_obj_fun, ...)
 end
 
 
-local function _obj_plugin_ctx(self, plugin_name, api_ctx, create_obj_fun, ...)
-    local key = api_ctx.conf_type .. "#" .. api_ctx.conf_id
-    return _plugin(self.plugin_count, self.plugin_ttl, plugin_name, key,
-                   api_ctx.conf_version, create_obj_fun, ...)
-end
-
-
-local function _obj_plugin(self, plugin_name, key, version, create_obj_fun, ...)
-    return _plugin(self.plugin_count, self.plugin_ttl, plugin_name, key,
-                   version, create_obj_fun, ...)
-end
-
-
 function _M.new(opts)
-    local plugin_count = opts and opts.plugin_count or PLUGIN_ITEMS_COUNT
-    local plugin_ttl = opts and opts.plugin_ttl or PLUGIN_TTL
+    local item_count = opts and opts.count or GLOBAL_ITEMS_COUNT
+    local item_ttl = opts and opts.ttl or GLOBAL_TTL
 
-    return setmetatable({
-        plugin_count = plugin_count,
-        plugin_ttl = plugin_ttl,
-        plugin_ctx = _obj_plugin_ctx,
-        plugin = _obj_plugin,
-    }, mt)
+    local lru_obj = lru_new(item_count)
+
+    return function (key, version, create_obj_fun, ...)
+        local obj, stale_obj = lru_obj:get(key)
+        if obj and obj._cache_ver == version then
+            return obj
+        end
+
+        if stale_obj and stale_obj._cache_ver == version then
+            lru_obj:set(key, obj, item_ttl)
+            return stale_obj
+        end
+
+        local err
+        obj, err = create_obj_fun(...)
+        if type(obj) == 'table' then
+            obj._cache_ver = version
+            lru_obj:set(key, obj, item_ttl)
+        else
+            log.warn('only support to cache Lua table object with lrucache')
+        end
+
+        return obj, err
+    end
 end
 
 
