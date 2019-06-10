@@ -11,7 +11,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.example-plugin")
-            ok, err = plugin.check_args({i = 1, s = "s", t = {1}})
+            local ok, err = plugin.check_args({i = 1, s = "s", t = {1}})
             if not ok then
                 ngx.say(err)
             end
@@ -32,7 +32,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.example-plugin")
 
-            ok, err = plugin.check_args({s = "s", t = {1}})
+            local ok, err = plugin.check_args({s = "s", t = {1}})
             if not ok then
                 ngx.say(err)
             end

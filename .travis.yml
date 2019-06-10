@@ -33,11 +33,9 @@ install:
   - sudo apt-get install openresty
   - sudo luarocks install apisix-*.rockspec --only-deps
   - git clone https://github.com/openresty/test-nginx.git test-nginx
-  - git clone https://github.com/xpol/lua-rapidjson.git lua-rapidjson
 
 script:
   - cd test-nginx && (sudo cpanm . > build.log 2>&1 || (cat build.log && exit 1)) && cd ..
-  - cd lua-rapidjson && (sudo luarocks make) && cd ..
   - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$PATH
   - sudo service etcd start
   - sudo apisix init_etcd

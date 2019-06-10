@@ -1,5 +1,4 @@
 local core = require("apisix.core")
-local rapidjson = require('rapidjson')
 
 
 -- You can follow this document to write schema:
@@ -15,7 +14,6 @@ local schema = {
     required = {"i"}
 }
 
-local sd = rapidjson.SchemaDocument(schema)
 
 local plugin_name = "example-plugin"
 
@@ -27,8 +25,7 @@ local _M = {
 
 
 function _M.check_args(conf)
-    local validator = rapidjson.SchemaValidator(sd)
-    local ok, err = core.schema.check_args(validator, conf)
+    local ok, err = core.schema.check_args(schema, conf)
 
     if not ok then
         return false, err

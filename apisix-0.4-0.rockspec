@@ -21,7 +21,7 @@ dependencies = {
    "lua-resty-balancer = 0.02rc5",
    "lua-resty-ngxvar = 0.2",
    "lua-resty-jit-uuid = 0.0.7",
-   "rapidjson"
+   "rapidjson = 0.5.2-1",
 }
 
 build = {
