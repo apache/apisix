@@ -1,4 +1,3 @@
-local log = require("apisix.core.log")
 local open = io.open
 
 
