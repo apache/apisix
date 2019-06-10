@@ -22,7 +22,7 @@ events {
     worker_connections 10620;
 }
 
-worker_shutdown_timeout 1;
+worker_shutdown_timeout 3;
 
 http {
     lua_package_path "{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
