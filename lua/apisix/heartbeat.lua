@@ -57,7 +57,7 @@ local function report()
     if not res then
         log.error("failed to report heartbeat information: ", err)
     else
-        log.info("succed to report body: ", json.encode(res, true))
+        log.info("succed to report body: ", json.delay_encode(res, true))
     end
 end
 
