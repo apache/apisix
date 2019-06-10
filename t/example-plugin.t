@@ -11,7 +11,10 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.example-plugin")
-
+            ok, err = plugin.check_args({i = 1, s = "s", t = {1}})
+            if not ok then
+                ngx.say(err)
+            end
 
             ngx.say("done")
         }
@@ -20,7 +23,7 @@ __DATA__
 GET /t
 --- response_body
 done
---- ONLY
+
 
 
 === TEST 2: missing args
@@ -40,6 +43,7 @@ done
 --- request
 GET /t
 --- response_body
+invalid "required" in docuement at pointer "#"
 done
 
 
@@ -60,16 +64,17 @@ done
 --- request
 GET /t
 --- response_body
+invalid "minimum" in docuement at pointer "#/i"
 done
 
 
 
-=== TEST 4: number as string
+=== TEST 4: wrong type of string
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.example-plugin")
-            local ok, err = plugin.check_args({i = 1, s = 123, t = {1, 2}})
+            local ok, err = plugin.check_args({i = 1, s = 123, t = {1}})
             if not ok then
                 ngx.say(err)
             end
@@ -80,16 +85,17 @@ done
 --- request
 GET /t
 --- response_body
+invalid "type" in docuement at pointer "#/s"
 done
 
 
 
-=== TEST 5: length of array small then minItems
+=== TEST 5: the size of array < minItems
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.example-plugin")
-            local ok, err = plugin.check_args({i = 1, s = 123, t = {}})
+            local ok, err = plugin.check_args({i = 1, s = '123', t = {}})
             if not ok then
                 ngx.say(err)
             end
@@ -100,6 +106,7 @@ done
 --- request
 GET /t
 --- response_body
+invalid "type" in docuement at pointer "#/t"
 done
 
 
