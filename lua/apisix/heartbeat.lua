@@ -27,6 +27,9 @@ local function request_apisix_svr(args)
         method = "GET",
         ssl_verify = false,
         keepalive = false,
+        headers = {
+            ["User-Agent"] = "curl",
+        }
     })
 
     if err then
@@ -73,6 +76,12 @@ end
 
 
 function _M.init_worker()
+    local local_conf = config_etcd.local_conf()
+    if not local_conf.apisix.enable_heartbeat then
+        log.info("disabled the heartbeat feature")
+        return
+    end
+
     local res, err = timer.new("heartbeat", report,
                                {check_interval = 60 * 60})
     if not res then
