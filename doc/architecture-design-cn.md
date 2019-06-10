@@ -5,6 +5,7 @@
 - [**Service**](#service)
 - [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
+- [**Upstream**](#upstream)
 
 ## apisix
 
