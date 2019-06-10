@@ -2,6 +2,7 @@
 
 local config_etcd = require("apisix.core.config_etcd").new()
 local apisix_version = require("apisix.core.version")
+local apisix_id = require("apisix.core.id")
 local timer = require("apisix.core.timer")
 local json = require("apisix.core.json")
 local log = require("apisix.core.log")
@@ -51,6 +52,7 @@ local function report()
         version = apisix_version,
         plugins = config_etcd.local_conf().plugins,
         etcd_version = etcd_version,
+        uuid = apisix_id.get(),
     }
 
     local args, err = encode_args(info)
