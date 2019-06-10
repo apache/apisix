@@ -29,6 +29,9 @@ add_block_preprocessor(sub {
     lua_shared_dict plugin-limit-count 10m;
     lua_shared_dict prometheus-metrics 10m;
 
+    resolver ipv6=off local=on;
+    resolver_timeout 5;
+
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
