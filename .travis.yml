@@ -16,6 +16,7 @@ addons:
       - etcd
       - luarocks
       - cmake
+      - lua-check
 
 cache:
   directories:
