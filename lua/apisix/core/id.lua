@@ -1,6 +1,7 @@
 local log = require("apisix.core.log")
 local uuid = require('resty.jit-uuid')
 local smatch = string.match
+local open = io.open
 
 
 local prefix = ngx.config.prefix()
@@ -15,7 +16,7 @@ end
 
 
 local function read_file(path)
-    local file = io.open(path, "rb") -- r read mode and b binary mode
+    local file = open(path, "rb") -- r read mode and b binary mode
     if not file then
         return nil
     end
@@ -27,7 +28,7 @@ end
 
 
 local function write_file(path, data)
-    local file = io.open(path ,"w+")
+    local file = open(path ,"w+")
     if not file then
         return nil, "failed to open file[" .. path .. "] for writing"
     end
@@ -46,7 +47,7 @@ function _M.init()
     end
 
     apisix_uid = uuid.generate_v4()
-    log.warn("not found apisix uid, generate a new one: ", apisix_uid)
+    log.notice("not found apisix uid, generate a new one: ", apisix_uid)
 
     local ok, err = write_file(uid_file_path, apisix_uid)
     if not ok then
