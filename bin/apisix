@@ -31,6 +31,7 @@ http {
     lua_shared_dict plugin-limit-req    10m;
     lua_shared_dict plugin-limit-count  10m;
     lua_shared_dict prometheus-metrics  10m;
+    lua_shared_dict plugin-limit-conn   10m;
 
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;

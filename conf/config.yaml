@@ -13,3 +13,4 @@ plugins:                        # plugin name list
   - limit-count
   - key-auth
   - prometheus
+  - limit-conn

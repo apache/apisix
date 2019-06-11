@@ -19,7 +19,7 @@ dependencies = {
    "lua-resty-template = 1.9-1",
    "lua-resty-etcd = 0.5",
    "lua-resty-balancer = 0.02rc5",
-   "lua-resty-ngxvar = 0.2",
+   "lua-resty-ngxvar = 0.3",
    "lua-resty-jit-uuid = 0.0.7",
    "rapidjson = 0.5.2-1",
 }
