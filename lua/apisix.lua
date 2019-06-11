@@ -159,7 +159,6 @@ function _M.balancer_phase()
         return
     end
 
-    -- TODO: fetch the upstream by upstream_id
     load_balancer(api_ctx.matched_route, api_ctx)
 end
 
