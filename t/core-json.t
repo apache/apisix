@@ -72,3 +72,24 @@ GET /t
 qr/\{"test":"test","fun":"function: 0x[0-9a-f]+"}/
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: encode, include `cdata` type
+--- config
+    location /t {
+        content_by_lua_block {
+            local ffi = require "ffi"
+            local charpp = ffi.new("char *[1]")
+
+            local core = require("apisix.core")
+            local json_data = core.json.encode({test=charpp}, true)
+            ngx.say("encode: ", json_data)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/encode: \{"test":"cdata\<char \*\[1\]>: 0x[0-9a-f]+"\}/
+--- no_error_log
+[error]
