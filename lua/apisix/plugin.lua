@@ -139,9 +139,4 @@ function _M.merge_service_route(service_conf, route_conf)
 end
 
 
-function _M.init_worker()
-    load()
-end
-
-
 return _M

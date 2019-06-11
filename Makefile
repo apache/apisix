@@ -21,13 +21,13 @@ help:
 .PHONY: run
 run:
 	mkdir -p logs
-	sudo $$(which openresty) -p $$PWD/
+	$$(which openresty) -p $$PWD/
 
 
 ### stop:         Stop the apisix server
 .PHONY: stop
 stop:
-	sudo $$(which openresty) -p $$PWD/ -s stop
+	$$(which openresty) -p $$PWD/ -s stop
 
 
 ### clean:        Remove generated files
@@ -39,7 +39,7 @@ clean:
 ### reload:       Reload the apisix server
 .PHONY: reload
 reload:
-	sudo $$(which openresty) -p $$PWD/ -s reload
+	$$(which openresty) -p $$PWD/ -s reload
 
 
 ### install:      Install the apisix
