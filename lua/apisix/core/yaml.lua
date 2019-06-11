@@ -61,14 +61,14 @@ function class.__meta.__call(cls, ...)
   return self
 end
 
-function class.def(base, type, cls)
+function class.def(base, typ, cls)
   base = base or class
   local mt = {__metatable=base, __index=base}
   for k, v in pairs(base.__meta) do mt[k] = v end
   cls = setmetatable(cls or {}, mt)
   cls.__index = cls
   cls.__metatable = cls
-  cls.__type = type
+  cls.__type = typ
   cls.__meta = mt
   return cls
 end
