@@ -193,7 +193,6 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
         },
         "prometheus": {}
     }
-    ...
 }
 ```
 
@@ -222,19 +221,74 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
     * roundrobin：支持权重的负载
     * chash：一致性 hash (TODO)
 * nodes: 上游机器地址列表（目前仅支持 IP+Port 方式）
+* key: 该选项只有类型是 `roundrobin` 才有效。根据 `key` 来查找对应的 node `id`，相同的
+`key` 在同一个对象中，永远返回相同 id 。
+
+创建上游对象用例：
 
 ```json
+curl http://127.0.0.1:2379/v2/keys/apisix/upstreams/1 -X PUT -d value='
 {
-    ...
+    "id": 1,
+    "type": "roundrobin",
+    "nodes": {
+        "127.0.0.1:80": 1,
+        "127.0.0.2:80": 1,
+        "127.0.0.3:80": 1
+    }
+}'
+
+curl http://127.0.0.1:2379/v2/keys/apisix/upstreams/2 -X PUT -d value='
+{
+    "id": 2,
+    "type": "chash",
+    "key": "remote_addr",
+    "nodes": {
+        "127.0.0.1:80": 1,
+        "127.0.0.2:80": 1
+    }
+}'
+```
+
+上游对象创建后，均可以被具体 `route` 或 `service` 引用，例如：
+
+```shell
+curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugin_config": {
+    },
+    "upstream": {
+        "id": "2"
+    }
+}'
+```
+
+为了方便使用，也可以直接把上游地址直接绑到某个 `route` 或 `service` ，例如：
+
+```shell
+curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+{
+   "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugin_config": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.100:80": 1,
-            "39.97.63.200:80": 2
+            "39.97.63.215:80": 1
         }
     }
-    ...
-}
+}'
 ```
 
 [返回目录](#目录)
