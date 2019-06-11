@@ -139,9 +139,11 @@ function _M.access_phase()
     run_plugin("access", api_ctx.filter_plugins, api_ctx)
 end
 
+
 function _M.header_filter_phase()
     run_plugin("header_filter")
 end
+
 
 function _M.log_phase()
     local api_ctx = run_plugin("log")
@@ -152,6 +154,7 @@ function _M.log_phase()
     end
 end
 
+
 function _M.balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx or not api_ctx.filter_plugins then
@@ -160,5 +163,11 @@ function _M.balancer_phase()
 
     load_balancer(api_ctx.matched_route, api_ctx)
 end
+
+
+function _M.admin()
+    ngx.say("admin")
+end
+
 
 return _M
