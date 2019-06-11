@@ -27,7 +27,7 @@ function _M.access(conf, ctx)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                            create_limit_obj, conf)
     if not lim then
-        core.log.error("failed to instantiate a resty.limit.count object: ", err)
+        core.log.error("failed to fetch limit.count object: ", err)
         return 500
     end
 

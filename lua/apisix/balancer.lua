@@ -130,6 +130,8 @@ function _M.run(route, ctx)
     if not ok then
         error("failed to set server peer: " .. err)
     end
+
+    ctx.proxy_passed = true
 end
 
 
