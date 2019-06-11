@@ -1,5 +1,4 @@
 local exporter = require("apisix.plugins.prometheus.exporter")
-local core = require("apisix.core")
 local plugin_name = "prometheus"
 
 
