@@ -20,6 +20,12 @@ my $yaml_config = read_file("conf/config.yaml");
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
+    require "resty.core"
+    apisix = require("apisix")
+    apisix.init()
+_EOC_
+
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
     lua_package_path "$pwd/lua/?.lua;/usr/share/lua/5.1/?.lua;;";
@@ -33,9 +39,7 @@ add_block_preprocessor(sub {
     resolver_timeout 5;
 
     init_by_lua_block {
-        require "resty.core"
-        apisix = require("apisix")
-        apisix.init()
+        $init_by_lua_block
     }
 
     init_worker_by_lua_block {
