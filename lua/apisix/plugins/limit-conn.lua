@@ -1,7 +1,6 @@
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
 local sleep = ngx.sleep
-local tonumber = tonumber
 local plugin_name = "limit-conn"
 
 
