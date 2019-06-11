@@ -77,7 +77,7 @@ end
 
 function _M.init_worker()
     local local_conf = config_etcd.local_conf()
-    if not local_conf.apisix.enable_heartbeat then
+    if local_conf.apisix and not local_conf.apisix.enable_heartbeat then
         log.info("disabled the heartbeat feature")
         return
     end

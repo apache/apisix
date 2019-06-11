@@ -23,6 +23,8 @@ __DATA__
 GET /t
 --- response_body
 done
+--- no_error_log
+[error]
 
 
 
@@ -45,6 +47,8 @@ GET /t
 --- response_body
 invalid "required" in docuement at pointer "#"
 done
+--- no_error_log
+[error]
 
 
 
@@ -66,6 +70,8 @@ GET /t
 --- response_body
 invalid "minimum" in docuement at pointer "#/i"
 done
+--- no_error_log
+[error]
 
 
 
@@ -87,6 +93,8 @@ GET /t
 --- response_body
 invalid "type" in docuement at pointer "#/s"
 done
+--- no_error_log
+[error]
 
 
 
@@ -108,6 +116,8 @@ GET /t
 --- response_body
 invalid "type" in docuement at pointer "#/t"
 done
+--- no_error_log
+[error]
 
 
 
@@ -134,12 +144,18 @@ GET /t
 --- response_body
 plugin name: example-plugin priority: 1000
 --- yaml_config
+etcd:
+  host: "http://127.0.0.1:2379" # etcd address
+  prefix: "/apisix"             # apisix configurations prefix
+  timeout: 1
+
 plugins:
   - example-plugin
   - not-exist-plugin
---- error_log
-failed to load plugin not-exist-plugin err: module 'apisix.plugins.not-exist-plugin' not found
-rewrite(): plugin rewrite phase
+--- grep_error_log eval
+qr/\[error\].*/
+--- grep_error_log_out eval
+qr/module 'apisix.plugins.not-exist-plugin' not found/
 
 
 
