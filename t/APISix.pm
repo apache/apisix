@@ -39,6 +39,8 @@ _EOC_
     resolver ipv6=off local=on;
     resolver_timeout 5;
 
+    lua_socket_log_errors off;
+
     init_by_lua_block {
         $init_by_lua_block
     }
