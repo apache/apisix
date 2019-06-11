@@ -74,22 +74,23 @@ local function parse_addr(addr)
 end
 
 
-function _M.run(route, ctx)
-    core.log.info("conf: ", core.json.delay_encode(route, true))
+local function pick_server(route, ctx)
+    core.log.info("route: ", core.json.delay_encode(route, true))
+    core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local upstream = route.value.upstream
-    local up_id = tostring(upstream.id)
+    local up_id = upstream.id
     local version
 
     local key
     if up_id then
         if not upstreams_etcd then
-            error("need to create a etcd instance for fetching ",
-                  "upstream information")
+            return nil, nil, "need to create a etcd instance for fetching "
+                             .. "upstream information"
         end
 
-        local upstream_obj = upstreams_etcd:get(up_id)
+        local upstream_obj = upstreams_etcd:get(tostring(up_id))
         if not upstream_obj then
-            error("failed to find upstream by id: " .. up_id)
+            return nil, nil, "failed to find upstream by id: " .. up_id
         end
         core.log.info("upstream: ", core.json.delay_encode(upstream_obj))
 
@@ -105,17 +106,27 @@ function _M.run(route, ctx)
     local server_picker = lrucache_get(key, version,
                             create_server_picker, upstream)
     if not server_picker then
-        error("failed to fetch server picker")
+        return nil, nil, "failed to fetch server picker"
     end
 
     local server, err = server_picker.get(ctx)
     if not server then
-        error("failed to find valid upstream server" .. err)
+        return nil, nil, "failed to find valid upstream server" .. err
     end
 
-    local host, port = parse_addr(server)
-    local ok
-    ok, err = balancer.set_current_peer(host, port)
+    return parse_addr(server)
+end
+-- for test
+_M.pick_server = pick_server
+
+
+function _M.run(route, ctx)
+    local host, port, err = pick_server(route, ctx)
+    if err then
+        error("failed to pick server: " .. err)
+    end
+
+    local ok, err = balancer.set_current_peer(host, port)
     if not ok then
         error("failed to set server peer: " .. err)
     end
