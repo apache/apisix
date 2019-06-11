@@ -4,6 +4,11 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 
+
+.PHONY: default
+default:
+
+
 ### help:         Show Makefile rules.
 .PHONY: help
 help:
