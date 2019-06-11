@@ -80,9 +80,9 @@ function _M.log(conf, ctx)
     if lim then
         local latency
         if ctx.proxy_passed then
-            latency = tonumber(ctx.var.upstream_response_time)
+            latency = ctx.var.upstream_response_time
         else
-            latency = tonumber(ctx.var.request_time) - ctx.limit_conn_delay
+            latency = ctx.var.request_time - ctx.limit_conn_delay
         end
 
         local key = ctx.limit_conn_key
