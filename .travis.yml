@@ -16,6 +16,7 @@ addons:
       - etcd
       - luarocks
       - cmake
+      - lua-check
 
 cache:
   directories:
@@ -39,4 +40,5 @@ script:
   - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$PATH
   - sudo service etcd start
   - sudo apisix init_etcd
+  - luacheck -q lua
   - make test
