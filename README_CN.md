@@ -123,6 +123,7 @@ Accept-Ranges: bytes
 * [key-auth](lua/apisix/plugins/key-auth.md): 基于 Key Authentication 的用户认证。
 * [limit-count](lua/apisix/plugins/limit-count.md): 基于“固定窗口”的限速实现.
 * [limit-req](lua/apisix/plugins/limit-req.md): 基于漏桶原理的请求限速实现。
+* [limit-conn](lua/apisix/plugins/limit-conn-cn.md): 限制并发请求（或并发连接）。
 * [prometheus](lua/apisix/plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
 
 ## 参与社区
