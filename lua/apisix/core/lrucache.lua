@@ -12,7 +12,6 @@ local log = require("apisix.core.log")
 
 
 local _M = {version = 0.1}
-local mt = { __index = _M }
 
 
 local function global_lru(key, version, create_obj_fun, ...)
