@@ -1,5 +1,6 @@
 local core = require("apisix.core")
 local plugin_name = "key-auth"
+local ipairs = ipairs
 
 
 local _M = {

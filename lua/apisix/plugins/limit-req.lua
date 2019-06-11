@@ -1,6 +1,7 @@
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
 local plugin_name = "limit-req"
+local sleep = ngx.sleep
 
 
 local _M = {
@@ -41,7 +42,7 @@ function _M.access(conf, ctx)
     end
 
     if delay >= 0.001 then
-        ngx.sleep(delay)
+        sleep(delay)
     end
 end
 

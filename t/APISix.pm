@@ -33,6 +33,7 @@ _EOC_
 
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict prometheus-metrics 10m;
 
     resolver ipv6=off local=on;
