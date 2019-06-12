@@ -11,7 +11,7 @@ local GLOBAL_TTL        = 60 * 60          -- 60 min
 local PLUGIN_TTL        = 5 * 60           -- 5 min
 local PLUGIN_ITEMS_COUNT= 8
 local global_lru_fun
-local lru_mettab = {}
+local lua_metatab = {}
 
 
 local function new_lru_fun(opts)
@@ -23,7 +23,7 @@ local function new_lru_fun(opts)
         local obj, stale_obj = lru_obj:get(key)
         if obj and obj._cache_ver == version then
             local met_tab = getmetatable(obj)
-            if met_tab ~= lru_mettab then
+            if met_tab ~= lua_metatab then
                 return obj
             end
 
@@ -43,7 +43,7 @@ local function new_lru_fun(opts)
 
         elseif obj ~= nil then
             local cached_obj = setmetatable({val = obj, _cache_ver = version},
-                                            lru_mettab)
+                                            lua_metatab)
             lru_obj:set(key, cached_obj, item_ttl)
         end
 
@@ -62,7 +62,7 @@ local function _plugin(plugin_name, key, version, create_obj_fun, ...)
     local obj, stale_obj = lru_global:get(key)
     if obj and obj._cache_ver == version then
         local met_tab = getmetatable(obj)
-        if met_tab ~= lru_mettab then
+        if met_tab ~= lua_metatab then
             return obj
         end
 
@@ -82,7 +82,7 @@ local function _plugin(plugin_name, key, version, create_obj_fun, ...)
 
     elseif obj ~= nil then
         local cached_obj = setmetatable({val = obj, _cache_ver = version},
-                                        lru_mettab)
+                                        lua_metatab)
         lru_global:set(key, cached_obj, PLUGIN_TTL)
     end
 
