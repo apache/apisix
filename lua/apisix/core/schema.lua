@@ -10,7 +10,14 @@ local _M = {version = 0.1}
 
 local function create_validator(schema)
     local sd = rapidjson_schema_doc(schema)
-    return rapidjson_schema_validator(sd)
+    local validator = rapidjson_schema_validator(sd)
+
+    -- bug: we have to use a table to store the `validator` first,
+    --   if we returned the `validator` directyly, we will get
+    --   some error like this:
+    --
+    --   attempt to call method 'validate' (a nil value)
+    return {validator}
 end
 
 
@@ -18,7 +25,7 @@ end
 -- https://github.com/Tencent/rapidjson/blob/master/bin/draft-04/schema
 -- rapidjson not supported `format` in draft-04 yet
 function _M.check(schema, json)
-    local validator = cached_sd(schema, nil, create_validator, schema)
+    local validator = cached_sd(schema, nil, create_validator, schema)[1]
 
     local d = rapidjson_doc(json)
     return validator:validate(d)
