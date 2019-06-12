@@ -35,7 +35,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 
 ## How to fetch the metric data
 
-We fetch the metric data from the specified url `/apisix.com/prometheus/metrics`.
+We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
 
 Puts this uri address into prometheus, and it will automatically fetch
 these metric data.
@@ -45,7 +45,7 @@ For example like this:
 ```yaml
 scrape_configs:
   - job_name: 'apisix'
-    metrics_path: '/apisix.com/prometheus/metrics'
+    metrics_path: '/apisix/prometheus/metrics'
     static_configs:
     - targets: ['127.0.0.1:9080']
 ```
@@ -72,7 +72,7 @@ Metrics exported by the plugin can be graphed in Grafana using a drop in dashboa
 Here is the original metric data of apisix:
 
 ```
-$ curl http://127.0.0.2:9080/apisix.com/prometheus/metrics
+$ curl http://127.0.0.2:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
 apisix_bandwidth{type="egress",service="127.0.0.2"} 183

@@ -20,7 +20,7 @@ function _M.api()
     return {
         {
             methods = {"GET"},
-            uri = "/apisix.com/prometheus/metrics",
+            uri = "/apisix/prometheus/metrics",
             handler = exporter.collect
         }
     }

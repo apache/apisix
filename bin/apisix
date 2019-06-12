@@ -75,14 +75,14 @@ http {
 
         include mime.types;
 
-        location = /apisix.com/nginx_status {
+        location = /apisix/nginx_status {
             internal;
             access_log off;
             stub_status;
         }
 
         {% if enable_admin then %}
-        location /apisix.com/admin {
+        location /apisix/admin {
             allow {*allow_admin*};
             content_by_lua_block {
                 apisix.admin()
