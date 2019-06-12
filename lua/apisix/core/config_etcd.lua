@@ -5,6 +5,7 @@ local fetch_local_conf = require("apisix.core.config_local").local_conf
 local encode_json = require("cjson.safe").encode
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
+local clone_tab = require("table.clone")
 local exiting = ngx.worker.exiting
 local insert_tab = table.insert
 local type = type
@@ -106,6 +107,7 @@ function _M.fetch(self)
             insert_tab(self.values, item)
             local key = short_key(self, item.key)
             self.values_hash[key] = #self.values
+            item.id = key
 
             if not self.prev_index or item.modifiedIndex > self.prev_index then
                 self.prev_index = item.modifiedIndex
@@ -133,6 +135,7 @@ function _M.fetch(self)
     end
 
     local key = short_key(self, res.key)
+    res.id = key
     local pre_index = self.values_hash[key]
     if pre_index then
         if res.value then
@@ -232,11 +235,12 @@ function _M.new(key, opts)
         return nil, err
     end
 
-    local prefix = local_conf.etcd.prefix
-    local_conf.etcd.prefix = nil
+    local etcd_conf = clone_tab(local_conf.etcd)
+    local prefix = etcd_conf.prefix
+    etcd_conf.prefix = nil
 
     local etcd_cli
-    etcd_cli, err = etcd.new(local_conf.etcd)
+    etcd_cli, err = etcd.new(etcd_conf)
     if not etcd_cli then
         return nil, err
     end

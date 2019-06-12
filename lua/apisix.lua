@@ -6,7 +6,11 @@ local router = require("apisix.route").get
 local plugin = require("apisix.plugin")
 local load_balancer = require("apisix.balancer").run
 local service_fetch = require("apisix.service").get
+local admin_init = require("apisix.admin.init")
+local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
+local get_method = ngx.req.get_method
+local ngx_exit = ngx.exit
 
 
 local _M = {version = 0.1}
@@ -41,6 +45,7 @@ function _M.init_worker()
     require("apisix.service").init_worker()
     require("apisix.consumer").init_worker()
     require("apisix.heartbeat").init_worker()
+    require("apisix.admin.init").init_worker()
 end
 
 
@@ -165,9 +170,22 @@ function _M.balancer_phase()
 end
 
 
+do
+    local router
+
 function _M.admin()
-    ngx.say("admin")
+    if not router then
+        router = admin_init.get()
+    end
+
+    -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
+    local ok = router:dispatch(get_method(), get_var("uri"))
+    if not ok then
+        ngx_exit(404)
+    end
 end
+
+end -- do
 
 
 return _M

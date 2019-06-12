@@ -1,3 +1,4 @@
+local ngx_re = require("ngx.re")
 local open = io.open
 
 
@@ -21,6 +22,11 @@ function _M.get_seed_from_urandom()
         seed = 256 * seed + str:byte(i)
     end
     return seed
+end
+
+
+function _M.split_uri(uri)
+    return ngx_re.split(uri, "/")
 end
 
 

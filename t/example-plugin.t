@@ -2,6 +2,7 @@ use t::APISix 'no_plan';
 
 repeat_each(2);
 no_long_string();
+no_root_location();
 run_tests;
 
 __DATA__

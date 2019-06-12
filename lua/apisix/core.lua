@@ -12,6 +12,7 @@ return {
     timer    = require("apisix.core.timer"),
     id       = require("apisix.core.id"),
     utils    = require("apisix.core.utils"),
+    etcd     = require("apisix.core.etcd"),
     consumer = require("apisix.consumer"),
     tablepool= require("tablepool"),
 }
