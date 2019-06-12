@@ -119,3 +119,36 @@ obj: {"idx":2,"_cache_ver":"1"}
 obj: {"idx":3,"_cache_ver":"1"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: cache the non-table object, eg: number or string
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            local idx = 0
+            local function create_num()
+                idx = idx + 1
+                return idx
+            end
+
+            local obj = core.lrucache.global("key", nil, create_num)
+            ngx.say("obj: ", core.json.encode(obj))
+
+            obj = core.lrucache.global("key", nil, create_num)
+            ngx.say("obj: ", core.json.encode(obj))
+
+            obj = core.lrucache.global("key", "1", create_num)
+            ngx.say("obj: ", core.json.encode(obj))
+        }
+    }
+--- request
+GET /t
+--- response_body
+obj: 1
+obj: 1
+obj: 2
+--- no_error_log
+[error]

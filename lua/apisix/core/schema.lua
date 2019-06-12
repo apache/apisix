@@ -11,9 +11,12 @@ local _M = {version = 0.1}
 local function create_validator(schema)
     local sd = rapidjson_schema_doc(schema)
     local validator = rapidjson_schema_validator(sd)
-    -- log.info("type: ", type(validator))
 
-    -- only support to cache lua table object
+    -- bug: we have to use a table to store the `validator` first,
+    --   if we returned the `validator` directyly, we will get
+    --   some error like this:
+    --
+    --   attempt to call method 'validate' (a nil value)
     return {validator}
 end
 
