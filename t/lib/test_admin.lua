@@ -36,7 +36,7 @@ function _M.test(uri, method, body, pattern)
         }
     )
 
-    if res.status ~= 200 or pattern == nil then
+    if res.status >= 300 or pattern == nil then
         return res.status, res.body
     end
 
