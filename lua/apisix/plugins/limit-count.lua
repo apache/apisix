@@ -22,8 +22,8 @@ local _M = {
 }
 
 
-function _M.check_args(conf)
-    local ok, err = core.schema.check_args(schema, conf)
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
     end

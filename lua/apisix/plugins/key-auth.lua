@@ -39,7 +39,7 @@ do
 end -- do
 
 
-function _M.check_args(conf)
+function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
 
     if not ok then

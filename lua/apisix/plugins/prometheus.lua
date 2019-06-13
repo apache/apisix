@@ -11,7 +11,7 @@ local _M = {
 }
 
 
-function _M.check_args(conf)
+function _M.check_schema(conf)
     return true
 end
 

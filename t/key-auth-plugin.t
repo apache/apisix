@@ -12,7 +12,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_args({key = 'test-key'})
+            local ok, err = plugin.check_schema({key = 'test-key'})
             if not ok then
                 ngx.say(err)
             end
@@ -35,7 +35,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.key-auth")
 
-            local ok, err = plugin.check_args({})
+            local ok, err = plugin.check_schema({})
             if not ok then
                 ngx.say(err)
             end
@@ -58,7 +58,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_args({key = 123})
+            local ok, err = plugin.check_schema({key = 123})
             if not ok then
                 ngx.say(err)
             end

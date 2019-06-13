@@ -41,9 +41,9 @@ local function load()
         elseif not plugin.priority then
             core.log.error("invalid plugin", name, ", missing field: priority")
 
-        elseif not plugin.check_args then
+        elseif not plugin.check_schema then
             core.log.error("invalid plugin", name,
-                           ", missing method: check_args")
+                           ", missing method: check_schema")
 
         elseif not plugin.version then
             core.log.error("invalid plugin", name, ", missing field: version")
