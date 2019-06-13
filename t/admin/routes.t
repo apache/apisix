@@ -19,7 +19,7 @@ __DATA__
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
-                        "plugin_config": {},
+                        "plugins": {},
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:8080": 1
@@ -35,7 +35,7 @@ __DATA__
                                 "GET"
                             ],
                             "uri": "/index.html",
-                            "plugin_config": {},
+                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -77,7 +77,7 @@ passed
                                 "GET"
                             ],
                             "uri": "/index.html",
-                            "plugin_config": {},
+                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -161,7 +161,7 @@ GET /t
                  ngx.HTTP_POST,
                  [[{
                         "methods": ["GET"],
-                        "plugin_config": {},
+                        "plugins": {},
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:8080": 1
@@ -177,7 +177,7 @@ GET /t
                                 "GET"
                             ],
                             "uri": "/index.html",
-                            "plugin_config": {},
+                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1

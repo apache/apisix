@@ -59,7 +59,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
     "methods": ["GET"],
     "uri": "/index.html",
     "id": "100",
-    "plugin_config": {
+    "plugins": {
     },
     "upstream": {
         "type": "roundrobin",
@@ -77,7 +77,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
 |uri      |required |除了静态常量匹配，还支持正则 `/foo/{:\w+}/{:\w+}`，更多见 [lua-resty-libr3](https://github.com/iresty/lua-resty-libr3)|
 |id       |required |必须与路径中的 `key` 保持一致|
 |methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
-|plugin_config|required |启用的插件配置，详见 [Plugin](#plugin) |
+|plugins|required |启用的插件配置，详见 [Plugin](#plugin) |
 |upstream|required |启用的上游配置，详见 [Upstream](#upstream)|
 |service_id|optional |绑定的 Service 配置，详见 [Service](#service)|
 
@@ -98,7 +98,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
 curl http://127.0.0.1:2379/v2/keys/apisix/services/200 -X PUT -d value='
 {
     "id": "200",
-    "plugin_config": {
+    "plugins": {
         "limit-count": {
             "count": 2,
             "time_window": 60,
@@ -140,7 +140,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
     "uri": "/bar/index.html",
     "id": "102",
     "service_id": "200",
-    "plugin_config": {
+    "plugins": {
         "limit-count": {
             "count": 2000,
             "time_window": 60,
@@ -178,13 +178,13 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 route 或 service）。
 插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../lua/apisix/plugins/example-plugin.lua#L16)。
 
-插件配置作为 route 或 service 的一部分提交的，放到 `plugin_config` 下。它内部是使用插件
+插件配置作为 route 或 service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
 名字作为哈希的 key 来保存不同插件的配置项。
 
 ```json
 {
     ...
-    "plugin_config": {
+    "plugins": {
         "limit-count": {
             "count": 2,
             "time_window": 60,
@@ -258,7 +258,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
     "methods": ["GET"],
     "uri": "/index.html",
     "id": 1,
-    "plugin_config": {
+    "plugins": {
     },
     "upstream": {
         "id": "2"
@@ -274,7 +274,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
    "methods": ["GET"],
     "uri": "/index.html",
     "id": 1,
-    "plugin_config": {
+    "plugins": {
         "limit-count": {
             "count": 2,
             "time_window": 60,

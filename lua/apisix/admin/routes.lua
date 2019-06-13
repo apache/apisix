@@ -9,7 +9,7 @@ local schema_desc = [[{
                 "enum": ["GET", "PUT", "POST", "DELETE"]
             }
         },
-        "plugin_config": {
+        "plugins": {
             "type": "object"
         },
         "upstream": {
@@ -22,21 +22,13 @@ local schema_desc = [[{
                     "type": "string"
                 }
             },
-            "required": [
-                "nodes",
-                "type"
-            ]
+            "required": ["nodes", "type"]
         },
         "uri": {
             "type": "string"
         }
     },
-    "required": [
-        "methods",
-        "plugin_config",
-        "upstream",
-        "uri"
-    ]
+    "required": ["upstream", "uri"]
 }]]
 
 

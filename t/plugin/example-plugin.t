@@ -173,7 +173,7 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
 
             local filter_plugins = plugin.filter({
                 value = {
-                    plugin_config = {
+                    plugins = {
                         ["example-plugin"] = {i = 1, s = "s", t = {1, 2}},
                         ["new-plugin"] = {a = "a"},
                     }

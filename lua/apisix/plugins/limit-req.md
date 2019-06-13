@@ -20,7 +20,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 	"methods": ["GET"],
 	"uri": "/index.html",
 	"id": 1,
-	"plugin_config": {
+	"plugins": {
 		"limit-req": {
 			"rate": 1,
 			"burst": 2,
@@ -72,7 +72,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 	"methods": ["GET"],
 	"uri": "/index.html",
 	"id": 1,
-	"plugin_config": {
+	"plugins": {
 	},
 	"upstream": {
 		"type": "roundrobin",
