@@ -75,11 +75,20 @@ http {
 
         include mime.types;
 
-        location = /apisix.com/nginx_status {
+        location = /apisix/nginx_status {
             internal;
             access_log off;
             stub_status;
         }
+
+        {% if enable_admin then %}
+        location /apisix/admin {
+            allow {*allow_admin*};
+            content_by_lua_block {
+                apisix.admin()
+            }
+        }
+        {% end %}
 
         location / {
             set $upstream_scheme             'http';
@@ -205,15 +214,16 @@ local function init()
     end
 
     -- -- Using template.render
-    local func = template.compile(ngx_tpl)
-    local ngxconf = func({
+    local sys_conf = setmetatable({
         lua_path = package.path,
         lua_cpath = package.cpath,
         os_name = exec("uname"),
-        node_listen = yaml_conf.apisix.node_listen,
-        apisix_lua_home = apisix_src_path
-    })
+        apisix_lua_home = apisix_src_path,
+    }, {__index = yaml_conf.apisix})
+    -- print(sys_conf.allow_admin)
 
+    local conf_render = template.compile(ngx_tpl)
+    local ngxconf = conf_render(sys_conf)
     -- print(ngxconf)
 
     local ok, err = write_file(apisix_home .. "/conf/nginx.conf", ngxconf)

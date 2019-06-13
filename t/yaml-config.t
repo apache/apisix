@@ -1,6 +1,7 @@
 use t::APISix 'no_plan';
 
 repeat_each(2);
+no_root_location();
 
 run_tests;
 

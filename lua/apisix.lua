@@ -6,7 +6,11 @@ local router = require("apisix.route").get
 local plugin = require("apisix.plugin")
 local load_balancer = require("apisix.balancer").run
 local service_fetch = require("apisix.service").get
+local admin_init = require("apisix.admin.init")
+local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
+local get_method = ngx.req.get_method
+local ngx_exit = ngx.exit
 
 
 local _M = {version = 0.1}
@@ -41,6 +45,7 @@ function _M.init_worker()
     require("apisix.service").init_worker()
     require("apisix.consumer").init_worker()
     require("apisix.heartbeat").init_worker()
+    require("apisix.admin.init").init_worker()
 end
 
 
@@ -139,9 +144,11 @@ function _M.access_phase()
     run_plugin("access", api_ctx.filter_plugins, api_ctx)
 end
 
+
 function _M.header_filter_phase()
     run_plugin("header_filter")
 end
+
 
 function _M.log_phase()
     local api_ctx = run_plugin("log")
@@ -152,6 +159,7 @@ function _M.log_phase()
     end
 end
 
+
 function _M.balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx or not api_ctx.filter_plugins then
@@ -160,5 +168,24 @@ function _M.balancer_phase()
 
     load_balancer(api_ctx.matched_route, api_ctx)
 end
+
+
+do
+    local router
+
+function _M.admin()
+    if not router then
+        router = admin_init.get()
+    end
+
+    -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
+    local ok = router:dispatch(get_method(), get_var("uri"))
+    if not ok then
+        ngx_exit(404)
+    end
+end
+
+end -- do
+
 
 return _M
