@@ -19,7 +19,6 @@ __DATA__
                  [[{
                         "methods": ["GET"],
                         "plugin_config": {},
-                        "id": 1,
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:8080": 1
@@ -35,7 +34,6 @@ __DATA__
                                 "GET"
                             ],
                             "uri": "/index.html",
-                            "id": 1,
                             "plugin_config": {},
                             "upstream": {
                                 "nodes": {
