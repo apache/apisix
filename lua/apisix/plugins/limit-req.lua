@@ -9,7 +9,7 @@ local schema = {
     properties = {
         rate = {type = "integer", minimum = 0},
         burst = {type = "integer",  minimum = 0},
-        key = {type = "string"},
+        key = {type = "string", enum = {"remote_addr"}},
         rejected_code = {type = "integer", minimum = 200},
     },
     required = {"rate", "burst", "key", "rejected_code"}
