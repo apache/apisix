@@ -56,6 +56,11 @@ end
 
 
 function _M.init_worker()
+    local local_conf = core.config.local_conf()
+    if not local_conf.enable_admin then
+        return
+    end
+
     router = route.new({
         -- todo: support routes|upstreams|service
         {0, [[/apisix/admin/{res:routes}]], run},
