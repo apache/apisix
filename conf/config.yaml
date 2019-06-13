@@ -1,13 +1,15 @@
 apisix:
   node_listen: 9080             # Apisix listening port
   enable_heartbeat: true
+  enable_admin: true
+  allow_admin: "127.0.0.1/24"
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
   prefix: "/apisix"             # apisix configurations prefix
-  timeout: 1
+  timeout: 1                    # 1 seconds
 
-plugins:                        # plugin name list
+plugins:                        # plugin list
   - example-plugin
   - limit-req
   - limit-count

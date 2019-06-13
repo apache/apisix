@@ -2,6 +2,8 @@ local rapidjson = require('rapidjson')
 local rapidjson_schema_validator = rapidjson.SchemaValidator
 local rapidjson_schema_doc = rapidjson.SchemaDocument
 local rapidjson_doc = rapidjson.Document
+
+
 local cached_sd = require("apisix.core.lrucache").new({count = 1000, ttl = 0})
 
 

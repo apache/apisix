@@ -28,7 +28,7 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$pwd/lua/?.lua;/usr/share/lua/5.1/?.lua;;";
+    lua_package_path "$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
     lua_package_cpath '/usr/lib64/lua/5.1/?.so;;';
 
     lua_shared_dict plugin-limit-req 10m;
@@ -52,9 +52,14 @@ _EOC_
 
     $block->set_value("http_config", $http_config);
 
-    my $config = $block->config;
-    if (!$config) {
+    my $config = $block->config // '';
     $config .= <<_EOC_;
+        location /apisix/admin {
+            content_by_lua_block {
+                apisix.admin()
+            }
+        }
+
         location / {
             access_by_lua_block {
                 apisix.access_phase()
@@ -69,7 +74,6 @@ _EOC_
             }
         }
 _EOC_
-    }
 
     $block->set_value("config", $config);
 

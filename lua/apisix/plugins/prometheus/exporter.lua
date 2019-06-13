@@ -54,7 +54,7 @@ end
     local ngx_statu_items = {"active", "accepted", "handled", "total",
                              "reading", "writing", "waiting"}
 local function nginx_status()
-    local res = ngx_capture("/apisix.com/nginx_status")
+    local res = ngx_capture("/apisix/nginx_status")
     if not res or res.status ~= 200 then
         core.log.error("failed to fetch Nginx status")
         return
