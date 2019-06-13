@@ -8,7 +8,7 @@ local schema = {
     properties = {
         count = {type = "integer", minimum = 0},
         time_window = {type = "integer",  minimum = 0},
-        key = {type = "string"},
+        key = {type = "string", enum = {"remote_addr"}},
         rejected_code = {type = "integer", minimum = 200},
     },
     required = {"count", "time_window", "key", "rejected_code"}
@@ -22,8 +22,8 @@ local _M = {
 }
 
 
-function _M.check_args(conf)
-    local ok, err = core.schema.check_args(schema, conf)
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
     end
