@@ -9,7 +9,18 @@
 
 APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
 
+APISIX is based on OpenResty and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
+
 [中文简介](README_CN.md)
+
+## Why APISIX?
+If you are building a website, mobile device or IoT (Internet of Things) application, you may need to use an API gateway to handle interface traffic.
+
+APISIX is a cloud-based microservices API gateway that handles traditional north-south traffic and handles east-west traffic between services.
+
+APISIX provides dynamic load balancing, authentication, rate limiting, and other plugins through plugin mechanisms, and supports plugins you develop yourself.
+
+For more detailed information, see the [APISIX White Paper] (https://www.iresty.com/download/Choosing the Right Microservice API Gateway for the Enterprise User.pdf).
 
 ## Install
 
