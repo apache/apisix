@@ -3,6 +3,18 @@ local core = require("apisix.core")
 local plugin_name = "limit-count"
 
 
+local schema = {
+    type = "object",
+    properties = {
+        count = {type = "integer", minimum = 0},
+        time_window = {type = "integer",  minimum = 0},
+        key = {type = "string"},
+        rejected_code = {type = "integer", minimum = 200},
+    },
+    required = {"count", "time_window", "key", "rejected_code"}
+}
+
+
 local _M = {
     version = 0.1,
     priority = 1002,        -- TODO: add a type field, may be a good idea
@@ -11,7 +23,11 @@ local _M = {
 
 
 function _M.check_args(conf)
-    -- todo: check arguments
+    local ok, err = core.schema.check_args(schema, conf)
+    if not ok then
+        return false, err
+    end
+
     return true
 end
 
