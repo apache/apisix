@@ -46,3 +46,4 @@ t/servroot
 go
 \.*
 conf/apisix.uid
+deps
