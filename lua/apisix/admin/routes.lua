@@ -56,6 +56,10 @@ function _M.put(uri_segs, conf)
         return 400, {error_msg = "missing route id"}
     end
 
+    if not conf then
+        return 400, {error_msg = "missing configurations"}
+    end
+
     -- core.log.info("schema: ", core.json.delay_encode(schema_desc))
     local ok, err = core.schema.check(schema_desc, conf)
     if not ok then

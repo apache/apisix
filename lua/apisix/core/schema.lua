@@ -25,6 +25,14 @@ end
 -- https://github.com/Tencent/rapidjson/blob/master/bin/draft-04/schema
 -- rapidjson not supported `format` in draft-04 yet
 function _M.check(schema, json)
+    if type (schema) ~= "table" then
+        return false, "invalid argument schema, it should be a table"
+    end
+
+    if type(json) ~= "table" then
+        return false, "invalid argument json, it should be a table"
+    end
+
     local validator = cached_sd(schema, nil, create_validator, schema)[1]
 
     local d = rapidjson_doc(json)

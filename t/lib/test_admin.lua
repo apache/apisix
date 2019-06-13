@@ -28,13 +28,7 @@ end
 
 
 function _M.test(uri, method, body, pattern)
-    local res = ngx.location.capture(
-        uri,
-        {
-            method = ngx.HTTP_PUT,
-            body = body
-        }
-    )
+    local res = ngx.location.capture(uri,{method = method,body = body})
 
     if res.status >= 300 or pattern == nil then
         return res.status, res.body
