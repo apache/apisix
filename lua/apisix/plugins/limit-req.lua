@@ -4,6 +4,18 @@ local plugin_name = "limit-req"
 local sleep = ngx.sleep
 
 
+local schema = {
+    type = "object",
+    properties = {
+        rate = {type = "integer", minimum = 0},
+        burst = {type = "integer",  minimum = 0},
+        key = {type = "string"},
+        rejected_code = {type = "integer", minimum = 200},
+    },
+    required = {"rate", "burst", "key", "rejected_code"}
+}
+
+
 local _M = {
     version = 0.1,
     priority = 1001,        -- TODO: add a type field, may be a good idea
@@ -12,6 +24,11 @@ local _M = {
 
 
 function _M.check_args(conf)
+    local ok, err = core.schema.check_args(schema, conf)
+    if not ok then
+        return false, err
+    end
+
     return true
 end
 

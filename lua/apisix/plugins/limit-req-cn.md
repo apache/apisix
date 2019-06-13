@@ -6,7 +6,7 @@
 ### 参数
 * `rate`：指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时
 * `burst`：请求速率超过 （`rate` + `brust`）的请求会被直接拒绝
-* `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503
+* `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码
 * `key`：是用来做请求计数的依据，当前只接受终端 IP 做为 key，即 "remote_addr"
 
 ### 示例
