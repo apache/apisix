@@ -14,7 +14,7 @@ local _M = {
     --[[
     {
         "id": "ShunFeng",
-        "plugin_config": {
+        "plugins": {
             "key-auth": {
                 "key": "dddxxyyy"
             }
@@ -41,7 +41,7 @@ local function plugin_consumer()
 
     for _, consumer in ipairs(consumers.values) do
         -- log.warn("consumer: ", require("cjson").encode(consumer))
-        for name, conf in pairs(consumer.value.plugin_config) do
+        for name, conf in pairs(consumer.value.plugins) do
             if not plugins[name] then
                 plugins[name] = {
                     nodes = {},
