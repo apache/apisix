@@ -10,7 +10,7 @@ local schema = {
         conn = {type = "integer", minimum = 0},
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", minimum = 0},
-        key = {type = "string"},
+        key = {type = "string", enum = {"remote_addr"}},
         rejected_code = {type = "integer", minimum = 200},
     },
     required = {"conn", "burst", "default_conn_delay", "key", "rejected_code"}
@@ -23,8 +23,8 @@ local _M = {
     name = plugin_name,
 }
 
-function _M.check_args(conf)
-    local ok, err = core.schema.check_args(schema, conf)
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
     end
