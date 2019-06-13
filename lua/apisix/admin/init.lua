@@ -57,7 +57,7 @@ end
 
 function _M.init_worker()
     local local_conf = core.config.local_conf()
-    if not local_conf.enable_admin then
+    if not local_conf.apisix.enable_admin then
         return
     end
 

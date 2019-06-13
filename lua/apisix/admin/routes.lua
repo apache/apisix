@@ -1,5 +1,5 @@
 local core = require("apisix.core")
-local schema_desc = core.json.decode([[{
+local schema_desc = [[{
     "type": "object",
     "properties": {
         "methods": {
@@ -37,7 +37,7 @@ local schema_desc = core.json.decode([[{
         "upstream",
         "uri"
     ]
-}]])
+}]]
 
 
 local _M = {
