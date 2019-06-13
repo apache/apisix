@@ -20,12 +20,11 @@ return function(plugin_name, priority)
         if not ok then
             return false, err
         end
-
         return true
     end
 
     function _M.access(conf, ctx)
-        ngx.log(ngx.ERR, conf.functions)
+        local functions = conf.functions
     end
 
     return _M
