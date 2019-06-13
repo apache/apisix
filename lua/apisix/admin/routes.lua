@@ -15,8 +15,6 @@ function _M.put(uri_segs, data)
         return 500
     end
 
-    -- core.log.info("res: ", core.json.delay_encode(res, true))
-
     return res.status, res.body
 end
 
@@ -34,8 +32,6 @@ function _M.get(uri_segs)
         return 500
     end
 
-    core.log.info("res: ", core.json.delay_encode(res, true))
-
     return res.status, res.body
 end
 
@@ -52,8 +48,6 @@ function _M.post(uri_segs, data)
         core.log.error("failed to get routes[", key, "]: ", err)
         return 500
     end
-
-    -- core.log.info("res: ", core.json.delay_encode(res, true))
 
     return res.status, res.body
 end

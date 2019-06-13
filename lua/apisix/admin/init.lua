@@ -16,7 +16,6 @@ local router
 
 
 local function run(params)
-    core.log.info("admin route params: ", core.json.delay_encode(params))
 
     local resource = resources[params.res]
     if not resource then
@@ -37,7 +36,6 @@ local function run(params)
 
     ngx.req.read_body()
     local req_body = ngx.req.get_body_data()
-    core.log.info("req body: ", req_body)
 
     if req_body then
         local data, err = core.json.decode(req_body)
@@ -59,12 +57,11 @@ end
 
 function _M.init_worker()
     router = route.new({
-        -- routes|upstreams|service
+        -- todo: support routes|upstreams|service
         {0, [[/apisix/admin/{res:routes}]], run},
         {0, [[/apisix/admin/{res:routes}/{id:\d+}]], run},
     })
 
-    -- don't forget!!!
     router:compile()
 end
 

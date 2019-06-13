@@ -5,7 +5,7 @@ local clone_tab = require("table.clone")
 local _M = {version = 0.1}
 
 
-function _M.new()
+local function new()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, nil, err
@@ -23,10 +23,11 @@ function _M.new()
 
     return etcd_cli, prefix
 end
+_M.new = new
 
 
 function _M.get(key)
-    local etcd_cli, prefix, err = _M.new()
+    local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
     end
@@ -36,7 +37,7 @@ end
 
 
 function _M.set(key, value)
-    local etcd_cli, prefix, err = _M.new()
+    local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
     end
