@@ -28,7 +28,7 @@ Two steps are required:
     curl http://127.0.0.1:2379/v2/keys/apisix/consumers/ShunFeng -X PUT -d value='
     {
         "id": "ShunFeng",
-        "plugin_config": {
+        "plugins": {
             "key-auth": {
                 "key": "keykey"
             }
@@ -44,7 +44,7 @@ Two steps are required:
         "methods": ["GET"],
         "uri": "/index.html",
         "id": 1,
-        "plugin_config": {
+        "plugins": {
             "key-auth": {}
         },
         "upstream": {
@@ -92,7 +92,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 	"methods": ["GET"],
 	"uri": "/index.html",
 	"id": 1,
-	"plugin_config": {
+	"plugins": {
 	},
 	"upstream": {
 		"type": "roundrobin",

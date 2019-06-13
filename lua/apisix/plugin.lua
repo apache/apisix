@@ -102,7 +102,7 @@ end
 function _M.filter(user_routes)
     -- todo: reuse table
     local plugins = core.table.new(#local_supported_plugins * 2, 0)
-    local user_plugin_conf = user_routes.value.plugin_config
+    local user_plugin_conf = user_routes.value.plugins
 
     for _, plugin_obj in ipairs(local_supported_plugins) do
         local name = plugin_obj.name
@@ -120,10 +120,10 @@ end
 
 function _M.merge_service_route(service_conf, route_conf)
     local changed = false
-    if route_conf.value.plugin_config and
-       core.table.nkeys(route_conf.value.plugin_config) then
-        for name, conf in pairs(route_conf.value.plugin_config) do
-            service_conf.value.plugin_config[name] = conf
+    if route_conf.value.plugins and
+       core.table.nkeys(route_conf.value.plugins) then
+        for name, conf in pairs(route_conf.value.plugins) do
+            service_conf.value.plugins[name] = conf
         end
         changed = true
     end
