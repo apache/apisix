@@ -69,8 +69,8 @@ function _M.put(uri_segs, conf)
     local key = "/" .. resource .. "/" .. id
     local res, err = core.etcd.set(key, conf)
     if not res then
-        core.log.error("failed to get routes[", key, "]: ", err)
-        return 500
+        core.log.error("failed to put route[", key, "]: ", err)
+        return 500, {error_msg = err}
     end
 
     return res.status, res.body
@@ -79,15 +79,15 @@ end
 
 function _M.get(uri_segs)
     local resource, id = uri_segs[4], uri_segs[5]
-    if not id then
-        return 200, {error_msg = "missing route id"}
+    local key = "/" .. resource
+    if id then
+        key = key .. "/" .. id
     end
 
-    local key = "/" .. resource .. "/" .. id
     local res, err = core.etcd.get(key)
     if not res then
-        core.log.error("failed to get routes[", key, "]: ", err)
-        return 500
+        core.log.error("failed to get route[", key, "]: ", err)
+        return 500, {error_msg = err}
     end
 
     return res.status, res.body
@@ -95,16 +95,39 @@ end
 
 
 function _M.post(uri_segs, conf)
+    if not conf then
+        return 400, {error_msg = "missing configurations"}
+    end
+
+    local ok, err = core.schema.check(schema_desc, conf)
+    if not ok then
+        return 400, {error_msg = "invalid configuration: " .. err}
+    end
+
+    local key = "/" .. uri_segs[4]
+    -- core.log.info("key: ", key)
+    local res, err = core.etcd.push(key, conf)
+    if not res then
+        core.log.error("failed to post route[", key, "]: ", err)
+        return 500, {error_msg = err}
+    end
+
+    return res.status, res.body
+end
+
+
+function _M.delete(uri_segs)
     local resource, id = uri_segs[4], uri_segs[5]
     if not id then
-        return 200, {error_msg = "missing route id"}
+        return 400, {error_msg = "missing route id"}
     end
 
     local key = "/" .. resource .. "/" .. id
-    local res, err = core.etcd.push(key, conf)
+    -- core.log.info("key: ", key)
+    local res, err = core.etcd.delete(key)
     if not res then
-        core.log.error("failed to get routes[", key, "]: ", err)
-        return 500
+        core.log.error("failed to delete route[", key, "]: ", err)
+        return 500, {error_msg = err}
     end
 
     return res.status, res.body

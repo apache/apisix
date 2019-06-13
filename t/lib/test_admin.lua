@@ -34,12 +34,13 @@ function _M.test(uri, method, body, pattern)
         return res.status, res.body
     end
 
-    local ok, err = com_tab(json.decode(pattern), json.decode(res.body))
+    local res_data = json.decode(res.body)
+    local ok, err = com_tab(json.decode(pattern), res_data)
     if not ok then
-        return 200, "failed, " .. err
+        return 500, "failed, " .. err, res_data
     end
 
-    return 200, "passed"
+    return 200, "passed", res_data
 end
 
 

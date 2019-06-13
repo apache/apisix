@@ -46,4 +46,24 @@ function _M.set(key, value)
 end
 
 
+function _M.push(key, value)
+    local etcd_cli, prefix, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return etcd_cli:push(prefix .. key, value)
+end
+
+
+function _M.delete(key)
+    local etcd_cli, prefix, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return etcd_cli:delete(prefix .. key)
+end
+
+
 return _M
