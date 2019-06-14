@@ -16,11 +16,25 @@ function _M.put(uri_segs, conf)
         return 400, {error_msg = "missing configurations"}
     end
 
-    core.log.info("schema: ", core.schema.route)
-    core.log.info("conf  : ", core.json.delay_encode(conf))
+    -- core.log.info("schema: ", core.schema.route)
+    -- core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.route, conf)
     if not ok then
         return 400, {error_msg = "invalid configuration: " .. err}
+    end
+
+    local service_id = conf.service_id
+    if service_id then
+        local key = "/services/" .. service_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return 400, {error_msg = "failed to fetch service info by "
+                                     .. "\"service_id\": " .. err}
+        end
+
+        if res.status ~= 200 then
+            return 400, {error_msg = "invalid service id[" .. service_id .. "]"}
+        end
     end
 
     local key = "/" .. resource .. "/" .. id
