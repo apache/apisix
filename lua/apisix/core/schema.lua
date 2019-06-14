@@ -77,7 +77,10 @@ _M.route = [[{
             "type": "string"
         },
         "id": {
-            "type": ["string", "integer"]
+            "anyOf": [
+                {"type": "string", "minLength": 1, "maxLength": 32},
+                {"type": "integer", "minimum": 1}
+            ]
         }
     },
     "anyOf": [
