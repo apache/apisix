@@ -8,25 +8,53 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: not found
+=== TEST 1: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
-            local apisix = require("apisix")
-            apisix.access_phase()
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {},
+                        "id":1,
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- error_code: 404
---- response_body_like eval
-qr/404 Not Found/
+--- response_body
+passed
+--- no_error_log
+[error]
 
 
 
-=== TEST 2: default response
+=== TEST 2: /not_found
 --- request
 GET /not_found
 --- error_code: 404
 --- response_body_like eval
 qr/404 Not Found/
+
+
+
+=== TEST 3: hit routes
+--- request
+GET /hello
+--- response_body
+hello world
