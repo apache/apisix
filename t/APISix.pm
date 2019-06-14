@@ -56,6 +56,7 @@ _EOC_
 
     init_worker_by_lua_block {
         require("apisix").init_worker()
+        os.execute("sleep 1")
     }
 
     server {
