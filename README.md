@@ -136,7 +136,7 @@ Now we support the following plugins:
 * [key-auth](lua/apisix/plugins/key-auth.md): user authentication based on Key Authentication.
 * [limit-count](lua/apisix/plugins/limit-count.md): rate limiting based on a "fixed window" implementation.
 * [limit-req](lua/apisix/plugins/limit-req.md): request rate limiting and adjustment based on the "leaky bucket" method.
-* [limit-count](lua/apisix/plugins/limit-conn.md): limite request concurrency (or concurrent connections).
+* [limit-conn](lua/apisix/plugins/limit-conn.md): limite request concurrency (or concurrent connections).
 * [prometheus](lua/apisix/plugins/prometheus.md): expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
 
 ## Contributing

@@ -61,7 +61,7 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 sudo luarocks install apisix
 ```
 
-如果一些顺利，你会在最后看到这样的信息：
+如果一切顺利，你会在最后看到这样的信息：
 > apisix is now built and installed in /usr (license: Apache License 2.0)
 
 恭喜你，APISIX 已经安装成功了。
