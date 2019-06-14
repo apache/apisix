@@ -65,16 +65,23 @@ _M.route = [[{
             "items": {
                 "type": "string",
                 "enum": ["GET", "PUT", "POST", "DELETE"]
-                "uniqueItems" = true,
-            }
+            },
+            "uniqueItems": true
         },
         ]] .. plugins_schema .. [[,
         ]] .. upstream_schema .. [[,
         "uri": {
             "type": "string"
+        },
+        "service_id": {
+            "type": "string"
         }
     },
-    "required": ["upstream", "uri"]
+    "anyOf": [
+        { "required": ["plugins", "uri"] },
+        { "required": ["upstream", "uri"] }
+    ],
+    "additionalItems": false
 }]]
 
 
