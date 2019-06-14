@@ -79,7 +79,8 @@ _M.route = [[{
     },
     "anyOf": [
         { "required": ["plugins", "uri"] },
-        { "required": ["upstream", "uri"] }
+        { "required": ["upstream", "uri"] },
+        { "required": ["service_id", "uri"] }
     ],
     "additionalItems": false
 }]]
