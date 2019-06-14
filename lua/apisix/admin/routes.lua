@@ -1,45 +1,9 @@
 local core = require("apisix.core")
-local schema_desc = [[{
-    "type": "object",
-    "properties": {
-        "methods": {
-            "type": "array",
-            "items": {
-                "type": "string",
-                "enum": ["GET", "PUT", "POST", "DELETE"]
-            }
-        },
-        "plugins": {
-            "type": "object"
-        },
-        "upstream": {
-            "type": "object",
-            "properties": {
-                "nodes": {
-                    "type": "object"
-                },
-                "type": {
-                    "type": "string"
-                }
-            },
-            "required": ["nodes", "type"]
-        },
-        "uri": {
-            "type": "string"
-        }
-    },
-    "required": ["upstream", "uri"]
-}]]
 
 
 local _M = {
     version = 0.1,
 }
-
-
-function _M.schema()
-    return schema_desc
-end
 
 
 function _M.put(uri_segs, conf)
@@ -53,7 +17,7 @@ function _M.put(uri_segs, conf)
     end
 
     -- core.log.info("schema: ", core.json.delay_encode(schema_desc))
-    local ok, err = core.schema.check(schema_desc, conf)
+    local ok, err = core.schema.check(core.schema.route, conf)
     if not ok then
         return 400, {error_msg = "invalid configuration: " .. err}
     end
@@ -91,7 +55,7 @@ function _M.post(uri_segs, conf)
         return 400, {error_msg = "missing configurations"}
     end
 
-    local ok, err = core.schema.check(schema_desc, conf)
+    local ok, err = core.schema.check(core.schema.route, conf)
     if not ok then
         return 400, {error_msg = "invalid configuration: " .. err}
     end

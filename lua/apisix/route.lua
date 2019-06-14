@@ -53,7 +53,11 @@ end
 
 function _M.init_worker()
     local err
-    conf_routes, err = core.config.new("/routes", {automatic = true})
+    conf_routes, err = core.config.new("/routes",
+                            {
+                                automatic = true,
+                                item_schema = core.schema.route
+                            })
     if not conf_routes then
         error("failed to create etcd instance to fetch /routes "
               .. "automaticly: " .. err)
