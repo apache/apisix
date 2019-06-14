@@ -109,7 +109,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            code, message = t('/apisix/admin/routes/1',
+            local code, message = t('/apisix/admin/routes/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -133,7 +133,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            code = t('/apisix/admin/routes/not_found',
+            local code = t('/apisix/admin/routes/not_found',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{

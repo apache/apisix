@@ -81,6 +81,22 @@ local function short_key(self, str)
 end
 
 
+function _M.upgrade_version(self, new_ver)
+    local pre_index = self.prev_index
+    if not pre_index then
+        self.prev_index = new_ver
+        return
+    end
+
+    if new_ver <= pre_index then
+        return
+    end
+
+    self.prev_index = new_ver
+    return
+end
+
+
 function _M.fetch(self)
     if not self.key then
         return nil, "missing 'key' arguments"
@@ -106,27 +122,31 @@ function _M.fetch(self)
 
         local changed = false
         for _, item in ipairs(dir_res.nodes) do
-            local ok = true
-            if self.item_schema then
-                ok, err = check_schema(self.item_schema, item.value)
+            local key = short_key(self, item.key)
+            local data_valid = true
+            if type(item.value) ~= "table" then
+                data_valid = false
+                log.error("invalid item data of [", self.key .. "/" .. key,
+                          "], val: ", tostring(item.value),
+                          ", it shoud be a object")
             end
 
-            if not ok then
-                log.error("failed to check item data of [", self.key, "] err:",
-                          err)
+            if data_valid and self.item_schema then
+                data_valid, err = check_schema(self.item_schema, item.value)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err)
+                end
+            end
 
-            else
+            if data_valid then
                 changed = true
                 insert_tab(self.values, item)
-                local key = short_key(self, item.key)
                 self.values_hash[key] = #self.values
                 item.id = key
             end
 
-            if not self.prev_index or
-                item.modifiedIndex > self.prev_index then
-                self.prev_index = item.modifiedIndex
-            end
+            self:upgrade_version(item.modifiedIndex)
         end
 
         if changed then
@@ -140,11 +160,22 @@ function _M.fetch(self)
         return nil, err
     end
 
-    if self.item_schema and res.value then
+    local key = short_key(self, res.key)
+    if res.value and type(res.value) ~= "table" then
+        self:upgrade_version(res.modifiedIndex)
+        log.error("invalid item data of [", self.key .. "/" .. key, "], val: ",
+                  tostring(res.value),
+                  ", it shoud be a object")
+        return self.values
+    end
+
+    if res.value and self.item_schema then
         local ok, err = check_schema(self.item_schema, res.value)
         if not ok then
-            log.error("failed to check item data of [", self.key, "] err:", err)
-            return nil, err
+            self:upgrade_version(res.modifiedIndex)
+
+            log.warn("failed to check item data of [", self.key, "] err:", err)
+            return self.values
         end
     end
 
@@ -155,11 +186,8 @@ function _M.fetch(self)
     end
     -- log.warn("waitdir: ", encode_json(res))
 
-    if not self.prev_index or res.modifiedIndex > self.prev_index then
-        self.prev_index = res.modifiedIndex
-    end
+    self:upgrade_version(res.modifiedIndex)
 
-    local key = short_key(self, res.key)
     res.id = key
     local pre_index = self.values_hash[key]
     if pre_index then
