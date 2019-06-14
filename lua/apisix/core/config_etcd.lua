@@ -161,7 +161,7 @@ function _M.fetch(self)
     end
 
     local key = short_key(self, res.key)
-    if type(res.value) ~= "table" then
+    if res.value and type(res.value) ~= "table" then
         self:upgrade_version(res.modifiedIndex)
         log.error("invalid item data of [", self.key .. "/" .. key, "], val: ",
                   tostring(res.value),
@@ -169,7 +169,7 @@ function _M.fetch(self)
         return self.values
     end
 
-    if self.item_schema then
+    if res.value and self.item_schema then
         local ok, err = check_schema(self.item_schema, res.value)
         if not ok then
             self:upgrade_version(res.modifiedIndex)
