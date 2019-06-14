@@ -140,7 +140,7 @@ function _M.fetch(self)
         return nil, err
     end
 
-    if self.item_schema then
+    if self.item_schema and res.value then
         local ok, err = check_schema(self.item_schema, res.value)
         if not ok then
             log.error("failed to check item data of [", self.key, "] err:", err)
