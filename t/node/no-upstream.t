@@ -1,8 +1,9 @@
 use t::APISix 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 log_level('info');
 no_root_location();
+no_shuffle();
 
 run_tests();
 
@@ -16,9 +17,8 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "plugins": {},
-                        "id": "1",
-                        "uri": "/hello"
+                    "plugins": {},
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -66,9 +66,11 @@ GET /not_found
             ngx.say("done")
         }
     }
+--- error_code eval
+[200, 502]
 --- pipelined_requests eval
 ["GET /t\n",
 "GET /hello\n"]
 --- response_body eval
 ["done\n",
-"hello world\n"]
+qr/502 Bad Gateway/]
