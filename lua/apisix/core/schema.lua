@@ -75,6 +75,9 @@ _M.route = [[{
         },
         "service_id": {
             "type": "string"
+        },
+        "id": {
+            "type": ["string", "integer"]
         }
     },
     "anyOf": [

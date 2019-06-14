@@ -143,7 +143,7 @@ function _M.fetch(self)
                 changed = true
                 insert_tab(self.values, item)
                 self.values_hash[key] = #self.values
-                item.id = key
+                item.value.id = key
             end
 
             self:upgrade_version(item.modifiedIndex)
@@ -188,10 +188,10 @@ function _M.fetch(self)
 
     self:upgrade_version(res.modifiedIndex)
 
-    res.id = key
     local pre_index = self.values_hash[key]
     if pre_index then
         if res.value then
+            res.value.id = key
             self.values[pre_index] = res
 
         else
