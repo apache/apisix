@@ -34,4 +34,37 @@ function _M.check(schema, json)
 end
 
 
+_M.route = [[{
+    "type": "object",
+    "properties": {
+        "methods": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": ["GET", "PUT", "POST", "DELETE"]
+            }
+        },
+        "plugins": {
+            "type": "object"
+        },
+        "upstream": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "object"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "required": ["nodes", "type"]
+        },
+        "uri": {
+            "type": "string"
+        }
+    },
+    "required": ["upstream", "uri"]
+}]]
+
+
 return _M
