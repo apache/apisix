@@ -2,10 +2,11 @@
 
 local log = require("apisix.core.log")
 local fetch_local_conf = require("apisix.core.config_local").local_conf
-local encode_json = require("cjson.safe").encode
+local encode_json = require("apisix.core.json").encode
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
 local clone_tab = require("table.clone")
+local check_schema = require("apisix.core.schema").check
 local exiting = ngx.worker.exiting
 local insert_tab = table.insert
 local type = type
@@ -103,24 +104,48 @@ function _M.fetch(self)
         self.values = new_tab(#dir_res.nodes, 0)
         self.values_hash = new_tab(0, #dir_res.nodes)
 
+        local changed = false
         for _, item in ipairs(dir_res.nodes) do
-            insert_tab(self.values, item)
-            local key = short_key(self, item.key)
-            self.values_hash[key] = #self.values
-            item.id = key
+            local ok = true
+            if self.item_schema then
+                ok, err = check_schema(self.item_schema, item.value)
+            end
 
-            if not self.prev_index or item.modifiedIndex > self.prev_index then
+            if not ok then
+                log.error("failed to check item data of [", self.key, "] err:",
+                          err)
+
+            else
+                changed = true
+                insert_tab(self.values, item)
+                local key = short_key(self, item.key)
+                self.values_hash[key] = #self.values
+                item.id = key
+            end
+
+            if not self.prev_index or
+                item.modifiedIndex > self.prev_index then
                 self.prev_index = item.modifiedIndex
             end
         end
 
-        self.conf_version = self.conf_version + 1
+        if changed then
+            self.conf_version = self.conf_version + 1
+        end
         return self.values
     end
 
     local res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
     if not res then
         return nil, err
+    end
+
+    if self.item_schema and res.value then
+        local ok, err = check_schema(self.item_schema, res.value)
+        if not ok then
+            log.error("failed to check item data of [", self.key, "] err:", err)
+            return nil, err
+        end
     end
 
     if res.dir then
@@ -246,11 +271,13 @@ function _M.new(key, opts)
     end
 
     local automatic = opts and opts.automatic
+    local item_schema = opts and opts.item_schema
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
         key = key and prefix .. key,
         automatic = automatic,
+        item_schema = item_schema,
         sync_times = 0,
         running = true,
         conf_version = 0,
