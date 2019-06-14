@@ -85,6 +85,8 @@ _EOC_
             set $upstream_uri                '';
 
             access_by_lua_block {
+                -- wait for etcd sync
+                ngx.sleep(0.1)
                 apisix.access_phase()
             }
 
