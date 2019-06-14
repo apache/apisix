@@ -21,6 +21,7 @@ help:
 .PHONY: run
 run:
 	mkdir -p logs
+	mkdir -p /tmp/cores/
 	$$(which openresty) -p $$PWD/
 
 
