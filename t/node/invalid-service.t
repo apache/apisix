@@ -10,12 +10,12 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set invalid route(id: 1)
+=== TEST 1: set invalid service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local res, err = core.etcd.set("/routes/1", [[mexxxxxxxxxxxxxxx]])
+            local res, err = core.etcd.set("/services/1", [[mexxxxxxxxxxxxxxx]])
 
             if res.status >= 300 then
                 res.status = code
@@ -28,7 +28,7 @@ __DATA__
 --- request
 GET /t
 --- error_log
-invalid item data of [/apisix/routes/1], val: mexxxxxxxxxxxxxxx, it shoud be a object
+invalid item data of [/apisix/services/1], val: mexxxxxxxxxxxxxxx, it shoud be a object
 --- response_body_like eval
 qr/"value":"mexxxxxxxxxxxxxxx"/
 
@@ -41,40 +41,35 @@ GET /not_found
 --- response_body_like eval
 qr/404 Not Found/
 --- error_log
-invalid item data of [/apisix/routes/1], val: mexxxxxxxxxxxxxxx, it shoud be a object
+invalid item data of [/apisix/services/1], val: mexxxxxxxxxxxxxxx, it shoud be a object
 
 
 
-=== TEST 3: set valid route(id: 1)
+=== TEST 3: set valid service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "methods": ["GET"],
+            local core = require("apisix.core")
+            local res, err = core.etcd.set("/services/1", core.json.decode([[{
                         "plugins": {},
-                        "id":1,
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
                             },
                             "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
+                        }
+                }]]))
 
-            if code >= 300 then
-                ngx.status = code
+            if res.status >= 300 then
+                res.status = code
             end
-            ngx.say(body)
+
+            ngx.print(core.json.encode(res.body))
         }
     }
 --- request
 GET /t
---- response_body
-passed
+--- response_body_like eval
+qr/"nodes":\{"127.0.0.1:1980":1\}/
 --- error_log
-invalid item data of [/apisix/routes/1], val: mexxxxxxxxxxxxxxx, it shoud be a object
+invalid item data of [/apisix/services/1], val: mexxxxxxxxxxxxxxx, it shoud be a object

@@ -34,6 +34,29 @@ function _M.check(schema, json)
 end
 
 
+local plugins_schema = [[
+    "plugins": {
+        "type": "object"
+    }
+]]
+
+
+local upstream_schema = [[
+    "upstream": {
+        "type": "object",
+        "properties": {
+            "nodes": {
+                "type": "object"
+            },
+            "type": {
+                "type": "string"
+            }
+        },
+        "required": ["nodes", "type"]
+    }
+]]
+
+
 _M.route = [[{
     "type": "object",
     "properties": {
@@ -42,28 +65,26 @@ _M.route = [[{
             "items": {
                 "type": "string",
                 "enum": ["GET", "PUT", "POST", "DELETE"]
+                "uniqueItems" = true,
             }
         },
-        "plugins": {
-            "type": "object"
-        },
-        "upstream": {
-            "type": "object",
-            "properties": {
-                "nodes": {
-                    "type": "object"
-                },
-                "type": {
-                    "type": "string"
-                }
-            },
-            "required": ["nodes", "type"]
-        },
+        ]] .. plugins_schema .. [[,
+        ]] .. upstream_schema .. [[,
         "uri": {
             "type": "string"
         }
     },
     "required": ["upstream", "uri"]
+}]]
+
+
+_M.service = [[{
+    "type": "object",
+    "properties": {
+        ]] .. plugins_schema .. [[,
+        ]] .. upstream_schema .. [[
+    },
+    "required": ["upstream"]
 }]]
 
 

@@ -45,16 +45,37 @@ passed
 
 
 === TEST 2: /not_found
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
 --- request
 GET /not_found
---- error_code: 404
---- response_body_like eval
-qr/404 Not Found/
+--- error_code eval
+[200, 404]
+--- pipelined_requests eval
+["GET /t\n",
+"GET /not_found\n"]
+--- response_body eval
+["done\n",
+ qr/404 Not Found/]
 
 
 
 === TEST 3: hit routes
---- request
-GET /hello
---- response_body
-hello world
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- pipelined_requests eval
+["GET /t\n",
+"GET /hello\n"]
+--- response_body eval
+["done\n",
+"hello world\n"]
