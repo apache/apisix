@@ -42,6 +42,7 @@ end
 function _M.init_worker()
     require("apisix.route").init_worker()
     require("apisix.balancer").init_worker()
+    require("apisix.plugin").init_worker()
     require("apisix.service").init_worker()
     require("apisix.consumer").init_worker()
     require("apisix.heartbeat").init_worker()
