@@ -16,7 +16,8 @@ function _M.put(uri_segs, conf)
         return 400, {error_msg = "missing configurations"}
     end
 
-    -- core.log.info("schema: ", core.json.delay_encode(schema_desc))
+    core.log.info("schema: ", core.schema.route)
+    core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.route, conf)
     if not ok then
         return 400, {error_msg = "invalid configuration: " .. err}

@@ -216,3 +216,199 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: uri + upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say("[push] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[push] code: 200 message: passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: uri + plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/index.html",
+                            "plugins": {
+                                "limit-count": {
+                                    "count": 2,
+                                    "time_window": 60,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say("[push] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[push] code: 200 message: passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: invalid empty plugins (todo)
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {},
+                        "uri": "/index.html"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say("[push] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- SKIP
+
+
+
+=== TEST 9: invalid route: duplicate method
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: invalid \"uniqueItems\" in docuement at pointer \"#\/methods\/1\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: invalid method
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["invalid_method"],
+                        "plugins": {},
+                        "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: invalid \"enum\" in docuement at pointer \"#\/methods\/0\""}
+--- no_error_log
+[error]
