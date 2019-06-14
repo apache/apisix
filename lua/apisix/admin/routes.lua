@@ -8,6 +8,11 @@ local _M = {
 
 function _M.put(uri_segs, conf)
     local resource, id = uri_segs[4], uri_segs[5]
+    id = id or tostring(conf.id)
+    if conf.id and tostring(conf.id) ~= id then
+        return 400, {error_msg = "wrong route id"}
+    end
+
     if not id then
         return 400, {error_msg = "missing route id"}
     end
