@@ -115,10 +115,10 @@ function _M.access_phase()
     end
 
     if route.value.service_id then
-        -- core.log.warn("matched route: ", core.json.encode(route.value))
+        -- core.log.info("matched route: ", core.json.delay_encode(route.value))
         local service = service_fetch(route.value.service_id)
         if not service then
-            core.log.error("failed to fetch a valid service configuration by ",
+            core.log.error("failed to fetch service configuration by ",
                            "id: ", route.value.service_id)
             return
         end
