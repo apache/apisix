@@ -117,6 +117,12 @@ function _M.access_phase()
     if route.value.service_id then
         -- core.log.warn("matched route: ", core.json.encode(route.value))
         local service = service_fetch(route.value.service_id)
+        if not service then
+            core.log.error("failed to fetch a valid service configuration by ",
+                           "id: ", route.value.service_id)
+            return
+        end
+
         local changed
         route, changed = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
@@ -129,8 +135,8 @@ function _M.access_phase()
                               .. service.value.id
         else
             api_ctx.conf_type = "service"
-            api_ctx.conf_version = route.modifiedIndex
-            api_ctx.conf_id = route.value.id
+            api_ctx.conf_version = service.modifiedIndex
+            api_ctx.conf_id = service.value.id
         end
 
     else
