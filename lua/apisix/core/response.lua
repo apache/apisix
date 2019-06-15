@@ -23,7 +23,7 @@ do
 function resp_exit(code, ...)
     idx = 0
 
-    if type(code) ~= "number" then
+    if code and type(code) ~= "number" then
         insert_tab(t, code)
         code = nil
     end
@@ -54,7 +54,7 @@ function resp_exit(code, ...)
     end
 
     if code then
-        ngx_exit(code)
+        return ngx_exit(code)
     end
 end
 
