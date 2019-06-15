@@ -11,6 +11,7 @@ local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_exit = ngx.exit
+local math = math
 
 
 local _M = {version = 0.1}

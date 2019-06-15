@@ -1,0 +1,213 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+
+my (@luas, @tests);
+
+my $hits = 0;
+my $RED = "\033[1;31m";
+my $NC = "\033[0m"; # No Color
+
+my %opts;
+getopts('Lse', \%opts) or die "Usage: lj-releng [-L] [-s] [-e] [files]\n";
+
+my $silent = $opts{s};
+my $stop_on_error = $opts{e};
+my $no_long_line_check = $opts{L};
+
+my $check_lua_ver = "luajit -v | awk '{print\$2}'| grep 2.1";
+my $output = `$check_lua_ver`;
+if ($output eq '') {
+    die "ERROR: lj-releng ONLY supports LuaJIT 2.1!\n";
+}
+
+if ($#ARGV != -1) {
+    @luas = @ARGV;
+
+} else {
+    @luas = split /\n/, `find . -name '*.lua'`;
+    if (-d 't') {
+        @tests = map glob, qw{ t/*.t t/*/*.t t/*/*/*.t };
+    }
+}
+
+for my $f (sort @luas) {
+    process_file($f);
+}
+
+for my $t (@tests) {
+    blank(qq{grep -H -n --color -E '\\--- ?(ONLY|LAST)' $t});
+}
+
+if ($hits) {
+    exit 1;
+}
+
+# p: prints a string to STDOUT appending \n
+# w: prints a string to STDERR appending \n
+# Both respect the $silent value
+sub p { print "$_[0]\n" if (!$silent) }
+sub w { warn  "$_[0]\n" if (!$silent) }
+
+# blank: runs a command and looks at the output. If the output is not
+# blank it is printed (and the program dies if stop_on_error is 1)
+sub blank {
+    my ($command) = @_;
+    if ($stop_on_error) {
+        my $output = `$command`;
+        if ($output ne '') {
+            die $output;
+        }
+    } else {
+        system($command);
+    }
+}
+
+my $version;
+sub process_file {
+    my $file = shift;
+    # Check the sanity of each .lua file
+    open my $in, $file or
+        die "ERROR: Can't open $file for reading: $!\n";
+    my $found_ver;
+    while (<$in>) {
+        my ($ver, $skipping);
+        if (/(?x) (?:_VERSION|version) \s* = .*? ([\d\.]*\d+) (.*? SKIP)?/) {
+            my $orig_ver = $ver = $1;
+            $found_ver = 1;
+            $skipping = $2;
+            $ver =~ s{^(\d+)\.(\d{3})(\d{3})$}{join '.', int($1), int($2), int($3)}e;
+            print("$file: $orig_ver ($ver)\n");
+            last;
+
+        } elsif (/(?x) (?:_VERSION|version) \s* = \s* ([a-zA-Z_]\S*)/) {
+            print("$file: $1\n");
+            $found_ver = 1;
+            last;
+        }
+
+        if ($ver and $version and !$skipping) {
+            if ($version ne $ver) {
+                die "$file: $ver != $version\n";
+            }
+        } elsif ($ver and !$version) {
+            $version = $ver;
+        }
+    }
+    # if (!$found_ver) {
+    #     w("WARNING: No \"_VERSION\" or \"version\" field found in `$file`.");
+    # }
+    close $in;
+
+    #p("Checking use of Lua global variables in file $file...");
+    #p("op no. line     opcode  args        ; code");
+    my $cmd = "luajit -bL $file";
+    open $in, "$cmd|"
+        or die "cannot open output pipe for \"$cmd\": $!";
+    my @sections;
+    my $sec;
+    while (<$in>) {
+
+        #warn "line: $_";
+
+        if (/^-- BYTECODE -- \S.*?:(\d+)-\d+$/) {
+            my $def_line = $1;
+            #warn "$file: $line";
+            if (defined $sec) {
+                push @sections, $sec;
+
+            }
+            $sec = {
+                def_line => $def_line,
+                gsets => [],
+                ggets => [],
+            };
+            next;
+        }
+
+        if (/^ \d+ \s+ \[ (\d+) \] \s+ (?: \W+ \s+ )? G([GS])ET \s+ .*? ; \s+ \"([^"]+)" $/x) {
+            my ($line, $op, $name) = ($1, $2, $3);
+
+            #warn "found: $line $op $name";
+            if ($op eq 'S') {
+                push @{ $sec->{gsets} }, [$line, $name];
+            } else {
+                push @{ $sec->{ggets} }, [$line, $name];
+            }
+
+            next;
+        }
+
+        if (/^ \d+ \s+ \[ \d+ \] \s+ (G[GS]ET) \s+ $/x) {
+            die "bad $1 instruction: $_";
+        }
+    }
+    close $in;
+
+    if (defined $sec) {
+        push @sections, $sec;
+    }
+
+    my $last_idx = $#sections;
+    my $i = 0;
+    for my $sec (@sections) {
+        my $def_line = $sec->{def_line};
+
+        my $gsets = $sec->{gsets};
+        my $ggets = $sec->{ggets};
+
+        for my $gset (@$gsets) {
+            $hits++;
+            my ($line, $name) = @$gset;
+            warn "${RED}ERROR${NC}: $file: line $line: setting the Lua global ",
+                 "\"$name\"\n";
+        }
+
+        if ($i == $last_idx) {
+            # being the top-level chunk
+
+            for my $gget (@$ggets) {
+                my ($line, $name) = @$gget;
+
+                if ($name =~ /^ (?: require|type|tostring|error|ngx|ndk|jit
+                                   |setmetatable|getmetatable|string|table|io
+                                   |os|print|tonumber|math|pcall|xpcall|unpack
+                                   |pairs|ipairs|assert|module|package
+                                   |coroutine|[gs]etfenv|next|rawget|rawset
+                                   |loadstring|dofile
+                                   |rawlen|select|arg|bit|debug|ngx|ndk)$/x)
+                {
+                    next;
+                }
+
+                $hits++;
+                warn "${RED}ERROR${NC}: $file: line $line: getting the Lua ",
+                     "global \"$name\"\n";
+            }
+
+            next;
+        }
+
+        for my $gget (@$ggets) {
+            $hits++;
+            my ($line, $name) = @$gget;
+            warn "${RED}ERROR${NC}: $file: line $line: getting the Lua ",
+                 "global \"$name\"\n";
+        }
+
+    } continue {
+        $i++;
+    }
+
+    if ($stop_on_error && $hits > 0) {
+        exit 1
+    }
+
+    unless ($no_long_line_check) {
+        p("Checking line length exceeding 80...");
+        blank("grep -H -n -E --color '.{81}' $file");
+    }
+}
