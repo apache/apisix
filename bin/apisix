@@ -25,8 +25,8 @@ events {
 worker_shutdown_timeout 3;
 
 http {
-    lua_package_path "{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
-    lua_package_cpath "{*lua_cpath*};;";
+    lua_package_path "$prefix/deps/share/lua/{*lua_version*}/?.lua;{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_cpath "$prefix/deps/lib64/lua/{*lua_version*}/?.so;$prefix/deps/lib/lua/{*lua_version*}/?.so;{*lua_cpath*};;";
 
     lua_shared_dict plugin-limit-req    10m;
     lua_shared_dict plugin-limit-count  10m;
@@ -213,12 +213,16 @@ local function init()
         error("failed to find the Lua source code home path")
     end
 
+    -- _VERSION = "Lua 5.*"
+    local lua_version = string.sub(_VERSION, #"Lua " + 1)
+
     -- -- Using template.render
     local sys_conf = setmetatable({
         lua_path = package.path,
         lua_cpath = package.cpath,
         os_name = exec("uname"),
         apisix_lua_home = apisix_src_path,
+        lua_version = lua_version,
     }, {__index = yaml_conf.apisix})
     -- print(sys_conf.allow_admin)
 
