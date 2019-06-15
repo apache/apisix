@@ -261,8 +261,6 @@ local function _automatic_fetch(premature, self)
                           tostring(self))
             end
 
-            -- ngx_sleep(3)
-
             if err ~= self.last_err then
                 self.last_err = err
                 self.last_err_time = ngx_time()
@@ -271,8 +269,6 @@ local function _automatic_fetch(premature, self)
                     self.last_err = nil
                 end
             end
-
-            break
         end
     end
 
