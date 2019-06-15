@@ -69,8 +69,10 @@ _EOC_
 
     $block->set_value("http_config", $http_config);
 
+    my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
+
     my $config = $block->config // '';
-    $config .= <<'_EOC_';
+    $config .= <<_EOC_;
         location /apisix/admin {
             content_by_lua_block {
                 apisix.admin()
@@ -78,26 +80,26 @@ _EOC_
         }
 
         location / {
-            set $upstream_scheme             'http';
-            set $upstream_host               $host;
-            set $upstream_upgrade            '';
-            set $upstream_connection         '';
-            set $upstream_uri                '';
+            set \$upstream_scheme             'http';
+            set \$upstream_host               \$host;
+            set \$upstream_upgrade            '';
+            set \$upstream_connection         '';
+            set \$upstream_uri                '';
 
             access_by_lua_block {
                 -- wait for etcd sync
-                ngx.sleep(0.1)
+                ngx.sleep($wait_etcd_sync)
                 apisix.access_phase()
             }
 
             proxy_http_version 1.1;
-            proxy_set_header   Host              $upstream_host;
-            proxy_set_header   Upgrade           $upstream_upgrade;
-            proxy_set_header   Connection        $upstream_connection;
-            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_set_header   Host              \$upstream_host;
+            proxy_set_header   Upgrade           \$upstream_upgrade;
+            proxy_set_header   Connection        \$upstream_connection;
+            proxy_set_header   X-Real-IP         \$remote_addr;
             proxy_pass_header  Server;
             proxy_pass_header  Date;
-            proxy_pass         $upstream_scheme://apisix_backend$upstream_uri;
+            proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
 
             header_filter_by_lua_block {
                 apisix.header_filter_phase()

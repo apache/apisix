@@ -99,10 +99,13 @@ function _M.api_routes()
 end
 
 
-function _M.filter(user_routes)
+function _M.filter(user_route)
     -- todo: reuse table
     local plugins = core.table.new(#local_supported_plugins * 2, 0)
-    local user_plugin_conf = user_routes.value.plugins
+    local user_plugin_conf = user_route.value.plugins
+    if user_plugin_conf == nil then
+        return plugins
+    end
 
     for _, plugin_obj in ipairs(local_supported_plugins) do
         local name = plugin_obj.name
