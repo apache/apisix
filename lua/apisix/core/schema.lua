@@ -1,7 +1,7 @@
-local rapidjson = require('rapidjson')
-local rapidjson_schema_validator = rapidjson.SchemaValidator
-local rapidjson_schema_doc = rapidjson.SchemaDocument
-local rapidjson_doc = rapidjson.Document
+local json = require('rapidjson')
+local schema_validator = json.SchemaValidator
+local schema_doc = json.SchemaDocument
+local json_doc = json.Document
 
 
 local cached_sd = require("apisix.core.lrucache").new({count = 1000, ttl = 0})
@@ -11,8 +11,8 @@ local _M = {version = 0.1}
 
 
 local function create_validator(schema)
-    local sd = rapidjson_schema_doc(schema)
-    local validator = rapidjson_schema_validator(sd)
+    local sd = schema_doc(schema)
+    local validator = schema_validator(sd)
 
     -- bug: we have to use a table to store the `validator` first,
     --   if we returned the `validator` directyly, we will get
@@ -29,13 +29,21 @@ end
 function _M.check(schema, json)
     local validator = cached_sd(schema, nil, create_validator, schema)[1]
 
-    local d = rapidjson_doc(json)
+    local d = json_doc(json)
     return validator:validate(d)
 end
 
 
 local plugins_schema = {
     type = "object"
+}
+
+
+local id_schema = {
+    anyOf = {
+        {type = "string", minLength = 1, maxLength = 32},
+        {type = "integer", minimum = 1}
+    }
 }
 
 
@@ -49,12 +57,7 @@ local upstream_schema = {
             type = "string",
             enum = {"chash", "roundrobin"}
         },
-        id = {
-            anyof = {
-                {type = "string", minLength = 1, maxLength = 32},
-                {type = "integer", minimum = 1}
-            }
-        }
+        id = id_schema
     },
     required = {"nodes", "type"}
 }
@@ -71,20 +74,13 @@ _M.route = [[{
             },
             "uniqueItems": true
         },
-        "plugins": ]] .. rapidjson.encode(plugins_schema) .. [[,
-        "upstream": ]] .. rapidjson.encode(upstream_schema) .. [[,
+        "plugins": ]] .. json.encode(plugins_schema) .. [[,
+        "upstream": ]] .. json.encode(upstream_schema) .. [[,
         "uri": {
             "type": "string"
         },
-        "service_id": {
-            "type": "string"
-        },
-        "id": {
-            "anyOf": [
-                {"type": "string", "minLength": 1, "maxLength": 32},
-                {"type": "integer", "minimum": 1}
-            ]
-        }
+        "service_id": ]] .. json.encode(id_schema) .. [[,
+        "id": ]] .. json.encode(id_schema) .. [[
     },
     "anyOf": [
         { "required": ["plugins", "uri"] },

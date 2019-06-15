@@ -18,11 +18,12 @@ __DATA__
             local res, err = core.etcd.set("/services/1", [[mexxxxxxxxxxxxxxx]])
 
             if res.status >= 300 then
-                res.status = code
+                ngx.status = code
+                return ngx.say(res.body)
             end
 
             ngx.print(core.json.encode(res.body))
-            ngx.sleep(1)
+            ngx.sleep(0.5)
         }
     }
 --- request

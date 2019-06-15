@@ -111,7 +111,7 @@ function _M.access_phase()
 
     local route = api_ctx.matched_route
     if not route then
-        return
+        return core.response.exit(404)
     end
 
     if route.value.service_id then
@@ -120,7 +120,7 @@ function _M.access_phase()
         if not service then
             core.log.error("failed to fetch service configuration by ",
                            "id: ", route.value.service_id)
-            return
+            return core.response.exit(404)
         end
 
         local changed
