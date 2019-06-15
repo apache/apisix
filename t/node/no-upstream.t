@@ -59,18 +59,10 @@ GET /not_found
 
 
 === TEST 3: hit routes
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(1)
-            ngx.say("done")
-        }
-    }
---- error_code eval
-[200, 502]
---- pipelined_requests eval
-["GET /t\n",
-"GET /hello\n"]
+--- request
+GET /hello
+--- error_code: 502
 --- response_body eval
-["done\n",
-qr/502 Bad Gateway/]
+qr/502 Bad Gateway/
+--- error_log
+failed to pick server: missing upstream configuration while connecting to upstream
