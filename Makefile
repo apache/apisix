@@ -20,6 +20,7 @@ help:
 ### dev:          Create a development ENV
 .PHONY: dev
 dev:
+	./utils/update_nginx_conf_dev.sh
 	sudo luarocks install apisix-*.rockspec --only-deps --tree deps
 
 
