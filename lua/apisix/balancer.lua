@@ -78,6 +78,10 @@ local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local upstream = route.value.upstream
+    if not upstream then
+        return nil, nil, "missing upstream configuration"
+    end
+
     local up_id = upstream.id
     local version
 
@@ -123,12 +127,14 @@ _M.pick_server = pick_server
 function _M.run(route, ctx)
     local host, port, err = pick_server(route, ctx)
     if err then
-        error("failed to pick server: " .. err)
+        core.log.error("failed to pick server: ", err)
+        return core.response.exit(502)
     end
 
     local ok, err = balancer.set_current_peer(host, port)
     if not ok then
-        error("failed to set server peer: " .. err)
+        core.log.error("failed to set server peer: ", err)
+        return core.response.exit(502)
     end
 
     ctx.proxy_passed = true
