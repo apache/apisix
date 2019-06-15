@@ -11,6 +11,7 @@ local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_exit = ngx.exit
+local math = math
 
 
 local _M = {version = 0.1}
@@ -50,22 +51,22 @@ function _M.init_worker()
 end
 
 
-local function run_plugin(phase, filter_plugins, api_ctx)
+local function run_plugin(phase, plugins, api_ctx)
     api_ctx = api_ctx or ngx.ctx.api_ctx
     if not api_ctx then
         return
     end
 
-    filter_plugins = filter_plugins or api_ctx.filter_plugins
-    if not filter_plugins then
+    plugins = plugins or api_ctx.plugins
+    if not plugins then
         return api_ctx
     end
 
     if phase ~= "log" then
-        for i = 1, #filter_plugins, 2 do
-            local phase_fun = filter_plugins[i][phase]
+        for i = 1, #plugins, 2 do
+            local phase_fun = plugins[i][phase]
             if phase_fun then
-                local code, body = phase_fun(filter_plugins[i + 1], api_ctx)
+                local code, body = phase_fun(plugins[i + 1], api_ctx)
                 if code or body then
                     core.response.exit(code, body)
                 end
@@ -74,10 +75,10 @@ local function run_plugin(phase, filter_plugins, api_ctx)
         return api_ctx
     end
 
-    for i = 1, #filter_plugins, 2 do
-        local phase_fun = filter_plugins[i][phase]
+    for i = 1, #plugins, 2 do
+        local phase_fun = plugins[i][phase]
         if phase_fun then
-            phase_fun(filter_plugins[i + 1], api_ctx)
+            phase_fun(plugins[i + 1], api_ctx)
         end
     end
 
@@ -145,10 +146,11 @@ function _M.access_phase()
         api_ctx.conf_id = route.value.id
     end
 
-    api_ctx.filter_plugins = plugin.filter(route)
+    local plugins = core.tablepool.fetch("plugins", 32, 0)
+    api_ctx.plugins = plugin.filter(route, plugins)
 
-    run_plugin("rewrite", api_ctx.filter_plugins, api_ctx)
-    run_plugin("access", api_ctx.filter_plugins, api_ctx)
+    run_plugin("rewrite", plugins, api_ctx)
+    run_plugin("access", plugins, api_ctx)
 end
 
 
@@ -162,6 +164,9 @@ function _M.log_phase()
     if api_ctx then
         core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
         core.ctx.release_vars(api_ctx)
+        if api_ctx.plugins then
+            core.tablepool.release("plugins", api_ctx.plugins)
+        end
         core.tablepool.release("api_ctx", api_ctx)
     end
 end
@@ -169,8 +174,9 @@ end
 
 function _M.balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx or not api_ctx.filter_plugins then
-        return
+    if not api_ctx then
+        core.log.error("invalid api_ctx")
+        return core.response.exit(500)
     end
 
     load_balancer(api_ctx.matched_route, api_ctx)

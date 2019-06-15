@@ -9,7 +9,8 @@ local error = error
 local conf_routes
 
 
-local _M = {}
+local _M = {version = 0.1}
+
 
     local empty_tab = {}
 local function create_r3_router(routes)
