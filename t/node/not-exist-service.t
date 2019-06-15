@@ -2,14 +2,54 @@ use t::APISix 'no_plan';
 
 repeat_each(1);
 log_level('info');
-worker_connections(1024);
+no_long_string();
 no_root_location();
+no_shuffle();
 
 run_tests();
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: invalid service id
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local res, err = core.etcd.set("/routes/1", {
+                    service_id = "not_found",
+                    uri = "/hello"
+                })
+
+
+            if res.status >= 300 then
+                ngx.status = res.status
+                return ngx.exit(res.status)
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: hit routes
+--- request
+GET /hello
+--- error_code: 404
+--- response_body_like eval
+qr/404 Not Found/
+--- wait_etcd_sync: 0.3
+--- error_log
+failed to fetch service configuration by id
+
+
+
+=== TEST 3: set valid route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -17,9 +57,6 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
-                        "plugins": {},
-                        "id":1,
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
@@ -40,23 +77,10 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 2: /not_found
---- request
-GET /not_found
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
---- no_error_log
-[error]
-
-
-
-=== TEST 3: hit routes
+=== TEST 4: hit routes
 --- request
 GET /hello
 --- response_body
