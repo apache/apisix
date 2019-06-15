@@ -34,30 +34,30 @@ function _M.check(schema, json)
 end
 
 
-local plugins_schema = [[
-    "type": "object"
-]]
+local plugins_schema = {
+    type = "object"
+}
 
 
-local upstream_schema = [[
-    "type": "object",
-    "properties": {
-        "nodes": {
-            "type": "object"
+local upstream_schema = {
+    type = "object",
+    properties = {
+        nodes = {
+            type = "object"
         },
-        "type": {
-            "type": "string",
-            "enum": ["chash", "roundrobin"]
+        type = {
+            type = "string",
+            enum = {"chash", "roundrobin"}
         },
-        "id": {
-            "anyOf": [
-                {"type": "string", "minLength": 1, "maxLength": 32},
-                {"type": "integer", "minimum": 1}
-            ]
+        id = {
+            anyof = {
+                {type = "string", minLength = 1, maxLength = 32},
+                {type = "integer", minimum = 1}
+            }
         }
     },
-    "required": ["nodes", "type"]
-]]
+    required = {"nodes", "type"}
+}
 
 
 _M.route = [[{
@@ -71,12 +71,8 @@ _M.route = [[{
             },
             "uniqueItems": true
         },
-        "plugins": {
-            ]] .. plugins_schema .. [[,
-        },
-        "upstream": {
-            ]] .. upstream_schema .. [[,
-        },
+        "plugins": ]] .. rapidjson.encode(plugins_schema) .. [[,
+        "upstream": ]] .. rapidjson.encode(upstream_schema) .. [[,
         "uri": {
             "type": "string"
         },
@@ -99,19 +95,17 @@ _M.route = [[{
 }]]
 
 
-_M.service = [[{
-    "type": "object",
-    "properties": {
-        ]] .. plugins_schema .. [[,
-        ]] .. upstream_schema .. [[
+_M.service = {
+    type = "object",
+    properties = {
+        plugins = plugins_schema,
+        upstream = upstream_schema,
     },
-    "required": ["upstream"]
-}]]
+    required = {"upstream"}
+}
 
 
-_M.upstream = [[
-    {]] .. upstream_schema .. [[}
-]]
+_M.upstream = upstream_schema
 
 
 return _M
