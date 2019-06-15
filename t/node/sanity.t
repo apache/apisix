@@ -2,6 +2,7 @@ use t::APISix 'no_plan';
 
 repeat_each(2);
 log_level('info');
+worker_connections(1024);
 no_root_location();
 
 run_tests();
