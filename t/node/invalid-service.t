@@ -73,3 +73,20 @@ GET /t
 qr/"nodes":\{"127.0.0.1:1980":1\}/
 --- error_log
 invalid item data of [/apisix/services/1], val: mexxxxxxxxxxxxxxx, it shoud be a object
+
+
+
+=== TEST 4: no error log
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
