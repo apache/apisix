@@ -180,7 +180,7 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
                     }
                 },
                 modifiedIndex = 1,
-            }, all_plugins)
+            })
 
             local encode_json = require "cjson.safe" .encode
             for i = 1, #filter_plugins, 2 do
@@ -195,3 +195,5 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
 GET /t
 --- response_body
 plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]}
+--- no_error_log
+[error]

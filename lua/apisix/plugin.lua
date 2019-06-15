@@ -99,9 +99,8 @@ function _M.api_routes()
 end
 
 
-function _M.filter(user_route)
-    -- todo: reuse table
-    local plugins = core.table.new(#local_supported_plugins * 2, 0)
+function _M.filter(user_route, plugins)
+    plugins = plugins or core.table.new(#local_supported_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
         return plugins

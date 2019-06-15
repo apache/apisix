@@ -24,6 +24,17 @@ dev:
 	sudo luarocks install apisix-*.rockspec --only-deps --tree deps
 
 
+### check:        Check Lua srouce code
+.PHONY: check
+check:
+	luacheck -q lua
+	./utils/lj-releng lua/*.lua lua/apisix/*.lua \
+		lua/apisix/admin/*.lua \
+		lua/apisix/core/*.lua \
+		lua/apisix/plugins/*.lua > \
+		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+
+
 ### run:          Start the apisix server
 .PHONY: run
 run:
