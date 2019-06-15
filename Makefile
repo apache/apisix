@@ -17,6 +17,12 @@ help:
 	@grep -E '^### [-A-Za-z0-9_]+:' Makefile | sed 's/###/   /'
 
 
+### dev:          Create a development ENV
+.PHONY: dev
+dev:
+	sudo luarocks install apisix-*.rockspec --only-deps --tree deps
+
+
 ### run:          Start the apisix server
 .PHONY: run
 run:
