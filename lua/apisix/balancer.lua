@@ -143,8 +143,10 @@ end
 
 function _M.init_worker()
     local err
-    upstreams_etcd, err = core.config.new("/upstreams",
-                                          {automatic = true})
+    upstreams_etcd, err = core.config.new("/upstreams", {
+                                automatic = true,
+                                item_schema = core.schema.upstream
+                            })
     if not upstreams_etcd then
         error("failed to create etcd instance to fetch upstream: " .. err)
         return
