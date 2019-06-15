@@ -1,6 +1,6 @@
 use t::APISix 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 log_level('info');
 worker_connections(1024);
 no_root_location();
@@ -46,37 +46,20 @@ passed
 
 
 === TEST 2: /not_found
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(1)
-            ngx.say("done")
-        }
-    }
 --- request
 GET /not_found
---- error_code eval
-[200, 404]
---- pipelined_requests eval
-["GET /t\n",
-"GET /not_found\n"]
+--- error_code: 404
 --- response_body eval
-["done\n",
- qr/404 Not Found/]
+qr/404 Not Found/
+--- no_error_log
+[error]
 
 
 
 === TEST 3: hit routes
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(1)
-            ngx.say("done")
-        }
-    }
---- pipelined_requests eval
-["GET /t\n",
-"GET /hello\n"]
---- response_body eval
-["done\n",
-"hello world\n"]
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
