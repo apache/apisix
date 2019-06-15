@@ -113,7 +113,6 @@ function _M.fetch(self)
         end
 
         if not dir_res.nodes then
-            ngx_sleep(1)
             return nil
         end
 
@@ -269,6 +268,9 @@ local function _automatic_fetch(premature, self)
                     self.last_err = nil
                 end
             end
+
+        elseif not res then
+            ngx_sleep(0.1)
         end
     end
 
