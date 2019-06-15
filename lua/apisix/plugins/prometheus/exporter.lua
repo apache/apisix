@@ -1,7 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local base_prometheus = require("apisix.plugins.prometheus.base_prometheus")
-local prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
+local prometheus
 local core = require("apisix.core")
 local ipairs = ipairs
 local ngx_capture = ngx.location.capture
@@ -17,7 +17,9 @@ local _M = {version = 0.1}
 
 function _M.init()
     core.table.clear(metrics)
+
     -- across all services
+    prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
             {"state"})
