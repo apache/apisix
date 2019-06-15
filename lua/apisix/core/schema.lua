@@ -35,25 +35,28 @@ end
 
 
 local plugins_schema = [[
-    "plugins": {
-        "type": "object"
-    }
+    "type": "object"
 ]]
 
 
 local upstream_schema = [[
-    "upstream": {
-        "type": "object",
-        "properties": {
-            "nodes": {
-                "type": "object"
-            },
-            "type": {
-                "type": "string"
-            }
+    "type": "object",
+    "properties": {
+        "nodes": {
+            "type": "object"
         },
-        "required": ["nodes", "type"]
-    }
+        "type": {
+            "type": "string",
+            "enum": ["chash", "roundrobin"]
+        },
+        "id": {
+            "anyOf": [
+                {"type": "string", "minLength": 1, "maxLength": 32},
+                {"type": "integer", "minimum": 1}
+            ]
+        }
+    },
+    "required": ["nodes", "type"]
 ]]
 
 
@@ -68,8 +71,12 @@ _M.route = [[{
             },
             "uniqueItems": true
         },
-        ]] .. plugins_schema .. [[,
-        ]] .. upstream_schema .. [[,
+        "plugins": {
+            ]] .. plugins_schema .. [[,
+        },
+        "upstream": {
+            ]] .. upstream_schema .. [[,
+        },
         "uri": {
             "type": "string"
         },
@@ -100,6 +107,11 @@ _M.service = [[{
     },
     "required": ["upstream"]
 }]]
+
+
+_M.upstream = [[
+    {]] .. upstream_schema .. [[}
+]]
 
 
 return _M
