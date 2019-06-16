@@ -231,6 +231,10 @@ end
 
 
 function _M.get(self, key)
+    if not self.values_hash then
+        return
+    end
+
     local arr_idx = self.values_hash[tostring(key)]
     if not arr_idx then
         return nil
@@ -271,6 +275,7 @@ local function _automatic_fetch(premature, self)
                     self.last_err = nil
                 end
             end
+            ngx_sleep(1)
 
         elseif not res then
             ngx_sleep(0.05)

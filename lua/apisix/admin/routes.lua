@@ -35,11 +35,14 @@ function _M.put(uri_segs, conf)
         local res, err = core.etcd.get(key)
         if not res then
             return 400, {error_msg = "failed to fetch service info by "
-                                     .. "\"service_id\": " .. err}
+                                     .. "service id [" .. service_id .. "]: "
+                                     .. err}
         end
 
         if res.status ~= 200 then
-            return 400, {error_msg = "invalid service id[" .. service_id .. "]"}
+            return 400, {error_msg = "failed to fetch service info by "
+                                     .. "service id [" .. service_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 

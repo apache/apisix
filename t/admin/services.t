@@ -10,31 +10,25 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: set service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
-                        "plugins": {},
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
+                    "plugins": {},
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "uri": "/index.html"
+                        "type": "roundrobin"
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
                             "plugins": {},
                             "upstream": {
                                 "nodes": {
@@ -43,7 +37,7 @@ __DATA__
                                 "type": "roundrobin"
                             }
                         },
-                        "key": "/apisix/routes/1"
+                        "key": "/apisix/services/1"
                     },
                     "action": "set"
                 }]]
@@ -62,21 +56,17 @@ passed
 
 
 
-=== TEST 2: get route(id: 1)
+=== TEST 2: get service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_GET,
                  nil,
                 [[{
                     "node": {
                         "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
                             "plugins": {},
                             "upstream": {
                                 "nodes": {
@@ -85,7 +75,7 @@ passed
                                 "type": "roundrobin"
                             }
                         },
-                        "key": "/apisix/routes/1"
+                        "key": "/apisix/services/1"
                     },
                     "action": "get"
                 }]]
@@ -104,12 +94,12 @@ passed
 
 
 
-=== TEST 3: delete route(id: 1)
+=== TEST 3: delete service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/routes/1',
+            local code, message = t('/apisix/admin/services/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -128,18 +118,19 @@ GET /t
 
 
 
-=== TEST 4: delete route(id: not_found)
+=== TEST 4: delete service(id: not_found)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/routes/not_found',
+            local code = t('/apisix/admin/services/not_found',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
                     "action": "delete"
                 }]]
                 )
+
             ngx.say("[delete] code: ", code)
         }
     }
@@ -152,31 +143,25 @@ GET /t
 
 
 
-=== TEST 5: push route + delete
+=== TEST 5: push service + delete
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/routes/1',
+            local code, message, res = t('/apisix/admin/services/1',
                  ngx.HTTP_POST,
                  [[{
-                        "methods": ["GET"],
-                        "plugins": {},
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
+                    "plugins": {},
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "uri": "/index.html"
+                        "type": "roundrobin"
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
                             "plugins": {},
                             "upstream": {
                                 "nodes": {
@@ -198,8 +183,8 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
-            code, message = t('/apisix/admin/routes/' .. id,
+            local id = string.sub(res.node.key, #"/apisix/services/" + 1)
+            code, message = t('/apisix/admin/services/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -225,21 +210,19 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/routes/1',
+            local code, message, res = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "uri": "/index.html"
+                        "type": "roundrobin"
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "uri": "/index.html",
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -276,23 +259,21 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/routes/1',
+            local code, message, res = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "plugins": {
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
-                        },
-                        "uri": "/index.html"
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "uri": "/index.html",
                             "plugins": {
                                 "limit-count": {
                                     "count": 2,
@@ -330,11 +311,10 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/routes/1',
+            local code, message, res = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "plugins": {},
-                        "uri": "/index.html"
+                    "plugins": {}
                 }]]
                 )
 
@@ -354,22 +334,46 @@ GET /t
 
 
 
-=== TEST 9: invalid route: duplicate method
+=== TEST 9: invalid service id
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/services/invalid_id',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET", "GET"],
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/index.html"
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
+                )
+
+            ngx.exit(code)
+        }
+    }
+--- request
+GET /t
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: invalid id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "id": 3,
+                    "plugins": {}
                 }]]
                 )
 
@@ -381,133 +385,31 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"uniqueItems\" in docuement at pointer \"#\/methods\/1\""}
+{"error_msg":"wrong service id"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 10: invalid method
+=== TEST 11: id in the rule
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "methods": ["invalid_method"],
-                        "plugins": {},
-                        "uri": "/index.html"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"enum\" in docuement at pointer \"#\/methods\/0\""}
---- no_error_log
-[error]
-
-
-
-=== TEST 11: invalid service id
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "service_id": "invalid_id",
-                        "uri": "/index.html"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/service_id\""}
---- no_error_log
-[error]
-
-
-
-=== TEST 12: service id: not exist
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "service_id": "99999999999999",
-                        "uri": "/index.html"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to fetch service info by service id [99999999999999], response code: 404"}
---- no_error_log
-[error]
-
-
-
-=== TEST 13: invalid id
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                     "id": 3,
-                    "plugins": {},
-                    "uri": "/index.html"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"wrong route id"}
---- no_error_log
-[error]
-
-
-
-=== TEST 14: id in the rule
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes',
+            local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
                     "id": "1",
-                    "plugins": {},
-                    "uri": "/index.html"
+                    "plugins": {}
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {}
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
                 }]]
                 )
 
@@ -524,17 +426,16 @@ passed
 
 
 
-=== TEST 15: integer id less than 1
+=== TEST 12: integer id less than 1
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes',
+            local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
                     "id": -100,
-                    "plugins": {},
-                    "uri": "/index.html"
+                    "plugins": {}
                 }]]
                 )
 
@@ -547,5 +448,60 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: invalid service id: string value
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "id": "invalid_id",
+                    "plugins": {}
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: no additional properties is valid
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "id": 1,
+                    "plugins": {},
+                    "invalid_property": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
 --- no_error_log
 [error]
