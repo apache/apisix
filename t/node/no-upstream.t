@@ -38,23 +38,13 @@ passed
 
 
 === TEST 2: /not_found
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(1)
-            ngx.say("done")
-        }
-    }
 --- request
 GET /not_found
---- error_code eval
-[200, 404]
---- pipelined_requests eval
-["GET /t\n",
-"GET /not_found\n"]
---- response_body eval
-["done\n",
- qr/404 Not Found/]
+--- error_code: 404
+--- response_body_like eval
+qr/404 Not Found/
+--- no_error_log
+[error]
 
 
 
@@ -64,5 +54,7 @@ GET /hello
 --- error_code: 502
 --- response_body eval
 qr/502 Bad Gateway/
---- error_log
-failed to pick server: missing upstream configuration while connecting to upstream
+--- grep_error_log eval
+qr/\[error\].*/
+--- grep_error_log_out eval
+qr/failed to pick server: missing upstream configuration while connecting to upstream/

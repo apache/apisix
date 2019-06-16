@@ -36,9 +36,9 @@ install:
   - git clone https://github.com/openresty/test-nginx.git test-nginx
 
 script:
-  - cd test-nginx && (sudo cpanm . > build.log 2>&1 || (cat build.log && exit 1)) && cd ..
-  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$PATH
   - sudo service etcd start
   - sudo apisix init_etcd
+  - cd test-nginx && (sudo cpanm . > build.log 2>&1 || (cat build.log && exit 1)) && cd ..
+  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$PATH
   - make check
   - make test

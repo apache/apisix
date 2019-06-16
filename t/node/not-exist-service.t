@@ -44,8 +44,10 @@ GET /hello
 --- response_body_like eval
 qr/404 Not Found/
 --- wait_etcd_sync: 0.3
---- error_log
-failed to fetch service configuration by id
+--- grep_error_log eval
+qr/\[error\].*/
+--- grep_error_log_out eval
+qr/failed to fetch service configuration by id/
 
 
 
@@ -77,6 +79,8 @@ failed to fetch service configuration by id
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
 
 
 
