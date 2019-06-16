@@ -16,7 +16,7 @@ __DATA__
         content_by_lua_block {
             local core = require("apisix.core")
             local res, err = core.etcd.set("/routes/1", {
-                    service_id = "not_found",
+                    service_id = "999999999",
                     uri = "/hello"
                 })
 
