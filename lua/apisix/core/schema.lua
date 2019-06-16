@@ -41,7 +41,10 @@ local plugins_schema = {
 
 local id_schema = {
     anyOf = {
-        {type = "string", minLength = 1, maxLength = 32},
+        {
+            type = "string", minLength = 1, maxLength = 32,
+            pattern = [[^[0-9]+$]]
+        },
         {type = "integer", minimum = 1}
     }
 }
@@ -87,17 +90,22 @@ _M.route = [[{
         { "required": ["upstream", "uri"] },
         { "required": ["service_id", "uri"] }
     ],
-    "additionalItems": false
+    "additionalProperties": false
 }]]
 
 
 _M.service = {
     type = "object",
     properties = {
+        id = id_schema,
         plugins = plugins_schema,
         upstream = upstream_schema,
     },
-    required = {"upstream"}
+    anyOf = {
+        {required = {"upstream"}},
+        {required = {"plugins"}},
+    },
+    additionalProperties = false,
 }
 
 
