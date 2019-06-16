@@ -2,7 +2,7 @@
 
 local log = require("apisix.core.log")
 local fetch_local_conf = require("apisix.core.config_local").local_conf
-local encode_json = require("apisix.core.json").encode
+local json = require("apisix.core.json")
 local etcd = require("resty.etcd")
 local new_tab = require("table.new")
 local clone_tab = require("table.clone")
@@ -104,6 +104,8 @@ function _M.fetch(self)
 
     if self.values == nil then
         local dir_res, err = readdir(self.etcd_cli, self.key)
+        log.info("waitdir key: ", self.key, " res: ",
+                 json.delay_encode(dir_res))
         if not dir_res then
             return nil, err
         end
@@ -155,6 +157,8 @@ function _M.fetch(self)
     end
 
     local res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1,
+             " res: ", json.delay_encode(res))
     if not res then
         return nil, err
     end
@@ -180,10 +184,9 @@ function _M.fetch(self)
 
     if res.dir then
         log.error("todo: support for parsing `dir` response structures. ",
-                  encode_json(res))
+                  json.delay_encode(res))
         return self.values
     end
-    -- log.warn("waitdir: ", encode_json(res))
 
     self:upgrade_version(res.modifiedIndex)
 
@@ -270,7 +273,7 @@ local function _automatic_fetch(premature, self)
             end
 
         elseif not res then
-            ngx_sleep(0.01)
+            ngx_sleep(0.05)
         end
     end
 

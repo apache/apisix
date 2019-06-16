@@ -4,6 +4,7 @@ repeat_each(1);
 log_level('info');
 worker_connections(1024);
 no_root_location();
+no_shuffle();
 
 run_tests();
 
