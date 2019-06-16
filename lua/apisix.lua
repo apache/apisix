@@ -107,8 +107,8 @@ function _M.access_phase()
         return core.response.exit(404)
     end
 
-    -- core.log.warn("route: ",
-    --               core.json.encode(api_ctx.matched_route, true))
+    core.log.info("route: ",
+                  core.json.delay_encode(api_ctx.matched_route, true))
 
     local route = api_ctx.matched_route
     if not route then
