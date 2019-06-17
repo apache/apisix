@@ -549,3 +549,57 @@ GET /t
 {"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: invalid upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream_id": "invalid",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/upstream_id\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: not exist upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream_id": "99999999",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to fetch upstream info by upstream id [99999999], response code: 404"}
+--- no_error_log
+[error]
