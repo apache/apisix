@@ -22,6 +22,15 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 
 更多详细的信息，可以查阅[APISIX 的白皮书](https://www.iresty.com/download/%E4%BC%81%E4%B8%9A%E7%94%A8%E6%88%B7%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E5%BE%AE%E6%9C%8D%E5%8A%A1%20API%20%E7%BD%91%E5%85%B3.pdf)
 
+## 插件
+目前已支持这些插件：
+
+* [动态负载均衡](doc/architecture-design-cn.md#upstream)：跨多个上游服务的动态负载均衡，目前已支持 round-robin 和一致性哈希算法。
+* [key-auth](lua/apisix/plugins/key-auth.md): 基于 Key Authentication 的用户认证。
+* [limit-count](lua/apisix/plugins/limit-count.md): 基于“固定窗口”的限速实现.
+* [limit-req](lua/apisix/plugins/limit-req.md): 基于漏桶原理的请求限速实现。
+* [limit-conn](lua/apisix/plugins/limit-conn-cn.md): 限制并发请求（或并发连接）。
+* [prometheus](lua/apisix/plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
 
 ## 安装
 
@@ -68,6 +77,41 @@ sudo luarocks install apisix
 
 恭喜你，APISIX 已经安装成功了。
 
+#### 搭建开发环境
+
+如果你是开发人员，可以通过下面的命令快速搭建本地开发环境。
+
+```shell
+git clone git@github.com:iresty/apisix.git
+cd apisix
+make dev
+```
+
+如果一切顺利，你会在最后看到这样的信息：
+> Stopping after installing dependencies for apisix
+
+下面是预期的开发环境目录结构：
+
+```shell
+$ tree -L 2 -d apisix
+apisix
+├── bin
+├── conf
+├── deps                # 依赖的 Lua 和动态库，放在了这里
+│   ├── lib64
+│   └── share
+├── doc
+│   └── images
+├── lua
+│   └── apisix
+├── t
+│   ├── admin
+│   ├── core
+│   ├── lib
+│   ├── node
+│   └── plugin
+└── utils
+```
 
 ## 快速上手
 
@@ -129,16 +173,6 @@ Accept-Ranges: bytes
 
 ## 开发文档
 [详细设计文档](doc/architecture-design-cn.md)
-
-## 插件
-目前已支持这些插件：
-
-* [动态负载均衡](doc/architecture-design-cn.md#upstream)：跨多个上游服务的动态负载均衡，目前已支持 round-robin 和一致性哈希算法。
-* [key-auth](lua/apisix/plugins/key-auth.md): 基于 Key Authentication 的用户认证。
-* [limit-count](lua/apisix/plugins/limit-count.md): 基于“固定窗口”的限速实现.
-* [limit-req](lua/apisix/plugins/limit-req.md): 基于漏桶原理的请求限速实现。
-* [limit-conn](lua/apisix/plugins/limit-conn-cn.md): 限制并发请求（或并发连接）。
-* [prometheus](lua/apisix/plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
 
 ## 参与社区
 
