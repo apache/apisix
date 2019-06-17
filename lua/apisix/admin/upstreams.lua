@@ -82,6 +82,8 @@ end
 
 
 function _M.delete(uri_segs)
+    -- todo: need to check if any route or service is still using this
+    --     upstream now.
     local id = uri_segs[5]
     if not id then
         return 400, {error_msg = "missing upstream id"}
