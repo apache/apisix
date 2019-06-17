@@ -4,6 +4,10 @@ use lib 'lib';
 use Cwd qw(cwd);
 use Test::Nginx::Socket::Lua::Stream -Base;
 
+log_level('info');
+no_long_string();
+no_shuffle();
+
 my $pwd = cwd();
 
 sub read_file($) {
@@ -60,11 +64,16 @@ _EOC_
 
     server {
         listen 1980;
+        listen 1981;
+        listen 1982;
 
-        location /hello {
-            echo "hello world";
+        location / {
+            content_by_lua_block {
+                require("lib.server").go()
+            }
         }
     }
+
 _EOC_
 
     $block->set_value("http_config", $http_config);
