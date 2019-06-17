@@ -175,8 +175,7 @@ end
 function _M.balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
-        core.log.error("invalid api_ctx")
-        return core.response.exit(500)
+        return
     end
 
     load_balancer(api_ctx.matched_route, api_ctx)

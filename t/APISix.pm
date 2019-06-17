@@ -73,6 +73,12 @@ _EOC_
 
     my $config = $block->config // '';
     $config .= <<_EOC_;
+        location = /apisix/nginx_status {
+            internal;
+            access_log off;
+            stub_status;
+        }
+
         location /apisix/admin {
             content_by_lua_block {
                 apisix.admin()

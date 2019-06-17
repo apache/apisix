@@ -581,6 +581,7 @@ end
 function Prometheus:collect()
   ngx.header.content_type = "text/plain"
   ngx.print(self:metric_data())
+  return ngx.exit(200)
 end
 
 return Prometheus
