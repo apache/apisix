@@ -9,8 +9,9 @@ local schema = {
         count = {type = "integer", minimum = 0},
         time_window = {type = "integer",  minimum = 0},
         key = {type = "string", enum = {"remote_addr"}},
-        rejected_code = {type = "integer", minimum = 200},
+        rejected_code = {type = "integer", minimum = 200, maximum = 600},
     },
+    additionalProperties = false,
     required = {"count", "time_window", "key", "rejected_code"}
 }
 
