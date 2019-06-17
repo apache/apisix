@@ -91,12 +91,14 @@ _M.route = [[{
             "type": "string"
         },
         "service_id": ]] .. json.encode(id_schema) .. [[,
+        "upstream_id": ]] .. json.encode(id_schema) .. [[,
         "id": ]] .. json.encode(id_schema) .. [[
     },
     "anyOf": [
-        { "required": ["plugins", "uri"] },
-        { "required": ["upstream", "uri"] },
-        { "required": ["service_id", "uri"] }
+        {"required": ["plugins", "uri"]},
+        {"required": ["upstream", "uri"]},
+        {"required": ["upstream_id", "uri"]},
+        {"required": ["service_id", "uri"]}
     ],
     "additionalProperties": false
 }]]
@@ -108,9 +110,11 @@ _M.service = {
         id = id_schema,
         plugins = plugins_schema,
         upstream = upstream_schema,
+        upstream_id = id_schema,
     },
     anyOf = {
         {required = {"upstream"}},
+        {required = {"upstream_id"}},
         {required = {"plugins"}},
     },
     additionalProperties = false,

@@ -505,3 +505,59 @@ GET /t
 {"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: invalid upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "id": 1,
+                    "plugins": {},
+                    "upstream_id": "invalid"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/upstream_id\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: not exist upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "id": 1,
+                    "plugins": {},
+                    "upstream_id": "9999999999"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to fetch upstream info by upstream id [9999999999], response code: 404"}
+--- no_error_log
+[error]

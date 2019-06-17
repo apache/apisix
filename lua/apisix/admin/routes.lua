@@ -46,6 +46,23 @@ function _M.put(uri_segs, conf)
         end
     end
 
+    local upstream_id = conf.upstream_id
+    if upstream_id then
+        local key = "/upstreams/" .. upstream_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return 400, {error_msg = "failed to fetch upstream info by "
+                                     .. "upstream id [" .. upstream_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return 400, {error_msg = "failed to fetch upstream info by "
+                                     .. "upstream id [" .. upstream_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
     local key = "/" .. resource .. "/" .. id
     local res, err = core.etcd.set(key, conf)
     if not res then
@@ -82,6 +99,40 @@ function _M.post(uri_segs, conf)
     local ok, err = core.schema.check(core.schema.route, conf)
     if not ok then
         return 400, {error_msg = "invalid configuration: " .. err}
+    end
+
+    local service_id = conf.service_id
+    if service_id then
+        local key = "/services/" .. service_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return 400, {error_msg = "failed to fetch service info by "
+                                     .. "service id [" .. service_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return 400, {error_msg = "failed to fetch service info by "
+                                     .. "service id [" .. service_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
+    local upstream_id = conf.upstream_id
+    if upstream_id then
+        local key = "/upstreams/" .. upstream_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return 400, {error_msg = "failed to fetch upstream info by "
+                                     .. "upstream id [" .. upstream_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return 400, {error_msg = "failed to fetch upstream info by "
+                                     .. "upstream id [" .. upstream_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
     end
 
     local key = "/" .. uri_segs[4]
