@@ -9,6 +9,7 @@ local ngx = ngx
 local resources = {
     routes   = require("apisix.admin.routes"),
     services = require("apisix.admin.services"),
+    upstreams = require("apisix.admin.upstreams"),
 }
 
 
@@ -63,9 +64,8 @@ function _M.init_worker()
     end
 
     router = route.new({
-        -- todo: support routes|upstreams|service
-        {0, [[/apisix/admin/{res:routes|services}]], run},
-        {0, [[/apisix/admin/{res:routes|services}/{id:\d+}]], run},
+        {0, [[/apisix/admin/{res:routes|services|upstreams}]], run},
+        {0, [[/apisix/admin/{res:routes|services|upstreams}/{id:\d+}]], run},
     })
 
     router:compile()
