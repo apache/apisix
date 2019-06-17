@@ -18,10 +18,6 @@ addons:
       - cmake
       - lua-check
 
-cache:
-  directories:
-    - download-cache
-
 env:
   global:
     - OPENRESTY_PREFIX=/usr/local/openresty
