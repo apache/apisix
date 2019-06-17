@@ -40,5 +40,5 @@ script:
   - sudo apisix init_etcd
   - cd test-nginx && (sudo cpanm . > build.log 2>&1 || (cat build.log && exit 1)) && cd ..
   - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$PATH
-  - make check
+  - make check || exit 1
   - make test
