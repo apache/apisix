@@ -9,8 +9,7 @@ local _M = {
 
 function _M.check_schema(plugins_conf)
     for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check plugin scheme, name: ", name,
-                      ", configurations: ",
+        core.log.info("check plugin scheme, name: ", name, ", configurations: ",
                       core.json.delay_encode(plugin_conf, true))
         local plugin_obj = local_plugins[name]
         if not plugin_obj then
