@@ -1,4 +1,5 @@
 local core = require("apisix.core")
+local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 
 
@@ -60,6 +61,13 @@ function _M.put(uri_segs, conf)
             return 400, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "], "
                                      .. "response code: " .. res.status}
+        end
+    end
+
+    if conf.plugins then
+        local ok, err = schema_plugin(conf.plugins)
+        if not ok then
+            return 400, {error_msg = err}
         end
     end
 
@@ -132,6 +140,13 @@ function _M.post(uri_segs, conf)
             return 400, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "], "
                                      .. "response code: " .. res.status}
+        end
+    end
+
+    if conf.plugins then
+        local ok, err = schema_plugin(conf.plugins)
+        if not ok then
+            return 400, {error_msg = err}
         end
     end
 
