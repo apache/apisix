@@ -1,3 +1,13 @@
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISix 'no_plan';
 
 repeat_each(1);

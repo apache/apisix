@@ -416,6 +416,7 @@ GET /t
             local code, body = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_PUT,
                  [[{
+                    "key": "remote_addr",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
@@ -424,6 +425,7 @@ GET /t
                 [[{
                     "node": {
                         "value": {
+                            "key": "remote_addr",
                             "nodes": {
                                 "127.0.0.1:8080": 1
                             },
@@ -533,5 +535,34 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: invalid \"patternProperties\" in docuement at pointer \"#\/nodes\/127.0.0.1%3A8080\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: set upstream (missing key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"missing key"}
 --- no_error_log
 [error]
