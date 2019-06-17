@@ -80,6 +80,9 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins
 	$(INSTALL) lua/apisix/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/admin
+	$(INSTALL) lua/apisix/admin/*.lua $(INST_LUADIR)/apisix/lua/apisix/admin/
+
 	$(INSTALL) COPYRIGHT $(INST_CONFDIR)/COPYRIGHT
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
