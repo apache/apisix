@@ -34,6 +34,66 @@ local id_schema = {
     }
 }
 
+-- todo: chash and roundrobin have different properties, we may support
+--     this limitation later.
+
+--   {
+--     "definitions": {
+--       "nodes": {
+--         "patternProperties": {
+--           ".*": {
+--             "minimum": 1,
+--             "type": "integer"
+--           }
+--         },
+--         "minProperties": 1,
+--         "type": "object"
+--       }
+--     },
+--     "type": "object",
+--     "anyOf": [
+--       {
+--         "properties": {
+--           "type": {
+--             "type": "string",
+--             "enum": [
+--               "roundrobin"
+--             ]
+--           },
+--           "nodes": {
+--             "$ref": "#/definitions/nodes"
+--           }
+--         },
+--         "required": [
+--           "type",
+--           "nodes"
+--         ],
+--         "additionalProperties": false
+--       },
+--       {
+--         "properties": {
+--           "type": {
+--             "type": "string",
+--             "enum": [
+--               "chash"
+--             ]
+--           },
+--           "nodes": {
+--             "$ref": "#/definitions/nodes"
+--           },
+--           "key": {
+--             "type": "string"
+--           }
+--         },
+--         "required": [
+--           "key",
+--           "type",
+--           "nodes"
+--         ],
+--         "additionalProperties": false
+--       }
+--     ]
+--   }
 
 local upstream_schema = {
     type = "object",
@@ -51,6 +111,10 @@ local upstream_schema = {
         type = {
             type = "string",
             enum = {"chash", "roundrobin"}
+        },
+        key = {
+            type = "string",
+            enum = {"remote_addr"},
         },
         id = id_schema
     },

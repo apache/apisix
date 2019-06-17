@@ -29,6 +29,10 @@ function _M.put(uri_segs, conf)
         return 400, {error_msg = "invalid configuration: " .. err}
     end
 
+    if conf.type == "chash" and not conf.key then
+        return 400, {error_msg = "missing key"}
+    end
+
     local key = "/upstreams/" .. id
     core.log.info("key: ", key)
     local res, err = core.etcd.set(key, conf)
