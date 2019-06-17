@@ -1,5 +1,6 @@
 local core = require("apisix.core")
 local local_plugins = require("apisix.plugin").plugins_hash
+local pairs = pairs
 
 
 local _M = {
