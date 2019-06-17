@@ -18,13 +18,12 @@ addons:
       - cmake
       - lua-check
 
-cache:
-  directories:
-    - download-cache
-
 env:
   global:
     - OPENRESTY_PREFIX=/usr/local/openresty
+
+before_install:
+  - sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
 install:
   - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
@@ -38,7 +37,6 @@ install:
 script:
   - sudo service etcd start
   - sudo apisix init_etcd
-  - cd test-nginx && (sudo cpanm . > build.log 2>&1 || (cat build.log && exit 1)) && cd ..
   - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$PATH
   - make check || exit 1
-  - make test
+  - prove -Itest-nginx/lib -r t
