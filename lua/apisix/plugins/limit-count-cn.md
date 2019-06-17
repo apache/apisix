@@ -16,11 +16,9 @@
 下面是一个示例，在指定的 route 上开启了 limit count 插件:
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X POST -d '
 {
-	"methods": ["GET"],
 	"uri": "/index.html",
-	"id": 1,
 	"plugins": {
 		"limit-count": {
 			"count": 2,

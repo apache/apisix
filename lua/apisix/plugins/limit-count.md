@@ -13,11 +13,9 @@
 Here's an example, enable the limit count plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X POST -d '
 {
-	"methods": ["GET"],
 	"uri": "/index.html",
-	"id": 1,
 	"plugins": {
 		"limit-count": {
 			"count": 2,

@@ -204,6 +204,7 @@ function _M.fetch(self)
     elseif res.value then
         insert_tab(self.values, res)
         self.values_hash[key] = #self.values
+        res.value.id = key
     end
 
     -- avoid space waste
