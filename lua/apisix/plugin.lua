@@ -7,13 +7,15 @@ local pcall = pcall
 local ipairs = ipairs
 local pairs = pairs
 local type = type
-local local_supported_plugins = {}
+local local_plugins = {}
+local local_plugins_hash = {}
 
 
 local _M = {
     version = 0.1,
     load_times = 0,
-    plugins = local_supported_plugins,
+    plugins = local_plugins,
+    plugins_hash = local_plugins_hash,
 }
 
 
@@ -23,7 +25,8 @@ end
 
 
 local function load()
-    core.table.clear(local_supported_plugins)
+    core.table.clear(local_plugins)
+    core.table.clear(local_plugins_hash)
 
     local plugin_names = core.config.local_conf().plugins
     if not plugin_names then
@@ -50,7 +53,7 @@ local function load()
 
         else
             plugin.name = name
-            insert_tab(local_supported_plugins, plugin)
+            insert_tab(local_plugins, plugin)
         end
 
         if plugin.init then
@@ -59,12 +62,16 @@ local function load()
     end
 
     -- sort by plugin's priority
-    if #local_supported_plugins > 1 then
-        sort_tab(local_supported_plugins, sort_plugin)
+    if #local_plugins > 1 then
+        sort_tab(local_plugins, sort_plugin)
+    end
+
+    for _, plugin in ipairs(local_plugins) do
+        local_plugins_hash[plugin.name] = plugin
     end
 
     _M.load_times = _M.load_times + 1
-    return local_supported_plugins
+    return local_plugins
 end
 _M.load = load
 
@@ -100,13 +107,13 @@ end
 
 
 function _M.filter(user_route, plugins)
-    plugins = plugins or core.table.new(#local_supported_plugins * 2, 0)
+    plugins = plugins or core.table.new(#local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
         return plugins
     end
 
-    for _, plugin_obj in ipairs(local_supported_plugins) do
+    for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
