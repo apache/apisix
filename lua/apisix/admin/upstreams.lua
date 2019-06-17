@@ -11,29 +11,29 @@ function _M.put(uri_segs, conf)
     local id = uri_segs[5]
     id = id or tostring(conf.id)
     if conf.id and tostring(conf.id) ~= id then
-        return 400, {error_msg = "wrong service id"}
+        return 400, {error_msg = "wrong upstream id"}
     end
 
     if not id then
-        return 400, {error_msg = "missing service id"}
+        return 400, {error_msg = "missing upstream id"}
     end
 
     if not conf then
         return 400, {error_msg = "missing configurations"}
     end
 
-    core.log.info("schema: ", core.json.delay_encode(core.schema.service))
+    core.log.info("schema: ", core.json.delay_encode(core.schema.upstream))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.service, conf)
+    local ok, err = core.schema.check(core.schema.upstream, conf)
     if not ok then
         return 400, {error_msg = "invalid configuration: " .. err}
     end
 
-    local key = "/services/" .. id
+    local key = "/upstreams/" .. id
     core.log.info("key: ", key)
     local res, err = core.etcd.set(key, conf)
     if not res then
-        core.log.error("failed to put service[", key, "]: ", err)
+        core.log.error("failed to put upstream[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -43,14 +43,14 @@ end
 
 function _M.get(uri_segs)
     local id = uri_segs[5]
-    local key = "/services"
+    local key = "/upstreams"
     if id then
         key = key .. "/" .. id
     end
 
     local res, err = core.etcd.get(key)
     if not res then
-        core.log.error("failed to get service[", key, "]: ", err)
+        core.log.error("failed to get upstream[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -63,17 +63,17 @@ function _M.post(uri_segs, conf)
         return 400, {error_msg = "missing configurations"}
     end
 
-    core.log.info("schema: ", core.json.delay_encode(core.schema.service))
+    core.log.info("schema: ", core.json.delay_encode(core.schema.upstream))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.service, conf)
+    local ok, err = core.schema.check(core.schema.upstream, conf)
     if not ok then
         return 400, {error_msg = "invalid configuration: " .. err}
     end
 
-    local key = "/services"
+    local key = "/upstreams"
     local res, err = core.etcd.push(key, conf)
     if not res then
-        core.log.error("failed to post service[", key, "]: ", err)
+        core.log.error("failed to post upstream[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -84,13 +84,13 @@ end
 function _M.delete(uri_segs)
     local id = uri_segs[5]
     if not id then
-        return 400, {error_msg = "missing service id"}
+        return 400, {error_msg = "missing upstream id"}
     end
 
-    local key = "/services/" .. id
+    local key = "/upstreams/" .. id
     local res, err = core.etcd.delete(key)
     if not res then
-        core.log.error("failed to delete service[", key, "]: ", err)
+        core.log.error("failed to delete upstream[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 

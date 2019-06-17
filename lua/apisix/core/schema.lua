@@ -54,7 +54,14 @@ local upstream_schema = {
     type = "object",
     properties = {
         nodes = {
-            type = "object"
+            type = "object",
+            patternProperties = {
+                [".*"] = {
+                    type = "integer",
+                    minimum = 1,
+                }
+            },
+            minProperties = 1,
         },
         type = {
             type = "string",
@@ -62,7 +69,8 @@ local upstream_schema = {
         },
         id = id_schema
     },
-    required = {"nodes", "type"}
+    required = {"nodes", "type"},
+    additionalProperties = false,
 }
 
 
