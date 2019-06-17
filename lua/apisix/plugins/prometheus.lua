@@ -1,5 +1,12 @@
+local core = require("apisix.core")
 local exporter = require("apisix.plugins.prometheus.exporter")
 local plugin_name = "prometheus"
+
+
+local schema = {
+    type = "object",
+    additionalProperties = false
+}
 
 
 local _M = {
@@ -12,6 +19,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
     return true
 end
 

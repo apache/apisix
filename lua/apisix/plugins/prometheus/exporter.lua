@@ -108,7 +108,7 @@ function _M.collect()
                        "processingmetrics endpoint: ", err)
     end
 
-    prometheus:collect()
+    return prometheus:collect()
 end
 
 
