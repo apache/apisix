@@ -81,3 +81,37 @@ GET /t
 passed: 30
 --- no_error_log
 [error]
+
+
+
+=== TEST 3: collectgarbage
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local schema = {
+                type = "object",
+                properties = {
+                    i = {type = "number", minimum = 0},
+                    s = {type = "string"},
+                    t = {type = "array", minItems = 1},
+                }
+            }
+
+            for i = 1, 1000 do
+                collectgarbage()
+                local ok, err = core.schema.check(schema,
+                                    {i = i, s = "s" .. i, t = {i}})
+                assert(ok)
+                assert(err == nil)
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
