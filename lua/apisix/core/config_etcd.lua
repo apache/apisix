@@ -97,7 +97,7 @@ function _M.upgrade_version(self, new_ver)
 end
 
 
-function _M.fetch(self)
+local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
     end
@@ -107,15 +107,15 @@ function _M.fetch(self)
         log.info("waitdir key: ", self.key, " res: ",
                  json.delay_encode(dir_res))
         if not dir_res then
-            return nil, err
+            return false, err
         end
 
         if not dir_res.dir then
-            return nil, self.key .. " is not a dir"
+            return false, self.key .. " is not a dir"
         end
 
         if not dir_res.nodes then
-            return nil
+            return false
         end
 
         self.values = new_tab(#dir_res.nodes, 0)
@@ -153,23 +153,22 @@ function _M.fetch(self)
         if changed then
             self.conf_version = self.conf_version + 1
         end
-        return self.values
+        return true
     end
 
     local res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1,
              " res: ", json.delay_encode(res))
     if not res then
-        return nil, err
+        return false, err
     end
 
     local key = short_key(self, res.key)
     if res.value and type(res.value) ~= "table" then
         self:upgrade_version(res.modifiedIndex)
-        log.error("invalid item data of [", self.key .. "/" .. key, "], val: ",
-                  tostring(res.value),
-                  ", it shoud be a object")
-        return self.values
+        return false, "invalid item data of [" .. self.key .. "/" .. key
+                      .. "], val: " .. tostring(res.value)
+                      .. ", it shoud be a object"
     end
 
     if res.value and self.item_schema then
@@ -177,18 +176,17 @@ function _M.fetch(self)
         if not ok then
             self:upgrade_version(res.modifiedIndex)
 
-            log.warn("failed to check item data of [", self.key, "] err:", err)
-            return self.values
+            return false, "failed to check item data of ["
+                          .. self.key .. "] err:" .. err
         end
     end
 
-    if res.dir then
-        log.error("todo: support for parsing `dir` response structures. ",
-                  json.delay_encode(res))
-        return self.values
-    end
-
     self:upgrade_version(res.modifiedIndex)
+
+    if res.dir then
+        return false, "todo: support for parsing `dir` response "
+                      .. "structures. " .. json.encode(res)
+    end
 
     local pre_index = self.values_hash[key]
     if pre_index then
@@ -253,15 +251,15 @@ local function _automatic_fetch(premature, self)
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
-        local ok, res, err = pcall(self.fetch, self)
+        local ok, ok2, err = pcall(sync_data, self)
         if not ok then
-            err = res
+            err = ok2
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
-            ngx_sleep(5)
+            ngx_sleep(3)
             break
 
-        elseif not res and err then
+        elseif not ok2 and err then
             if err ~= "timeout" and err ~= "Key not found"
                and self.last_err ~= err then
                 log.error("failed to fetch data from etcd: ", err, ", ",
@@ -276,9 +274,9 @@ local function _automatic_fetch(premature, self)
                     self.last_err = nil
                 end
             end
-            ngx_sleep(1)
+            ngx_sleep(0.5)
 
-        elseif not res then
+        elseif not ok2 then
             ngx_sleep(0.05)
         end
     end
