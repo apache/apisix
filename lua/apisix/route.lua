@@ -6,7 +6,7 @@ local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
-local conf_routes
+local routes
 
 
 local _M = {version = 0.1}
@@ -46,20 +46,29 @@ end
 
 
 function _M.get()
-    core.log.info("routes conf_version: ", conf_routes.conf_version)
-    return core.lrucache.global("/routes", conf_routes.conf_version,
-                                create_r3_router, conf_routes.values)
+    core.log.info("routes conf_version: ", routes.conf_version)
+    return core.lrucache.global("/routes", routes.conf_version,
+                                create_r3_router, routes.values)
+end
+
+
+function _M.routes()
+    if not routes then
+        return nil, nil
+    end
+
+    return routes.values, routes.conf_version
 end
 
 
 function _M.init_worker()
     local err
-    conf_routes, err = core.config.new("/routes",
+    routes, err = core.config.new("/routes",
                             {
                                 automatic = true,
                                 item_schema = core.schema.route
                             })
-    if not conf_routes then
+    if not routes then
         error("failed to create etcd instance to fetch /routes "
               .. "automaticly: " .. err)
     end

@@ -1,5 +1,8 @@
 local core = require("apisix.core")
+local get_routes = require("apisix.route").routes
+local get_services = require("apisix.service").services
 local tostring = tostring
+local ipairs = ipairs
 
 
 local _M = {
@@ -94,11 +97,37 @@ end
 
 
 function _M.delete(uri_segs)
-    -- todo: need to check if any route or service is still using this
-    --     upstream now.
     local id = uri_segs[5]
     if not id then
         return 400, {error_msg = "missing upstream id"}
+    end
+
+    local routes, routes_ver = get_routes()
+    core.log.info("routes: ", core.json.delay_encode(routes, true))
+    core.log.info("routes_ver: ", routes_ver)
+    if routes_ver and routes then
+        for _, route in ipairs(routes) do
+            if route.value and route.value.upstream_id
+               and tostring(route.value.upstream_id) == id then
+                return 400, {error_msg = "can not delete this upstream,"
+                                         .. " route [" .. route.value.id
+                                         .. "] is still using it now"}
+            end
+        end
+    end
+
+    local services, services_ver = get_services()
+    core.log.info("services: ", core.json.delay_encode(services, true))
+    core.log.info("services_ver: ", services_ver)
+    if services_ver and services then
+        for _, service in ipairs(services) do
+            if service.value and service.value.upstream_id
+               and tostring(service.value.upstream_id) == id then
+                return 400, {error_msg = "can not delete this upstream,"
+                                         .. " service [" .. service.value.id
+                                         .. "] is still using it now"}
+            end
+        end
     end
 
     local key = "/upstreams/" .. id
