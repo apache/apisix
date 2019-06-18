@@ -13,6 +13,15 @@ function _M.get(service_id)
 end
 
 
+function _M.services()
+    if not services then
+        return nil, nil
+    end
+
+    return services.values, services.conf_version
+end
+
+
 function _M.init_worker()
     local err
     services, err = core.config.new("/services",

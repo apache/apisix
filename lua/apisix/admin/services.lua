@@ -1,6 +1,8 @@
 local core = require("apisix.core")
+local routes = require("apisix.route").routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
+local ipairs = ipairs
 
 
 local _M = {
@@ -119,6 +121,20 @@ function _M.delete(uri_segs)
     local id = uri_segs[5]
     if not id then
         return 400, {error_msg = "missing service id"}
+    end
+
+    local routes, routes_ver = routes()
+    core.log.info("routes: ", core.json.delay_encode(routes, true))
+    core.log.info("routes_ver: ", routes_ver)
+    if routes_ver and routes then
+        for _, route in ipairs(routes) do
+            if route.value and route.value.service_id
+               and tostring(route.value.service_id) == id then
+                return 400, {error_msg = "can not delete this service directly,"
+                                         .. " route [" .. route.value.id
+                                         .. "] is still using it now"}
+            end
+        end
     end
 
     local key = "/services/" .. id
