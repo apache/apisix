@@ -564,7 +564,7 @@ GET /t
 
 
 
-=== TEST 17: not exist upstream_id
+=== TEST 17: wrong service id
 --- config
     location /t {
         content_by_lua_block {
@@ -590,7 +590,7 @@ GET /t
 
 
 
-=== TEST 18: not exist upstream_id
+=== TEST 18: wrong service id
 --- config
     location /t {
         content_by_lua_block {
