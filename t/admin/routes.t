@@ -157,7 +157,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/routes/1',
+            local code, message, res = t('/apisix/admin/routes',
                  ngx.HTTP_POST,
                  [[{
                         "methods": ["GET"],
@@ -601,5 +601,60 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch upstream info by upstream id [99999999], response code: 404"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: wrong route id, do not need it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes',
+                 ngx.HTTP_POST,
+                 [[{
+                    "id": 1,
+                    "plugins":{},
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"wrong route id, do not need it"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: wrong route id, do not need it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_POST,
+                 [[{
+                    "plugins":{},
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"wrong route id, do not need it"}
 --- no_error_log
 [error]

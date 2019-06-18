@@ -148,7 +148,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/services/1',
+            local code, message, res = t('/apisix/admin/services',
                  ngx.HTTP_POST,
                  [[{
                     "plugins": {},
@@ -559,5 +559,58 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch upstream info by upstream id [9999999999], response code: 404"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: wrong service id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_POST,
+                 [[{
+                    "plugins": {}
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"wrong service id, do not need it"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: wrong service id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services',
+                ngx.HTTP_POST,
+                [[{
+                    "id": 1,
+                    "plugins": {}
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"wrong service id, do not need it"}
 --- no_error_log
 [error]
