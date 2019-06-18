@@ -126,25 +126,23 @@ sudo apisix start
 为了方便测试，下面的示例中设置的是 60 秒最多只能有 2 个请求，如果超过就返回 503：
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-		"limit-count": {
-			"count": 2,
-			"time_window": 60,
-			"rejected_code": 503,
-			"key": "remote_addr"
-		}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 

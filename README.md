@@ -129,25 +129,23 @@ For the convenience of testing, we set up a maximum of 2 visits in 60 seconds,
 and return 503 if the threshold is exceeded:
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-		"limit-count": {
-			"count": 2,
-			"time_window": 60,
-			"rejected_code": 503,
-			"key": "remote_addr"
-		}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 

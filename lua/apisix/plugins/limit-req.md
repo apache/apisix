@@ -15,11 +15,10 @@ limit request rate using the "leaky bucket" method.
 Here's an example, enable the limit req plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
 	"methods": ["GET"],
 	"uri": "/index.html",
-	"id": 1,
 	"plugins": {
 		"limit-req": {
 			"rate": 1,
@@ -67,7 +66,7 @@ When you want to disable the limit req plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
 	"methods": ["GET"],
 	"uri": "/index.html",
