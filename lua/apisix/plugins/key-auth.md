@@ -25,7 +25,7 @@ Two steps are required:
 1. creates a consumer object, and set the attributes of plugin `key-auth`.
 
     ```shell
-    curl http://127.0.0.1:2379/v2/keys/apisix/consumers/ShunFeng -X PUT -d value='
+    curl http://127.0.0.1:9080/apisix/admin/consumers/ShunFeng -X PUT -d value='
     {
         "id": "ShunFeng",
         "plugins": {
@@ -39,7 +39,7 @@ Two steps are required:
 2. creates a route or service object, and enable plugin `key-auth`.
 
     ```shell
-    curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+    curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d value='
     {
         "methods": ["GET"],
         "uri": "/index.html",
@@ -87,7 +87,7 @@ When you want to disable the limit req plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d value='
 {
 	"methods": ["GET"],
 	"uri": "/index.html",

@@ -54,7 +54,7 @@ plugins:                        # plugin name list
 路径中的 `key` 会被用作路由 `id` 做唯一标识，比如下面示例的路由 `id` 是 `100`。
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -95,7 +95,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
 然后把 id 为 `100`、`101` 的 route 都绑定在这个 service 上。
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/services/200 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/services/200 -X PUT -d value='
 {
     "id": "200",
     "plugins": {
@@ -114,7 +114,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/services/200 -X PUT -d value='
     }
 }'
 
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -122,7 +122,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/100 -X PUT -d value='
     "service_id": "200"
 }'
 
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/101 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/101 -X PUT -d value='
 {
     "methods": [],
     "uri": "/foo/index.html",
@@ -134,7 +134,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/101 -X PUT -d value='
 你也可以为 route 单独制定不同的插件和参数，比如下面这个示例设置了不同的限流参数：
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d value='
 {
     "methods": [],
     "uri": "/bar/index.html",
@@ -227,7 +227,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/102 -X PUT -d value='
 创建上游对象用例：
 
 ```json
-curl http://127.0.0.1:2379/v2/keys/apisix/upstreams/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -X PUT -d value='
 {
     "id": 1,
     "type": "roundrobin",
@@ -238,7 +238,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/upstreams/1 -X PUT -d value='
     }
 }'
 
-curl http://127.0.0.1:2379/v2/keys/apisix/upstreams/2 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -X PUT -d value='
 {
     "id": 2,
     "type": "chash",
@@ -253,7 +253,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/upstreams/2 -X PUT -d value='
 上游对象创建后，均可以被具体 `route` 或 `service` 引用，例如：
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -269,7 +269,7 @@ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 为了方便使用，也可以直接把上游地址直接绑到某个 `route` 或 `service` ，例如：
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d value='
 {
    "methods": ["GET"],
     "uri": "/index.html",

@@ -16,7 +16,7 @@ any options yet.
 For example:
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",

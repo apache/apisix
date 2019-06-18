@@ -75,7 +75,7 @@ When you want to disable the limit count plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d value='
 {
 	"methods": ["GET"],
 	"uri": "/index.html",
