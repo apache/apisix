@@ -204,7 +204,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/routes',
                  ngx.HTTP_POST,
                  [[{
                         "plugins": {
@@ -327,7 +327,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services',
                  ngx.HTTP_POST,
                  [[{
                         "plugins": {

@@ -8,26 +8,30 @@ local _M = {
 }
 
 
-function _M.put(uri_segs, conf)
-    local id = uri_segs[5]
-    id = id or tostring(conf.id)
-    if conf.id and tostring(conf.id) ~= id then
-        return 400, {error_msg = "wrong service id"}
-    end
-
-    if not id then
-        return 400, {error_msg = "missing service id"}
-    end
-
+local function check_conf(uri_segs, conf, need_id)
     if not conf then
-        return 400, {error_msg = "missing configurations"}
+        return nil, {error_msg = "missing configurations"}
+    end
+
+    local id = uri_segs[5]
+    id = id or conf.id
+    if need_id and not id then
+        return nil, {error_msg = "missing service id"}
+    end
+
+    if not need_id and id then
+        return nil, {error_msg = "wrong service id, do not need it"}
+    end
+
+    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
+        return nil, {error_msg = "wrong service id"}
     end
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.service))
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.service, conf)
     if not ok then
-        return 400, {error_msg = "invalid configuration: " .. err}
+        return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_id = conf.upstream_id
@@ -35,13 +39,13 @@ function _M.put(uri_segs, conf)
         local key = "/upstreams/" .. upstream_id
         local res, err = core.etcd.get(key)
         if not res then
-            return 400, {error_msg = "failed to fetch upstream info by "
+            return nil, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "]: "
                                      .. err}
         end
 
         if res.status ~= 200 then
-            return 400, {error_msg = "failed to fetch upstream info by "
+            return nil, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "], "
                                      .. "response code: " .. res.status}
         end
@@ -50,8 +54,18 @@ function _M.put(uri_segs, conf)
     if conf.plugins then
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
-            return 400, {error_msg = err}
+            return nil, {error_msg = err}
         end
+    end
+
+    return need_id and id or true
+end
+
+
+function _M.put(uri_segs, conf)
+    local id, err = check_conf(uri_segs, conf, true)
+    if not id then
+        return 400, err
     end
 
     local key = "/services/" .. id
@@ -84,56 +98,9 @@ end
 
 
 function _M.post(uri_segs, conf)
-    if not conf then
-        return 400, {error_msg = "missing configurations"}
-    end
-
-    core.log.info("schema: ", core.json.delay_encode(core.schema.service))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.service, conf)
-    if not ok then
-        return 400, {error_msg = "invalid configuration: " .. err}
-    end
-
-    local service_id = conf.service_id
-    if service_id then
-        local key = "/services/" .. service_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return 400, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return 400, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
-    end
-
-    local upstream_id = conf.upstream_id
-    if upstream_id then
-        local key = "/upstreams/" .. upstream_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return 400, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return 400, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
-    end
-
-    if conf.plugins then
-        local ok, err = schema_plugin(conf.plugins)
-        if not ok then
-            return 400, {error_msg = err}
-        end
+    local id, err = check_conf(uri_segs, conf, false)
+    if not id then
+        return 400, err
     end
 
     local key = "/services"

@@ -139,7 +139,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams',
                  ngx.HTTP_POST,
                  [[{
                     "nodes": {
@@ -564,5 +564,64 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing key"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: wrong upstream id, do not need it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_POST,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"wrong upstream id, do not need it"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: wrong upstream id, do not need it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams',
+                 ngx.HTTP_POST,
+                 [[{
+                    "id": 1,
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"wrong upstream id, do not need it"}
 --- no_error_log
 [error]

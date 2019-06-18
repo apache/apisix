@@ -8,43 +8,30 @@ local _M = {
 }
 
 
-function _M.put(uri_segs, conf)
-    local resource, id = uri_segs[4], uri_segs[5]
-    id = id or tostring(conf.id)
-    if conf.id and tostring(conf.id) ~= id then
-        return 400, {error_msg = "wrong route id"}
-    end
-
-    if not id then
-        return 400, {error_msg = "missing route id"}
-    end
-
+local function check_conf(uri_segs, conf, need_id)
     if not conf then
-        return 400, {error_msg = "missing configurations"}
+        return nil, {error_msg = "missing configurations"}
     end
 
-    -- core.log.info("schema: ", core.schema.route)
-    -- core.log.info("conf  : ", core.json.delay_encode(conf))
+    local id = uri_segs[5]
+    id = id or conf.id
+    if need_id and not id then
+        return nil, {error_msg = "missing route id"}
+    end
+
+    if not need_id and id then
+        return nil, {error_msg = "wrong route id, do not need it"}
+    end
+
+    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
+        return nil, {error_msg = "wrong route id"}
+    end
+
+    core.log.info("schema: ", core.json.delay_encode(core.schema.route))
+    core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.route, conf)
     if not ok then
-        return 400, {error_msg = "invalid configuration: " .. err}
-    end
-
-    local service_id = conf.service_id
-    if service_id then
-        local key = "/services/" .. service_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return 400, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return 400, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
+        return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_id = conf.upstream_id
@@ -52,14 +39,31 @@ function _M.put(uri_segs, conf)
         local key = "/upstreams/" .. upstream_id
         local res, err = core.etcd.get(key)
         if not res then
-            return 400, {error_msg = "failed to fetch upstream info by "
+            return nil, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "]: "
                                      .. err}
         end
 
         if res.status ~= 200 then
-            return 400, {error_msg = "failed to fetch upstream info by "
+            return nil, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
+    local service_id = conf.service_id
+    if service_id then
+        local key = "/services/" .. service_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch service info by "
+                                     .. "service id [" .. service_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch service info by "
+                                     .. "service id [" .. service_id .. "], "
                                      .. "response code: " .. res.status}
         end
     end
@@ -67,11 +71,21 @@ function _M.put(uri_segs, conf)
     if conf.plugins then
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
-            return 400, {error_msg = err}
+            return nil, {error_msg = err}
         end
     end
 
-    local key = "/" .. resource .. "/" .. id
+    return need_id and id or true
+end
+
+
+function _M.put(uri_segs, conf)
+    local id, err = check_conf(uri_segs, conf, true)
+    if not id then
+        return 400, err
+    end
+
+    local key = "/routes/" .. id
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put route[", key, "]: ", err)
@@ -83,8 +97,8 @@ end
 
 
 function _M.get(uri_segs)
-    local resource, id = uri_segs[4], uri_segs[5]
-    local key = "/" .. resource
+    local id = uri_segs[5]
+    local key = "/routes"
     if id then
         key = key .. "/" .. id
     end
@@ -100,59 +114,14 @@ end
 
 
 function _M.post(uri_segs, conf)
-    if not conf then
-        return 400, {error_msg = "missing configurations"}
+    local id, err = check_conf(uri_segs, conf, false)
+    if not id then
+        return 400, err
     end
 
-    local ok, err = core.schema.check(core.schema.route, conf)
-    if not ok then
-        return 400, {error_msg = "invalid configuration: " .. err}
-    end
-
-    local service_id = conf.service_id
-    if service_id then
-        local key = "/services/" .. service_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return 400, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return 400, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
-    end
-
-    local upstream_id = conf.upstream_id
-    if upstream_id then
-        local key = "/upstreams/" .. upstream_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return 400, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return 400, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
-    end
-
-    if conf.plugins then
-        local ok, err = schema_plugin(conf.plugins)
-        if not ok then
-            return 400, {error_msg = err}
-        end
-    end
-
-    local key = "/" .. uri_segs[4]
+    local key = "/routes"
     -- core.log.info("key: ", key)
-    local res, err = core.etcd.push(key, conf)
+    local res, err = core.etcd.push("/routes", conf)
     if not res then
         core.log.error("failed to post route[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -163,12 +132,12 @@ end
 
 
 function _M.delete(uri_segs)
-    local resource, id = uri_segs[4], uri_segs[5]
+    local id = uri_segs[5]
     if not id then
         return 400, {error_msg = "missing route id"}
     end
 
-    local key = "/" .. resource .. "/" .. id
+    local key = "/routes/" .. id
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then
