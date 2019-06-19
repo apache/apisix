@@ -12,6 +12,7 @@ local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_exit = ngx.exit
 local math = math
+local match_opts = {}
 
 
 local _M = {version = 0.1}
@@ -97,11 +98,13 @@ function _M.access_phase()
     core.ctx.set_vars_meta(api_ctx)
     ngx_ctx.api_ctx = api_ctx
 
-    local method = api_ctx.var.method
-    local uri =  api_ctx.var.uri
+    core.table.clear(match_opts)
+    match_opts.method = api_ctx.var.method
+    match_opts.host = api_ctx.var.host
     api_ctx.uri_parse_param = core.tablepool.fetch("uri_parse_param", 0, 4)
-    -- local host = api_ctx.var.host -- todo: support host
-    local ok = router():dispatch2(api_ctx.uri_parse_param, method, uri, api_ctx)
+
+    local ok = router():dispatch2(api_ctx.uri_parse_param,
+                                  api_ctx.var.uri, match_opts, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
         return core.response.exit(404)
@@ -192,7 +195,7 @@ function _M.admin()
     end
 
     -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
-    local ok = router:dispatch(get_method(), get_var("uri"))
+    local ok = router:dispatch(get_var("uri"), get_method())
     if not ok then
         ngx_exit(404)
     end

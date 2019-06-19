@@ -4,7 +4,7 @@ supported_platforms = {"linux", "macosx"}
 
 source = {
    url = "git://github.com/iresty/apisix",
-   tag = "v0.4.2",
+   branch = "route-host",
 }
 
 description = {
