@@ -86,7 +86,43 @@ passed
 
 
 
-=== TEST 3: delete consumer
+=== TEST 3: get consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                 ngx.HTTP_GET,
+                 nil,
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "key-auth": {
+                                    "key": "auth-one"
+                                }
+                            }
+                        }
+                    },
+                    "action": "get"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: delete consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -111,7 +147,7 @@ passed
 
 
 
-=== TEST 4: delete consumer(id: not_found)
+=== TEST 5: delete consumer(id: not_found)
 --- config
     location /t {
         content_by_lua_block {
@@ -135,7 +171,7 @@ GET /t
 
 
 
-=== TEST 5: missing username
+=== TEST 6: missing username
 --- config
     location /t {
         content_by_lua_block {
