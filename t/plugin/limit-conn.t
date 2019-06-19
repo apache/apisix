@@ -356,50 +356,7 @@ GET /t
 
 
 
-=== TEST 9: invalid route: wrong conn + POST method
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_POST,
-                 [[{
-                        "plugins": {
-                            "limit-conn": {
-                                    "conn": -1,
-                                    "burst": 1,
-                                    "default_conn_delay": 0.1,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"minimum\" in docuement at pointer \"#\/conn\""}
---- no_error_log
-[error]
-
-
-
-=== TEST 10: invalid service: missing key
+=== TEST 9: invalid service: missing key
 --- config
     location /t {
         content_by_lua_block {
@@ -440,7 +397,7 @@ GET /t
 
 
 
-=== TEST 11: invalid service: wrong count
+=== TEST 10: invalid service: wrong count
 --- config
     location /t {
         content_by_lua_block {
@@ -482,49 +439,7 @@ GET /t
 
 
 
-=== TEST 12: invalid service: wrong conn + POST method
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_POST,
-                 [[{
-                        "plugins": {
-                            "limit-conn": {
-                                "conn": -1,
-                                "burst": 1,
-                                "default_conn_delay": 0.1,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"minimum\" in docuement at pointer \"#\/conn\""}
---- no_error_log
-[error]
-
-
-
-=== TEST 13: disable plugin
+=== TEST 11: disable plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -559,7 +474,7 @@ passed
 
 
 
-=== TEST 14: exceeding the burst
+=== TEST 12: exceeding the burst
 --- request
 GET /test_concurrency
 --- content_handler
