@@ -31,9 +31,10 @@ local function create_r3_router(routes)
         if type(route) == "table" then
             idx = idx + 1
             items[idx] = {
-                route.value.methods,
-                route.value.uri,
-                function (params, api_ctx)
+                uri = route.value.uri,
+                method = route.value.methods,
+                host = route.value.host,
+                handler = function (params, api_ctx)
                     api_ctx.matched_params = params
                     api_ctx.matched_route = route
                 end

@@ -88,8 +88,11 @@ function fetch_api_routes()
         if api_fun then
             local api_routes = api_fun()
             for _, route in ipairs(api_routes) do
-                core.table.insert(routes, {route.methods, route.uri,
-                                           route.handler})
+                core.table.insert(routes, {
+                        method = route.methods,
+                        uri = route.uri,
+                        handler = route.handler
+                    })
             end
         end
     end

@@ -1,10 +1,10 @@
 package = "apisix"
-version = "0.4-1"
+version = "0.4-2"
 supported_platforms = {"linux", "macosx"}
 
 source = {
    url = "git://github.com/iresty/apisix",
-   tag = "v0.4.1",
+   branch = "master",
 }
 
 description = {
@@ -15,7 +15,7 @@ description = {
 }
 
 dependencies = {
-   "lua-resty-libr3 = 0.3",
+   "lua-resty-libr3 = 0.4",
    "lua-resty-template = 1.9-1",
    "lua-resty-etcd = 0.5",
    "lua-resty-balancer = 0.02rc5",

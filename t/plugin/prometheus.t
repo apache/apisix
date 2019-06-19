@@ -134,8 +134,8 @@ apisix_etcd_reachable 1
 === TEST 7: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
---- response_body_like
-apisix_bandwidth{type="egress",service="localhost"} 1278
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",service="localhost"\} 1278/
 --- no_error_log
 [error]
 
@@ -269,7 +269,7 @@ passed
 === TEST 12: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
---- response_body_like
-apisix_bandwidth{type="egress",service="localhost"} 1825
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",service="localhost"\} 1825/
 --- no_error_log
 [error]
