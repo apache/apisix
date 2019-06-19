@@ -3,6 +3,7 @@ local get_routes = require("apisix.route").routes
 local get_services = require("apisix.service").services
 local tostring = tostring
 local ipairs = ipairs
+local tonumber = tonumber
 
 
 local _M = {
@@ -35,6 +36,11 @@ local function check_conf(uri_segs, conf, need_id)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
+
+    if need_id and not tonumber(id) then
+        return nil, {error_msg = "wrong type of service id"}
+    end
+
 
     if conf.type == "chash" and not conf.key then
         return nil, {error_msg = "missing key"}

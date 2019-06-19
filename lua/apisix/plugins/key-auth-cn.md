@@ -23,21 +23,21 @@
 1. 创建一个 consumer 对象，并设置插件 `key-auth` 的值。
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/consumers/ShunFeng -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 {
-    "id": "ShunFeng",
-    "plugins": {
-        "key-auth": {
-            "key": "keykey"
-        }
-    }
+    "username": "jack",
+	"plugins": {
+		"key-auth": {
+			"key": "keykey"
+		}
+	}
 }'
 ```
 
 2. 创建 route 或 service 对象，并开启 `key-auth` 插件。
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
 	"methods": ["GET"],
 	"uri": "/index.html",

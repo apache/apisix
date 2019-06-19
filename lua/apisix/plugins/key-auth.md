@@ -24,37 +24,37 @@ Two steps are required:
 
 1. creates a consumer object, and set the attributes of plugin `key-auth`.
 
-    ```shell
-    curl http://127.0.0.1:2379/v2/keys/apisix/consumers/ShunFeng -X PUT -d value='
-    {
-        "id": "ShunFeng",
-        "plugins": {
-            "key-auth": {
-                "key": "keykey"
-            }
-        }
-    }'
-    ```
+```shell
+    curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
+{
+    "username": "jack",
+	"plugins": {
+		"key-auth": {
+			"key": "keykey"
+		}
+	}
+}'
+```
 
 2. creates a route or service object, and enable plugin `key-auth`.
 
-    ```shell
-    curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
-    {
-        "methods": ["GET"],
-        "uri": "/index.html",
-        "id": 1,
-        "plugins": {
-            "key-auth": {}
-        },
-        "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "39.97.63.215:80": 1
-            }
-        }
-    }'
-    ```
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+	"methods": ["GET"],
+	"uri": "/index.html",
+	"id": 1,
+	"plugins": {
+		"key-auth": {}
+	},
+	"upstream": {
+		"type": "roundrobin",
+		"nodes": {
+			"39.97.63.215:80": 1
+		}
+	}
+}'
+```
 
 ## Test Plugin
 

@@ -1,4 +1,5 @@
 local lrucache = require("apisix.core.lrucache")
+local schema   = require("apisix.core.schema")
 local config   = require("apisix.core.config_etcd")
 local insert_tab = table.insert
 local consumers
@@ -40,7 +41,6 @@ local function plugin_consumer()
     end
 
     for _, consumer in ipairs(consumers.values) do
-        -- log.warn("consumer: ", require("cjson").encode(consumer))
         for name, conf in pairs(consumer.value.plugins) do
             if not plugins[name] then
                 plugins[name] = {
@@ -60,7 +60,6 @@ end
 
 
 function _M.plugin(plugin_name)
-    -- core.log.warn("conf_routes.conf_version: ", conf_routes.conf_version)
     local plugin_conf = lrucache.global("/consumers",
                                         consumers.conf_version, plugin_consumer)
     return plugin_conf[plugin_name]
@@ -69,7 +68,11 @@ end
 
 function _M.init_worker()
     local err
-    consumers, err = config.new("/consumers", {automatic = true})
+    consumers, err = config.new("/consumers",
+                        {
+                            automatic = true,
+                            item_schema = schema.consumer
+                        })
     if not consumers then
         error("failed to create etcd instance to fetch upstream: " .. err)
         return
