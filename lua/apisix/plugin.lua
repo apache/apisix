@@ -120,7 +120,7 @@ function _M.filter(user_route, plugins)
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
-        if type(plugin_conf) == "table" then
+        if type(plugin_conf) == "table" and not plugin_conf.disable then
             insert_tab(plugins, plugin_obj)
             insert_tab(plugins, plugin_conf)
         end
@@ -131,22 +131,22 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
+    -- core.log.info("service conf: ", core.json.delay_encode(service_conf))
+    -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
     local changed = false
-    if route_conf.value.plugins and
-       core.table.nkeys(route_conf.value.plugins) then
+    if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
             service_conf.value.plugins[name] = conf
         end
         changed = true
     end
 
-    if route_conf.upstream and core.table.nkeys(route_conf.upstream) then
-        service_conf.upstream = route_conf.upstream
+    if route_conf.value.upstream then
+        service_conf.value.upstream = route_conf.value.upstream
         changed = true
     end
 
-    route_conf.service = service_conf.value
-
+    -- core.log.info("merged conf : ", core.json.delay_encode(service_conf))
     return service_conf, changed
 end
 
