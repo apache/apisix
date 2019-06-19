@@ -649,3 +649,39 @@ GET /t
 {"error_msg":"wrong route id, do not need it"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 20: limit-count with `disable` option
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "disable": true
+                        }
+                    },
+                    "uri": "/index.html"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say("[push] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[push] code: 200 message: passed
+--- no_error_log
+[error]
