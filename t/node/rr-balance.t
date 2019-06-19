@@ -27,7 +27,6 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "plugins": {},
                     "uri": "/server_port",
                     "upstream": {
                         "type": "roundrobin",
@@ -104,7 +103,6 @@ GET /t
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "plugins": {},
                     "uri": "/server_port",
                     "upstream": {
                         "type": "roundrobin",
@@ -182,7 +180,6 @@ GET /t
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "plugins": {},
                     "uri": "/server_port",
                     "upstream": {
                         "type": "roundrobin",

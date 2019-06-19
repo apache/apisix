@@ -15,7 +15,6 @@ __DATA__
             local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "plugins": {},
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -26,7 +25,6 @@ __DATA__
                 [[{
                     "node": {
                         "value": {
-                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1

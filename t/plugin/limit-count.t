@@ -70,7 +70,6 @@ done
                                 "key": "remote_addr"
                             }
                         },
-                        "id":1,
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
