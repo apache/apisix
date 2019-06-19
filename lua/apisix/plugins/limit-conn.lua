@@ -51,9 +51,8 @@ function _M.access(conf, ctx)
     local key = ctx.var[conf.key]
     local rejected_code = conf.rejected_code
 
-    local delay, remaining = lim:incoming(key, true)
+    local delay, err = lim:incoming(key, true)
     if not delay then
-        local err = remaining
         if err == "rejected" then
             return rejected_code
         end
