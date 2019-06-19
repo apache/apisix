@@ -18,7 +18,6 @@ __DATA__
             local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "plugins": {},
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -29,7 +28,6 @@ __DATA__
                 [[{
                     "node": {
                         "value": {
-                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -67,7 +65,6 @@ passed
                 [[{
                     "node": {
                         "value": {
-                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -151,7 +148,6 @@ GET /t
             local code, message, res = t('/apisix/admin/services',
                  ngx.HTTP_POST,
                  [[{
-                    "plugins": {},
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -162,7 +158,6 @@ GET /t
                 [[{
                     "node": {
                         "value": {
-                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -489,7 +484,6 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                     "id": 1,
-                    "plugins": {},
                     "invalid_property": "/index.html"
                 }]]
                 )
@@ -517,7 +511,6 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                     "id": 1,
-                    "plugins": {},
                     "upstream_id": "invalid"
                 }]]
                 )
@@ -545,7 +538,6 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                     "id": 1,
-                    "plugins": {},
                     "upstream_id": "9999999999"
                 }]]
                 )

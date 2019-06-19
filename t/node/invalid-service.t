@@ -56,7 +56,6 @@ qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud
         content_by_lua_block {
             local core = require("apisix.core")
             local res, err = core.etcd.set("/services/1", core.json.decode([[{
-                        "plugins": {},
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1

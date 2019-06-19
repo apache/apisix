@@ -58,8 +58,6 @@ qr{invalid item data of \[/apisix/routes/1\], val: mexxxxxxxxxxxxxxx, it shoud b
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
-                        "plugins": {},
-                        "id":1,
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
