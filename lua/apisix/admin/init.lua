@@ -10,6 +10,7 @@ local resources = {
     routes   = require("apisix.admin.routes"),
     services = require("apisix.admin.services"),
     upstreams = require("apisix.admin.upstreams"),
+    consumers = require("apisix.admin.consumers"),
 }
 
 
@@ -65,11 +66,11 @@ function _M.init_worker()
 
     router = route.new({
         {
-            uri = [[/apisix/admin/{res:routes|services|upstreams}]],
+            uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]],
             handler = run
         },
         {
-            uri = [[/apisix/admin/{res:routes|services|upstreams}/{id:\d+}]],
+            uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}/{id:\d+}]],
             handler =run
         },
     })

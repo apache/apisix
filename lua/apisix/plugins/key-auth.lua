@@ -57,6 +57,7 @@ function _M.rewrite(conf, ctx)
     end
 
     local consumer_conf = core.consumer.plugin(plugin_name)
+    core.log.warn("consumer_conf: ", require("cjson").encode(consumer_conf))
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
             consumer_conf.conf_version,
             create_consume_cache, consumer_conf)

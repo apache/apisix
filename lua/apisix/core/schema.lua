@@ -184,6 +184,20 @@ _M.service = {
 }
 
 
+-- _M.consumer = {
+--     type = "object",
+--     properties = {
+--         id = id_schema,
+--         username = {type = "string"}
+--     },
+--     anyOf = {
+--         {required = {"id"}},
+--         {required = {"username"}},
+--     },
+--     additionalProperties = false,
+-- }
+
+
 _M.upstream = upstream_schema
 
 
