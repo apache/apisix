@@ -7,8 +7,8 @@ local sleep = ngx.sleep
 local schema = {
     type = "object",
     properties = {
-        rate = {type = "integer", minimum = 0},
-        burst = {type = "integer",  minimum = 0},
+        rate = {type = "number", minimum = 0},
+        burst = {type = "number",  minimum = 0},
         key = {type = "string", enum = {"remote_addr"}},
         rejected_code = {type = "integer", minimum = 200},
     },
