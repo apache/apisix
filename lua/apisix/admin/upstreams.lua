@@ -36,6 +36,11 @@ local function check_conf(uri_segs, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
+    if need_id and not tonumber(id) then
+        return nil, {error_msg = "wrong type of service id"}
+    end
+
+
     if conf.type == "chash" and not conf.key then
         return nil, {error_msg = "missing key"}
     end

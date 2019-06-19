@@ -29,6 +29,7 @@ local function check_conf(uri_segs, conf, need_id)
         return nil, {error_msg = "wrong service id"}
     end
 
+
     core.log.info("schema: ", core.json.delay_encode(core.schema.service))
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.service, conf)
@@ -36,6 +37,10 @@ local function check_conf(uri_segs, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
+    if need_id and not tonumber(id) then
+        return nil, {error_msg = "wrong type of service id"}
+    end
+    
     local upstream_id = conf.upstream_id
     if upstream_id then
         local key = "/upstreams/" .. upstream_id
