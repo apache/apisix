@@ -74,7 +74,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
 |name     |option   |description|
 |---------|---------|-----------|
 |uri      |required |除了静态常量匹配，还支持正则 `/foo/{:\w+}/{:\w+}`，更多见 [lua-resty-libr3](https://github.com/iresty/lua-resty-libr3)|
-|id       |required |必须与路径中的 `key` 保持一致|
+|id       |optional |如果有，必须与路径中的 `key` 保持一致|
+|host     |optional |当前请求域名，比如 `foo.com`。注：目前还不支持通配符方式。|
 |methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
 |plugins|required |启用的插件配置，详见 [Plugin](#plugin) |
 |upstream|required |启用的上游配置，详见 [Upstream](#upstream)|
