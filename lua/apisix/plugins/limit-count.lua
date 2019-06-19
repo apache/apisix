@@ -10,13 +10,9 @@ local schema = {
         time_window = {type = "integer",  minimum = 0},
         key = {type = "string", enum = {"remote_addr"}},
         rejected_code = {type = "integer", minimum = 200, maximum = 600},
-        disable = {type = "boolean", enum={true}},
     },
     additionalProperties = false,
-    anyOf = {
-        {required = {"count", "time_window", "key", "rejected_code"}},
-        {required = {"disable"}},
-    }
+    required = {"count", "time_window", "key", "rejected_code"},
 }
 
 
