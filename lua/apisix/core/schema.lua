@@ -150,6 +150,9 @@ _M.route = [[{
         "uri": {
             "type": "string"
         },
+        "host": {
+            "type": "string"
+        },
         "service_id": ]] .. json.encode(id_schema) .. [[,
         "upstream_id": ]] .. json.encode(id_schema) .. [[,
         "id": ]] .. json.encode(id_schema) .. [[
