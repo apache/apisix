@@ -3,6 +3,7 @@ local routes = require("apisix.route").routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local ipairs = ipairs
+local tonumber = tonumber
 
 
 local _M = {
@@ -40,7 +41,7 @@ local function check_conf(uri_segs, conf, need_id)
     if need_id and not tonumber(id) then
         return nil, {error_msg = "wrong type of service id"}
     end
-    
+
     local upstream_id = conf.upstream_id
     if upstream_id then
         local key = "/upstreams/" .. upstream_id

@@ -3,6 +3,7 @@ local get_routes = require("apisix.route").routes
 local get_services = require("apisix.service").services
 local tostring = tostring
 local ipairs = ipairs
+local tonumber = tonumber
 
 
 local _M = {
