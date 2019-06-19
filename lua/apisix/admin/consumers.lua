@@ -1,6 +1,4 @@
 local core = require("apisix.core")
-local tostring = tostring
-
 
 local _M = {
     version = 0.1,

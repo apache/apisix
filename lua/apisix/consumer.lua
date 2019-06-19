@@ -1,7 +1,5 @@
 local lrucache = require("apisix.core.lrucache")
 local config   = require("apisix.core.config_etcd")
-local schema   = require("apisix.core.schema")
-local log      = require("apisix.core.log")
 local insert_tab = table.insert
 local consumers
 local error = error
@@ -42,7 +40,6 @@ local function plugin_consumer()
     end
 
     for _, consumer in ipairs(consumers.values) do
-        log.warn("consumer: ", require("cjson").encode(consumer))
         for name, conf in pairs(consumer.value.plugins) do
             if not plugins[name] then
                 plugins[name] = {
