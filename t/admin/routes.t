@@ -19,7 +19,6 @@ __DATA__
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
-                        "plugins": {},
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:8080": 1
@@ -35,7 +34,6 @@ __DATA__
                                 "GET"
                             ],
                             "uri": "/index.html",
-                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -77,7 +75,6 @@ passed
                                 "GET"
                             ],
                             "uri": "/index.html",
-                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -161,7 +158,6 @@ GET /t
                  ngx.HTTP_POST,
                  [[{
                         "methods": ["GET"],
-                        "plugins": {},
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:8080": 1
@@ -177,7 +173,6 @@ GET /t
                                 "GET"
                             ],
                             "uri": "/index.html",
-                            "plugins": {},
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -333,7 +328,6 @@ GET /t
             local code, message, res = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "plugins": {},
                         "uri": "/index.html"
                 }]]
                 )
@@ -396,7 +390,6 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["invalid_method"],
-                        "plugins": {},
                         "uri": "/index.html"
                 }]]
                 )
@@ -478,7 +471,6 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                      "id": 3,
-                    "plugins": {},
                     "uri": "/index.html"
                 }]]
                 )
@@ -503,10 +495,10 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "id": "1",
-                    "plugins": {},
+                    "plugins":{},
                     "uri": "/index.html"
                 }]]
                 )
@@ -533,7 +525,6 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                     "id": -100,
-                    "plugins": {},
                     "uri": "/index.html"
                 }]]
                 )

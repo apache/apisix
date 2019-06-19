@@ -60,7 +60,6 @@ passed
                 [[{
                     "node": {
                         "value": {
-                            "plugins": {},
                             "upstream_id": 1
                         },
                         "key": "/apisix/services/1"
