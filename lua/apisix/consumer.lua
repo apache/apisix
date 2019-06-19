@@ -1,4 +1,5 @@
 local lrucache = require("apisix.core.lrucache")
+local schema   = require("apisix.core.schema")
 local config   = require("apisix.core.config_etcd")
 local insert_tab = table.insert
 local consumers
@@ -70,7 +71,7 @@ function _M.init_worker()
     consumers, err = config.new("/consumers",
                         {
                             automatic = true,
-                            -- item_schema = schema.consumer
+                            item_schema = schema.consumer
                         })
     if not consumers then
         error("failed to create etcd instance to fetch upstream: " .. err)
