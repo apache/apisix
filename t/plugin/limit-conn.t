@@ -4,6 +4,44 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+    my $port = $ENV{TEST_NGINX_SERVER_PORT};
+
+    my $config = $block->config // "";
+    $config .= <<_EOC_;
+
+    location /access_root_dir {
+        content_by_lua_block {
+            local httpc = require "resty.http"
+            local hc = httpc:new()
+
+            local res, err = hc:request_uri('http://127.0.0.1:$port/hello')
+            if res then
+                ngx.exit(res.status)
+            end
+        }
+    }
+
+    location /test_concurrency {
+        content_by_lua_block {
+            local reqs = {}
+            for i = 1, 10 do
+                reqs[i] = { "/access_root_dir" }
+            end
+            local resps = { ngx.location.capture_multi(reqs) }
+            for i, resp in ipairs(resps) do
+                ngx.say(resp.status)
+            end
+        }
+    }
+_EOC_
+
+    $block->set_value("config", $config);
+});
+
 run_tests;
 
 __DATA__
@@ -12,8 +50,8 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.limit-count")
-            local ok, err = plugin.check_schema({count = 2, time_window = 60, rejected_code = 503, key = 'remote_addr'})
+            local plugin = require("apisix.plugins.limit-conn")
+            local ok, err = plugin.check_schema({conn = 1, burst = 0, default_conn_delay = 0.1, rejected_code = 503, key = 'remote_addr'})
             if not ok then
                 ngx.say(err)
             end
@@ -34,8 +72,8 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.limit-count")
-            local ok, err = plugin.check_schema({count = 2, time_window = 60, rejected_code = 503, key = 'host'})
+            local plugin = require("apisix.plugins.limit-conn")
+            local ok, err = plugin.check_schema({conn = 1, default_conn_delay = 0.1, rejected_code = 503, key = 'remote_addr'})
             if not ok then
                 ngx.say(err)
             end
@@ -46,14 +84,14 @@ done
 --- request
 GET /t
 --- response_body
-invalid "enum" in docuement at pointer "#/key"
+invalid "required" in docuement at pointer "#"
 done
 --- no_error_log
 [error]
 
 
 
-=== TEST 3: set route(id: 1)
+=== TEST 3: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -61,16 +99,15 @@ done
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
                         "plugins": {
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
+                            "limit-conn": {
+                                "conn": 100,
+                                "burst": 50,
+                                "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr"
                             }
                         },
-                        "id":1,
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
@@ -78,6 +115,30 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-conn": {
+                                    "conn": 100,
+                                    "burst": 50,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
                 }]]
                 )
 
@@ -96,27 +157,31 @@ passed
 
 
 
-=== TEST 4: up the limit
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
---- error_code eval
-[200, 200, 503, 503]
+=== TEST 4: not exceeding the burst
+--- request
+GET /test_concurrency
+--- content_handler
+content_by_lua_block {
+    ngx.sleep(0.3)
+}
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+200
+200
+200
+200
 --- no_error_log
 [error]
 
 
 
-=== TEST 5: up the limit
---- pipelined_requests eval
-["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
---- error_code eval
-[404, 200, 404, 200, 503]
---- no_error_log
-[error]
-
-
-
-=== TEST 6: invalid route: missing key
+=== TEST 5: update plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -125,10 +190,12 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 503
+                            "limit-conn": {
+                                "conn": 2,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
                         },
                         "upstream": {
@@ -138,26 +205,73 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-conn": {
+                                    "conn": 2,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
                 }]]
                 )
 
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.print(body)
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"required\" in docuement at pointer \"#\""}
+passed
 --- no_error_log
 [error]
 
 
 
-=== TEST 7: invalid route: wrong count
+=== TEST 6: exceeding the burst
+--- request
+GET /test_concurrency
+--- content_handler
+content_by_lua_block {
+    ngx.sleep(0.3)
+}
+--- timeout: 10s
+--- response_body
+200
+200
+200
+503
+503
+503
+503
+503
+503
+503
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: invalid route: missing key
 --- config
     location /t {
         content_by_lua_block {
@@ -166,9 +280,9 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "limit-count": {
-                                "count": -100,
-                                "time_window": 60,
+                            "limit-conn": {
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr"
                             }
@@ -193,27 +307,28 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"required\" in docuement at pointer \"#\""}
 --- no_error_log
 [error]
 
 
 
-=== TEST 8: invalid route: wrong count + POST method
+=== TEST 8: invalid route: wrong conn
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes',
-                 ngx.HTTP_POST,
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "limit-count": {
-                                "count": -100,
-                                "time_window": 60,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
+                            "limit-conn": {
+                                    "conn": -1,
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
                         },
                         "upstream": {
                             "nodes": {
@@ -235,7 +350,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"minimum\" in docuement at pointer \"#\/conn\""}
 --- no_error_log
 [error]
 
@@ -250,11 +365,12 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 503
-                            }
+                            "limit-conn": {
+                                    "burst": 1,
+                                    "default_conn_delay": 0.1,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
                         },
                         "upstream": {
                             "nodes": {
@@ -275,7 +391,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"required\" in docuement at pointer \"#\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"required\" in docuement at pointer \"#\""}
 --- no_error_log
 [error]
 
@@ -290,9 +406,10 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "limit-count": {
-                                "count": -100,
-                                "time_window": 60,
+                            "limit-conn": {
+                                "conn": -1,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr"
                             }
@@ -316,105 +433,13 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"minimum\" in docuement at pointer \"#\/conn\""}
 --- no_error_log
 [error]
 
 
 
-=== TEST 11: invalid service: wrong count + POST method
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services',
-                 ngx.HTTP_POST,
-                 [[{
-                        "plugins": {
-                            "limit-count": {
-                                "count": -100,
-                                "time_window": 60,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
---- no_error_log
-[error]
-
-
-
-=== TEST 12: set route without id in post body
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 13: up the limit
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
---- error_code eval
-[200, 200, 503, 503]
---- no_error_log
-[error]
-
-
-
-=== TEST 14: disable plugin
+=== TEST 11: disable plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -449,10 +474,24 @@ passed
 
 
 
-=== TEST 15: up the limit
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
---- error_code eval
-[200, 200, 200, 200]
+=== TEST 12: exceeding the burst
+--- request
+GET /test_concurrency
+--- content_handler
+content_by_lua_block {
+    ngx.sleep(0.3)
+}
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+200
+200
+200
+200
 --- no_error_log
 [error]
