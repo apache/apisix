@@ -39,7 +39,7 @@ local id_schema = {
     anyOf = {
         {
             type = "string", minLength = 1, maxLength = 32,
-            pattern = [[^[a-zA-Z0-9_]+$]]
+            pattern = [[^[0-9]+$]]
         },
         {type = "integer", minimum = 1}
     }
@@ -187,7 +187,10 @@ _M.service = {
 _M.consumer = {
     type = "object",
     properties = {
-        username = id_schema,
+        username = {
+            type = "string", minLength = 1, maxLength = 32,
+            pattern = [[^[a-zA-Z0-9_]+$]]
+        },
         plugins = plugins_schema,
     },
     required = {"username"},
