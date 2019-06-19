@@ -4,6 +4,7 @@ use lib 'lib';
 use Cwd qw(cwd);
 use Test::Nginx::Socket::Lua::Stream -Base;
 
+repeat_each(1);
 log_level('info');
 no_long_string();
 no_shuffle();

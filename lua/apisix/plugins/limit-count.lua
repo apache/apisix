@@ -10,9 +10,13 @@ local schema = {
         time_window = {type = "integer",  minimum = 0},
         key = {type = "string", enum = {"remote_addr"}},
         rejected_code = {type = "integer", minimum = 200, maximum = 600},
+        disable = {type = "boolean", enum={true}},
     },
     additionalProperties = false,
-    required = {"count", "time_window", "key", "rejected_code"}
+    anyOf = {
+        {required = {"count", "time_window", "key", "rejected_code"}},
+        {required = {"disable"}},
+    }
 }
 
 
@@ -24,12 +28,7 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
@@ -42,7 +41,7 @@ end
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
-                                           create_limit_obj, conf)
+                                              create_limit_obj, conf)
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
         return 500
