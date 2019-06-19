@@ -39,7 +39,7 @@ local id_schema = {
     anyOf = {
         {
             type = "string", minLength = 1, maxLength = 32,
-            pattern = [[^[0-9]+$]]
+            pattern = [[^[a-zA-Z0-9_]+$]]
         },
         {type = "integer", minimum = 1}
     }
@@ -184,18 +184,15 @@ _M.service = {
 }
 
 
--- _M.consumer = {
---     type = "object",
---     properties = {
---         id = id_schema,
---         username = {type = "string"}
---     },
---     anyOf = {
---         {required = {"id"}},
---         {required = {"username"}},
---     },
---     additionalProperties = false,
--- }
+_M.consumer = {
+    type = "object",
+    properties = {
+        username = id_schema,
+        plugins = plugins_schema,
+    },
+    required = {"username"},
+    additionalProperties = false,
+}
 
 
 _M.upstream = upstream_schema

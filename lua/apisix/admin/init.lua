@@ -70,8 +70,8 @@ function _M.init_worker()
             handler = run
         },
         {
-            uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}/{id:\d+}]],
-            handler =run
+            uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}/{id:[\d\w_]+}]],
+            handler = run
         },
     })
 

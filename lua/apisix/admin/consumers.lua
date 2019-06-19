@@ -1,8 +1,5 @@
 local core = require("apisix.core")
-local routes = require("apisix.route").routes
-local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
-local ipairs = ipairs
 
 
 local _M = {
@@ -10,71 +7,39 @@ local _M = {
 }
 
 
-local function check_conf(uri_segs, conf, need_id)
+local function check_conf(uri_segs, conf)
+    -- core.log.error(core.json.encode(conf))
     if not conf then
         return nil, {error_msg = "missing configurations"}
     end
 
-    local id = uri_segs[5]
-    id = id or conf.id
-    if need_id and not id then
-        return nil, {error_msg = "missing service id"}
+    local consumer_name = conf.username or uri_segs[5]
+    if not consumer_name then
+        return nil, {error_msg = "missing consumer name"}
     end
 
-    if not need_id and id then
-        return nil, {error_msg = "wrong service id, do not need it"}
-    end
-
-    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
-        return nil, {error_msg = "wrong service id"}
-    end
-
-    core.log.info("schema: ", core.json.delay_encode(core.schema.service))
+    core.log.info("schema: ", core.json.delay_encode(core.schema.consumer))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.service, conf)
+    local ok, err = core.schema.check(core.schema.consumer, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
-    local upstream_id = conf.upstream_id
-    if upstream_id then
-        local key = "/upstreams/" .. upstream_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return nil, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return nil, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
-    end
-
-    if conf.plugins then
-        local ok, err = schema_plugin(conf.plugins)
-        if not ok then
-            return nil, {error_msg = err}
-        end
-    end
-
-    return need_id and id or true
+    return consumer_name
 end
 
 
 function _M.put(uri_segs, conf)
-    local id, err = check_conf(uri_segs, conf, true)
-    if not id then
+    local consumer_name, err = check_conf(uri_segs, conf)
+    if not consumer_name then
         return 400, err
     end
 
-    local key = "/services/" .. id
+    local key = "/consumers/" .. consumer_name
     core.log.info("key: ", key)
     local res, err = core.etcd.set(key, conf)
     if not res then
-        core.log.error("failed to put service[", key, "]: ", err)
+        core.log.error("failed to put consumer[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -83,15 +48,15 @@ end
 
 
 function _M.get(uri_segs)
-    local id = uri_segs[5]
-    local key = "/services"
-    if id then
-        key = key .. "/" .. id
+    local consumer_name = uri_segs[5]
+    local key = "/consumers"
+    if consumer_name then
+        key = key .. "/" .. consumer_name
     end
 
     local res, err = core.etcd.get(key)
     if not res then
-        core.log.error("failed to get service[", key, "]: ", err)
+        core.log.error("failed to get consumer[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
@@ -100,47 +65,20 @@ end
 
 
 function _M.post(uri_segs, conf)
-    local id, err = check_conf(uri_segs, conf, false)
-    if not id then
-        return 400, err
-    end
-
-    local key = "/services"
-    local res, err = core.etcd.push(key, conf)
-    if not res then
-        core.log.error("failed to post service[", key, "]: ", err)
-        return 500, {error_msg = err}
-    end
-
-    return res.status, res.body
+    return 400, {error_msg = "not support `POST` method for consumer"}
 end
 
 
 function _M.delete(uri_segs)
-    -- todo: need to check if any route is still using this service now.
-    local id = uri_segs[5]
-    if not id then
-        return 400, {error_msg = "missing service id"}
+    local consumer_name = uri_segs[5]
+    if not consumer_name then
+        return 400, {error_msg = "missing consumer name"}
     end
 
-    local routes, routes_ver = routes()
-    core.log.info("routes: ", core.json.delay_encode(routes, true))
-    core.log.info("routes_ver: ", routes_ver)
-    if routes_ver and routes then
-        for _, route in ipairs(routes) do
-            if route.value and route.value.service_id
-               and tostring(route.value.service_id) == id then
-                return 400, {error_msg = "can not delete this service directly,"
-                                         .. " route [" .. route.value.id
-                                         .. "] is still using it now"}
-            end
-        end
-    end
-
-    local key = "/services/" .. id
+    local key = "/consumers/" .. consumer_name
     local res, err = core.etcd.delete(key)
     if not res then
-        core.log.error("failed to delete service[", key, "]: ", err)
+        core.log.error("failed to delete consumer[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
