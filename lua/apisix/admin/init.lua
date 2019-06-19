@@ -64,8 +64,14 @@ function _M.init_worker()
     end
 
     router = route.new({
-        {0, [[/apisix/admin/{res:routes|services|upstreams}]], run},
-        {0, [[/apisix/admin/{res:routes|services|upstreams}/{id:\d+}]], run},
+        {
+            uri = [[/apisix/admin/{res:routes|services|upstreams}]],
+            handler = run
+        },
+        {
+            uri = [[/apisix/admin/{res:routes|services|upstreams}/{id:\d+}]],
+            handler =run
+        },
     })
 
     router:compile()
