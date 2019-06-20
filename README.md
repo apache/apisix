@@ -20,7 +20,7 @@ APISIX is a cloud-based microservices API gateway that handles traditional north
 
 APISIX provides dynamic load balancing, authentication, rate limiting, and other plugins through plugin mechanisms, and supports plugins you develop yourself.
 
-![](doc/images/apisix.jpg)
+![](doc/images/apisix.png)
 
 For more detailed information, see the [White Paper](https://www.iresty.com/download/Choosing%20the%20Right%20Microservice%20API%20Gateway%20for%20the%20Enterprise%20User.pdf).
 
@@ -55,7 +55,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4/apisix-0.4-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4.1/apisix-0.4-1.noarch.rpm
 ```
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
