@@ -1,5 +1,18 @@
 #! /usr/bin/lua
 
+-- _VERSION = "Lua 5.*"
+local lua_ver = string.sub(_VERSION, #"Lua " + 1)
+local cur_dir = os.getenv("PWD")
+
+package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
+                .. cur_dir .. "/deps/lib64/lua/" .. lua_ver .. "/?.so;"
+                .. package.cpath
+
+package.path  = cur_dir .. "/?.lua;"
+                .. "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/?.lua;"
+                .. cur_dir .. "/deps/share/lua/" .. lua_ver .. "/?.lua;"
+                .. package.path
+
 local yaml = require("apisix.lua.apisix.core.yaml")
 local template = require("resty.template")
 local apisix_home = "/usr/local/apisix"
@@ -213,16 +226,13 @@ local function init()
         error("failed to find the Lua source code home path")
     end
 
-    -- _VERSION = "Lua 5.*"
-    local lua_version = string.sub(_VERSION, #"Lua " + 1)
-
     -- -- Using template.render
     local sys_conf = setmetatable({
         lua_path = package.path,
         lua_cpath = package.cpath,
         os_name = exec("uname"),
         apisix_lua_home = apisix_src_path,
-        lua_version = lua_version,
+        lua_version = lua_ver,
     }, {__index = yaml_conf.apisix})
     -- print(sys_conf.allow_admin)
 

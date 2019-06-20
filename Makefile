@@ -21,7 +21,7 @@ help:
 .PHONY: dev
 dev:
 	./utils/update_nginx_conf_dev.sh
-	sudo luarocks install apisix-*.rockspec --only-deps --tree deps
+	sudo luarocks install apisix-*.rockspec --tree deps
 
 
 ### check:        Check Lua srouce code
