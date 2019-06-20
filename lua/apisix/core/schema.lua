@@ -151,7 +151,8 @@ _M.route = [[{
             "type": "string"
         },
         "host": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^\\*?[0-9a-zA-Z-.]+$"
         },
         "service_id": ]] .. json.encode(id_schema) .. [[,
         "upstream_id": ]] .. json.encode(id_schema) .. [[,
