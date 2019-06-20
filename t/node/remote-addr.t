@@ -6,7 +6,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: remote addr: 127.0.0.1
+=== TEST 1: set route: remote addr = 127.0.0.1
 --- config
     location /t {
         content_by_lua_block {
@@ -62,7 +62,7 @@ hello world
 
 
 
-=== TEST 4: remote addr: 127.0.0.2
+=== TEST 4: set route: remote addr = 127.0.0.2
 --- config
     location /t {
         content_by_lua_block {
