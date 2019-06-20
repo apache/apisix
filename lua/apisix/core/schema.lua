@@ -154,6 +154,13 @@ _M.route = [[{
             "type": "string",
             "pattern": "^\\*?[0-9a-zA-Z-.]+$"
         },
+        "remote_addr": {
+            "type": "string",
+            "anyOf": [
+              {"pattern": "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
+              {"pattern": "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}/[0-9]{1,2}$"}
+            ]
+        },
         "service_id": ]] .. json.encode(id_schema) .. [[,
         "upstream_id": ]] .. json.encode(id_schema) .. [[,
         "id": ]] .. json.encode(id_schema) .. [[
