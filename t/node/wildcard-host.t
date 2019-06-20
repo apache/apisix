@@ -17,7 +17,7 @@ __DATA__
                         "host": "*.foo.com",
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:8080": 1
+                                "127.0.0.1:1980": 1
                             },
                             "type": "roundrobin"
                         },
