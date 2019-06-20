@@ -18,7 +18,7 @@ APISIX 是基于云原生的微服务 API 网关，可以处理传统的南北�
 
 APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限速等功能，并且支持你自己开发的插件。
 
-![](doc/images/apisix.jpg)
+![](doc/images/apisix.png)
 
 更多详细的信息，可以查阅[APISIX 的白皮书](https://www.iresty.com/download/%E4%BC%81%E4%B8%9A%E7%94%A8%E6%88%B7%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E5%BE%AE%E6%9C%8D%E5%8A%A1%20API%20%E7%BD%91%E5%85%B3.pdf)
 
@@ -52,7 +52,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4/apisix-0.4-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4.1/apisix-0.4-1.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
