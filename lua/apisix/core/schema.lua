@@ -110,9 +110,11 @@ local upstream_schema = {
     type = "object",
     properties = {
         nodes = {
+            description = "nodes of upstream",
             type = "object",
             patternProperties = {
                 [".*"] = {
+                    description = "weight of node",
                     type = "integer",
                     minimum = 1,
                 }
@@ -120,10 +122,12 @@ local upstream_schema = {
             minProperties = 1,
         },
         type = {
+            description = "algorithms of load balancing",
             type = "string",
             enum = {"chash", "roundrobin"}
         },
         key = {
+            description = "the key of chash for dynamic load balancing",
             type = "string",
             enum = {"remote_addr"},
         },
@@ -140,6 +144,7 @@ _M.route = [[{
         "methods": {
             "type": "array",
             "items": {
+                "description": "HTTP method",
                 "type": "string",
                 "enum": ["GET", "PUT", "POST", "DELETE"]
             },
@@ -155,6 +160,7 @@ _M.route = [[{
             "pattern": "^\\*?[0-9a-zA-Z-.]+$"
         },
         "remote_addr": {
+            "description": "client IP",
             "type": "string",
             "anyOf": [
               {"pattern": "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
