@@ -1,21 +1,49 @@
 #! /usr/bin/lua
 
+local function trim(s)
+    return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+local function excute_cmd(cmd)
+    local t = io.popen(cmd)
+    local data = t:read("*all")
+    t:close()
+    return data
+end
+
+local pwd = trim(excute_cmd("pwd"))
+if not pwd then
+    error("failed to fetch current path")
+end
+
+local function file_exists(path)
+    local file = io.open(path, "rb")
+    if file then file:close() end
+    return file ~= nil
+end
+
+excute_cmd("mkdir -p /tmp/apisix_cores/")
+
+local apisix_home = "/usr/local/apisix"
+if file_exists(pwd .. "/deps") and file_exists(pwd .. "/conf") then
+    apisix_home = pwd
+end
+
 -- _VERSION = "Lua 5.*"
 local lua_ver = string.sub(_VERSION, #"Lua " + 1)
-local cur_dir = os.getenv("PWD")
+
 
 package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
-                .. cur_dir .. "/deps/lib64/lua/" .. lua_ver .. "/?.so;"
+                .. pwd .. "/deps/lib64/lua/" .. lua_ver .. "/?.so;"
                 .. package.cpath
 
-package.path  = cur_dir .. "/?.lua;"
+package.path  = pwd .. "/?.lua;"
                 .. "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/?.lua;"
-                .. cur_dir .. "/deps/share/lua/" .. lua_ver .. "/?.lua;"
+                .. pwd .. "/deps/share/lua/" .. lua_ver .. "/?.lua;"
                 .. package.path
 
 local yaml = require("apisix.lua.apisix.core.yaml")
 local template = require("resty.template")
-local apisix_home = "/usr/local/apisix"
 
 local ngx_tpl = [=[
 master_process on;
@@ -34,6 +62,9 @@ events {
     accept_mutex off;
     worker_connections 10620;
 }
+
+worker_rlimit_core  500M;
+working_directory   /tmp/apisix_cores/;
 
 worker_shutdown_timeout 3;
 
@@ -59,6 +90,7 @@ http {
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
 
     access_log logs/access.log main buffer=32768 flush=3;
+    open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
 
     server_tokens off;
@@ -157,31 +189,6 @@ local function read_file(file_path)
     return data
 end
 
-local function apisix_lua_home()
-    local string_gmatch = string.gmatch
-    local string_match = string.match
-    local io_open = io.open
-    local io_close = io.close
-
-    for k, _ in string_gmatch(package.path, "[^;]+") do
-        local fpath = string_match(k, "(.*/)")
-        fpath = fpath .. "apisix"
-        -- print("fpath: ", fpath .. "/conf/config.yaml")
-        local f = io_open(fpath .. "/lua/apisix.lua")
-        if f ~= nil then
-            io_close(f)
-            return fpath
-        end
-    end
-
-    return
-end
-
-
-local function trim(s)
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
 local function exec(command)
     local t= io.popen(command)
     local res = t:read("*all")
@@ -221,9 +228,12 @@ local function init()
     end
     -- print("etcd: ", yaml_conf.etcd.host)
 
-    local apisix_src_path =  apisix_lua_home()
-    if not apisix_src_path then
-        error("failed to find the Lua source code home path")
+    local or_ver = excute_cmd("openresty -V 2>&1")
+    if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
+        io.stderr:write("'http_stub_status_module' module is missing in ",
+                        "your openresty, please check it out. Without this ",
+                        "module, there will be fewer monitoring indicators.\n")
+        return
     end
 
     -- -- Using template.render
@@ -231,14 +241,13 @@ local function init()
         lua_path = package.path,
         lua_cpath = package.cpath,
         os_name = exec("uname"),
-        apisix_lua_home = apisix_src_path,
+        apisix_lua_home = apisix_home,
         lua_version = lua_ver,
     }, {__index = yaml_conf.apisix})
     -- print(sys_conf.allow_admin)
 
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
-    -- print(ngxconf)
 
     local ok, err = write_file(apisix_home .. "/conf/nginx.conf", ngxconf)
     if not ok then
