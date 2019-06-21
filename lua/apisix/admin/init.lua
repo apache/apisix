@@ -68,7 +68,8 @@ function _M.init_worker()
             handler = run
         },
         {
-            uri = [[/apisix/admin/{res:schema}/{id:\w+}]],
+            uri = [[/apisix/admin/{res:schema}/]]
+                    .. [[{id:route|service|upstream|consumer}]],
             handler = run
         },
     })
