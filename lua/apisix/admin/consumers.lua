@@ -5,13 +5,13 @@ local _M = {
 }
 
 
-local function check_conf(uri_segs, conf)
+local function check_conf(consumer_name, conf)
     -- core.log.error(core.json.encode(conf))
     if not conf then
         return nil, {error_msg = "missing configurations"}
     end
 
-    local consumer_name = conf.username or uri_segs[5]
+    local consumer_name = conf.username or consumer_name
     if not consumer_name then
         return nil, {error_msg = "missing consumer name"}
     end
@@ -27,8 +27,8 @@ local function check_conf(uri_segs, conf)
 end
 
 
-function _M.put(uri_segs, conf)
-    local consumer_name, err = check_conf(uri_segs, conf)
+function _M.put(consumer_name, conf)
+    local consumer_name, err = check_conf(consumer_name, conf)
     if not consumer_name then
         return 400, err
     end
@@ -45,8 +45,7 @@ function _M.put(uri_segs, conf)
 end
 
 
-function _M.get(uri_segs)
-    local consumer_name = uri_segs[5]
+function _M.get(consumer_name)
     local key = "/consumers"
     if consumer_name then
         key = key .. "/" .. consumer_name
@@ -62,13 +61,12 @@ function _M.get(uri_segs)
 end
 
 
-function _M.post(uri_segs, conf)
+function _M.post(consumer_name, conf)
     return 400, {error_msg = "not support `POST` method for consumer"}
 end
 
 
-function _M.delete(uri_segs)
-    local consumer_name = uri_segs[5]
+function _M.delete(consumer_name)
     if not consumer_name then
         return 400, {error_msg = "missing consumer name"}
     end
