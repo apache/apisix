@@ -30,13 +30,6 @@ local function run(params)
         core.response.exit(404)
     end
 
-    local segments, err = core.utils.split_uri(get_var("uri"))
-    if not segments then
-        core.log.error("failed to split uri: ", err)
-        core.response.exit(500)
-    end
-    core.log.info("split uri: ", core.json.delay_encode(segments))
-
     ngx.req.read_body()
     local req_body = ngx.req.get_body_data()
 
@@ -51,7 +44,7 @@ local function run(params)
         req_body = data
     end
 
-    local code, data = resource[method](segments, req_body)
+    local code, data = resource[method](params.id, req_body)
     if code then
         core.response.exit(code, data)
     end
