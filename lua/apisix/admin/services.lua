@@ -11,12 +11,11 @@ local _M = {
 }
 
 
-local function check_conf(uri_segs, conf, need_id)
+local function check_conf(id, conf, need_id)
     if not conf then
         return nil, {error_msg = "missing configurations"}
     end
 
-    local id = uri_segs[5]
     id = id or conf.id
     if need_id and not id then
         return nil, {error_msg = "missing service id"}
@@ -70,8 +69,8 @@ local function check_conf(uri_segs, conf, need_id)
 end
 
 
-function _M.put(uri_segs, conf)
-    local id, err = check_conf(uri_segs, conf, true)
+function _M.put(id, conf)
+    local id, err = check_conf(id, conf, true)
     if not id then
         return 400, err
     end
@@ -88,8 +87,7 @@ function _M.put(uri_segs, conf)
 end
 
 
-function _M.get(uri_segs)
-    local id = uri_segs[5]
+function _M.get(id)
     local key = "/services"
     if id then
         key = key .. "/" .. id
@@ -105,8 +103,8 @@ function _M.get(uri_segs)
 end
 
 
-function _M.post(uri_segs, conf)
-    local id, err = check_conf(uri_segs, conf, false)
+function _M.post(id, conf)
+    local id, err = check_conf(id, conf, false)
     if not id then
         return 400, err
     end
@@ -122,9 +120,8 @@ function _M.post(uri_segs, conf)
 end
 
 
-function _M.delete(uri_segs)
+function _M.delete(id)
     -- todo: need to check if any route is still using this service now.
-    local id = uri_segs[5]
     if not id then
         return 400, {error_msg = "missing service id"}
     end
