@@ -56,21 +56,13 @@ local function run_loop()
         ngx_status[name] = val[0]
     end
 
-    local etcd_cli, prefix = core.etcd.new()
-    if not etcd_cli then
+    local res, err = core.etcd.set("/node_status/" .. apisix_id, ngx_status)
+    if not res then
         core.log.error("failed to create etcd client: ", err)
         return
     end
 
-
-    local res, err = etcd_cli:set(prefix .. "/node_status/" .. apisix_id,
-                                  ngx_status)
-    if not res then
-        core.log.error("failed to update node status: ", err)
-        return
-    end
-
-    if res.status >= 100 then
+    if res.status >= 300 then
         core.log.error("failed to update node status, code: ", res.status,
                        " body: ", core.json.encode(res.body, true))
         return
