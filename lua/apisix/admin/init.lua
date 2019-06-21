@@ -10,6 +10,7 @@ local resources = {
     services = require("apisix.admin.services"),
     upstreams = require("apisix.admin.upstreams"),
     consumers = require("apisix.admin.consumers"),
+    schema = require("apisix.admin.schema"),
 }
 
 
@@ -64,6 +65,10 @@ function _M.init_worker()
         {
             uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]]
                     .. [[/{id:[\d\w_]+}]],
+            handler = run
+        },
+        {
+            uri = [[/apisix/admin/{res:schema}/{id:\w+}]],
             handler = run
         },
     })
