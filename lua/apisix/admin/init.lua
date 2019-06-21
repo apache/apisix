@@ -10,6 +10,7 @@ local resources = {
     services = require("apisix.admin.services"),
     upstreams = require("apisix.admin.upstreams"),
     consumers = require("apisix.admin.consumers"),
+    schema = require("apisix.admin.schema"),
 }
 
 
@@ -49,6 +50,22 @@ local function run(params)
     end
 end
 
+local uri_route = {
+    {
+        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]],
+        handler = run
+    },
+    {
+        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]]
+                .. [[/{id:[\d\w_]+}]],
+        handler = run
+    },
+    {
+        uri = [[/apisix/admin/{res:schema}/]]
+                .. [[{id:route|service|upstream|consumer}]],
+        handler = run
+    },
+}
 
 function _M.init_worker()
     local local_conf = core.config.local_conf()
@@ -56,17 +73,7 @@ function _M.init_worker()
         return
     end
 
-    router = route.new({
-        {
-            uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]],
-            handler = run
-        },
-        {
-            uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]]
-                    .. [[/{id:[\d\w_]+}]],
-            handler = run
-        },
-    })
+    router = route.new(uri_route)
 
     router:compile()
 end
