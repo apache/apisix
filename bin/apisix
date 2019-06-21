@@ -22,7 +22,7 @@ local function file_exists(path)
     return file ~= nil
 end
 
-excute_cmd("mkdir -p /tmp/apisix_cores/")
+excute_cmd("install -d -m 666 /tmp/apisix_cores/")
 
 local apisix_home = "/usr/local/apisix"
 if file_exists(pwd .. "/deps") and file_exists(pwd .. "/conf") then
