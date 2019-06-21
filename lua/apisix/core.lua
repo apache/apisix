@@ -13,6 +13,7 @@ return {
     id       = require("apisix.core.id"),
     utils    = require("apisix.core.utils"),
     etcd     = require("apisix.core.etcd"),
+    http     = require("apisix.core.http"),
     consumer = require("apisix.consumer"),
     tablepool= require("tablepool"),
 }
