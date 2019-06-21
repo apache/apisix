@@ -1,4 +1,3 @@
-local get_var = require("resty.ngxvar").fetch
 local core = require("apisix.core")
 local route = require("resty.r3")
 local get_method = ngx.req.get_method
