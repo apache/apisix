@@ -135,7 +135,7 @@ apisix_etcd_reachable 1
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",service="localhost"\} 1278/
+qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
 --- no_error_log
 [error]
 
@@ -270,6 +270,6 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",service="localhost"\} 1825/
+qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
 --- no_error_log
 [error]

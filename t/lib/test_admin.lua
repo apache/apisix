@@ -48,4 +48,12 @@ function _M.test(uri, method, body, pattern)
 end
 
 
+function _M.read_file(path)
+    local f = assert(io.open(path, "rb"))
+    local cert = f:read("*all")
+    f:close()
+    return cert
+end
+
+
 return _M

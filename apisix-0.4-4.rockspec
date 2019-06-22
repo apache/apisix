@@ -1,5 +1,5 @@
 package = "apisix"
-version = "0.4-3"
+version = "0.4-4"
 supported_platforms = {"linux", "macosx"}
 
 source = {
@@ -15,7 +15,7 @@ description = {
 }
 
 dependencies = {
-   "lua-resty-libr3 = 0.5",
+   "lua-resty-libr3 = 0.6",
    "lua-resty-template = 1.9-1",
    "lua-resty-etcd = 0.5",
    "lua-resty-balancer = 0.02rc5",

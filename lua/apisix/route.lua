@@ -23,7 +23,11 @@ local function create_r3_router(routes)
     for _, route in ipairs(api_routes) do
         if type(route) == "table" then
             idx = idx + 1
-            items[idx] = route
+            items[idx] = {
+                path = route.uri,
+                handler = route.handler,
+                method = route.methods,
+            }
         end
     end
 
@@ -31,7 +35,7 @@ local function create_r3_router(routes)
         if type(route) == "table" then
             idx = idx + 1
             items[idx] = {
-                uri = route.value.uri,
+                path = route.value.uri,
                 method = route.value.methods,
                 host = route.value.host,
                 handler = function (params, api_ctx)
