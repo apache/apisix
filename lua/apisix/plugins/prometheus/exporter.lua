@@ -108,7 +108,9 @@ function _M.collect()
                        "processingmetrics endpoint: ", err)
     end
 
-    return prometheus:collect()
+    core.response.set_header("content_type", "text/plain")
+
+    return 200, core.table.concat(prometheus:metric_data())
 end
 
 

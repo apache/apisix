@@ -39,17 +39,14 @@ local function load()
 
         local ok, plugin = pcall(require, pkg_name)
         if not ok then
-            core.log.error("failed to load plugin ", name, " err: ", plugin)
+            core.log.error("failed to load plugin [", name, "] err: ", plugin)
 
         elseif not plugin.priority then
-            core.log.error("invalid plugin", name, ", missing field: priority")
-
-        elseif not plugin.check_schema then
-            core.log.error("invalid plugin", name,
-                           ", missing method: check_schema")
+            core.log.error("invalid plugin [", name,
+                           "], missing field: priority")
 
         elseif not plugin.version then
-            core.log.error("invalid plugin", name, ", missing field: version")
+            core.log.error("invalid plugin [", name, "] missing field: version")
 
         else
             plugin.name = name
@@ -87,11 +84,17 @@ function fetch_api_routes()
         local api_fun = plugin.api
         if api_fun then
             local api_routes = api_fun()
+            core.log.info("feched api routes: ", core.json.delay_encode(api_routes, true))
             for _, route in ipairs(api_routes) do
                 core.table.insert(routes, {
                         method = route.methods,
                         uri = route.uri,
-                        handler = route.handler
+                        handler = function (...)
+                            local code, body = route.handler(...)
+                            if code or body then
+                                core.response.exit(code, body)
+                            end
+                        end
                     })
             end
         end

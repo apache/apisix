@@ -16,3 +16,4 @@ plugins:                        # plugin list
   - key-auth
   - prometheus
   - limit-conn
+  - node-status

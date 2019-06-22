@@ -10,6 +10,9 @@ local _M = {
 }
 
 
+setmetatable(_M, {__index = table})
+
+
 function _M.insert_tail(tab, ...)
     local idx = #tab
     for i = 1, select('#', ...) do

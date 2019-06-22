@@ -104,8 +104,8 @@ local function sync_data(self)
 
     if self.values == nil then
         local dir_res, err = readdir(self.etcd_cli, self.key)
-        log.info("waitdir key: ", self.key, " res: ",
-                 json.delay_encode(dir_res))
+        log.debug("waitdir key: ", self.key, " res: ",
+                  json.delay_encode(dir_res))
         if not dir_res then
             return false, err
         end
