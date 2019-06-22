@@ -20,6 +20,18 @@ local ngx_statu_items = {
 }
 
 
+local function collect()
+    core.log.info("try to collect node status from etcd: ",
+                  "/node_status/" .. apisix_id)
+    local res, err = core.etcd.get("/node_status/" .. apisix_id)
+    if not res then
+        return 500, {error = err}
+    end
+
+    return res.status, res.body
+end
+
+
 local function run_loop()
     local res, err = core.http.request_self("/apisix/nginx_status")
     if not res then
@@ -67,6 +79,17 @@ local function run_loop()
                        " body: ", core.json.encode(res.body, true))
         return
     end
+end
+
+
+function _M.api()
+    return {
+        {
+            methods = {"GET"},
+            uri = "/apisix/status",
+            handler = collect,
+        }
+    }
 end
 
 
