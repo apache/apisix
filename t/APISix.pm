@@ -21,6 +21,8 @@ sub read_file($) {
 }
 
 my $yaml_config = read_file("conf/config.yaml");
+$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
+
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -84,7 +86,7 @@ _EOC_
     my $config = $block->config // '';
     $config .= <<_EOC_;
         location = /apisix/nginx_status {
-            internal;
+            allow 127.0.0.0/24;
             access_log off;
             stub_status;
         }

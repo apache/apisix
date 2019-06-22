@@ -22,7 +22,7 @@ local function file_exists(path)
     return file ~= nil
 end
 
-excute_cmd("install -d -m 666 /tmp/apisix_cores/")
+excute_cmd("install -d -m 777 /tmp/apisix_cores/")
 
 local apisix_home = "/usr/local/apisix"
 if file_exists(pwd .. "/deps") and file_exists(pwd .. "/conf") then
@@ -121,7 +121,7 @@ http {
         include mime.types;
 
         location = /apisix/nginx_status {
-            internal;
+            allow 127.0.0.0/24;
             access_log off;
             stub_status;
         }
@@ -267,7 +267,7 @@ local function init_etcd(show_output)
     local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
     for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
-                               "/plugins", "/consumers"}) do
+                               "/plugins", "/consumers", "/node_status"}) do
         local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true 2>&1"
         local res = exec(cmd)

@@ -3,6 +3,7 @@
 local log = require("apisix.core.log")
 local sleep = ngx.sleep
 local timer_every = ngx.timer.every
+local timer_at = ngx.timer.at
 local update_time = ngx.update_time
 local now = ngx.now
 local pcall = pcall
@@ -69,6 +70,11 @@ function _M.new(name, callback_fun, opts)
 
     local hdl, err = timer_every(opts.check_interval or 1,
                                  run_timer, timer)
+    if not hdl then
+        return nil, err
+    end
+
+    hdl, err = timer_at(0, run_timer, timer)
     if not hdl then
         return nil, err
     end
