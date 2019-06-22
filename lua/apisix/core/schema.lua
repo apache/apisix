@@ -7,7 +7,7 @@ local json_doc = json.Document
 local cached_sd = require("apisix.core.lrucache").new({count = 1000, ttl = 0})
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
 local function create_validator(schema)
@@ -213,6 +213,25 @@ _M.consumer = {
 
 
 _M.upstream = upstream_schema
+
+
+_M.ssl = {
+    type = "object",
+    properties = {
+        cert = {
+            type = "string", minLength = 128, maxLength = 4096
+        },
+        key = {
+            type = "string", minLength = 128, maxLength = 4096
+        },
+        sni = {
+            type = "string",
+            pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+        }
+    },
+    required = {"sni", "key", "cert"},
+    additionalProperties = false,
+}
 
 
 return _M

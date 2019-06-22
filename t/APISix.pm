@@ -21,7 +21,10 @@ sub read_file($) {
 }
 
 my $yaml_config = read_file("conf/config.yaml");
+my $ssl_crt = read_file("conf/cert/apisix.crt");
+my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
+$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 
 
 add_block_preprocessor(sub {
@@ -70,10 +73,14 @@ _EOC_
         listen 1981;
         listen 1982;
 
+        server_tokens off;
+
         location / {
             content_by_lua_block {
                 require("lib.server").go()
             }
+
+            more_clear_headers Date;
         }
     }
 
@@ -81,10 +88,22 @@ _EOC_
 
     $block->set_value("http_config", $http_config);
 
+    my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
     my $config = $block->config // '';
     $config .= <<_EOC_;
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+        ssl_certificate             cert/apisix.crt;
+        ssl_certificate_key         cert/apisix.key;
+        lua_ssl_trusted_certificate cert/apisix.crt;
+
+        ssl_certificate_by_lua_block {
+            apisix.ssl_phase()
+        }
+
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             access_log off;
@@ -137,6 +156,10 @@ _EOC_
     $user_files .= <<_EOC_;
 >>> ../conf/config.yaml
 $user_yaml_config
+>>> ../conf/cert/apisix.crt
+$ssl_crt
+>>> ../conf/cert/apisix.key
+$ssl_key
 _EOC_
 
     $block->set_value("user_files", $user_files);

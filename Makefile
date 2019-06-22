@@ -65,9 +65,10 @@ reload:
 .PHONY: install
 install:
 	$(INSTALL) -d /usr/local/apisix/logs/
-	$(INSTALL) -d /usr/local/apisix/conf/
+	$(INSTALL) -d /usr/local/apisix/conf/cert
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
+	$(INSTALL) conf/cert/apisix.* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/core
 	$(INSTALL) lua/*.lua $(INST_LUADIR)/apisix/lua/
