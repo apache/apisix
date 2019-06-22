@@ -87,6 +87,11 @@ local function run_plugin(phase, plugins, api_ctx)
 end
 
 
+function _M.access_ssl()
+    core.log.warn("enter access_ssl phase")
+end
+
+
 function _M.access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx

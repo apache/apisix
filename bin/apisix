@@ -119,6 +119,10 @@ http {
 
     server {
         listen {* node_listen *};
+        listen 9443 ssl;
+        ssl_certificate      cert/apisix.crt;
+        ssl_certificate_key  cert/apisix.key;
+        ssl_session_cache    shared:SSL:1m;
 
         include mime.types;
 
