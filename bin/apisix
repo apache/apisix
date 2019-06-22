@@ -24,12 +24,13 @@ excute_cmd("install -d -m 777 /tmp/apisix_cores/")
 local lua_ver = string.sub(_VERSION, #"Lua " + 1)
 
 local apisix_home = "/usr/local/apisix"
-if script_path:sub(1, 1) == '/' then
+if script_path == '/usr/bin/apisix' or script_path == '/bin/apisix' then
     package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
                     .. package.cpath
 
     package.path  = "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
                     .. "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/?.lua;"
+                    .. "/usr/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
                     .. package.path
 
 else
