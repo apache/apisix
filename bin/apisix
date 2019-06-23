@@ -42,7 +42,7 @@ else
                     .. pwd .. "/deps/share/lua/" .. lua_ver .. "/?.lua;"
                     .. package.path
 end
-print("apisix_home: ", apisix_home)
+-- print("apisix_home: ", apisix_home)
 
 local yaml = require("apisix.core.yaml")
 local template = require("resty.template")
