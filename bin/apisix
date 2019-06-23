@@ -1,5 +1,7 @@
 #! /usr/bin/lua
 
+local script_path = debug.getinfo(1).source:sub(2)
+
 local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
@@ -16,33 +18,33 @@ if not pwd then
     error("failed to fetch current path")
 end
 
-local function file_exists(path)
-    local file = io.open(path, "rb")
-    if file then file:close() end
-    return file ~= nil
-end
-
 excute_cmd("install -d -m 777 /tmp/apisix_cores/")
-
-local apisix_home = "/usr/local/apisix"
-if file_exists(pwd .. "/deps") and file_exists(pwd .. "/conf") then
-    apisix_home = pwd
-end
 
 -- _VERSION = "Lua 5.*"
 local lua_ver = string.sub(_VERSION, #"Lua " + 1)
 
+local apisix_home = "/usr/local/apisix"
+if script_path == '/usr/bin/apisix' or script_path == '/bin/apisix' then
+    package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
+                    .. package.cpath
 
-package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
-                .. pwd .. "/deps/lib64/lua/" .. lua_ver .. "/?.so;"
-                .. package.cpath
+    package.path  = "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
+                    .. "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/?.lua;"
+                    .. "/usr/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
+                    .. package.path
 
-package.path  = pwd .. "/?.lua;"
-                .. "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/?.lua;"
-                .. pwd .. "/deps/share/lua/" .. lua_ver .. "/?.lua;"
-                .. package.path
+else
+    apisix_home = pwd
+    package.cpath = pwd .. "/deps/lib64/lua/" .. lua_ver .. "/?.so;"
+                    .. package.cpath
 
-local yaml = require("apisix.lua.apisix.core.yaml")
+    package.path  = pwd .. "/lua/?.lua;"
+                    .. pwd .. "/deps/share/lua/" .. lua_ver .. "/?.lua;"
+                    .. package.path
+end
+-- print("apisix_home: ", apisix_home)
+
+local yaml = require("apisix.core.yaml")
 local template = require("resty.template")
 
 local ngx_tpl = [=[
@@ -69,7 +71,7 @@ working_directory   /tmp/apisix_cores/;
 worker_shutdown_timeout 3;
 
 http {
-    lua_package_path "$prefix/deps/share/lua/{*lua_version*}/?.lua;{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_path "$prefix/deps/share/lua/{*lua_version*}/?.lua;{*apisix_lua_home*}/lua/?.lua;{*lua_path*};;";
     lua_package_cpath "$prefix/deps/lib64/lua/{*lua_version*}/?.so;$prefix/deps/lib/lua/{*lua_version*}/?.so;{*lua_cpath*};;";
 
     lua_shared_dict plugin-limit-req    10m;
@@ -238,12 +240,14 @@ local function init()
 
     -- -- Using template.render
     local sys_conf = setmetatable({
-        lua_path = package.path,
-        lua_cpath = package.cpath,
-        os_name = exec("uname"),
-        apisix_lua_home = apisix_home,
-        lua_version = lua_ver,
-    }, {__index = yaml_conf.apisix})
+            lua_path = package.path,
+            lua_cpath = package.cpath,
+            os_name = exec("uname"),
+            apisix_lua_home = apisix_home,
+            lua_version = lua_ver,
+        },
+        {__index = yaml_conf.apisix}
+    )
     -- print(sys_conf.allow_admin)
 
     local conf_render = template.compile(ngx_tpl)
@@ -288,16 +292,19 @@ function _M.start(...)
     init(...)
     init_etcd(...)
 
+    -- print([[openresty -p ]] .. apisix_home)
     os.execute([[openresty -p ]] .. apisix_home)
 end
 
 function _M.stop()
     -- todo: use single to reload
+    -- print([[openresty -p ]] .. apisix_home .. [[ -s stop]])
     os.execute([[openresty -p ]] .. apisix_home .. [[ -s stop]])
 end
 
 function _M.reload()
     -- todo: use single to reload
+    -- print([[openresty -p ]] .. apisix_home .. [[ -s stop]])
     os.execute([[openresty -p ]] .. apisix_home .. [[ -s reload]])
 end
 
