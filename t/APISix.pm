@@ -21,6 +21,8 @@ sub read_file($) {
 }
 
 my $yaml_config = read_file("conf/config.yaml");
+my $ssl_crt = read_file("conf/cert/apisix.crt");
+my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 
 
@@ -137,6 +139,10 @@ _EOC_
     $user_files .= <<_EOC_;
 >>> ../conf/config.yaml
 $user_yaml_config
+>>> ../conf/cert/apisix.crt
+$ssl_crt
+>>> ../conf/cert/apisix.key
+$ssl_key
 _EOC_
 
     $block->set_value("user_files", $user_files);

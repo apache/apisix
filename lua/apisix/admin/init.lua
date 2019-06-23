@@ -6,11 +6,12 @@ local ngx = ngx
 
 
 local resources = {
-    routes   = require("apisix.admin.routes"),
-    services = require("apisix.admin.services"),
+    routes    = require("apisix.admin.routes"),
+    services  = require("apisix.admin.services"),
     upstreams = require("apisix.admin.upstreams"),
     consumers = require("apisix.admin.consumers"),
-    schema = require("apisix.admin.schema"),
+    schema    = require("apisix.admin.schema"),
+    ssl       = require("apisix.admin.ssl"),
 }
 
 
@@ -52,11 +53,11 @@ end
 
 local uri_route = {
     {
-        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]],
+        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]],
         handler = run
     },
     {
-        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers}]]
+        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
                 .. [[/{id:[\d\w_]+}]],
         handler = run
     },

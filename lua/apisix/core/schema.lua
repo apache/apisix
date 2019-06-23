@@ -215,4 +215,23 @@ _M.consumer = {
 _M.upstream = upstream_schema
 
 
+_M.ssl = {
+    type = "object",
+    properties = {
+        cert = {
+            type = "string", minLength = 128, maxLength = 4096
+        },
+        key = {
+            type = "string", minLength = 128, maxLength = 4096
+        },
+        sni = {
+            type = "string",
+            pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+        }
+    },
+    required = {"sni", "key", "cert"},
+    additionalProperties = false,
+}
+
+
 return _M
