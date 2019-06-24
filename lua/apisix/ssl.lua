@@ -29,10 +29,11 @@ local _M = {
 
 
     local empty_tab = {}
+    local route_items
 local function create_r3_router(ssl_items)
     local ssl_items = ssl_items or empty_tab
 
-    local route_items = core.table.new(#ssl_items, 0)
+    route_items = core.table.new(#ssl_items, 0)
     local idx = 0
 
     for _, ssl in ipairs(ssl_items) do
@@ -52,8 +53,10 @@ local function create_r3_router(ssl_items)
         end
     end
 
-    core.log.warn("route items: ", core.json.encode(route_items, true))
-    return r3router.new(route_items)
+    core.log.info("route items: ", core.json.delay_encode(route_items, true))
+    local r3 = r3router.new(route_items)
+    r3:compile()
+    return r3
 end
 
 
