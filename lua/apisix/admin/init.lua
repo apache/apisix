@@ -63,7 +63,7 @@ local uri_route = {
     },
     {
         path = [[/apisix/admin/{res:schema}/]]
-                .. [[{id:route|service|upstream|consumer}]],
+                .. [[{id:route|service|upstream|consumer|ssl}]],
         handler = run
     },
 }

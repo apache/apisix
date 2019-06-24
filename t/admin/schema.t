@@ -54,3 +54,43 @@ POST /apisix/admin/schema/service
 --- error_code: 404
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: ssl
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/ssl',
+            ngx.HTTP_GET,
+            nil,
+            {
+                type = "object",
+                properties = {
+                    cert = {
+                        type = "string", minLength = 128, maxLength = 4096
+                    },
+                    key = {
+                        type = "string", minLength = 128, maxLength = 4096
+                    },
+                    sni = {
+                        type = "string",
+                        pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+                    }
+                },
+                required = {"sni", "key", "cert"},
+                additionalProperties = false,
+            }
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
