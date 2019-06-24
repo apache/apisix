@@ -6,7 +6,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: set ssl(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -44,7 +44,7 @@ passed
 
 
 
-=== TEST 2: get route(id: 1)
+=== TEST 2: get ssl(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -76,7 +76,7 @@ passed
 
 
 
-=== TEST 3: delete route(id: 1)
+=== TEST 3: delete ssl(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -100,7 +100,7 @@ GET /t
 
 
 
-=== TEST 4: delete route(id: 99999999999999)
+=== TEST 4: delete ssl(id: 99999999999999)
 --- config
     location /t {
         content_by_lua_block {
@@ -124,7 +124,7 @@ GET /t
 
 
 
-=== TEST 5: push route + delete
+=== TEST 5: push ssl + delete
 --- config
     location /t {
         content_by_lua_block {

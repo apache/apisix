@@ -73,10 +73,14 @@ _EOC_
         listen 1981;
         listen 1982;
 
+        server_tokens off;
+
         location / {
             content_by_lua_block {
                 require("lib.server").go()
             }
+
+            more_clear_headers Date;
         }
     }
 
@@ -92,8 +96,9 @@ _EOC_
     $config .= <<_EOC_;
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
-        ssl_certificate      cert/apisix.crt;
-        ssl_certificate_key  cert/apisix.key;
+        ssl_certificate             cert/apisix.crt;
+        ssl_certificate_key         cert/apisix.key;
+        lua_ssl_trusted_certificate cert/apisix.crt;
 
         ssl_certificate_by_lua_block {
             apisix.ssl_phase()
