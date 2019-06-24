@@ -24,7 +24,7 @@ qr/"plugins": \{"type":"object"}/
 --- request
 GET /apisix/admin/schema/service
 --- response_body eval
-qr/"upstream":\{"type":"object"/
+qr/"required":\["upstream"\]/
 --- no_error_log
 [error]
 
