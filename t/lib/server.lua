@@ -11,6 +11,12 @@ function _M.server_port()
 end
 
 
+function _M.limit_conn()
+    ngx.sleep(0.3)
+    ngx.say("hello world")
+end
+
+
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
     if not _M[action] then

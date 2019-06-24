@@ -18,7 +18,7 @@ add_block_preprocessor(sub {
             local httpc = require "resty.http"
             local hc = httpc:new()
 
-            local res, err = hc:request_uri('http://127.0.0.1:$port/hello')
+            local res, err = hc:request_uri('http://127.0.0.1:$port/limit_conn')
             if res then
                 ngx.exit(res.status)
             end
@@ -114,7 +114,7 @@ done
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/limit_conn"
                 }]],
                 [[{
                     "node": {
@@ -134,7 +134,7 @@ done
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/hello"
+                            "uri": "/limit_conn"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -160,10 +160,6 @@ passed
 === TEST 4: not exceeding the burst
 --- request
 GET /test_concurrency
---- content_handler
-content_by_lua_block {
-    ngx.sleep(0.3)
-}
 --- timeout: 10s
 --- response_body
 200
@@ -204,7 +200,7 @@ content_by_lua_block {
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/limit_conn"
                 }]],
                 [[{
                     "node": {
@@ -224,7 +220,7 @@ content_by_lua_block {
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/hello"
+                            "uri": "/limit_conn"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -250,10 +246,6 @@ passed
 === TEST 6: exceeding the burst
 --- request
 GET /test_concurrency
---- content_handler
-content_by_lua_block {
-    ngx.sleep(0.3)
-}
 --- timeout: 10s
 --- response_body
 200
@@ -293,7 +285,7 @@ content_by_lua_block {
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/limit_conn"
                 }]]
                 )
 
@@ -336,7 +328,7 @@ GET /t
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/limit_conn"
                 }]]
                 )
 
@@ -455,7 +447,7 @@ GET /t
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/limit_conn"
                 }]]
                 )
 
@@ -477,10 +469,6 @@ passed
 === TEST 12: exceeding the burst
 --- request
 GET /test_concurrency
---- content_handler
-content_by_lua_block {
-    ngx.sleep(0.3)
-}
 --- timeout: 10s
 --- response_body
 200
