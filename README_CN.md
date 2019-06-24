@@ -25,6 +25,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 ## 插件
 目前已支持这些插件：
 
+* [HTTPS](doc/https.md): 根据 TLS 扩展字段 SNI(Server Name Indication) 动态加载证书。
 * [动态负载均衡](doc/architecture-design-cn.md#upstream)：跨多个上游服务的动态负载均衡，目前已支持 round-robin 和一致性哈希算法。
 * [key-auth](lua/apisix/plugins/key-auth.md): 基于 Key Authentication 的用户认证。
 * [limit-count](lua/apisix/plugins/limit-count.md): 基于“固定窗口”的限速实现.
