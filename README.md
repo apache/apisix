@@ -26,6 +26,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 
 ## Plugins
 Now we support the following plugins:
+* [HTTPS](doc/https.md): dynamic load the SSL Certificate by Server Name Indication (SNI).
 * [dynamic load balancing](#Plugins): load balance traffic across multiple upstream services, supports round-robin and consistent hash algorithms.
 * [key-auth](lua/apisix/plugins/key-auth.md): user authentication based on Key Authentication.
 * [limit-count](lua/apisix/plugins/limit-count.md): rate limiting based on a "fixed window" implementation.
