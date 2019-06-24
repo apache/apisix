@@ -53,16 +53,16 @@ end
 
 local uri_route = {
     {
-        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]],
+        path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]],
         handler = run
     },
     {
-        uri = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
+        path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
                 .. [[/{id:[\d\w_]+}]],
         handler = run
     },
     {
-        uri = [[/apisix/admin/{res:schema}/]]
+        path = [[/apisix/admin/{res:schema}/]]
                 .. [[{id:route|service|upstream|consumer}]],
         handler = run
     },

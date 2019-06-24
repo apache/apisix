@@ -7,7 +7,7 @@ local json_doc = json.Document
 local cached_sd = require("apisix.core.lrucache").new({count = 1000, ttl = 0})
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
 local function create_validator(schema)

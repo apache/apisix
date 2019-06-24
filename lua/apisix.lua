@@ -6,6 +6,7 @@ local router = require("apisix.route").get
 local plugin = require("apisix.plugin")
 local load_balancer = require("apisix.balancer").run
 local service_fetch = require("apisix.service").get
+local ssl_match = require("apisix.ssl").match
 local admin_init = require("apisix.admin.init")
 local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
@@ -49,6 +50,7 @@ function _M.init_worker()
     require("apisix.consumer").init_worker()
     require("apisix.heartbeat").init_worker()
     require("apisix.admin.init").init_worker()
+    require("apisix.ssl").init_worker()
 end
 
 
@@ -87,8 +89,29 @@ local function run_plugin(phase, plugins, api_ctx)
 end
 
 
-function _M.access_ssl()
-    core.log.warn("enter access_ssl phase")
+function _M.ssl_phase()
+    core.log.info("enter ssl_phase phase")
+    local ngx_ctx = ngx.ctx
+    local api_ctx = ngx_ctx.api_ctx
+
+    if api_ctx == nil then
+        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+        ngx_ctx.api_ctx = api_ctx
+    end
+
+    local ok, err = ssl_match(api_ctx)
+    if not ok then
+        if err then
+            core.log.error("failed to fetch ssl config: ", err)
+        end
+        return
+    end
+
+    -- local matched_ssl = api_ctx.matched_ssl
+    -- if not matched_ssl then
+    --     core.log.error("not find any sni")
+    --     return
+    -- end
 end
 
 
@@ -98,18 +121,15 @@ function _M.access_phase()
 
     if api_ctx == nil then
         api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+        ngx_ctx.api_ctx = api_ctx
     end
 
     core.ctx.set_vars_meta(api_ctx)
-    ngx_ctx.api_ctx = api_ctx
-
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.method
     match_opts.host = api_ctx.var.host
-    api_ctx.uri_parse_param = core.tablepool.fetch("uri_parse_param", 0, 4)
 
-    local ok = router():dispatch2(api_ctx.uri_parse_param,
-                                  api_ctx.var.uri, match_opts, api_ctx)
+    local ok = router():dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
         return core.response.exit(404)
@@ -170,11 +190,15 @@ end
 function _M.log_phase()
     local api_ctx = run_plugin("log")
     if api_ctx then
-        core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
+        if api_ctx.uri_parse_param then
+            core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
+        end
+
         core.ctx.release_vars(api_ctx)
         if api_ctx.plugins then
             core.tablepool.release("plugins", api_ctx.plugins)
         end
+
         core.tablepool.release("api_ctx", api_ctx)
     end
 end

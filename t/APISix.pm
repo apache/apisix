@@ -24,6 +24,7 @@ my $yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
+$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 
 
 add_block_preprocessor(sub {
