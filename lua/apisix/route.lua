@@ -13,17 +13,18 @@ local _M = {version = 0.1}
 
 
     local empty_tab = {}
+    local route_items
 local function create_r3_router(routes)
     routes = routes or empty_tab
 
     local api_routes = plugin.api_routes()
-    local items = core.table.new(#api_routes + #routes, 0)
+    route_items = core.table.new(#api_routes + #routes, 0)
     local idx = 0
 
     for _, route in ipairs(api_routes) do
         if type(route) == "table" then
             idx = idx + 1
-            items[idx] = {
+            route_items[idx] = {
                 path = route.uri,
                 handler = route.handler,
                 method = route.methods,
@@ -34,7 +35,7 @@ local function create_r3_router(routes)
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             idx = idx + 1
-            items[idx] = {
+            route_items[idx] = {
                 path = route.value.uri,
                 method = route.value.methods,
                 host = route.value.host,
@@ -46,7 +47,10 @@ local function create_r3_router(routes)
         end
     end
 
-    return r3router.new(items)
+    core.log.info("route items: ", core.json.delay_encode(route_items, true))
+    local r3 = r3router.new(route_items)
+    r3:compile()
+    return r3
 end
 
 
