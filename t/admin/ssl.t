@@ -2,24 +2,6 @@ use t::APISix 'no_plan';
 
 no_root_location();
 
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    my $init_by_lua_block = <<_EOC_;
-    require "resty.core"
-    apisix = require("apisix")
-    apisix.init()
-
-    function read_file(path)
-        local f = assert(io.open(path, "rb"))
-        local cert = f:read("*all")
-        f:close()
-        return cert
-    end
-_EOC_
-    $block->set_value("init_by_lua_block", $init_by_lua_block);
-});
-
 run_tests;
 
 __DATA__
@@ -68,12 +50,12 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/ssl/1',
-                 ngx.HTTP_GET,
-                 nil,
+                ngx.HTTP_GET,
+                nil,
                 [[{
                     "node": {
                         "value": {
-                            "sni": "foo.com"
+                            "sni": "test.com"
                         },
                         "key": "/apisix/ssl/1"
                     },
@@ -181,7 +163,7 @@ GET /t
                  [[{
                     "action": "delete"
                 }]]
-                )
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
