@@ -20,7 +20,7 @@ addons:
 
 env:
   global:
-    - OPENRESTY_PREFIX=/usr/local/openresty
+    - OPENRESTY_PREFIX=/usr/local/openresty-debug
 
 before_install:
   - sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
