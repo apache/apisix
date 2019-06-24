@@ -12,6 +12,7 @@ local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_exit = ngx.exit
+local ngx_ERROR = ngx.ERROR
 local math = math
 local match_opts = {}
 
@@ -90,7 +91,6 @@ end
 
 
 function _M.ssl_phase()
-    core.log.info("enter ssl_phase phase")
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
@@ -104,14 +104,8 @@ function _M.ssl_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
-        return
+        return ngx_exit(ngx_ERROR)
     end
-
-    -- local matched_ssl = api_ctx.matched_ssl
-    -- if not matched_ssl then
-    --     core.log.error("not find any sni")
-    --     return
-    -- end
 end
 
 

@@ -95,7 +95,7 @@ end
 
 
 function _M.match(api_ctx)
-    -- ngx_ssl.clear_certs()
+    ngx_ssl.clear_certs()
 
     local r3, err = core.lrucache.global("/ssl", ssl.conf_version,
                         create_r3_router, ssl.values)
@@ -103,14 +103,12 @@ function _M.match(api_ctx)
         return false, "gailed to fetch ssl router: " .. err
     end
 
-    -- local sni = ngx_ssl.server_name()
-    -- if type(sni) ~= "string" then
-    --     core.log.error("gailed to fetch SNI: ", err)
-    --     return false, "gailed to fetch SNI: " .. err
-    -- end
+    local sni = ngx_ssl.server_name()
+    if type(sni) ~= "string" then
+        return false, "gailed to fetch SNI: " .. err
+    end
 
-    local sni = "foo.com"
-    core.log.warn("sni: ", sni)
+    core.log.debug("sni: ", sni)
     local ok = r3:dispatch2(nil, sni:reverse(), nil, api_ctx)
     if not ok then
         core.log.warn("not found any valid sni configuration")
@@ -118,8 +116,8 @@ function _M.match(api_ctx)
     end
 
     local matched_ssl = api_ctx.matched_ssl
-    core.log.info("ssl: ", core.json.delay_encode(matched_ssl, true))
-    ok, err = set_pem_ssl_key(matched_ssl.cert, matched_ssl.key)
+    core.log.info("debug: ", core.json.delay_encode(matched_ssl, true))
+    ok, err = set_pem_ssl_key(matched_ssl.value.cert, matched_ssl.value.key)
     if not ok then
         return false, err
     end

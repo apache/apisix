@@ -33,7 +33,7 @@ __DATA__
 
             local ssl_cert = t.read_file("conf/cert/apisix.crt")
             local ssl_key =  t.read_file("conf/cert/apisix.key")
-            local data = {cert = ssl_cert, key = ssl_key, sni = "foo.com"}
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
             local code, body = t.test('/apisix/admin/ssl/1',
                 ngx.HTTP_PUT,
@@ -41,7 +41,7 @@ __DATA__
                 [[{
                     "node": {
                         "value": {
-                            "sni": "foo.com"
+                            "sni": "test.com"
                         },
                         "key": "/apisix/ssl/1"
                     },
