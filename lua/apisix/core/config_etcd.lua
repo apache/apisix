@@ -33,26 +33,26 @@ local mt = {
 
 local function readdir(etcd_cli, key)
     if not etcd_cli then
-        return nil, "not inited"
+        return nil, nil, "not inited"
     end
 
     local data, err = etcd_cli:readdir(key, true)
     if not data then
         -- log.error("failed to get key from etcd: ", err)
-        return nil, err
+        return nil, nil, err
     end
 
     local body = data.body
 
     if type(body) ~= "table" then
-        return nil, "failed to read etcd dir"
+        return nil, nil, "failed to read etcd dir"
     end
 
     if body.message then
-        return nil, body.message
+        return nil, nil, body.message
     end
 
-    return body.node
+    return body.node, data.headers
 end
 
 local function waitdir(etcd_cli, key, modified_index)
@@ -82,6 +82,11 @@ end
 
 
 function _M.upgrade_version(self, new_ver)
+    new_ver = tonumber(new_ver)
+    if not new_ver then
+        return
+    end
+
     local pre_index = self.prev_index
     if not pre_index then
         self.prev_index = new_ver
@@ -103,8 +108,8 @@ local function sync_data(self)
     end
 
     if self.values == nil then
-        local dir_res, err = readdir(self.etcd_cli, self.key)
-        log.debug("waitdir key: ", self.key, " res: ",
+        local dir_res, headers, err = readdir(self.etcd_cli, self.key)
+        log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then
             return false, err
@@ -115,7 +120,7 @@ local function sync_data(self)
         end
 
         if not dir_res.nodes then
-            return false
+            dir_res.nodes = {}
         end
 
         self.values = new_tab(#dir_res.nodes, 0)
@@ -148,6 +153,10 @@ local function sync_data(self)
             end
 
             self:upgrade_version(item.modifiedIndex)
+        end
+
+        if headers then
+            self:upgrade_version(headers["X-Etcd-Index"])
         end
 
         if changed then
