@@ -1,23 +1,24 @@
 -- Copyright (C) Yuansheng Wang
 
-local log = require("apisix.core.log")
 local fetch_local_conf = require("apisix.core.config_local").local_conf
-local json = require("apisix.core.json")
-local etcd = require("resty.etcd")
-local new_tab = require("table.new")
-local clone_tab = require("table.clone")
+local log          = require("apisix.core.log")
+local json         = require("apisix.core.json")
+local etcd         = require("resty.etcd")
+local new_tab      = require("table.new")
+local clone_tab    = require("table.clone")
 local check_schema = require("apisix.core.schema").check
-local exiting = ngx.worker.exiting
-local insert_tab = table.insert
-local type = type
-local ipairs = ipairs
+local exiting      = ngx.worker.exiting
+local insert_tab   = table.insert
+local type         = type
+local ipairs       = ipairs
 local setmetatable = setmetatable
-local ngx_sleep = ngx.sleep
+local ngx_sleep    = ngx.sleep
 local ngx_timer_at = ngx.timer.at
-local ngx_time = ngx.time
-local sub_str = string.sub
-local tostring = tostring
-local pcall=pcall
+local ngx_time     = ngx.time
+local sub_str      = string.sub
+local tostring     = tostring
+local tonumber     = tonumber
+local pcall        = pcall
 
 
 local _M = {
