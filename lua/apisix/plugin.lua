@@ -84,7 +84,8 @@ function fetch_api_routes()
         local api_fun = plugin.api
         if api_fun then
             local api_routes = api_fun()
-            core.log.info("feched api routes: ", core.json.delay_encode(api_routes, true))
+            core.log.debug("feched api routes: ",
+                           core.json.delay_encode(api_routes, true))
             for _, route in ipairs(api_routes) do
                 core.table.insert(routes, {
                         method = route.methods,
