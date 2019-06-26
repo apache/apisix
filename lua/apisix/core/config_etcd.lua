@@ -58,22 +58,22 @@ end
 
 local function waitdir(etcd_cli, key, modified_index)
     if not etcd_cli then
-        return nil, "not inited"
+        return nil, nil, "not inited"
     end
 
     local data, err = etcd_cli:waitdir(key, modified_index)
     if not data then
         -- log.error("failed to get key from etcd: ", err)
-        return nil, err
+        return nil, nil, err
     end
 
     local body = data.body or {}
 
     if body.message then
-        return nil, body.message
+        return nil, nil, body.message
     end
 
-    return body.node
+    return body.node, data.headers
 end
 
 
@@ -166,9 +166,10 @@ local function sync_data(self)
         return true
     end
 
-    local res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    local res, headers, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
     log.debug("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1,
-              " res: ", json.delay_encode(res))
+              " res: ", json.delay_encode(res, true),
+              " headers: ", json.delay_encode(headers, true))
     if not res then
         return false, err
     end
