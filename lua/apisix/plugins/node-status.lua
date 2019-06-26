@@ -96,7 +96,7 @@ end
     local timer
 function _M.init()
     if timer == nil and 0 == ngx.worker.id() then
-        timer = core.timer.new(plugin_name, run_loop)
+        timer = core.timer.new(plugin_name, run_loop, {check_interval = 5 * 60})
     end
 end
 
