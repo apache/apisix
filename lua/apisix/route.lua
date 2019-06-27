@@ -78,8 +78,7 @@ function _M.init_worker()
                                 item_schema = core.schema.route
                             })
     if not routes then
-        error("failed to create etcd instance to fetch /routes "
-              .. "automaticly: " .. err)
+        error("failed to create etcd instance for fetching routes : " .. err)
     end
 end
 

@@ -136,8 +136,7 @@ function _M.init_worker()
                         item_schema = core.schema.ssl
                     })
     if not ssl then
-        error("failed to create etcd instance to fetch /ssl "
-              .. "automaticly: " .. err)
+        error("failed to create etcd instance for fetching ssl: " .. err)
     end
 end
 

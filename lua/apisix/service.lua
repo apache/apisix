@@ -30,7 +30,7 @@ function _M.init_worker()
                             item_schema = core.schema.service
                         })
     if not services then
-        error("failed to create etcd instance to fetch upstream: " .. err)
+        error("failed to create etcd instance for fetching upstream: " .. err)
         return
     end
 end

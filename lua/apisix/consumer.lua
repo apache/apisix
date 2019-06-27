@@ -74,7 +74,7 @@ function _M.init_worker()
                             item_schema = schema.consumer
                         })
     if not consumers then
-        error("failed to create etcd instance to fetch consumers: " .. err)
+        error("failed to create etcd instance for fetching consumers: " .. err)
         return
     end
 end
