@@ -26,6 +26,7 @@ local lua_ver = string.sub(_VERSION, #"Lua " + 1)
 local apisix_home = "/usr/local/apisix"
 if script_path == '/usr/bin/apisix' or script_path == '/bin/apisix' then
     package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
+                    .. "/usr/local/apisix/deps/lib/lua/" .. lua_ver .. "/?.so;"
                     .. package.cpath
 
     package.path  = "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
@@ -43,6 +44,16 @@ else
                     .. package.path
 end
 -- print("apisix_home: ", apisix_home)
+
+do
+    local ok, json = pcall(require, "cjson")
+    if ok and json then
+        io.stderr:write("please remove the cjson library in Lua, it may "
+                        .. "conflict with the cjson library in openresty. "
+                        .. "\n luarocks remove cjson\n")
+        return
+    end
+end
 
 local yaml = require("apisix.core.yaml")
 local template = require("resty.template")
@@ -71,8 +82,11 @@ working_directory   /tmp/apisix_cores/;
 worker_shutdown_timeout 3;
 
 http {
-    lua_package_path "$prefix/deps/share/lua/{*lua_version*}/?.lua;{*apisix_lua_home*}/lua/?.lua;{*lua_path*};;";
-    lua_package_cpath "$prefix/deps/lib64/lua/{*lua_version*}/?.so;$prefix/deps/lib/lua/{*lua_version*}/?.so;{*lua_cpath*};;";
+    lua_package_path  "$prefix/deps/share/lua/{*lua_version*}/?.lua;]=]
+                      .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_cpath "$prefix/deps/lib64/lua/{*lua_version*}/?.so;]=]
+                      .. [=[$prefix/deps/lib/lua/{*lua_version*}/?.so;;]=]
+                      .. [=[{*lua_cpath*};";
 
     lua_shared_dict plugin-limit-req    10m;
     lua_shared_dict plugin-limit-count  10m;
@@ -140,6 +154,10 @@ http {
             }
         }
         {% end %}
+
+        ssl_certificate_by_lua_block {
+            apisix.ssl_phase()
+        }
 
         location / {
             set $upstream_scheme             'http';
