@@ -36,6 +36,11 @@ end
 
 
 function _M.access(conf, ctx)
+    -- core.log.error(core.json.encode(ctx, true))
+    local prefix = ''
+    if ctx.matched_route then
+        prefix = ctx.matched_route.value.id
+    end
     core.log.info("ver: ", ctx.conf_version)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                               create_limit_obj, conf)
