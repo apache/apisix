@@ -1,5 +1,6 @@
 -- Copyright (C) Yuansheng Wang
 
+local log = require("apisix.core.log")
 local yaml = require("apisix.core.yaml")
 local ngx = ngx
 local io_open = io.open
@@ -11,8 +12,9 @@ local _M = {version = 0.1}
 
 
 local function read_file(path)
-    local file = io_open(path, "rb")   -- read and binary mode
+    local file,msg = io_open(path, "rb")   -- read and binary mode
     if not file then
+        log.error("read file faild:"..path , msg)
         return nil
     end
 
