@@ -148,7 +148,7 @@ function _M.init_worker()
                                 item_schema = core.schema.upstream
                             })
     if not upstreams_etcd then
-        error("failed to create etcd instance to fetch upstream: " .. err)
+        error("failed to create etcd instance for fetching upstream: " .. err)
         return
     end
 end
