@@ -27,11 +27,11 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 
 * [HTTPS](doc/https.md): 根据 TLS 扩展字段 SNI(Server Name Indication) 动态加载证书。
 * [动态负载均衡](doc/architecture-design-cn.md#upstream)：跨多个上游服务的动态负载均衡，目前已支持 round-robin 和一致性哈希算法。
-* [key-auth](lua/apisix/plugins/key-auth.md): 基于 Key Authentication 的用户认证。
-* [limit-count](lua/apisix/plugins/limit-count.md): 基于“固定窗口”的限速实现.
-* [limit-req](lua/apisix/plugins/limit-req.md): 基于漏桶原理的请求限速实现。
-* [limit-conn](lua/apisix/plugins/limit-conn-cn.md): 限制并发请求（或并发连接）。
-* [prometheus](lua/apisix/plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
+* [key-auth](doc/plugins/key-auth-cn.md): 基于 Key Authentication 的用户认证。
+* [limit-count](doc/plugins/limit-count-cn.md): 基于“固定窗口”的限速实现.
+* [limit-req](doc/plugins/limit-req-cn.md): 基于漏桶原理的请求限速实现。
+* [limit-conn](doc/plugins/limit-conn-cn.md): 限制并发请求（或并发连接）。
+* [prometheus](doc/plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
 
 ## 安装
 
