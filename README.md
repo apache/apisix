@@ -28,11 +28,11 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 Now we support the following plugins:
 * [HTTPS](doc/https.md): dynamic load the SSL Certificate by Server Name Indication (SNI).
 * [dynamic load balancing](#Plugins): load balance traffic across multiple upstream services, supports round-robin and consistent hash algorithms.
-* [key-auth](lua/apisix/plugins/key-auth.md): user authentication based on Key Authentication.
-* [limit-count](lua/apisix/plugins/limit-count.md): rate limiting based on a "fixed window" implementation.
-* [limit-req](lua/apisix/plugins/limit-req.md): request rate limiting and adjustment based on the "leaky bucket" method.
-* [limit-conn](lua/apisix/plugins/limit-conn.md): limite request concurrency (or concurrent connections).
-* [prometheus](lua/apisix/plugins/prometheus.md): expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
+* [key-auth](doc/plugins/key-auth.md): user authentication based on Key Authentication.
+* [limit-count](doc/plugins/limit-count.md): rate limiting based on a "fixed window" implementation.
+* [limit-req](doc/plugins/limit-req.md): request rate limiting and adjustment based on the "leaky bucket" method.
+* [limit-conn](doc/plugins/limit-conn.md): limite request concurrency (or concurrent connections).
+* [prometheus](doc/plugins/prometheus.md): expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
 
 ## Install
 
