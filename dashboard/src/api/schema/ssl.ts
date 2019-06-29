@@ -6,11 +6,10 @@ type SSLType = {
   sni: string
 }
 
-export const getList = (params: any) =>
+export const getList = () =>
   request({
     url: '/ssl',
-    method: 'GET',
-    params
+    method: 'GET'
   })
 
 export const set = (id: string, params: SSLType) =>
@@ -21,10 +20,10 @@ export const set = (id: string, params: SSLType) =>
   })
 
 export const get = (id: string) =>
-request({
-  url: `/ssl/${id}`,
-  method: 'GET'
-})
+  request({
+    url: `/ssl/${id}`,
+    method: 'GET'
+  })
 
 export const remove = (id: string) =>
   request({
@@ -33,8 +32,8 @@ export const remove = (id: string) =>
   })
 
 export const create = (params: SSLType) =>
-request({
-  url: '/ssl',
-  method: 'POST',
-  params
-})
+  request({
+    url: '/ssl',
+    method: 'POST',
+    params
+  })

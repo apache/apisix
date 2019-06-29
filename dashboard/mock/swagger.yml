@@ -94,6 +94,56 @@ paths:
           description: OK
           content:
           application/json:
+  /consumers:
+    put:
+      tags:
+          - consumers
+      summary:
+      description:
+      operationId: updateOrCreateConsumer
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    get:
+      tags:
+          - consumers
+      summary:
+      description:
+      operationId: getConsumerList
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+  /consumers/{username}:
+    get:
+      tags:
+          - consumers
+      summary:
+      description:
+      operationId: getConsumer
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    delete:
+      tags:
+          - consumers
+      summary:
+      description:
+      operationId: removeConsumer
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
   /articles:
     get:
       tags:
