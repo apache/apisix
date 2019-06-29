@@ -1,6 +1,6 @@
 ## Overview
 
-Admin for apisix.
+Dashboard for apisix & based on ElementUI.
 
 ## Documentation
 
