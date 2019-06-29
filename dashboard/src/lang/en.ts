@@ -62,7 +62,17 @@ export default {
     clipboard: 'Clipboard',
     i18n: 'I18n',
     externalLink: 'External Link',
-    profile: 'Profile'
+    profile: 'Profile',
+    SchemaRoutes: 'Routes',
+    SchemaRoutesList: 'Routes',
+    SchemaConsumers: 'Consumers',
+    SchemaConsumersList: 'Consumers',
+    SchemaServices: 'Services',
+    SchemaServicesList: 'Services',
+    SchemaSSL: 'SSL',
+    SchemaSSLList: 'SSL',
+    SchemaUpstream: 'Upstream',
+    SchemaUpstreamList: 'Upstream'
   },
   navbar: {
     logOut: 'Log Out',

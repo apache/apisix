@@ -62,7 +62,17 @@ export default {
     clipboard: '粘贴板',
     i18n: '国际化',
     externalLink: '外链',
-    profile: '个人中心'
+    profile: '个人中心',
+    SchemaRoutes: 'Routes',
+    SchemaRoutesList: 'Routes',
+    SchemaConsumers: 'Consumers',
+    SchemaConsumersList: 'Consumers',
+    SchemaServices: 'Services',
+    SchemaServicesList: 'Services',
+    SchemaSSL: 'SSL',
+    SchemaSSLList: 'SSL',
+    SchemaUpstream: 'Upstream',
+    SchemaUpstreamList: 'Upstream'
   },
   navbar: {
     logOut: '退出登录',
