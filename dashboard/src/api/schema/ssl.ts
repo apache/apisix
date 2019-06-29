@@ -1,10 +1,6 @@
 import request from '@/utils/request'
 
-type SSLType = {
-  cert: string
-  key: string
-  sni: string
-}
+import { ISSLData } from '../types'
 
 export const getList = () =>
   request({
@@ -12,7 +8,7 @@ export const getList = () =>
     method: 'GET'
   })
 
-export const set = (id: string, params: SSLType) =>
+export const set = (id: string, params: ISSLData) =>
   request({
     url: `/ssl/${id}`,
     method: 'PUT',
@@ -31,7 +27,7 @@ export const remove = (id: string) =>
     method: 'DELETE'
   })
 
-export const create = (params: SSLType) =>
+export const create = (params: ISSLData) =>
   request({
     url: '/ssl',
     method: 'POST',

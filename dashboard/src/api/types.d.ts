@@ -42,3 +42,59 @@ export interface IUserData {
   introduction: string
   roles: string[]
 }
+
+export type TypeID = number | string
+export type TypePlugin = object
+
+export interface IConsumerData {
+  username: string
+  plugins?: TypePlugin
+}
+
+export enum EnumRouteMethod {
+  GET,
+  PUT,
+  POST,
+  DELETE
+}
+export interface IRouteData {
+  // TODO: https://github.com/iresty/apisix/blob/7953e5bb755bf7481b07a177f94d674f8b344741/lua/apisix/core/schema.lua#L149
+  methods: []
+  plugins: TypePlugin
+  upstream: IUpstreamData
+  uri: string
+  host: string
+  remote_addr: string
+  service_id: TypeID
+  upstream_id: TypeID
+  id: TypeID
+}
+
+// TODO: https://github.com/iresty/apisix/blob/7953e5bb755bf7481b07a177f94d674f8b344741/lua/apisix/core/schema.lua#L193
+export interface IServiceData {
+  id: TypeID
+  plugins: TypePlugin
+  upstream: IUpstreamData
+  upstream_id: TypeID
+}
+
+export interface ISSLData {
+  cert: string
+  key: string
+  sni: string
+}
+
+export enum EnumUpstreamType {
+  chash,
+  roundrobin
+}
+
+export enum EnumUpstreamKey {
+  remote_addr
+}
+export interface IUpstreamData {
+  nodes: object
+  type: EnumUpstreamType
+  key?: EnumUpstreamKey
+  id?: TypeID
+}

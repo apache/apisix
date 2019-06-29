@@ -1,11 +1,8 @@
 import request from '@/utils/request'
 
-type ConsumerType = {
-  username: string
-  plugins?: object
-}
+import { IConsumerData } from '../types'
 
-export const updateOrCreate = (params: ConsumerType) =>
+export const updateOrCreate = (params: IConsumerData) =>
   request({
     url: '/consumers',
     method: 'PUT',

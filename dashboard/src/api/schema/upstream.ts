@@ -1,22 +1,8 @@
 import request from '@/utils/request'
 
-enum Type {
-    chash,
-    roundrobin
-}
+import { IUpstreamData } from '../types'
 
-enum Key {
-    remote_addr
-}
-
-type UpstreamType = {
-    nodes: object
-    type: Type
-    key?: Key
-    id?: number | string
-}
-
-export const update = (id: string, params: UpstreamType) =>
+export const update = (id: string, params: IUpstreamData) =>
     request({
         url: `/upstreams/${id}`,
         method: 'PUT',
@@ -35,7 +21,7 @@ export const remove = (id: string) =>
         method: 'DELETE'
     })
 
-export const create = (params: UpstreamType) =>
+export const create = (params: IUpstreamData) =>
     request({
         url: `/upstreams`,
         method: 'POST',
