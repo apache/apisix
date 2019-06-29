@@ -206,6 +206,68 @@ paths:
           description: OK
           content:
           application/json:
+  /routes:
+    post:
+      tags:
+          - routes
+      summary:
+      description:
+      operationId: createRoute
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    get:
+      tags:
+          - routes
+      summary:
+      description:
+      operationId: getRoutes
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    delete:
+      tags:
+          - routes
+      summary:
+      description:
+      operationId: removeRoute
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+  /routes/{id}:
+    get:
+      tags:
+          - routes
+      summary:
+      description:
+      operationId: getRoute
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    put:
+      tags:
+          - routes
+      summary:
+      description:
+      operationId: updateRoute
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
   /articles:
     get:
       tags:
@@ -605,29 +667,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         404:
           $ref: '#/components/responses/NotFound'
-  /routes:
-    get:
-      tags:
-        - roles
-      summary: Get Routes Data
-      description: Return routes object.
-      operationId: getRoutes
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                    format: int32
-                  data:
-                    type: object
-                    properties:
-                      routes:
-                        $ref: '#/components/schemas/Role/properties/routes'
   /users:
     get:
       tags:

@@ -58,6 +58,7 @@ export enum EnumRouteMethod {
   DELETE
 }
 export interface IRouteData {
+  // TODO: https://github.com/iresty/apisix/blob/7953e5bb755bf7481b07a177f94d674f8b344741/lua/apisix/core/schema.lua#L175
   // TODO: https://github.com/iresty/apisix/blob/7953e5bb755bf7481b07a177f94d674f8b344741/lua/apisix/core/schema.lua#L149
   methods: []
   plugins: TypePlugin

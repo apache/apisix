@@ -121,7 +121,7 @@ import { Component, Vue } from 'vue-property-decorator'
 import { RouteConfig } from 'vue-router'
 import { Tree } from 'element-ui'
 import { AppModule } from '@/store/modules/app'
-import { getRoutes, getRoles, createRole, deleteRole, updateRole } from '@/api/roles'
+import { getRoles, createRole, deleteRole, updateRole } from '@/api/roles'
 
 interface Role {
   key: number
@@ -165,14 +165,13 @@ export default class extends Vue {
 
   created() {
     // Mock: get all routes and roles list from server
-    this.getRoutes()
     this.getRoles()
   }
 
   private async getRoutes() {
-    const { data } = await getRoutes({ /* Your params here */ })
-    this.serviceRoutes = data.routes
-    this.reshapedRoutes = this.reshapeRoutes(data.routes)
+    // const { data } = await getRoutes({ /* Your params here */ })
+    // this.serviceRoutes = data.routes
+    // this.reshapedRoutes = this.reshapeRoutes(data.routes)
   }
 
   private async getRoles() {

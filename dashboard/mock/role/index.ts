@@ -69,12 +69,3 @@ export const deleteRole = (req: Request, res: Response) => {
     code: 20000,
   })
 }
-
-export const getRoutes = (req: Request, res: Response) => {
-  return res.json({
-    code: 20000,
-    data: {
-      routes
-    }
-  })
-}

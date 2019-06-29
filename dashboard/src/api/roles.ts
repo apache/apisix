@@ -26,10 +26,3 @@ export const deleteRole = (id: number) =>
     url: `/roles/${id}`,
     method: 'delete'
   })
-
-export const getRoutes = (params: any) =>
-  request({
-    url: '/routes',
-    method: 'get',
-    params
-  })
