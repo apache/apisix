@@ -19,7 +19,7 @@ tags:
     description: Services data related api.
   - name: ssl
     description: SSL data related api.
-  - name: upstream
+  - name: upstreams
     description: Upstream data related api.
   # 下方脚手架 API 将逐渐移除
   - name: articles
@@ -138,6 +138,68 @@ paths:
       summary:
       description:
       operationId: removeConsumer
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+  /upstreams:
+    post:
+      tags:
+          - upstreams
+      summary:
+      description:
+      operationId: createUpstream
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    get:
+      tags:
+          - upstreams
+      summary:
+      description:
+      operationId: getUpstreamList
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+  /upstreams/{id}:
+    get:
+      tags:
+          - upstreams
+      summary:
+      description:
+      operationId: getUpstream
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    delete:
+      tags:
+          - upstreams
+      summary:
+      description:
+      operationId: removeUpstream
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    put:
+      tags:
+          - upstreams
+      summary:
+      description:
+      operationId: updateUpstream
       parameters:
       response:
         200:

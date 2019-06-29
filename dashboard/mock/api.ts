@@ -5,3 +5,4 @@ export * from './users'
 
 export * from './schema/ssl'
 export * from './schema/consumers'
+export * from './schema/upstream'
