@@ -1,14 +1,17 @@
 ### HTTPS
 
-`apisix` 支持通过TLS扩展SNI实现加载特定的SSL证书以实现对https的支撑。SNI(Server Name Indication)是用来改善SSL和TLS的一项特性，它允许客户端在服务器端向其发送证书之前请求服务器的域名。
+`APISIX` 支持通过 TLS 扩展 SNI 实现加载特定的 SSL 证书以实现对 https 的支持。
+
+SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，
+它允许客户端在服务器端向其发送证书之前请求服务器的域名。
 
 ### 单一域名指定
 
-通常情况下一个SSL证书只指定一个域名，我们可以配置一个'ssl'参数对象，他包括cret、key、sni三个属性，详细如下
+通常情况下一个 SSL 证书只指定一个域名，我们可以配置一个 `ssl` 参数对象，他包括 cret、key、sni 三个属性，详细如下
 
-* `cert`: SSL密钥对的公钥，pem格式
-* `key`: SSL密钥对的私钥，pem格式
-* `sni`: SSL证书所指定的域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
+* `cert`: SSL 密钥对的公钥，pem 格式
+* `key`: SSL 密钥对的私钥，pem 格式
+* `sni`: SSL 证书所指定的域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
@@ -59,10 +62,11 @@ Accept-Ranges: bytes
 
 ### 通配符域名指定
 
-有时候，一个SSL证书可能也需要指定特定的一群域名，如`*.test.com`,也就是意味着SNI可以支持基于通配符的多域名支撑。
+有时候，一个 SSL 证书可能也需要指定特定的一群域名，如`*.test.com`,
+也就是意味着SNI可以支持基于通配符的多域名支撑。
 像刚才这个配置，就可以支持 `www.test.com` 或者 `mail.test.com`
 
-看下面这个例子，请注意sni这个属性
+看下面这个例子，请注意 sni 这个属性
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
@@ -114,4 +118,5 @@ Accept-Ranges: bytes
 
 ### 多域名的情况
 
-如果你的SSL证书需要指定多个域名，又无法通过通配符来实现，那么你就只能每个域名都去找一个对应的证书，就那么简单^_^.
+如果你的 SSL 证书需要指定多个域名，又无法通过通配符来实现，
+那么你就只能针对每个域名，都单独设置对应的证书。
