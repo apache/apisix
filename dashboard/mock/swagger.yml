@@ -11,6 +11,17 @@ info:
 servers:
   - url: /mock-api/v1
 tags:
+  - name: consumers
+    description: Consumers data related api.
+  - name: routes
+    description: Routes data related api.
+  - name: services
+    description: Services data related api.
+  - name: ssl
+    description: SSL data related api.
+  - name: upstream
+    description: Upstream data related api.
+  # 下方脚手架 API 将逐渐移除
   - name: articles
     description: Articles data related api.
   - name: roles
@@ -20,6 +31,69 @@ tags:
   - name: users
     description: Users related api.
 paths:
+  # 暂时只编写 Swagger 与 API 对应内容，不编写 Swagger Response 内容
+  /ssl:
+    get:
+      tags:
+        - ssl
+      summary:
+      description:
+      operationId: getSSLList
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    post:
+      tags:
+        - ssl
+      summary:
+      description:
+      operationId: createSSL
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+  /ssl/{id}:
+    get:
+      tags:
+        - ssl
+      summary:
+      description:
+      operationId: getSSL
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    put:
+      tags:
+        - ssl
+      summary:
+      description:
+      operationId: updateSSL
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+    delete:
+      tags:
+        - ssl
+      summary:
+      description:
+      operationId: removeSSL
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
   /articles:
     get:
       tags:
