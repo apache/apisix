@@ -1,0 +1,925 @@
+openapi: 3.0.0
+info:
+  description: Mock API for vue-typescript-admin-template.
+  version: 1.0.0
+  title: Mock API
+  contact:
+    email: armourcy@email.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: /mock-api/v1
+tags:
+  - name: articles
+    description: Articles data related api.
+  - name: roles
+    description: Roles related api.
+  - name: transactions
+    description: Transactions data related api.
+  - name: users
+    description: Users related api.
+paths:
+  /articles:
+    get:
+      tags:
+        - articles
+      summary: Get Article List
+      description: Return a list of articles.
+      operationId: getArticles
+      parameters:
+        - name: importance
+          in: query
+          description: Used to filter articles by importance.
+          schema:
+            $ref: '#/components/schemas/Article/properties/importance'
+        - name: title
+          in: query
+          description: Used to filter articles by matched title substring.
+          schema:
+            $ref: '#/components/schemas/Article/properties/title'
+        - name: type
+          in: query
+          description: Used to filter articles by type.
+          schema:
+            $ref: '#/components/schemas/Article/properties/type'
+        - name: page
+          in: query
+          description: The wanted page number (one page).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+        - name: limit
+          in: query
+          description: The maximum number of articles returned for one page.
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 50
+        - name: sort
+          in: query
+          description: Optional sorting order for articles.
+          schema:
+            type: string
+            enum:
+              - +id
+              - -id
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        format: int32
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Article'
+    post:
+      tags:
+        - articles
+      summary: Create New Article
+      description: Create a new article.
+      operationId: createArticle
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: article
+          in: query
+          required: true
+          description: The data for new article.
+          schema:
+            $ref: '#/components/schemas/Article'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      article:
+                        $ref: '#/components/schemas/Article'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+  /articles/{id}:
+    get:
+      tags:
+        - articles
+      summary: Get Article Detail
+      description: Get article detail by ID.
+      operationId: getArticle
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Article id.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      article:
+                        $ref: '#/components/schemas/Article'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - articles
+      summary: Update Article Detail
+      description: Update article deatail by ID.
+      operationId: updateArticle
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Article id.
+          schema:
+            type: integer
+            format: int64
+        - name: article
+          in: query
+          required: true
+          description: data for the updated article.
+          schema:
+            $ref: '#/components/schemas/Article'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      article:
+                        $ref: '#/components/schemas/Article'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - articles
+      summary: Delete Article
+      description: Delete article by ID.
+      operationId: deleteArticle
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Article id.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+  /pageviews:
+    get:
+      tags:
+        - articles
+      summary: Get Pageviews Data
+      description: Return a list of pageviews for each platforms.
+      operationId: getPageviews
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      pageviews:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Pageviews'
+  /transactions:
+    get:
+      tags:
+        - transactions
+      summary: Get Transaction List
+      description: Return a list of transaction.
+      operationId: getTransactions
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        format: int32
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Transaction'
+  /roles:
+    get:
+      tags:
+        - roles
+      summary: Get Role List
+      description: Return a list of roles.
+      operationId: getRoles
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        format: int32
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Role'
+    post:
+      tags:
+        - roles
+      summary: Create New Role
+      description: Create a new role.
+      operationId: createRole
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: role
+          in: query
+          required: true
+          description: The data for new role.
+          schema:
+            $ref: '#/components/schemas/Role'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      key:
+                        type: integer
+                        format: int64
+        401:
+          $ref: '#/components/responses/Unauthorized'
+  /roles/{id}:
+    put:
+      tags:
+        - roles
+      summary: Update Role Detail
+      description: Update role deatail by ID.
+      operationId: updateRole
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Role id (key).
+          schema:
+            type: integer
+            format: int64
+        - name: role
+          in: query
+          required: true
+          description: The data for updated role.
+          schema:
+            $ref: '#/components/schemas/Role'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      role:
+                        $ref: '#/components/schemas/Role'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - roles
+      summary: Delete Role
+      description: Delete role by ID.
+      operationId: deleteRole
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Role id (key).
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+  /routes:
+    get:
+      tags:
+        - roles
+      summary: Get Routes Data
+      description: Return routes object.
+      operationId: getRoutes
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      routes:
+                        $ref: '#/components/schemas/Role/properties/routes'
+  /users:
+    get:
+      tags:
+        - users
+      summary: Get users list
+      description: Return a list of users
+      operationId: getUsers
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: name
+          in: query
+          description: Used to filter users by matched username substring
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+  /users/register:
+    post:
+      tags:
+        - users
+      summary: Create user
+      description: This can only be done by the logged in user.
+      operationId: register
+      parameters:
+        - name: user
+          in: query
+          required: true
+          description: The data for created user.
+          schema:
+            $ref: '#/components/schemas/User'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+  /users/login:
+    post:
+      tags:
+        - users
+      summary: Logs user into the system
+      description: Use username and password to login.
+      operationId: login
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: The user name for login.
+          schema:
+            $ref: '#/components/schemas/User/properties/username'
+        - name: password
+          in: query
+          required: true
+          description: The password for login in clear text.
+          schema:
+            $ref: '#/components/schemas/User/properties/password'
+      responses:
+        200:
+          description: OK
+          headers:
+            X-Rate-Limit:
+              schema:
+                type: integer
+                format: int32
+              description: calls per hour allowed by the user.
+            X-Expires-After:
+              schema:
+                type: string
+                format: date-time
+              description: date in UTC when token expires.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        example: admin-token
+        400:
+          $ref: '#/components/responses/InvalidUser'
+  /users/logout:
+    post:
+      tags:
+        - users
+      summary: Logs out current logged in user session
+      description: Log out current session.
+      operationId: logout
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+  /users/{username}:
+    get:
+      tags:
+        - users
+      summary: Get user by user name
+      description: Get user by user name.
+      operationId: getUserByName
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: The name that needs to be fetched.
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/InvalidUser'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - users
+      summary: Updated user
+      description: This can only be done by the logged in user.
+      operationId: updateUser
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: Name that need to be updated.
+          schema:
+            type: string
+        - name: user
+          in: query
+          required: true
+          description: The data for updated user.
+          schema:
+            $ref: "#/components/schemas/User"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        400:
+          $ref: '#/components/responses/InvalidUser'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - users
+      summary: Delete user
+      description: This can only be done by the logged in user.
+      operationId: deleteUser
+      security:
+        - AccessTokenAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: The name that needs to be deleted.
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+        400:
+          $ref: '#/components/responses/InvalidUser'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+  /users/info:
+    post:
+      tags:
+        - users
+      summary: Get current user info
+      description: This can only be done by the logged in user.
+      operationId: getUserInfo
+      security:
+        - AccessTokenAuth: []
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    AccessTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Access-Token
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidUser:
+      description: Invalid username supplied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+            - draft
+            - published
+            - deleted
+        title:
+          type: string
+          example: IG Won World Championship
+        abstractContent:
+          type: string
+          example: Invictus Gaming sweeps Fnatic 3-0 to win League of Legends World Championship
+        fullContent:
+          type: string
+          example: Article details goes here...
+        sourceURL:
+          type: string
+          format: url
+          example: http://www.espn.com/esports/story/_/id/25164094/invictus-gaming-sweeps-fnatic-3-0-win-league-legends-world-championship
+        imageURL:
+          type: string
+          format: url
+          example: https://a1.espncdn.com/combiner/i?img=%2Fphoto%2F2018%2F1103%2Fr458060_1296x729_16%2D9.jpg&w=920&h=518&scale=crop&cquality=80&location=origin&format=jpg
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        platforms:
+          type: array
+          items:
+            type: string
+            enum:
+              - a-platform
+              - b-platform
+              - c-platform
+          uniqueItems: true
+        disableComment:
+          type: boolean
+          example: false
+        importance:
+          type: integer
+          format: int32
+          enum:
+            - 1
+            - 2
+            - 3
+        author:
+          type: string
+          example: Chong Guo
+        reviewer:
+          type: string
+          example: Chong Guo
+        type:
+          type: string
+          enum:
+            - CN
+            - US
+            - JP
+            - EU
+        pageviews:
+          $ref: '#/components/schemas/Pageviews/properties/pageviews'
+      required:
+       - id
+       - status
+       - title
+       - timestamp
+       - importance
+       - author
+    Pageviews:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+            - PC
+            - Mobile
+            - iOS
+            - Android
+        pageviews:
+          type: integer
+          format: int32
+          example: 1024
+      required:
+        - key
+        - pageviews
+    Transaction:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        username:
+          type: string
+          example: Chong Guo
+        price:
+          type: number
+          format: double
+        status:
+          type: string
+          enum:
+            - success
+            - pending
+      required:
+        - orderId
+        - timestamp
+        - username
+        - price
+        - status
+    Role:
+      type: object
+      properties:
+        key:
+          type: string
+          example: admin
+        name:
+          type: string
+          example: admin
+        description:
+          type: string
+          example: Super Administrator. Have access to view all pages.
+        routes:
+          $ref: '#/components/schemas/AnyValue'
+      required:
+        - key
+        - name
+        - routes
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+          example: Armour
+        password:
+          type: string
+          example: 12345678
+        name:
+          type: string
+          example: Chong Guo
+        email:
+          type: string
+          example: armourcy@gmail.com
+        phone:
+          type: string
+          example: 18888888888
+        avatar:
+          type: string
+          format: url
+        introduction:
+          type: string
+          example: Always Sunshine
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role/properties/key'
+      required:
+        - id
+        - username
+        - password
+        - roles
+    Timestamp:
+      oneOf:
+      - type: integer
+        format: int32
+        example: 1559605283
+      - type: string
+        format: date-time
+        example: 2017-07-21T17:32:28Z
+    AnyValue: {}
