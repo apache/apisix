@@ -1,6 +1,8 @@
 local core = require("apisix.core")
 local local_plugins = require("apisix.plugin").plugins_hash
 local pairs = pairs
+local pcall = pcall
+local require = require
 
 
 local _M = {
@@ -39,6 +41,24 @@ function _M.check_schema(plugins_conf)
     end
 
     return true
+end
+
+
+function _M.get(name)
+    local plugin_name = "apisix.plugins." .. name
+
+    local ok, plugin = pcall(require, plugin_name)
+    if not ok then
+        core.log.warn("failed to load plugin [", name, "] err: ", plugin)
+        return 400, {error_msg = "failed to load plugin " .. name}
+    end
+
+    local json_schema = plugin.schema
+    if not json_schema then
+        return 400, {error_msg = "not found schema"}
+    end
+
+    return 200, json_schema
 end
 
 
