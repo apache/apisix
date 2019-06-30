@@ -5,10 +5,27 @@ for (let i = 0; i <= 50; i++) {
   consumerList.push({
     node: {
       value: {
-        username: "jack"
+        username: "jack",
+        plugins: {
+          ['key-auth']: {
+            key: "auth-one"
+          },
+          ['rate-limit']: {
+            key: 'rate-limit-test'
+          },
+          ['rate-limit2']: {
+            key: 'rate-limit-test'
+          },
+          ['rate-limit3']: {
+            key: 'rate-limit-test'
+          },
+          ['rate-limit4']: {
+            key: 'rate-limit-test'
+          }
+        }
       }
     },
-    action: "set"
+    action: "get"
   })
 }
 

@@ -12,7 +12,7 @@ interface ISettings {
 
 // You can customize below settings :)
 const settings: ISettings = {
-  title: 'Vue Typescript Admin',
+  title: 'Dashboard for APISIX',
   showSettings: true,
   showTagsView: true,
   fixedHeader: false,

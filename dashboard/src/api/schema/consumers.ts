@@ -2,6 +2,11 @@ import request from '@/utils/request'
 
 import { IConsumerData } from '../types'
 
+export const defaultConsumerData: IConsumerData = {
+  username: '',
+  plugins: {}
+}
+
 export const updateOrCreate = (params: IConsumerData) =>
   request({
     url: '/consumers',
@@ -10,10 +15,10 @@ export const updateOrCreate = (params: IConsumerData) =>
   })
 
 export const getList = () =>
-request({
-  url: '/consumers',
-  method: 'GET'
-})
+  request({
+    url: '/consumers',
+    method: 'GET'
+  })
 
 export const get = (username: string) =>
   request({

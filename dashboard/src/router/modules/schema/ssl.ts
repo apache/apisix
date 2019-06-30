@@ -12,7 +12,7 @@ const tableRoutes: RouteConfig = {
   children: [
     {
       path: 'list',
-      component: () => import(/* webpackChunkName: "complex-table" */ '@/views/table/complex-table.vue'),
+      component: () => import(/* webpackChunkName: "complex-table" */ '@/views/schema/ssl/list.vue'),
       name: 'SchemaSSLList',
       meta: { title: 'SchemaSSLList' }
     }

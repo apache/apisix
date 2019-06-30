@@ -99,3 +99,17 @@ export interface IUpstreamData {
   key?: EnumUpstreamKey
   id?: TypeID
 }
+
+export enum EnumAction {
+  get,
+  set,
+  delete,
+  create
+}
+
+export interface IDataWrapper<T> {
+  node: {
+    value: T
+  },
+  action: EnumAction
+}

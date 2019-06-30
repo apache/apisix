@@ -12,7 +12,7 @@ const tableRoutes: RouteConfig = {
   children: [
     {
       path: 'list',
-      component: () => import(/* webpackChunkName: "complex-table" */ '@/views/table/complex-table.vue'),
+      component: () => import(/* webpackChunkName: "complex-table" */ '@/views/schema/consumers/list.vue'),
       name: 'SchemaConsumersList',
       meta: { title: 'SchemaConsumersList' }
     }

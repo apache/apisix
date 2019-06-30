@@ -34,7 +34,8 @@ service.interceptors.response.use(
     // code == 50005: username or password is incorrect
     // You can change this part for your own usage.
     const res = response.data
-    if (res.code !== 20000) {
+    // NOTE: 新API不包含 code 参数
+    if (res.code && res.code !== 20000) {
       Message({
         message: res.message || 'Error',
         type: 'error',
