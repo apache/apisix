@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
 
 - **QQ group**: 552030619
+- [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## What's APISIX?
 
@@ -20,19 +21,35 @@ APISIX is a cloud-based microservices API gateway that handles traditional north
 
 APISIX provides dynamic load balancing, authentication, rate limiting, and other plugins through plugin mechanisms, and supports plugins you develop yourself.
 
-![](doc/images/apisix.png)
-
 For more detailed information, see the [White Paper](https://www.iresty.com/download/Choosing%20the%20Right%20Microservice%20API%20Gateway%20for%20the%20Enterprise%20User.pdf).
 
-## Plugins
-Now we support the following plugins:
-* [HTTPS](doc/https.md): dynamic load the SSL Certificate by Server Name Indication (SNI).
-* [dynamic load balancing](#Plugins): load balance traffic across multiple upstream services, supports round-robin and consistent hash algorithms.
-* [key-auth](doc/plugins/key-auth.md): user authentication based on Key Authentication.
-* [limit-count](doc/plugins/limit-count.md): rate limiting based on a "fixed window" implementation.
-* [limit-req](doc/plugins/limit-req.md): request rate limiting and adjustment based on the "leaky bucket" method.
-* [limit-conn](doc/plugins/limit-conn.md): limite request concurrency (or concurrent connections).
-* [prometheus](doc/plugins/prometheus.md): expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
+
+![](doc/images/apisix.png)
+
+## Features
+- **Cloud-Native**
+- **Dynamic Load Balancing**
+- **Hash-based Load Balancing**
+- **SSL**
+- **Monitoring**
+- **Forward Proxy**
+- **Authentications**
+- **Limit-rate**
+- **Limit-count**
+- **Limit-concurrency**
+- **CLI**
+- **REST API**
+- **Clustering**
+- **Scalability**
+- **High performance**
+- **Custom plugins**
+- **Health Checks**: TODO.
+- **Caching**: TODO.
+- **GUI**: TODO.
+- **OAuth2.0**: TODO.
+- **ACL**: TODO.
+- **Bot detection**: TODO.
+- **black IP list**: TODO.
 
 ## Install
 
@@ -166,6 +183,8 @@ Accept-Ranges: bytes
 
 ...
 ```
+
+You can try more [plugins](doc/plugins.md) follow the documentation.
 
 ## Benchmark
 Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency of only 500 microseconds.
