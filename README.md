@@ -30,7 +30,6 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Cloud-Native**
 - **Dynamic Load Balancing**
 - **Hash-based Load Balancing**
-- **Health Checks**
 - **SSL**
 - **Monitoring**
 - **Forward Proxy**
@@ -38,13 +37,14 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Limit-rate**
 - **Limit-count**
 - **Limit-concurrency**
-- **Caching**
 - **CLI**
 - **REST API**
 - **Clustering**
 - **Scalability**
 - **High performance**
 - **Custom plugins**
+- **Health Checks**: TODO.
+- **Caching**: TODO.
 - **GUI**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
