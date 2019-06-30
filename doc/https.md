@@ -1,6 +1,6 @@
 ### HTTPS
 
-`apisix` supports to load a specific SSL certificate by TLS extension Server Name Indication (SNI).
+`APISIX` supports to load a specific SSL certificate by TLS extension Server Name Indication (SNI).
 
 ### Single SNI
 
@@ -115,4 +115,4 @@ Accept-Ranges: bytes
 
 ### multiple domain
 
-If your SSL certificate may contain more than one domain, like `www.test.com` and `mail.test.com`, then you can more ssl object for each domain, that is a most simple way ^_^.
+If your SSL certificate may contain more than one domain, like `www.test.com` and `mail.test.com`, then you can more ssl object for each domain, that is a most simple way.
