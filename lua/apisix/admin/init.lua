@@ -12,6 +12,7 @@ local resources = {
     consumers = require("apisix.admin.consumers"),
     schema    = require("apisix.admin.schema"),
     ssl       = require("apisix.admin.ssl"),
+    plugins   = require("apisix.admin.plugins"),
 }
 
 
@@ -59,6 +60,10 @@ local uri_route = {
     {
         path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
                 .. [[/{id:[\d\w_]+}]],
+        handler = run
+    },
+    {
+        path = [[/apisix/admin/schema/{res:plugins}/{id:[\d\w-]+}]],
         handler = run
     },
     {

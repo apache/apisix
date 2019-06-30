@@ -20,6 +20,7 @@ local _M = {
     version = 0.1,
     priority = 1001,        -- TODO: add a type field, may be a good idea
     name = plugin_name,
+    schema = schema,
 }
 
 
