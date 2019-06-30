@@ -15,6 +15,7 @@ local _M = {
     name = plugin_name,
     init = exporter.init,
     log  = exporter.log,
+    schema = schema,
 }
 
 
