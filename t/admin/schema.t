@@ -94,3 +94,22 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: get plugin's schema
+--- request
+GET /apisix/admin/schema/plugins/limit-count
+--- response_body eval
+qr/"required":\["count","time_window","key","rejected_code"]/
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: get not exist plugin
+--- request
+GET /apisix/admin/schema/plugins/no-exist
+--- error_code: 400
+--- no_error_log
+[error]

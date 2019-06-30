@@ -21,6 +21,7 @@ local _M = {
     version = 0.1,
     priority = 1003,
     name = plugin_name,
+    schema = schema,
 }
 
 function _M.check_schema(conf)
