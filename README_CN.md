@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
 
 - **QQ 交流群**: 552030619
+- [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 ## 什么是 APISIX？
 
@@ -18,20 +19,37 @@ APISIX 是基于云原生的微服务 API 网关，可以处理传统的南北�
 
 APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限速等功能，并且支持你自己开发的插件。
 
+
+更多详细的信息，可以查阅[ APISIX 的白皮书](https://www.iresty.com/download/%E4%BC%81%E4%B8%9A%E7%94%A8%E6%88%B7%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E5%BE%AE%E6%9C%8D%E5%8A%A1%20API%20%E7%BD%91%E5%85%B3.pdf)
+
+
 ![](doc/images/apisix.png)
 
-更多详细的信息，可以查阅[APISIX 的白皮书](https://www.iresty.com/download/%E4%BC%81%E4%B8%9A%E7%94%A8%E6%88%B7%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E5%BE%AE%E6%9C%8D%E5%8A%A1%20API%20%E7%BD%91%E5%85%B3.pdf)
 
-## 插件
-目前已支持这些插件：
-
-* [HTTPS](doc/https.md): 根据 TLS 扩展字段 SNI(Server Name Indication) 动态加载证书。
-* [动态负载均衡](doc/architecture-design-cn.md#upstream)：跨多个上游服务的动态负载均衡，目前已支持 round-robin 和一致性哈希算法。
-* [key-auth](doc/plugins/key-auth-cn.md): 基于 Key Authentication 的用户认证。
-* [limit-count](doc/plugins/limit-count-cn.md): 基于“固定窗口”的限速实现.
-* [limit-req](doc/plugins/limit-req-cn.md): 基于漏桶原理的请求限速实现。
-* [limit-conn](doc/plugins/limit-conn-cn.md): 限制并发请求（或并发连接）。
-* [prometheus](doc/plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
+## 功能
+- **云原生**
+- **动态负载均衡**
+- **支持一致性 hash 的负载均衡**
+- **SSL**
+- **监控**
+- **反向代理**
+- **身份认证**
+- **Limit-rate**
+- **Limit-count**
+- **Limit-concurrency**
+- **CLI**
+- **REST API**
+- **集群**
+- **可扩展**
+- **高性能**
+- **自定义插件**
+- **健康检查**: TODO
+- **缓存**: TODO.
+- **GUI**: TODO.
+- **OAuth2.0**: TODO.
+- **ACL**: TODO.
+- **Bot detection**: TODO.
+- **black IP list**: TODO.
 
 ## 安装
 
@@ -163,6 +181,8 @@ Accept-Ranges: bytes
 
 ...
 ```
+
+你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
 
 ## 性能测试
 使用谷歌云的 4 核心服务器来运行 APISIX，QPS 可以达到 60000，同时延时只有 0.5 毫秒。
