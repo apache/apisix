@@ -62,4 +62,9 @@ function _M.get(name)
 end
 
 
+function _M.get_plugins_list()
+    return core.config.local_conf().plugins
+end
+
+
 return _M
