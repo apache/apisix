@@ -10,7 +10,7 @@ add_block_preprocessor(sub {
     my $init_by_lua_block = <<_EOC_;
     require "resty.core"
     apisix = require("apisix")
-    apisix.init()
+    apisix.http_init()
 
     function test(route, ctx, count)
         local balancer = require("apisix.balancer")
