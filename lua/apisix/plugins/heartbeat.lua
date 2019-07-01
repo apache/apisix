@@ -73,7 +73,7 @@ local function report()
     if not res then
         core.log.error("failed to report heartbeat information: ", err)
     else
-        core.log.info("succed to report body: ",
+        core.log.info("succeed to report body: ",
                       core.json.delay_encode(res, true))
     end
 end
@@ -87,7 +87,7 @@ function _M.init()
     if not timer then
         core.log.error("failed to create timer: ", err)
     else
-        core.log.info("succed to create timer: heartbeat")
+        core.log.info("succeed to create timer: heartbeat")
     end
 end
 
