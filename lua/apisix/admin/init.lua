@@ -52,6 +52,11 @@ local function run(params)
     end
 end
 
+local function get_plugins_list()
+    local plugins = resources.plugins.get_plugins_list()
+    core.response.exit(200, plugins)
+end
+
 local uri_route = {
     {
         path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]],
@@ -70,6 +75,10 @@ local uri_route = {
         path = [[/apisix/admin/{res:schema}/]]
                 .. [[{id:route|service|upstream|consumer|ssl}]],
         handler = run
+    },
+    {
+        path = [[/apisix/admin/plugins/list]],
+        handler = get_plugins_list
     },
 }
 
