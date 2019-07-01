@@ -33,7 +33,7 @@ add_block_preprocessor(sub {
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     require "resty.core"
     apisix = require("apisix")
-    apisix.init()
+    apisix.http_init()
 _EOC_
 
     my $http_config = $block->http_config // '';
@@ -54,7 +54,7 @@ _EOC_
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
-            apisix.balancer_phase()
+            apisix.http_balancer_phase()
         }
 
         keepalive 32;
@@ -65,7 +65,7 @@ _EOC_
     }
 
     init_worker_by_lua_block {
-        require("apisix").init_worker()
+        require("apisix").http_init_worker()
     }
 
     server {
@@ -101,7 +101,7 @@ _EOC_
         lua_ssl_trusted_certificate cert/apisix.crt;
 
         ssl_certificate_by_lua_block {
-            apisix.ssl_phase()
+            apisix.http_ssl_phase()
         }
 
         location = /apisix/nginx_status {
@@ -112,7 +112,7 @@ _EOC_
 
         location /apisix/admin {
             content_by_lua_block {
-                apisix.admin()
+                apisix.http_admin()
             }
         }
 
@@ -126,7 +126,7 @@ _EOC_
             access_by_lua_block {
                 -- wait for etcd sync
                 ngx.sleep($wait_etcd_sync)
-                apisix.access_phase()
+                apisix.http_access_phase()
             }
 
             proxy_http_version 1.1;
@@ -139,11 +139,11 @@ _EOC_
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
 
             header_filter_by_lua_block {
-                apisix.header_filter_phase()
+                apisix.http_header_filter_phase()
             }
 
             log_by_lua_block {
-                apisix.log_phase()
+                apisix.http_log_phase()
             }
         }
 _EOC_
