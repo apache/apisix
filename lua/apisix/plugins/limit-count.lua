@@ -39,7 +39,7 @@ function _M.access(conf, ctx)
     -- core.log.error(core.json.encode(ctx, true))
     local prefix = ''
     if ctx.matched_route then
-        prefix = ctx.matched_route.value.id
+        prefix = ctx.matched_route.value.id .. "_"
     end
     core.log.info("ver: ", ctx.conf_version)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
@@ -49,7 +49,7 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local key = ctx.var[conf.key]
+    local key = prefix .. ctx.var[conf.key]
     local rejected_code = conf.rejected_code
 
     local delay, remaining = lim:incoming(key, true)
