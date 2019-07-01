@@ -49,7 +49,6 @@ function _M.init_worker()
     require("apisix.plugin").init_worker()
     require("apisix.service").init_worker()
     require("apisix.consumer").init_worker()
-    require("apisix.heartbeat").init_worker()
     require("apisix.admin.init").init_worker()
     require("apisix.ssl").init_worker()
 end
