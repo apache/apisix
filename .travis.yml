@@ -36,7 +36,7 @@ install:
 
 script:
   - sudo service etcd start
-  - sudo apisix init_etcd
+  - sudo ./bin/apisix init_etcd
   - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$PATH
   - make check || exit 1
   - prove -Itest-nginx/lib -r t
