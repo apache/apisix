@@ -19,7 +19,9 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 
 # install openresty, etcd and some compilation tools
 sudo yum install -y etcd openresty curl git automake autoconf \
-    gcc pcre-devel libtool gcc-c++ luarocks
+    gcc pcre-devel libtool gcc-c++ luarocks cmake3 lua-devel
+
+sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
 
 # start etcd server
 sudo service etcd start
