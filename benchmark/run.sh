@@ -7,6 +7,7 @@ else
 fi
 
 mkdir -p benchmark/server/logs
+mkdir -p benchmark/fake-apisix/logs
 
 sudo openresty -p $PWD/benchmark/server || exit 1
 
@@ -15,12 +16,12 @@ function onCtrlC () {
     sudo openresty -p $PWD/benchmark/server -s stop
 }
 
-# 1 worker
 sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" conf/nginx.conf
-make reload
+make run
 
 sleep 3
 
+#############################################
 echo -e "\n\n$worker_cnt worker + 1 upstream + no plugin"
 
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -46,6 +47,7 @@ wrk -d 5 -c 16 http://127.0.0.1:9080/hello
 
 sleep 1
 
+#############################################
 echo -e "\n\n$worker_cnt worker + 1 upstream + 2 plugins (limit-count + prometheus)"
 
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -68,7 +70,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     }
 }'
 
-sleep 1
+sleep 3
 
 wrk -d 5 -c 16 http://127.0.0.1:9080/hello
 
@@ -78,6 +80,23 @@ wrk -d 5 -c 16 http://127.0.0.1:9080/hello
 
 sleep 1
 
-# exit
+make stop
+
+#############################################
+echo -e "\n\nfake empty apisix server"
+
+sleep 1
+
+sudo openresty -p $PWD/benchmark/fake-apisix || exit 1
+
+sleep 1
+
+wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+
+sleep 1
+
+wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+
+sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
 
 sudo openresty -p $PWD/benchmark/server -s stop || exit 1
