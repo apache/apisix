@@ -40,8 +40,8 @@ luac.out
 *.hex
 
 # develop
-logs/*.log
-logs/*.pid
+*.log
+*.pid
 t/servroot
 go
 \.*
