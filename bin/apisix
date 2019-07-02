@@ -24,7 +24,7 @@ excute_cmd("install -d -m 777 /tmp/apisix_cores/")
 local lua_ver = string.sub(_VERSION, #"Lua " + 1)
 
 local apisix_home = "/usr/local/apisix"
-if script_path == '/usr/bin/apisix' or script_path == '/bin/apisix' then
+if script_path:sub(1, 4) == '/usr' or script_path:sub(1, 4) == '/bin' then
     package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
                     .. "/usr/local/apisix/deps/lib/lua/" .. lua_ver .. "/?.so;"
                     .. package.cpath
@@ -115,7 +115,7 @@ http {
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
-            apisix.balancer_phase()
+            apisix.http_balancer_phase()
         }
 
         keepalive 32;
@@ -124,11 +124,11 @@ http {
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
-        apisix.init()
+        apisix.http_init()
     }
 
     init_worker_by_lua_block {
-        apisix.init_worker()
+        apisix.http_init_worker()
     }
 
     server {
@@ -150,13 +150,13 @@ http {
         location /apisix/admin {
             allow {*allow_admin*};
             content_by_lua_block {
-                apisix.admin()
+                apisix.http_admin()
             }
         }
         {% end %}
 
         ssl_certificate_by_lua_block {
-            apisix.ssl_phase()
+            apisix.http_ssl_phase()
         }
 
         location / {
@@ -167,7 +167,7 @@ http {
             set $upstream_uri                '';
 
             access_by_lua_block {
-                apisix.access_phase()
+                apisix.http_access_phase()
             }
 
             proxy_http_version 1.1;
@@ -180,11 +180,11 @@ http {
             proxy_pass         $upstream_scheme://apisix_backend$upstream_uri;
 
             header_filter_by_lua_block {
-                apisix.header_filter_phase()
+                apisix.http_header_filter_phase()
             }
 
             log_by_lua_block {
-                apisix.log_phase()
+                apisix.http_log_phase()
             }
         }
     }
