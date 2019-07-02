@@ -4,7 +4,7 @@ supported_platforms = {"linux", "macosx"}
 
 source = {
    url = "git://github.com/iresty/apisix",
-   tag = "0.5",
+   tag = "v0.5",
 }
 
 description = {
