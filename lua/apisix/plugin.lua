@@ -24,37 +24,57 @@ local function sort_plugin(l, r)
 end
 
 
+local function load_plugin(name)
+    local pkg_name = "apisix.plugins." .. name
+    pkg_loaded[pkg_name] = nil
+
+    local ok, plugin = pcall(require, pkg_name)
+    if not ok then
+        core.log.error("failed to load plugin [", name, "] err: ", plugin)
+        return
+    end
+
+    if not plugin.priority then
+        core.log.error("invalid plugin [", name,
+                        "], missing field: priority")
+        return
+    end
+
+    if not plugin.version then
+        core.log.error("invalid plugin [", name, "] missing field: version")
+        return
+    end
+
+    plugin.name = name
+    insert_tab(local_plugins, plugin)
+
+    if plugin.init then
+        plugin.init()
+    end
+
+    return
+end
+
+
 local function load()
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
-    local plugin_names = core.config.local_conf().plugins
+    local local_conf = core.config.local_conf()
+    local plugin_names = local_conf.plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
     end
 
+    if local_conf.apisix and local_conf.apisix.enable_heartbeat then
+        core.table.insert(plugin_names, "heartbeat")
+    end
+
+    local processed = {}
     for _, name in ipairs(plugin_names) do
-        local pkg_name = "apisix.plugins." .. name
-        pkg_loaded[pkg_name] = nil
-
-        local ok, plugin = pcall(require, pkg_name)
-        if not ok then
-            core.log.error("failed to load plugin [", name, "] err: ", plugin)
-
-        elseif not plugin.priority then
-            core.log.error("invalid plugin [", name,
-                           "], missing field: priority")
-
-        elseif not plugin.version then
-            core.log.error("invalid plugin [", name, "] missing field: version")
-
-        else
-            plugin.name = name
-            insert_tab(local_plugins, plugin)
-        end
-
-        if plugin.init then
-            plugin.init()
+        if processed[name] == nil then
+            processed[name] = true
+            load_plugin(name)
         end
     end
 

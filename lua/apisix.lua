@@ -20,7 +20,7 @@ local match_opts = {}
 local _M = {version = 0.1}
 
 
-function _M.init()
+function _M.http_init()
     require("resty.core")
 
     if require("ffi").os == "Linux" then
@@ -43,13 +43,12 @@ function _M.init()
 end
 
 
-function _M.init_worker()
+function _M.http_init_worker()
     require("apisix.route").init_worker()
     require("apisix.balancer").init_worker()
     require("apisix.plugin").init_worker()
     require("apisix.service").init_worker()
     require("apisix.consumer").init_worker()
-    require("apisix.heartbeat").init_worker()
     require("apisix.admin.init").init_worker()
     require("apisix.ssl").init_worker()
 end
@@ -90,7 +89,7 @@ local function run_plugin(phase, plugins, api_ctx)
 end
 
 
-function _M.ssl_phase()
+function _M.http_ssl_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
@@ -109,7 +108,7 @@ function _M.ssl_phase()
 end
 
 
-function _M.access_phase()
+function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
@@ -176,12 +175,12 @@ function _M.access_phase()
 end
 
 
-function _M.header_filter_phase()
+function _M.http_header_filter_phase()
     run_plugin("header_filter")
 end
 
 
-function _M.log_phase()
+function _M.http_log_phase()
     local api_ctx = run_plugin("log")
     if api_ctx then
         if api_ctx.uri_parse_param then
@@ -198,7 +197,7 @@ function _M.log_phase()
 end
 
 
-function _M.balancer_phase()
+function _M.http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         core.log.error("invalid api_ctx")
@@ -212,7 +211,7 @@ end
 do
     local router
 
-function _M.admin()
+function _M.http_admin()
     if not router then
         router = admin_init.get()
     end

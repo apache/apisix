@@ -66,4 +66,14 @@ function _M.delete(key)
 end
 
 
+function _M.server_version(key)
+    local etcd_cli, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return etcd_cli:version()
+end
+
+
 return _M
