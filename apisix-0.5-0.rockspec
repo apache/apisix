@@ -1,10 +1,10 @@
 package = "apisix"
-version = "0.4-5"
+version = "0.5-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
    url = "git://github.com/iresty/apisix",
-   branch = "master",
+   tag = "v0.5",
 }
 
 description = {

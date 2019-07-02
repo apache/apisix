@@ -32,6 +32,7 @@ if script_path:sub(1, 4) == '/usr' or script_path:sub(1, 4) == '/bin' then
     package.path  = "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
                     .. "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/?.lua;"
                     .. "/usr/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
+                    .. "/usr/local/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
                     .. package.path
 
 else
