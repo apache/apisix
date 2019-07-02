@@ -58,10 +58,10 @@ sudo apt-get update
 wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
 tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
     cd etcd-v3.3.13-linux-amd64 && \
-    cp -a etcd etcdctl /usr/bin/
+    sudo cp -a etcd etcdctl /usr/bin/
 
-# install openresty, etcd and some compilation tools
-sudo apt-get install -y git etcd openresty curl luarocks\
+# install openresty and some compilation tools
+sudo apt-get install -y git openresty cmake curl luarocks\
     check libpcre3 libpcre3-dev libjemalloc-dev \
     libjemalloc1 build-essential libtool automake autoconf pkg-config
 
