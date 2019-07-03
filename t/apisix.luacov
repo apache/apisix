@@ -1,0 +1,7 @@
+modules = {
+   ["lua.*"] = "lua",
+   ["lua/apisix/*"] = "apisix",
+   ["lua/apisix/admin/*"] = "admin",
+   ["lua/apisix/core/*"] = "core",
+   ["lua/apisix/plugins/*"] = "plugins",
+}
