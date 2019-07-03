@@ -49,7 +49,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
-- **black IP list**: TODO.
+- **IP blacklist**: TODO.
 
 ## Install
 
