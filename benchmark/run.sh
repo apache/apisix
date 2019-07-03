@@ -13,7 +13,10 @@ sudo openresty -p $PWD/benchmark/server || exit 1
 
 trap 'onCtrlC' INT
 function onCtrlC () {
-    sudo openresty -p $PWD/benchmark/server -s stop
+    sudo killall wrk
+    sudo killall openresty
+    sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
+    sudo openresty -p $PWD/benchmark/server -s stop || exit 1
 }
 
 sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" conf/nginx.conf
@@ -22,7 +25,7 @@ make run
 sleep 3
 
 #############################################
-echo -e "\n\n$worker_cnt worker + 1 upstream + no plugin"
+echo -e "\n\napisix: $worker_cnt worker + 1 upstream + no plugin"
 
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
@@ -48,7 +51,7 @@ wrk -d 5 -c 16 http://127.0.0.1:9080/hello
 sleep 1
 
 #############################################
-echo -e "\n\n$worker_cnt worker + 1 upstream + 2 plugins (limit-count + prometheus)"
+echo -e "\n\napisix: $worker_cnt worker + 1 upstream + 2 plugins (limit-count + prometheus)"
 
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
@@ -83,10 +86,11 @@ sleep 1
 make stop
 
 #############################################
-echo -e "\n\nfake empty apisix server"
+echo -e "\n\nfake empty apisix server: $worker_cnt worker"
 
 sleep 1
 
+sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
 sudo openresty -p $PWD/benchmark/fake-apisix || exit 1
 
 sleep 1
