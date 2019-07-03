@@ -45,11 +45,11 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **自定义插件**
 - **健康检查**: TODO
 - **缓存**: TODO.
-- **GUI**: TODO.
+- **管理控制台**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
-- **black IP list**: TODO.
+- **IP 黑名单**: TODO.
 
 ## 安装
 
