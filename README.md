@@ -45,7 +45,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Custom plugins**
 - **Health Checks**: TODO.
 - **Caching**: TODO.
-- **GUI**: TODO.
+- **Dashboard**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
