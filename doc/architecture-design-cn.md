@@ -73,12 +73,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
 
 |name     |option   |description|
 |---------|---------|-----------|
-|uri      |required |除了静态常量匹配，还支持正则 `/foo/{:\w+}/{:\w+}`，更多见 [lua-resty-libr3](https://github.com/iresty/lua-resty-libr3)|
+|uri      |required |除了静态常量匹配，这里还支持正则 `/foo/{:\w+}/{:\w+}`，更多见 [lua-resty-libr3](https://github.com/iresty/lua-resty-libr3)|
 |id       |optional |如果有，必须与路径中的 `key` 保持一致|
-|host     |optional |当前请求域名，比如 `foo.com`。注：目前还不支持通配符方式。|
+|host     |optional |当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
+|remote_addr|optional |客户端请求 IP 地址，比如 `192.168.1.101`；也支持 CIDR 格式，比如 `192.168.1.0/24`|
 |methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
 |plugins|required |启用的插件配置，详见 [Plugin](#plugin) |
-|upstream|required |启用的上游配置，详见 [Upstream](#upstream)|
+|upstream|optional |启用的 upstream 配置，详见 [Upstream](#upstream)|
+|upstream_id|optional |启用的 upstream id，详见 [Upstream](#upstream)|
 |service_id|optional |绑定的 Service 配置，详见 [Service](#service)|
 
 
