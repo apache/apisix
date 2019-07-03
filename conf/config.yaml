@@ -3,6 +3,7 @@ apisix:
   enable_heartbeat: true
   enable_admin: true
   allow_admin: "127.0.0.0/24"
+  # port_admin: 9180              # use a separate port
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
