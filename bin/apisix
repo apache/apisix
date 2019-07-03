@@ -132,6 +132,20 @@ http {
         apisix.http_init_worker()
     }
 
+    {% if enable_admin and port_admin then %}
+    server {
+        listen {* port_admin *};
+        include mime.types;
+
+        location /apisix/admin {
+            allow {*allow_admin*};
+            content_by_lua_block {
+                apisix.http_admin()
+            }
+        }
+    }
+    {% end %}
+
     server {
         listen {* node_listen *};
         listen 9443 ssl;
@@ -147,7 +161,7 @@ http {
             stub_status;
         }
 
-        {% if enable_admin then %}
+        {% if enable_admin and not port_admin then %}
         location /apisix/admin {
             allow {*allow_admin*};
             content_by_lua_block {
