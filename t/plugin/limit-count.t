@@ -1,3 +1,13 @@
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISix 'no_plan';
 
 repeat_each(1);
@@ -109,13 +119,65 @@ passed
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
-[404, 200, 404, 200, 503]
+[404, 503, 404, 503, 503]
 --- no_error_log
 [error]
 
 
 
-=== TEST 6: invalid route: missing key
+=== TEST 6: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 3,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: invalid route: missing key
 --- config
     location /t {
         content_by_lua_block {
@@ -156,7 +218,7 @@ GET /t
 
 
 
-=== TEST 7: invalid route: wrong count
+=== TEST 9: invalid route: wrong count
 --- config
     location /t {
         content_by_lua_block {
@@ -198,7 +260,7 @@ GET /t
 
 
 
-=== TEST 8: invalid route: wrong count + POST method
+=== TEST 10: invalid route: wrong count + POST method
 --- config
     location /t {
         content_by_lua_block {
@@ -240,7 +302,7 @@ GET /t
 
 
 
-=== TEST 9: invalid service: missing key
+=== TEST 11: invalid service: missing key
 --- config
     location /t {
         content_by_lua_block {
@@ -280,7 +342,7 @@ GET /t
 
 
 
-=== TEST 10: invalid service: wrong count
+=== TEST 12: invalid service: wrong count
 --- config
     location /t {
         content_by_lua_block {
@@ -321,7 +383,7 @@ GET /t
 
 
 
-=== TEST 11: invalid service: wrong count + POST method
+=== TEST 13: invalid service: wrong count + POST method
 --- config
     location /t {
         content_by_lua_block {
@@ -362,7 +424,7 @@ GET /t
 
 
 
-=== TEST 12: set route without id in post body
+=== TEST 14: set route without id in post body
 --- config
     location /t {
         content_by_lua_block {
@@ -403,7 +465,7 @@ passed
 
 
 
-=== TEST 13: up the limit
+=== TEST 15: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -413,7 +475,7 @@ passed
 
 
 
-=== TEST 14: disable plugin
+=== TEST 16: disable plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -448,7 +510,7 @@ passed
 
 
 
-=== TEST 15: up the limit
+=== TEST 17: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
