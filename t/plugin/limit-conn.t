@@ -1,3 +1,13 @@
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISix 'no_plan';
 
 repeat_each(1);
@@ -263,7 +273,69 @@ GET /test_concurrency
 
 
 
-=== TEST 7: invalid route: missing key
+=== TEST 7: update plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 5,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: exceeding the burst
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+503
+503
+503
+503
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: invalid route: missing key
 --- config
     location /t {
         content_by_lua_block {
@@ -305,7 +377,7 @@ GET /t
 
 
 
-=== TEST 8: invalid route: wrong conn
+=== TEST 10: invalid route: wrong conn
 --- config
     location /t {
         content_by_lua_block {
@@ -348,7 +420,7 @@ GET /t
 
 
 
-=== TEST 9: invalid service: missing key
+=== TEST 11: invalid service: missing key
 --- config
     location /t {
         content_by_lua_block {
@@ -389,7 +461,7 @@ GET /t
 
 
 
-=== TEST 10: invalid service: wrong count
+=== TEST 12: invalid service: wrong count
 --- config
     location /t {
         content_by_lua_block {
@@ -431,7 +503,7 @@ GET /t
 
 
 
-=== TEST 11: disable plugin
+=== TEST 13: disable plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -466,7 +538,7 @@ passed
 
 
 
-=== TEST 12: exceeding the burst
+=== TEST 14: exceeding the burst
 --- request
 GET /test_concurrency
 --- timeout: 10s
