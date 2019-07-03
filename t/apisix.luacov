@@ -1,6 +1,5 @@
 modules = {
    ["lua.*"] = "lua",
-   ["bin/*"] = "bin",
    ["lua/apisix/*"] = "apisix",
    ["lua/apisix/admin/*"] = "admin",
    ["lua/apisix/core/*"] = "core",
