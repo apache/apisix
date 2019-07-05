@@ -40,7 +40,7 @@ check:
 		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 
-### run:          Initialize the runtime environment
+### init:         Initialize the runtime environment
 .PHONY: init
 init:
 	./bin/apisix init

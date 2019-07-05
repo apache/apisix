@@ -132,6 +132,23 @@ apisix
 └── utils
 ```
 
+`make` 可以辅助我们完成更多其他功能, 比如:
+
+```shell
+$ make help
+Makefile rules:
+
+    help:         Show Makefile rules.
+    dev:          Create a development ENV
+    check:        Check Lua srouce code
+    init:         Initialize the runtime environment
+    run:          Start the apisix server
+    stop:         Stop the apisix server
+    clean:        Remove generated files
+    reload:       Reload the apisix server
+    install:      Install the apisix
+```
+
 ## 快速上手
 
 1. 启动 APISIX
