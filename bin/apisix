@@ -155,11 +155,13 @@ http {
 
         include mime.types;
 
+        {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             access_log off;
             stub_status;
         }
+        {% end %}
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
@@ -268,11 +270,12 @@ local function init()
     -- print("etcd: ", yaml_conf.etcd.host)
 
     local or_ver = excute_cmd("openresty -V 2>&1")
+    local with_module_status = true
     if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
         io.stderr:write("'http_stub_status_module' module is missing in ",
                         "your openresty, please check it out. Without this ",
                         "module, there will be fewer monitoring indicators.\n")
-        return
+        with_module_status = false
     end
 
     -- -- Using template.render
@@ -282,6 +285,8 @@ local function init()
             os_name = exec("uname"),
             apisix_lua_home = apisix_home,
             lua_version = lua_ver,
+            with_module_status = with_module_status,
+            node_ssl_listen = 9443,     -- default value
         },
         {__index = yaml_conf.apisix}
     )
