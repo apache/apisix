@@ -33,7 +33,9 @@ end
 
 
 local function run_loop()
-    local res, err = core.http.request_self("/apisix/nginx_status")
+    local res, err = core.http.request_self("/apisix/nginx_status", {
+                                                keepalive = false,
+                                            })
     if not res then
         if err then
             return core.log.error("failed to fetch nginx status: ", err)
