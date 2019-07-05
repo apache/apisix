@@ -36,15 +36,16 @@ install:
   - git clone https://github.com/openresty/test-nginx.git test-nginx
 
 script:
+  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
   - sudo service etcd start
-  - sudo ./bin/apisix help
-  - sudo ./bin/apisix init
-  - sudo ./bin/apisix init_etcd
-  - sudo ./bin/apisix run
+  - ./bin/apisix help
+  - ./bin/apisix init
+  - ./bin/apisix init_etcd
+  - ./bin/apisix start
+  - mkdir -p logs
   - sleep 1
-  - sudo ./bin/apisix stop
+  - ./bin/apisix stop
   - sleep 1
-  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$PATH
   - make check || exit 1
   - APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 
