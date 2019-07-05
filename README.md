@@ -106,6 +106,7 @@ If you are a developer, you can set up a local development environment with the 
 ```shell
 git clone git@github.com:iresty/apisix.git
 cd apisix
+make init
 make dev
 ```
 
