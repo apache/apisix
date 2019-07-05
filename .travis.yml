@@ -40,7 +40,7 @@ script:
   - sudo ./bin/apisix help
   - sudo ./bin/apisix init
   - sudo ./bin/apisix init_etcd
-  - sudo ./bin/apisix run
+  - sudo ./bin/apisix start
   - sleep 1
   - sudo ./bin/apisix stop
   - sleep 1
