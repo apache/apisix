@@ -3,6 +3,7 @@ INST_LIBDIR ?= $(INST_PREFIX)/lib64/lua/5.1
 INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
+UNAME ?= $(shell uname)
 
 
 .PHONY: default
@@ -21,7 +22,11 @@ help:
 .PHONY: dev
 dev:
 	./utils/update_nginx_conf_dev.sh
+ifeq ($(UNAME),Darwin)
+	luarocks install apisix-*.rockspec --tree=deps --only-deps
+else
 	sudo luarocks install apisix-*.rockspec --tree=deps --only-deps
+endif
 
 
 ### check:        Check Lua srouce code
@@ -33,6 +38,13 @@ check:
 		lua/apisix/core/*.lua \
 		lua/apisix/plugins/*.lua > \
 		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+
+
+### init:         Initialize the runtime environment
+.PHONY: init
+init:
+	./bin/apisix init
+	./bin/apisix init_etcd
 
 
 ### run:          Start the apisix server

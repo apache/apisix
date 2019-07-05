@@ -1,4 +1,4 @@
-#! /usr/bin/lua
+#!/usr/bin/env lua
 
 local script_path = debug.getinfo(1).source:sub(2)
 
