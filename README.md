@@ -17,6 +17,7 @@ APISIX is based on OpenResty and etcd. Compared with traditional API gateways, A
 [中文简介](README_CN.md)
 
 ## Why APISIX?
+
 If you are building a website, mobile device or IoT (Internet of Things) application, you may need to use an API gateway to handle interface traffic.
 
 APISIX is a cloud-based microservices API gateway that handles traditional north-south traffic and handles east-west traffic between services.
@@ -25,10 +26,10 @@ APISIX provides dynamic load balancing, authentication, rate limiting, and other
 
 For more detailed information, see the [White Paper](https://www.iresty.com/download/Choosing%20the%20Right%20Microservice%20API%20Gateway%20for%20the%20Enterprise%20User.pdf).
 
-
 ![](doc/images/apisix.png)
 
 ## Features
+
 - **Cloud-Native**
 - **Dynamic Load Balancing**
 - **Hash-based Load Balancing**
@@ -57,11 +58,11 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 
 APISIX Installed and tested in the following systems:
 
-|OS          |  OpenResty|Status|
-|------------|-----------|------|
-|CentOS 7    |   1.15.8.1|√     |
-|Ubuntu 18.04|   1.15.8.1|√     |
-|Debian 9    |   1.15.8.1|√     |
+| OS           | OpenResty | Status |
+| ------------ | --------- | ------ |
+| CentOS 7     | 1.15.8.1  | √      |
+| Ubuntu 18.04 | 1.15.8.1  | √      |
+| Debian 9     | 1.15.8.1  | √      |
 
 You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
 
@@ -95,11 +96,12 @@ sudo luarocks install apisix
 ```
 
 If all goes well, you will see the message like this:
+
 > apisix is now built and installed in /usr (license: Apache License 2.0)
 
 Congratulations, you have already installed APISIX successfully.
 
-#### Install APISIX Development Environment
+## Install APISIX Development Environment
 
 If you are a developer, you can set up a local development environment with the following commands.
 
@@ -156,6 +158,7 @@ Makefile rules:
 ## Quickstart
 
 1. start server:
+
 ```shell
 sudo apisix start
 ```
@@ -206,17 +209,21 @@ Accept-Ranges: bytes
 You can try more [plugins](doc/plugins.md) follow the documentation.
 
 ## Benchmark
+
 Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency of only 500 microseconds.
 
 You can view the [benchmark documentation](doc/benchmark.md) for more detailed information.
 
 ## Documentation
+
 English Development Documentation: TODO
 
 [中文开发文档](doc/architecture-design-cn.md)
 
 ## Contributing
+
 Contributions are welcomed and greatly appreciated.
 
 ## Acknowledgments
+
 inspired by Kong and Orange.
