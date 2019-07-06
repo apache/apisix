@@ -24,6 +24,7 @@ env:
 
 before_install:
   - sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
+  - sudo luarocks install luacov-coveralls
 
 install:
   - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
@@ -35,8 +36,18 @@ install:
   - git clone https://github.com/openresty/test-nginx.git test-nginx
 
 script:
+  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
   - sudo service etcd start
-  - sudo apisix init_etcd
-  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$PATH
+  - ./bin/apisix help
+  - ./bin/apisix init
+  - ./bin/apisix init_etcd
+  - ./bin/apisix start
+  - mkdir -p logs
+  - sleep 1
+  - ./bin/apisix stop
+  - sleep 1
   - make check || exit 1
-  - prove -Itest-nginx/lib -r t
+  - APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
+
+after_success:
+  - luacov-coveralls

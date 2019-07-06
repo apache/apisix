@@ -2,9 +2,11 @@
 
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
+[![Coverage Status](https://coveralls.io/repos/github/iresty/apisix/badge.svg?branch=master)](https://coveralls.io/github/iresty/apisix?branch=master)
 
 - **QQ group**: 552030619
 - [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+- [![Twitter](https://img.shields.io/twitter/follow/apisixfast.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=apisixfast)
 
 ## What's APISIX?
 
@@ -45,11 +47,11 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Custom plugins**
 - **Health Checks**: TODO.
 - **Caching**: TODO.
-- **GUI**: TODO.
+- **Dashboard**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
-- **black IP list**: TODO.
+- **IP blacklist**: TODO.
 
 ## Install
 
@@ -73,7 +75,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4.1/apisix-0.4-1.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.5/apisix-0.5-0.el7.noarch.rpm
 ```
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
@@ -132,6 +134,23 @@ apisix
 │   ├── node
 │   └── plugin
 └── utils
+```
+
+We can use more actions in the `make` command, for example:
+
+```shell
+$ make help
+Makefile rules:
+
+    help:         Show Makefile rules.
+    dev:          Create a development ENV
+    check:        Check Lua srouce code
+    init:         Initialize the runtime environment
+    run:          Start the apisix server
+    stop:         Stop the apisix server
+    clean:        Remove generated files
+    reload:       Reload the apisix server
+    install:      Install the apisix
 ```
 
 ## Quickstart
@@ -200,4 +219,4 @@ English Development Documentation: TODO
 Contributions are welcomed and greatly appreciated.
 
 ## Acknowledgments
-inspired by Kong
+inspired by Kong and Orange.

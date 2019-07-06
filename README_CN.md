@@ -45,11 +45,11 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **自定义插件**
 - **健康检查**: TODO
 - **缓存**: TODO.
-- **GUI**: TODO.
+- **管理控制台**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
-- **black IP list**: TODO.
+- **IP 黑名单**: TODO.
 
 ## 安装
 
@@ -71,7 +71,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.4.1/apisix-0.4-1.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.5/apisix-0.5-0.el7.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
@@ -130,6 +130,23 @@ apisix
 │   ├── node
 │   └── plugin
 └── utils
+```
+
+`make` 可以辅助我们完成更多其他功能, 比如:
+
+```shell
+$ make help
+Makefile rules:
+
+    help:         Show Makefile rules.
+    dev:          Create a development ENV
+    check:        Check Lua srouce code
+    init:         Initialize the runtime environment
+    run:          Start the apisix server
+    stop:         Stop the apisix server
+    clean:        Remove generated files
+    reload:       Reload the apisix server
+    install:      Install the apisix
 ```
 
 ## 快速上手
@@ -201,4 +218,4 @@ Accept-Ranges: bytes
 
 
 ## 致谢
-灵感来自 Kong
+灵感来自 Kong 和 Orange。
