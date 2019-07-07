@@ -86,7 +86,7 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 #### 安装 APISIX
 
 ```shell
-sudo luarocks install apisix
+sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
 
 如果一切顺利，你会在最后看到这样的信息：
