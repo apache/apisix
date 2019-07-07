@@ -49,7 +49,7 @@
             v-if="row.status!=='deleted'"
             size="mini"
             type="danger"
-            @click="handleModifyStatus(row, 'deleted')"
+            @click="handleRemove(row)"
           >
             {{ $t('table.delete') }}
           </el-button>
@@ -68,7 +68,7 @@ import { exportJson2Excel } from '../../../utils/excel'
 import { formatJson } from '../../../utils'
 import Pagination from '../../../components/Pagination/index.vue'
 
-import { defaultConsumerData, getList } from '../../../api/schema/consumers'
+import { defaultConsumerData, getList, removeConsumer } from '../../../api/schema/consumers'
 
 @Component({
   name: 'ComplexTable',
@@ -139,12 +139,17 @@ export default class extends Vue {
     this.getList()
   }
 
-  private handleModifyStatus(row: any, status: string) {
-    this.$message({
-      message: '操作成功',
-      type: 'success'
+  private handleRemove(row: any) {
+    this.$confirm(`Do you want to remove consumer ${row.username}?`, 'Warning', {
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      type: 'warning'
     })
-    row.status = status
+      .then(async() => {
+        await removeConsumer(row.username)
+        this.getList()
+        this.$message.success(`Remove consumer ${row.username} successfully!`)
+      })
   }
 
   private sortChange(data: any) {
@@ -164,7 +169,9 @@ export default class extends Vue {
   }
 
   private handleCreate() {
-    // TODO: 跳转至 Edit 页
+    this.$router.push({
+      name: 'SchemaConsumersCreate'
+    })
   }
 
   private handleToEdit(row: any) {

@@ -68,6 +68,7 @@ export default {
     SchemaConsumers: 'Consumers',
     SchemaConsumersList: 'Consumers',
     SchemaConsumersEdit: 'Consumer Edit',
+    SchemaConsumersCreate: 'Consumer Create',
     SchemaServices: 'Services',
     SchemaServicesList: 'Services',
     SchemaSSL: 'SSL',

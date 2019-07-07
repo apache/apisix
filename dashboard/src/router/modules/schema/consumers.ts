@@ -23,6 +23,14 @@ const tableRoutes: RouteConfig = {
         title: 'SchemaConsumersEdit',
         hidden: true
       }
+    }, {
+      path: 'create',
+      component: () => import('@/views/schema/consumers/edit.vue'),
+      name: 'SchemaConsumersCreate',
+      meta: {
+        title: 'SchemaConsumersCreate',
+        hidden: true
+      }
     }
   ]
 }

@@ -7,11 +7,11 @@ export const defaultConsumerData: IConsumerData = {
   plugins: {}
 }
 
-export const updateOrCreate = (params: IConsumerData) =>
+export const updateOrCreateConsumer = (data: IConsumerData) =>
   request({
     url: '/consumers',
     method: 'PUT',
-    params
+    data
   })
 
 export const getList = () =>
@@ -26,7 +26,7 @@ export const get = (username: string) =>
     method: 'GET'
   })
 
-export const remove = (username: string) =>
+export const removeConsumer = (username: string) =>
   request({
     url: `/consumers/${username}`,
     method: 'DELETE'
