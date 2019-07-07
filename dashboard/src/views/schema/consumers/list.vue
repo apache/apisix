@@ -40,7 +40,7 @@
           <el-button
             type="primary"
             size="mini"
-            @click="handleUpdate(row)"
+            @click="handleToEdit(row)"
           >
             {{ $t('table.edit') }}
           </el-button>
@@ -49,106 +49,13 @@
             v-if="row.status!=='deleted'"
             size="mini"
             type="danger"
-            @click="handleModifyStatus(row,'deleted')"
+            @click="handleModifyStatus(row, 'deleted')"
           >
             {{ $t('table.delete') }}
           </el-button>
         </template>
       </el-table-column>
     </el-table>
-
-    <el-dialog
-      :title="textMap[dialogStatus]"
-      :visible.sync="dialogFormVisible"
-    >
-      <el-form
-        ref="dataForm"
-        :rules="rules"
-        :model="tempData"
-        label-position="left"
-        label-width="100px"
-        style="width: 400px; margin-left:50px;"
-      >
-        <el-form-item
-          label="username"
-          prop="username"
-        >
-          <el-input v-model="tempData.username" />
-        </el-form-item>
-
-        <el-form-item
-          v-for="(item, index) of tempData.pluginArr"
-          :key="index"
-          :label="'plugin' + index"
-          style="width:500px"
-        >
-          <el-input
-            v-model="item[fieldName]"
-            style="display:inline-block;width:120px;margin-right:10px;"
-            v-for="fieldName of ['name','key']"
-            :key="fieldName"
-            :placeholder="fieldName"
-          />
-          <el-button
-            type="danger"
-            style="margin-top:10px;"
-            @click.prevent="removePlugin(item)"
-          >
-            Delete
-          </el-button>
-        </el-form-item>
-        <el-form-item>
-          <el-button @click="addPlugin">
-            Add Plugin
-          </el-button>
-        </el-form-item>
-      </el-form>
-      <div
-        slot="footer"
-        class="dialog-footer"
-      >
-        <el-button @click="dialogFormVisible = false">
-          {{ $t('table.cancel') }}
-        </el-button>
-        <el-button
-          type="primary"
-          @click="dialogStatus==='create'?createData():updateData()"
-        >
-          {{ $t('table.confirm') }}
-        </el-button>
-      </div>
-    </el-dialog>
-
-    <el-dialog
-      :visible.sync="dialogPageviewsVisible"
-      title="Reading statistics"
-    >
-      <el-table
-        :data="pageviewsData"
-        border
-        fit
-        highlight-current-row
-        style="width: 100%"
-      >
-        <el-table-column
-          prop="key"
-          label="Channel"
-        />
-        <el-table-column
-          prop="pageviews"
-          label="Pageviews"
-        />
-      </el-table>
-      <span
-        slot="footer"
-        class="dialog-footer"
-      >
-        <el-button
-          type="primary"
-          @click="dialogPageviewsVisible = false"
-        >{{ $t('table.confirm') }}</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
@@ -182,33 +89,9 @@ export default class extends Vue {
     type: undefined,
     sort: '+id'
   }
-  private importanceOptions = [1, 2, 3]
-  private sortOptions = [
-    { label: 'ID Ascending', key: '+id' },
-    { label: 'ID Descending', key: '-id' }
-  ]
-  private statusOptions = ['published', 'draft', 'deleted']
-  private showReviewer = false
-  private dialogFormVisible = false
-  private dialogStatus = ''
-  private textMap = {
-    update: 'Edit',
-    create: 'Create'
-  }
-  private dialogPageviewsVisible = false
-  private pageviewsData = []
-  private rules = {
-    type: [{ required: true, message: 'type is required', trigger: 'change' }],
-    timestamp: [{ required: true, message: 'timestamp is required', trigger: 'change' }],
-    title: [{ required: true, message: 'title is required', trigger: 'blur' }]
-  }
-  private downloadLoading = false
-  private tempArticleData = defaultArticleData
 
   private tableData: IConsumerData[] = []
   private tableKeys: string[] = []
-
-  private tempData: IConsumerData = defaultConsumerData
 
   created() {
     this.getList()
@@ -224,7 +107,7 @@ export default class extends Vue {
       const value = Object.assign({}, item.node.value)
       const pluginArr: any[] = []
 
-      Object.entries(value.plugins).map(([ key, value ]: any) => {
+      Object.entries(value.plugins as any).map(([ key, value ]: any) => {
         pluginArr.push({
           name: key,
           key: value.key
@@ -249,24 +132,6 @@ export default class extends Vue {
     setTimeout(() => {
       this.listLoading = false
     }, 0.5 * 1000)
-  }
-
-  private addPlugin() {
-    (this.tempData as any).pluginArr.push({
-      name: null,
-      key: null
-    })
-  }
-
-  private removePlugin(item: any) {
-    const index = (this.tempData as any).pluginArr.indexOf(item)
-
-    if (index !== -1) {
-      (this.tempData as any).pluginArr.splice(index, 1)
-      console.log({
-        index, tempData: this.tempData
-      })
-    }
   }
 
   private handleFilter() {
@@ -298,86 +163,17 @@ export default class extends Vue {
     this.handleFilter()
   }
 
-  private resetTempArticleData() {
-    this.tempArticleData = defaultArticleData
-  }
-
   private handleCreate() {
-    this.resetTempArticleData()
-    this.dialogStatus = 'create'
-    this.dialogFormVisible = true
-    this.$nextTick(() => {
-      (this.$refs['dataForm'] as Form).clearValidate()
-    })
+    // TODO: 跳转至 Edit 页
   }
 
-  private createData() {
-    (this.$refs['dataForm'] as Form).validate(async(valid) => {
-      if (valid) {
-        let { id, ...articleData } = this.tempArticleData
-        articleData.author = 'vue-element-admin'
-        const { data } = await createArticle({ article: articleData })
-        this.list.unshift(data.article)
-        this.dialogFormVisible = false
-        this.$notify({
-          title: '成功',
-          message: '创建成功',
-          type: 'success',
-          duration: 2000
-        })
+  private handleToEdit(row: any) {
+    this.$router.push({
+      name: 'SchemaConsumersEdit',
+      params: {
+        username: row.username
       }
     })
-  }
-
-  private handleUpdate(row: any) {
-    this.tempData = Object.assign({}, row)
-    console.log(this.tempData)
-    this.dialogStatus = 'update'
-    this.dialogFormVisible = true
-    this.$nextTick(() => {
-      (this.$refs['dataForm'] as Form).clearValidate()
-    })
-  }
-
-  private updateData() {
-    (this.$refs['dataForm'] as Form).validate(async(valid) => {
-      if (valid) {
-        const tempData = Object.assign({}, this.tempData)
-
-        // const { data } = await updateArticle(tempData.id, { article: tempData })
-        
-        // for (const v of this.list) {
-        //   if (v.id === data.article.id) {
-        //     const index = this.list.indexOf(v)
-        //     this.list.splice(index, 1, data.article)
-        //     break
-        //   }
-        // }
-
-        this.dialogFormVisible = false
-        this.$notify({
-          title: '成功',
-          message: '更新成功',
-          type: 'success',
-          duration: 2000
-        })
-      }
-    })
-  }
-
-  private async handleGetPageviews(pageviews: string) {
-    const { data } = await getPageviews({ /* Your params here */ })
-    this.pageviewsData = data.pageviews
-    this.dialogPageviewsVisible = true
-  }
-
-  private handleDownload() {
-    this.downloadLoading = true
-    const tHeader = ['timestamp', 'title', 'type', 'importance', 'status']
-    const filterVal = ['timestamp', 'title', 'type', 'importance', 'status']
-    const data = formatJson(filterVal, this.list)
-    exportJson2Excel(tHeader, data, 'table-list')
-    this.downloadLoading = false
   }
 }
 </script>

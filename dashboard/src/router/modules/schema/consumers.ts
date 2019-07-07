@@ -15,6 +15,14 @@ const tableRoutes: RouteConfig = {
       component: () => import(/* webpackChunkName: "complex-table" */ '@/views/schema/consumers/list.vue'),
       name: 'SchemaConsumersList',
       meta: { title: 'SchemaConsumersList' }
+    }, {
+      path: 'edit/:username',
+      component: () => import('@/views/schema/consumers/edit.vue'),
+      name: 'SchemaConsumersEdit',
+      meta: {
+        title: 'SchemaConsumersEdit',
+        hidden: true
+      }
     }
   ]
 }

@@ -21,6 +21,10 @@ tags:
     description: SSL data related api.
   - name: upstreams
     description: Upstream data related api.
+  - name: plugins
+    description: Plugins data related api.
+  - name: schema
+    description: Schema data related api.
   # 下方脚手架 API 将逐渐移除
   - name: articles
     description: Articles data related api.
@@ -330,6 +334,35 @@ paths:
           description: OK
           content:
           application/json:
+## Plugins 
+  /plugins/list:
+    get:
+      tags:
+          - plugins
+      summary:
+      description:
+      operationId: getPluginList
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+## Schema
+  /schema/plugins/:name:
+    get:
+      tags:
+          - schema
+      summary:
+      description:
+      operationId: getPluginSchema
+      parameters:
+      response:
+        200:
+          description: OK
+          content:
+          application/json:
+# 以下内容即将被移除
   /articles:
     get:
       tags:

@@ -67,6 +67,7 @@ export default {
     SchemaRoutesList: 'Routes',
     SchemaConsumers: 'Consumers',
     SchemaConsumersList: 'Consumers',
+    SchemaConsumersEdit: 'Consumer Edit',
     SchemaServices: 'Services',
     SchemaServicesList: 'Services',
     SchemaSSL: 'SSL',
