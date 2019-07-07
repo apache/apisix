@@ -20,28 +20,25 @@ end
 
 excute_cmd("install -d -m 777 /tmp/apisix_cores/")
 
--- _VERSION = "Lua 5.*"
-local lua_ver = string.sub(_VERSION, #"Lua " + 1)
-
 local apisix_home = "/usr/local/apisix"
 if script_path:sub(1, 4) == '/usr' or script_path:sub(1, 4) == '/bin' then
-    package.cpath = "/usr/local/apisix/deps/lib64/lua/" .. lua_ver .. "/?.so;"
-                    .. "/usr/local/apisix/deps/lib/lua/" .. lua_ver .. "/?.so;"
+    package.cpath = "/usr/local/apisix/deps/lib64/lua/5.1/?.so;"
+                    .. "/usr/local/apisix/deps/lib/lua/5.1/?.so;"
                     .. package.cpath
 
-    package.path  = "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
-                    .. "/usr/local/apisix/deps/share/lua/" .. lua_ver .. "/?.lua;"
-                    .. "/usr/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
-                    .. "/usr/local/share/lua/" .. lua_ver .. "/apisix/lua/?.lua;"
+    package.path  = "/usr/local/apisix/deps/share/lua/5.1/apisix/lua/?.lua;"
+                    .. "/usr/local/apisix/deps/share/lua/5.1/?.lua;"
+                    .. "/usr/share/lua/5.1/apisix/lua/?.lua;"
+                    .. "/usr/local/share/lua/5.1/apisix/lua/?.lua;"
                     .. package.path
 
 else
     apisix_home = pwd
-    package.cpath = pwd .. "/deps/lib64/lua/" .. lua_ver .. "/?.so;"
+    package.cpath = pwd .. "/deps/lib64/lua/5.1/?.so;"
                     .. package.cpath
 
     package.path  = pwd .. "/lua/?.lua;"
-                    .. pwd .. "/deps/share/lua/" .. lua_ver .. "/?.lua;"
+                    .. pwd .. "/deps/share/lua/5.1/?.lua;"
                     .. package.path
 end
 -- print("apisix_home: ", apisix_home)
@@ -83,10 +80,10 @@ working_directory   /tmp/apisix_cores/;
 worker_shutdown_timeout 3;
 
 http {
-    lua_package_path  "$prefix/deps/share/lua/{*lua_version*}/?.lua;]=]
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
-    lua_package_cpath "$prefix/deps/lib64/lua/{*lua_version*}/?.so;]=]
-                      .. [=[$prefix/deps/lib/lua/{*lua_version*}/?.so;;]=]
+    lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
+                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
     lua_shared_dict plugin-limit-req    10m;
@@ -284,7 +281,6 @@ local function init()
             lua_cpath = package.cpath,
             os_name = exec("uname"),
             apisix_lua_home = apisix_home,
-            lua_version = lua_ver,
             with_module_status = with_module_status,
             node_ssl_listen = 9443,     -- default value
         },

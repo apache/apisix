@@ -23,9 +23,9 @@ help:
 dev:
 	./utils/update_nginx_conf_dev.sh
 ifeq ($(UNAME),Darwin)
-	luarocks install apisix-*.rockspec --tree=deps --only-deps
+	luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --tree=deps --only-deps
 else
-	sudo luarocks install apisix-*.rockspec --tree=deps --only-deps
+	sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --tree=deps --only-deps
 endif
 
 
