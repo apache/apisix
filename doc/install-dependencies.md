@@ -4,6 +4,7 @@
 * [Ubuntu 18.04](#ubuntu-1804)
 * [Debian 9](#debian-9)
 * [CentOS 6](#centos-6)
+* [Mac OSX](#mac-osx)
 
 CentOS 7
 ========
@@ -77,3 +78,17 @@ CentOS 6
 TODO
 
 The compilation of `libr3` relies on later versions of `autoconf` and `pcre`, but the CentOS 6 comes with a lower version, will support CentOS 6 later.
+
+
+Mac OSX
+=======
+
+**WIP**
+
+```shell
+#
+brew install openresty/brew/openresty etcd
+
+# start etcd server
+etcd
+```
