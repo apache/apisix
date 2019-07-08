@@ -52,13 +52,13 @@ init:
 run:
 	mkdir -p logs
 	mkdir -p /tmp/cores/
-	$$(which openresty) -p $$PWD/
+	$$(which openresty) -p $$PWD/ -c $$PWD/conf/nginx.conf
 
 
 ### stop:         Stop the apisix server
 .PHONY: stop
 stop:
-	$$(which openresty) -p $$PWD/ -s stop
+	$$(which openresty) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
 ### clean:        Remove generated files
@@ -70,7 +70,7 @@ clean:
 ### reload:       Reload the apisix server
 .PHONY: reload
 reload:
-	$$(which openresty) -p $$PWD/ -s reload
+	$$(which openresty) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
 ### install:      Install the apisix
