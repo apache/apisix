@@ -87,6 +87,8 @@ Mac OSX
 
 ```shell
 #
+brew install autoconf automake check pkg-config pcre
+
 brew install openresty/brew/openresty etcd
 
 # start etcd server
