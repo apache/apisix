@@ -86,10 +86,9 @@ Mac OSX
 **WIP**
 
 ```shell
-#
-brew install autoconf automake check pkg-config pcre
-
-brew install openresty/brew/openresty etcd
+# install openresty, etcd and some compilation tools
+brew install autoconf automake check pkg-config pcre install \
+    openresty/brew/openresty etcd luarocks
 
 # start etcd server
 etcd
