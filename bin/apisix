@@ -327,24 +327,32 @@ local function init_etcd(show_output)
 end
 _M.init_etcd = init_etcd
 
+local openresty_args = [[ -p ]] .. apisix_home .. [[ -c ]] .. apisix_home .. [[/conf/nginx.conf ]]
+
 function _M.start(...)
     init(...)
     init_etcd(...)
 
-    -- print([[openresty -p ]] .. apisix_home .. [[ -c ]] .. apisix_home .. "/conf/nginx.conf")
-    os.execute([[openresty -p ]] .. apisix_home .. [[ -c ]] .. apisix_home .. "/conf/nginx.conf")
+    local cmd = [[openresty ]] .. openresty_args
+    -- print(cmd)
+    os.execute(cmd)
 end
 
 function _M.stop()
-    -- todo: use single to reload
-    -- print([[openresty -p ]] .. apisix_home .. [[ -s stop]])
-    os.execute([[openresty -p ]] .. apisix_home .. [[ -s stop]])
+    local cmd = [[openresty ]] .. openresty_args .. [[ -s stop]]
+    -- print(cmd)
+    os.execute(cmd)
 end
 
 function _M.reload()
-    -- todo: use single to reload
-    -- print([[openresty -p ]] .. apisix_home .. [[ -s stop]])
-    os.execute([[openresty -p ]] .. apisix_home .. [[ -s reload]])
+    local test_cmd = [[openresty ]] .. openresty_args .. [[ -t -q ]]
+    if os.execute((test_cmd)) ~= 0 then
+        return
+    end
+
+    local cmd = [[openresty ]] .. openresty_args .. [[ -s reload]]
+    -- print(cmd)
+    os.execute(cmd)
 end
 
 local cmd_action = arg[1]
