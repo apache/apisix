@@ -54,21 +54,13 @@ init:
 run:
 	mkdir -p logs
 	mkdir -p /tmp/cores/
-ifeq ($(UNAME),Darwin)
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
-else
-	$(OR_EXEC) -p $$PWD/
-endif
 
 
 ### stop:         Stop the apisix server
 .PHONY: stop
 stop:
-ifeq ($(UNAME),Darwin)
-	$(OR_EXEC) -p $$PWD/ -s stop -c $$PWD/conf/nginx.conf
-else
-	$(OR_EXEC) -p $$PWD/ -s stop
-endif
+	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
 ### clean:        Remove generated files
@@ -80,11 +72,7 @@ clean:
 ### reload:       Reload the apisix server
 .PHONY: reload
 reload:
-ifeq ($(UNAME),Darwin)
-	$(OR_EXEC) -p $$PWD/ -s reload -c $$PWD/conf/nginx.conf
-else
-	$(OR_EXEC) -p $$PWD/ -s reload
-endif
+	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
 ### install:      Install the apisix

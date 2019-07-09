@@ -331,8 +331,8 @@ function _M.start(...)
     init(...)
     init_etcd(...)
 
-    -- print([[openresty -p ]] .. apisix_home)
-    os.execute([[openresty -p ]] .. apisix_home)
+    -- print([[openresty -p ]] .. apisix_home .. [[ -c ]] .. apisix_home .. "/conf/nginx.conf")
+    os.execute([[openresty -p ]] .. apisix_home .. [[ -c ]] .. apisix_home .. "/conf/nginx.conf")
 end
 
 function _M.stop()
