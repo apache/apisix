@@ -9,6 +9,11 @@ compiler:
   
 sudo: required
 
+cache:
+  directories:
+    - $HOME/Library/Caches/Homebrew
+    - /usr/local/Homebrew
+
 addons:
   apt:
     packages:
@@ -24,13 +29,10 @@ addons:
       - cmake
       - lua-check
   homebrew:
-    packages:
-      - perl
-      - cpanminus
-      - etcd
-      - luarocks
-      - openresty
     update: true
+
+before_cache:
+  - brew cleanup
 
 before_install:
   - ./utils/travis_runner.sh before_install

@@ -23,13 +23,14 @@ export_or_prefix() {
 }
 
 before_install() {
+    if [ $TRAVIS_OS_NAME = osx ]; then
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug
+    fi
     sudo cpanm --notest Test::Nginx IPC::Run >build.log 2>&1 || (cat build.log && exit 1)
 }
 
 do_install() {
-    if [ $TRAVIS_OS_NAME = osx ]; then
-        brew install openresty/brew/openresty-debug
-    else
+    if [ ! $TRAVIS_OS_NAME = osx ]; then
         wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
         sudo apt-get -y install software-properties-common
         sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
@@ -69,7 +70,12 @@ script() {
         make check || exit 1
 
         ln -sf $PWD/deps/lib $PWD/deps/lib64
-        APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t
+        sudo mkdir -p /usr/local/var/log/nginx/
+        sudo touch /usr/local/var/log/nginx/error.log
+        sudo chmod 777 /usr/local/var/log/nginx/error.log
+        APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r -v t
+        cat $PWD/t/servroot/conf/nginx.conf
+        cat /usr/local/var/log/nginx/error.log
     else
         sudo service etcd start
         ./bin/apisix help
