@@ -44,7 +44,7 @@ install:
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install openresty-debug; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --only-deps; fi
   - if [ $TRAVIS_OS_NAME = osx ]; then brew install openresty/brew/openresty; fi
-  - if [ $TRAVIS_OS_NAME = osx ]; then luarocks install --lua-dir=/usr/local/opt/openresty/luajit apisix-*.rockspec --only-deps; fi
+  - if [ $TRAVIS_OS_NAME = osx ]; then luarocks install --lua-dir=/usr/local/opt/openresty/luajit apisix-*.rockspec --tree=deps --only-deps; fi
   - git clone https://github.com/openresty/test-nginx.git test-nginx
 
 script:
