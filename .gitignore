@@ -47,3 +47,8 @@ go
 \.*
 conf/apisix.uid
 deps
+scgi_temp
+uwsgi_temp
+proxy_temp
+fastcgi_temp
+client_body_temp

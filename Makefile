@@ -4,6 +4,8 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
+OR_EXEC ?= $(shell which openresty)
+LUA_JIT_DIR ?= $(shell TMP='./v_tmp' && $(OR_EXEC) -V &>$${TMP} && cat $${TMP} | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/' && rm $${TMP})luajit
 
 
 .PHONY: default
@@ -23,7 +25,7 @@ help:
 dev:
 	./utils/update_nginx_conf_dev.sh
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --tree=deps --only-deps
+	luarocks install --lua-dir=$(LUA_JIT_DIR) apisix-*.rockspec --tree=deps --only-deps
 else
 	sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --tree=deps --only-deps
 endif
@@ -52,13 +54,13 @@ init:
 run:
 	mkdir -p logs
 	mkdir -p /tmp/cores/
-	$$(which openresty) -p $$PWD/ -c $$PWD/conf/nginx.conf
+	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 
 
 ### stop:         Stop the apisix server
 .PHONY: stop
 stop:
-	$$(which openresty) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
+	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
 ### clean:        Remove generated files
@@ -70,7 +72,7 @@ clean:
 ### reload:       Reload the apisix server
 .PHONY: reload
 reload:
-	$$(which openresty) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
+	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
 ### install:      Install the apisix
@@ -101,4 +103,8 @@ install:
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
 test:
+ifeq ($(UNAME),Darwin)
+	prove -I../test-nginx/lib -I./ -r -s t/
+else
 	prove -I../test-nginx/lib -r -s t/
+endif
