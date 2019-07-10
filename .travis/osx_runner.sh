@@ -13,7 +13,7 @@
 set -ex
 
 export_or_prefix() {
-    export OPENRESTY_PREFIX=$(brew --prefix openresty/brew/openresty)
+    export OPENRESTY_PREFIX=$(brew --prefix openresty/brew/openresty-debug)
 }
 
 before_install() {
