@@ -37,13 +37,13 @@ before_cache:
   - brew cleanup
 
 before_install:
-  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh before_install
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh before_install
 
 install:
-  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh do_install
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh do_install
 
 script:
-  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh script
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh script
 
 after_success:
-  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh after_success
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh after_success
