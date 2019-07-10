@@ -13,16 +13,14 @@
 set -ex
 
 export_or_prefix() {
-    export OPENRESTY_PREFIX=$(TMP='./v_tmp' && $(which openresty) -V &>${TMP} &&
-        cat ${TMP} | grep prefix | grep -Eo 'prefix=(.*?)/nginx' |
-        grep -Eo '/.*/' && rm ${TMP})
+    export OPENRESTY_PREFIX=$(brew --prefix openresty/brew/openresty-debug)
 }
 
 before_install() {
     HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug tree
     sudo cpanm --notest Test::Nginx IPC::Run >build.log 2>&1 || (cat build.log && exit 1)
     export_or_prefix
-    luarocks install --lua-dir=${OPENRESTY_PREFIX}luajit luacov-coveralls --local --tree=deps
+    luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls --local --tree=deps
 }
 
 do_install() {
@@ -56,8 +54,6 @@ script() {
     sudo touch /usr/local/var/log/nginx/error.log
     sudo chmod 777 /usr/local/var/log/nginx/error.log
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t
-    # cat $PWD/t/servroot/conf/nginx.conf
-    # cat /usr/local/var/log/nginx/error.log
 }
 
 after_success() {

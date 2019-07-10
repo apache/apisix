@@ -7,7 +7,7 @@
 # travis_runner_linux  ./travis_runner_linux.sh
 #
 # Environment variables that control this script:
-#
+# OPENRESTY_PREFIX
 ### END ###
 
 set -ex
