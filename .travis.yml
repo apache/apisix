@@ -1,18 +1,20 @@
-os:
-  - linux
-  - osx
 dist: xenial
+sudo: required
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+    - os: osx
+      if: branch = master
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /usr/local/Homebrew
 
 compiler:
   - gcc
   - clang
-  
-sudo: required
-
-cache:
-  directories:
-    - $HOME/Library/Caches/Homebrew
-    - /usr/local/Homebrew
 
 addons:
   apt:
@@ -35,13 +37,13 @@ before_cache:
   - brew cleanup
 
 before_install:
-  - ./utils/travis_runner.sh before_install
+  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh before_install
 
 install:
-  - ./utils/travis_runner.sh do_install
+  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh do_install
 
 script:
-  - ./utils/travis_runner.sh script
+  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh script
 
 after_success:
-  - ./utils/travis_runner.sh after_success
+  - ./utils/travis_runner_$TRAVIS_OS_NAME.sh after_success
