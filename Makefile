@@ -6,6 +6,7 @@ INSTALL ?= install
 UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
 LUA_JIT_DIR ?= $(shell TMP='./v_tmp' && $(OR_EXEC) -V &>$${TMP} && cat $${TMP} | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/' && rm $${TMP})luajit
+LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 
 
 .PHONY: default
@@ -25,9 +26,11 @@ help:
 dev:
 	./utils/update_nginx_conf_dev.sh
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) apisix-*.rockspec --tree=deps --only-deps
+	luarocks install --lua-dir=$(LUA_JIT_DIR) apisix-*.rockspec --tree=deps --only-deps --local
+else ifneq ($(LUAROCKS_VER),'luarocks 3.')
+	luarocks install apisix-*.rockspec --tree=deps --only-deps --local
 else
-	sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --tree=deps --only-deps
+	luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --tree=deps --only-deps --local
 endif
 
 
