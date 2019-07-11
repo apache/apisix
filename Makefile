@@ -34,7 +34,7 @@ else
 endif
 
 
-### check:        Check Lua srouce code
+### check:        Check Lua source code
 .PHONY: check
 check:
 	luacheck -q lua
