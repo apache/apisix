@@ -1,6 +1,6 @@
 local core = require("apisix.core")
 local get_routes = require("apisix.http.route").routes
-local get_services = require("apisix.service").services
+local get_services = require("apisix.http.service").services
 local tostring = tostring
 local ipairs = ipairs
 local tonumber = tonumber
