@@ -3,5 +3,6 @@ modules = {
    ["lua/apisix/*"] = "apisix",
    ["lua/apisix/admin/*"] = "admin",
    ["lua/apisix/core/*"] = "core",
+   ["lua/apisix/http/*"] = "http",
    ["lua/apisix/plugins/*"] = "plugins",
 }

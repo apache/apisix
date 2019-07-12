@@ -1,5 +1,6 @@
 -- Copyright (C) Yuansheng Wang
 
+local require = require
 local r3router = require("resty.r3")
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
