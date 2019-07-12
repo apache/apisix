@@ -14,10 +14,6 @@ matrix:
 
 language: c
 
-compiler:
-  - gcc
-  - clang
-
 addons:
   apt:
     packages:
