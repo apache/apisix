@@ -80,6 +80,9 @@ function _M.init_worker()
     if not routes then
         error("failed to create etcd instance for fetching routes : " .. err)
     end
+
+
+    require("apisix.http.balancer").init_worker()
 end
 
 

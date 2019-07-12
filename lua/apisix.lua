@@ -2,9 +2,9 @@
 
 local require = require
 local core = require("apisix.core")
-local router = require("apisix.route").get
+local router = require("apisix.http.route").get
 local plugin = require("apisix.plugin")
-local load_balancer = require("apisix.balancer").run
+local load_balancer = require("apisix.http.balancer").run
 local service_fetch = require("apisix.service").get
 local ssl_match = require("apisix.ssl").match
 local admin_init = require("apisix.admin.init")
@@ -44,8 +44,7 @@ end
 
 
 function _M.http_init_worker()
-    require("apisix.route").init_worker()
-    require("apisix.balancer").init_worker()
+    require("apisix.http.route").init_worker()
     require("apisix.plugin").init_worker()
     require("apisix.service").init_worker()
     require("apisix.consumer").init_worker()
