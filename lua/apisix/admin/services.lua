@@ -1,5 +1,5 @@
 local core = require("apisix.core")
-local routes = require("apisix.route").routes
+local routes = require("apisix.http.route").routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local ipairs = ipairs
