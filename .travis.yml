@@ -12,9 +12,7 @@ matrix:
           - $HOME/Library/Caches/Homebrew
           - /usr/local/Homebrew
 
-compiler:
-  - gcc
-  - clang
+language: c
 
 addons:
   apt:
