@@ -18,43 +18,26 @@ curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
     "sni": "test.com"
 }'
 
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
+# make a test
 
-Makes a test now:
-
-```shell
-$ curl -i http://127.0.0.1:9443/index.html
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 1
-Server: APISIX web server
-Date: Mon, 03 Jun 2019 09:38:32 GMT
-Last-Modified: Wed, 24 Apr 2019 00:14:17 GMT
-ETag: "5cbfaa59-3377"
-Accept-Ranges: bytes
-
-...
+curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
+* Added test.com:9443:127.0.0.1 to DNS cache
+* About to connect() to test.com port 9443 (#0)
+*   Trying 127.0.0.1...
+* Connected to test.com (127.0.0.1) port 9443 (#0)
+* Initializing NSS with certpath: sql:/etc/pki/nssdb
+* skipping SSL peer certificate verification
+* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+* Server certificate:
+* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
+* 	start date: Jun 24 22:18:05 2019 GMT
+* 	expire date: May 31 22:18:05 2119 GMT
+* 	common name: test.com
+* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
+> GET /hello HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: test.com:9443
+> Accept: */*
 ```
 
 ### wildcard SNI
@@ -73,46 +56,30 @@ curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
     "sni": "*.test.com"
 }'
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
+# make a test
 
-Makes a test:
-
-```shell
-$ curl -i http://127.0.0.1:9443/index.html
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 1
-Server: APISIX web server
-Date: Mon, 03 Jun 2019 09:38:32 GMT
-Last-Modified: Wed, 24 Apr 2019 00:14:17 GMT
-ETag: "5cbfaa59-3377"
-Accept-Ranges: bytes
-
-...
+curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -vvv
+* Added test.com:9443:127.0.0.1 to DNS cache
+* About to connect() to test.com port 9443 (#0)
+*   Trying 127.0.0.1...
+* Connected to test.com (127.0.0.1) port 9443 (#0)
+* Initializing NSS with certpath: sql:/etc/pki/nssdb
+* skipping SSL peer certificate verification
+* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+* Server certificate:
+* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
+* 	start date: Jun 24 22:18:05 2019 GMT
+* 	expire date: May 31 22:18:05 2119 GMT
+* 	common name: test.com
+* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
+> GET /hello HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: test.com:9443
+> Accept: */*
 ```
 
 ### multiple domain
 
-If your SSL certificate may contain more than one domain, like `www.test.com` and `mail.test.com`, then you can more ssl object for each domain, that is a most simple way.
+If your SSL certificate may contain more than one domain, like `www.test.com`
+and `mail.test.com`, then you can more ssl object for each domain, that is a
+most simple way.
