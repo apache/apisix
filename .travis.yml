@@ -12,6 +12,8 @@ matrix:
           - $HOME/Library/Caches/Homebrew
           - /usr/local/Homebrew
 
+language: c
+
 compiler:
   - gcc
   - clang
