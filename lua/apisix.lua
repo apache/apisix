@@ -5,8 +5,8 @@ local core = require("apisix.core")
 local router = require("apisix.http.route").get
 local plugin = require("apisix.plugin")
 local load_balancer = require("apisix.http.balancer").run
-local service_fetch = require("apisix.service").get
-local ssl_match = require("apisix.ssl").match
+local service_fetch = require("apisix.http.service").get
+local ssl_match = require("apisix.http.ssl").match
 local admin_init = require("apisix.admin.init")
 local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
@@ -44,12 +44,14 @@ end
 
 
 function _M.http_init_worker()
-    require("apisix.http.route").init_worker()
-    require("apisix.plugin").init_worker()
-    require("apisix.service").init_worker()
-    require("apisix.consumer").init_worker()
     require("apisix.admin.init").init_worker()
-    require("apisix.ssl").init_worker()
+
+    require("apisix.http.route").init_worker()
+    require("apisix.http.service").init_worker()
+    require("apisix.http.ssl").init_worker()
+
+    require("apisix.plugin").init_worker()
+    require("apisix.consumer").init_worker()
 end
 
 
