@@ -49,7 +49,8 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_version
+    local ip = core.request.get_remote_client_ip(ctx)
+    local key = ip .. ctx.conf_version
     local rejected_code = conf.rejected_code
 
     local delay, err = lim:incoming(key, true)
