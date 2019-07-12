@@ -41,6 +41,7 @@ check:
 	./utils/lj-releng lua/*.lua lua/apisix/*.lua \
 		lua/apisix/admin/*.lua \
 		lua/apisix/core/*.lua \
+		lua/apisix/http/*.lua \
 		lua/apisix/plugins/*.lua > \
 		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
@@ -91,6 +92,9 @@ install:
 	$(INSTALL) lua/*.lua $(INST_LUADIR)/apisix/lua/
 	$(INSTALL) lua/apisix/core/*.lua $(INST_LUADIR)/apisix/lua/apisix/core/
 	$(INSTALL) lua/apisix/*.lua $(INST_LUADIR)/apisix/lua/apisix/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/http
+	$(INSTALL) lua/apisix/http/*.lua $(INST_LUADIR)/apisix/lua/apisix/http/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
 	$(INSTALL) lua/apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
