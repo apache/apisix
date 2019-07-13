@@ -6,7 +6,7 @@ SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允�
 
 ### 单一域名指定
 
-通常情况下一个 SSL 证书只指定一个域名，我们可以配置一个 `ssl` 参数对象，它包括 cert、key、sni 三个属性，详细如下
+通常情况下一个 SSL 证书只包含一个静态域名，配置一个 `ssl` 参数对象，它包括 `cert`、`key`和`sni`三个属性，详细如下：
 
 * `cert`: SSL 密钥对的公钥，pem 格式
 * `key`: SSL 密钥对的私钥，pem 格式
@@ -42,13 +42,12 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 > Accept: */*
 ```
 
-### 通配符域名指定
+### 范域名
 
-有时候，一个 SSL 证书也需要指定特定的一类域名，如`*.test.com`,
-也就是意味着SNI可以支持基于通配符的多域名支撑。
-像这个配置，就可以支持 `www.test.com` 或者 `mail.test.com`
+一个 SSL 证书的域名也可能包含范域名，如`*.test.com`，它代表所有以`test.com`结尾的域名都可以使用该证书。
+比如`*.test.com`，可以匹配 `www.test.com`、`mail.test.com`甚至`a.b.test.com`。
 
-看下面这个例子，请注意 sni 这个属性
+看下面这个例子，请注意 `sni` 这个属性:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
@@ -82,4 +81,5 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 ### 多域名的情况
 
-如果你的 SSL 证书指定了多个域名，这多个证书无法通过通配符来描述，比如`www.test.com`和`mail.test.com`， 那么你就只能针对每个域名，都单独设置同样的同样的证书。
+如果一个 SSL 证书包含多个独立域名，比如`www.test.com`和`mail.test.com`，通配符方式又会导致匹配不严谨。
+所以针对不同域名，设置不同 SSL 证书对象即可。
