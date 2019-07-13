@@ -1,5 +1,5 @@
-# limit-conn
 [English](limit-conn.md)
+# limit-conn
 
 Apisix 的限制并发请求（或并发连接）插件。
 

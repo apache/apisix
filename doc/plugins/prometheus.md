@@ -1,8 +1,7 @@
+[中文](prometheus-cn.md) 
 # prometheus
 
 This plugin exposes metrics in Prometheus Exposition format.
-
-<!-- [中文](prometheus-cn.md) [英文](prometheus.md) -->
 
 ## Attributes
 
@@ -50,9 +49,9 @@ scrape_configs:
 
 And we can check the status at prometheus console:
 
-![](../../../doc/images/plugin/prometheus01.png)
+![](../../doc/images/plugin/prometheus01.png)
 
-![](../../../doc/images/plugin/prometheus02.png)
+![](../../doc/images/plugin/prometheus02.png)
 
 
 ### Grafana dashboard

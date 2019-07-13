@@ -1,5 +1,5 @@
-# limit-req
 [English](limit-req.md)
+# limit-req
 
 限制请求速度的插件，使用的是漏桶算法。
 
