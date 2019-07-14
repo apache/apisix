@@ -1,4 +1,4 @@
-
+[English](plugins.md)
 ## 插件
 目前已支持这些插件：
 

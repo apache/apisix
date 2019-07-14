@@ -1,5 +1,5 @@
-# limit-count
 [中文](limit-count-cn.md)
+# limit-count
 
 limit request rate using the "leaky bucket" method.
 

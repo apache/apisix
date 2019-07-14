@@ -1,4 +1,4 @@
-[中文](key-auth-cn.md) [英文](key-auth.md)
+[English](key-auth.md)
 
 # 目录
 - [**名字**](#名字)

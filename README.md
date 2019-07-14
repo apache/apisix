@@ -1,3 +1,4 @@
+[中文](README_CN.md)
 ## APISIX
 
 [![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
@@ -14,7 +15,6 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 APISIX is based on OpenResty and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
 
-[中文简介](README_CN.md)
 
 ## Why APISIX?
 

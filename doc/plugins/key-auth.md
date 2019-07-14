@@ -1,4 +1,4 @@
-[中文](key-auth-cn.md) [英文](key-auth.md)
+[中文](key-auth-cn.md) 
 
 # Summary
 - [**Name**](#name)
