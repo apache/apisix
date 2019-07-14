@@ -1,5 +1,5 @@
-# limit-conn
 [中文](limit-conn-cn.md)
+# limit-conn
 
 Limiting request concurrency (or concurrent connections) plugin for Apisix.
 

@@ -1,3 +1,4 @@
+[中文](plugins-cn.md)
 ## Plugins
 Now we support the following plugins:
 * [HTTPS](https.md): dynamic load the SSL Certificate by Server Name Indication (SNI).

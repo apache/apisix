@@ -1,5 +1,5 @@
-# limit-count
 [中文](limit-count-cn.md)
+# limit-count
 
 ### Parameters
 * `count`: is the specified number of requests threshold.

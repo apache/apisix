@@ -1,3 +1,4 @@
+[English](benchmark.md)
 ### 测试环境
 使用谷歌云的服务器进行测试，型号为 n1-highcpu-8 (8 vCPUs, 7.2 GB memory)
 

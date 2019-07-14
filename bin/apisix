@@ -248,6 +248,22 @@ local function read_yaml_conf()
     return yaml.parse(ymal_conf)
 end
 
+local function checkOpenrestyVersion(need_version)
+	local shell="need_ver="..need_version ..";"
+          .."str=`openresty -v 2>&1`;"
+          .."op_ver=${str##*/};"
+          --.."echo \"op_ver:\"$op_ver;"
+          .."max_ver=`echo \"${need_ver} ${op_ver}\" | tr \" \" \"\n\" | sort -rV | head -n 1`;"
+          --.."echo \"max_ver:\"${max_ver};"
+          .."if [ $max_ver != $need_ver ];then"
+          .."  echo 1;" 
+          .."else" 
+          .."  echo 0;"
+          .."fi"
+     local ret = excute_cmd(shell)
+	 return trim(ret)=="1"
+end
+
 local _M = {version = 0.1}
 
 function _M.help()
@@ -339,6 +355,12 @@ function _M.start(...)
     init(...)
     init_etcd(...)
 
+	local need_version="1.15.8";
+	if not checkOpenrestyVersion(need_version) then
+		print("the openresty version must >=", need_version, "\n")
+		return
+	end 
+	
     local cmd = openresty_args
     -- print(cmd)
     os.execute(cmd)
@@ -355,7 +377,7 @@ function _M.reload()
     if os.execute((test_cmd)) ~= 0 then
         return
     end
-
+	
     local cmd = openresty_args .. [[ -s reload]]
     -- print(cmd)
     os.execute(cmd)

@@ -1,5 +1,5 @@
-# limit-count
 [English](limit-count.md)
+# limit-count
 
 和 [GitHub API 的限速](https://developer.github.com/v3/#rate-limiting)类似，
 在指定的时间范围内，限制总的请求个数。并且在 HTTP 响应头中返回剩余可以请求的个数。

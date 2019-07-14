@@ -1,18 +1,17 @@
-[中文](prometheus-cn.md) 
+[English](prometheus.md) 
 # prometheus
 
-This plugin exposes metrics in Prometheus Exposition format.
+此插件是提供符合prometheus数据格式的监控指标数据。
 
-## Attributes
+## 属性
 
-none.
+无
 
-## How to enable it
+## 如何开启插件
 
-`prometheus` plugin can be enable with empty table, because it doesn't have
-any options yet.
+`prometheus` 插件用空{}就可以开启了,他没有任何的选项。
 
-For example:
+例子如下:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -30,14 +29,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-## How to fetch the metric data
+## 如何提取指标数据
 
-We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
+我们可以从指定的url中提取指标数据 `/apisix/prometheus/metrics`.
 
-Puts this uri address into prometheus, and it will automatically fetch
-these metric data.
+把改uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
 
-For example like this:
+例子如下:
 
 ```yaml
 scrape_configs:
@@ -47,26 +45,25 @@ scrape_configs:
     - targets: ['127.0.0.1:9080']
 ```
 
-And we can check the status at prometheus console:
+我们也可以在 prometheus 控制台中去检查状态:
 
 ![](../../doc/images/plugin/prometheus01.png)
 
 ![](../../doc/images/plugin/prometheus02.png)
 
 
-### Grafana dashboard
+### Grafana 面板
 
-Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard: https://grafana.com/dashboards/7424 .
+.插件导出的指标可以在 Grafana 进行图形化绘制显示。https://grafana.com/dashboards/7424
 
+### 可有的指标
 
-### Available metrics
+* `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。
+* `Bandwidth`: 流经apisix的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
+* `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1来表示。
+* `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
 
-* `Status codes`: HTTP status codes returned by upstream services. These are available per service and across all services.
-* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
-* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
-* `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
-
-Here is the original metric data of apisix:
+这里是apisix的原始的指标数据集:
 
 ```
 $ curl http://127.0.0.2:9080/apisix/prometheus/metrics
