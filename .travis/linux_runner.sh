@@ -30,7 +30,7 @@ do_install() {
 
     export_or_prefix
 
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}luajit apisix-*.rockspec --only-deps
+    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}luajit rockspec/apisix-dev-0.rockspec --only-deps
 
     git clone https://github.com/openresty/test-nginx.git test-nginx
 }
