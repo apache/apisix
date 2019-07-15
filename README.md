@@ -46,6 +46,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Scalability**
 - **High performance**
 - **Custom plugins**
+- **Anti-ReDoS(Regular expression Denial of Service)**
 - **Health Checks**: TODO.
 - **Caching**: TODO.
 - **Dashboard**: TODO.
