@@ -1,4 +1,5 @@
-local roundrobin = require("resty.roundrobin")
+local healthcheck = require("resty.healthcheck")
+local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
 local balancer = require("ngx.balancer")
 local core = require("apisix.core")
@@ -14,7 +15,8 @@ local tostring = tostring
 
 
 local module_name = "balancer"
-local lrucache_get = core.lrucache.new({ttl = 300, count = 256})
+local lrucache_server_picker = core.lrucache.new({ttl = 300, count = 256})
+-- local lrucache_checker = core.lrucache.new({ttl = 300, count = 4096})
 
 
 local _M = {
@@ -107,8 +109,28 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    local server_picker = lrucache_get(key, version,
-                            create_server_picker, upstream)
+    if upstream.checks and not upstream.checker_obj then
+        local checker = healthcheck.new({
+            name = "upstream",
+            shm_name = "upstream-healthcheck",
+            checks = upstream.checks,
+        })
+        upstream.checker_obj = checker
+
+        for addr, weight in pairs(upstream.nodes) do
+            local ip, port = parse_addr(addr)
+            -- add host
+            local ok, err = checker:add_target(ip, port, upstream.checks.host)
+            if not ok then
+                core.log.error("failed to add new health check target: ", addr,
+                               " err: ", err)
+            end
+        end
+        core.log.warn("create checks obj for upstream, check")
+    end
+
+    local server_picker = lrucache_server_picker(key, version,
+                                                 create_server_picker, upstream)
     if not server_picker then
         return nil, nil, "failed to fetch server picker"
     end

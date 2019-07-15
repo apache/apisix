@@ -18,27 +18,28 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "checks": {
-                                "active": {
-                                    "http_path": "/status",
-                                    "healthy": {
-                                        "interval": 2,
-                                        "successes": 1
-                                    },
-                                    "unhealthy": {
-                                        "interval": 1,
-                                        "http_failures": 2
-                                    }
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin",
+                        "checks": {
+                            "active": {
+                                "http_path": "/status",
+                                "host": "foo.com",
+                                "healthy": {
+                                    "interval": 2,
+                                    "successes": 1
+                                },
+                                "unhealthy": {
+                                    "interval": 1,
+                                    "http_failures": 2
                                 }
                             }
-                        },
-                        "uri": "/index.html"
+                        }
+                    },
+                    "uri": "/index.html"
                 }]],
                 [[{
                     "node": {
@@ -53,6 +54,7 @@ __DATA__
                                 "checks": {
                                     "active": {
                                         "http_path": "/status",
+                                        "host": "foo.com",
                                         "healthy": {
                                             "interval": 2,
                                             "successes": 1

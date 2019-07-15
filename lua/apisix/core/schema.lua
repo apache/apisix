@@ -53,6 +53,7 @@ local health_checker = {
             type = "object",
             properties = {
                 http_path = {type = "string"},
+                host = {type = "string"},
                 healthy = {
                     type = "object",
                     properties = {
