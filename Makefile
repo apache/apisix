@@ -109,6 +109,8 @@ install:
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
+
+### test:         Run the test case
 test:
 ifeq ($(UNAME),Darwin)
 	prove -I../test-nginx/lib -I./ -r -s t/
