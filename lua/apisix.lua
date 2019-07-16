@@ -14,6 +14,7 @@ local ngx_exit = ngx.exit
 local ngx_ERROR = ngx.ERROR
 local math = math
 local match_opts = {}
+local error = error
 local load_balancer
 
 
