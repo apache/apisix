@@ -51,7 +51,7 @@ plugins:                        # plugin name list
 `Route` 是如何匹配用户请求的具体描述。目前 apisix 支持 `URI` 和 `Method` 两种方式匹配
 用户请求。其他比如 `Host` 方式，将会持续增加。
 
-路径中的 `key` 会被用作路由 `id` 做唯一标识，比如下面示例的路由 `id` 是 `100`。
+路径中最后的数字，会被用作路由 `id` 做唯一标识，比如下面示例的路由 `id` 是 `100`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
