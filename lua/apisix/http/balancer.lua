@@ -16,7 +16,6 @@ local tostring = tostring
 
 local module_name = "balancer"
 local lrucache_server_picker = core.lrucache.new({ttl = 300, count = 256})
--- local lrucache_checker = core.lrucache.new({ttl = 300, count = 4096})
 
 
 local _M = {
