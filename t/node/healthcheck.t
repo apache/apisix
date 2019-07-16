@@ -222,5 +222,5 @@ GET /t
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
-qr/61: Connection refused/
+qr/Connection refused\) while connecting to upstream/
 --- timeout: 5
