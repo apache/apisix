@@ -46,6 +46,9 @@ local id_schema = {
 }
 
 
+-- todo: support all option
+--   default value: https://github.com/Kong/lua-resty-healthcheck/
+--   blob/master/lib/resty/healthcheck.lua#L1121
 local health_checker = {
     type = "object",
     properties = {
