@@ -25,12 +25,46 @@ local _M = {
 }
 
 
+local function parse_addr(addr)
+    local pos = find_str(addr, ":", 1, true)
+    if not pos then
+        return addr, 80
+    end
+
+    local host = sub_str(addr, 1, pos - 1)
+    local port = sub_str(addr, pos + 1)
+    return host, tonumber(port)
+end
+
+
 local function create_server_picker(upstream)
     core.log.info("create create_obj, type: ", upstream.type,
                   " nodes: ", core.json.delay_encode(upstream.nodes))
 
+    local host = upstream.checks and upstream.checks.host
     if upstream.type == "roundrobin" then
-        local picker = roundrobin:new(upstream.nodes)
+        local nodes = upstream.nodes
+        if upstream.checks then
+            local checker = upstream.checker
+            nodes = core.table.new(0, #upstream.nodes)
+
+            for addr, weight in pairs(upstream.nodes) do
+                local ip, port = parse_addr(addr)
+                local ok = checker:get_target_status(ip, port, host)
+                if ok then
+                    nodes[addr] = weight
+                end
+            end
+
+            if core.table.nkeys(nodes) == 0 then
+                core.log.warn("all upstream nodes is unhealth, use default")
+                nodes = upstream.nodes
+            end
+        end
+
+        core.log.info("upstream nodes: ", core.json.delay_encode(nodes))
+
+        local picker = roundrobin:new(nodes)
         return {
             get = function ()
                 return picker:find()
@@ -39,6 +73,7 @@ local function create_server_picker(upstream)
     end
 
     if upstream.type == "chash" then
+        -- todo: choose health node
         local str_null = str_char(0)
 
         local servers, nodes = {}, {}
@@ -61,18 +96,6 @@ local function create_server_picker(upstream)
     end
 
     return nil, "invalid balancer type: " .. upstream.type, 0
-end
-
-
-local function parse_addr(addr)
-    local pos = find_str(addr, ":", 1, true)
-    if not pos then
-        return addr, 80
-    end
-
-    local host = sub_str(addr, 1, pos - 1)
-    local port = sub_str(addr, pos + 1)
-    return host, tonumber(port)
 end
 
 
@@ -109,17 +132,19 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    if upstream.checks and not upstream.checker_obj then
+    if upstream.checks and not upstream.checker then
         local checker = healthcheck.new({
             name = "upstream",
             shm_name = "upstream-healthcheck",
             checks = upstream.checks,
         })
-        upstream.checker_obj = checker
+
+        -- fixme: how to recycle the checker object when we not using the
+        -- upstream?
+        upstream.checker = checker
 
         for addr, weight in pairs(upstream.nodes) do
             local ip, port = parse_addr(addr)
-            -- add host
             local ok, err = checker:add_target(ip, port, upstream.checks.host)
             if not ok then
                 core.log.error("failed to add new health check target: ", addr,
@@ -127,6 +152,10 @@ local function pick_server(route, ctx)
             end
         end
         core.log.warn("create checks obj for upstream, check")
+    end
+
+    if upstream.checks then
+        version = version .. "#" .. upstream.checker.status_ver
     end
 
     local server_picker = lrucache_server_picker(key, version,

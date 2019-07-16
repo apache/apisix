@@ -17,6 +17,11 @@ function _M.limit_conn()
 end
 
 
+function _M.status()
+    ngx.say("ok")
+end
+
+
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
     if not _M[action] then
