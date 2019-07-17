@@ -215,6 +215,23 @@ Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency 
 
 You can view the [benchmark documentation](doc/benchmark.md) for more detailed information.
 
+## Test
+
+Running the test cases at local machine:
+
+```shell
+make test
+```
+
+The following dependencies are required to run the test suite:
+
+* Nginx: version >= 1.4.2
+
+* Perl modules:
+    `Test::Nginx` https://github.com/openresty/test-nginx
+
+For the detail on how to install dependencies, please take a look at [travis.yml](.travis.yml).
+
 ## Documentation
 
 English Development Documentation: TODO
