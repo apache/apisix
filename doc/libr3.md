@@ -45,7 +45,7 @@ for example the uri is `/blog/post/foo`, libr3 will return `{"name":"foo"}`.
 
 for example the uri is `/blog/post/foo/12`, libr3 will return `{"name":"foo", "id":"12"}`.
 
-`/blog/post/{\w+}/{id:\d+}`
+`/blog/post/{:\w+}/{id:\d+}`
 
 for example the uri is `/blog/post/foo/12`, libr3 will return `{"1":"foo", "id":"12"}`.
 
