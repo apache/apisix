@@ -46,10 +46,12 @@ _EOC_
     lua_package_path "$pwd/deps/share/lua/5.1/?.lua;$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
     lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
 
-    lua_shared_dict plugin-limit-req 10m;
-    lua_shared_dict plugin-limit-count 10m;
-    lua_shared_dict plugin-limit-conn 10m;
-    lua_shared_dict prometheus-metrics 10m;
+    lua_shared_dict plugin-limit-req     10m;
+    lua_shared_dict plugin-limit-count   10m;
+    lua_shared_dict plugin-limit-conn    10m;
+    lua_shared_dict prometheus-metrics   10m;
+    lua_shared_dict upstream-healthcheck 32m;
+    lua_shared_dict worker-events        10m;
 
     resolver ipv6=off local=on;
     resolver_timeout 5;
