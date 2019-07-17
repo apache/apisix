@@ -1,3 +1,6 @@
+local newproxy = newproxy
+local getmetatable = getmetatable
+local setmetatable = setmetatable
 local select = select
 
 local _M = {

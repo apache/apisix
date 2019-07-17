@@ -178,7 +178,7 @@ sub process_file {
                                    |pairs|ipairs|assert|module|package
                                    |coroutine|[gs]etfenv|next|rawget|rawset
                                    |loadstring|dofile
-                                   |rawlen|select|arg|bit|debug|ngx|ndk)$/x)
+                                   |rawlen|select|arg|bit|debug|ngx|ndk|newproxy)$/x)
                 {
                     next;
                 }
