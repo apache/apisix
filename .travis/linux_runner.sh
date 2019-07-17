@@ -17,7 +17,7 @@ export_or_prefix() {
 }
 
 before_install() {
-    sudo cpanm --notest Test::Nginx IPC::Run >build.log 2>&1 || (cat build.log && exit 1)
+    sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks install --lua-dir=/usr/local/openresty/luajit luacov-coveralls
 }
 

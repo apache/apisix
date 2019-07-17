@@ -18,7 +18,7 @@ export_or_prefix() {
 
 before_install() {
     HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug tree
-    sudo cpanm --notest Test::Nginx IPC::Run >build.log 2>&1 || (cat build.log && exit 1)
+    sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     export_or_prefix
     luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls --local --tree=deps
 }
