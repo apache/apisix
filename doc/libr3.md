@@ -11,6 +11,7 @@ libr3 supports PCRE(Perl Compatible Regular Expressions), so you can use route f
 Let's take a look at a few examples and have an intuitive understanding.
 
 1. default regular expression
+
 `/blog/post/{id}`
 
 there is not regular expression included, and `[^/]+` will be the default
@@ -19,6 +20,7 @@ regular expression of `id`.
 So `/blog/post/{id}` is equivalent to `/blog/post/{id:[^/]+}`.
 
 2. match all uris
+
 `/{:.*}`
 
 `/` matches root uri, and `.*` matches any character (except for line terminators).
@@ -26,16 +28,24 @@ So `/blog/post/{id}` is equivalent to `/blog/post/{id:[^/]+}`.
 `:` means is an anonymous match, for example the uri is `/blog/post/1`, the libr3 will return `[/blog/post/1]` if pattern is `/{:.*}`, and return `{"uri":"/blog/post/1"}` if pattern is `/{uri:.*}`.
 
 3. match number
+
 `/blog/post/{id:\d+}`
 
-for example the uri is `/blog/post/1`, libr3 will return `{"id":1}`.
+for example the uri is `/blog/post/1`, libr3 will return `{"id":"1"}`.
 
 4. match characters
+
 `/blog/post/{name:\w+}`
 
 for example the uri is `/blog/post/foo`, libr3 will return `{"name":"foo"}`.
 
 5. match multiple uri segments
+
 `/blog/post/{name:\w+}/{id:\d+}`
 
-for example the uri is `/blog/post/foo/12`, libr3 will return `{"name":"foo", "id":12}`.
+for example the uri is `/blog/post/foo/12`, libr3 will return `{"name":"foo", "id":"12"}`.
+
+`/blog/post/{:\w+}/{id:\d+}`
+
+for example the uri is `/blog/post/foo/12`, libr3 will return `{"1":"foo", "id":"12"}`.
+
