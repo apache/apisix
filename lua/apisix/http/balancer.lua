@@ -144,8 +144,10 @@ local function pick_server(route, ctx)
             checks = upstream.checks,
         })
 
-        -- fixme: recycle the checker object
         upstream.checker = checker
+
+        -- stop the checker by `gc`
+        core.table.setmt__gc(upstream, {__gc=function() checker:stop() end})
 
         for addr, weight in pairs(upstream.nodes) do
             local ip, port = parse_addr(addr)

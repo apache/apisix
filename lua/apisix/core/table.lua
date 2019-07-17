@@ -31,4 +31,13 @@ function _M.set(tab, ...)
 end
 
 
+-- only work under lua51 or luajit
+function _M.setmt__gc(t, mt)
+    local prox = newproxy(true)
+    getmetatable(prox).__gc = function() mt.__gc(t) end
+    t[prox] = true
+    return setmetatable(t, mt)
+end
+
+
 return _M
