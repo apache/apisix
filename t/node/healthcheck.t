@@ -19,7 +19,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route(two upstream node)
+=== TEST 1: set route(two healthy upstream nodes)
 --- config
     location /t {
         content_by_lua_block {
@@ -67,7 +67,7 @@ passed
 
 
 
-=== TEST 2: hit routes
+=== TEST 2: hit routes (two healthy nodes)
 --- config
     location /t {
         content_by_lua_block {
@@ -112,7 +112,7 @@ GET /t
 
 
 
-=== TEST 3: set route(two upstream node: one normal + one invalid)
+=== TEST 3: set route(two upstream node: one healthy + one unhealthy)
 --- config
     location /t {
         content_by_lua_block {
@@ -160,7 +160,7 @@ passed
 
 
 
-=== TEST 4: hit routes
+=== TEST 4: hit routes (two upstream node: one healthy + one unhealthy)
 --- config
     location /t {
         content_by_lua_block {
@@ -213,7 +213,7 @@ qr/Connection refused\) while connecting to upstream/
 
 
 
-=== TEST 5: chash route(two normal upstream node)
+=== TEST 5: chash route (two healthy nodes)
 --- config
     location /t {
         content_by_lua_block {
@@ -262,7 +262,7 @@ passed
 
 
 
-=== TEST 6: hit routes
+=== TEST 6: hit routes (two healthy nodes)
 --- config
     location /t {
         content_by_lua_block {
@@ -307,7 +307,7 @@ GET /t
 
 
 
-=== TEST 7: chash route(two upstream node: one normal + one invalid)
+=== TEST 7: chash route (upstream nodes: 1 healthy + 8 unhealthy)
 --- config
     location /t {
         content_by_lua_block {
@@ -320,7 +320,14 @@ GET /t
                         "type": "chash",
                         "nodes": {
                             "127.0.0.1:1980": 1,
-                            "127.0.0.1:1970": 1
+                            "127.0.0.1:1970": 1,
+                            "127.0.0.1:1971": 1,
+                            "127.0.0.1:1972": 1,
+                            "127.0.0.1:1973": 1,
+                            "127.0.0.1:1974": 1,
+                            "127.0.0.1:1975": 1,
+                            "127.0.0.1:1976": 1,
+                            "127.0.0.1:1977": 1
                         },
                         "key": "remote_addr",
                         "checks": {
@@ -356,7 +363,7 @@ passed
 
 
 
-=== TEST 8: hit routes
+=== TEST 8: hit routes (upstream nodes: 1 healthy + 8 unhealthy)
 --- config
     location /t {
         content_by_lua_block {
@@ -401,6 +408,8 @@ passed
 GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/\[error\].*/
+--- grep_error_log_out eval
+qr/Connection refused\) while connecting to upstream/
 --- timeout: 5
