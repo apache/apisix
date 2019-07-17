@@ -1,4 +1,5 @@
-local roundrobin = require("resty.roundrobin")
+local healthcheck = require("resty.healthcheck")
+local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
 local balancer = require("ngx.balancer")
 local core = require("apisix.core")
@@ -14,7 +15,7 @@ local tostring = tostring
 
 
 local module_name = "balancer"
-local lrucache_get = core.lrucache.new({ttl = 300, count = 256})
+local lrucache_server_picker = core.lrucache.new({ttl = 300, count = 256})
 
 
 local _M = {
@@ -23,12 +24,52 @@ local _M = {
 }
 
 
+local function parse_addr(addr)
+    local pos = find_str(addr, ":", 1, true)
+    if not pos then
+        return addr, 80
+    end
+
+    local host = sub_str(addr, 1, pos - 1)
+    local port = sub_str(addr, pos + 1)
+    return host, tonumber(port)
+end
+
+
+local function fetch_health_nodes(upstream)
+    if not upstream.checks then
+        return upstream.nodes
+    end
+
+    local host = upstream.checks and upstream.checks.host
+    local checker = upstream.checker
+    local up_nodes = core.table.new(0, #upstream.nodes)
+
+    for addr, weight in pairs(upstream.nodes) do
+        local ip, port = parse_addr(addr)
+        local ok = checker:get_target_status(ip, port, host)
+        if ok then
+            up_nodes[addr] = weight
+        end
+    end
+
+    if core.table.nkeys(up_nodes) == 0 then
+        core.log.warn("all upstream nodes is unhealth, use default")
+        up_nodes = upstream.nodes
+    end
+    return up_nodes
+end
+
+
 local function create_server_picker(upstream)
     core.log.info("create create_obj, type: ", upstream.type,
                   " nodes: ", core.json.delay_encode(upstream.nodes))
 
     if upstream.type == "roundrobin" then
-        local picker = roundrobin:new(upstream.nodes)
+        local up_nodes = fetch_health_nodes(upstream)
+        core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))
+
+        local picker = roundrobin:new(up_nodes)
         return {
             get = function ()
                 return picker:find()
@@ -37,10 +78,11 @@ local function create_server_picker(upstream)
     end
 
     if upstream.type == "chash" then
+        local up_nodes = fetch_health_nodes(upstream)
         local str_null = str_char(0)
 
         local servers, nodes = {}, {}
-        for serv, weight in pairs(upstream.nodes) do
+        for serv, weight in pairs(up_nodes) do
             local id = str_gsub(serv, ":", str_null)
 
             servers[id] = serv
@@ -59,18 +101,6 @@ local function create_server_picker(upstream)
     end
 
     return nil, "invalid balancer type: " .. upstream.type, 0
-end
-
-
-local function parse_addr(addr)
-    local pos = find_str(addr, ":", 1, true)
-    if not pos then
-        return addr, 80
-    end
-
-    local host = sub_str(addr, 1, pos - 1)
-    local port = sub_str(addr, pos + 1)
-    return host, tonumber(port)
 end
 
 
@@ -107,8 +137,36 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    local server_picker = lrucache_get(key, version,
-                            create_server_picker, upstream)
+    if upstream.checks and not upstream.checker then
+        local checker = healthcheck.new({
+            name = "upstream",
+            shm_name = "upstream-healthcheck",
+            checks = upstream.checks,
+        })
+
+        upstream.checker = checker
+
+        -- stop the checker by `gc`
+        core.table.setmt__gc(upstream, {__gc=function() checker:stop() end})
+
+        for addr, weight in pairs(upstream.nodes) do
+            local ip, port = parse_addr(addr)
+            local ok, err = checker:add_target(ip, port, upstream.checks.host)
+            if not ok then
+                core.log.error("failed to add new health check target: ", addr,
+                               " err: ", err)
+            end
+        end
+
+        core.log.warn("create checks obj for upstream, check")
+    end
+
+    if upstream.checks then
+        version = version .. "#" .. upstream.checker.status_ver
+    end
+
+    local server_picker = lrucache_server_picker(key, version,
+                                                 create_server_picker, upstream)
     if not server_picker then
         return nil, nil, "failed to fetch server picker"
     end

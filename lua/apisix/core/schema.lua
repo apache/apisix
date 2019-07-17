@@ -45,66 +45,37 @@ local id_schema = {
     }
 }
 
--- todo: chash and roundrobin have different properties, we may support
---     this limitation later.
 
---   {
---     "definitions": {
---       "nodes": {
---         "patternProperties": {
---           ".*": {
---             "minimum": 1,
---             "type": "integer"
---           }
---         },
---         "minProperties": 1,
---         "type": "object"
---       }
---     },
---     "type": "object",
---     "anyOf": [
---       {
---         "properties": {
---           "type": {
---             "type": "string",
---             "enum": [
---               "roundrobin"
---             ]
---           },
---           "nodes": {
---             "$ref": "#/definitions/nodes"
---           }
---         },
---         "required": [
---           "type",
---           "nodes"
---         ],
---         "additionalProperties": false
---       },
---       {
---         "properties": {
---           "type": {
---             "type": "string",
---             "enum": [
---               "chash"
---             ]
---           },
---           "nodes": {
---             "$ref": "#/definitions/nodes"
---           },
---           "key": {
---             "type": "string"
---           }
---         },
---         "required": [
---           "key",
---           "type",
---           "nodes"
---         ],
---         "additionalProperties": false
---       }
---     ]
---   }
+-- todo: support all option
+--   default value: https://github.com/Kong/lua-resty-healthcheck/
+--   blob/master/lib/resty/healthcheck.lua#L1121
+local health_checker = {
+    type = "object",
+    properties = {
+        active = {
+            type = "object",
+            properties = {
+                http_path = {type = "string"},
+                host = {type = "string"},
+                healthy = {
+                    type = "object",
+                    properties = {
+                        interval = {type = "integer", minimum = 1},
+                        successes = {type = "integer", minimum = 1}
+                    }
+                },
+                unhealthy = {
+                    type = "object",
+                    properties = {
+                        interval = {type = "integer", minimum = 1},
+                        http_failures = {type = "integer", minimum = 1}
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 local upstream_schema = {
     type = "object",
@@ -126,6 +97,7 @@ local upstream_schema = {
             type = "string",
             enum = {"chash", "roundrobin"}
         },
+        checks = health_checker,
         key = {
             description = "the key of chash for dynamic load balancing",
             type = "string",

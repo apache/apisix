@@ -1,3 +1,6 @@
+local newproxy = newproxy
+local getmetatable = getmetatable
+local setmetatable = setmetatable
 local select = select
 
 local _M = {
@@ -28,6 +31,15 @@ function _M.set(tab, ...)
     for i = 1, select('#', ...) do
         tab[i] = select(i, ...)
     end
+end
+
+
+-- only work under lua51 or luajit
+function _M.setmt__gc(t, mt)
+    local prox = newproxy(true)
+    getmetatable(prox).__gc = function() mt.__gc(t) end
+    t[prox] = true
+    return setmetatable(t, mt)
 end
 
 

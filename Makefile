@@ -24,7 +24,6 @@ help:
 ### dev:          Create a development ENV
 .PHONY: dev
 dev:
-	./utils/update_nginx_conf_dev.sh
 ifeq ($(UNAME),Darwin)
 	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-dev-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
