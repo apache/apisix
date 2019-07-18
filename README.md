@@ -47,7 +47,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **High performance**
 - **Custom plugins**
 - **Anti-ReDoS(Regular expression Denial of Service)**
-- **Health Checks**: TODO.
+- **[Health Checks](doc/health-check.md)**.
 - **Caching**: TODO.
 - **Dashboard**: TODO.
 - **OAuth2.0**: TODO.
@@ -102,59 +102,9 @@ If all goes well, you will see the message like this:
 
 Congratulations, you have already installed APISIX successfully.
 
-## Install APISIX Development Environment
+## Development Manual of APISIX
 
-If you are a developer, you can set up a local development environment with the following commands.
-
-```shell
-git clone git@github.com:iresty/apisix.git
-cd apisix
-make dev
-```
-
-If all goes well, you will see this message at the end:
-
-> Stopping after installing dependencies for apisix
-
-The following is the expected development environment directory structure:
-
-```shell
-$ tree -L 2 -d apisix
-apisix
-├── bin
-├── conf
-├── deps                # dependent Lua and dynamic libraries
-│   ├── lib64
-│   └── share
-├── doc
-│   └── images
-├── lua
-│   └── apisix
-├── t
-│   ├── admin
-│   ├── core
-│   ├── lib
-│   ├── node
-│   └── plugin
-└── utils
-```
-
-We can use more actions in the `make` command, for example:
-
-```shell
-$ make help
-Makefile rules:
-
-    help:         Show Makefile rules.
-    dev:          Create a development ENV
-    check:        Check Lua srouce code
-    init:         Initialize the runtime environment
-    run:          Start the apisix server
-    stop:         Stop the apisix server
-    clean:        Remove generated files
-    reload:       Reload the apisix server
-    install:      Install the apisix
-```
+If you are a developer, you can view the [dev manual](doc/dev-manual.md) for more detailed information.
 
 ## Quickstart
 
@@ -166,48 +116,11 @@ sudo apisix start
 
 2. try limit count plugin
 
-For the convenience of testing, we set up a maximum of 2 visits in 60 seconds,
-and return 503 if the threshold is exceeded:
+Limit count plugin is a good start to try APISIX,
+you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
 
-```shell
-$ curl -i http://127.0.0.1:9080/index.html
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 1
-Server: APISIX web server
-Date: Mon, 03 Jun 2019 09:38:32 GMT
-Last-Modified: Wed, 24 Apr 2019 00:14:17 GMT
-ETag: "5cbfaa59-3377"
-Accept-Ranges: bytes
-
-...
-```
-
-You can try more [plugins](doc/plugins.md) follow the documentation.
+You can try more [plugins](doc/plugins.md).
 
 ## Benchmark
 
@@ -215,28 +128,17 @@ Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency 
 
 You can view the [benchmark documentation](doc/benchmark.md) for more detailed information.
 
-## Test
-
-Running the test cases at local machine:
-
-```shell
-make test
-```
-
-The following dependencies are required to run the test suite:
-
-* Nginx: version >= 1.4.2
-
-* Perl modules:
-    `Test::Nginx` https://github.com/openresty/test-nginx
-
-For the detail on how to install dependencies, please take a look at [travis.yml](.travis.yml).
-
-## Documentation
+## Architecture Design
 
 English Development Documentation: TODO
 
 [中文开发文档](doc/architecture-design-cn.md)
+
+## Landscape
+
+APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
+
+![](doc/images/cncf-landscope.png)
 
 ## Contributing
 
