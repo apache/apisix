@@ -3,6 +3,7 @@ local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
 local balancer = require("ngx.balancer")
 local core = require("apisix.core")
+local worker_exiting = ngx.worker.exiting
 local sub_str = string.sub
 local find_str = string.find
 local upstreams_etcd
@@ -147,7 +148,13 @@ local function pick_server(route, ctx)
         upstream.checker = checker
 
         -- stop the checker by `gc`
-        core.table.setmt__gc(upstream, {__gc=function() checker:stop() end})
+        core.table.setmt__gc(upstream, {__gc = function()
+            if worker_exiting() then
+                return
+            end
+
+            checker:stop()
+        end})
 
         for addr, weight in pairs(upstream.nodes) do
             local ip, port = parse_addr(addr)
