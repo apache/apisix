@@ -138,7 +138,7 @@ English Development Documentation: TODO
 
 APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
 
-![](doc/images/cncf-landscope.png)
+![](doc/images/cncf-landscope.jpg)
 
 ## Contributing
 
