@@ -1,10 +1,10 @@
 -- Copyright (C) Yuansheng Wang
 
+local get_request = require("resty.core.base").get_request
 local r3router = require("resty.r3")
 local core     = require("apisix.core")
 local ngx_ssl  = require("ngx.ssl")
 local ffi      = require("ffi")
-local get_request = require("resty.core.base").get_request
 local errmsg   = ffi.new("char *[1]")
 local C        = ffi.C
 local ipairs   = ipairs
@@ -40,7 +40,7 @@ local function create_r3_router(ssl_items)
         if type(ssl) == "table" then
             local sni = ssl.value.sni:reverse()
             if sni:sub(#sni) == "*" then
-                sni = sni:sub(1, #sni - 1) .. "{prefix:.+}"
+                sni = sni:sub(1, #sni - 1) .. "{prefix:.*}"
             end
 
             idx = idx + 1
