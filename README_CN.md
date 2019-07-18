@@ -97,59 +97,9 @@ sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 
 恭喜你，APISIX 已经安装成功了。
 
-## 搭建开发环境
+## 开发环境
 
-如果你是开发人员，可以通过下面的命令快速搭建本地开发环境。
-
-```shell
-git clone git@github.com:iresty/apisix.git
-cd apisix
-make dev
-```
-
-如果一切顺利，你会在最后看到这样的信息：
-
-> Stopping after installing dependencies for apisix
-
-下面是预期的开发环境目录结构：
-
-```shell
-$ tree -L 2 -d apisix
-apisix
-├── bin
-├── conf
-├── deps                # 依赖的 Lua 和动态库，放在了这里
-│   ├── lib64
-│   └── share
-├── doc
-│   └── images
-├── lua
-│   └── apisix
-├── t
-│   ├── admin
-│   ├── core
-│   ├── lib
-│   ├── node
-│   └── plugin
-└── utils
-```
-
-`make` 可以辅助我们完成更多其他功能, 比如:
-
-```shell
-$ make help
-Makefile rules:
-
-    help:         Show Makefile rules.
-    dev:          Create a development ENV
-    check:        Check Lua srouce code
-    init:         Initialize the runtime environment
-    run:          Start the apisix server
-    stop:         Stop the apisix server
-    clean:        Remove generated files
-    reload:       Reload the apisix server
-    install:      Install the apisix
-```
+如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤.
 
 ## 快速上手
 
@@ -161,45 +111,7 @@ sudo apisix start
 
 2. 测试限流插件
 
-为了方便测试，下面的示例中设置的是 60 秒最多只能有 2 个请求，如果超过就返回 503：
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
-
-```shell
-$ curl -i http://127.0.0.1:9080/index.html
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 1
-Server: APISIX web server
-Date: Mon, 03 Jun 2019 09:38:32 GMT
-Last-Modified: Wed, 24 Apr 2019 00:14:17 GMT
-ETag: "5cbfaa59-3377"
-Accept-Ranges: bytes
-
-...
-```
+你可以测试限流插件，来上手体验 APISIX，按照限流插件的[文档](doc/plugins/limit-count-cn.md)步骤即可.
 
 你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
 
@@ -209,9 +121,15 @@ Accept-Ranges: bytes
 
 你可以看出[性能测试文档](doc/benchmark-cn.md)来了解更多详细内容。
 
-## 开发文档
+## 架构设计
 
 [详细设计文档](doc/architecture-design-cn.md)
+
+## 全景图
+
+APISIX 被纳入 [云原生软件基金会 API 网关全景图](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
+
+![](doc/images/cncf-landscope.png)
 
 ## 参与社区
 
