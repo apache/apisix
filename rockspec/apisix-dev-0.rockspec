@@ -8,26 +8,26 @@ source = {
 }
 
 description = {
-   summary = "APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.",
-   homepage = "https://github.com/iresty/apisix",
-   license = "Apache License 2.0",
-   maintainer = "Yuansheng Wang <membphis@gmail.com>"
+    summary = "APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.",
+    homepage = "https://github.com/iresty/apisix",
+    license = "Apache License 2.0",
+    maintainer = "Yuansheng Wang <membphis@gmail.com>"
 }
 
 dependencies = {
-   "lua-resty-libr3 = 0.7",
-   "lua-resty-template = 1.9-1",
-   "lua-resty-etcd = 0.5",
-   "lua-resty-balancer = 0.02rc5",
-   "lua-resty-ngxvar = 0.3",
-   "lua-resty-jit-uuid = 0.0.7",
-   "rapidjson = 0.6.0-1",
-   "lua-resty-healthcheck-iresty = 1.0.0",
+    "lua-resty-libr3 = 0.7",
+    "lua-resty-template = 1.9-1",
+    "lua-resty-etcd = 0.5",
+    "lua-resty-balancer = 0.02rc5",
+    "lua-resty-ngxvar = 0.3",
+    "lua-resty-jit-uuid = 0.0.7",
+    "rapidjson = 0.6.0-1",
+    "lua-resty-healthcheck-iresty = 1.0.0",
 }
 
 build = {
-   type = "make",
-   build_variables = {
+    type = "make",
+    build_variables = {
         CFLAGS="$(CFLAGS)",
         LIBFLAG="$(LIBFLAG)",
         LUA_LIBDIR="$(LUA_LIBDIR)",
