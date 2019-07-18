@@ -47,7 +47,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **High performance**
 - **Custom plugins**
 - **Anti-ReDoS(Regular expression Denial of Service)**
-- **Health Checks**: TODO.
+- **[Health Checks](doc/health-check.md)**.
 - **Caching**: TODO.
 - **Dashboard**: TODO.
 - **OAuth2.0**: TODO.
