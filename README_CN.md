@@ -129,7 +129,7 @@ sudo apisix start
 
 APISIX 被纳入 [云原生软件基金会 API 网关全景图](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
 
-![](doc/images/cncf-landscope.png)
+![](doc/images/cncf-landscope.jpg)
 
 ## 参与社区
 
