@@ -1,14 +1,13 @@
 local require = require
 local core = require("apisix.core")
 local pkg_loaded = package.loaded
-local insert_tab = table.insert
 local sort_tab = table.sort
 local pcall = pcall
 local ipairs = ipairs
 local pairs = pairs
 local type = type
-local local_plugins = {}
-local local_plugins_hash = {}
+local local_plugins = core.table.new(10, 0)
+local local_plugins_hash = core.table.new(10, 0)
 
 
 local _M = {
@@ -46,7 +45,7 @@ local function load_plugin(name)
     end
 
     plugin.name = name
-    insert_tab(local_plugins, plugin)
+    core.table.insert(local_plugins, plugin)
 
     if plugin.init then
         plugin.init()
@@ -145,8 +144,8 @@ function _M.filter(user_route, plugins)
         local plugin_conf = user_plugin_conf[name]
 
         if type(plugin_conf) == "table" and not plugin_conf.disable then
-            insert_tab(plugins, plugin_obj)
-            insert_tab(plugins, plugin_conf)
+            core.table.insert(plugins, plugin_obj)
+            core.table.insert(plugins, plugin_conf)
         end
     end
 
