@@ -29,7 +29,7 @@ local function check_signature(signature, timestamp, res)
     local src        = res..'|'..timestamp
     local digest     = ngx.hmac_sha1(local_conf.apisix.api_key, src)
     local str_base64 = ngx.encode_base64(digest)
-    local generated  = ngx.md5(str)
+    local generated  = ngx.md5(str_base64)
 
     if generated==signature then
         return true, nil
@@ -69,13 +69,14 @@ local function run(params)
     local signature = req_body and req_body.signature or nil
     local timestamp = req_body and req_body.timestamp or nil
 
-    local ok, err = check_token(signature, timestamp, params.res)
+    local ok, err = check_signature(signature, timestamp, params.res)
     if not ok then
         core.response.exit(403)
     end
 
     local code, data = resource[method](params, req_body)
     if code then
+        core.log.error("invalid request body: ", req_body, " err: ", err)
         core.response.exit(code, data)
     end
 end
