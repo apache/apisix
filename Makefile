@@ -25,7 +25,7 @@ help:
 .PHONY: dev
 dev:
 ifeq ($(UNAME),Darwin)
-	luarocks make --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-dev-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-dev-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
 	luarocks make rockspec/apisix-dev-0.rockspec --tree=deps --only-deps --local
 else
