@@ -7,6 +7,7 @@ local plugin = require("apisix.plugin")
 local service_fetch = require("apisix.http.service").get
 local ssl_match = require("apisix.http.ssl").match
 local admin_init = require("apisix.admin.init")
+local api_init = require("apisix.api.init")
 local get_var = require("resty.ngxvar").fetch
 local ngx = ngx
 local get_method = ngx.req.get_method
@@ -54,6 +55,7 @@ function _M.http_init_worker()
     load_balancer = require("apisix.http.balancer").run
 
     require("apisix.admin.init").init_worker()
+    require("apisix.api.init").init_worker()
 
     require("apisix.http.route").init_worker()
     require("apisix.http.service").init_worker()
@@ -224,6 +226,18 @@ do
 function _M.http_admin()
     if not router then
         router = admin_init.get()
+    end
+
+    -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
+    local ok = router:dispatch(get_var("uri"), get_method())
+    if not ok then
+        ngx_exit(404)
+    end
+end
+
+function _M.http_api()
+    if not router then
+        router = api_init.get()
     end
 
     -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())

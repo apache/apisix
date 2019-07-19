@@ -152,6 +152,21 @@ http {
     }
     {% end %}
 
+    {% if enable_api and port_api then %}
+    server {
+        listen {* port_api *};
+        include mime.types;
+
+        location /apisix/api {
+            allow {*allow_api*};
+            content_by_lua_block {
+                apisix.http_api()
+            }
+        }
+    }
+    {% end %}
+
+
     server {
         listen {* node_listen *};
         listen {* node_ssl_listen *} ssl;
@@ -174,6 +189,15 @@ http {
             allow {*allow_admin*};
             content_by_lua_block {
                 apisix.http_admin()
+            }
+        }
+        {% end %}
+
+        {% if enable_api and not port_api then %}
+        location /apisix/api {
+            allow {*allow_api*};
+            content_by_lua_block {
+                apisix.http_api()
             }
         }
         {% end %}

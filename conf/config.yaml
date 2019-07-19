@@ -10,6 +10,11 @@ apisix:
     - 'unix:'
   # port_admin: 9180              # use a separate port
 
+  enable_api: true
+  port_api: 9988
+  allow_api: "127.0.0.0/24"  
+  api_key: "key4@pi6"
+
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
   prefix: "/apisix"             # apisix configurations prefix
