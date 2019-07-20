@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 import { IRouteData } from '../types'
 
-export const getList = (id: string) =>
+export const getList = () =>
   request({
     url: '/routes',
     method: 'GET'
@@ -14,13 +14,13 @@ export const update = (id: string, params: IRouteData) =>
     params
   })
 
-export const get = (id: string) =>
+export const getRouter = (id: string) =>
   request({
     url: `/routes/${id}`,
     method: 'GET'
   })
 
-export const remove = (id: string) =>
+export const removeRouter = (id: string) =>
   request({
     url: `/routes/${id}`,
     method: 'DELETE'

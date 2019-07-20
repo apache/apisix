@@ -58,8 +58,7 @@ class User extends VuexModule implements IUserState {
   public async Login(userInfo: { username: string, password: string}) {
     let { username, password } = userInfo
     username = username.trim()
-    // NOTE: 在此处绕过登录
-    
+    // TEMP: 在此处绕过登录
     // const { data } = await login({ username, password })
 
     const data = {
@@ -82,7 +81,7 @@ class User extends VuexModule implements IUserState {
     if (this.token === '') {
       throw Error('GetUserInfo: token is undefined!')
     }
-    // NOTE: 暂时绕过登录
+    // TEMP: 暂时绕过登录
     // const { data } = await getUserInfo({ /* Your params here */ })
     const data = {
       user: {
@@ -94,7 +93,7 @@ class User extends VuexModule implements IUserState {
         introduction: 'I am a super administrator',
         email: 'admin@test.com',
         phone: '1234567890',
-        roles: ['admin'],
+        roles: ['admin']
       }
     }
 
@@ -134,7 +133,8 @@ class User extends VuexModule implements IUserState {
     if (this.token === '') {
       throw Error('LogOut: token is undefined!')
     }
-    await logout()
+    // TEMP: 暂时跳过 API 注销
+    // await logout()
     removeToken()
     resetRouter()
     this.SET_TOKEN('')

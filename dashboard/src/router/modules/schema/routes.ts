@@ -12,9 +12,25 @@ const tableRoutes: RouteConfig = {
   children: [
     {
       path: 'list',
-      component: () => import(/* webpackChunkName: "complex-table" */ '@/views/table/complex-table.vue'),
+      component: () => import('@/views/schema/routes/list.vue'),
       name: 'SchemaRoutesList',
       meta: { title: 'SchemaRoutesList' }
+    }, {
+      path: 'edit/:id',
+      component: () => import('@/views/schema/routes/edit.vue'),
+      name: 'SchemaRoutesEdit',
+      meta: {
+        title: 'SchemaRoutesEdit',
+        hidden: true
+      }
+    }, {
+      path: 'create',
+      component: () => import('@/views/schema/routes/edit.vue'),
+      name: 'SchemaRoutesCreate',
+      meta: {
+        title: 'SchemaRoutesCreate',
+        hidden: true
+      }
     }
   ]
 }

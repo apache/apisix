@@ -65,6 +65,8 @@ export default {
     profile: 'Profile',
     SchemaRoutes: 'Routes',
     SchemaRoutesList: 'Routes',
+    SchemaRoutesEdit: 'Router Edit',
+    SchemaRoutesCreate: 'Router Create',
     SchemaConsumers: 'Consumers',
     SchemaConsumersList: 'Consumers',
     SchemaConsumersEdit: 'Consumer Edit',
