@@ -391,6 +391,10 @@ function _M.start(...)
 
     local need_ver = "1.15.8";
     local op_ver = getOpenrestyVersion()
+    if op_ver == nil then
+        io.stderr:write("can not find openresty \n")
+        return
+    end
     if not checkVersion(op_ver, need_ver) then
         io.stderr:write("the openresty version must >=", need_ver, "\n")
         return
