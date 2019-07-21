@@ -252,20 +252,45 @@ local function read_yaml_conf()
     return yaml.parse(ymal_conf)
 end
 
-local function checkOpenrestyVersion(need_version)
-    local shell="need_ver="..need_version ..";"
-          .."str=`openresty -v 2>&1`;"
-          .."op_ver=${str##*/};"
-          --.."echo \"op_ver:\"$op_ver;"
-          .."max_ver=`echo \"${need_ver} ${op_ver}\" | tr \" \" \"\n\" | sort -rV | head -n 1`;"
-          --.."echo \"max_ver:\"${max_ver};"
-          .."if [ $max_ver != $need_ver ];then"
-          .."  echo 1;"
-          .."else"
-          .."  echo 0;"
-          .."fi"
-     local ret = excute_cmd(shell)
-     return trim(ret)=="1"
+local function getOpenrestyVersion()
+    local str = "nginx version: openresty/"
+    local ver = nil
+    local ret = excute_cmd("openresty -v 2>&1")
+    local pos = string.find(ret,str)
+    if( pos == 1 ) then
+        ver = string.sub(ret,string.len(str)+1)
+    end
+    return ver
+end
+
+local function checkVersion(ver1,ver2)
+    local a={}
+    local b={}
+    local a_len=0
+    local b_len=0
+    local i=1
+    for word in string.gmatch(ver1,"%d+") do
+             table.insert(a,tonumber(word))
+             a_len = a_len+1
+    end
+    for word in string.gmatch(ver2,"%d+") do
+             table.insert(b,tonumber(word))
+             b_len = b_len+1
+    end
+    while(i<=a_len and i<=b_len) do
+         -- print(a[i] .. " " .. b[i])
+         if(a[i] == b[i] ) then
+             i=i+1
+         else
+             return a[i]>b[i];
+         end
+    end
+    -- print(i)
+    if(i > a_len and i< b_len )  then
+         return false
+    else
+         return true
+    end
 end
 
 local _M = {version = 0.1}
@@ -364,9 +389,14 @@ function _M.start(...)
     init(...)
     init_etcd(...)
 
-    local need_version="1.15.8";
-    if not checkOpenrestyVersion(need_version) then
-        print("the openresty version must >=", need_version, "\n")
+    local need_ver = "1.15.8";
+    local op_ver = getOpenrestyVersion()
+    if op_ver == nil then
+        io.stderr:write("can not find openresty \n")
+        return
+    end
+    if not checkVersion(op_ver, need_ver) then
+        io.stderr:write("the openresty version must >=", need_ver, "\n")
         return
     end
 
