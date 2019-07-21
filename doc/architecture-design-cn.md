@@ -77,7 +77,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
 |id       |optional |如果有，必须与路径中最后的数字保持一致|
 |host     |optional |当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
 |remote_addr|optional |客户端请求 IP 地址，比如 `192.168.1.101`；也支持 CIDR 格式，比如 `192.168.1.0/24`|
-|methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
+|methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE。|
 |plugins|required |启用的插件配置，详见 [Plugin](#plugin) |
 |upstream|optional |启用的 upstream 配置，详见 [Upstream](#upstream)|
 |upstream_id|optional |启用的 upstream id，详见 [Upstream](#upstream)|
