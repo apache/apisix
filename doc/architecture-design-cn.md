@@ -220,7 +220,7 @@ APISIX 支持对上游的健康检查，你可以设置需要检查的 host、ur
     * roundrobin：支持权重的负载
     * chash：一致性 hash (TODO)
 * nodes: 上游机器地址列表（目前仅支持 IP+Port 方式）
-* key: 该选项只有类型是 `roundrobin` 才有效。根据 `key` 来查找对应的 node `id`，相同的
+* key: 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的
 `key` 在同一个对象中，永远返回相同 id 。
 * checks: 配置健康检查的参数。
 
