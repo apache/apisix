@@ -934,3 +934,36 @@ GET /t
 {"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/remote_addr\""}
 --- no_error_log
 [error]
+
+
+
+=== TEST 27: all method
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "POST", "PUT", "DELETE", "PATCH",
+                                    "HEAD", "OPTIONS"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
