@@ -118,7 +118,8 @@ _M.route = [[{
             "items": {
                 "description": "HTTP method",
                 "type": "string",
-                "enum": ["GET", "PUT", "POST", "DELETE"]
+                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+                         "OPTIONS"]
             },
             "uniqueItems": true
         },
