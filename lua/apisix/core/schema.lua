@@ -72,6 +72,47 @@ local health_checker = {
                     }
                 }
             }
+        },
+        passive = {
+            type = "object",
+            properties = {
+                type = {
+                    type = "string",
+                    enum = {"http", "https", "tcp"},
+                },
+                healthy = {
+                    type = "object",
+                    properties = {
+                        http_statuses = {
+                            type = "array",
+                            items = {
+                                type = "integer",
+                                minimum = 200,
+                                maximum = 599,
+                            },
+                            uniqueItems = true,
+                        },
+                        successes = {type = "integer", minimum = 1}
+                    }
+                },
+                unhealthy = {
+                    type = "object",
+                    properties = {
+                        http_statuses = {
+                            type = "array",
+                            items = {
+                                type = "integer",
+                                minimum = 200,
+                                maximum = 599,
+                            },
+                            uniqueItems = true,
+                        },
+                        tcp_failures = {type = "integer"},
+                        timeouts = {type = "integer"},
+                        http_failures = {type = "integer"},
+                    }
+                }
+            }
         }
     }
 }
