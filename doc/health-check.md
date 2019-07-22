@@ -23,6 +23,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "127.0.0.1:1970": 1
         }
         "type": "roundrobin",
+        "retries": 2,
         "checks": {
             "active": {
                 "http_path": "/status",
@@ -35,23 +36,47 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
                     "interval": 1,
                     "http_failures": 2
                 }
+            },
+            "passive": {
+                "healthy": {
+                    "http_statuses": [200, 201],
+                    "successes": 3
+                },
+                "unhealthy": {
+                    "http_statuses": [500],
+                    "http_failures": 3,
+                    "tcp_failures": 3
+                }
             }
         }
     }
 }'
 ```
 
-The configures in `checks` are belong to health check, the type of `checks` is
- one of the two: `active` or `passive`.
+The configures in `checks` are belong to health check, the type of `checks`
+contains: `active` or `passive`.
 
-You need to specify the check point:
-* `http_path`: The HTTP GET request path used to detect if the upstream is healthy.
-* `host`: The HTTP request host used to detect if the upstream is healthy.
+* `active`: To enable active health checks, you need to specify the configuration items under `checks.active` in the Upstream object configuration.
 
-The threshold fields of `health` are:
-* `interval`: Interval between health checks for healthy targets (in seconds), the minimum is 1.
-* `successes`: The number of success times to determine the target is healthy, the minimum is 1.
+    * `active.http_path`: The HTTP GET request path used to detect if the upstream is healthy.
+    * `active.host`: The HTTP request host used to detect if the upstream is healthy.
 
-The threshold fields of  `unhealthy` are:
-* `interval`: Interval between health checks for unhealthy targets (in seconds), the minimum is 1.
-* `http_failures`: The number of http failures times to determine the target is unhealthy, the minimum is 1.
+    The threshold fields of `healthy` are:
+    * `active.healthy.interval`: Interval between health checks for healthy targets (in seconds), the minimum is 1.
+    * `active.healthy.successes`: The number of success times to determine the target is healthy, the minimum is 1.
+
+    The threshold fields of  `unhealthy` are:
+    * `active.unhealthy.interval`: Interval between health checks for unhealthy targets (in seconds), the minimum is 1.
+    * `active.unhealthy.http_failures`: The number of http failures times to determine the target is unhealthy, the minimum is 1.
+
+* `passive`: To enable passive health checks, you need to specify the configuration items under `checks.passive` in the Upstream object configuration.
+
+    The threshold fields of `healthy` are:
+    * `passive.healthy.http_statuses`: If the current response code is equal to any of these, set the upstream node to the `healthy` state. Otherwise ignore this request.
+    * `passive.healthy.successes`: Number of successes in proxied traffic (as defined by `passive.healthy.http_statuses`) to consider a target healthy, as observed by passive health checks.
+
+    The threshold fields of `unhealthy` are:
+    * `passive.unhealthy.http_statuses`: If the current response code is equal to any of these, set the upstream node to the `unhealthy` state. Otherwise ignore this request.
+    * `passive.unhealthy.tcp_failures`: Number of TCP failures in proxied traffic to consider a target unhealthy, as observed by passive health checks.
+    * `passive.unhealthy.timeouts`: Number of timeouts in proxied traffic to consider a target unhealthy, as observed by passive health checks.
+    * `passive.unhealthy.http_failures`: Number of HTTP failures in proxied traffic (as defined by `passive.unhealthy.http_statuses`) to consider a target unhealthy, as observed by passive health checks.
