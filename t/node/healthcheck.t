@@ -477,7 +477,7 @@ passed
 
 
 
-=== TEST 10: hit routes (passive)
+=== TEST 10: hit routes (passive + retries)
 --- config
     location /t {
         content_by_lua_block {
