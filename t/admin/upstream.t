@@ -21,7 +21,8 @@ __DATA__
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
-                    "type": "roundrobin"
+                    "type": "roundrobin",
+                    "desc": "new upstream"
                 }]],
                 [[{
                     "node": {
@@ -29,7 +30,8 @@ __DATA__
                             "nodes": {
                                 "127.0.0.1:8080": 1
                             },
-                            "type": "roundrobin"
+                            "type": "roundrobin",
+                            "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/1"
                     },
@@ -64,7 +66,8 @@ passed
                             "nodes": {
                                 "127.0.0.1:8080": 1
                             },
-                            "type": "roundrobin"
+                            "type": "roundrobin",
+                            "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/1"
                     },

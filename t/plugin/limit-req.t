@@ -86,6 +86,7 @@ done
                             },
                             "type": "roundrobin"
                         },
+                        "desc": "上游节点",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -105,6 +106,7 @@ done
                                 },
                                 "type": "roundrobin"
                             },
+                            "desc": "上游节点",
                             "uri": "/hello"
                         },
                         "key": "/apisix/routes/1"

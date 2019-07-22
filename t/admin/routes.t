@@ -25,6 +25,7 @@ __DATA__
                             },
                             "type": "roundrobin"
                         },
+                        "desc": "new route",
                         "uri": "/index.html"
                 }]],
                 [[{
@@ -34,6 +35,7 @@ __DATA__
                                 "GET"
                             ],
                             "uri": "/index.html",
+                            "desc": "new route",
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -75,6 +77,7 @@ passed
                                 "GET"
                             ],
                             "uri": "/index.html",
+                            "desc": "new route",
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
