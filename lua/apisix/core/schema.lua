@@ -46,7 +46,7 @@ local id_schema = {
 }
 
 
--- todo: support all option
+-- todo: support all options
 --   default value: https://github.com/Kong/lua-resty-healthcheck/
 --   blob/master/lib/resty/healthcheck.lua#L1121
 local health_checker = {
@@ -132,6 +132,19 @@ local upstream_schema = {
                 }
             },
             minProperties = 1,
+        },
+        retries = {
+            type = "integer",
+            minimum = 1,
+        },
+        timeout = {
+            type = "object",
+            properties = {
+                connect = {type = "number", minimum = 0},
+                send = {type = "number", minimum = 0},
+                read = {type = "number", minimum = 0},
+            },
+            required = {"connect", "send", "read"},
         },
         type = {
             description = "algorithms of load balancing",
