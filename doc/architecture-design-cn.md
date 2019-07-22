@@ -216,13 +216,14 @@ APISIX 支持对上游的健康检查，你可以设置需要检查的 host、ur
 
 #### 配置参数
 
-* type：`roundrobin` 或 `chash`
-    * roundrobin：支持权重的负载
-    * chash：一致性 hash (TODO)
-* nodes: 上游机器地址列表（目前仅支持 IP+Port 方式）
-* key: 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的
+* `type`：`roundrobin` 或 `chash`
+    * `roundrobin`：支持权重的负载
+    * `chash`：一致性 `hash`
+* `nodes`: 上游机器地址列表（目前仅支持 IP+Port 方式）
+* `key`: 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的
 `key` 在同一个对象中，永远返回相同 id 。
-* checks: 配置健康检查的参数。
+* `retries`: APISIX 将使用底层的 Nginx 重试机制将请求传递给下一个上游。这是一个可选项，默认是不启用重试机制。
+* `checks`: 配置健康检查的参数。
 
 创建上游对象用例：
 
@@ -299,6 +300,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "39.97.63.215:80": 1
         }
         "type": "roundrobin",
+        "retries": 2,
         "checks": {
             "active": {
                 "http_path": "/status",
