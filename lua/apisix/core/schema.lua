@@ -144,6 +144,7 @@ local upstream_schema = {
             type = "string",
             enum = {"remote_addr"},
         },
+        desc = {type = "string", maxLength = 256},
         id = id_schema
     },
     required = {"nodes", "type"},
@@ -164,6 +165,7 @@ _M.route = [[{
             },
             "uniqueItems": true
         },
+        "desc": {"type": "string", "maxLength": 256},
         "plugins": ]] .. json.encode(plugins_schema) .. [[,
         "upstream": ]] .. json.encode(upstream_schema) .. [[,
         "uri": {
@@ -203,6 +205,7 @@ _M.service = {
         plugins = plugins_schema,
         upstream = upstream_schema,
         upstream_id = id_schema,
+        desc = {type = "string", maxLength = 256},
     },
     anyOf = {
         {required = {"upstream"}},
@@ -221,6 +224,7 @@ _M.consumer = {
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
         plugins = plugins_schema,
+        desc = {type = "string", maxLength = 256},
     },
     required = {"username"},
     additionalProperties = false,

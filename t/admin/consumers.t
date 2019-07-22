@@ -18,12 +18,14 @@ __DATA__
             local code, body = t('/apisix/admin/consumers',
                  ngx.HTTP_PUT,
                  [[{
-                     "username":"jack"
+                     "username":"jack",
+                     "desc": "new consumer"
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "username": "jack"
+                            "username": "jack",
+                            "desc": "new consumer"
                         }
                     },
                     "action": "set"
@@ -52,6 +54,7 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                     "username": "jack",
+                    "desc": "new consumer",
                     "plugins": {
                             "key-auth": {
                                 "key": "auth-one"
@@ -62,6 +65,7 @@ passed
                     "node": {
                         "value": {
                             "username": "jack",
+                            "desc": "new consumer",
                             "plugins": {
                                 "key-auth": {
                                     "key": "auth-one"
@@ -98,6 +102,7 @@ passed
                     "node": {
                         "value": {
                             "username": "jack",
+                            "desc": "new consumer",
                             "plugins": {
                                 "key-auth": {
                                     "key": "auth-one"
