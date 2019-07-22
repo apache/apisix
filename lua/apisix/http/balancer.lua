@@ -13,6 +13,9 @@ local str_gsub = string.gsub
 local pairs = pairs
 local tonumber = tonumber
 local tostring = tostring
+local set_more_tries = balancer.set_more_tries
+local get_last_failure = balancer.get_last_failure
+local set_timeouts = balancer.set_timeouts
 
 
 local module_name = "balancer"
@@ -113,6 +116,7 @@ local function pick_server(route, ctx)
         return nil, nil, "missing upstream configuration"
     end
 
+    local checker = upstream.checker
     local up_id = upstream.id
     local version
 
@@ -138,8 +142,8 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    if upstream.checks and not upstream.checker then
-        local checker = healthcheck.new({
+    if upstream.checks and not checker then
+        checker = healthcheck.new({
             name = "upstream",
             shm_name = "upstream-healthcheck",
             checks = upstream.checks,
@@ -147,12 +151,13 @@ local function pick_server(route, ctx)
 
         upstream.checker = checker
 
-        -- stop the checker by `gc`
+        -- stop checker by `gc`
         core.table.setmt__gc(upstream, {__gc = function()
             if worker_exiting() then
                 return
             end
 
+            core.log.info("stop checker: ", key)
             checker:stop()
         end})
 
@@ -166,6 +171,31 @@ local function pick_server(route, ctx)
         end
 
         core.log.warn("create checks obj for upstream, check")
+    end
+
+    local retries = upstream.retries
+    if retries and retries > 0 then
+        ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
+        if checker and ctx.balancer_try_count > 1 then
+            local state, code = get_last_failure()
+            if state == "failed" then
+                if code == 504 then
+                    checker:report_timeout(ctx.balancer_ip, ctx.balancer_port,
+                                           upstream.checks.host)
+                else
+                    checker:report_tcp_failure(ctx.balancer_ip,
+                        ctx.balancer_port, upstream.checks.host)
+                end
+
+            else
+                checker:report_http_status(ctx.balancer_ip, ctx.balancer_port,
+                                           upstream.checks.host)
+            end
+        end
+
+        if ctx.balancer_try_count == 1 then
+            set_more_tries(retries)
+        end
     end
 
     if upstream.checks then
@@ -183,20 +213,35 @@ local function pick_server(route, ctx)
         return nil, nil, "failed to find valid upstream server" .. err
     end
 
-    return parse_addr(server)
+    if upstream.timeout then
+        local timeout = upstream.timeout
+        local ok, err = set_timeouts(timeout.connect, timeout.send,
+                                     timeout.read)
+        if not ok then
+            core.log.error("could not set upstream timeouts: ", err)
+        end
+    end
+
+    local ip, port, err = parse_addr(server)
+    if upstream.checker then
+        ctx.balancer_ip = ip
+        ctx.balancer_port = port
+    end
+
+    return ip, port, err
 end
 -- for test
 _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
-    local host, port, err = pick_server(route, ctx)
+    local ip, port, err = pick_server(route, ctx)
     if err then
         core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
 
-    local ok, err = balancer.set_current_peer(host, port)
+    local ok, err = balancer.set_current_peer(ip, port)
     if not ok then
         core.log.error("failed to set server peer: ", err)
         return core.response.exit(502)
