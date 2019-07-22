@@ -56,4 +56,4 @@ GET /sleep1
 --- response_body eval
 qr/504 Gateway Time-out/
 --- error_log
-Connection timed out
+timed out) while reading response header from upstream
