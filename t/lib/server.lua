@@ -21,6 +21,11 @@ function _M.status()
     ngx.say("ok")
 end
 
+function _M.sleep1()
+    ngx.sleep(1)
+    ngx.say("ok")
+end
+
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
