@@ -65,7 +65,7 @@ APISIX Installed and tested in the following systems:
 | Ubuntu 16.04 | 1.15.8.1  | √      |
 | Ubuntu 18.04 | 1.15.8.1  | √      |
 | Debian 9     | 1.15.8.1  | √      |
-| Mac OSX      | 10.14.5   | √      |
+| Mac OSX      | 1.15.8.1  | √      |
 
 You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
 
