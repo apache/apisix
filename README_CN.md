@@ -28,12 +28,12 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 ## 功能
 
 - **云原生**
-- **动态负载均衡**
-- **支持一致性 hash 的负载均衡**
+- **动态负载均衡**：支持权重的 round-robin 负载平衡。
+- **支持一致性 hash 的负载均衡**：支持一致性 hash 的负载均衡。
 - **SSL**
 - **监控**
 - **反向代理**
-- **身份认证**
+- **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT]([key-auth](doc/plugins/jwt-auth-cn.md))。
 - **Limit-rate**
 - **Limit-count**
 - **Limit-concurrency**
@@ -44,7 +44,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **高性能**
 - **自定义插件**
 - **防御 ReDoS(正则表达式拒绝服务)**
-- **健康检查**: TODO
+- **[Health Checks](doc/health-check.md)**.
 - **缓存**: TODO.
 - **管理控制台**: TODO.
 - **OAuth2.0**: TODO.
