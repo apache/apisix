@@ -39,6 +39,9 @@ local function write_file(path, data)
 end
 
 
+_M.gen_uuid_v4 = uuid.generate_v4
+
+
 function _M.init()
     local uid_file_path = prefix .. "/conf/apisix.uid"
     apisix_uid = read_file(uid_file_path)

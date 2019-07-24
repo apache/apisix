@@ -1,4 +1,5 @@
 local core = require("apisix.core")
+local plugins = require("apisix.admin.plugins")
 
 local _M = {
     version = 0.1,
@@ -19,6 +20,15 @@ local function check_conf(consumer_name, conf)
     core.log.info("schema: ", core.json.delay_encode(core.schema.consumer))
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.consumer, conf)
+    if not ok then
+        return nil, {error_msg = "invalid configuration: " .. err}
+    end
+
+    if not conf.plugins then
+        return consumer_name
+    end
+
+    ok, err = plugins.check_schema(conf.plugins)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end

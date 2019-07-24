@@ -39,7 +39,7 @@ local function run(params)
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(401, {error_msg = "invalid request body",
+            core.response.exit(400, {error_msg = "invalid request body",
                                      req_body = req_body})
         end
 

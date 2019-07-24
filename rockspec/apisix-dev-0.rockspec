@@ -23,6 +23,8 @@ dependencies = {
     "lua-resty-jit-uuid = 0.0.7",
     "rapidjson = 0.6.0-1",
     "lua-resty-healthcheck-iresty = 1.0.0",
+    "lua-resty-jwt = 0.2.0",
+    "lua-resty-cookie = 0.1.0",
 }
 
 build = {
