@@ -4,6 +4,7 @@ repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
+
 run_tests;
 
 __DATA__
@@ -195,5 +196,49 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
 GET /t
 --- response_body
 plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "example-plugin": {
+                                "i": 11,
+                                "ip": "127.0.0.1",
+                                "port": 1981
+                            }
+                        },
+                        "uri": "/server_port"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: hit route
+--- request
+GET /server_port
+--- response_body_like eval
+qr/1981/
 --- no_error_log
 [error]
