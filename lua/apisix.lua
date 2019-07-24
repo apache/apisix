@@ -75,6 +75,18 @@ local function run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
+    if phase == "balancer" then
+        local balancer_name = api_ctx.balancer_name
+        for i = 1, #plugins, 2 do
+            local phase_fun = plugins[i][phase]
+            if phase_fun and
+               (not balancer_name or balancer_name == plugins[i].name) then
+                phase_fun(plugins[i + 1], api_ctx)
+            end
+        end
+        return api_ctx
+    end
+
     if phase ~= "log" then
         for i = 1, #plugins, 2 do
             local phase_fun = plugins[i][phase]
@@ -214,6 +226,19 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
+    -- first time
+    if not api_ctx.balancer_name then
+        run_plugin("balancer", nil, api_ctx)
+        if api_ctx.balancer_name then
+            return
+        end
+    end
+
+    if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
+        return run_plugin("balancer", nil, api_ctx)
+    end
+
+    api_ctx.balancer_name = "default"
     load_balancer(api_ctx.matched_route, api_ctx)
 end
 
