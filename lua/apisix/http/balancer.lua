@@ -223,10 +223,8 @@ local function pick_server(route, ctx)
     end
 
     local ip, port, err = parse_addr(server)
-    if upstream.checker then
-        ctx.balancer_ip = ip
-        ctx.balancer_port = port
-    end
+    ctx.balancer_ip = ip
+    ctx.balancer_port = port
 
     return ip, port, err
 end
