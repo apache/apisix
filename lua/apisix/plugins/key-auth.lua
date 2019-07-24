@@ -3,9 +3,6 @@ local plugin_name = "key-auth"
 local ipairs = ipairs
 
 
--- You can follow this document to write schema:
--- https://github.com/Tencent/rapidjson/blob/master/bin/draft-04/schema
--- rapidjson not supported `format` in draft-04 yet
 local schema = {
     type = "object",
     properties = {
@@ -40,13 +37,7 @@ end -- do
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
