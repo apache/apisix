@@ -31,12 +31,12 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 ## Features
 
 - **Cloud-Native**
-- **Dynamic Load Balancing**
-- **Hash-based Load Balancing**
+- **Dynamic Load Balancing**: Round-robin load balancing with weight.
+- **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
 - **SSL**
 - **Monitoring**
 - **Forward Proxy**
-- **Authentications**
+- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md).
 - **Limit-rate**
 - **Limit-count**
 - **Limit-concurrency**
