@@ -19,8 +19,9 @@ plugins:                        # plugin list
   - example-plugin
   - limit-req
   - limit-count
+  - limit-conn
   - key-auth
   - prometheus
-  - limit-conn
   - node-status
   - jwt-auth
+  - zipkin

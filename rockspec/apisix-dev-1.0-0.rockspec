@@ -27,6 +27,7 @@ dependencies = {
     "lua-resty-cookie",
     "lua-resty-session",
     "lua-resty-openidc",
+    "opentracing-openresty",
 }
 
 build = {

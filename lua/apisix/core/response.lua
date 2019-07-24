@@ -10,7 +10,7 @@ local type = type
 local ngx_exit = ngx.exit
 local insert_tab = table.insert
 local concat_tab = table.concat
-
+local str_sub = string.sub
 
 local _M = {version = 0.1}
 
@@ -77,5 +77,9 @@ function _M.set_header(...)
     end
 end
 
+
+function _M.get_upstream_status(ctx)
+    return tonumber(str_sub(ctx.var.upstream_status or "", -3))
+end
 
 return _M
