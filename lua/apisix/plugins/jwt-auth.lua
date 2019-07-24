@@ -128,7 +128,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = jwt_obj.reason}
     end
 
-    core.log.info("hit key-auth access")
+    core.log.info("hit jwt-auth access")
 end
 
 
