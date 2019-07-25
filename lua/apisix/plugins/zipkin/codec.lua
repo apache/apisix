@@ -15,7 +15,7 @@ end
 
 local function new_extractor()
 	return function(headers)
-		-- X-B3-Sampled: if an upstream decided to sample this request, we do too.
+-- X-B3-Sampled: if an upstream decided to sample this request, we do too.
 		local sample = headers["x-b3-sampled"]
 		if sample == "1" or sample == "true" then
 			sample = true
@@ -26,8 +26,8 @@ local function new_extractor()
 			sample = nil
 		end
 
-		-- X-B3-Flags: if it equals '1' then it overrides sampling policy
-		-- We still want to warn on invalid sample header, so do this after the above
+-- X-B3-Flags: if it equals '1' then it overrides sampling policy
+-- We still want to warn on invalid sample header, so do this after the above
 		local debug = headers["x-b3-flags"]
 		if debug == "1" then
 			sample = true
@@ -39,21 +39,24 @@ local function new_extractor()
 
 		local trace_id = headers["x-b3-traceid"]
 		-- Validate trace id
-		if trace_id and ((#trace_id ~= 16 and #trace_id ~= 32) or trace_id:match("%X")) then
+		if trace_id and
+			((#trace_id ~= 16 and #trace_id ~= 32) or trace_id:match("%X")) then
 			core.log.warn("x-b3-traceid header invalid; ignoring.")
 			had_invalid_id = true
 		end
 
 		local parent_span_id = headers["x-b3-parentspanid"]
 		-- Validate parent_span_id
-		if parent_span_id and (#parent_span_id ~= 16 or parent_span_id:match("%X")) then
+		if parent_span_id and
+			(#parent_span_id ~= 16 or parent_span_id:match("%X")) then
 			core.log.warn("x-b3-parentspanid header invalid; ignoring.")
 			had_invalid_id = true
 		end
 
 		local request_span_id = headers["x-b3-spanid"]
 		-- Validate request_span_id
-		if request_span_id and (#request_span_id ~= 16 or request_span_id:match("%X")) then
+		if request_span_id and
+			(#request_span_id ~= 16 or request_span_id:match("%X")) then
 			core.log.warn("x-b3-spanid header invalid; ignoring.")
 			had_invalid_id = true
 		end
@@ -75,7 +78,8 @@ local function new_extractor()
 		parent_span_id = from_hex(parent_span_id)
 		request_span_id = from_hex(request_span_id)
 
-		return new_span_context(trace_id, request_span_id, parent_span_id, sample, baggage)
+		return new_span_context(trace_id, request_span_id, parent_span_id,
+								 sample, baggage)
 	end
 end
 
@@ -83,11 +87,12 @@ local function new_injector()
 	return function(span_context, headers)
 		-- We want to remove headers if already present
 		headers["x-b3-traceid"] = to_hex(span_context.trace_id)
-		headers["x-b3-parentspanid"] = span_context.parent_id and to_hex(span_context.parent_id) or nil
+		headers["x-b3-parentspanid"] = span_context.parent_id
+									and to_hex(span_context.parent_id) or nil
 		headers["x-b3-spanid"] = to_hex(span_context.span_id)
-		local Flags = core.request.header(nil, "x-b3-flags") -- Get from request headers
-		headers["x-b3-flags"] = Flags
-		headers["x-b3-sampled"] = (not Flags) and (span_context.should_sample and "1" or "0") or nil
+		local flags = core.request.header(nil, "x-b3-flags")
+		headers["x-b3-flags"] = flags
+		headers["x-b3-sampled"] = (not flags)
 		for key, value in span_context:each_baggage_item() do
 			-- XXX: https://github.com/opentracing/specification/issues/117
 			headers["uberctx-"..key] = ngx.escape_uri(value)

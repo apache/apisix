@@ -17,10 +17,10 @@ local span_kind_map = {
 
 
 function _M.new(conf)
-	local http_endpoint = conf.http_endpoint
-	assert(type(http_endpoint) == "string", "invalid http endpoint")
+	local endpoint = conf.endpoint
+	assert(type(endpoint) == "string", "invalid http endpoint")
 	return setmetatable({
-		http_endpoint = http_endpoint,
+		endpoint = endpoint,
 		pending_spans = {},
 		pending_spans_n = 0,
 	}, mt)
@@ -72,17 +72,17 @@ function _M.report(self, span)
 	local zipkin_span = {
 		traceId = to_hex(span_context.trace_id),
 		name = span.name,
-		parentId = span_context.parent_id and to_hex(span_context.parent_id) or nil,
+		parentId = span_context.parent_id and
+					to_hex(span_context.parent_id) or nil,
 		id = to_hex(span_context.span_id),
 		kind = span_kind_map[span_kind],
 		timestamp = span.timestamp * 1000000,
 		duration = math.floor(span.duration * 1000000), -- zipkin wants integer
-		-- shared = nil, -- We don't use shared spans (server reuses client generated spanId)
 		-- TODO: debug?
 		localEndpoint = localEndpoint,
 		remoteEndpoint = remoteEndpoint,
 		tags = zipkin_tags,
-		annotations = span.logs -- XXX: not guaranteed by documented opentracing-lua API to be in correct format
+		annotations = span.logs
 	}
 
 	local i = self.pending_spans_n + 1
@@ -92,6 +92,7 @@ end
 
 function _M.flush(self)
 	if self.pending_spans_n == 0 then
+		
 		return true
 	end
 
@@ -100,19 +101,21 @@ function _M.flush(self)
 	self.pending_spans_n = 0
 
 	local httpc = resty_http.new()
-	local res, err = httpc:request_uri(self.http_endpoint, {
+	local res, err = httpc:request_uri(self.endpoint, {
 		method = "POST",
 		headers = {
 			["content-type"] = "application/json",
 		},
 		body = pending_spans,
 	})
+
 	-- TODO: on failure, retry?
 	if not res then
 		return nil, "failed to request: " .. err
 	elseif res.status < 200 or res.status >= 300 then
 		return nil, "failed: " .. res.status .. " " .. res.reason
 	end
+
 	return true
 end
 
