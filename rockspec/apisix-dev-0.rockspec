@@ -24,6 +24,8 @@ dependencies = {
     "lua-resty-healthcheck-iresty = 1.0.0",
     "lua-resty-jwt = 0.2.0",
     "lua-resty-cookie = 0.1.0",
+    "lua-resty-session = 2.24-1",
+    "lua-resty-openidc = 1.7.2-1",
 }
 
 build = {
