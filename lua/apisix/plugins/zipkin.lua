@@ -3,6 +3,8 @@ local new_tracer = require("opentracing.tracer").new
 local zipkin_codec = require("apisix.plugins.zipkin.codec")
 local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
 local new_reporter = require("apisix.plugins.zipkin.reporter").new
+local ngx = ngx
+local pairs = pairs
 
 local plugin_name = "zipkin"
 

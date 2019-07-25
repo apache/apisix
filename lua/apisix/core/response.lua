@@ -11,6 +11,7 @@ local ngx_exit = ngx.exit
 local insert_tab = table.insert
 local concat_tab = table.concat
 local str_sub = string.sub
+local tonumber = tonumber
 
 local _M = {version = 0.1}
 

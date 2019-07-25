@@ -2,7 +2,7 @@
 
 local ngx = ngx
 local get_headers = ngx.req.get_headers
-
+local tonumber = tonumber
 
 local _M = {version = 0.1}
 
