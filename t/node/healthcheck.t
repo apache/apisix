@@ -62,8 +62,9 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -106,8 +107,9 @@ passed
 GET /t
 --- response_body
 [{"count":6,"port":"1981"},{"count":6,"port":"1980"}]
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 --- timeout: 6
 
 
@@ -155,8 +157,9 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -257,8 +260,9 @@ qr/Connection refused\) while connecting to upstream/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -301,8 +305,9 @@ passed
 GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 --- timeout: 6
 
 
@@ -358,8 +363,9 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -409,7 +415,7 @@ GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\[error\].*/
+qr/^.*?\[error\](?!.*process exiting).*/
 --- grep_error_log_out eval
 qr/Connection refused\) while connecting to upstream/
 --- timeout: 5
@@ -472,8 +478,9 @@ qr/Connection refused\) while connecting to upstream/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
