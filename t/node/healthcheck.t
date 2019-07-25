@@ -10,6 +10,7 @@ BEGIN {
 
 use t::APISix 'no_plan';
 
+master_on();
 repeat_each(1);
 log_level('info');
 no_root_location();
@@ -424,56 +425,20 @@ qr/Connection refused\) while connecting to upstream/
 
 === TEST 9: chash route (upstream nodes: 2 unhealthy)
 --- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/server_port",
-                    "upstream": {
-                        "type": "chash",
-                        "nodes": {
-                            "127.0.0.1:1960": 1,
-                            "127.0.0.1:1961": 1
-                        },
-                        "key": "remote_addr",
-                        "retries": 3,
-                        "checks": {
-                            "active": {
-                                "http_path": "/status",
-                                "host": "foo.com",
-                                "healthy": {
-                                    "interval": 999,
-                                    "successes": 3
-                                },
-                                "unhealthy": {
-                                    "interval": 999,
-                                    "http_failures": 3
-                                }
-                            },
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 3
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500],
-                                    "http_failures": 3,
-                                    "tcp_failures": 3
-                                }
-                            }
-                        }
-                    }
-                }]]
-                )
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{"uri":"/server_port","upstream":{"type":"chash","nodes":{"127.0.0.1:1960":1,"127.0.0.1:1961":1},"key":"remote_addr","retries":3,"checks":{"active":{"http_path":"/status","host":"foo.com","healthy":{"interval":999,"successes":3},"unhealthy":{"interval":999,"http_failures":3}},"passive":{"healthy":{"http_statuses":[200,201],"successes":3},"unhealthy":{"http_statuses":[500],"http_failures":3,"tcp_failures":3}}}}}]]
+        )
 
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
+        if code >= 300 then
+        ngx.status = code
+        end
+        ngx.say(body)
+  }
+}
 --- request
 GET /t
 --- response_body
