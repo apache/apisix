@@ -27,7 +27,7 @@ do
         core.table.clear(consumer_ids)
 
         for _, consumer in ipairs(consumers.nodes) do
-            consumer_ids[consumer.conf.key] = consumer.consumer_id
+            consumer_ids[consumer.conf.key] = consumer
         end
 
         return consumer_ids
@@ -52,13 +52,14 @@ function _M.rewrite(conf, ctx)
             consumer_conf.conf_version,
             create_consume_cache, consumer_conf)
 
-    local consumer_id = consumers[key]
-    if not consumer_id then
+    local consumer = consumers[key]
+    if not consumer then
         return 401, {message = "Invalid API key in request"}
     end
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    -- ctx.consumer_id = consumer_id
-    core.log.info("hit key-auth access")
+    ctx.consumer_id = consumer.consumer_id
+    core.log.info("hit key-auth rewrite")
 end
 
 
