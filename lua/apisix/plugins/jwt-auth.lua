@@ -121,6 +121,7 @@ function _M.rewrite(conf, ctx)
     if not consumer then
         return 401, {message = "Invalid user key in JWT token"}
     end
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     jwt_obj = jwt:verify_jwt_obj(consumer.conf.secret, jwt_obj)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
@@ -128,7 +129,8 @@ function _M.rewrite(conf, ctx)
         return 401, {message = jwt_obj.reason}
     end
 
-    core.log.info("hit jwt-auth access")
+    ctx.consumer_id = consumer.consumer_id
+    core.log.info("hit jwt-auth rewrite")
 end
 
 
