@@ -3,8 +3,7 @@ version = "dev-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
-   url = "git://github.com/iresty/apisix",
-   branch = "master",
+    url = 'file://.'
 }
 
 description = {
