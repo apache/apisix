@@ -5,6 +5,10 @@ function _M.hello()
     ngx.say("hello world")
 end
 
+function _M.hello1()
+    ngx.say("hello1 world")
+end
+
 
 function _M.server_port()
     ngx.print(ngx.var.server_port)
