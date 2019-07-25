@@ -75,6 +75,7 @@ _EOC_
         require("apisix").http_init_worker()
     }
 
+    # fake server, only for test
     server {
         listen 1980;
         listen 1981;
