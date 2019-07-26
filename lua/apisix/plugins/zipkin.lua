@@ -16,10 +16,9 @@ local schema = {
     type = "object",
     properties = {
         endpoint = {type = "string"},
-        sample_ratio = {type = "number",
-                        default = 0.001, minimum = 0.00001, maximum = 1}
+        sample_ratio = {type = "number", minimum = 0.00001, maximum = 1}
     },
-    required = {"endpoint"}
+    required = {"endpoint", "sample_ratio"}
 }
 
 

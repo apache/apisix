@@ -16,7 +16,7 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 
 * `endpoint`: the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`.
 
-* `sample_ratio`: the ratio of sample, the default value is 0.001, the minimum is 0.00001, the maximum is 1.
+* `sample_ratio`: the ratio of sample, the minimum is 0.00001, the maximum is 1.
 
 ## How To Enable
 
