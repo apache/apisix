@@ -163,8 +163,10 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- error_log
-report2endpoint ok
+--- grep_error_log eval
+qr/\[info\].*/
+--- grep_error_log_out eval
+qr{report2endpoint ok}
 
 
 

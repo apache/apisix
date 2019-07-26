@@ -8,7 +8,7 @@
 
 ## Name
 
-`Zipkin` is a OpenTracing plugin.
+[Zipkin](https://github.com/openzipkin/zipkin) is a OpenTracing plugin.
 
 It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 
@@ -66,6 +66,10 @@ Then you can use a browser to access the webUI of Zipkin:
 http://127.0.0.1:9411/zipkin
 ```
 
+![](../../doc/images/plugin/zipkin-1.png)
+
+![](../../doc/images/plugin/zipkin-2.png)
+
 ## Disable Plugin
 
 When you want to disable the zipkin plugin, it is very simple,
@@ -77,7 +81,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
 	"methods": ["GET"],
 	"uri": "/index.html",
-	"id": 1,
 	"plugins": {
 	},
 	"upstream": {

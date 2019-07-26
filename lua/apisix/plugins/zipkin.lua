@@ -32,13 +32,7 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
@@ -66,7 +60,7 @@ end
 
 function _M.rewrite(conf, ctx)
     local tracer = core.lrucache.plugin_ctx(plugin_name, ctx,
-                                                 create_tracer, conf)
+                                            create_tracer, conf)
 
     ctx.opentracing_sample = tracer.sampler:sample()
     if not ctx.opentracing_sample then
