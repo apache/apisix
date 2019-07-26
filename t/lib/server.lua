@@ -1,3 +1,5 @@
+local json_decode = require("cjson").decode
+
 local _M = {}
 
 
@@ -28,6 +30,30 @@ end
 function _M.sleep1()
     ngx.sleep(1)
     ngx.say("ok")
+end
+
+
+function _M.opentracing()
+    ngx.say("opentracing")
+end
+
+
+function _M.mock_zipkin()
+    ngx.req.read_body()
+    local data = ngx.req.get_body_data()
+    local spans = json_decode(data)
+    if #spans < 5 then
+        ngx.exit(400)
+    end
+
+    for _, span in pairs(spans) do
+        if string.sub(span.name, 1, 6) ~= 'apisix' then
+            ngx.exit(400)
+        end
+        if not span.traceId then
+            ngx.exit(400)
+        end
+    end
 end
 
 
