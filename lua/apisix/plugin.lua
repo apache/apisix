@@ -11,7 +11,7 @@ local local_plugins_hash = core.table.new(10, 0)
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     load_times = 0,
     plugins = local_plugins,
     plugins_hash = local_plugins_hash,
@@ -19,7 +19,7 @@ local _M = {
 
 
 local function sort_plugin(l, r)
-    return l.priority >= r.priority
+    return l.priority > r.priority
 end
 
 
@@ -59,7 +59,7 @@ local function load()
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
-    local local_conf = core.config.local_conf()
+    local local_conf = core.config.local_conf(true)
     local plugin_names = local_conf.plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
@@ -82,8 +82,13 @@ local function load()
         sort_tab(local_plugins, sort_plugin)
     end
 
-    for _, plugin in ipairs(local_plugins) do
+    for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
+        if local_conf.apisix.enable_debug then
+            core.log.warn("loaded plugin and sort by priority:",
+                          " ", plugin.priority,
+                          " name: ", plugin.name)
+        end
     end
 
     _M.load_times = _M.load_times + 1
