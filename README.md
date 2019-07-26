@@ -48,6 +48,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Custom plugins**
 - **Anti-ReDoS(Regular expression Denial of Service)**
 - **[Health Checks](doc/health-check.md)**.
+- **[OpenTracing(Zipkin)](doc/plugins/zipkin.md)**.
 - **Caching**: TODO.
 - **Dashboard**: TODO.
 - **OAuth2.0**: TODO.

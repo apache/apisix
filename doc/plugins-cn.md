@@ -10,3 +10,4 @@
 * [limit-req](plugins/limit-req-cn.md): 基于漏桶原理的请求限速实现。
 * [limit-conn](plugins/limit-conn-cn.md): 限制并发请求（或并发连接）。
 * [prometheus](plugins/prometheus.md): 以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
+* [OpenTracing](plugins/zipkin.md): 支持 Zikpin 和 Apache SkyWalking。

@@ -66,9 +66,9 @@ Then you can use a browser to access the webUI of Zipkin:
 http://127.0.0.1:9411/zipkin
 ```
 
-![](../../doc/images/plugin/zipkin-1.png)
+![](../../doc/images/plugin/zipkin-1.jpg)
 
-![](../../doc/images/plugin/zipkin-2.png)
+![](../../doc/images/plugin/zipkin-2.jpg)
 
 ## Disable Plugin
 

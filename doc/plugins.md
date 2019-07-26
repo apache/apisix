@@ -9,3 +9,5 @@ Now we support the following plugins:
 * [limit-req](plugins/limit-req.md): request rate limiting and adjustment based on the "leaky bucket" method.
 * [limit-conn](plugins/limit-conn.md): limite request concurrency (or concurrent connections).
 * [prometheus](plugins/prometheus.md): expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
+* [OpenTracing](plugins/zipkin.md): support Zikpin and Apache SkyWalking.
+
