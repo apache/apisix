@@ -8,6 +8,7 @@ local pairs = pairs
 local type = type
 local local_plugins = core.table.new(10, 0)
 local local_plugins_hash = core.table.new(10, 0)
+local local_conf
 
 
 local _M = {
@@ -59,7 +60,7 @@ local function load()
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
-    local local_conf = core.config.local_conf(true)
+    local_conf = core.config.local_conf(true)
     local plugin_names = local_conf.plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
@@ -141,6 +142,9 @@ function _M.filter(user_route, plugins)
     plugins = plugins or core.table.new(#local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
+        if local_conf and local_conf.apisix.enable_debug then
+            core.response.set_header("apisix-plugins", "no plugin")
+        end
         return plugins
     end
 
@@ -152,6 +156,14 @@ function _M.filter(user_route, plugins)
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
         end
+    end
+
+    if local_conf.apisix.enable_debug then
+        local t = {}
+        for i = 1, #plugins, 2 do
+            core.table.insert(t, plugins[i].name)
+        end
+        core.response.set_header("apisix-plugins", core.table.concat(t, ", "))
     end
 
     return plugins
