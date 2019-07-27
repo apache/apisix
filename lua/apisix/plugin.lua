@@ -144,7 +144,7 @@ function _M.filter(user_route, plugins)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
         if local_conf and local_conf.apisix.enable_debug then
-            core.response.set_header("apisix-plugins", "no plugin")
+            core.response.set_header("Apisix-Plugins", "no plugin")
         end
         return plugins
     end
@@ -164,7 +164,7 @@ function _M.filter(user_route, plugins)
         for i = 1, #plugins, 2 do
             core.table.insert(t, plugins[i].name)
         end
-        core.response.set_header("apisix-plugins", core.table.concat(t, ", "))
+        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
     end
 
     return plugins

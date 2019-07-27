@@ -75,7 +75,7 @@ GET /hello
 --- response_body
 hello world
 --- response_headers
-apisix-plugins: no plugin
+Apisix-Plugins: no plugin
 --- no_error_log
 [error]
 
@@ -136,6 +136,6 @@ GET /hello
 --- response_body
 hello world
 --- response_headers
-apisix-plugins: limit-conn, limit-count
+Apisix-Plugins: limit-conn, limit-count
 --- no_error_log
 [error]
