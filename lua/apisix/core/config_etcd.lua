@@ -1,6 +1,6 @@
 -- Copyright (C) Yuansheng Wang
 
-local fetch_local_conf = require("apisix.core.config_local").local_conf
+local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd         = require("resty.etcd")
@@ -22,9 +22,11 @@ local pcall        = pcall
 
 
 local _M = {
-    version = 0.1,
-    local_conf = fetch_local_conf,
+    version = 0.2,
+    local_conf = config_local.local_conf,
+    clear_local_cache = config_local.clear_cache,
 }
+
 local mt = {
     __index = _M,
     __tostring = function(self)
@@ -300,7 +302,7 @@ end
 
 
 function _M.new(key, opts)
-    local local_conf, err = fetch_local_conf()
+    local local_conf, err = config_local.local_conf()
     if not local_conf then
         return nil, err
     end

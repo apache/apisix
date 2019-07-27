@@ -11,7 +11,7 @@ local apisix_heartbeat_addr = "https://iresty.com/apisix/heartbeat?"
 
 local _M = {
     version = 0.1,
-    priority = 1000,
+    priority = 100,
     name = plugin_name,
 }
 
