@@ -4,6 +4,21 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
+sub read_file($) {
+    my $infile = shift;
+    open my $in, $infile
+        or die "cannot open $infile for reading: $!";
+    my $cert = do { local $/; <$in> };
+    close $in;
+    $cert;
+}
+
+our $yaml_config = read_file("conf/config.yaml");
+$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
+$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
+$yaml_config =~ s/enable_debug: false/enable_debug: true/;
+
+
 run_tests;
 
 __DATA__
@@ -16,6 +31,7 @@ __DATA__
             ngx.say("done")
         }
     }
+--- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -72,6 +88,7 @@ passed
 === TEST 3: hit routes
 --- request
 GET /hello
+--- yaml_config eval: $::yaml_config
 --- response_body
 hello world
 --- response_headers
@@ -133,6 +150,7 @@ passed
 === TEST 5: hit routes
 --- request
 GET /hello
+--- yaml_config eval: $::yaml_config
 --- response_body
 hello world
 --- response_headers

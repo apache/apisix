@@ -142,7 +142,6 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Apisix-Plugins: no plugin
 received: Server: openresty
 received: \nreceived: hello world
 close: 1 nil}
@@ -292,7 +291,6 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Apisix-Plugins: no plugin
 received: Server: openresty
 received: \nreceived: hello world
 close: 1 nil}
@@ -404,7 +402,6 @@ sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Apisix-Plugins: no plugin
 received: Server: openresty
 received: \nreceived: hello world
 close: 1 nil}
