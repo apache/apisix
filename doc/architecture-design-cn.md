@@ -6,6 +6,7 @@
 - [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
 - [**Upstream**](#upstream)
+- [**Debug mode**](#Debug-mode)
 
 ## apisix
 
@@ -320,5 +321,30 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 ```
 
 更多细节可以参考[健康检查的文档](health-check.md).
+
+[返回目录](#目录)
+
+
+## Debug mode
+
+开启调试模式后，会在请求应答时，输出更多的内部信息，比如加载了哪些插件等。
+
+设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启调试模式。
+
+比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count` 出现。
+
+```shell
+$ curl http://127.0.0.1:1984/hello -i
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Apisix-Plugins: limit-conn, limit-count
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 1
+Server: openresty
+
+hello world
+```
 
 [返回目录](#目录)
