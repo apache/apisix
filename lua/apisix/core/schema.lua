@@ -55,20 +55,72 @@ local health_checker = {
         active = {
             type = "object",
             properties = {
-                http_path = {type = "string"},
+                type = {
+                    type = "string",
+                    enum = {"http", "https", "tcp"},
+                    default = "http"
+                },
+                timeout = {type = "integer", default = 1},
+                concurrency = {type = "integer", default = 10},
                 host = {type = "string"},
+                http_path = {type = "string", default = "/"},
+                https_verify_certificate = {type = "boolean", default = true},
                 healthy = {
                     type = "object",
                     properties = {
-                        interval = {type = "integer", minimum = 1},
-                        successes = {type = "integer", minimum = 1}
+                        interval = {type = "integer", minimum = 1, default = 0},
+                        http_statuses = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                type = "integer",
+                                minimum = 200,
+                                maximum = 599
+                            },
+                            uniqueItems = true,
+                            default = {200, 302}
+                        },
+                        successes = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 2
+                        }
                     }
                 },
                 unhealthy = {
                     type = "object",
                     properties = {
-                        interval = {type = "integer", minimum = 1},
-                        http_failures = {type = "integer", minimum = 1}
+                        interval = {type = "integer", minimum = 1, default = 0},
+                        http_statuses = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                type = "integer",
+                                minimum = 200,
+                                maximum = 599
+                            },
+                            uniqueItems = true,
+                            default = {429, 404, 500, 501, 502, 503, 504, 505}
+                        },
+                        http_failures = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 5
+                        },
+                        tcp_failures = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 2
+                        },
+                        timeouts = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 3
+                        }
                     }
                 }
             }
@@ -79,20 +131,30 @@ local health_checker = {
                 type = {
                     type = "string",
                     enum = {"http", "https", "tcp"},
+                    default = "http"
                 },
                 healthy = {
                     type = "object",
                     properties = {
                         http_statuses = {
                             type = "array",
+                            minItems = 1,
                             items = {
                                 type = "integer",
                                 minimum = 200,
                                 maximum = 599,
                             },
                             uniqueItems = true,
+                            default = {200, 201, 202, 203, 204, 205, 206, 207,
+                                       208, 226, 300, 301, 302, 303, 304, 305,
+                                       306, 307, 308}
                         },
-                        successes = {type = "integer", minimum = 1}
+                        successes = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 5
+                        }
                     }
                 },
                 unhealthy = {
@@ -100,16 +162,33 @@ local health_checker = {
                     properties = {
                         http_statuses = {
                             type = "array",
+                            minItems = 1,
                             items = {
                                 type = "integer",
                                 minimum = 200,
                                 maximum = 599,
                             },
                             uniqueItems = true,
+                            default = {429, 500, 503}
                         },
-                        tcp_failures = {type = "integer"},
-                        timeouts = {type = "integer"},
-                        http_failures = {type = "integer"},
+                        tcp_failures = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 2
+                        },
+                        timeouts = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 7
+                        },
+                        http_failures = {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 254,
+                            default = 5
+                        },
                     }
                 }
             }
