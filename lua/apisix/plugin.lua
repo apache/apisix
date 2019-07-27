@@ -8,10 +8,11 @@ local pairs = pairs
 local type = type
 local local_plugins = core.table.new(10, 0)
 local local_plugins_hash = core.table.new(10, 0)
+local local_conf
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     load_times = 0,
     plugins = local_plugins,
     plugins_hash = local_plugins_hash,
@@ -19,7 +20,7 @@ local _M = {
 
 
 local function sort_plugin(l, r)
-    return l.priority >= r.priority
+    return l.priority > r.priority
 end
 
 
@@ -59,7 +60,7 @@ local function load()
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
-    local local_conf = core.config.local_conf()
+    local_conf = core.config.local_conf(true)
     local plugin_names = local_conf.plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
@@ -82,8 +83,14 @@ local function load()
         sort_tab(local_plugins, sort_plugin)
     end
 
-    for _, plugin in ipairs(local_plugins) do
+    for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
+        if local_conf and local_conf.apisix
+           and local_conf.apisix.enable_debug then
+            core.log.warn("loaded plugin and sort by priority:",
+                          " ", plugin.priority,
+                          " name: ", plugin.name)
+        end
     end
 
     _M.load_times = _M.load_times + 1
@@ -136,6 +143,9 @@ function _M.filter(user_route, plugins)
     plugins = plugins or core.table.new(#local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
+        if local_conf and local_conf.apisix.enable_debug then
+            core.response.set_header("Apisix-Plugins", "no plugin")
+        end
         return plugins
     end
 
@@ -147,6 +157,14 @@ function _M.filter(user_route, plugins)
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
         end
+    end
+
+    if local_conf.apisix.enable_debug then
+        local t = {}
+        for i = 1, #plugins, 2 do
+            core.table.insert(t, plugins[i].name)
+        end
+        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
     end
 
     return plugins
