@@ -85,7 +85,8 @@ local function load()
 
     for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
-        if local_conf.apisix.enable_debug then
+        if local_conf and local_conf.apisix
+           and local_conf.apisix.enable_debug then
             core.log.warn("loaded plugin and sort by priority:",
                           " ", plugin.priority,
                           " name: ", plugin.name)

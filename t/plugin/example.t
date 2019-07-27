@@ -145,7 +145,7 @@ done
 --- request
 GET /t
 --- response_body
-plugin name: example-plugin priority: 1000
+plugin name: example-plugin priority: 0
 --- yaml_config
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
