@@ -7,6 +7,7 @@ local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
+local str_reverse = string.reverse
 local routes
 
 
@@ -33,18 +34,47 @@ local function create_r3_router(routes)
         end
     end
 
+    local local_conf = core.config.local_conf()
+    local route_idx = local_conf and local_conf.apisix and
+                      local_conf.apisix.route_idx
+
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             idx = idx + 1
-            route_items[idx] = {
-                path = route.value.uri,
-                method = route.value.methods,
-                host = route.value.host,
-                handler = function (params, api_ctx)
-                    api_ctx.matched_params = params
-                    api_ctx.matched_route = route
+            if route_idx == "host+uri" then
+                local host = route.value.host
+                if not host then
+                    host = [=[{domain:[^/]+}]=]
+
+                else
+                    host = str_reverse(host)
+                    if host:sub(#host) == "*" then
+                        host = host:sub(1, #host - 1) .. "{prefix:.*}"
+                    end
                 end
-            }
+
+                core.log.info("route rule: ", host .. route.value.uri)
+                route_items[idx] = {
+                    path = host .. route.value.uri,
+                    method = route.value.methods,
+                    handler = function (params, api_ctx)
+                        api_ctx.matched_params = params
+                        api_ctx.matched_route = route
+                    end
+                }
+
+            else
+                route_items[idx] = {
+                    path = route.value.uri,
+                    method = route.value.methods,
+                    host = route.value.host,
+                    handler = function (params, api_ctx)
+                        api_ctx.matched_params = params
+                        api_ctx.matched_route = route
+                    end
+                }
+            end
+
         end
     end
 

@@ -8,10 +8,12 @@ local service_fetch = require("apisix.http.service").get
 local ssl_match = require("apisix.http.ssl").match
 local admin_init = require("apisix.admin.init")
 local get_var = require("resty.ngxvar").fetch
+local local_conf = core.config.local_conf
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_exit = ngx.exit
 local ngx_ERROR = ngx.ERROR
+local str_reverse = string.reverse
 local math = math
 local match_opts = {}
 local error = error
@@ -153,9 +155,22 @@ function _M.http_access_phase()
     core.ctx.set_vars_meta(api_ctx)
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.method
-    match_opts.host = api_ctx.var.host
 
-    local ok = router():dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
+    local ok
+
+    if local_conf().apisix
+       and local_conf().apisix.route_idx == "host+uri" then
+        local host = api_ctx.var.host
+        host = host and str_reverse(host) or "[^/]+"
+        host = host .. api_ctx.var.uri
+        ok = router():dispatch2(nil, host, match_opts, api_ctx)
+        core.log.info("match string: ", host)
+
+    else
+        match_opts.host = api_ctx.var.host
+        ok = router():dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
+    end
+
     if not ok then
         core.log.info("not find any matched route")
         return core.response.exit(404)
