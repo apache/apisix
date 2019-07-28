@@ -6,6 +6,38 @@ no_root_location();
 no_shuffle();
 log_level("info");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $init_by_lua_block = <<_EOC_;
+    require "resty.core"
+    apisix = require("apisix")
+    apisix.http_init()
+
+    json = require("cjson.safe")
+    req_data = json.decode([[{
+        "methods": ["GET"],
+        "upstream": {
+            "nodes": {
+                "127.0.0.1:8080": 1
+            },
+            "type": "roundrobin",
+            "checks": {}
+        },
+        "uri": "/index.html"
+    }]])
+    exp_data = {
+        node = {
+            value = req_data,
+            key = "/apisix/routes/1",
+        },
+        action = "set",
+    }
+_EOC_
+
+    $block->set_value("init_by_lua_block", $init_by_lua_block);
+});
+
 run_tests;
 
 __DATA__
@@ -15,63 +47,28 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "http_path": "/status",
+                    "host": "foo.com",
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    },
+                    "unhealthy": {
+                        "interval": 1,
+                        "http_failures": 2
+                    }
+                }
+            }]])
+            exp_data.node.value.upstream.checks = req_data.upstream.checks
+
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "active": {
-                                "http_path": "/status",
-                                "host": "foo.com",
-                                "healthy": {
-                                    "interval": 2,
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "interval": 1,
-                                    "http_failures": 2
-                                }
-                            }
-                        }
-                    },
-                    "uri": "/index.html"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "active": {
-                                        "http_path": "/status",
-                                        "host": "foo.com",
-                                        "healthy": {
-                                            "interval": 2,
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "interval": 1,
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -91,59 +88,26 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "passive": {
+                    "healthy": {
+                        "http_statuses": [200, 201],
+                        "successes": 1
+                    },
+                    "unhealthy": {
+                        "http_statuses": [500],
+                        "http_failures": 2
+                    }
+                }
+            }]])
+            exp_data.node.value.upstream.checks = req_data.upstream.checks
+
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500],
-                                    "http_failures": 2
-                                }
-                            }
-                        }
-                    },
-                    "uri": "/index.html"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "passive": {
-                                        "healthy": {
-                                            "http_statuses": [200, 201],
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "http_statuses": [500],
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -163,64 +127,16 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "uri": "/index.html",
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "active": {
-                                "healthy": {
-                                    "successes": 255
-                                }
-                            },
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500],
-                                    "http_failures": 2
-                                }
-                            }
-                        }
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "healthy": {
+                        "successes": 255
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "passive": {
-                                        "healthy": {
-                                            "http_statuses": [200, 201],
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "http_statuses": [500],
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                }
+            }]])
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -241,64 +157,16 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "uri": "/index.html",
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "active": {
-                                "healthy": {
-                                    "successes": 0
-                                }
-                            },
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500],
-                                    "http_failures": 2
-                                }
-                            }
-                        }
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "healthy": {
+                        "successes": 0
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "passive": {
-                                        "healthy": {
-                                            "http_statuses": [200, 201],
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "http_statuses": [500],
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                }
+            }]])
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -319,67 +187,16 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "uri": "/index.html",
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "active": {
-                                "healthy": {
-                                    "successes": 2
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [499]
-                                }
-                            },
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500, 600],
-                                    "http_failures": 2
-                                }
-                            }
-                        }
+
+            req_data.upstream.checks = json.decode([[{
+                "passive": {
+                    "unhealthy": {
+                        "http_statuses": [500, 600]
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "passive": {
-                                        "healthy": {
-                                            "http_statuses": [200, 201],
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "http_statuses": [500],
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                }
+            }]])
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -400,68 +217,14 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "uri": "/index.html",
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "active": {
-                                "type": "udp",
-                                "healthy": {
-                                    "successes": 2
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [499]
-                                }
-                            },
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500, 600],
-                                    "http_failures": 2
-                                }
-                            }
-                        }
-                    }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "passive": {
-                                        "healthy": {
-                                            "http_statuses": [200, 201],
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "http_statuses": [500],
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "type": "udp"
+                }
+            }]])
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -482,68 +245,16 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "uri": "/index.html",
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "active": {
-                                "healthy": {
-                                    "successes": 2,
-                                    "http_statuses": [200, 200]
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [499]
-                                }
-                            },
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500, 600],
-                                    "http_failures": 2
-                                }
-                            }
-                        }
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "healthy": {
+                        "http_statuses": [200, 200]
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "passive": {
-                                        "healthy": {
-                                            "http_statuses": [200, 201],
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "http_statuses": [500],
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                }
+            }]])
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -564,69 +275,16 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "uri": "/index.html",
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "checks": {
-                            "active": {
-                                "healthy": {
-                                    "successes": 2,
-                                    "http_statuses": [200, 200]
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [499],
-                                    "http_failures": 3.1
-                                }
-                            },
-                            "passive": {
-                                "healthy": {
-                                    "http_statuses": [200, 201],
-                                    "successes": 1
-                                },
-                                "unhealthy": {
-                                    "http_statuses": [500, 600],
-                                    "http_failures": 2
-                                }
-                            }
-                        }
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "unhealthy": {
+                        "http_failures": 3.1
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET"],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin",
-                                "checks": {
-                                    "passive": {
-                                        "healthy": {
-                                            "http_statuses": [200, 201],
-                                            "successes": 1
-                                        },
-                                        "unhealthy": {
-                                            "http_statuses": [500],
-                                            "http_failures": 2
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
-                }]]
-                )
+                }
+            }]])
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
