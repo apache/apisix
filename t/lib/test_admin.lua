@@ -1,4 +1,4 @@
-local json = require("cjson")
+local json = require("cjson.safe")
 local dir_names = {}
 
 
@@ -29,6 +29,14 @@ end
 
 
 function _M.test(uri, method, body, pattern)
+    if type(body) == "table" then
+        body = json.encode(body)
+    end
+
+    if type(pattern) == "table" then
+        pattern = json.encode(pattern)
+    end
+
     local res = ngx.location.capture(uri,{method = method,body = body})
 
     if res.status >= 300 then
