@@ -324,16 +324,18 @@ local function init()
     end
 
     -- -- Using template.render
-    local sys_conf = setmetatable({
-            lua_path = package.path,
-            lua_cpath = package.cpath,
-            os_name = exec("uname"),
-            apisix_lua_home = apisix_home,
-            with_module_status = with_module_status,
-            node_ssl_listen = 9443,     -- default value
-        },
-        {__index = yaml_conf.apisix}
-    )
+    local sys_conf = {
+        lua_path = package.path,
+        lua_cpath = package.cpath,
+        os_name = exec("uname"),
+        apisix_lua_home = apisix_home,
+        with_module_status = with_module_status,
+        node_ssl_listen = 9443,     -- default value
+    }
+    for k,v in pairs(yaml_conf.apisix) do
+        sys_conf[k] = v
+    end
+
     -- print(sys_conf.allow_admin)
 
     local conf_render = template.compile(ngx_tpl)
