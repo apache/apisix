@@ -35,13 +35,13 @@ local function create_r3_router(routes)
     end
 
     local local_conf = core.config.local_conf()
-    local route_by = local_conf and local_conf.apisix and
-                     local_conf.apisix.route_by
+    local route_idx = local_conf and local_conf.apisix and
+                      local_conf.apisix.route_idx
 
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             idx = idx + 1
-            if route_by == "host+uri" then
+            if route_idx == "host+uri" then
                 local host = route.value.host
                 if not host then
                     host = [=[{domain:[^/]+}]=]

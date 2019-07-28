@@ -159,7 +159,7 @@ function _M.http_access_phase()
     local ok
 
     if local_conf().apisix
-       and local_conf().apisix.route_by == "host+uri" then
+       and local_conf().apisix.route_idx == "host+uri" then
         local host = api_ctx.var.host
         host = host and str_reverse(host) or "[^/]+"
         host = host .. api_ctx.var.uri

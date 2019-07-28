@@ -10,7 +10,7 @@ apisix:
     - 127.0.0.1
     - 'unix:'
   # port_admin: 9180              # use a separate port
-  route_by: 'uri'                 # how to match the route.
+  route_idx: 'uri'                # how to create the route index:
                                   #   `uri`: only use `uri` for routing
                                   #   `host + uri`: use `host + uri` for routing
 
