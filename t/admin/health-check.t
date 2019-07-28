@@ -135,13 +135,8 @@ passed
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
 
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                req_data,
-                exp_data
-            )
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -170,13 +165,8 @@ GET /t
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
 
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                req_data,
-                exp_data
-            )
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -205,13 +195,8 @@ GET /t
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
 
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                req_data,
-                exp_data
-            )
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -238,13 +223,8 @@ GET /t
                     "type": "udp"
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
 
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                req_data,
-                exp_data
-            )
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -269,18 +249,12 @@ GET /t
             req_data.upstream.checks = json.decode([[{
                 "active": {
                     "healthy": {
-                        "successes": 2,
                         "http_statuses": [200, 200]
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
 
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                req_data,
-                exp_data
-            )
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
@@ -305,18 +279,12 @@ GET /t
             req_data.upstream.checks = json.decode([[{
                 "active": {
                     "unhealthy": {
-                        "http_statuses": [499],
                         "http_failures": 3.1
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
 
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                req_data,
-                exp_data
-            )
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, req_data)
 
             ngx.status = code
             ngx.print(body)
