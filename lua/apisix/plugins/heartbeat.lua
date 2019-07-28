@@ -4,6 +4,7 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local encode_args = ngx.encode_args
 local plugin_name = "heartbeat"
+local ngx = ngx
 
 
 local apisix_heartbeat_addr = "https://iresty.com/apisix/heartbeat?"
