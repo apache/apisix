@@ -83,7 +83,7 @@ do
     local timer
 
 function _M.init()
-    if timer or 0 ~= ngx.worker.id() then
+    if timer or ngx.worker.id() ~= 0 then
         return
     end
 
