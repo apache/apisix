@@ -165,6 +165,7 @@ http {
         {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
+            deny all;
             access_log off;
             stub_status;
         }
@@ -173,6 +174,7 @@ http {
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
             allow {*allow_admin*};
+            deny all;
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -210,6 +212,24 @@ http {
             log_by_lua_block {
                 apisix.http_log_phase()
             }
+        }
+    }
+
+    server {
+        listen 8000;
+        index index.html;
+
+        root dashboard;
+
+       allow 127.0.0.0/24;
+       # deny all;
+
+        location / {
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Real-PORT $remote_port;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+          try_files $uri $uri/ /index.html;
         }
     }
 }
