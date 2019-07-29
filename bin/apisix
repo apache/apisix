@@ -146,6 +146,7 @@ http {
 
         location /apisix/admin {
             allow {*allow_admin*};
+            deny all;
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -165,6 +166,7 @@ http {
         {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
+            deny all;
             access_log off;
             stub_status;
         }
@@ -173,6 +175,7 @@ http {
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
             allow {*allow_admin*};
+            deny all;
             content_by_lua_block {
                 apisix.http_admin()
             }
