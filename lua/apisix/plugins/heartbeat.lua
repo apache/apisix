@@ -4,6 +4,7 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local encode_args = ngx.encode_args
 local plugin_name = "heartbeat"
+local ngx = ngx
 
 
 local apisix_heartbeat_addr = "https://iresty.com/apisix/heartbeat?"
@@ -82,6 +83,10 @@ do
     local timer
 
 function _M.init()
+    if timer or 0 ~= ngx.worker.id() then
+        return
+    end
+
     local err
     timer, err = core.timer.new("heartbeat", report, {check_interval = 60 * 60})
     if not timer then
