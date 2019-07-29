@@ -1,0 +1,3 @@
+[submodule "dashboard"]
+	path = dashboard
+	url = git@github.com:iresty/apisix_dashboard.git
