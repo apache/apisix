@@ -15,19 +15,19 @@ description = {
 }
 
 dependencies = {
-    "lua-resty-libr3",
-    "lua-resty-template",
-    "lua-resty-etcd",
-    "lua-resty-balancer",
-    "lua-resty-ngxvar",
-    "lua-resty-jit-uuid",
-    "rapidjson",
-    "lua-resty-healthcheck-iresty",
-    "lua-resty-jwt",
-    "lua-resty-cookie",
-    "lua-resty-session",
-    "lua-resty-openidc",
-    "opentracing-openresty",
+    "lua-resty-libr3 = 0.9",
+    "lua-resty-template = 1.9",
+    "lua-resty-etcd = 0.5",
+    "lua-resty-balancer = 0.02rc5",
+    "lua-resty-ngxvar = 0.3",
+    "lua-resty-jit-uuid = 0.0.7",
+    "rapidjson = 0.6.1",
+    "lua-resty-healthcheck-iresty = 1.0.0",
+    "lua-resty-jwt = 0.2.0",
+    "lua-resty-cookie = 0.1.0",
+    "lua-resty-session = 2.24",
+    "lua-resty-openidc = 1.7.2",
+    "opentracing-openresty = 0.1",
 }
 
 build = {
