@@ -46,8 +46,8 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **防御 ReDoS(正则表达式拒绝服务)**
 - **[Health Checks](doc/health-check.md)**.
 - **[OpenTracing(Zipkin)](doc/plugins/zipkin.md)**.
+- **管理控制台**
 - **缓存**: TODO.
-- **管理控制台**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
@@ -127,6 +127,12 @@ sudo apisix start
 ## 架构设计
 
 [详细设计文档](doc/architecture-design-cn.md)
+
+## 视频和幻灯片
+
+- [APISIX 的选型、测试和持续集成](https://www.upyun.com/opentalk/432.html)
+
+- [APISIX 高性能实践](https://www.upyun.com/opentalk/429.html)
 
 ## 全景图
 
