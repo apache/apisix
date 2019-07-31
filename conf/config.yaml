@@ -1,10 +1,11 @@
 apisix:
-  node_listen: 9080             # Apisix listening port
+  node_listen: 9080             # APISIX listening port
   node_ssl_listen: 9443
   enable_heartbeat: true
   enable_admin: true
   enable_debug: false
-  allow_admin: "127.0.0.0/24"
+  allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+    - 127.0.0.0/24
   real_ip_header: "X-Real-IP"     # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
   real_ip_from:                   # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
     - 127.0.0.1

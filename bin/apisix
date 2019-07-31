@@ -146,8 +146,11 @@ http {
         listen {* port_admin *};
 
         location /apisix/admin {
-            allow {*allow_admin*};
+            {% for _, allow_ip in ipairs(allow_admin) do %}
+            allow {*allow_ip*};
+            {% end %}
             deny all;
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -173,8 +176,11 @@ http {
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
-            allow {*allow_admin*};
+            {% for _, allow_ip in ipairs(allow_admin) do %}
+            allow {*allow_ip*};
+            {% end %}
             deny all;
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -355,8 +361,6 @@ local function init()
     for k,v in pairs(yaml_conf.apisix) do
         sys_conf[k] = v
     end
-
-    -- print(sys_conf.allow_admin)
 
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
