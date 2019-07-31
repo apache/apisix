@@ -7,7 +7,7 @@ local plugin_name = "heartbeat"
 local ngx = ngx
 
 
-local apisix_heartbeat_addr = "https://iresty.com/apisix/heartbeat?"
+local apisix_heartbeat_addr = "https://www.iresty.com/apisix/heartbeat?"
 
 
 local _M = {
@@ -23,7 +23,7 @@ local function request_apisix_svr(args)
         return nil, err
     end
 
-    http_cli:set_timeout(60 * 1000)
+    http_cli:set_timeout(5 * 1000)
 
     local res
     res, err = http_cli:request_uri(apisix_heartbeat_addr .. args, {
@@ -31,7 +31,7 @@ local function request_apisix_svr(args)
         ssl_verify = false,
         keepalive = false,
         headers = {
-            ["User-Agent"] = "curl",
+            ["User-Agent"] = "curl/7.54.0",
         }
     })
 
@@ -73,10 +73,11 @@ local function report()
     res, err = request_apisix_svr(args)
     if not res then
         core.log.error("failed to report heartbeat information: ", err)
-    else
-        core.log.info("succeed to report body: ",
-                      core.json.delay_encode(res, true))
+        return
     end
+
+    core.log.info("succeed to report body: ",
+                  core.json.delay_encode(res, true))
 end
 
 do
