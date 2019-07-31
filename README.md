@@ -49,8 +49,8 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Anti-ReDoS(Regular expression Denial of Service)**
 - **[Health Checks](doc/health-check.md)**.
 - **[OpenTracing(Zipkin)](doc/plugins/zipkin.md)**.
+- **Dashboard**
 - **Caching**: TODO.
-- **Dashboard**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
@@ -136,6 +136,12 @@ You can view the [benchmark documentation](doc/benchmark.md) for more detailed i
 English Development Documentation: TODO
 
 [中文开发文档](doc/architecture-design-cn.md)
+
+## Videos and slides
+
+- [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/432.html)
+
+- [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
 
 ## Landscape
 
