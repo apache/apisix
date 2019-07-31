@@ -170,9 +170,9 @@ local function sync_data(self)
 
     local res, headers, err = waitdir(self.etcd_cli, self.key,
                                       self.prev_index + 1)
-    log.debug("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1,
-              " res: ", json.delay_encode(res, true),
-              " headers: ", json.delay_encode(headers, true))
+    log.debug("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
+    log.debug("res: ", json.delay_encode(res, true))
+    log.debug("headers: ", json.delay_encode(headers, true))
     if not res then
         return false, err
     end
