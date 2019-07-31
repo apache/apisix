@@ -193,7 +193,9 @@ http {
 
         location /apisix/dashboard {
             index index.html;
-            allow {*allow_admin*};
+            {% for _, allow_ip in ipairs(allow_admin) do %}
+            allow {*allow_ip*};
+            {% end %}
             deny all;
 
             root ../;
