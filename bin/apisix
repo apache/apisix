@@ -187,12 +187,12 @@ http {
             apisix.http_ssl_phase()
         }
 
-        location /dashboard {
+        location /apisix/dashboard {
             index index.html;
             allow {*allow_admin*};
             deny all;
 
-            root .;
+            root ../;
 
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Real-PORT $remote_port;
