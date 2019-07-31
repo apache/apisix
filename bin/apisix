@@ -162,8 +162,6 @@ http {
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
 
-        include mime.types;
-
         {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
