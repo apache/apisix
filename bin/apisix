@@ -191,6 +191,20 @@ http {
             apisix.http_ssl_phase()
         }
 
+        location /apisix/dashboard {
+            index index.html;
+            allow {*allow_admin*};
+            deny all;
+
+            root ../;
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Real-PORT $remote_port;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            try_files $uri $uri/ /index.html;
+        }
+
         location / {
             set $upstream_scheme             'http';
             set $upstream_host               $host;
@@ -218,24 +232,6 @@ http {
             log_by_lua_block {
                 apisix.http_log_phase()
             }
-        }
-    }
-
-    server {
-        listen 8000;
-        index index.html;
-
-        root dashboard;
-
-       allow 127.0.0.0/24;
-       #deny all;
-
-        location / {
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Real-PORT $remote_port;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-          try_files $uri $uri/ /index.html;
         }
     }
 }
