@@ -30,27 +30,28 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 
 ## Features
 
-- **Cloud-Native**
+- **Cloud-Native**: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
+- **hot updates and hot plugins**: Continuously updates its configurations and plugins without restarts!
 - **Dynamic Load Balancing**: Round-robin load balancing with weight.
 - **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
 - **SSL**
-- **Monitoring**
 - **Forward Proxy**
-- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md).
-- **Limit-rate**
-- **Limit-count**
-- **Limit-concurrency**
-- **CLI**
+- **[Health Checks](doc/health-check.md)**.
+- **Circuit-Breaker**: Intelligent tracking of unhealthy upstream services.
+- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md)
+- **[Limit-req](doc/plugins/limit-req.md)**
+- **[Limit-count](doc/plugins/limit-count.md)**
+- **[Limit-concurrency](doc/plugins/limit-conn.md)**
+- **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
+- **Monitoring and Metrics**: [Prometheus](doc/plugins/prometheus.md)
+- **Custom plugins**
+- **Dashboard**: Built-in dashboard to control APISIX
+- **CLI**: start\stop\reload APISIX through the command line.
 - **REST API**
 - **Clustering**
 - **Scalability**
-- **High performance**
-- **Custom plugins**
+- **High performance**: The single-core QPS reaches 23800 with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
-- **[Health Checks](doc/health-check.md)**.
-- **[OpenTracing(Zipkin)](doc/plugins/zipkin.md)**.
-- **Dashboard**
-- **Caching**: TODO.
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
