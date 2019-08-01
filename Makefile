@@ -56,7 +56,7 @@ init:
 .PHONY: run
 run:
 	mkdir -p logs
-	mkdir -p /tmp/cores/
+	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 
 
