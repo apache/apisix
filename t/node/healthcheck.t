@@ -15,6 +15,7 @@ repeat_each(1);
 log_level('info');
 no_root_location();
 no_shuffle();
+worker_connections(256);
 
 run_tests();
 
@@ -82,7 +83,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET"})
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
                     return
@@ -174,7 +175,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
 
             do
                 local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET"})
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             end
 
             ngx.sleep(2.5)
@@ -182,7 +183,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET"})
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
                     return
@@ -280,7 +281,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET"})
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
                     return
@@ -380,7 +381,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
 
             do
                 local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET"})
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             end
 
             ngx.sleep(2.5)
@@ -388,7 +389,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET"})
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
                     return
@@ -460,7 +461,9 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local ports_count = {}
             for i = 1, 2 do
                 local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET"})
+                local res, err = httpc:request_uri(uri,
+                    {method = "GET", keepalive = false}
+                )
                 ngx.say("res: ", res.status, " err: ", err)
             end
         }
