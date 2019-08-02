@@ -10,6 +10,7 @@ BEGIN {
 
 use t::APISix 'no_plan';
 
+master_on();
 repeat_each(1);
 log_level('info');
 no_root_location();
@@ -62,8 +63,9 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -106,8 +108,9 @@ passed
 GET /t
 --- response_body
 [{"count":6,"port":"1981"},{"count":6,"port":"1980"}]
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 --- timeout: 6
 
 
@@ -155,8 +158,9 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -257,8 +261,9 @@ qr/Connection refused\) while connecting to upstream/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -301,8 +306,9 @@ passed
 GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 --- timeout: 6
 
 
@@ -358,8 +364,9 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
 
 
 
@@ -409,7 +416,69 @@ GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\[error\].*/
+qr/^.*?\[error\](?!.*process exiting).*/
 --- grep_error_log_out eval
 qr/Connection refused\) while connecting to upstream/
+--- timeout: 5
+
+
+
+=== TEST 9: chash route (upstream nodes: 2 unhealthy)
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{"uri":"/server_port","upstream":{"type":"chash","nodes":{"127.0.0.1:1960":1,"127.0.0.1:1961":1},"key":"remote_addr","retries":3,"checks":{"active":{"http_path":"/status","host":"foo.com","healthy":{"interval":999,"successes":3},"unhealthy":{"interval":999,"http_failures":3}},"passive":{"healthy":{"http_statuses":[200,201],"successes":3},"unhealthy":{"http_statuses":[500],"http_failures":3,"tcp_failures":3}}}}}]]
+        )
+
+        if code >= 300 then
+        ngx.status = code
+        end
+        ngx.say(body)
+  }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
+
+
+
+=== TEST 10: hit routes (passive + retries)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            local ports_count = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET"})
+                ngx.say("res: ", res.status, " err: ", err)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+res: 502 err: nil
+res: 502 err: nil
+--- grep_error_log eval
+qr{\[error\].*while connecting to upstream.*}
+--- grep_error_log_out eval
+qr{.*http://127.0.0.1:1960/server_port.*
+.*http://127.0.0.1:1960/server_port.*
+.*http://127.0.0.1:1961/server_port.*
+.*http://127.0.0.1:1961/server_port.*
+.*http://127.0.0.1:1961/server_port.*
+.*http://127.0.0.1:1960/server_port.*
+.*http://127.0.0.1:1960/server_port.*
+.*http://127.0.0.1:1960/server_port.*}
 --- timeout: 5

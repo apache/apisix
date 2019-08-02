@@ -23,7 +23,8 @@ __DATA__
                             "127.0.0.1:8080": 1
                         },
                         "type": "roundrobin"
-                    }
+                    },
+                    "desc": "new service"
                 }]],
                 [[{
                     "node": {
@@ -33,7 +34,8 @@ __DATA__
                                     "127.0.0.1:8080": 1
                                 },
                                 "type": "roundrobin"
-                            }
+                            },
+                            "desc": "new service"
                         },
                         "key": "/apisix/services/1"
                     },
@@ -70,7 +72,8 @@ passed
                                     "127.0.0.1:8080": 1
                                 },
                                 "type": "roundrobin"
-                            }
+                            },
+                            "desc": "new service"
                         },
                         "key": "/apisix/services/1"
                     },

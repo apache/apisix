@@ -83,13 +83,10 @@ The compilation of `libr3` relies on later versions of `autoconf` and `pcre`, bu
 Mac OSX
 =======
 
-**WIP**
-
 ```shell
 # install openresty, etcd and some compilation tools
-brew install autoconf automake check pkg-config pcre install \
-    openresty/brew/openresty etcd luarocks
+brew install openresty/brew/openresty etcd luarocks
 
 # start etcd server
-etcd
+brew services start etcd
 ```

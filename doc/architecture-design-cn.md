@@ -6,6 +6,7 @@
 - [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
 - [**Upstream**](#upstream)
+- [**Debug mode**](#Debug-mode)
 
 ## apisix
 
@@ -88,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
 ## Service
 
 `Service` 是某类功能的提供者，比如订单、账户服务。它通常与上游服务抽象是一对一的，`Route`
-与 `Service` 之间，通常是 N:1 的关系，既多个 `Route` 规则可以对应同一个 `Service`。
+与 `Service` 之间，通常是 N:1 的关系，即多个 `Route` 规则可以对应同一个 `Service`。
 
 多个 route 规则同时绑定到一个 service 上，这些路由将具有相同的上游和插件配置，减少冗余配置。
 
@@ -216,13 +217,14 @@ APISIX 支持对上游的健康检查，你可以设置需要检查的 host、ur
 
 #### 配置参数
 
-* type：`roundrobin` 或 `chash`
-    * roundrobin：支持权重的负载
-    * chash：一致性 hash (TODO)
-* nodes: 上游机器地址列表（目前仅支持 IP+Port 方式）
-* key: 该选项只有类型是 `roundrobin` 才有效。根据 `key` 来查找对应的 node `id`，相同的
+* `type`：`roundrobin` 或 `chash`
+    * `roundrobin`：支持权重的负载
+    * `chash`：一致性 `hash`
+* `nodes`: 上游机器地址列表（目前仅支持 IP+Port 方式）
+* `key`: 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的
 `key` 在同一个对象中，永远返回相同 id 。
-* checks: 配置健康检查的参数。
+* `retries`: APISIX 将使用底层的 Nginx 重试机制将请求传递给下一个上游。这是一个可选项，默认是不启用重试机制。
+* `checks`: 配置健康检查的参数。
 
 创建上游对象用例：
 
@@ -299,6 +301,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "39.97.63.215:80": 1
         }
         "type": "roundrobin",
+        "retries": 2,
         "checks": {
             "active": {
                 "http_path": "/status",
@@ -318,5 +321,30 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 ```
 
 更多细节可以参考[健康检查的文档](health-check.md).
+
+[返回目录](#目录)
+
+
+## Debug mode
+
+开启调试模式后，会在请求应答时，输出更多的内部信息，比如加载了哪些插件等。
+
+设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启调试模式。
+
+比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count` 出现。
+
+```shell
+$ curl http://127.0.0.1:1984/hello -i
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Apisix-Plugins: limit-conn, limit-count
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 1
+Server: openresty
+
+hello world
+```
 
 [返回目录](#目录)

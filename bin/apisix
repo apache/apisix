@@ -86,11 +86,12 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
-    lua_shared_dict plugin-limit-req    10m;
-    lua_shared_dict plugin-limit-count  10m;
-    lua_shared_dict prometheus-metrics  10m;
-    lua_shared_dict plugin-limit-conn   10m;
-    lua_shared_dict worker-events       10m;
+    lua_shared_dict plugin-limit-req     10m;
+    lua_shared_dict plugin-limit-count   10m;
+    lua_shared_dict prometheus-metrics   10m;
+    lua_shared_dict plugin-limit-conn    10m;
+    lua_shared_dict upstream-healthcheck 10m;
+    lua_shared_dict worker-events        10m;
 
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
@@ -113,6 +114,8 @@ http {
 
     server_tokens off;
     more_set_headers 'Server: APISIX web server';
+
+    include mime.types;
 
     real_ip_header {* real_ip_header *};
     {% for _, real_ip in ipairs(real_ip_from) do %}
@@ -141,10 +144,13 @@ http {
     {% if enable_admin and port_admin then %}
     server {
         listen {* port_admin *};
-        include mime.types;
 
         location /apisix/admin {
-            allow {*allow_admin*};
+            {% for _, allow_ip in ipairs(allow_admin) do %}
+            allow {*allow_ip*};
+            {% end %}
+            deny all;
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -159,11 +165,10 @@ http {
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
 
-        include mime.types;
-
         {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
+            deny all;
             access_log off;
             stub_status;
         }
@@ -171,7 +176,11 @@ http {
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
-            allow {*allow_admin*};
+            {% for _, allow_ip in ipairs(allow_admin) do %}
+            allow {*allow_ip*};
+            {% end %}
+            deny all;
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -180,6 +189,22 @@ http {
 
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
+        }
+
+        location /apisix/dashboard {
+            index index.html;
+            {% for _, allow_ip in ipairs(allow_admin) do %}
+            allow {*allow_ip*};
+            {% end %}
+            deny all;
+
+            root ../;
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Real-PORT $remote_port;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            try_files $uri $uri/ /index.html;
         }
 
         location / {
@@ -252,20 +277,42 @@ local function read_yaml_conf()
     return yaml.parse(ymal_conf)
 end
 
-local function checkOpenrestyVersion(need_version)
-    local shell="need_ver="..need_version ..";"
-          .."str=`openresty -v 2>&1`;"
-          .."op_ver=${str##*/};"
-          --.."echo \"op_ver:\"$op_ver;"
-          .."max_ver=`echo \"${need_ver} ${op_ver}\" | tr \" \" \"\n\" | sort -rV | head -n 1`;"
-          --.."echo \"max_ver:\"${max_ver};"
-          .."if [ $max_ver != $need_ver ];then"
-          .."  echo 1;"
-          .."else"
-          .."  echo 0;"
-          .."fi"
-     local ret = excute_cmd(shell)
-     return trim(ret)=="1"
+local function get_openresty_version()
+    local str = "nginx version: openresty/"
+    local ret = excute_cmd("openresty -v 2>&1")
+    local pos = string.find(ret,str)
+    if pos ~= 1 then
+        return nil
+    end
+
+    return string.sub(ret,string.len(str)+1)
+end
+
+local function split(self, sep)
+    local sep, fields = sep or ":", {}
+    local pattern = string.format("([^%s]+)", sep)
+    self:gsub(pattern, function(c) fields[#fields + 1] = c end)
+    return fields
+ end
+
+local function check_or_version(cur_ver_s, need_ver_s)
+    local cur_vers = split(cur_ver_s, [[.]])
+    local need_vers = split(need_ver_s, [[.]])
+    local len = math.max(#cur_vers, #need_vers)
+
+    for i = 1, len do
+        local cur_ver = tonumber(cur_vers[i]) or 0
+        local need_ver = tonumber(need_vers[i]) or 0
+        if cur_ver > need_ver then
+            return true
+        end
+
+        if cur_ver < need_ver then
+            return false
+        end
+    end
+
+    return true
 end
 
 local _M = {version = 0.1}
@@ -301,17 +348,17 @@ local function init()
     end
 
     -- -- Using template.render
-    local sys_conf = setmetatable({
-            lua_path = package.path,
-            lua_cpath = package.cpath,
-            os_name = exec("uname"),
-            apisix_lua_home = apisix_home,
-            with_module_status = with_module_status,
-            node_ssl_listen = 9443,     -- default value
-        },
-        {__index = yaml_conf.apisix}
-    )
-    -- print(sys_conf.allow_admin)
+    local sys_conf = {
+        lua_path = package.path,
+        lua_cpath = package.cpath,
+        os_name = exec("uname"),
+        apisix_lua_home = apisix_home,
+        with_module_status = with_module_status,
+        node_ssl_listen = 9443,     -- default value
+    }
+    for k,v in pairs(yaml_conf.apisix) do
+        sys_conf[k] = v
+    end
 
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
@@ -319,6 +366,18 @@ local function init()
     local ok, err = write_file(apisix_home .. "/conf/nginx.conf", ngxconf)
     if not ok then
         error("failed to update nginx.conf: " .. err)
+    end
+
+    local op_ver = get_openresty_version()
+    if op_ver == nil then
+        io.stderr:write("can not find openresty\n")
+        return
+    end
+
+    local need_ver = "1.15.8"
+    if not check_or_version(op_ver, need_ver) then
+        io.stderr:write("openresty version must >=", need_ver, "\n")
+        return
     end
 end
 _M.init = init
@@ -363,12 +422,6 @@ local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
 function _M.start(...)
     init(...)
     init_etcd(...)
-
-    local need_version="1.15.8";
-    if not checkOpenrestyVersion(need_version) then
-        print("the openresty version must >=", need_version, "\n")
-        return
-    end
 
     local cmd = openresty_args
     -- print(cmd)

@@ -1,7 +1,9 @@
 local json_encode = require("cjson.safe").encode
+local clear_tab = require("table.clear")
 local tostring = tostring
 local type = type
 local pairs = pairs
+local cached_tab = {}
 
 
 local _M = {
@@ -29,7 +31,12 @@ local function tab_clone_with_serialise(data)
     local t = {}
     for k, v in pairs(data) do
         if type(v) == "table" then
-            t[serialise_obj(k)] = tab_clone_with_serialise(v)
+            if cached_tab[v] then
+                t[serialise_obj(k)] = tostring(v)
+            else
+                cached_tab[v] = true
+                t[serialise_obj(k)] = tab_clone_with_serialise(v)
+            end
 
         else
             t[serialise_obj(k)] = serialise_obj(v)
@@ -42,6 +49,7 @@ end
 
 local function encode(data, force)
     if force then
+        clear_tab(cached_tab)
         data = tab_clone_with_serialise(data)
     end
 
