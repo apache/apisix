@@ -4,6 +4,7 @@ local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local ipairs = ipairs
 local tonumber = tonumber
+local type = type
 
 
 local _M = {
@@ -121,7 +122,6 @@ end
 
 
 function _M.delete(id)
-    -- todo: need to check if any route is still using this service now.
     if not id then
         return 400, {error_msg = "missing service id"}
     end
@@ -131,7 +131,8 @@ function _M.delete(id)
     core.log.info("routes_ver: ", routes_ver)
     if routes_ver and routes then
         for _, route in ipairs(routes) do
-            if route.value and route.value.service_id
+            if type(route) == "table" and route.value
+               and route.value.service_id
                and tostring(route.value.service_id) == id then
                 return 400, {error_msg = "can not delete this service directly,"
                                          .. " route [" .. route.value.id

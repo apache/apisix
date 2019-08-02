@@ -4,6 +4,7 @@ local get_services = require("apisix.http.service").services
 local tostring = tostring
 local ipairs = ipairs
 local tonumber = tonumber
+local type = type
 
 
 local _M = {
@@ -110,7 +111,8 @@ function _M.delete(id)
     core.log.info("routes_ver: ", routes_ver)
     if routes_ver and routes then
         for _, route in ipairs(routes) do
-            if route.value and route.value.upstream_id
+            if type(route) == "table" and route.value
+               and route.value.upstream_id
                and tostring(route.value.upstream_id) == id then
                 return 400, {error_msg = "can not delete this upstream,"
                                          .. " route [" .. route.value.id
@@ -124,7 +126,8 @@ function _M.delete(id)
     core.log.info("services_ver: ", services_ver)
     if services_ver and services then
         for _, service in ipairs(services) do
-            if service.value and service.value.upstream_id
+            if type(service) == "table" and service.value
+               and service.value.upstream_id
                and tostring(service.value.upstream_id) == id then
                 return 400, {error_msg = "can not delete this upstream,"
                                          .. " service [" .. service.value.id

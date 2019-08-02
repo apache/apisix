@@ -111,16 +111,15 @@ end
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
+    local up_id = route.value.upstream_id
     local upstream = route.value.upstream
-    if not upstream then
+    if not up_id and not upstream then
         return nil, nil, "missing upstream configuration"
     end
 
-    local checker = upstream.checker
-    local up_id = upstream.id
     local version
-
     local key
+
     if up_id then
         if not upstreams_etcd then
             return nil, nil, "need to create a etcd instance for fetching "
@@ -142,6 +141,7 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
+    local checker = upstream and upstream.checker
     if upstream.checks and not checker then
         checker = healthcheck.new({
             name = "upstream",
