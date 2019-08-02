@@ -94,6 +94,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(0.5)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_DELETE,
