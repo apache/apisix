@@ -1,6 +1,6 @@
 use t::APISix 'no_plan';
 
-worker_connections(1024);
+worker_connections(256);
 no_root_location();
 
 run_tests();
