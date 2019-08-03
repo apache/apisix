@@ -4,6 +4,7 @@ local require = require
 local r3router = require("resty.r3")
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
+local local_conf = core.config.local_conf
 local ipairs = ipairs
 local type = type
 local error = error
@@ -34,9 +35,8 @@ local function create_r3_router(routes)
         end
     end
 
-    local local_conf = core.config.local_conf()
-    local route_idx = local_conf and local_conf.apisix and
-                      local_conf.apisix.route_idx
+    local conf = local_conf()
+    local route_idx = conf and conf.apisix and conf.apisix.route_idx
 
     for _, route in ipairs(routes) do
         if type(route) == "table" then
@@ -85,10 +85,26 @@ local function create_r3_router(routes)
 end
 
 
-function _M.get()
-    core.log.info("routes conf_version: ", routes.conf_version)
-    return core.lrucache.global("/routes", routes.conf_version,
-                                create_r3_router, routes.values)
+    local match_opts = {}
+function _M.match(api_ctx)
+    local router, err = core.lrucache.global("/routes", routes.conf_version,
+                                             create_r3_router, routes.values)
+    if not router then
+        core.log.error("failed to fetch http router: ", err)
+        return core.response.exit(404)
+    end
+
+    core.table.clear(match_opts)
+    match_opts.method = api_ctx.var.method
+    match_opts.host = api_ctx.var.host
+
+    local ok = router:dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
+    if not ok then
+        core.log.info("not find any matched route")
+        return core.response.exit(404)
+    end
+
+    return true
 end
 
 
