@@ -6,8 +6,8 @@ local pcall = pcall
 local ipairs = ipairs
 local pairs = pairs
 local type = type
-local local_plugins = core.table.new(10, 0)
-local local_plugins_hash = core.table.new(10, 0)
+local local_plugins = core.table.new(32, 0)
+local local_plugins_hash = core.table.new(0, 32)
 local local_conf
 
 
@@ -194,6 +194,11 @@ end
 
 function _M.init_worker()
     load()
+end
+
+
+function _M.get(name)
+    return local_plugins_hash and local_plugins_hash[name]
 end
 
 
