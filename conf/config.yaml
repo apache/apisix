@@ -6,14 +6,14 @@ apisix:
   enable_debug: false
   allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24
+  # port_admin: 9180              # use a separate port
   real_ip_header: "X-Real-IP"     # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
   real_ip_from:                   # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
     - 127.0.0.1
     - 'unix:'
-  # port_admin: 9180              # use a separate port
-  route_idx: 'uri'                # how to create the route index:
-                                  #   `uri`: only use `uri` for routing
-                                  #   `host+uri`: use `host+uri` for routing
+  router:
+    http: 'r3_uri'
+    ssl: 'r3_sni'
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
