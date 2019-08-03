@@ -2,25 +2,21 @@
 
 local require = require
 local core = require("apisix.core")
-local router = require("apisix.http.route").get
 local plugin = require("apisix.plugin")
 local service_fetch = require("apisix.http.service").get
-local ssl_match = require("apisix.http.ssl").match
 local admin_init = require("apisix.admin.init")
 local get_var = require("resty.ngxvar").fetch
-local local_conf = core.config.local_conf
+local router = require("apisix.http.router")
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_exit = ngx.exit
 local ngx_ERROR = ngx.ERROR
-local str_reverse = string.reverse
 local math = math
-local match_opts = {}
 local error = error
 local load_balancer
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
 function _M.http_init()
@@ -57,10 +53,8 @@ function _M.http_init_worker()
 
     require("apisix.admin.init").init_worker()
 
-    require("apisix.http.route").init_worker()
+    router.init_worker()
     require("apisix.http.service").init_worker()
-    require("apisix.http.ssl").init_worker()
-
     require("apisix.plugin").init_worker()
     require("apisix.consumer").init_worker()
 end
@@ -133,7 +127,7 @@ function _M.http_ssl_phase()
         ngx_ctx.api_ctx = api_ctx
     end
 
-    local ok, err = ssl_match(api_ctx)
+    local ok, err = router.router_ssl.match(api_ctx)
     if not ok then
         if err then
             core.log.error("failed to fetch ssl config: ", err)
@@ -153,28 +147,8 @@ function _M.http_access_phase()
     end
 
     core.ctx.set_vars_meta(api_ctx)
-    core.table.clear(match_opts)
-    match_opts.method = api_ctx.var.method
 
-    local ok
-
-    if local_conf().apisix
-       and local_conf().apisix.route_idx == "host+uri" then
-        local host = api_ctx.var.host
-        host = host and str_reverse(host) or "[^/]+"
-        host = host .. api_ctx.var.uri
-        ok = router():dispatch2(nil, host, match_opts, api_ctx)
-        core.log.info("match string: ", host)
-
-    else
-        match_opts.host = api_ctx.var.host
-        ok = router():dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
-    end
-
-    if not ok then
-        core.log.info("not find any matched route")
-        return core.response.exit(404)
-    end
+    router.router_http.match(api_ctx)
 
     core.log.info("route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
