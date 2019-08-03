@@ -35,6 +35,7 @@ before_cache:
   - brew cleanup
 
 before_install:
+  - echo $TRAVIS_OS_NAME
   - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh before_install
 
 install:
