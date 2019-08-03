@@ -1,5 +1,5 @@
 local core = require("apisix.core")
-local routes = require("apisix.http.route").routes
+local get_routes = require("apisix.http.router").http_routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local ipairs = ipairs
@@ -8,7 +8,7 @@ local type = type
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
 }
 
 
@@ -126,7 +126,7 @@ function _M.delete(id)
         return 400, {error_msg = "missing service id"}
     end
 
-    local routes, routes_ver = routes()
+    local routes, routes_ver = get_routes()
     core.log.info("routes: ", core.json.delay_encode(routes, true))
     core.log.info("routes_ver: ", routes_ver)
     if routes_ver and routes then
