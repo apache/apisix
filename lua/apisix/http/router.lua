@@ -1,3 +1,4 @@
+local require = require
 local core = require("apisix.core")
 local local_conf = core.config.local_conf
 
