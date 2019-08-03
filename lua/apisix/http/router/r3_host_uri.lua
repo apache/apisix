@@ -7,6 +7,7 @@ local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
+local str_reverse = string.reverse
 local routes
 
 
@@ -36,10 +37,22 @@ local function create_r3_router(routes)
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             idx = idx + 1
+
+            local host = route.value.host
+            if not host then
+                host = [=[{domain:[^/]+}]=]
+
+            else
+                host = str_reverse(host)
+                if host:sub(#host) == "*" then
+                    host = host:sub(1, #host - 1) .. "{prefix:.*}"
+                end
+            end
+
+            core.log.info("route rule: ", host .. route.value.uri)
             route_items[idx] = {
-                path = route.value.uri,
+                path = host .. route.value.uri,
                 method = route.value.methods,
-                host = route.value.host,
                 handler = function (params, api_ctx)
                     api_ctx.matched_params = params
                     api_ctx.matched_route = route
@@ -66,9 +79,13 @@ function _M.match(api_ctx)
 
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.method
-    match_opts.host = api_ctx.var.host
 
-    local ok = router:dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
+    local host = api_ctx.var.host
+    host = host and str_reverse(host) or "[^/]+"
+    host = host .. api_ctx.var.uri
+    core.log.info("match string: ", host)
+
+    local ok = router:dispatch2(nil, host, match_opts, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
         return core.response.exit(404)
@@ -89,11 +106,10 @@ end
 
 function _M.init_worker()
     local err
-    routes, err = core.config.new("/routes",
-                            {
-                                automatic = true,
-                                item_schema = core.schema.route
-                            })
+    routes, err = core.config.new("/routes", {
+            automatic = true,
+            item_schema = core.schema.route
+        })
     if not routes then
         error("failed to create etcd instance for fetching routes : " .. err)
     end

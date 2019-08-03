@@ -18,7 +18,7 @@ sub read_file($) {
 our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
-$yaml_config =~ s/route_idx: 'uri'/route_idx: 'host+uri'/;
+$yaml_config =~ s/http: 'r3_uri'/http: 'r3_host_uri'/;
 
 run_tests();
 
