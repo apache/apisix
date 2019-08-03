@@ -52,6 +52,7 @@ function _M.http_init_worker()
     load_balancer = require("apisix.http.balancer").run
 
     require("apisix.admin.init").init_worker()
+    require("apisix.http.balancer").init_worker()
 
     router.init_worker()
     require("apisix.http.service").init_worker()
