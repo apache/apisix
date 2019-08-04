@@ -6,6 +6,7 @@
 - [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
 - [**Upstream**](#upstream)
+- [**Router**](#router)
 - [**Debug mode**](#Debug-mode)
 
 ## apisix
@@ -320,10 +321,25 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-更多细节可以参考[健康检查的文档](health-check.md).
+更多细节可以参考[健康检查的文档](health-check.md)。
 
 [返回目录](#目录)
 
+
+## Router
+
+APISIX 区别于其他 API 网关的一大特点是允许用户选择不同路由实现来更好匹配自由业务。这样可以更好的在性能、自由之间做最佳选择。
+
+在本地配置 `conf/config.yaml` 中设置最符合自身业务需求的路由，可获得更好的匹配效率。
+
+* `apisix.router.http`: HTTP 请求路由。
+    * `r3_uri`: 默认值，只使用 `uri` 作为主索引（基于 r3 引擎）。
+    * `r3_host_uri`: 使用 `host + uri` 作为主索引（基于 r3 引擎）,对当前请求会同时匹配 host 和 uri。
+
+* `apisix.router.ssl`: SSL 加载匹配路由。
+    * `r3_sni`: 默认值，使用 `SNI` (Server Name Indication) 作为主索引（基于 r3 引擎）。
+
+[返回目录](#目录)
 
 ## Debug mode
 

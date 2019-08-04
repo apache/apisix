@@ -135,11 +135,12 @@ moc.oof/hello
                         "methods": ["GET"],
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:1981": 1
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "host": "foo.com",
+                        "uri": "/server_port"
                 }]]
                 )
 
@@ -161,10 +162,10 @@ passed
 
 === TEST 8: /not_found
 --- request
-GET /hello2
+GET /hello
 --- yaml_config eval: $::yaml_config
 --- more_headers
-Host: not_found.com
+Host: foo.com
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
@@ -175,6 +176,67 @@ qr/404 Not Found/
 
 === TEST 9: hit routes
 --- request
+GET /server_port
+--- yaml_config eval: $::yaml_config
+--- more_headers
+Host: foo.com
+--- response_body_like eval
+qr/1981/
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: set route(id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1981": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "host": "foo.com",
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- yaml_config eval: $::yaml_config
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: /not_found
+--- request
+GET /hello2
+--- yaml_config eval: $::yaml_config
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit routes
+--- request
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- more_headers
@@ -183,15 +245,28 @@ Host: foo.com
 hello world
 --- no_error_log
 [error]
---- LAST
 
 
 
-=== TEST 10: hit routes
---- request
-GET /hello
+=== TEST 13: delete route(id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
 --- yaml_config eval: $::yaml_config
+--- request
+GET /t
 --- response_body
-hello world
+passed
 --- no_error_log
 [error]
