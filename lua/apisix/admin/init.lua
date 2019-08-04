@@ -65,12 +65,12 @@ local uri_route = {
     },
     {
         path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
-                .. [[/{id:[\d\w_]+}]],
+                .. [[/{id}]],
         handler = run,
         method = {"GET", "PUT", "POST", "DELETE"},
     },
     {
-        path = [[/apisix/admin/schema/{res:plugins}/{id:[\d\w-]+}]],
+        path = [[/apisix/admin/schema/{res:plugins}/{id}]],
         handler = run,
         method = {"GET", "PUT", "POST", "DELETE"},
     },
@@ -87,7 +87,7 @@ local uri_route = {
     },
     {
         path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
-               .. [[/{id:[\d\w_]+}/{sub_path:.*}]],
+               .. [[/{id}/{sub_path:.*}]],
         handler = run,
         method = {"PATCH"},
     },
