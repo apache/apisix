@@ -12,7 +12,8 @@ apisix:
     - 127.0.0.1
     - 'unix:'
   router:
-    http: 'r3_uri'
+    http: 'r3_uri'                # r3_uri: match route by uri(base on r3)
+                                  # r3_host_uri: match route by host + uri(base on r3)
     ssl: 'r3_sni'
 
 etcd:
