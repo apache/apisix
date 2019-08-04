@@ -139,7 +139,6 @@ moc.oof/hello
                             },
                             "type": "roundrobin"
                         },
-                        "host": "foo.com",
                         "uri": "/server_port"
                 }]]
                 )
@@ -164,8 +163,6 @@ passed
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
---- more_headers
-Host: foo.com
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
@@ -179,7 +176,7 @@ qr/404 Not Found/
 GET /server_port
 --- yaml_config eval: $::yaml_config
 --- more_headers
-Host: foo.com
+Host: anydomain.com
 --- response_body_like eval
 qr/1981/
 --- no_error_log
@@ -202,7 +199,6 @@ qr/1981/
                             },
                             "type": "roundrobin"
                         },
-                        "host": "foo.com",
                         "uri": "/hello"
                 }]]
                 )
@@ -240,7 +236,7 @@ qr/404 Not Found/
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- more_headers
-Host: foo.com
+Host: anydomain.com
 --- response_body
 hello world
 --- no_error_log
