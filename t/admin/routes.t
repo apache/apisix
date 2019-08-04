@@ -970,3 +970,69 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 28: patch route(new methods)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1/methods',
+                ngx.HTTP_PATCH,
+                '["GET"]',
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ]
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: patch route(new uri)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1/uri',
+                ngx.HTTP_PATCH,
+                '"/patch_test"',
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/patch_test"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
