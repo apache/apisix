@@ -16,7 +16,7 @@ local resources = {
 }
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 local router
 
 
@@ -46,7 +46,7 @@ local function run(params)
         req_body = data
     end
 
-    local code, data = resource[method](params.id, req_body)
+    local code, data = resource[method](params.id, req_body, params.sub_path)
     if code then
         core.response.exit(code, data)
     end
@@ -60,25 +60,36 @@ end
 local uri_route = {
     {
         path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]],
-        handler = run
+        handler = run,
+        method = {"GET", "PUT", "POST", "DELETE"},
     },
     {
         path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
                 .. [[/{id:[\d\w_]+}]],
-        handler = run
+        handler = run,
+        method = {"GET", "PUT", "POST", "DELETE"},
     },
     {
         path = [[/apisix/admin/schema/{res:plugins}/{id:[\d\w-]+}]],
-        handler = run
+        handler = run,
+        method = {"GET", "PUT", "POST", "DELETE"},
     },
     {
         path = [[/apisix/admin/{res:schema}/]]
                 .. [[{id:route|service|upstream|consumer|ssl}]],
-        handler = run
+        handler = run,
+        method = {"GET", "PUT", "POST", "DELETE"},
     },
     {
         path = [[/apisix/admin/plugins/list]],
-        handler = get_plugins_list
+        handler = get_plugins_list,
+        method = {"GET", "PUT", "POST", "DELETE"},
+    },
+    {
+        path = [[/apisix/admin/{res:routes|services|upstreams|consumers|ssl}]]
+               .. [[/{id:[\d\w_]+}/{sub_path:.*}]],
+        handler = run,
+        method = {"PATCH"},
     },
 }
 
@@ -89,7 +100,6 @@ function _M.init_worker()
     end
 
     router = route.new(uri_route)
-
     router:compile()
 end
 
