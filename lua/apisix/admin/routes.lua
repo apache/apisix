@@ -1,6 +1,7 @@
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
+local type = type
 
 
 local _M = {
@@ -198,7 +199,11 @@ function _M.patch(id, conf, sub_path)
     end
 
     local sub_name = sub_paths[#sub_paths]
-    sub_value[sub_name] = conf
+    if sub_name and sub_name ~= "" then
+        sub_value[sub_name] = conf
+    else
+        node_value = conf
+    end
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
     local id, err = check_conf(id, node_value, true)
