@@ -8,37 +8,35 @@ local ipairs = ipairs
 local type = type
 local error = error
 local str_reverse = string.reverse
-local routes
+local user_routes
+local cached_version
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
-    local api_routes = {}
-    local api_router
-local function create_api_router()
-    local api_routes = plugin.api_routes()
-    core.table.clear(api_routes)
+    local only_uri_routes = {}
+    local only_uri_router
+local function create_only_uri_router()
+    local routes = plugin.api_routes()
 
-    local idx = 0
-    for _, route in ipairs(api_routes) do
+    for _, route in ipairs(routes) do
         if type(route) == "table" then
-            idx = idx + 1
-            api_routes[idx] = {
+            core.table.insert(only_uri_routes, {
                 path = route.uri,
                 handler = route.handler,
                 method = route.methods,
-            }
+            })
         end
     end
 
-    api_router = r3router.new(api_routes)
-    api_router:compile()
+    only_uri_router = r3router.new(only_uri_routes)
+    only_uri_router:compile()
     return true
 end
 
 
-    local req_routes = {}
-    local req_routes_idx = 0
+    local host_uri_routes = {}
+    local host_uri_router
 local function push_valid_route(route)
     if type(route) ~= "table" then
         return
@@ -46,8 +44,14 @@ local function push_valid_route(route)
 
     local host = route.value.host
     if not host then
-        core.log.error("missing `host` field in route: ",
-                        core.json.delay_encode(route))
+        core.table.insert(only_uri_routes, {
+            path = route.value.uri,
+            method = route.value.methods,
+            handler = function (params, api_ctx)
+                api_ctx.matched_params = params
+                api_ctx.matched_route = route
+            end
+        })
         return
     end
 
@@ -57,42 +61,44 @@ local function push_valid_route(route)
     end
 
     core.log.info("route rule: ", host .. route.value.uri)
-    req_routes_idx = req_routes_idx + 1
-    req_routes[req_routes_idx] = {
+    core.table.insert(host_uri_routes, {
         path = "/" .. host .. route.value.uri,
         method = route.value.methods,
         handler = function (params, api_ctx)
             api_ctx.matched_params = params
             api_ctx.matched_route = route
         end
-    }
+    })
 
     return
 end
 
 local function create_r3_router(routes)
-    create_api_router()
-
-    core.table.clear(req_routes)
-    req_routes_idx = 0
+    core.table.clear(only_uri_routes)
+    core.table.clear(host_uri_routes)
 
     for _, route in ipairs(routes or {}) do
         push_valid_route(route)
     end
 
-    core.log.info("route items: ", core.json.delay_encode(req_routes, true))
-    local r3 = r3router.new(req_routes)
-    r3:compile()
-    return r3
+    create_only_uri_router()
+
+    core.log.info("route items: ",
+                  core.json.delay_encode(host_uri_routes, true))
+    host_uri_router = r3router.new(host_uri_routes)
+    host_uri_router:compile()
 end
 
 
     local match_opts = {}
 function _M.match(api_ctx)
-    local router, err = core.lrucache.global("/routes", routes.conf_version,
-                                             create_r3_router, routes.values)
-    if not router then
-        core.log.error("failed to fetch http router: ", err)
+    if not cached_version or cached_version ~= user_routes.conf_version then
+        create_r3_router(user_routes.values)
+        cached_version = user_routes.conf_version
+    end
+
+    if not host_uri_router then
+        core.log.error("failed to fetch valid `host+uri` router: ")
         return core.response.exit(404)
     end
 
@@ -100,12 +106,12 @@ function _M.match(api_ctx)
     match_opts.method = api_ctx.var.method
 
     local host_uri = "/" .. str_reverse(api_ctx.var.host) .. api_ctx.var.uri
-    local ok = router:dispatch2(nil, host_uri, match_opts, api_ctx)
+    local ok = host_uri_router:dispatch2(nil, host_uri, match_opts, api_ctx)
     if ok then
         return true
     end
 
-    ok = router:dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
+    ok = only_uri_router:dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
     if ok then
         return true
     end
@@ -116,22 +122,22 @@ end
 
 
 function _M.routes()
-    if not routes then
+    if not user_routes then
         return nil, nil
     end
 
-    return routes.values, routes.conf_version
+    return user_routes.values, user_routes.conf_version
 end
 
 
 function _M.init_worker()
     local err
-    routes, err = core.config.new("/routes", {
+    user_routes, err = core.config.new("/routes", {
             automatic = true,
             item_schema = core.schema.route
         })
-    if not routes then
-        error("failed to create etcd instance for fetching routes : " .. err)
+    if not user_routes then
+        error("failed to create etcd instance for fetching /routes : " .. err)
     end
 end
 
