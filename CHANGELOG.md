@@ -15,8 +15,8 @@ This release brings many new features such as health check and circuit breaker, 
 - support debug mode. [#319](https://github.com/iresty/apisix/pull/319)
 
 ### Plugins
-- :sunrise: **[OpenTracing](https://github.com/iresty/apisix/blob/master/doc/plugins/zipkin.md)**: support Zipkin and Apache SkyWalking.
-- [JWT auth](https://github.com/iresty/apisix/blob/master/doc/plugins/jwt-auth-cn.md)
+- :sunrise: **[OpenTracing](https://github.com/iresty/apisix/blob/master/doc/plugins/zipkin.md)**: support Zipkin and Apache SkyWalking. [#304](https://github.com/iresty/apisix/pull/304)
+- [JWT auth](https://github.com/iresty/apisix/blob/master/doc/plugins/jwt-auth-cn.md). [#303](https://github.com/iresty/apisix/pull/303)
 
 ### Dashboard
 - :sunrise: add built-in dashboard. [#327](https://github.com/iresty/apisix/pull/327)
