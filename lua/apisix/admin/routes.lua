@@ -167,7 +167,7 @@ function _M.patch(id, conf, sub_path)
 
     local res_old, err = core.etcd.get(key)
     if not res_old then
-        core.log.error("failed to delete route[", key, "]: ", err)
+        core.log.error("failed to get route [", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
