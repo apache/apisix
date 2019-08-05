@@ -163,7 +163,7 @@ function _M.patch(id, conf, sub_path)
     local key = "/upstreams" .. "/" .. id
     local res_old, err = core.etcd.get(key)
     if not res_old then
-        core.log.error("failed to delete upstream[", key, "]: ", err)
+        core.log.error("failed to get upstream [", key, "]: ", err)
         return 500, {error_msg = err}
     end
 
