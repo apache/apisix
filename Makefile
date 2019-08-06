@@ -82,8 +82,11 @@ reload:
 .PHONY: install
 install:
 	$(INSTALL) -d /usr/local/apisix/dashboard
-	git clone https://github.com/iresty/apisix.git
-	cd apisix && git submodule update --init --recursive && cp -r dashboard/* /usr/local/apisix/dashboard && cd ..
+	cd `mktemp -d /tmp/apisix.XXXXXX` && \
+		git clone https://github.com/iresty/apisix.git && \
+		cd apisix && \
+		git submodule update --init --recursive && \
+		cp -r dashboard/* /usr/local/apisix/dashboard
 	chmod -R 644 /usr/local/apisix/dashboard
 
 	$(INSTALL) -d /usr/local/apisix/logs/
