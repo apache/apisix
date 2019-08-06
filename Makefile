@@ -81,6 +81,11 @@ reload:
 ### install:      Install the apisix
 .PHONY: install
 install:
+	$(INSTALL) -d /usr/local/apisix/dashboard
+	git clone https://github.com/iresty/apisix.git
+	cd apisix && git submodule update --init --recursive && cp -r dashboard/* /usr/local/apisix/dashboard && cd ..
+	chmod -R 644 /usr/local/apisix/dashboard
+
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types

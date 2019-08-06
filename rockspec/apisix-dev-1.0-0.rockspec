@@ -4,7 +4,7 @@ supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/iresty/apisix",
-    branch = "master",
+    branch = "luarocks-dashboard",
 }
 
 description = {
