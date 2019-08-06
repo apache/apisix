@@ -98,6 +98,9 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
 	$(INSTALL) lua/apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin/
+	$(INSTALL) lua/apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins
 	$(INSTALL) lua/apisix/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/
 
