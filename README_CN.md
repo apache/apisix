@@ -141,6 +141,11 @@ APISIX 被纳入 [云原生软件基金会 API 网关全景图](https://landscap
 
 ![](doc/images/cncf-landscope.jpg)
 
+## 常见问题（FAQ）
+在社区中经常会有开发者问到的一些问题，我们整理在下面这份 [FAQ](FAQ_CN.md) 中：
+
+如果你关心的问题没有在其中，欢迎提交 issue 或者加入下面的 QQ 群和我们沟通。
+
 ## 参与社区
 
 如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
