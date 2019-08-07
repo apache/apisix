@@ -118,6 +118,7 @@ local function create_healthchecker(upstream)
     end
 
     core.log.info("create new checker: ", core.json.delay_encode(checker))
+    return checker
 end
 
 
@@ -201,6 +202,7 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
+    local checker = create_healthchecker(upstream)
     local retries = upstream.retries
     if retries and retries > 0 then
         ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
@@ -225,8 +227,6 @@ local function pick_server(route, ctx)
             set_more_tries(retries)
         end
     end
-
-    create_healthchecker(upstream)
 
     if upstream.checks then
         version = version .. "#" .. upstream.checker.status_ver
