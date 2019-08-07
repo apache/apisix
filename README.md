@@ -123,8 +123,14 @@ sudo apisix start
 Limit count plugin is a good start to try APISIX,
 you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
+Then you can try more [plugins](doc/plugins.md).
 
-You can try more [plugins](doc/plugins.md).
+## Dashboard
+APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard` with a browser and try it.
+
+Do not need to fill the user name and password, log in directly.
+
+dashboard only allow `127.0.0.0/24` by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to add more IPs.
 
 ## Benchmark
 
