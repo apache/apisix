@@ -1,5 +1,6 @@
 local json_encode = require("cjson.safe").encode
 local clear_tab = require("table.clear")
+local ngx = ngx
 local tostring = tostring
 local type = type
 local pairs = pairs
@@ -25,7 +26,7 @@ end
 
 local function tab_clone_with_serialise(data)
     if type(data) ~= "table" then
-        return data
+        return serialise_obj(data)
     end
 
     local t = {}
@@ -60,7 +61,13 @@ _M.encode = encode
 
 local delay_tab = setmetatable({data = "", force = false}, {
     __tostring = function(self)
-        return encode(self.data, self.force)
+        local res, err = encode(self.data, self.force)
+        if not res then
+            ngx.log(ngx.WARN, "failed to encode: ", err,
+                    " force: ", self.force)
+        end
+
+        return res
     end
 })
 
