@@ -115,9 +115,16 @@ sudo apisix start
 
 2. 测试限流插件
 
-你可以测试限流插件，来上手体验 APISIX，按照限流插件的[文档](doc/plugins/limit-count-cn.md)步骤即可.
+你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可.
 
-你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
+更进一步，你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
+
+## 控制台
+APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard` 即可使用，
+不用填写用户名和密码，直接登录。
+
+dashboard 默认只放行了 `127.0.0.0/24` 的本地 IP，其他地址禁止访问。
+你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，来增加更多可以访问 dashboard 的 IP。
 
 ## 性能测试
 
