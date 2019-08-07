@@ -17,6 +17,7 @@ local lua_metatab = {}
 local function new_lru_fun(opts)
     local item_count = opts and opts.count or GLOBAL_ITEMS_COUNT
     local item_ttl = opts and opts.ttl or GLOBAL_TTL
+    local item_release = opts and opts.release
     local lru_obj = lru_new(item_count)
 
     return function (key, version, create_obj_fun, ...)
@@ -32,7 +33,17 @@ local function new_lru_fun(opts)
 
         if stale_obj and stale_obj._cache_ver == version then
             lru_obj:set(key, obj, item_ttl)
-            return stale_obj
+
+            local met_tab = getmetatable(obj)
+            if met_tab ~= lua_metatab then
+                return obj
+            end
+
+            return obj.val
+        end
+
+        if item_release and obj then
+            item_release(obj)
         end
 
         local err
