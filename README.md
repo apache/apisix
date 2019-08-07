@@ -150,6 +150,11 @@ APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/categ
 
 ![](doc/images/cncf-landscope.jpg)
 
+## FAQ
+There are often some questions asked by developers in the community. We have arranged them in the [FAQ](FAQ.md).
+
+If your concerns are not among them, please submit issue to communicate with us.
+
 ## Contributing
 
 Contributions are welcomed and greatly appreciated.
