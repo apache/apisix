@@ -14,6 +14,6 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["example-plugin","limit-req","limit-count","limit-conn","key-auth","prometheus","node-status","jwt-auth","zipkin"\]/
+qr/\["limit-req","limit-count","limit-conn","key-auth","prometheus","node-status","jwt-auth","zipkin"\]/
 --- no_error_log
 [error]
