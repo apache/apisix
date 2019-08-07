@@ -3,7 +3,6 @@ local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
 local balancer = require("ngx.balancer")
 local core = require("apisix.core")
-local worker_exiting = ngx.worker.exiting
 local sub_str = string.sub
 local find_str = string.find
 local upstreams_etcd
@@ -19,7 +18,22 @@ local set_timeouts = balancer.set_timeouts
 
 
 local module_name = "balancer"
-local lrucache_server_picker = core.lrucache.new({ttl = 300, count = 256})
+
+
+local function server_release(server)
+    local checker = server and server.upstream and server.upstream.checker
+    if not checker then
+        return
+    end
+
+    server.upstream.checker = nil
+    checker:stop()
+end
+
+
+local lrucache_server_picker = core.lrucache.new({
+        ttl = 300, count = 256, release = server_release
+    })
 
 
 local _M = {
@@ -75,6 +89,7 @@ local function create_server_picker(upstream)
 
         local picker = roundrobin:new(up_nodes)
         return {
+            upstream = upstream,
             get = function ()
                 return picker:find()
             end
@@ -96,6 +111,7 @@ local function create_server_picker(upstream)
         local picker = resty_chash:new(nodes)
         local key = upstream.key
         return {
+            upstream = upstream,
             get = function (ctx)
                 local id = picker:find(ctx.var[key])
                 -- core.log.warn("chash id: ", id, " val: ", servers[id])
@@ -151,13 +167,15 @@ local function pick_server(route, ctx)
 
         upstream.checker = checker
 
-        -- stop checker by `gc`
-        core.table.setmt__gc(upstream, {__gc = function()
-            if worker_exiting() then
+        -- stop checker by `__gc`
+        core.table.setmt__gc(upstream, {__gc = function(self)
+            core.log.info("stop checker: ", core.json.delay_encode(self, true))
+            local checker = self.checker
+            if not checker then
                 return
             end
 
-            core.log.info("stop checker: ", key)
+            self.checker = nil
             checker:stop()
         end})
 
