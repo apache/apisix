@@ -3,7 +3,7 @@ local local_plugins = require("apisix.plugin").plugins_hash
 local pairs = pairs
 local pcall = pcall
 local require = require
-
+local table_remove = table.remove
 
 local _M = {
     version = 0.1,
@@ -63,7 +63,12 @@ end
 
 
 function _M.get_plugins_list()
-    return core.config.local_conf().plugins
+    local plugins = core.config.local_conf().plugins
+    if plugins[1] == 'example-plugin' then
+        table_remove(plugins, 1)
+    end
+
+    return plugins
 end
 
 
