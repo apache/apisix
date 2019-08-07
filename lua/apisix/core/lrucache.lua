@@ -32,14 +32,14 @@ local function new_lru_fun(opts)
         end
 
         if stale_obj and stale_obj._cache_ver == version then
-            lru_obj:set(key, obj, item_ttl)
+            lru_obj:set(key, stale_obj, item_ttl)
 
-            local met_tab = getmetatable(obj)
+            local met_tab = getmetatable(stale_obj)
             if met_tab ~= lua_metatab then
-                return obj
+                return stale_obj
             end
 
-            return obj.val
+            return stale_obj.val
         end
 
         if item_release and obj then
