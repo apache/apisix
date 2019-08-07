@@ -79,9 +79,53 @@ local function fetch_health_nodes(upstream)
 end
 
 
+local function create_healthchecker(upstream)
+    if not upstream.checks then
+        return
+    end
+
+    if upstream.checker then
+        return
+    end
+
+    local checker = healthcheck.new({
+        name = "upstream",
+        shm_name = "upstream-healthcheck",
+        checks = upstream.checks,
+    })
+
+    upstream.checker = checker
+
+    -- stop checker by `__gc`
+    core.table.setmt__gc(upstream, {__gc = function(self)
+        core.log.info("stop checker: ", tostring(self))
+        local checker = self.checker
+        if not checker then
+            return
+        end
+
+        self.checker = nil
+        checker:stop()
+    end})
+
+    for addr, weight in pairs(upstream.nodes) do
+        local ip, port = parse_addr(addr)
+        local ok, err = checker:add_target(ip, port, upstream.checks.host)
+        if not ok then
+            core.log.error("failed to add new health check target: ", addr,
+                            " err: ", err)
+        end
+    end
+
+    core.log.info("create new checker: ", core.json.delay_encode(checker))
+end
+
+
 local function create_server_picker(upstream)
     core.log.info("create create_obj, type: ", upstream.type,
                   " nodes: ", core.json.delay_encode(upstream.nodes))
+
+    create_healthchecker(upstream)
 
     if upstream.type == "roundrobin" then
         local up_nodes = fetch_health_nodes(upstream)
@@ -157,40 +201,6 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    local checker = upstream and upstream.checker
-    if upstream.checks and not checker then
-        checker = healthcheck.new({
-            name = "upstream",
-            shm_name = "upstream-healthcheck",
-            checks = upstream.checks,
-        })
-
-        upstream.checker = checker
-
-        -- stop checker by `__gc`
-        core.table.setmt__gc(upstream, {__gc = function(self)
-            core.log.info("stop checker: ", core.json.delay_encode(self, true))
-            local checker = self.checker
-            if not checker then
-                return
-            end
-
-            self.checker = nil
-            checker:stop()
-        end})
-
-        for addr, weight in pairs(upstream.nodes) do
-            local ip, port = parse_addr(addr)
-            local ok, err = checker:add_target(ip, port, upstream.checks.host)
-            if not ok then
-                core.log.error("failed to add new health check target: ", addr,
-                               " err: ", err)
-            end
-        end
-
-        core.log.warn("create checks obj for upstream, check")
-    end
-
     local retries = upstream.retries
     if retries and retries > 0 then
         ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
@@ -215,6 +225,8 @@ local function pick_server(route, ctx)
             set_more_tries(retries)
         end
     end
+
+    create_healthchecker(upstream)
 
     if upstream.checks then
         version = version .. "#" .. upstream.checker.status_ver
