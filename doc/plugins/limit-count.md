@@ -33,6 +33,12 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard`, to complete the above operation through the web interface, first add a route:
+![](../images/plugin/limit-count-1.png)
+
+Then add limit-count plugin:
+![](../images/plugin/limit-count-2.png)
+
 #### test plugin
 The above configuration limits access to only 2 times in 60 seconds. The first two visits will be normally:
 ```shell
