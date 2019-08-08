@@ -145,7 +145,7 @@ http {
     server {
         listen {* port_admin *};
 
-        location /apisix/admin {
+        location /apisix/admin/ {
             {% for _, allow_ip in ipairs(allow_admin) do %}
             allow {*allow_ip*};
             {% end %}
@@ -191,14 +191,14 @@ http {
             apisix.http_ssl_phase()
         }
 
-        location /apisix/dashboard {
+        location /apisix/dashboard/ {
             index index.html;
             {% for _, allow_ip in ipairs(allow_admin) do %}
             allow {*allow_ip*};
             {% end %}
             deny all;
 
-            root ../;
+            alias dashboard/;
 
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Real-PORT $remote_port;
