@@ -81,6 +81,14 @@ reload:
 ### install:      Install the apisix
 .PHONY: install
 install:
+	$(INSTALL) -d /usr/local/apisix/dashboard
+	cd `mktemp -d /tmp/apisix.XXXXXX` && \
+		git clone https://github.com/iresty/apisix.git && \
+		cd apisix && \
+		git submodule update --init --recursive && \
+		cp -r dashboard/* /usr/local/apisix/dashboard
+	chmod -R 644 /usr/local/apisix/dashboard
+
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
@@ -97,6 +105,9 @@ install:
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
 	$(INSTALL) lua/apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin/
+	$(INSTALL) lua/apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins
 	$(INSTALL) lua/apisix/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/

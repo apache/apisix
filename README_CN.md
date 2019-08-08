@@ -28,12 +28,12 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 ## 功能
 
 - **云原生**: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
-- **热更新和热插件**: 无需重启服务，就可以持续的更新配置和插件!
-- **动态负载均衡**：支持权重的 round-robin 负载平衡。
-- **支持一致性 hash 的负载均衡**：支持一致性 hash 的负载均衡。
-- **SSL**
+- **热更新和热插件**: 无需重启服务，就可以持续更新配置和插件。
+- **动态负载均衡**：动态支持有权重的 round-robin 负载平衡。
+- **支持一致性 hash 的负载均衡**：动态支持一致性 hash 的负载均衡。
+- **SSL**：动态加载 SSL 证书。
 - **反向代理**
-- **[监控检查](doc/health-check.md)**.
+- **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
 - **熔断器**: 智能跟踪不健康上游服务.
 - **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT]([key-auth](doc/plugins/jwt-auth-cn.md))。
 - **[限制速率](doc/plugins/limit-req-cn.md)**
@@ -47,7 +47,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **REST API**
 - **集群**
 - **可扩展**
-- **高性能**：在单核上 QPS 可以达到 23800，同时延迟只有 0.6 毫秒。
+- **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.6 毫秒。
 - **防御 ReDoS(正则表达式拒绝服务)**
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
@@ -76,7 +76,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.5/apisix-0.5-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.6/apisix-0.6-0.el7.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
@@ -115,9 +115,16 @@ sudo apisix start
 
 2. 测试限流插件
 
-你可以测试限流插件，来上手体验 APISIX，按照限流插件的[文档](doc/plugins/limit-count-cn.md)步骤即可.
+你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可.
 
-你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
+更进一步，你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
+
+## 控制台
+APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard` 即可使用，
+不用填写用户名和密码，直接登录。
+
+dashboard 默认只放行了 `127.0.0.0/24` 的本地 IP，其他地址禁止访问。
+你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，来增加更多可以访问 dashboard 的 IP。
 
 ## 性能测试
 
@@ -140,6 +147,11 @@ sudo apisix start
 APISIX 被纳入 [云原生软件基金会 API 网关全景图](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
 
 ![](doc/images/cncf-landscope.jpg)
+
+## 常见问题（FAQ）
+在社区中经常会有开发者问到的一些问题，我们整理在下面这份 [FAQ](FAQ_CN.md) 中：
+
+如果你关心的问题没有在其中，欢迎提交 issue 或者加入下面的 QQ 群和我们沟通。
 
 ## 参与社区
 

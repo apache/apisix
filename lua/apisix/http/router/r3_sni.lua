@@ -103,12 +103,12 @@ function _M.match(api_ctx)
     local r3, err = core.lrucache.global("/ssl", ssl.conf_version,
                         create_r3_router, ssl.values)
     if not r3 then
-        return false, "gailed to fetch ssl router: " .. err
+        return false, "failed to fetch ssl router: " .. err
     end
 
     local sni = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        return false, "gailed to fetch SNI: " .. err
+        return false, "failed to fetch SNI: " .. err
     end
 
     core.log.debug("sni: ", sni)

@@ -34,9 +34,9 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **hot updates and hot plugins**: Continuously updates its configurations and plugins without restarts!
 - **Dynamic Load Balancing**: Round-robin load balancing with weight.
 - **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
-- **SSL**
+- **SSL**: Dynamically load an SSL certificate.
 - **Forward Proxy**
-- **[Health Checks](doc/health-check.md)**.
+- **[Health Checks](doc/health-check.md)**：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 - **Circuit-Breaker**: Intelligent tracking of unhealthy upstream services.
 - **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md)
 - **[Limit-req](doc/plugins/limit-req.md)**
@@ -50,7 +50,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **REST API**
 - **Clustering**
 - **Scalability**
-- **High performance**: The single-core QPS reaches 23800 with an average delay of less than 0.6 milliseconds.
+- **High performance**: The single-core QPS reaches 24k with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
@@ -81,7 +81,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.5/apisix-0.5-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.6/apisix-0.6-0.el7.noarch.rpm
 ```
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
@@ -123,8 +123,14 @@ sudo apisix start
 Limit count plugin is a good start to try APISIX,
 you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
+Then you can try more [plugins](doc/plugins.md).
 
-You can try more [plugins](doc/plugins.md).
+## Dashboard
+APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard` with a browser and try it.
+
+Do not need to fill the user name and password, log in directly.
+
+dashboard only allow `127.0.0.0/24` by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to add more IPs.
 
 ## Benchmark
 
@@ -149,6 +155,11 @@ English Development Documentation: TODO
 APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
 
 ![](doc/images/cncf-landscope.jpg)
+
+## FAQ
+There are often some questions asked by developers in the community. We have arranged them in the [FAQ](FAQ.md).
+
+If your concerns are not among them, please submit issue to communicate with us.
 
 ## Contributing
 
