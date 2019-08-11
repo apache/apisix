@@ -14,7 +14,7 @@ apisix:
   router:
     http: 'r3_uri'                # r3_uri: match route by uri(base on r3)
                                   # r3_host_uri: match route by host + uri(base on r3)
-                                  # radixtree_uri： match route by uri(base on radixtree)
+                                  # radixtree_uri: match route by uri(base on radixtree)
     ssl: 'r3_sni'
 
 etcd:
