@@ -111,7 +111,7 @@ hello world
 
 
 
-=== TEST 5: hit routes (user.foo.com)
+=== TEST 6: hit routes (user.foo.com)
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
@@ -123,7 +123,8 @@ hello world
 [error]
 
 
-=== TEST 1: set route(id: 1)
+
+=== TEST 7: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -157,7 +158,9 @@ passed
 --- no_error_log
 [error]
 
-=== TEST 2: /not_found
+
+
+=== TEST 8: /not_found
 --- request
 GET /not_found
 --- yaml_config eval: $::yaml_config
@@ -169,7 +172,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 3: /not_found
+=== TEST 9: /not_found
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
@@ -181,7 +184,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 4: /not_found
+=== TEST 10: /not_found
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
@@ -195,7 +198,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 5: hit routes (foo.com)
+=== TEST 11: hit routes (foo.com)
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
