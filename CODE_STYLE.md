@@ -13,7 +13,7 @@ end
 ```
 --yes
 if a then
-    ngx.say("hello")
+    ngx.say("hello")
 end
 ```
 
@@ -54,7 +54,7 @@ if a then ngx.say("hello") end
 ```
 --yes
 if a then
-    ngx.say("hello")
+    ngx.say("hello")
 end
 ```
 
@@ -63,7 +63,7 @@ The functions needs to be separated by two blank lines:
 --No
 local function foo()
 end
- local function bar()
+local function bar()
 end
 ```
 
@@ -73,7 +73,7 @@ local function foo()
 end
 
 
- local function bar()
+local function bar()
 end
 ```
 
@@ -118,7 +118,7 @@ return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst, conf.default_c
 ```
 --Yes
 return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst,
-                    conf.default_conn_delay)
+                      conf.default_conn_delay)
 ```
 
 When the linefeed is aligned, the correspondence between the upper and lower lines should be reflected. For the example above, the parameters of the second line of functions are to the right of the left parenthesis of the first line.
@@ -127,13 +127,13 @@ If it is a string stitching alignment, you need to put `..` in the next line:
 ```
 --No
 return limit_conn_new("plugin-limit-conn" ..  "plugin-limit-conn" ..
-                    "plugin-limit-conn")
+                      "plugin-limit-conn")
 ```
 
 ```
 --Yes
 return limit_conn_new("plugin-limit-conn" .. "plugin-limit-conn"
-                    .. "plugin-limit-conn")
+                      .. "plugin-limit-conn")
 ```
 
 ## Variable
@@ -182,17 +182,17 @@ Use `table.new` to pre-allocate the table:
 --No
 local t = {}
 for i = 1, 100 do
-   t[i] = i
- end
+    t[i] = i
+end
 ```
 
 ```
 --Yes
 local new_tab = require "table.new"
- local t = new_tab(100, 0)
- for i = 1, 100 do
-   t[i] = i
- end
+local t = new_tab(100, 0)
+for i = 1, 100 do
+    t[i] = i
+end
 ```
 
 Don't use `nil` in an array:
@@ -223,7 +223,7 @@ local t = {}
 for i = 1, 100000 do
     t[i] = "a"
 end
-local s =  table.concat(t, "")
+local s = table.concat(t, "")
 ```
 
 ## Function
@@ -254,6 +254,7 @@ local function check(age, name)
     end
     -- do something else
     return ret
+end
 ```
 
 ```
@@ -268,6 +269,7 @@ local function check(age, name)
     end
     -- do something else
     return true
+end
 ```
 
 ## Module
@@ -316,19 +318,19 @@ For functions that return with error information, the error information must be 
 ```
 --No
 local sock = ngx.socket.tcp()
- local ok = sock:connect("www.google.com", 80)
- ngx.say("successfully connected to google!")
+local ok = sock:connect("www.google.com", 80)
+ngx.say("successfully connected to google!")
 ```
 
 ```
 --Yes
 local sock = ngx.socket.tcp()
- local ok, err = sock:connect("www.google.com", 80)
- if not ok then
-     ngx.say("failed to connect to google: ", err)
-     return
- end
- ngx.say("successfully connected to google!")
+local ok, err = sock:connect("www.google.com", 80)
+if not ok then
+    ngx.say("failed to connect to google: ", err)
+    return
+end
+ngx.say("successfully connected to google!")
 ```
 
 The function you wrote yourself, the error message is to be returned as a second parameter in the form of a string:
