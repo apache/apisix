@@ -1,4 +1,4 @@
-# Code Style
+# Code Style of OpenResty
 
 ## indentation
 Use 4 spaces as an indent in OpenResty, although Lua does not have such a grammar requirement.
@@ -81,29 +81,29 @@ If there are multiple if elseif branches, they need a blank line to separate the
 ```
 --No
 if a == 1 then
-	foo()
+    foo()
 elseif a== 2 then
-	bar()
+    bar()
 elseif a == 3 then
-	run()
+    run()
 else
-	error()
+    error()
 end
 ```
 
 ```
 --Yes
 if a == 1 then
-	foo()
+    foo()
 
 elseif a== 2 then
-	bar()
+    bar()
 
 elseif a == 3 then
-	run()
+    run()
 
 else
-	error()
+    error()
 end
 ```
 
@@ -118,7 +118,7 @@ return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst, conf.default_c
 ```
 --Yes
 return limit_conn_new("plugin-limit-conn", conf.conn, conf.burst,
-					conf.default_conn_delay)
+                    conf.default_conn_delay)
 ```
 
 When the linefeed is aligned, the correspondence between the upper and lower lines should be reflected. For the example above, the parameters of the second line of functions are to the right of the left parenthesis of the first line.
@@ -127,13 +127,13 @@ If it is a string stitching alignment, you need to put `..` in the next line:
 ```
 --No
 return limit_conn_new("plugin-limit-conn" ..  "plugin-limit-conn" ..
-					"plugin-limit-conn")
+                    "plugin-limit-conn")
 ```
 
 ```
 --Yes
 return limit_conn_new("plugin-limit-conn" .. "plugin-limit-conn"
-					.. "plugin-limit-conn")
+                    .. "plugin-limit-conn")
 ```
 
 ## Variable
@@ -213,7 +213,7 @@ Do not splicing strings on the hot code path:
 --No
 local s = ""
 for i = 1, 100000 do
-	s = s .. "a"
+    s = s .. "a"
 end
 ```
 
@@ -221,7 +221,7 @@ end
 --Yes
 local t = {}
 for i = 1, 100000 do
-	t[i] = "a"
+    t[i] = "a"
 end
 local s =  table.concat(t, "")
 ```
@@ -244,30 +244,30 @@ The function should return as early as possible:
 ```
 --No
 local function check(age, name)
-	local ret = true
-	if age < 20 then
-		ret = false
-	end
+    local ret = true
+    if age < 20 then
+        ret = false
+    end
 
-	if name == "a" then
-		ret = false
-	end
-	-- do something else
-	return ret
+    if name == "a" then
+        ret = false
+    end
+    -- do something else
+    return ret
 ```
 
 ```
 --Yes
 local function check(age, name)
-	if age < 20 then
-		return false
-	end
+    if age < 20 then
+        return false
+    end
 
-	if name == "a" then
-		return false
-	end
-	-- do something else
-	return true
+    if name == "a" then
+        return false
+    end
+    -- do something else
+    return true
 ```
 
 ## Module
@@ -275,7 +275,7 @@ All require libraries must be localized:
 ```
 --No
 local function foo()
-	local ok, err = ngx.timer.at(delay, handler)
+    local ok, err = ngx.timer.at(delay, handler)
 end
 ```
 
@@ -284,7 +284,7 @@ end
 local timer_at = ngx.timer.at
 
 local function foo()
-	local ok, err = timer_at(delay, handler)
+    local ok, err = timer_at(delay, handler)
 end
 ```
 
@@ -295,7 +295,7 @@ local core = require("apisix.core")
 local timer_at = ngx.timer.at
 
 local function foo()
-	local ok, err = timer_at(delay, handler)
+    local ok, err = timer_at(delay, handler)
 end
 ```
 
@@ -307,7 +307,7 @@ local core = require("apisix.core")
 local timer_at = ngx.timer.at
 
 local function foo()
-	local ok, err = timer_at(delay, handler)
+    local ok, err = timer_at(delay, handler)
 end
 ```
 
@@ -325,8 +325,8 @@ local sock = ngx.socket.tcp()
 local sock = ngx.socket.tcp()
  local ok, err = sock:connect("www.google.com", 80)
  if not ok then
-	 ngx.say("failed to connect to google: ", err)
-	 return
+     ngx.say("failed to connect to google: ", err)
+     return
  end
  ngx.say("successfully connected to google!")
 ```
@@ -335,32 +335,32 @@ The function you wrote yourself, the error message is to be returned as a second
 ```
 --No
 local function foo()
-	local ok, err = func()
-	if not ok then
-		return false
-	end
-	return true
+    local ok, err = func()
+    if not ok then
+        return false
+    end
+    return true
 end
 ```
 
 ```
 --No
 local function foo()
-	local ok, err = func()
-	if not ok then
-		return false, {msg = err}
-	end
-	return true
+    local ok, err = func()
+    if not ok then
+        return false, {msg = err}
+    end
+    return true
 end
 ```
 
 ```
 --Yes
 local function foo()
-	local ok, err = func()
-	if not ok then
-		return false, "failed to call func(): " .. err
-	end
-	return true
+    local ok, err = func()
+    if not ok then
+        return false, "failed to call func(): " .. err
+    end
+    return true
 end
 ```
