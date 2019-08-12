@@ -202,6 +202,9 @@ function _M.http_header_filter_phase()
     run_plugin("header_filter")
 end
 
+function _M.http_body_filter_phase()
+    run_plugin("body_filter")
+end
 
 function _M.http_log_phase()
     local api_ctx = run_plugin("log")

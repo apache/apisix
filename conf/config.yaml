@@ -35,3 +35,4 @@ plugins:                          # plugin list
   - jwt-auth
   - zipkin
   - ip-restriction
+  - grpc-proxy

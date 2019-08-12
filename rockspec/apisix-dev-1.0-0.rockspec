@@ -28,6 +28,7 @@ dependencies = {
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 0.4",
     "lua-resty-iputils = 0.3.0-1",
+    "lua-protobuf = 0.3.1",
 }
 
 build = {
