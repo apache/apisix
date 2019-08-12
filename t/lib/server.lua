@@ -59,7 +59,12 @@ end
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
-    if not _M[action] then
+    local find = string.find(action, "/", 1, true)
+    if find then
+        action = string.sub(action, 1, find - 1)
+    end
+
+    if not action or not _M[action] then
         return ngx.exit(404)
     end
 
