@@ -1,7 +1,8 @@
--- Ref: https://github.com/Kong/kong/blob/master/kong/plugins/ip-restriction
+local ipairs = ipairs
 
 local core = require("apisix.core")
 local iputils = require("resty.iputils")
+
 
 local schema = {
     type = "object",
@@ -33,9 +34,18 @@ local _M = {
     schema = schema,
 }
 
-
-local FORBIDDEN = 403
 local cache = {}
+
+
+-- TODO: support IPv6
+local function validate_cidr_v4(ip)
+    local lower, err = iputils.parse_cidr(ip)
+    if not lower and err then
+        return nil, "invalid cidr range: " .. err
+    end
+
+    return true
+end
 
 
 local function cidr_cache(cidr_tab)
@@ -69,7 +79,7 @@ end
 function _M.init()
     local ok, err = iputils.enable_lrucache()
     if not ok then
-        core.log.error("could not enable lrucache: ", err)
+        core.log.error("could not enable lrucache for iputils: ", err)
     end
 end
 
@@ -81,6 +91,24 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if conf.whitelist and #conf.whitelist > 0 then
+        for _, cidr in ipairs(conf.whitelist) do
+            ok, err = validate_cidr_v4(cidr)
+            if not ok then
+                return false, err
+            end
+        end
+    end
+
+    if conf.blacklist and #conf.blacklist > 0 then
+        for _, cidr in ipairs(conf.blacklist) do
+            ok, err = validate_cidr_v4(cidr)
+            if not ok then
+                return false, err
+            end
+        end
+    end
+
     return true
 end
 
@@ -88,10 +116,6 @@ end
 function _M.access(conf, ctx)
     local block = false
     local binary_remote_addr = ctx.var.binary_remote_addr
-
-    if not binary_remote_addr then
-        return FORBIDDEN, { message = "Cannot identify the client IP address, unix domain sockets are not supported." }
-    end
 
     if conf.blacklist and #conf.blacklist > 0 then
         block = iputils.binip_in_cidrs(binary_remote_addr,
@@ -104,7 +128,7 @@ function _M.access(conf, ctx)
     end
 
     if block then
-        return FORBIDDEN, { message = "Your IP address is not allowed" }
+        return 403, { message = "Your IP address is not allowed" }
     end
 end
 

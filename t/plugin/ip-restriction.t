@@ -1,25 +1,21 @@
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISix 'no_plan';
 
 repeat_each(1);
-no_root_location();
+no_long_string();
 no_shuffle();
-
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
-$yaml_config =~ s/- example-plugin/- ip-restriction/;
+no_root_location();
 
 run_tests;
-
 
 __DATA__
 
@@ -51,7 +47,63 @@ GET /t
 
 
 
-=== TEST 2: empty conf
+=== TEST 2: wrong CIDR v4 format
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ip-restriction")
+            local conf = {
+                whitelist = {
+                    "10.255.256.0/24",
+                    "192.168.0.0/16"
+                }
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(require("cjson").encode(conf))
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/invalid cidr range: Invalid octet: 256/
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: wrong CIDR v4 format
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ip-restriction")
+            local conf = {
+                whitelist = {
+                    "10.255.254.0/38",
+                    "192.168.0.0/16"
+                }
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(require("cjson").encode(conf))
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr@invalid cidr range: Invalid prefix: /38@
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: empty conf
 --- config
     location /t {
         content_by_lua_block {
@@ -74,7 +126,8 @@ done
 [error]
 
 
-=== TEST 3: empty CIDRs
+
+=== TEST 5: empty CIDRs
 --- config
     location /t {
         content_by_lua_block {
@@ -98,7 +151,7 @@ done
 
 
 
-=== TEST 4: whitelist and blacklist mutual exclusive
+=== TEST 6: whitelist and blacklist mutual exclusive
 --- config
     location /t {
         content_by_lua_block {
@@ -120,7 +173,8 @@ done
 [error]
 
 
-=== TEST 5: set route(id: 1)
+
+=== TEST 7: set whitelist
 --- config
     location /t {
         content_by_lua_block {
@@ -128,7 +182,7 @@ done
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "uri": "/server_port",
+                        "uri": "/hello",
                         "upstream": {
                             "type": "roundrobin",
                             "nodes": {
@@ -138,7 +192,8 @@ done
                         "plugins": {
                             "ip-restriction": {
                                  "whitelist": [
-                                     "127.0.0.0/24"
+                                     "127.0.0.0/24",
+                                     "113.74.26.106"
                                  ]
                             }
                         }
@@ -153,8 +208,6 @@ done
     }
 --- request
 GET /t
---- yaml_config eval
-$::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -162,16 +215,64 @@ passed
 
 
 
-=== TEST 6: hit route
+=== TEST 8: hit route and ip cidr in the whitelist
 --- request
-GET /server_port
---- response_body_like eval
-qr/1980/
+GET /hello
+--- response_body
+hello world
 --- no_error_log
 [error]
 
 
-=== TEST 7: set route(id: 1)
+
+=== TEST 9: hit route and ip in the whitelist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 113.74.26.106
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: hit route and ip not in the whitelist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 114.114.114.114
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit route and ipv6 not not in the whitelist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 2001:db8::2
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: set blacklist
 --- config
     location /t {
         content_by_lua_block {
@@ -179,7 +280,7 @@ qr/1980/
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "uri": "/server_port",
+                        "uri": "/hello",
                         "upstream": {
                             "type": "roundrobin",
                             "nodes": {
@@ -189,7 +290,8 @@ qr/1980/
                         "plugins": {
                             "ip-restriction": {
                                  "blacklist": [
-                                     "127.0.0.0/24"
+                                     "127.0.0.0/24",
+                                     "113.74.26.106"
                                  ]
                             }
                         }
@@ -204,8 +306,6 @@ qr/1980/
     }
 --- request
 GET /t
---- yaml_config eval
-$::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -213,13 +313,102 @@ passed
 
 
 
-=== TEST 8: hit route
+=== TEST 13: hit route and ip cidr in the blacklist
 --- request
-GET /server_port
---- yaml_config eval
-$::yaml_config
+GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: hit route and ip in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 113.74.26.106
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: hit route and ip not not in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 114.114.114.114
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: hit route and ipv6 not not in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 2001:db8::2
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: remove ip-restriction
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: hit route
+--- request
+GET /hello
+--- response_body
+hello world
 --- no_error_log
 [error]
