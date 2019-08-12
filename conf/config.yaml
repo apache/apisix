@@ -14,14 +14,15 @@ apisix:
   router:
     http: 'r3_uri'                # r3_uri: match route by uri(base on r3)
                                   # r3_host_uri: match route by host + uri(base on r3)
+                                  # radixtree_uri: match route by uri(base on radixtree)
     ssl: 'r3_sni'
 
 etcd:
-  host: "http://127.0.0.1:2379" # etcd address
-  prefix: "/apisix"             # apisix configurations prefix
-  timeout: 1                    # 1 seconds
+  host: "http://127.0.0.1:2379"   # etcd address
+  prefix: "/apisix"               # apisix configurations prefix
+  timeout: 1                      # 1 seconds
 
-plugins:                        # plugin list
+plugins:                          # plugin list
   - example-plugin
   - limit-req
   - limit-count
