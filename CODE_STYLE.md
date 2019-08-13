@@ -1,4 +1,4 @@
-# Code Style of OpenResty
+# OpenResty Lua Coding Style Guide
 
 ## indentation
 Use 4 spaces as an indent in OpenResty, although Lua does not have such a grammar requirement.
