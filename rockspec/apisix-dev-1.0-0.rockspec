@@ -22,11 +22,10 @@ dependencies = {
     "lua-resty-ngxvar = 0.3",
     "lua-resty-jit-uuid = 0.0.7",
     "rapidjson = 0.6.1",
-    "lua-resty-healthcheck-iresty = 1.0.0",
+    "lua-resty-healthcheck-iresty = 1.0.1",
     "lua-resty-jwt = 0.2.0",
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
-    "lua-resty-openidc = 1.7.2",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 0.4",
 }
