@@ -257,6 +257,9 @@ _M.route = [[{
             },
             "uniqueItems": true
         },
+        "backend_protocol": {
+            "type": "string"
+        },
         "desc": {"type": "string", "maxLength": 256},
         "plugins": ]] .. json.encode(plugins_schema) .. [[,
         "upstream": ]] .. json.encode(upstream_schema) .. [[,
