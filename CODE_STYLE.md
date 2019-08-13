@@ -203,7 +203,7 @@ local t = {1, 2, nil, 3}
 
 If you must use null values, use `ngx.null` to indicate:
 ```
---No
+--Yes
 local t = {1, 2, ngx.null, 3}
 ```
 
