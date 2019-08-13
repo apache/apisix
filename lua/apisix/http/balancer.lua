@@ -212,7 +212,7 @@ local function pick_server(route, ctx)
 
             else
                 checker:report_http_status(ctx.balancer_ip, ctx.balancer_port,
-                                           upstream.checks.host)
+                                           upstream.checks.host, code)
             end
         end
 
