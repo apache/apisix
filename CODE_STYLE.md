@@ -1,4 +1,4 @@
-# Code Style of OpenResty
+# OpenResty Lua Coding Style Guide
 
 ## indentation
 Use 4 spaces as an indent in OpenResty, although Lua does not have such a grammar requirement.
@@ -203,7 +203,7 @@ local t = {1, 2, nil, 3}
 
 If you must use null values, use `ngx.null` to indicate:
 ```
---No
+--Yes
 local t = {1, 2, ngx.null, 3}
 ```
 
