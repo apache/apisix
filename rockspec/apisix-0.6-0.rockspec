@@ -26,7 +26,6 @@ dependencies = {
     "lua-resty-jwt = 0.2.0",
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
-    "lua-resty-openidc = 1.7.2",
     "opentracing-openresty = 0.1",
 }
 
