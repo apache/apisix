@@ -71,9 +71,7 @@ local function fetch_health_nodes(upstream, checker)
 end
 
 
-local function create_checker(healthcheck_parent)
-    local upstream = healthcheck_parent.value.upstream
-
+local function create_checker(upstream, healthcheck_parent)
     local checker = healthcheck.new({
         name = "upstream",
         shm_name = "upstream-healthcheck",
@@ -107,8 +105,7 @@ local function create_checker(healthcheck_parent)
 end
 
 
-local function fetch_healthchecker(healthcheck_parent, version)
-    local upstream = healthcheck_parent.value.upstream
+local function fetch_healthchecker(upstream, healthcheck_parent, version)
     if not upstream.checks then
         return
     end
@@ -118,7 +115,8 @@ local function fetch_healthchecker(healthcheck_parent, version)
     end
 
     local checker = lrucache_checker(upstream, version,
-                                     create_checker, healthcheck_parent)
+                                     create_checker, upstream,
+                                     healthcheck_parent)
     return checker
 end
 
@@ -202,7 +200,7 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    local checker = fetch_healthchecker(healthcheck_parent, version)
+    local checker = fetch_healthchecker(upstream, healthcheck_parent, version)
     local retries = upstream.retries
     if retries and retries > 0 then
         ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
