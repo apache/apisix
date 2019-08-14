@@ -199,8 +199,11 @@ local function sync_data(self)
     self:upgrade_version(res.modifiedIndex)
 
     if res.dir then
-        return false, "todo: support for parsing `dir` response "
-                      .. "structures. " .. json.encode(res)
+        if res.value then
+            return false, "todo: support for parsing `dir` response "
+                          .. "structures. " .. json.encode(res)
+        end
+        return false
     end
 
     local pre_index = self.values_hash[key]
