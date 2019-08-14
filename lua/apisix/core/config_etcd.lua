@@ -153,6 +153,7 @@ local function sync_data(self)
                 insert_tab(self.values, item)
                 self.values_hash[key] = #self.values
                 item.value.id = key
+                item.clean_handlers = {}
             end
 
             self:upgrade_version(item.modifiedIndex)
@@ -204,9 +205,18 @@ local function sync_data(self)
 
     local pre_index = self.values_hash[key]
     if pre_index then
+        local pre_val = self.values[pre_index]
+        if pre_val and pre_val.clean_handlers then
+            for _, clean_handler in ipairs(pre_val.clean_handlers) do
+                clean_handler(pre_val)
+            end
+            pre_val.clean_handlers = nil
+        end
+
         if res.value then
             res.value.id = key
             self.values[pre_index] = res
+            res.clean_handlers = {}
 
         else
             self.sync_times = self.sync_times + 1
