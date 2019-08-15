@@ -1,3 +1,4 @@
+local http = require("resty.http")
 local json = require("cjson.safe")
 local dir_names = {}
 
@@ -28,16 +29,43 @@ local function com_tab(pattern, data, deep)
 end
 
 
+local methods = {
+    [ngx.HTTP_GET    ] = "GET",
+    [ngx.HTTP_HEAD   ] = "HEAD",
+    [ngx.HTTP_PUT    ] = "PUT",
+    [ngx.HTTP_POST   ] = "POST",
+    [ngx.HTTP_DELETE ] = "DELETE",
+    [ngx.HTTP_OPTIONS] = "OPTIONS",
+}
+
+
 function _M.test(uri, method, body, pattern)
-    if type(body) == "table" then
-        body = json.encode(body)
-    end
+    -- if type(body) == "table" then
+    --     body = json.encode(body)
+    -- end
 
     if type(pattern) == "table" then
         pattern = json.encode(pattern)
     end
 
-    local res = ngx.location.capture(uri,{method = method,body = body})
+    if type(method) == "number" then
+        method = methods[method]
+    end
+
+    local httpc = http.new()
+    -- https://github.com/ledgetech/lua-resty-http
+    uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
+          .. ":" .. ngx.var.server_port .. uri
+    local res = httpc:request_uri(uri,
+        {
+            method = method,
+            body = body,
+            keepalive = false,
+            headers = {
+            ["Content-Type"] = "application/x-www-form-urlencoded",
+            },
+        }
+    )
 
     if res.status >= 300 then
         return res.status, res.body

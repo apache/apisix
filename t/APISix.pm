@@ -30,6 +30,13 @@ $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $main_config = $block->main_config // <<_EOC_;
+worker_rlimit_core  500M;
+working_directory   $pwd;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
+
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     require "resty.core"
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
