@@ -159,8 +159,10 @@ function _M.http_access_phase()
         return core.response.exit(404)
     end
 
+    core.log.error("service_protocol:", route.value.service_protocol)
+
     --
-    if route.value.backend_protocol=="gprc" then
+    if route.value.service_protocol=="gprc" then
         return ngx.exec("@grpc_pass")
     end
 

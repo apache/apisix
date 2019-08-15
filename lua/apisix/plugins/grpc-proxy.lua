@@ -6,7 +6,7 @@ local response = require("apisix.plugins.grpc-proxy.response")
 
 local schema = {
     type = "object",
-    additionalProperties = false
+    additionalProperties = true
 }
 
 
@@ -28,15 +28,20 @@ function _M.check_schema(conf)
 end
 
 
-function _M.access()
-  local proto_id = 1
+function _M.access(conf, ctx)
+  local proto_id = conf.proto_id
+  if not proto_id then
+    ngx.log(ngx.ERR, ("proto id miss: %s"):format(err))
+    return    
+  end
+
   local p, err = proto.new(proto_id)
   if err then
     ngx.log(ngx.ERR, ("proto load error: %s"):format(err))
     return
   end
   local req = request.new(p)
-  err = req:transform("helloworld.Greeter", "SayHello")
+  err = req:transform(conf.service, conf.method)
   if err then
     ngx.log(ngx.ERR, ("trasnform request error: %s"):format(err))
     return
@@ -51,14 +56,19 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    local proto_id = 1
+    local proto_id = conf.proto_id
+    if not proto_id then
+      ngx.log(ngx.ERR, ("proto id miss: %s"):format(err))
+      return    
+    end
+
     local p, err = proto.new(proto_id)
     if err then
         ngx.log(ngx.ERR, ("proto load error: %s"):format(err))
         return
     end
     local resp = response.new(p)
-    err = resp:transform("helloworld.Greeter", "SayHello")
+    err = resp:transform(conf.service, conf.method)
     if err then
         ngx.log(ngx.ERR, ("trasnform response error: %s"):format(err))
         return

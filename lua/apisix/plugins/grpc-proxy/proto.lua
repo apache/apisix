@@ -1,3 +1,4 @@
+local core = require("apisix.core")
 local protoc = require("protoc")
 local util = require("apisix.plugins.grpc-proxy.util")
 
@@ -5,33 +6,26 @@ local _M = {}
 
 _M.new = function(proto_id)
   local _p = protoc.new()
-  --todo read proto content from etcd by id
-  local ppp = [[
-           syntax = "proto3";
 
-  option java_multiple_files = true;
-  option java_package = "io.grpc.examples.helloworld";
-  option java_outer_classname = "HelloWorldProto";
+  local err
+  proto_etcd, err = core.config.new("/proto", {
+                              automatic = true,
+                              item_schema = core.schema.proto
+                          })
+  if not proto_etcd then
+      ngx.log(ngx.ERR, "failed to create etcd instance for fetching proto:" .. err)
+      return
+  end
 
-  package helloworld;
+  local proto_obj = proto_etcd:get(tostring(proto_id))
+  if not proto_obj then
+      ngx.log(ngx.ERR, "failed to find proto by id: " .. proto_id)
+      return 
+  end
 
-  // The greeting service definition.
-  service Greeter {
-    // Sends a greeting
-    rpc SayHello (HelloRequest) returns (HelloReply) {}
-  }
+  ngx.log(ngx.ERR, "proto content:" .. proto_obj.value.content)
 
-  // The request message containing the user's name.
-  message HelloRequest {
-    string name = 1;
-  }
-
-  // The response message containing the greetings
-  message HelloReply {
-    string message = 1;
-  } ]]
-
-  _p:load(ppp)
+  _p:load(proto_obj.value.content)
 
   local instance = {}
   instance.get_loaded_proto = function()

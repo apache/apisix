@@ -257,8 +257,9 @@ _M.route = [[{
             },
             "uniqueItems": true
         },
-        "backend_protocol": {
-            "type": "string"
+        "service_protocol": {
+            "type": "string",
+            "maxLength": 20,
         },
         "desc": {"type": "string", "maxLength": 256},
         "plugins": ]] .. json.encode(plugins_schema) .. [[,
@@ -344,6 +345,18 @@ _M.ssl = {
         }
     },
     required = {"sni", "key", "cert"},
+    additionalProperties = false,
+}
+
+
+_M.proto = {
+    type = "object",
+    properties = {
+        content = {
+            type = "string", minLength = 1, maxLength = 4096
+        }
+    },
+    required = {"content"},
     additionalProperties = false,
 }
 
