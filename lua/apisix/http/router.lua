@@ -22,6 +22,10 @@ function _M.init_worker()
     local router_ssl = require("apisix.http.router." .. router_ssl_name)
     router_ssl:init_worker()
     _M.router_ssl = router_ssl
+
+    local proto = require("apisix.plugins.grpc-proxy.proto")
+    proto:init_worker()
+
 end
 
 

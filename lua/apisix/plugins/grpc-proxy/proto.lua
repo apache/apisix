@@ -1,42 +1,61 @@
 local core = require("apisix.core")
 local protoc = require("protoc")
 local util = require("apisix.plugins.grpc-proxy.util")
+local lrucache = require("apisix.core.lrucache")
+local config   = require("apisix.core.config_etcd")
+local schema   = require("apisix.core.schema")
+local protos
+
+
+local function protos_arrange()
+    local result = {}
+
+    if protos.values == nil then
+        return result
+    end
+
+    for _, proto in ipairs(protos.values) do
+        local id = proto.value.id
+        result[id] = proto.value.content
+    end
+
+    return result
+end
 
 
 local _M = {}
 
 _M.new = function(proto_id)
-  local _p = protoc.new()
+    local cache   = lrucache.global("/proto", protos.conf_version, protos_arrange)
+    local content = cache[proto_id]
 
-    local key = "/proto/" .. proto_id
-    local res, err = core.etcd.get(key)
+    if not content then
+        ngx.log(ngx.ERR, "failed to find proto by id: " .. proto_id)
+        return 
+    end
 
-    local proto_obj = res.body.node.value
+    local _p = protoc.new()
+    _p:load(content)
 
-  -- local err
-  -- proto_etcd, err = core.config.new("/proto", {
-  --                             automatic = true,
-  --                             item_schema = core.schema.proto
-  --                         })
-  -- if not proto_etcd then
-  --     ngx.log(ngx.ERR, "failed to create etcd instance for fetching proto:" .. err)
-  --     return
-  -- end
-
-  --local proto_obj = proto_etcd:get(tostring(proto_id))
-  if not proto_obj then
-      ngx.log(ngx.ERR, "failed to find proto by id: " .. proto_id)
-      return 
-  end
+    local instance = {}
+    instance.get_loaded_proto = function()
+        return _p.loaded
+    end
+    return instance
+end
 
 
-  _p:load(proto_obj.content)
-
-  local instance = {}
-  instance.get_loaded_proto = function()
-    return _p.loaded
-  end
-  return instance
+_M.init_worker = function()
+    local err
+    protos, err = config.new("/proto",
+                        {
+                            automatic = true,
+                            item_schema = schema.proto
+                        })
+    if not protos then
+        ngx.log(ngx.ERR, "failed to create etcd instance for fetching protos: " .. err)
+        return
+    end
 end
 
 return _M
