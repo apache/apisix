@@ -18,12 +18,8 @@ end
 _M.find_method = function(proto, service, method)
   local protos = proto.get_loaded_proto()
   for k, loaded in pairs(protos) do
-
-    ngx.log(ngx.ERR, "key:" .. k)
-
     local package = loaded.package
     for _, s in ipairs(loaded.service or {}) do
-      ngx.log(ngx.ERR, "pkg:" .. package .. "name:"..s.name)
       if ("%s.%s"):format(package, s.name) == service then
         for _, m in ipairs(s.method) do
           if m.name == method then

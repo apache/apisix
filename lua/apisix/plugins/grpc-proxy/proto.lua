@@ -29,7 +29,6 @@ _M.new = function(proto_id)
       return 
   end
 
-  ngx.log(ngx.ERR, "proto content:" .. proto_obj.content)
 
   _p:load(proto_obj.content)
 
