@@ -31,7 +31,7 @@ end
 function _M.access(conf, ctx)
     local proto_id = conf.proto_id
     if not proto_id then
-        ngx.log(ngx.ERR, ("proto id miss: %s"):format(err))
+        ngx.log(ngx.ERR, ("proto id miss: %s"):format(proto_id))
         return    
     end
 
@@ -58,7 +58,7 @@ end
 function _M.body_filter(conf, ctx)
     local proto_id = conf.proto_id
     if not proto_id then
-        ngx.log(ngx.ERR, ("proto id miss: %s"):format(err))
+        ngx.log(ngx.ERR, ("proto id miss: %s"):format(proto_id))
         return    
     end
 

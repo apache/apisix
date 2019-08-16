@@ -46,7 +46,7 @@ local function get_from_request(name, kind)
     end
     local prefix = kind:sub(1, 3)
     if prefix == "str" then
-        return request_table[name] or nul
+        return request_table[name] or nil
     elseif prefix == "int" then
         if request_table[name] then
             return tonumber(request_table[name])
@@ -63,6 +63,7 @@ _M.map_message = function(field, default_values)
     end
 
     local request = {}
+    local sub, err 
     for name, _, field_type in pb.fields(field) do
         if field_type:sub(1, 1) == "." then
             sub, err = _M.map_message(field_type, default_values)

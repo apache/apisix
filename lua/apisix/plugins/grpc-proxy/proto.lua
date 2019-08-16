@@ -1,6 +1,4 @@
-local core = require("apisix.core")
-local protoc = require("protoc")
-local util = require("apisix.plugins.grpc-proxy.util")
+local protoc   = require("protoc")
 local lrucache = require("apisix.core.lrucache")
 local config   = require("apisix.core.config_etcd")
 local schema   = require("apisix.core.schema")
