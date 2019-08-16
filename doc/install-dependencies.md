@@ -64,9 +64,26 @@ tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install openresty and some compilation tools
-sudo apt-get install -y git openresty cmake curl luarocks\
+
+sudo apt-get install -y git openresty cmake curl \
     check libpcre3 libpcre3-dev libjemalloc-dev \
     libjemalloc1 build-essential libtool automake autoconf pkg-config
+
+install luarocks
+(the version must > 3.0, --lua-dir was first introduced in the luarocks 3.0 release)
+
+```
+-$ wget https://luarocks.org/releases/luarocks-3.1.3.tar.gz
+-$ tar zxpf luarocks-3.1.3.tar.gz
+-$ cd luarocks-3.1.3
+
+```
+
+* Run `./configure`. (This will attempt to detect your installation of Lua. If you get any error messages, see the section "Customizing your settings", below.)
+* Run `make build`.
+* As superuser, run `make install`.
+ln -s /usr/local/bin/luarocks /usr/bin/luarocks
+
 
 # start etcd server
 nohup etcd &
