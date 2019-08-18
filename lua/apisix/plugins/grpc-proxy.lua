@@ -1,8 +1,9 @@
-local core = require("apisix.core")
+local ngx         = ngx
+local core        = require("apisix.core")
 local plugin_name = "grpc-proxy"
-local proto = require("apisix.plugins.grpc-proxy.proto")
-local request = require("apisix.plugins.grpc-proxy.request")
-local response = require("apisix.plugins.grpc-proxy.response")
+local proto       = require("apisix.plugins.grpc-proxy.proto")
+local request     = require("apisix.plugins.grpc-proxy.request")
+local response    = require("apisix.plugins.grpc-proxy.response")
 
 local schema = {
     type = "object",
