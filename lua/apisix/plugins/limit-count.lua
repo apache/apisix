@@ -8,7 +8,7 @@ local schema = {
     properties = {
         count = {type = "integer", minimum = 0},
         time_window = {type = "integer",  minimum = 0},
-        key = {type = "string", enum = {"remote_addr"}},
+        key = {type = "string", enum = {"remote_addr", "server_addr"}},
         rejected_code = {type = "integer", minimum = 200, maximum = 600},
     },
     additionalProperties = false,
