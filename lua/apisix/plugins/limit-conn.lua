@@ -10,7 +10,7 @@ local schema = {
         conn = {type = "integer", minimum = 0},
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", minimum = 0},
-        key = {type = "string", enum = {"remote_addr"}},
+        key = {type = "string", enum = {"remote_addr", "server_addr"}},
         rejected_code = {type = "integer", minimum = 200},
     },
     required = {"conn", "burst", "default_conn_delay", "key", "rejected_code"}
