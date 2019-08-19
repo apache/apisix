@@ -1,15 +1,19 @@
-local pb = require("pb")
-local json = require("cjson")
-local util = require("apisix.plugins.grpc-proxy.util")
+local ngx    = ngx
+local string = string
+local table  = table
+local pb     = require("pb")
+local json   = require("cjson")
+local util   = require("apisix.plugins.grpc-proxy.util")
 
-local _M = {}
+local _M = {version = 0.1}
 
-_M.new = function(proto)
+function _M.new(proto)
     local instance = {}
     instance.transform = function(self, service, method)
         local m = util.find_method(proto, service, method)
         if not m then
-            return ("2.Undefined service method: %s/%s end."):format(service, method)
+            return "2.Undefined service method: " .. service .. "/" .. method
+                   .. " end."
         end
 
         local chunk, eof = ngx.arg[1], ngx.arg[2]

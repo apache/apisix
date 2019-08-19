@@ -52,9 +52,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
     "service_protocol": "grpc",
     "plugins": {
         "grpc-proxy": {
-         "proto_id": "1",
-         "service": "helloworld.Greeter",
-         "method": "SayHello"
+            "proto_id": "1",
+            "service": "helloworld.Greeter",
+            "method": "SayHello"
         }
     },
     "upstream": {

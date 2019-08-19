@@ -5,6 +5,7 @@ local proto       = require("apisix.plugins.grpc-proxy.proto")
 local request     = require("apisix.plugins.grpc-proxy.request")
 local response    = require("apisix.plugins.grpc-proxy.response")
 
+
 local schema = {
     type = "object",
     additionalProperties = true
@@ -35,24 +36,28 @@ end
 
 
 function _M.access(conf, ctx)
+    core.log.info("conf: ", core.json.delay_encode(conf))
+
     local proto_id = conf.proto_id
     if not proto_id then
-        ngx.log(ngx.ERR, ("proto id miss: %s"):format(proto_id))
+        core.log.error("proto id miss: ", proto_id)
         return
     end
 
-    local p, err = proto.new(proto_id)
+    local proto_obj, err = proto.fetch(proto_id)
     if err then
-        ngx.log(ngx.ERR, ("proto load error: %s"):format(err))
+        core.log.error("proto load error: ", err)
         return
     end
-    local req = request.new(p)
+
+    local req = request.new(proto_obj)
     err = req:transform(conf.service, conf.method)
     if err then
-        ngx.log(ngx.ERR, ("trasnform request error: %s"):format(err))
+        core.log.error("trasnform request error: ", err)
         return
     end
 
+    ctx.proto_obj = proto_obj
 end
 
 
@@ -62,21 +67,15 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    local proto_id = conf.proto_id
-    if not proto_id then
-        ngx.log(ngx.ERR, ("proto id miss: %s"):format(proto_id))
+    local proto_obj = ctx.proto_obj
+    if not proto_obj then
         return
     end
 
-    local p, err = proto.new(proto_id)
+    local resp = response.new(proto_obj)
+    local err = resp:transform(conf.service, conf.method)
     if err then
-        ngx.log(ngx.ERR, ("proto load error: %s"):format(err))
-        return
-    end
-    local resp = response.new(p)
-    err = resp:transform(conf.service, conf.method)
-    if err then
-        ngx.log(ngx.ERR, ("trasnform response error: %s"):format(err))
+        core.log.error("trasnform response error: ", err)
         return
     end
 end

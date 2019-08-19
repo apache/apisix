@@ -1,12 +1,18 @@
-local pb = require("pb")
-local json
-if not os.getenv("LUAUNIT") then
-    json = require("cjson")
-end
+local json     = require("apisix.core.json")
+local pb       = require("pb")
+local ngx      = ngx
+local io       = io
+local pairs    = pairs
+local ipairs   = ipairs
+local string   = string
+local tonumber = tonumber
+local type     = type
 
-local _M = {}
 
-_M.file_exists = function(file)
+local _M = {version = 0.1}
+
+
+function _M.file_exists(file)
     local fp = io.open(file, "r")
     if fp then
         fp:close()
@@ -15,7 +21,8 @@ _M.file_exists = function(file)
     return false
 end
 
-_M.find_method = function(protos, service, method)
+
+function _M.find_method(protos, service, method)
     for k, loaded in pairs(protos) do
         if type(loaded) == 'table' then
             local package = loaded.package
@@ -34,10 +41,12 @@ _M.find_method = function(protos, service, method)
     return nil
 end
 
+
 local function get_from_request(name, kind)
     local request_table
     if ngx.req.get_method() == "POST" then
-        if string.find(ngx.req.get_headers()["Content-Type"] or "", "application/json") then
+        if string.find(ngx.req.get_headers()["Content-Type"] or "",
+                       "application/json", true) then
             request_table = json.decode(ngx.req.get_body_data())
         else
             request_table = ngx.req.get_post_args()
@@ -45,22 +54,25 @@ local function get_from_request(name, kind)
     else
         request_table = ngx.req.get_uri_args()
     end
+
     local prefix = kind:sub(1, 3)
     if prefix == "str" then
         return request_table[name] or nil
-    elseif prefix == "int" then
+    end
+
+    if prefix == "int" then
         if request_table[name] then
             return tonumber(request_table[name])
-        else
-            return nil
         end
     end
+
     return nil
 end
 
-_M.map_message = function(field, default_values)
+
+function _M.map_message(field, default_values)
     if not pb.type(field) then
-        return nil, ("Field %s is not defined"):format(field)
+        return nil, "Field " .. field .. " is not defined"
     end
 
     local request = {}
@@ -78,5 +90,6 @@ _M.map_message = function(field, default_values)
     end
     return request, nil
 end
+
 
 return _M
