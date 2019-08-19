@@ -1,9 +1,13 @@
-local protoc   = require("protoc")
-local lrucache = require("apisix.core.lrucache")
-local config   = require("apisix.core.config_etcd")
-local schema   = require("apisix.core.schema")
+local protoc = require("protoc")
+local core   = require("apisix.core")
+local config = require("apisix.core.config_etcd")
+local schema = require("apisix.core.schema")
 local protos
 
+
+local lrucache_proto = core.lrucache.new({
+    ttl = 300, count = 256
+})
 
 local function protos_arrange(proto_id)
     if protos.values == nil then
@@ -36,7 +40,8 @@ end
 local _M = {}
 
 _M.new = function(proto_id)
-    return lrucache.global("/protoc", protos.conf_version, protos_arrange, proto_id)
+    local key = "/proto"..proto_id
+    return lrucache_proto(key, protos.conf_version, protos_arrange, proto_id)
 end
 
 
