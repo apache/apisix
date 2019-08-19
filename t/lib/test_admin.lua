@@ -40,9 +40,9 @@ local methods = {
 
 
 function _M.test(uri, method, body, pattern)
-    -- if type(body) == "table" then
-    --     body = json.encode(body)
-    -- end
+    if type(body) == "table" then
+        body = json.encode(body)
+    end
 
     if type(pattern) == "table" then
         pattern = json.encode(pattern)
