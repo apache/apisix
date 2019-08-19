@@ -32,3 +32,4 @@ plugins:                          # plugin list
   - node-status
   - jwt-auth
   - zipkin
+  - ip-restriction

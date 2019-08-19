@@ -28,6 +28,7 @@ dependencies = {
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 0.4",
+    "lua-resty-iputils = 0.3.0-1",
 }
 
 build = {

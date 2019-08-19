@@ -52,10 +52,11 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Scalability**
 - **High performance**: The single-core QPS reaches 24k with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
+- **IP whitelist/blacklist**
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
-- **IP blacklist**: TODO.
+
 
 ## Install
 
