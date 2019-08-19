@@ -559,3 +559,13 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 19: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
+--- no_error_log
+[error]
