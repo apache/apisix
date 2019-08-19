@@ -1,7 +1,7 @@
-local protoc = require("protoc")
-local core   = require("apisix.core")
-local config = require("apisix.core.config_etcd")
-local schema = require("apisix.core.schema")
+local core     = require("apisix.core")
+local protoc   = require("protoc")
+local config   = require("apisix.core.config_etcd")
+local schema   = require("apisix.core.schema")
 local protos
 
 
@@ -18,8 +18,7 @@ local function protos_arrange(proto_id)
 
     local content
     for _, proto in ipairs(protos.values) do
-        local id = proto.value.id
-        if proto_id==proto.value.id then
+        if proto_id == proto.value.id then
             content = proto.value.content
             break
         end
@@ -27,7 +26,7 @@ local function protos_arrange(proto_id)
 
     if not content then
         ngx.log(ngx.ERR, "failed to find proto by id: " .. proto_id)
-        return 
+        return
     end
 
     local _p = protoc.new()
@@ -37,25 +36,26 @@ local function protos_arrange(proto_id)
 end
 
 
-local _M = {}
+local _M = {version = 0.1}
+
 
 _M.new = function(proto_id)
-    local key = "/proto"..proto_id
+    local key = "/proto" .. proto_id
     return lrucache_proto(key, protos.conf_version, protos_arrange, proto_id)
 end
 
 
-_M.init_worker = function()
+function _M.init()
     local err
-    protos, err = config.new("/proto",
-                        {
-                            automatic = true,
-                            item_schema = schema.proto
-                        })
+    protos, err = config.new("/proto", {
+        automatic = true,
+        item_schema = schema.proto
+    })
     if not protos then
-        ngx.log(ngx.ERR, "failed to create etcd instance for fetching protos: " .. err)
+        core.log.error("failed to create etcd instance for fetching protos: " .. err)
         return
     end
 end
+
 
 return _M

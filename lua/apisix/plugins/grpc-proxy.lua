@@ -19,6 +19,11 @@ local _M = {
 }
 
 
+function _M.init()
+    proto.init()
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -33,7 +38,7 @@ function _M.access(conf, ctx)
     local proto_id = conf.proto_id
     if not proto_id then
         ngx.log(ngx.ERR, ("proto id miss: %s"):format(proto_id))
-        return    
+        return
     end
 
     local p, err = proto.new(proto_id)
@@ -60,7 +65,7 @@ function _M.body_filter(conf, ctx)
     local proto_id = conf.proto_id
     if not proto_id then
         ngx.log(ngx.ERR, ("proto id miss: %s"):format(proto_id))
-        return    
+        return
     end
 
     local p, err = proto.new(proto_id)

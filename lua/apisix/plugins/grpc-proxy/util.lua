@@ -64,7 +64,7 @@ _M.map_message = function(field, default_values)
     end
 
     local request = {}
-    local sub, err 
+    local sub, err
     for name, _, field_type in pb.fields(field) do
         if field_type:sub(1, 1) == "." then
             sub, err = _M.map_message(field_type, default_values)

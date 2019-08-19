@@ -10,6 +10,7 @@ function _M.init_worker()
     local conf = local_conf()
     local router_http_name = "r3_uri"
     local router_ssl_name = "r3_sni"
+
     if conf and conf.apisix and conf.apisix.router then
         router_http_name = conf.apisix.router.http or router_http_name
         router_ssl_name = conf.apisix.router.ssl or router_ssl_name
@@ -22,10 +23,6 @@ function _M.init_worker()
     local router_ssl = require("apisix.http.router." .. router_ssl_name)
     router_ssl:init_worker()
     _M.router_ssl = router_ssl
-
-    local proto = require("apisix.plugins.grpc-proxy.proto")
-    proto:init_worker()
-
 end
 
 
