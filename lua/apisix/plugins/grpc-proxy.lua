@@ -71,8 +71,7 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local resp = response.new(proto_obj)
-    local err = resp:transform(conf.service, conf.method)
+    local err = response(proto_obj, conf.service, conf.method)
     if err then
         core.log.error("trasnform response error: ", err)
         return

@@ -1,9 +1,11 @@
+
+local util   = require("apisix.plugins.grpc-proxy.util")
+local pb     = require("pb")
+local bit    = require("bit")
 local ngx    = ngx
 local string = string
 local table  = table
-local pb     = require("pb")
-local bit    = require("bit")
-local util   = require("apisix.plugins.grpc-proxy.util")
+
 
 return function (proto, service, method, default_values)
     local m = util.find_method(proto, service, method)
