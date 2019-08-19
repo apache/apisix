@@ -6,6 +6,10 @@ local schema   = require("apisix.core.schema")
 local protos
 
 
+local lrucache_proto = core.lrucache.new({
+    ttl = 300, count = 100
+})
+
 local function protos_arrange(proto_id)
     if protos.values == nil then
         return nil
@@ -37,7 +41,8 @@ local _M = {version = 0.1}
 
 
 function _M.new(proto_id)
-    return lrucache.global("/protoc", protos.conf_version, protos_arrange, proto_id)
+    local key = "/proto"..proto_id
+    return lrucache_proto(key, protos.conf_version, protos_arrange, proto_id)
 end
 
 
