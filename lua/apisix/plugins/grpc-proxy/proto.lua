@@ -1,8 +1,7 @@
-local core     = require("apisix.core")
-local protoc   = require("protoc")
-local lrucache = require("apisix.core.lrucache")
-local config   = require("apisix.core.config_etcd")
-local schema   = require("apisix.core.schema")
+local core   = require("apisix.core")
+local protoc = require("protoc")
+local config = require("apisix.core.config_etcd")
+local schema = require("apisix.core.schema")
 local protos
 
 
@@ -14,8 +13,6 @@ local function protos_arrange(proto_id)
     if protos.values == nil then
         return nil
     end
-
-    ngx.log(ngx.ERR, "load proto")
 
     local content
     for _, proto in ipairs(protos.values) do
