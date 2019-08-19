@@ -1,6 +1,7 @@
 [中文](grpc-proxy-cn.md)
 # grpc-proxy
 
+HTTP(s) -> APISIX -> gRPC server
 
 ### Proto
 
@@ -29,16 +30,16 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 ```
 
 ### Parameters
+
 * `proto_id`: `.proto` content id.
 * `service`:  the grpc service name.
 * `method`:   the method name of grpc service.
 
-
-
 ### example
 
 #### enable plugin
-Here's an example, enable the grpc-proxy plugin on the specified route:
+
+Here's an example, to enable the grpc-proxy plugin to specified route:
 
 * attention: the route's option `service_protocal` must be `grpc`
 * the grpc server example：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)

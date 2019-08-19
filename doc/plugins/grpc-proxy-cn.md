@@ -1,15 +1,16 @@
-[中文](grpc-proxy-cn.md)
+[English](grpc-proxy.md)
 # grpc-proxy
 
+HTTP(s) -> APISIX -> gRPC server
 
 ### Proto
 
 #### 参数
-* `content`: `.proto`文件的内容 
+* `content`: `.proto` 文件的内容
 
 #### 添加proto
 
-路径中最后的数字，会被用作proto的id 做唯一标识，比如下面示例的proto `id` 是 `1` ：
+路径中最后的数字，会被用作 proto 的 id 做唯一标识，比如下面示例的 proto `id` 是 `1` ：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
@@ -29,20 +30,21 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 ```
 
 ### 参数
+
 * `proto_id`: `.proto`内容的id.
 * `service`:  grpc服务名.
 * `method`:   grpc服务中要调用的方法名.
 
 
 
-### 举个例子
+### 示例
 
-#### 使用grpc-proxy插件
+#### 使用 grpc-proxy 插件
 
-在指定route中，代理grpc服务接口:
+在指定 route 中，代理 grpc 服务接口:
 
-* 注意： 这个route的属性`service_protocal` 必须设置为 `grpc`
-* 例子所代理的grpc服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
+* 注意： 这个 route 的属性`service_protocal` 必须设置为 `grpc`
+* 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
@@ -69,13 +71,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
 
 #### 测试
 
-访问上面配置的route：
-```shell
-curl -i http://127.0.0.1:9080/grpctest
-```
+访问上面配置的 route：
 
-response:
-```
+```shell
+$ curl -i http://127.0.0.1:9080/grpctest
 HTTP/1.1 200 OK
 Date: Fri, 16 Aug 2019 11:55:36 GMT
 Content-Type: application/json
@@ -87,5 +86,5 @@ Proxy-Connection: keep-alive
 {"message":"Hello world"}
 ```
 
-这意味着代理成功
+这表示已成功代理。
 
