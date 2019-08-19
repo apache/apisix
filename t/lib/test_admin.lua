@@ -36,6 +36,7 @@ local methods = {
     [ngx.HTTP_POST   ] = "POST",
     [ngx.HTTP_DELETE ] = "DELETE",
     [ngx.HTTP_OPTIONS] = "OPTIONS",
+    [ngx.HTTP_PATCH]   = "PATCH",
 }
 
 
