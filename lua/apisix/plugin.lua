@@ -172,19 +172,30 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    -- core.log.info("service conf: ", core.json.delay_encode(service_conf))
+    core.log.info("service conf: ", core.json.delay_encode(service_conf))
     -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
+
+    -- optimize: use LRU to cache merged result
+    local new_service_conf
+
     local changed = false
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
-            service_conf.value.plugins[name] = conf
+            if not new_service_conf then
+                new_service_conf = core.table.deepcopy(service_conf)
+            end
+            new_service_conf.value.plugins[name] = conf
         end
         changed = true
     end
 
     local route_upstream = route_conf.value.upstream
     if route_upstream then
-        service_conf.value.upstream = route_upstream
+        if not new_service_conf then
+            new_service_conf = core.table.deepcopy(service_conf)
+        end
+        new_service_conf.value.upstream = route_upstream
+
         if route_upstream.checks then
             route_upstream.parent = route_conf
         end
@@ -192,11 +203,14 @@ function _M.merge_service_route(service_conf, route_conf)
     end
 
     if route_conf.value.upstream_id then
-        service_conf.value.upstream_id = route_conf.value.upstream_id
+        if not new_service_conf then
+            new_service_conf = core.table.deepcopy(service_conf)
+        end
+        new_service_conf.value.upstream_id = route_conf.value.upstream_id
     end
 
-    -- core.log.info("merged conf : ", core.json.delay_encode(service_conf))
-    return service_conf, changed
+    -- core.log.info("merged conf : ", core.json.delay_encode(new_service_conf))
+    return new_service_conf or service_conf, changed
 end
 
 
