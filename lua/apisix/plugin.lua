@@ -182,9 +182,17 @@ function _M.merge_service_route(service_conf, route_conf)
         changed = true
     end
 
-    if route_conf.value.upstream then
-        service_conf.value.upstream = route_conf.value.upstream
+    local route_upstream = route_conf.value.upstream
+    if route_upstream then
+        service_conf.value.upstream = route_upstream
+        if route_upstream.checks then
+            route_upstream.parent = route_conf
+        end
         changed = true
+    end
+
+    if route_conf.value.upstream_id then
+        service_conf.value.upstream_id = route_conf.value.upstream_id
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(service_conf))
