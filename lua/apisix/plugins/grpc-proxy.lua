@@ -50,9 +50,8 @@ function _M.access(conf, ctx)
         return
     end
 
-    local req = request.new(proto_obj)
-    err = req:transform(conf.service, conf.method)
-    if err then
+    local ok, err = request(proto_obj, conf.service, conf.method)
+    if not ok then
         core.log.error("trasnform request error: ", err)
         return
     end
