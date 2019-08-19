@@ -5,27 +5,21 @@ local schema   = require("apisix.core.schema")
 local protos
 
 
-local function protos_arrange()
-    local result = {}
-
+local function protos_arrange(proto_id)
     if protos.values == nil then
-        return result
+        return nil
     end
 
+    ngx.log(ngx.ERR, "load proto")
+
+    local content
     for _, proto in ipairs(protos.values) do
         local id = proto.value.id
-        result[id] = proto.value.content
+        if proto_id==proto.value.id then
+            content = proto.value.content
+            break
+        end
     end
-
-    return result
-end
-
-
-local _M = {}
-
-_M.new = function(proto_id)
-    local cache   = lrucache.global("/proto", protos.conf_version, protos_arrange)
-    local content = cache[proto_id]
 
     if not content then
         ngx.log(ngx.ERR, "failed to find proto by id: " .. proto_id)
@@ -35,11 +29,14 @@ _M.new = function(proto_id)
     local _p = protoc.new()
     _p:load(content)
 
-    local instance = {}
-    instance.get_loaded_proto = function()
-        return _p.loaded
-    end
-    return instance
+    return _p.loaded
+end
+
+
+local _M = {}
+
+_M.new = function(proto_id)
+    return lrucache.global("/protoc", protos.conf_version, protos_arrange, proto_id)
 end
 
 

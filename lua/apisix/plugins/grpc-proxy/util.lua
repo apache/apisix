@@ -15,15 +15,16 @@ _M.file_exists = function(file)
     return false
 end
 
-_M.find_method = function(proto, service, method)
-    local protos = proto.get_loaded_proto()
+_M.find_method = function(protos, service, method)
     for k, loaded in pairs(protos) do
-        local package = loaded.package
-        for _, s in ipairs(loaded.service or {}) do
-            if ("%s.%s"):format(package, s.name) == service then
-                for _, m in ipairs(s.method) do
-                    if m.name == method then
-                        return m
+        if type(loaded) == 'table' then
+            local package = loaded.package
+            for _, s in ipairs(loaded.service or {}) do
+                if ("%s.%s"):format(package, s.name) == service then
+                    for _, m in ipairs(s.method) do
+                        if m.name == method then
+                            return m
+                        end
                     end
                 end
             end
