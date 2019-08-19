@@ -20,16 +20,11 @@ local set_timeouts = balancer.set_timeouts
 local module_name = "balancer"
 
 
-local function checker_release(checker)
-    checker:stop()
-end
-
-
 local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
 })
 local lrucache_checker = core.lrucache.new({
-    ttl = 300, count = 256, release = checker_release
+    ttl = 300, count = 256
 })
 
 
@@ -76,18 +71,12 @@ local function fetch_health_nodes(upstream, checker)
 end
 
 
-local function create_checker(upstream)
+local function create_checker(upstream, healthcheck_parent)
     local checker = healthcheck.new({
         name = "upstream",
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
     })
-
-    -- stop checker by `__gc`
-    core.table.setmt__gc(upstream, {__gc = function(self)
-        core.log.info("stop checker: ", tostring(self))
-        self:stop()
-    end})
 
     for addr, weight in pairs(upstream.nodes) do
         local ip, port = parse_addr(addr)
@@ -98,12 +87,25 @@ local function create_checker(upstream)
         end
     end
 
-    core.log.info("create new checker")
+    if upstream.parent then
+        core.table.insert(upstream.parent.clean_handlers, function ()
+            core.log.info("try to release checker: ", tostring(checker))
+            checker:stop()
+        end)
+
+    else
+        core.table.insert(healthcheck_parent.clean_handlers, function ()
+            core.log.info("try to release checker: ", tostring(checker))
+            checker:stop()
+        end)
+    end
+
+    core.log.info("create new checker: ", tostring(checker))
     return checker
 end
 
 
-local function fetch_healthchecker(upstream, version)
+local function fetch_healthchecker(upstream, healthcheck_parent, version)
     if not upstream.checks then
         return
     end
@@ -113,7 +115,8 @@ local function fetch_healthchecker(upstream, version)
     end
 
     local checker = lrucache_checker(upstream, version,
-                                     create_checker, upstream)
+                                     create_checker, upstream,
+                                     healthcheck_parent)
     return checker
 end
 
@@ -165,6 +168,7 @@ end
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
+    local healthcheck_parent = route
     local up_id = route.value.upstream_id
     local upstream = route.value.upstream
     if not up_id and not upstream then
@@ -186,6 +190,7 @@ local function pick_server(route, ctx)
         end
         core.log.info("upstream: ", core.json.delay_encode(upstream_obj))
 
+        healthcheck_parent = upstream_obj
         upstream = upstream_obj.value
         version = upstream_obj.modifiedIndex
         key = upstream.type .. "#upstream_" .. up_id
@@ -195,7 +200,7 @@ local function pick_server(route, ctx)
         key = upstream.type .. "#route_" .. route.value.id
     end
 
-    local checker = fetch_healthchecker(upstream, version)
+    local checker = fetch_healthchecker(upstream, healthcheck_parent, version)
     local retries = upstream.retries
     if retries and retries > 0 then
         ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
