@@ -8,6 +8,7 @@ repeat_each(1);
 log_level('info');
 no_long_string();
 no_shuffle();
+worker_connections(128);
 
 my $pwd = cwd();
 
