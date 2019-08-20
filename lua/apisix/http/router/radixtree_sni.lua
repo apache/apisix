@@ -1,17 +1,19 @@
 -- Copyright (C) Yuansheng Wang
 
-local get_request = require("resty.core.base").get_request
-local radixtree_router = require("resty.radixtree")
-local core     = require("apisix.core")
-local ngx_ssl  = require("ngx.ssl")
-local ffi      = require("ffi")
-local errmsg   = ffi.new("char *[1]")
-local C        = ffi.C
-local ipairs   = ipairs
-local type     = type
-local error    = error
-local ffi_string = ffi.string
-local ssl
+local get_request      = require("resty.core.base").get_request
+local radixtree_new    = require("resty.radixtree").new
+local core             = require("apisix.core")
+local ngx_ssl          = require("ngx.ssl")
+local ffi              = require("ffi")
+local errmsg           = ffi.new("char *[1]")
+local C                = ffi.C
+local ipairs           = ipairs
+local type             = type
+local error            = error
+local ffi_string       = ffi.string
+local ssl_certificates
+local radixtree_router
+local radixtree_router_ver
 
 
 ffi.cdef[[
@@ -28,12 +30,10 @@ local _M = {
 }
 
 
-    local empty_tab = {}
-    local route_items
-local function create_r3_router(ssl_items)
-    local ssl_items = ssl_items or empty_tab
+local function create_router(ssl_items)
+    local ssl_items = ssl_items or {}
 
-    route_items = core.table.new(#ssl_items, 0)
+    local route_items = core.table.new(#ssl_items, 0)
     local idx = 0
 
     for _, ssl in ipairs(ssl_items) do
@@ -53,8 +53,12 @@ local function create_r3_router(ssl_items)
     end
 
     core.log.info("route items: ", core.json.delay_encode(route_items, true))
-    local radixtree = radixtree_router.new(route_items)
-    return radixtree
+    local router, err = radixtree_new(route_items)
+    if not router then
+        return nil, err
+    end
+
+    return router
 end
 
 
@@ -98,10 +102,14 @@ end
 function _M.match(api_ctx)
     ngx_ssl.clear_certs()
 
-    local r3, err = core.lrucache.global("/ssl", ssl.conf_version,
-                        create_r3_router, ssl.values)
-    if not r3 then
-        return false, "failed to fetch ssl router: " .. err
+    local err
+    if not radixtree_router or
+       radixtree_router_ver ~= ssl_certificates.conf_version then
+        radixtree_router, err = create_router(ssl_certificates.values)
+        if not radixtree_router then
+            return false, "failed to create radixtree router: " .. err
+        end
+        radixtree_router_ver = ssl_certificates.conf_version
     end
 
     local sni = ngx_ssl.server_name()
@@ -110,7 +118,7 @@ function _M.match(api_ctx)
     end
 
     core.log.debug("sni: ", sni)
-    local ok = r3:dispatch(sni:reverse(), nil, api_ctx)
+    local ok = radixtree_router:dispatch(sni:reverse(), nil, api_ctx)
     if not ok then
         core.log.warn("not found any valid sni configuration")
         return false
@@ -129,12 +137,13 @@ end
 
 function _M.init_worker()
     local err
-    ssl, err = core.config.new("/ssl", {
+    ssl_certificates, err = core.config.new("/ssl", {
                         automatic = true,
                         item_schema = core.schema.ssl
                     })
-    if not ssl then
-        error("failed to create etcd instance for fetching ssl: " .. err)
+    if not ssl_certificates then
+        error("failed to create etcd instance for fetching ssl certificates: "
+              .. err)
     end
 end
 
