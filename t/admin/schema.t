@@ -33,7 +33,7 @@ qr/"required":\["upstream"\]/
 === TEST 3: get not exist schema
 --- request
 GET /apisix/admin/schema/noexits
---- error_code: 404
+--- error_code: 400
 --- no_error_log
 [error]
 
