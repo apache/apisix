@@ -34,7 +34,7 @@ endif
 
 ### dev_r3:        Create a development ENV of r3
 .PHONY: dev_r3
-dev:
+dev_r3:
 ifeq ($(UNAME),Darwin)
 	luarocks install --lua-dir=$(LUA_JIT_DIR) lua-resty-libr3 --tree=deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
