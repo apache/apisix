@@ -1,7 +1,6 @@
 local json     = require("apisix.core.json")
 local pb       = require("pb")
 local ngx      = ngx
-local io       = io
 local pairs    = pairs
 local ipairs   = ipairs
 local string   = string
@@ -10,16 +9,6 @@ local type     = type
 
 
 local _M = {version = 0.1}
-
-
-function _M.file_exists(file)
-    local fp = io.open(file, "r")
-    if fp then
-        fp:close()
-        return true
-    end
-    return false
-end
 
 
 function _M.find_method(protos, service, method)
@@ -88,7 +77,7 @@ function _M.map_message(field, default_values)
             request[name] = get_from_request(name, field_type) or default_values[name] or nil
         end
     end
-    return request, nil
+    return request
 end
 
 
