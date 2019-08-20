@@ -92,8 +92,7 @@ hello world
 GET /hello
 --- more_headers
 Host: .foo.com
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+hello world
 --- no_error_log
 [error]
