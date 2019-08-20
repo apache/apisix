@@ -262,7 +262,6 @@ http {
                 apisix.http_log_phase()
             }
         }
-
     }
 }
 ]=]
