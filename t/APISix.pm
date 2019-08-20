@@ -25,6 +25,8 @@ my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
+$yaml_config =~ s/ssl: 'radixtree_sni'/ssl: 'r3_sni'/;
+$yaml_config =~ s/http: 'radixtree_uri'/http: 'r3_uri'/;
 
 
 add_block_preprocessor(sub {
