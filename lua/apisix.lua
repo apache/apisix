@@ -253,7 +253,7 @@ function _M.http_admin()
     end
 
     -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
-    local ok = router:dispatch(get_var("uri"), get_method())
+    local ok = router:dispatch(get_var("uri"), {method = get_method()})
     if not ok then
         ngx_exit(404)
     end
