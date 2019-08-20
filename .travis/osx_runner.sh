@@ -17,7 +17,7 @@ export_or_prefix() {
 }
 
 before_install() {
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug golang
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     export_or_prefix
     luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls --local --tree=deps
@@ -30,6 +30,7 @@ do_install() {
     make dev_r3
 
     git clone https://github.com/openresty/test-nginx.git test-nginx
+    git clone https://github.com/nic-chen/grpc_server_example.git grpc_server_example
 }
 
 script() {
@@ -38,6 +39,9 @@ script() {
 
     luarocks install luacheck
     brew services start etcd
+
+    go run ./grpc_server_example/main.go &
+
     make help
     make init
     sudo make run

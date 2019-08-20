@@ -28,6 +28,7 @@ do_install() {
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
     sudo apt-get update
     sudo apt-get install openresty-debug
+    sudo apt-get install golang
 
     export_or_prefix
 
@@ -35,12 +36,15 @@ do_install() {
     sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}luajit lua-resty-libr3 --tree=deps --local
 
     git clone https://github.com/openresty/test-nginx.git test-nginx
+
+    git clone https://github.com/nic-chen/grpc_server_example.git grpc_server_example
 }
 
 script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     sudo service etcd start
+    go run ./grpc_server_example/main.go &
     ./bin/apisix help
     ./bin/apisix init
     ./bin/apisix init_etcd
