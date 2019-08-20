@@ -151,7 +151,7 @@ function _M.http_access_phase()
 
     router.router_http.match(api_ctx)
 
-    core.log.info("route: ",
+    core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
 
     local route = api_ctx.matched_route
@@ -253,7 +253,7 @@ function _M.http_admin()
     end
 
     -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
-    local ok = router:dispatch(get_var("uri"), get_method())
+    local ok = router:dispatch(get_var("uri"), {method = get_method()})
     if not ok then
         ngx_exit(404)
     end

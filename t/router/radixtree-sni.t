@@ -5,20 +5,6 @@ no_root_location();
 
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
-$yaml_config =~ s/ssl: 'radixtree_uri'/ssl: 'r3_sni'/;
-
 run_tests;
 
 __DATA__
@@ -54,7 +40,6 @@ location /t {
 }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -88,7 +73,6 @@ passed
     }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -151,7 +135,6 @@ location /t {
 }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body eval
 qr{connected: 1
 ssl handshake: userdata
@@ -200,7 +183,6 @@ location /t {
 }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body
 connected: 1
 failed to do SSL handshake: handshake failed
@@ -240,7 +222,6 @@ location /t {
 }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -303,7 +284,6 @@ location /t {
 }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body eval
 qr{connected: 1
 ssl handshake: userdata
@@ -353,7 +333,6 @@ location /t {
 }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -416,7 +395,6 @@ location /t {
 }
 --- request
 GET /t
---- yaml_config eval: $::yaml_config
 --- response_body eval
 qr{connected: 1
 ssl handshake: userdata

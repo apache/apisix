@@ -6,6 +6,20 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
+sub read_file($) {
+    my $infile = shift;
+    open my $in, $infile
+        or die "cannot open $infile for reading: $!";
+    my $cert = do { local $/; <$in> };
+    close $in;
+    $cert;
+}
+
+our $yaml_config = read_file("conf/config.yaml");
+$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
+$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
+$yaml_config =~ s/http: 'radixtree_uri'/ssl: 'r3_uri'/;
+
 run_tests();
 
 __DATA__
@@ -37,6 +51,7 @@ __DATA__
     }
 --- request
 GET /t
+--- yaml_config eval: $::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -47,6 +62,7 @@ passed
 === TEST 2: /not_found
 --- request
 GET /not_found
+--- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
@@ -58,6 +74,7 @@ qr/404 Not Found/
 === TEST 3: hit routes
 --- request
 GET /hello
+--- yaml_config eval: $::yaml_config
 --- response_body
 hello world
 --- no_error_log
@@ -91,6 +108,7 @@ hello world
     }
 --- request
 GET /t
+--- yaml_config eval: $::yaml_config
 --- response_body
 passed
 --- no_error_log
@@ -101,6 +119,7 @@ passed
 === TEST 5: hit routes：/hello
 --- request
 GET /hello
+--- yaml_config eval: $::yaml_config
 --- response_body
 hello world
 --- no_error_log
@@ -111,6 +130,7 @@ hello world
 === TEST 6: hit routes: /hello1
 --- request
 GET /hello1
+--- yaml_config eval: $::yaml_config
 --- response_body
 hello1 world
 --- no_error_log
@@ -121,6 +141,7 @@ hello1 world
 === TEST 7: hit routes: /hello2
 --- request
 GET /hello2
+--- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
