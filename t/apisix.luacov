@@ -4,5 +4,8 @@ modules = {
    ["lua/apisix/admin/*"] = "admin",
    ["lua/apisix/core/*"] = "core",
    ["lua/apisix/http/*"] = "http",
+   ["lua/apisix/http/router/*"] = "http/router",
    ["lua/apisix/plugins/*"] = "plugins",
+   ["lua/apisix/plugins/prometheus/*"] = "plugins/prometheus",
+   ["lua/apisix/plugins/zipkin/*"] = "plugins/zipkin",
 }
