@@ -1,8 +1,12 @@
 local core = require("apisix.core")
 local route = require("resty.radixtree")
+local plugin = require("apisix.plugin")
 local get_method = ngx.req.get_method
 local str_lower = string.lower
+local require = require
 local ngx = ngx
+local reload_event = "/apisix/admin/plugins/reload"
+local events
 
 
 local resources = {
@@ -16,7 +20,7 @@ local resources = {
 }
 
 
-local _M = {version = 0.2}
+local _M = {version = 0.3}
 local router
 
 
@@ -63,10 +67,28 @@ local function run()
     end
 end
 
+
 local function get_plugins_list()
     local plugins = resources.plugins.get_plugins_list()
     core.response.exit(200, plugins)
 end
+
+
+local function post_reload_plugins()
+    local success, err = events.post(reload_event, get_method(), ngx.time())
+    if not success then
+        core.response.exit(500, err)
+    end
+
+    core.response.exit(200, success)
+end
+
+
+local function reload_plugins(data, event, source, pid)
+    core.log.info("start to hot reload plugins")
+    plugin.load()
+end
+
 
 local uri_route = {
     {
@@ -79,7 +101,13 @@ local uri_route = {
         handler = get_plugins_list,
         method = {"GET", "PUT", "POST", "DELETE"},
     },
+    {
+        path = reload_event,
+        handler = post_reload_plugins,
+        method = {"PUT"},
+    },
 }
+
 
 function _M.init_worker()
     local local_conf = core.config.local_conf()
@@ -88,6 +116,9 @@ function _M.init_worker()
     end
 
     router = route.new(uri_route)
+    events = require("resty.worker.events")
+
+    events.register(reload_plugins, reload_event, "PUT")
 end
 
 

@@ -94,6 +94,7 @@ local function load()
     end
 
     _M.load_times = _M.load_times + 1
+    core.log.info("load plugin times: ", _M.load_times)
     return local_plugins
 end
 _M.load = load
