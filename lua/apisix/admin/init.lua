@@ -21,11 +21,17 @@ local router
 
 
 local function run()
-    -- eg: /apisix/admin/routes/1
     local uri_segs = core.utils.split_uri(ngx.var.uri)
+    core.log.info("uri: ", core.json.delay_encode(uri_segs))
+
+    -- /apisix/admin/schema/route
     local seg_res, seg_id = uri_segs[4], uri_segs[5]
     local seg_sub_path = core.table.concat(uri_segs, "/", 6)
-    core.log.info("uri: ", core.json.delay_encode(uri_segs))
+    if seg_res == "schema" and seg_id == "plugins" then
+        -- /apisix/admin/schema/plugins/limit-count
+        seg_res, seg_id = uri_segs[5], uri_segs[6]
+        seg_sub_path = core.table.concat(uri_segs, "/", 7)
+    end
 
     local resource = resources[seg_res]
     if not resource then
