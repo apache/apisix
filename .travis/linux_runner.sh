@@ -28,6 +28,9 @@ do_install() {
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
     sudo apt-get update
     sudo apt-get install openresty-debug
+
+    add-apt-repository ppa:longsleep/golang-backports
+    apt-get update
     sudo apt-get install golang
 
     export_or_prefix
