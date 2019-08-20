@@ -27,7 +27,7 @@ function _M.find_method(protos, service, method)
         if type(loaded) == 'table' then
             local package = loaded.package
             for _, s in ipairs(loaded.service or {}) do
-                if ("%s.%s"):format(package, s.name) == service then
+                if package .. "." .. s.name == service then
                     for _, m in ipairs(s.method) do
                         if m.name == method then
                             return m

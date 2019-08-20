@@ -1,5 +1,6 @@
 
 local util   = require("apisix.plugins.grpc-proxy.util")
+local core   = require("apisix.core")
 local pb     = require("pb")
 local bit    = require("bit")
 local ngx    = ngx
@@ -8,6 +9,7 @@ local table  = table
 
 
 return function (proto, service, method, default_values)
+    core.log.info("proto: ", core.json.delay_encode(proto, true))
     local m = util.find_method(proto, service, method)
     if not m then
         return false, "Undefined service method: " .. service .. "/" .. method
