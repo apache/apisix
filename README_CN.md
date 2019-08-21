@@ -54,6 +54,9 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **ACL**: TODO.
 - **Bot detection**: TODO.
 
+## 在线演示版本
+我们提供了一个在线的 dashboard [演示版本](http://39.97.63.215:9080/apisix/dashboard)，你可以上手体验下。
+
 ## 安装
 
 APISIX 在以下操作系统中做过安装和运行测试:

@@ -57,6 +57,8 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **ACL**: TODO.
 - **Bot detection**: TODO.
 
+## Online Demo Dashboard
+We provide an online dashboard [demo version](http://39.97.63.215:9080/apisix/dashboard), you can try without install APISIX.
 
 ## Install
 
