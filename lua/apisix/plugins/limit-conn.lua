@@ -10,7 +10,7 @@ local schema = {
         conn = {type = "integer", minimum = 0},
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", minimum = 0},
-        key = {type = "string", enum = {"remote_addr"}},
+        key = {type = "string", enum = {"remote_addr", "server_addr"}},
         rejected_code = {type = "integer", minimum = 200},
     },
     required = {"conn", "burst", "default_conn_delay", "key", "rejected_code"}
@@ -49,8 +49,7 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local ip = core.request.get_remote_client_ip(ctx)
-    local key = ip .. ctx.conf_type .. ctx.conf_version
+    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     local rejected_code = conf.rejected_code
 
     local delay, err = lim:incoming(key, true)

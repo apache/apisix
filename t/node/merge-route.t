@@ -192,3 +192,28 @@ qr/X-RateLimit-Limit/
 qr/1980/
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: hit routes two times, checker service configuration
+--- config
+location /t {
+    content_by_lua_block {
+        ngx.sleep(0.2)
+        local t = require("lib.test_admin").test
+        local code, body = t('/server_port',
+            ngx.HTTP_GET
+        )
+        ngx.say(body)
+
+        code, body = t('/server_port',
+            ngx.HTTP_GET
+        )
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_log eval
+[qr/merge_service_route.*"time_window":60,"rejected_code":503/,
+qr/merge_service_route.*"time_window":60,"rejected_code":503/]

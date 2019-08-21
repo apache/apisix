@@ -15,7 +15,6 @@ description = {
 }
 
 dependencies = {
-    "lua-resty-libr3 = 1.0",
     "lua-resty-template = 1.9",
     "lua-resty-etcd = 0.6",
     "lua-resty-balancer = 0.02rc5",
@@ -28,6 +27,7 @@ dependencies = {
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 0.4",
+    "lua-resty-iputils = 0.3.0-1",
 }
 
 build = {
