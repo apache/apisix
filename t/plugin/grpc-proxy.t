@@ -98,7 +98,6 @@ passed
 [error]
 
 
-
 === TEST 3: hit route
 --- request
 GET /grpctest
@@ -106,3 +105,45 @@ GET /grpctest
 qr/\{"message":"Hello "\}/
 --- no_error_log
 [error]
+
+
+=== TEST 2: wrong service protocol
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/grpctest",
+                    "service_protocol": "asf",
+                    "plugins": {
+                        "grpc-proxy": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "SayHello"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- no_error_log
+[error]
+
+

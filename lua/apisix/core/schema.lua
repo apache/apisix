@@ -259,8 +259,7 @@ local route = [[{
             "uniqueItems": true
         },
         "service_protocol": {
-            "type": "string",
-            "maxLength": 20
+            "enum": [ "grpc", "http" ]
         },
         "desc": {"type": "string", "maxLength": 256},
         "plugins": ]] .. json.encode(plugins_schema) .. [[,
