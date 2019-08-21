@@ -32,6 +32,8 @@ do_install() {
     sudo add-apt-repository -y ppa:longsleep/golang-backports
     sudo apt-get update
     sudo apt-get install golang
+    
+    export GO111MOUDULE=on
 
     export_or_prefix
 
@@ -47,7 +49,11 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     sudo service etcd start
-    go run ./grpc_server_example/main.go &
+
+    cd grpc_server_example/
+    go run main.go &
+    cd ..
+
     ./bin/apisix help
     ./bin/apisix init
     ./bin/apisix init_etcd

@@ -19,7 +19,6 @@ export_or_prefix() {
 before_install() {
     HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug
     brew upgrade go
-    go clean
     export GO111MOUDULE=on
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     export_or_prefix
@@ -43,8 +42,9 @@ script() {
     luarocks install luacheck
     brew services start etcd
 
-    go env
-    go run ./grpc_server_example/main.go &
+    cd grpc_server_example/
+    go run main.go &
+    cd ..
 
     make help
     make init
