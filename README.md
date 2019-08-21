@@ -59,7 +59,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Bot detection**: TODO.
 
 ## Online Demo Dashboard
-We provide an online dashboard [demo version](http://39.97.63.215:9080/apisix/dashboard), you can try without install APISIX.
+We provide an online dashboard [demo version](http://apisix.iresty.com)， make it easier for you to understand APISIX.
 
 ## Install
 
