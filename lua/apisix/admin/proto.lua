@@ -1,4 +1,6 @@
 local core = require("apisix.core")
+local get_routes = require("apisix.http.router").http_routes
+local get_services = require("apisix.http.service").services
 local tostring = tostring
 
 
@@ -86,10 +88,52 @@ function _M.post(id, conf)
     return res.status, res.body
 end
 
+function _M.check_proto_used(plugins, deleting, ptype, pid)
+
+    core.log.info("plugins1: ", core.json.delay_encode(plugins, true))
+
+    if plugins then
+        if type(plugins) == "table" and plugins["grpc-proxy"]
+           and plugins["grpc-proxy"].proto_id
+           and tostring(plugins["grpc-proxy"].proto_id) == deleting then
+            return 400, {error_msg = "can not delete this proto,"
+                                     .. ptype .. " [" .. pid
+                                     .. "] is still using it now"}
+        end
+    end
+end
 
 function _M.delete(id)
     if not id then
         return 400, {error_msg = "missing proto id"}
+    end
+
+    local routes, routes_ver = get_routes()
+
+    core.log.info("routes: ", core.json.delay_encode(routes, true))
+    core.log.info("routes_ver: ", routes_ver)
+
+    if routes_ver and routes then
+        for _, route in ipairs(routes) do
+            if type(route) == "table" and route.value
+               and route.value.plugins then
+                  return _M.check_proto_used(route.value.plugins, id, "route", route.value.id)
+            end
+        end
+    end
+
+    local services, services_ver = get_services()
+    
+    core.log.info("services: ", core.json.delay_encode(services, true))
+    core.log.info("services_ver: ", services_ver)
+
+    if services_ver and services then
+        for _, service in ipairs(services) do
+            if type(service) == "table" and service.value
+               and service.value.plugins then
+                  return _M.check_proto_used(service.value.plugins, id, "service", service.value.id)
+            end
+        end
     end
 
     local key = "/proto/" .. id
