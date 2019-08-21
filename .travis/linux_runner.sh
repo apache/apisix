@@ -43,6 +43,10 @@ do_install() {
     git clone https://github.com/membphis/test-nginx.git test-nginx
 
     git clone https://github.com/nic-chen/grpc_server_example.git grpc_server_example
+
+    cd grpc_server_example/
+    go build -o grpc_server_example main.go
+    cd ..
 }
 
 script() {
@@ -50,9 +54,7 @@ script() {
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     sudo service etcd start
 
-    cd grpc_server_example/
-    go run main.go &
-    cd ..
+    ./grpc_server_example/grpc_server_example &
 
     ./bin/apisix help
     ./bin/apisix init
