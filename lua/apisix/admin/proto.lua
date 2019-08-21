@@ -1,3 +1,5 @@
+local type = type
+local ipairs = ipairs
 local core = require("apisix.core")
 local get_routes = require("apisix.http.router").http_routes
 local get_services = require("apisix.http.service").services
@@ -123,7 +125,7 @@ function _M.delete(id)
     end
 
     local services, services_ver = get_services()
-    
+
     core.log.info("services: ", core.json.delay_encode(services, true))
     core.log.info("services_ver: ", services_ver)
 
