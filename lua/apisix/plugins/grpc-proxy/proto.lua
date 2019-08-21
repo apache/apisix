@@ -26,8 +26,13 @@ local function create_proto_obj(proto_id)
         return nil, "failed to find proto by id: " .. proto_id
     end
 
-    local _p = protoc.new()
-    _p:load(content)
+    local _p  = protoc.new()
+    local res = _p:load(content)
+
+    if not res or not _p.loaded then
+        return nil, "failed to load proto content"
+    end
+
 
     return _p.loaded
 end
