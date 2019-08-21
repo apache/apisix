@@ -43,6 +43,7 @@ script() {
     luarocks install luacheck
     brew services start etcd
 
+    go env
     go run ./grpc_server_example/main.go &
 
     make help
