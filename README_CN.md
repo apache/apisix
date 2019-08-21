@@ -41,6 +41,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **[限制并发](doc/plugins/limit-conn-cn.md)**
 - **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
 - **监控和指标**: [Prometheus](doc/plugins/prometheus-cn.md)
+- **[gRPC-Proxy](doc/plugins/grpc-proxy-cn.md)**：REST <-> gRPC proxying.
 - **自定义插件**: 允许挂载常见阶段，例如`rewrite`，`access`，`header filer`，`body filter`和`log`，还允许挂载 `balancer` 阶段。
 - **控制台**: 内置控制台来操作 APISIX 集群。
 - **CLI**: 使用命令行来启动、关闭和重启 APISIX。

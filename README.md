@@ -44,6 +44,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **[Limit-concurrency](doc/plugins/limit-conn.md)**
 - **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
 - **Monitoring and Metrics**: [Prometheus](doc/plugins/prometheus.md)
+- **[gRPC-Proxy](doc/plugins/grpc-proxy.md)**：REST <-> gRPC proxying.
 - **Custom plugins**: Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
 - **Dashboard**: Built-in dashboard to control APISIX.
 - **CLI**: start\stop\reload APISIX through the command line.

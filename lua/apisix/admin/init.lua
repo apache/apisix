@@ -17,6 +17,7 @@ local resources = {
     schema    = require("apisix.admin.schema"),
     ssl       = require("apisix.admin.ssl"),
     plugins   = require("apisix.admin.plugins"),
+    proto     = require("apisix.admin.proto"),
 }
 
 

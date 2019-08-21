@@ -1,4 +1,5 @@
 local json = require('rapidjson')
+local cjson = require('cjson.safe')
 local schema_validator = json.SchemaValidator
 local schema_doc = json.SchemaDocument
 local json_doc = json.Document
@@ -244,7 +245,7 @@ local upstream_schema = {
 }
 
 
-_M.route = [[{
+local route = [[{
     "type": "object",
     "properties": {
         "methods": {
@@ -256,6 +257,9 @@ _M.route = [[{
                          "OPTIONS"]
             },
             "uniqueItems": true
+        },
+        "service_protocol": {
+            "enum": [ "grpc", "http" ]
         },
         "desc": {"type": "string", "maxLength": 256},
         "plugins": ]] .. json.encode(plugins_schema) .. [[,
@@ -288,6 +292,13 @@ _M.route = [[{
     ],
     "additionalProperties": false
 }]]
+do
+    local route_t, err = cjson.decode(route)
+    if err then
+        error("invalid route: " .. route)
+    end
+    _M.route = cjson.encode(route_t)
+end
 
 
 _M.service = {
@@ -341,6 +352,18 @@ _M.ssl = {
         }
     },
     required = {"sni", "key", "cert"},
+    additionalProperties = false,
+}
+
+
+_M.proto = {
+    type = "object",
+    properties = {
+        content = {
+            type = "string", minLength = 1, maxLength = 4096
+        }
+    },
+    required = {"content"},
     additionalProperties = false,
 }
 
