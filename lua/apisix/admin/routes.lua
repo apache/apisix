@@ -27,7 +27,7 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "wrong route id"}
     end
 
-    core.log.info("schema: ", core.json.delay_encode(core.schema.route))
+    core.log.info("schema: ", core.schema.route)
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.route, conf)
     if not ok then

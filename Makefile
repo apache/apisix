@@ -52,7 +52,8 @@ check:
 		lua/apisix/admin/*.lua \
 		lua/apisix/core/*.lua \
 		lua/apisix/http/*.lua \
-		lua/apisix/plugins/*.lua > \
+		lua/apisix/plugins/*.lua \
+		lua/apisix/plugins/grpc-proxy/*.lua > \
 		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 
