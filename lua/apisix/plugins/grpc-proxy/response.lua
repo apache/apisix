@@ -21,7 +21,7 @@ return function(proto, service, method)
     end
 
     if chunk ~= "" then
-        buffered[#buffered + 1] = chunk
+        core.table.insert(buffered, chunk)
         ngx.arg[1] = nil
     end
 

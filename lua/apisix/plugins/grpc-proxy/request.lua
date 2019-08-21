@@ -33,7 +33,6 @@ return function (proto, service, method, default_values)
     ngx.req.set_method(ngx.HTTP_POST)
     ngx.req.set_uri("/" .. service .. "/" .. method, false)
     ngx.req.set_uri_args({})
-    ngx.req.init_body(#message)
     ngx.req.set_body_data(message)
     return true
 end

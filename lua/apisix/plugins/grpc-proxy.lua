@@ -62,6 +62,7 @@ end
 
 function _M.header_filter(conf, ctx)
     ngx.header["Content-Type"] = "application/json"
+    ngx.header["Trailer"] = {"grpc-status", "grpc-message"}
 end
 
 

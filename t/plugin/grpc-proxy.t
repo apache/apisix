@@ -14,6 +14,7 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+log_level('debug');
 
 run_tests;
 
@@ -98,7 +99,7 @@ passed
 
 
 
-=== TEST 3: hit route
+=== TEST 3: hit route (test::nginx has bug, it do not support HTTP Trailer)
 --- request
 GET /grpctest
 --- response_body
