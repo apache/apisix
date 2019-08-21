@@ -107,7 +107,7 @@ qr/\{"message":"Hello "\}/
 [error]
 
 
-=== TEST 2: wrong service protocol
+=== TEST 4: wrong service protocol
 --- config
     location /t {
         content_by_lua_block {
