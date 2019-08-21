@@ -17,7 +17,7 @@ export_or_prefix() {
 }
 
 before_install() {
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug 
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug
     brew upgrade go
     go clean
     export GO111MOUDULE=on
@@ -32,7 +32,7 @@ do_install() {
     make dev
     make dev_r3
 
-    git clone https://github.com/openresty/test-nginx.git test-nginx
+    git clone https://github.com/membphis/test-nginx.git test-nginx
     git clone https://github.com/nic-chen/grpc_server_example.git grpc_server_example
 }
 

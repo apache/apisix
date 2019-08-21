@@ -99,11 +99,10 @@ passed
 
 
 
-=== TEST 3: hit route (test::nginx has bug, it do not support HTTP Trailer)
+=== TEST 3: hit route
 --- request
 GET /grpctest
---- response_body
-hello world
+--- response_body eval
+qr/\{"message":"Hello "\}/
 --- no_error_log
 [error]
---- SKIP
