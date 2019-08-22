@@ -95,9 +95,9 @@ function _M.check_proto_used(plugins, deleting, ptype, pid)
     core.log.info("plugins1: ", core.json.delay_encode(plugins, true))
 
     if plugins then
-        if type(plugins) == "table" and plugins["grpc-proxy"]
-           and plugins["grpc-proxy"].proto_id
-           and tostring(plugins["grpc-proxy"].proto_id) == deleting then
+        if type(plugins) == "table" and plugins["grpc-transcode"]
+           and plugins["grpc-transcode"].proto_id
+           and tostring(plugins["grpc-transcode"].proto_id) == deleting then
             return 400, {error_msg = "can not delete this proto,"
                                      .. ptype .. " [" .. pid
                                      .. "] is still using it now"}

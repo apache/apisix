@@ -1,5 +1,5 @@
 
-local util   = require("apisix.plugins.grpc-proxy.util")
+local util   = require("apisix.plugins.grpc-transcode.util")
 local core   = require("apisix.core")
 local pb     = require("pb")
 local bit    = require("bit")

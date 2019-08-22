@@ -39,7 +39,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 
 ### 示例
 
-#### 使用 grpc-proxy 插件
+#### 使用 grpc-transcode 插件
 
 在指定 route 中，代理 grpc 服务接口:
 
@@ -53,7 +53,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
     "uri": "/grpctest",
     "service_protocol": "grpc",
     "plugins": {
-        "grpc-proxy": {
+        "grpc-transcode": {
          "proto_id": "1",
          "service": "helloworld.Greeter",
          "method": "SayHello"
