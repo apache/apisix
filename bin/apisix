@@ -419,7 +419,7 @@ local function init_etcd(show_output)
     local etcd_conf = yaml_conf.etcd
     local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
-    local timeout = etcd_conf.timeout or 1
+    local timeout = etcd_conf.timeout or 3
 
     for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                "/plugins", "/consumers", "/node_status",
