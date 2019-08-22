@@ -26,7 +26,7 @@ dependencies = {
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 0.4",
+    "lua-resty-radixtree = 0.5",
     "lua-resty-iputils = 0.3.0-1",
     "lua-protobuf = 0.3.1",
 }
