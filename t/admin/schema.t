@@ -14,7 +14,7 @@ __DATA__
 --- request
 GET /apisix/admin/schema/route
 --- response_body eval
-qr/"plugins": \{"type":"object"}/
+qr/"plugins":\{"type":"object"}/
 --- no_error_log
 [error]
 

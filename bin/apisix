@@ -128,7 +128,7 @@ http {
             apisix.http_balancer_phase()
         }
 
-        keepalive 32;
+        keepalive 320;
     }
 
     init_by_lua_block {
@@ -231,6 +231,33 @@ http {
                 apisix.http_header_filter_phase()
             }
 
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
+        location @grpc_pass {
+
+            access_by_lua_block {
+                apisix.grpc_access_phase()
+            }
+
+            grpc_set_header   Content-Type application/grpc;
+            grpc_socket_keepalive on;
+            grpc_pass         grpc://apisix_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
             log_by_lua_block {
                 apisix.http_log_phase()
             }
@@ -327,6 +354,7 @@ init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
 reload:     reload the apisix server
+version:    print the version of apisix
 ]])
 end
 
@@ -392,7 +420,7 @@ local function init_etcd(show_output)
     local etcd_conf = yaml_conf.etcd
     local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
-    local timeout = etcd_conf.timeout or 1
+    local timeout = etcd_conf.timeout or 3
 
     for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                "/plugins", "/consumers", "/node_status",
@@ -443,6 +471,11 @@ function _M.reload()
     local cmd = openresty_args .. [[ -s reload]]
     -- print(cmd)
     os.execute(cmd)
+end
+
+function _M.version()
+    local ver = require("apisix.core.version")
+    print(ver['VERSION'])
 end
 
 local cmd_action = arg[1]
