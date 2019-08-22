@@ -1,16 +1,16 @@
-[English](grpc-proxy.md)
-# grpc-proxy
+[中文](grpc-transcoding-cn.md)
+# grpc-transcoding
 
 HTTP(s) -> APISIX -> gRPC server
 
 ### Proto
 
-#### 参数
-* `content`: `.proto` 文件的内容
+#### Parameters
+* `content`: `.proto` file's content.
 
-#### 添加proto
+#### Add a proto
 
-路径中最后的数字，会被用作 proto 的 id 做唯一标识，比如下面示例的 proto `id` 是 `1` ：
+Here's an example, adding a proto which `id` is `1`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
@@ -29,22 +29,20 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 }'
 ```
 
-### 参数
+### Parameters
 
-* `proto_id`: `.proto`内容的id.
-* `service`:  grpc服务名.
-* `method`:   grpc服务中要调用的方法名.
+* `proto_id`: `.proto` content id.
+* `service`:  the grpc service name.
+* `method`:   the method name of grpc service.
 
+### example
 
+#### enable plugin
 
-### 示例
+Here's an example, to enable the grpc-proxy plugin to specified route:
 
-#### 使用 grpc-proxy 插件
-
-在指定 route 中，代理 grpc 服务接口:
-
-* 注意： 这个 route 的属性`service_protocal` 必须设置为 `grpc`
-* 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
+* attention: the route's option `service_protocal` must be `grpc`
+* the grpc server example：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
@@ -54,9 +52,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
     "service_protocol": "grpc",
     "plugins": {
         "grpc-proxy": {
-         "proto_id": "1",
-         "service": "helloworld.Greeter",
-         "method": "SayHello"
+            "proto_id": "1",
+            "service": "helloworld.Greeter",
+            "method": "SayHello"
         }
     },
     "upstream": {
@@ -69,12 +67,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
 ```
 
 
-#### 测试
+#### test plugin
 
-访问上面配置的 route：
-
+The above configuration proxy :
 ```shell
-$ curl -i http://127.0.0.1:9080/grpctest
+curl -i http://127.0.0.1:9080/grpctest
+```
+
+response:
+```
 HTTP/1.1 200 OK
 Date: Fri, 16 Aug 2019 11:55:36 GMT
 Content-Type: application/json
@@ -86,5 +87,5 @@ Proxy-Connection: keep-alive
 {"message":"Hello world"}
 ```
 
-这表示已成功代理。
+This means that the proxying is working.
 
