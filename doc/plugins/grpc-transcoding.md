@@ -39,7 +39,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 
 #### enable plugin
 
-Here's an example, to enable the grpc-proxy plugin to specified route:
+Here's an example, to enable the grpc-transcode plugin to specified route:
 
 * attention: the route's option `service_protocal` must be `grpc`
 * the grpc server example：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
@@ -51,7 +51,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
     "uri": "/grpctest",
     "service_protocol": "grpc",
     "plugins": {
-        "grpc-proxy": {
+        "grpc-transcode": {
             "proto_id": "1",
             "service": "helloworld.Greeter",
             "method": "SayHello"

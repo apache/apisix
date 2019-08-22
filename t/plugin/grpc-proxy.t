@@ -69,7 +69,7 @@ passed
                     "uri": "/grpctest",
                     "service_protocol": "grpc",
                     "plugins": {
-                        "grpc-proxy": {
+                        "grpc-transcode": {
                             "proto_id": "1",
                             "service": "helloworld.Greeter",
                             "method": "SayHello"
@@ -98,6 +98,7 @@ passed
 [error]
 
 
+
 === TEST 3: hit route
 --- request
 GET /grpctest
@@ -105,6 +106,7 @@ GET /grpctest
 qr/\{"message":"Hello "\}/
 --- no_error_log
 [error]
+
 
 
 === TEST 4: wrong service protocol
@@ -119,7 +121,7 @@ qr/\{"message":"Hello "\}/
                     "uri": "/grpctest",
                     "service_protocol": "asf",
                     "plugins": {
-                        "grpc-proxy": {
+                        "grpc-transcode": {
                             "proto_id": "1",
                             "service": "helloworld.Greeter",
                             "method": "SayHello"
@@ -145,5 +147,3 @@ GET /t
 --- error_code: 400
 --- no_error_log
 [error]
-
-

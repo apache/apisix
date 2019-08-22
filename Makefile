@@ -32,7 +32,7 @@ else
 	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
 endif
 
-### dev_r3:        Create a development ENV of r3
+### dev_r3:       Create a development ENV for r3
 .PHONY: dev_r3
 dev_r3:
 ifeq ($(UNAME),Darwin)
@@ -53,7 +53,7 @@ check:
 		lua/apisix/core/*.lua \
 		lua/apisix/http/*.lua \
 		lua/apisix/plugins/*.lua \
-		lua/apisix/plugins/grpc-proxy/*.lua > \
+		lua/apisix/plugins/grpc-transcode/*.lua > \
 		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 
@@ -120,6 +120,9 @@ install:
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin/
 	$(INSTALL) lua/apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/grpc-transcode/
+	$(INSTALL) lua/apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/grpc-transcode/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins
 	$(INSTALL) lua/apisix/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/
