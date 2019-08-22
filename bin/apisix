@@ -354,6 +354,7 @@ init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
 reload:     reload the apisix server
+version:    print the version of apisix
 ]])
 end
 
@@ -470,6 +471,11 @@ function _M.reload()
     local cmd = openresty_args .. [[ -s reload]]
     -- print(cmd)
     os.execute(cmd)
+end
+
+function _M.version()
+    local ver = require("apisix.core.version")
+    print(ver['VERSION'])
 end
 
 local cmd_action = arg[1]
