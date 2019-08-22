@@ -19,7 +19,12 @@ return function (proto, service, method, default_values)
     ngx.req.read_body()
     local encoded = pb.encode(m.input_type,
         util.map_message(m.input_type, default_values or {}))
-    local size = string.len(encoded)
+
+    if not encoded then
+        return false, "failed to encode request data to protobuf"
+    end
+
+    local size = #encoded
     local prefix = {
         string.char(0),
         string.char(bit.band(bit.rshift(size, 24), 0xFF)),

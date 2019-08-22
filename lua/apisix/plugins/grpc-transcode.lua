@@ -61,12 +61,20 @@ end
 
 
 function _M.header_filter(conf, ctx)
+    if ngx.status >= 300 then
+        return
+    end
+
     ngx.header["Content-Type"] = "application/json"
     ngx.header["Trailer"] = {"grpc-status", "grpc-message"}
 end
 
 
 function _M.body_filter(conf, ctx)
+    if ngx.status >= 300 then
+        return
+    end
+
     local proto_obj = ctx.proto_obj
     if not proto_obj then
         return
