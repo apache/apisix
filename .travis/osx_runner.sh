@@ -43,8 +43,12 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
-    luarocks install luacheck
     brew services start etcd
+    sleep 1
+
+    luarocks install luacheck
+
+    sudo cpanm Test::Nginx
 
     ./grpc_server_example/grpc_server_example &
 
@@ -54,8 +58,6 @@ script() {
     mkdir -p logs
     sleep 1
     sudo make stop
-
-    sudo cpanm Test::Nginx
 
     sleep 1
     make check || exit 1
