@@ -32,7 +32,7 @@ do_install() {
     sudo add-apt-repository -y ppa:longsleep/golang-backports
     sudo apt-get update
     sudo apt-get install golang
-    
+
     export GO111MOUDULE=on
 
     export_or_prefix
@@ -40,9 +40,8 @@ do_install() {
     sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
     sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}luajit lua-resty-libr3 --tree=deps --local
 
-    git clone https://github.com/membphis/test-nginx.git test-nginx
-
-    git clone https://github.com/nic-chen/grpc_server_example.git grpc_server_example
+    git clone https://github.com/iresty/test-nginx.git test-nginx
+    git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
 
     cd grpc_server_example/
     go build -o grpc_server_example main.go

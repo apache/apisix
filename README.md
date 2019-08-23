@@ -50,7 +50,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Version Control**: Supports rollbacks of operations.
 - **CLI**: start\stop\reload APISIX through the command line.
 - **REST API**
-- **Clustering**
+- **Clustering**: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md).
 - **Scalability**
 - **High performance**: The single-core QPS reaches 24k with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
@@ -102,8 +102,11 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 #### Install APISIX
 
 ```shell
-sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
+luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
+
+If you got some error like `unknow flag --lua-dir`, this is because `luarocks` version is too low.
+We need to remove option `lua-dir` and run again: `luarocks install apisix`.
 
 If all goes well, you will see the message like this:
 
