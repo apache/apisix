@@ -74,7 +74,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
 访问上面配置的 route：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/grpctest
+$ curl -i http://127.0.0.1:9080/grpctest?name=world
 HTTP/1.1 200 OK
 Date: Fri, 16 Aug 2019 11:55:36 GMT
 Content-Type: application/json
