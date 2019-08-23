@@ -25,3 +25,15 @@ Yes, in version 0.6 we have dashboard built in, you can operate APISIX through t
 ## Can I write my own plugin?
 
 Of course, APISIX provides flexible custom plugins for developers and businesses to write their own logic.
+
+## Why we choose etcd as the configuration center?
+
+For the configuration center, configuration storage is only the most basic function, and APISIX also needs the following features:
+
+1. Cluster
+2. Transactions
+3. Multi-version Concurrency Control
+4. Change Notification
+5. High Performance
+
+See more [etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart).
