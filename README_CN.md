@@ -100,6 +100,8 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
 
+如果你得到 `unknow flag --lua-dir` 这类错误，这是因为 `luarocks` 版本过低。这时我们需要移除 `lua-dir` 选项重新运行：`luarocks install apisix`。
+
 如果一切顺利，你会在最后看到这样的信息：
 
 > apisix is now built and installed in /usr (license: Apache License 2.0)
