@@ -102,8 +102,11 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 #### Install APISIX
 
 ```shell
-sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
+luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
+
+If you got some error like `unknow flag --lua-dir`, this is because `luarocks` version is too low.
+We need to remove option `lua-dir` and run again: `luarocks install apisix`.
 
 If all goes well, you will see the message like this:
 
