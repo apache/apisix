@@ -26,17 +26,14 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 
 当然可以，APISIX 提供了灵活的自定义插件，方便开发者和企业编写自己的逻辑。
 
-## 我们为什么选择 etcd？
+## 我们为什么选择 etcd 作为配置中心？
 
-主要看中如下几个特性：
+对于配置中心，配置存储只是最基本功能，APISIX 还需要下面几个特性：
 
-1. 良好的集群支持
-2. 自带高可用解决方案
-3. 配置版本号跟踪
-4. 支持 watch 方法增量获取
-5. 支持获取历史版本配置
-6. 完整持久化处理
-7. 高性能
-8. 支持事务
+1. 集群支持
+2. 事务
+3. 历史版本管理
+4. 变化通知
+5. 高性能
 
-在 APISIX 中需要一个配置中心，上面提到的很多功能是传统关系型数据库无法提供的。与 etcd 同类软件还有 Consul ，APISIX 将来也许会支持 Consul。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和KV数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
