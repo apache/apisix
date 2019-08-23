@@ -47,7 +47,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **版本控制**：支持操作的多次回滚。
 - **CLI**: 使用命令行来启动、关闭和重启 APISIX。
 - **REST API**
-- **集群**
+- **集群**: APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
 - **可扩展**
 - **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.6 毫秒。
 - **防御 ReDoS(正则表达式拒绝服务)**
