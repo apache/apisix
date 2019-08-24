@@ -2,8 +2,9 @@ use t::APISix;
 
 no_root_location();
 
-my $unmae = `uname`;
-if ($unmae eq "linux") {
+my $uname = eval { `uname` };
+chomp $uname;
+if ($uname eq "linux") {
     plan(skip_all => "skip remote address(IPv6) under linux");
 } else {
     plan 'no_plan';
