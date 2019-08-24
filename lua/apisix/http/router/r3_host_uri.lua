@@ -47,6 +47,7 @@ local function push_valid_route(route)
         core.table.insert(only_uri_routes, {
             path = route.value.uri,
             method = route.value.methods,
+            remote_addr = route.value.remote_addr,
             handler = function (params, api_ctx)
                 api_ctx.matched_params = params
                 api_ctx.matched_route = route
@@ -64,6 +65,7 @@ local function push_valid_route(route)
     core.table.insert(host_uri_routes, {
         path = "/" .. host .. route.value.uri,
         method = route.value.methods,
+        remote_addr = route.value.remote_addr,
         handler = function (params, api_ctx)
             api_ctx.matched_params = params
             api_ctx.matched_route = route
@@ -104,6 +106,7 @@ function _M.match(api_ctx)
 
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.method
+    match_opts.remote_addr = api_ctx.var.remote_addr
 
     local host_uri = "/" .. str_reverse(api_ctx.var.host) .. api_ctx.var.uri
     local ok = host_uri_router:dispatch2(nil, host_uri, match_opts, api_ctx)

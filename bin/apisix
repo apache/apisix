@@ -146,7 +146,7 @@ http {
         listen {* port_admin *};
 
         location /apisix/admin/ {
-            {% for _, allow_ip in ipairs(allow_admin) do %}
+            {% for _, allow_ip in ipairs(allow_admin or {}) do %}
             allow {*allow_ip*};
             {% end %}
             deny all;
@@ -161,6 +161,10 @@ http {
     server {
         listen {* node_listen *};
         listen {* node_ssl_listen *} ssl;
+        {% if enable_ipv6 then %}
+        listen [::]:{* node_listen *};
+        listen [::]:{* node_ssl_listen *} ssl;
+        {% end %}
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
