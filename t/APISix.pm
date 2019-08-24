@@ -105,7 +105,7 @@ _EOC_
     $block->set_value("http_config", $http_config);
 
     my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
-    my $TEST_NGINX_SERVER_PORT = $ENV{TEST_NGINX_SERVER_PORT} // 1984;
+    my $TEST_NGINX_SERVER_PORT = 12345;
 
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
