@@ -71,7 +71,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
 
 The above configuration proxy :
 ```shell
-curl -i http://127.0.0.1:9080/grpctest
+curl -i http://127.0.0.1:9080/grpctest?name=world
 ```
 
 response:
