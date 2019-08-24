@@ -1,6 +1,13 @@
-use t::APISix 'no_plan';
+use t::APISix;
 
 no_root_location();
+
+my $unmae = `uname`;
+if ($unmae eq "linux") {
+    plan(skip_all => "skip remote address(IPv6) under linux");
+} else {
+    plan 'no_plan';
+}
 
 run_tests();
 
