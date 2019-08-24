@@ -49,6 +49,7 @@ passed
 
 
 === TEST 2: IPv6 /not_found
+--- listen_ipv6
 --- config
 location /t {
     content_by_lua_block {
@@ -67,6 +68,7 @@ qr{.*404 Not Found.*}
 
 
 === TEST 3: IPv4 /not_found
+--- listen_ipv6
 --- request
 GET /not_found
 --- error_code: 404
@@ -78,6 +80,7 @@ qr{.*404 Not Found.*}
 
 
 === TEST 4: IPv6 /hello
+--- listen_ipv6
 --- config
 location /t {
     content_by_lua_block {
@@ -105,6 +108,7 @@ close: 1 nil
 
 
 === TEST 5: IPv4 /hello
+--- listen_ipv6
 --- request
 GET /hello
 --- error_code: 404
