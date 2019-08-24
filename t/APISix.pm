@@ -105,11 +105,16 @@ _EOC_
     $block->set_value("http_config", $http_config);
 
     my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+    my $ipv6_listen_conf = '';
+    if (defined $block->listen_ipv6) {
+        $ipv6_listen_conf = "listen \[::1\]:12345;"
+    }
 
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
     my $config = $block->config // '';
     $config .= <<_EOC_;
+        $ipv6_listen_conf
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
         ssl_certificate             cert/apisix.crt;
