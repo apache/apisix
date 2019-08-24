@@ -2,12 +2,11 @@ use t::APISix;
 
 no_root_location();
 
-my $uname = eval { `uname` };
-chomp $uname;
-if ($uname eq "linux") {
-    plan(skip_all => "skip remote address(IPv6) under linux");
-} else {
+my $travis_os_name = $ENV{TRAVIS_OS_NAME};
+if ($travis_os_name eq "osx") {
     plan 'no_plan';
+} else {
+    plan(skip_all => "skip remote address(IPv6) under linux");
 }
 
 run_tests();
