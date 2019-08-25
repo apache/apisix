@@ -1,3 +1,8 @@
+local ipairs = ipairs
+local pcall = pcall
+local loadstring = loadstring
+local require = require
+
 return function(plugin_name, priority)
     local core = require("apisix.core")
 
