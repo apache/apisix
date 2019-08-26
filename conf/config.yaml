@@ -38,3 +38,5 @@ plugins:                          # plugin list
   - zipkin
   - ip-restriction
   - grpc-transcode
+  - serverless-pre-function
+  - serverless-post-function
