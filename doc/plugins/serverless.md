@@ -1,14 +1,13 @@
 [中文](serverless-cn.md)
 # serverless
-There are two plug-ins for serverless, namely `serverless-pre-function` and `serverless-post-function'.
+There are two plug-ins for serverless, namely `serverless-pre-function` and `serverless-post-function`.
 
 The former runs at the beginning of the specified phase, while the latter runs at the end of the specified phase.
 
 Both plug-ins receive the same parameters.
 
 ### Parameters
-* `phase`: The default phase is `access`, if not specified. The valid phases are: `rewrite', `access`,`
-`Header_filer`, `body_filter', `log` and `balancer'.
+* `phase`: The default phase is `access`, if not specified. The valid phases are: `rewrite`, `access`,`Header_filer`, `body_filter`, `log` and `balancer`.
 
 * `functions`: A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially.
 
