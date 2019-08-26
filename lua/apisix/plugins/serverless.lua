@@ -66,6 +66,22 @@ return function(plugin_name, priority)
             conf.phase = 'access'
         end
 
+        local functions = conf.functions
+        for _, func_str in ipairs(functions) do
+            local func, err = loadstring(func_str)
+            if err then
+                return false, 'failed to loadstring: ' .. err
+            end
+
+            local ok, ret = pcall(func)
+            if not ok then
+                return false, 'pcall error: ' .. ret
+            end
+            if type(ret) ~= 'function' then
+                return false, 'only accept Lua function, the input code type is ' .. type(ret)
+            end
+        end
+
         return true
     end
 
