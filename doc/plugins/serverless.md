@@ -1,0 +1,91 @@
+[中文](serverless-cn.md)
+# serverless
+There are two plug-ins for serverless, namely `serverless-pre-function` and `serverless-post-function'.
+
+The former runs at the beginning of the specified phase, while the latter runs at the end of the specified phase.
+
+Both plug-ins receive the same parameters.
+
+### Parameters
+* `phase`: The default phase is `access`, if not specified. The valid phases are: `rewrite', `access`,`
+`Header_filer`, `body_filter', `log` and `balancer'.
+
+* `functions`: A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially.
+
+Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:
+```
+return function()
+    ngx.log(ngx.ERR, 'one')
+end
+```
+
+Closure is also legal:
+```
+local count = 1
+return function()
+    count = count + 1
+    ngx.say(count)
+end
+```
+
+ But code that is not a function type is illegal:
+ ```
+local count = 1
+ngx.say(count)
+```
+
+### Example
+
+#### enable plugin
+Here's an example, enable the serverless plugin on the specified route:
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "plugins": {
+            "serverless-pre-function": {
+                "phase": "rewrite",
+                "functions" : ["return function() ngx.log(ngx.ERR, 'serverless pre function'); end"]
+            }
+        },
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+#### test plugin
+ Use curl to access:
+ ```shell
+curl -i http://127.0.0.1:9080/index.html
+```
+
+Then you will find the message 'serverless pre-function' in the error.log,
+which indicates that the specified function is in effect.
+
+#### disable plugin
+When you want to disable the serverless plugin, it is very simple,
+ you can delete the corresponding json configuration in the plugin configuration,
+  no need to restart the service, it will take effect immediately:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+The serverless plugin has been disabled now. It works for other plugins.

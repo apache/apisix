@@ -247,6 +247,7 @@ passed
 [error]
 
 
+
 === TEST 8: set routes(id: 2)
 --- config
     location /t {
@@ -286,6 +287,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 9: hit route
