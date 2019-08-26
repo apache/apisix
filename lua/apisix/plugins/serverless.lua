@@ -78,7 +78,8 @@ return function(plugin_name, priority)
                 return false, 'pcall error: ' .. ret
             end
             if type(ret) ~= 'function' then
-                return false, 'only accept Lua function, the input code type is ' .. type(ret)
+                return false, 'only accept Lua function,'
+                               .. ' the input code type is ' .. type(ret)
             end
         end
 

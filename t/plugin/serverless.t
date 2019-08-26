@@ -1,6 +1,6 @@
 use t::APISix 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 no_long_string();
 no_root_location();
 run_tests;
@@ -484,3 +484,71 @@ GET /hello
 --- error_log
 one
 two
+
+
+
+=== TEST 17: closure
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "log",
+                            "functions" : ["local count = 1; return function() count = count + 1;ngx.log(ngx.ERR, 'serverless pre function:', count); end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "serverless-pre-function": {
+                                    "phase": "log",
+                            "functions" : ["local count = 1; return function() count = count + 1;ngx.log(ngx.ERR, 'serverless pre function:', count); end"]
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: check plugin
+--- request
+GET /hello
+--- error_log
+serverless pre function:2
