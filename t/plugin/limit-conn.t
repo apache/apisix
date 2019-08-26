@@ -20,9 +20,7 @@ add_block_preprocessor(sub {
     my ($block) = @_;
     my $port = $ENV{TEST_NGINX_SERVER_PORT};
 
-    my $config = $block->config // "";
-    $config .= <<_EOC_;
-
+    my $config = $block->config // <<_EOC_;
     location /access_root_dir {
         content_by_lua_block {
             local httpc = require "resty.http"
@@ -597,3 +595,189 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: key: http_x_real_ip
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 5,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "http_x_real_ip"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: exceeding the burst (X-Real-IP)
+--- config
+location /access_root_dir {
+    content_by_lua_block {
+        local port = ngx.var.server_port
+        local httpc = require "resty.http"
+        local hc = httpc:new()
+
+        local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
+            keepalive = false,
+            headers = {["X-Real-IP"] = "10.10.10.1"}
+        })
+        if res then
+            ngx.exit(res.status)
+        end
+    }
+}
+
+location /test_concurrency {
+    content_by_lua_block {
+        local reqs = {}
+        for i = 1, 10 do
+            reqs[i] = { "/access_root_dir" }
+        end
+        local resps = { ngx.location.capture_multi(reqs) }
+        for i, resp in ipairs(resps) do
+            ngx.say(resp.status)
+        end
+    }
+}
+--- more_headers
+X-Real-IP: 10.0.0.1
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+503
+503
+503
+503
+--- error_log
+limit key: 10.10.10.1route
+
+
+
+=== TEST 18: key: http_x_forwarded_for
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 5,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "http_x_forwarded_for"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: exceeding the burst(X-Forwarded-For)
+--- config
+location /access_root_dir {
+    content_by_lua_block {
+        local port = ngx.var.server_port
+        local httpc = require "resty.http"
+        local hc = httpc:new()
+
+        local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
+            keepalive = false,
+            headers = {["X-Forwarded-For"] = "10.10.10.2"}
+        })
+        if res then
+            ngx.exit(res.status)
+        end
+    }
+}
+
+location /test_concurrency {
+    content_by_lua_block {
+        local reqs = {}
+        for i = 1, 10 do
+            reqs[i] = { "/access_root_dir" }
+        end
+        local resps = { ngx.location.capture_multi(reqs) }
+        for i, resp in ipairs(resps) do
+            ngx.say(resp.status)
+        end
+    }
+}
+--- more_headers
+X-Real-IP: 10.0.0.1
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+503
+503
+503
+503
+--- error_log
+limit key: 10.10.10.2route
