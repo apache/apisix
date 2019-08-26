@@ -45,7 +45,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
 - **Monitoring and Metrics**: [Prometheus](doc/plugins/prometheus.md)
 - **[gRPC transcoding](doc/plugins/grpc-transcoding.md)**：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
-- Serverless: Invoke functions in each phase in APISIX.
+- **[Serverless](doc/plugins/serverless.md)**: Invoke functions in each phase in APISIX.
 - **Custom plugins**: Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
 - **Dashboard**: Built-in dashboard to control APISIX.
 - **Version Control**: Supports rollbacks of operations.
