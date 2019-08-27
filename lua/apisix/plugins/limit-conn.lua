@@ -10,7 +10,10 @@ local schema = {
         conn = {type = "integer", minimum = 0},
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", minimum = 0},
-        key = {type = "string", enum = {"remote_addr", "server_addr"}},
+        key = {type = "string",
+            enum = {"remote_addr", "server_addr", "http_x_real_ip",
+                    "http_x_forwarded_for"},
+        },
         rejected_code = {type = "integer", minimum = 200},
     },
     required = {"conn", "burst", "default_conn_delay", "key", "rejected_code"}
@@ -50,12 +53,12 @@ function _M.access(conf, ctx)
     end
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
-    local rejected_code = conf.rejected_code
+    core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
-            return rejected_code
+            return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)

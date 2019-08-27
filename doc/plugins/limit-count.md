@@ -5,7 +5,7 @@
 * `count`: is the specified number of requests threshold.
 * `time_window`: is the time window in seconds before the request count is reset.
 * `rejected_code`: The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.
-* `key`: is the user specified key to limit the rate, now only accept "remote_addr"(client's IP) as key
+* `key`: is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.
 
 ### example
 
