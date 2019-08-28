@@ -1,4 +1,6 @@
 local core = require("apisix.core")
+local ngx_re = require("ngx.re")
+local openidc = require("resty.openidc")
 
 local plugin_name = "openid-connect"
 
@@ -63,11 +65,48 @@ function _M.check_schema(conf)
 end
 
 
+local function has_bearer_access_token(ctx)
+    local auth_header = core.request.header(ctx, "Authorization")
+    if not auth_header then
+        return false
+    end
+
+    local res, err = ngx_re.split(auth_header, " ", nil, nil, 2)
+    if not res then
+        return false, err
+    end
+
+    if res[1] == "bearer" then
+        return true
+    end
+
+    return false
+end
+
+local function introspect(ctx, conf)
+    if has_bearer_access_token(ctx) or conf.bearer_only then
+        local res, err = openidc.introspect(conf)
+        if err then
+          if conf.bearer_only then
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '",error="' .. err .. '"'
+            utils.exit(ngx.HTTP_UNAUTHORIZED, err, ngx.HTTP_UNAUTHORIZED)
+          end
+          return nil
+        end
+        return res
+      end
+    return nil
+end
+
 function _M.access(conf, ctx)
     if not conf.redirect_uri then
         conf.redirect_uri = ctx.var.request_uri -- TODO: remove args
     end
 
+    local response
+    if conf.introspection_endpoint then
+        response = introspect(ctx, conf)
+    end
 end
 
 
