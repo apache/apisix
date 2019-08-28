@@ -40,3 +40,4 @@ plugins:                          # plugin list
   - grpc-transcode
   - serverless-pre-function
   - serverless-post-function
+  - openid-connect
