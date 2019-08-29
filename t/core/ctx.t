@@ -83,6 +83,7 @@ failed to fetch cookie value by name: cookie_host error: no cookie found in the 
             ngx.say("cookie_a: ", ctx.var["cookie_a"])
             ngx.say("cookie_b: ", ctx.var["cookie_b"])
             ngx.say("cookie_c: ", ctx.var["cookie_c"])
+            ngx.say("cookie_d: ", ctx.var["cookie_d"])
         }
     }
 --- more_headers
@@ -93,5 +94,6 @@ GET /t?a=aaa
 cookie_a: a
 cookie_b: bb
 cookie_c: ccc
+cookie_d: nil
 --- no_error_log
 [error]
