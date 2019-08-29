@@ -153,6 +153,7 @@ passed
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.say(require("cjson").encode(res))
             ngx.status = res.status
             local location = res.headers['Location']
             if location.find('https://samples.auth0.com/authorize') ~= -1 and
@@ -172,7 +173,6 @@ true
 --- error_code: 302
 --- no_error_log
 [error]
---- SKIP
 
 
 
