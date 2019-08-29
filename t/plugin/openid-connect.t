@@ -1,6 +1,6 @@
 use t::APISix 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 no_long_string();
 no_root_location();
 run_tests;
@@ -75,36 +75,7 @@ done
 
 
 
-=== TEST 4: sanity
---- config
-    location /t {
-        content_by_lua_block {
-            local oidc = require("resty.openidc")
-            local opts = {
-                client_id = "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                client_secret = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                discovery = "https://samples.auth0.com/.well-known/openid-configuration",
-                redirect_uri = "https://iresty.com",
-                ssl_verify = "no",
-                scope = "apisix"
-            }
-            local res, err = oidc.authenticate(opts)
-
-            ngx.log(ngx.ERR, err)
-            ngx.log(ngx.ERR, require("cjson").encode(res))
-        }
-    }
---- request
-GET /t
---- error_code: 302
---- response_headers_like
-Location: https:\/\/samples.auth0.com\/authorize\?scope=apisix&client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH&state=[\d\w]+&nonce=[\d\w]+&redirect_uri=https%3A%2F%2Firesty.com&response_type=code
---- no_error_log
-[error]
-
-
-
-=== TEST 5: add plugin
+=== TEST 4: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -119,6 +90,7 @@ Location: https:\/\/samples.auth0.com\/authorize\?scope=apisix&client_id=kbyuFDi
                                 "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
+                                "timeout": 5,
                                 "scope": "apisix"
                             }
                         },
@@ -140,6 +112,7 @@ Location: https:\/\/samples.auth0.com\/authorize\?scope=apisix&client_id=kbyuFDi
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": "no",
+                                    "timeout": 5,
                                     "scope": "apisix"
                                 }
                             },
@@ -167,5 +140,37 @@ Location: https:\/\/samples.auth0.com\/authorize\?scope=apisix&client_id=kbyuFDi
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: access
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location.find('https://samples.auth0.com/authorize') ~= -1 and
+                location.find('scope=apisix') ~= -1 and
+                location.find('client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
+                location.find('response_type=code') ~= -1 and
+                location.find('redirect_uri=https://iresty.com') ~= -1 then
+                ngx.say(true)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 5s
+--- response_body
+true
+--- error_code: 302
+--- no_error_log
+[error]
 --- no_error_log
 [error]
