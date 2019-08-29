@@ -94,7 +94,7 @@ local function introspect(ctx, conf)
         end
         if conf.bearer_only then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '",error="' .. err .. '"'
-            return core.response.exit(ngx.HTTP_UNAUTHORIZED, err)
+            return ngx.HTTP_UNAUTHORIZED, err
         end
     end
 
@@ -108,30 +108,30 @@ local function add_user_header(user)
 end
 
 
-local function make_oidc(conf)
-    local res, err = openidc.authenticate(conf)
-    if err then
-        return core.response.exit(500, err)
-    end
-    return res
-end
-
-
 function _M.access(conf, ctx)
     if not conf.redirect_uri then
         conf.redirect_uri = ctx.var.request_uri
     end
 
-    local response
+    local response, err
     if conf.introspection_endpoint then
-        response = introspect(ctx, conf)
+        response, err = introspect(ctx, conf)
+        if err then
+            core.log.error("failed to introspect in openidc: ", err)
+            return response
+        end
         if response then
             add_user_header(response)
         end
     end
 
     if not response then
-        response = make_oidc(conf)
+        local response, err = openidc.authenticate(conf)
+        if err then
+            core.log.error("failed to authenticate in openidc: ", err)
+            return 500
+        end
+
         if response then
             if response.user then
                 add_user_header(response.user)
