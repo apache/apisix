@@ -146,11 +146,12 @@ http {
         listen {* port_admin *};
 
         location /apisix/admin/ {
-            {% for _, allow_ip in ipairs(allow_admin or {}) do %}
-            allow {*allow_ip*};
-            {% end %}
-            deny all;
-
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -180,10 +181,12 @@ http {
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
-            {% for _, allow_ip in ipairs(allow_admin) do %}
-            allow {*allow_ip*};
-            {% end %}
-            deny all;
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
 
             content_by_lua_block {
                 apisix.http_admin()
@@ -197,10 +200,12 @@ http {
 
         location /apisix/dashboard/ {
             index index.html;
-            {% for _, allow_ip in ipairs(allow_admin) do %}
-            allow {*allow_ip*};
-            {% end %}
-            deny all;
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
 
             alias dashboard/;
 
