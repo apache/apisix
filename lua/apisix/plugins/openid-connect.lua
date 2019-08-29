@@ -50,6 +50,7 @@ function _M.check_schema(conf)
     if not conf.timeout then
         conf.timeout = 3
     end
+    conf.timeout = conf.timeout * 1000
     if not conf.introspection_endpoint_auth_method then
         conf.introspection_endpoint_auth_method = 'client_secret_basic'
     end
