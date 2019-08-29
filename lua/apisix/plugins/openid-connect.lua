@@ -15,7 +15,7 @@ local schema = {
         discovery = {type = "string"},
         scope = {type = "string"},
         ssl_verify = {type = "boolean"}, -- default is false
-        timeout = {type = "integer", minimum = 1}, --default is 3 secs
+        timeout = {type = "integer", minimum = 1}, --default is 3 seconds
         introspection_endpoint = {type = "string"}, --default is nil
         --default is client_secret_basic
         introspection_endpoint_auth_method = {type = "string"},
