@@ -177,10 +177,12 @@ function _M.http_access_phase()
         return ngx.exec("@grpc_pass")
     end
 
-    local up_options = route.value.upstream
-    for _, name in ipairs(upstream_names) do
-        if up_options[name] then
-            ngx_var[upstream_vars[name]] = up_options[name]
+    local upstream = route.value.upstream
+    if upstream then
+        for _, name in ipairs(upstream_names) do
+            if upstream[name] then
+                ngx_var[upstream_vars[name]] = upstream[name]
+            end
         end
     end
 
