@@ -172,5 +172,87 @@ true
 --- error_code: 302
 --- no_error_log
 [error]
+--- SKIP
+
+
+
+=== TEST 6: update plugin with bearer_only=true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
+                                "timeout": 5,
+                                "bearer_only": true,
+                                "scope": "apisix"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "openid-connect": {
+                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                    "redirect_uri": "https://iresty.com",
+                                    "ssl_verify": "no",
+                                    "timeout": 5,
+                                    "bearer_only": true,
+                                    "scope": "apisix"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: access
+--- request
+GET /hello
+--- error_code: 401
+--- response_headers_like
+WWW-Authenticate: Bearer realm=apisix
 --- no_error_log
 [error]
