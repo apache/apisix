@@ -1,6 +1,8 @@
 local core = require("apisix.core")
 local ngx_re = require("ngx.re")
 local openidc = require("resty.openidc")
+local ngx = ngx
+local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name = "openid-connect"
 
@@ -83,20 +85,37 @@ local function has_bearer_access_token(ctx)
     return false
 end
 
+
 local function introspect(ctx, conf)
     if has_bearer_access_token(ctx) or conf.bearer_only then
         local res, err = openidc.introspect(conf)
-        if err then
-          if conf.bearer_only then
-            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '",error="' .. err .. '"'
-            utils.exit(ngx.HTTP_UNAUTHORIZED, err, ngx.HTTP_UNAUTHORIZED)
-          end
-          return nil
+        if res then
+            return res
         end
-        return res
-      end
+        if conf.bearer_only then
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '",error="' .. err .. '"'
+            return core.response.exit(ngx.HTTP_UNAUTHORIZED, err)
+        end
+    end
+
     return nil
 end
+
+
+local function add_user_header(user)
+    local userinfo = core.json.encode(user)
+    ngx.req.set_header("X-Userinfo", ngx_encode_base64(userinfo))
+end
+
+
+local function make_oidc(conf)
+    local res, err = openidc.authenticate(conf)
+    if err then
+        return core.response.exit(500, err)
+    end
+    return res
+end
+
 
 function _M.access(conf, ctx)
     if not conf.redirect_uri then
@@ -106,6 +125,25 @@ function _M.access(conf, ctx)
     local response
     if conf.introspection_endpoint then
         response = introspect(ctx, conf)
+        if response then
+            add_user_header(response)
+        end
+    end
+
+    if not response then
+        response = make_oidc(conf)
+        if response then
+            if response.user then
+                add_user_header(response.user)
+            end
+            if response.access_token then
+                ngx.req.set_header("X-Access-Token", response.access_token)
+            end
+            if response.id_token then
+                local token = core.json.encode(response.id_token)
+                ngx.req.set_header("X-ID-Token", ngx.encode_base64(token))
+            end
+        end
     end
 end
 
