@@ -42,10 +42,10 @@ function _M.check_schema(conf)
     end
 
     if not conf.scope then
-        conf.scope = 'openid'
+        conf.scope = "openid"
     end
     if not conf.ssl_verify then
-        conf.ssl_verify = false
+        conf.ssl_verify = "no"
     end
     if not conf.timeout then
         conf.timeout = 3
