@@ -119,7 +119,7 @@ end
 
 function _M.access(conf, ctx)
     if not conf.redirect_uri then
-        conf.redirect_uri = ctx.var.request_uri -- TODO: remove args
+        conf.redirect_uri = ctx.var.request_uri
     end
 
     local response
