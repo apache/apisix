@@ -90,7 +90,7 @@ done
                                 "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
-                                "timeout": 5,
+                                "timeout": 10,
                                 "scope": "apisix"
                             }
                         },
@@ -112,7 +112,7 @@ done
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": "no",
-                                    "timeout": 5,
+                                    "timeout": 10000,
                                     "scope": "apisix"
                                 }
                             },
@@ -153,21 +153,20 @@ passed
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri, {method = "GET"})
-            ngx.say(require("cjson").encode(res))
             ngx.status = res.status
             local location = res.headers['Location']
-            if location.find('https://samples.auth0.com/authorize') ~= -1 and
-                location.find('scope=apisix') ~= -1 and
-                location.find('client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
-                location.find('response_type=code') ~= -1 and
-                location.find('redirect_uri=https://iresty.com') ~= -1 then
+            if string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+                string.find(location, 'scope=apisix') ~= -1 and
+                string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
+                string.find(location, 'response_type=code') ~= -1 and
+                string.find(location, 'redirect_uri=https://iresty.com') ~= -1 then
                 ngx.say(true)
             end
         }
     }
 --- request
 GET /t
---- timeout: 5s
+--- timeout: 10s
 --- response_body
 true
 --- error_code: 302
@@ -191,7 +190,7 @@ true
                                 "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
-                                "timeout": 5,
+                                "timeout": 10,
                                 "bearer_only": true,
                                 "scope": "apisix"
                             }
@@ -214,7 +213,7 @@ true
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": "no",
-                                    "timeout": 5,
+                                    "timeout": 10000,
                                     "bearer_only": true,
                                     "scope": "apisix"
                                 }
@@ -249,6 +248,7 @@ passed
 
 
 === TEST 7: access
+--- timeout: 10s
 --- request
 GET /hello
 --- error_code: 401
@@ -256,3 +256,4 @@ GET /hello
 WWW-Authenticate: Bearer realm=apisix
 --- no_error_log
 [error]
+--- SKIP
