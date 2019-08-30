@@ -21,8 +21,16 @@ local _M = {version = 0.2}
 
 do
     local var_methods = {
-        ["method"] = ngx.req.get_method,
-        ["cookie"] = function () return ck:new() end
+        method = ngx.req.get_method,
+        cookie = function () return ck:new() end
+    }
+
+    local ngx_var_names = {
+        upstream_scheme     = true,
+        upstream_host       = true,
+        upstream_upgrade    = true,
+        upstream_connection = true,
+        upstream_uri        = true,
     }
 
     local mt = {
@@ -33,7 +41,7 @@ do
                 val = method()
 
             elseif C.memcmp(key, "cookie_", 7) == 0 then
-                local cookie = t["cookie"]
+                local cookie = t.cookie
                 if cookie then
                     local err
                     val, err = cookie:get(sub_str(key, 8))
@@ -48,24 +56,18 @@ do
             end
 
             if val ~= nil then
-                -- t[key] = val
                 rawset(t, key, val)
             end
 
             return val
         end,
         __newindex = function(t, key, val)
-            local method = var_methods[key]
-            if method then
-                return
+            if ngx_var_names[key] then
+                ngx_var[key] = val
             end
 
-            if C.memcmp(key, "cookie_", 7) == 0 then
-                return
-            end
-
-            log.info("key: ", key, " new val: ", val)
-            ngx_var[key] = val
+            -- log.info("key: ", key, " new val: ", val)
+            rawset(t, key, val)
         end,
     }
 
