@@ -31,6 +31,10 @@ addons:
   homebrew:
     update: true
 
+cache:
+  directories:
+  - build-cache
+
 before_cache:
   - brew cleanup
 
