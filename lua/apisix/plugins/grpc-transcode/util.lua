@@ -74,7 +74,8 @@ function _M.map_message(field, default_values)
             end
             request[name] = sub
         else
-            request[name] = get_from_request(name, field_type) or default_values[name] or nil
+            request[name] = get_from_request(name, field_type)
+                                or default_values[name] or nil
         end
     end
     return request

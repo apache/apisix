@@ -226,6 +226,9 @@ APISIX 支持对上游的健康检查，你可以设置需要检查的 host、ur
 `key` 在同一个对象中，永远返回相同 id 。
 * `retries`: APISIX 将使用底层的 Nginx 重试机制将请求传递给下一个上游。这是一个可选项，默认是不启用重试机制。
 * `checks`: 配置健康检查的参数。
+* `uri`: 转发到上游的新 `uri` 地址。
+* `host`: 转发到上游的新 `host`。
+* `enable_websocket`: 是否启用 websocket （布尔值），默认不启用。
 
 创建上游对象用例：
 

@@ -68,7 +68,7 @@ GET /t?a=aaa
 --- response_body
 cookie_host: nil
 --- error_log
-failed to fetch cookie value by name: cookie_host error: no cookie found in the current request
+failed to fetch cookie value by key: cookie_host error: no cookie found in the current request
 
 
 
