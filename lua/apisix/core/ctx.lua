@@ -61,6 +61,7 @@ do
 
             return val
         end,
+
         __newindex = function(t, key, val)
             if ngx_var_names[key] then
                 ngx_var[key] = val
