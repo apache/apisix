@@ -29,6 +29,7 @@ dependencies = {
     "lua-resty-radixtree = 0.5",
     "lua-resty-iputils = 0.3.0-1",
     "lua-protobuf = 0.3.1",
+    "lua-resty-openidc = 1.7.2-1",
 }
 
 build = {
