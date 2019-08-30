@@ -238,7 +238,32 @@ local upstream_schema = {
             enum = {"remote_addr"},
         },
         desc = {type = "string", maxLength = 256},
-        id = id_schema
+        id = id_schema,
+        scheme = {
+            description = "scheme of upstream",
+            type = "string",
+            enum = {"http", "https"},
+        },
+        host = {
+            description = "host of upstream",
+            type = "string",
+        },
+        upgrade = {
+            description = "upgrade header for upstream",
+            type = "string",
+        },
+        connection = {
+            description = "connection header for upstream",
+            type = "string",
+        },
+        uri = {
+            description = "new uri for upstream",
+            type = "string",
+        },
+        enable_websocket = {
+            description = "enable websocket for request",
+            type = "boolean",
+        }
     },
     required = {"nodes", "type"},
     additionalProperties = false,
@@ -298,7 +323,7 @@ do
     if err then
         error("invalid route: " .. route)
     end
-    _M.route = cjson.encode(route_t)
+    _M.route = route_t
 end
 
 
