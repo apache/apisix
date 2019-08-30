@@ -257,9 +257,13 @@ local upstream_schema = {
             type = "string",
         },
         uri = {
-            description = "uri for request",
+            description = "new uri for upstream",
             type = "string",
         },
+        enable_websocket = {
+            description = "enable websocket for request",
+            type = "boolean",
+        }
     },
     required = {"nodes", "type"},
     additionalProperties = false,

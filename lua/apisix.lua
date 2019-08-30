@@ -184,6 +184,11 @@ function _M.http_access_phase()
                 ngx_var[upstream_vars[name]] = upstream[name]
             end
         end
+
+        if upstream.enable_websocket then
+            api_ctx.var["upstream_upgrade"] = api_ctx.var["http_upgrade"]
+            api_ctx.var["upstream_connection"] = api_ctx.var["http_connection"]
+        end
     end
 
     if route.value.service_id then

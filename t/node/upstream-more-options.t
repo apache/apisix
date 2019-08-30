@@ -1,13 +1,3 @@
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
-
-    } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
-    }
-}
-
 use t::APISix 'no_plan';
 
 repeat_each(1);
@@ -59,34 +49,68 @@ passed
 
 
 === TEST 2: hit routes
+--- request
+GET /old_uri
+--- response_body
+uri: /uri
+host: foo.com
+upgrade: upgrade.com
+connection: connection.com
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: set route(enable websocket)
 --- config
     location /t {
         content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/old_uri"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/old_uri",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1981": 1
+                        },
+                        "scheme": "http",
+                        "host": "foo.com",
+                        "enable_websocket": true,
+                        "uri": "/uri"
+                    }
+                }]]
+                )
 
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {method = "GET"})
-            if not res then
-                ngx.say(err)
-                return
+            if code >= 300 then
+                ngx.status = code
             end
-
-            if res.status >= 300 then
-                ngx.status = res.status
-            end
-            ngx.print(res.body)
+            ngx.say(body)
         }
     }
 --- request
 GET /t
 --- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: hit routes
+--- more_headers
+upgrade: upgrade
+connection: close
+--- request
+GET /old_uri
+--- response_body
 uri: /uri
 host: foo.com
+upgrade: upgrade
+connection: close
 x-real-ip: 127.0.0.1
-connection: connection.com
-upgrade: upgrade.com
-user-agent: lua-resty-http/0.13 (Lua) ngx_lua/10015
 --- no_error_log
 [error]
