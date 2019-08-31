@@ -42,26 +42,28 @@ plugins:                        # plugin name list
 *注意* 不要手工修改 apisix 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
 
-目前读写 `etcd` 操作使用的是 v2 协议，所有配置均存储在 `/v2/keys` 目录下。
-
 [返回目录](#目录)
 
 ## Route
 
-默认路径：`/apisix/routes/`
+Route 字面意思就是路由，实际就是我们通过定义一些规则来匹配客户端的请求，然后根据匹配结果执行相应的插件，并把请求转发给到指定上游。
 
-`Route` 是如何匹配用户请求的具体描述。目前 apisix 支持 `URI` 和 `Method` 两种方式匹配
-用户请求。其他比如 `Host` 方式，将会持续增加。
+![](./images/router.png)
 
-路径中最后的数字，会被用作路由 `id` 做唯一标识，比如下面示例的路由 `id` 是 `100`。
+通过上图可以看到，Route 中主要包含三方面内容：Route 自身、绑定的插件（完成限流、限速等行为）和目标 Upstream 地址，除了 Route 自身是必须的，后两者均是可选的。
+
+如果我们直接在 Route 中配置需要的所有参数，比如上面的示例图。这种方式的有点是容易设置，每个 Route 都是相对独立，对于后期管理来说自由度比较高。但当我们规则比较多的时候，缺点也就越发明显，会有比较多的重复。比如当我们需要修改某个已有 Upstream 时，就需要逐个更新每个 Route 的配置，后期管理维护成本略高。
+
+上面提及的缺点在 APISIX 中独立抽象了 [Service](#service) 和 [Upstream](#upstream) 两个概念来解决。
+
+Route 默认存储到路径是 `/apisix/routes/`。
+
+下面创建的 Route 示例，是把 uri 为 "/index.html" 的请求代理到地址为 "39.97.63.215:80" 的 Upstream 服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes -X POST -i -d '
 {
     "uri": "/index.html",
-    "id": "100",
-    "plugins": {
-    },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -69,14 +71,49 @@ curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
         }
     }
 }'
+
+HTTP/1.1 201 Created
+Date: Sat, 31 Aug 2019 01:17:15 GMT
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX web server
+
+{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/00000000000000061925","modifiedIndex":61925},"action":"create"}
 ```
+
+当我们接受到 201 的应答，表示该 Route 已成功创建。
+该 Route 被存到 "/apisix/routes/00000000000000061925" 这个路径下，`00000000000000061925` 就是这条 Route 的 ID。
+
+具体 Route 的获取、更新、删除都是依赖这个 ID 来管理维护，有时候需指定 ID 的方式来创建或更新 Route（注意这里的 uri 地址和对应的 method 与上面的例子略有不同）：
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+HTTP/1.1 200 OK
+Date: Sat, 31 Aug 2019 05:00:41 GMT
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX web server
+
+{..."key":"\/apisix\/routes\/1","modifiedIndex":61921},"action":"set"}
+```
+
 
 #### Route option
 
 |name     |option   |description|
 |---------|---------|-----------|
 |uri      |required |除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
-|id       |optional |如果有，必须与路径中最后的数字保持一致|
 |host     |optional |当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
 |remote_addr|optional |客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也支持 IPv6 匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
 |methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
