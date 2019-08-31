@@ -68,7 +68,7 @@ done
                     "username": "jack",
                     "plugins": {
                             "jwt-auth": {
-                                "key": "user-key",
+                                "key": "consumer-key",
                                 "secret": "my-secret-key"
                             }
                         }
@@ -79,7 +79,7 @@ done
                             "username": "jack",
                             "plugins": {
                                 "jwt-auth": {
-                                    "key": "user-key",
+                                    "key": "consumer-key",
                                     "secret": "my-secret-key"
                                 }
                             }
@@ -140,7 +140,7 @@ passed
 
 === TEST 5: sign
 --- request
-GET /apisix/plugin/jwt/sign?key=user-key
+GET /apisix/plugin/jwt/sign?key=consumer-key
 --- response_body_like eval
 qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
 --- no_error_log
