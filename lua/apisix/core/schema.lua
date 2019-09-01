@@ -296,6 +296,13 @@ local route = [[{
             "type": "string",
             "pattern": "^\\*?[0-9a-zA-Z-.]+$"
         },
+        "vars": {
+            "type": "array",
+            "items": {
+                "description": "Nginx builtin variable name and value",
+                "type": "string"
+            }
+        },
         "remote_addr": {
             "description": "client IP",
             "type": "string",
