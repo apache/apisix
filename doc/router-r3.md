@@ -49,3 +49,23 @@ for example the uri is `/blog/post/foo/12`, libr3 will return `{"name":"foo", "i
 
 for example the uri is `/blog/post/foo/12`, libr3 will return `{"1":"foo", "id":"12"}`.
 
+### How to filter route by Nginx builtin variable
+
+Please take a look at [radixtree-new](https://github.com/iresty/lua-resty-radixtree#new),
+here is an example:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
+{
+    "uri": "/index.html",
+    "vars": ["http_k", "header", "cookie_k", "cookie", "arg_k", "uri_arg"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+This route will require the request header `k` equal "header", request cookie key `k` equal "cookie" etc.

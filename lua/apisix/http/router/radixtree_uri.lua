@@ -39,6 +39,7 @@ local function create_radixtree_router(routes)
                 method = route.value.methods,
                 host = route.value.host,
                 remote_addr = route.value.remote_addr,
+                vars = route.value.vars,
                 handler = function (api_ctx)
                     api_ctx.matched_params = nil
                     api_ctx.matched_route = route
@@ -68,6 +69,7 @@ function _M.match(api_ctx)
     match_opts.method = api_ctx.var.method
     match_opts.host = api_ctx.var.host
     match_opts.remote_addr = api_ctx.var.remote_addr
+    match_opts.vars = api_ctx.var
 
     local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
     if not ok then
