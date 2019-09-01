@@ -61,7 +61,7 @@ Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_a
 下面创建的 Route 示例，是把 uri 为 "/index.html" 的请求代理到地址为 "39.97.63.215:80" 的 Upstream 服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes -X POST -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -79,34 +79,10 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 Server: APISIX web server
 
-{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/00000000000000061925","modifiedIndex":61925},"action":"create"}
+{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
-当我们接受到 201 的应答，表示该 Route 已成功创建。
-该 Route 被存到 "/apisix/routes/00000000000000061925" 这个路径下，`00000000000000061925` 是为这条 Route 自动生成的 ID。
-
-该 Route 后面的更新管理都是依赖这个 ID，有时候需指定 ID 的方式来创建或更新 Route（注意：uri 地址和 method 方法与上面的例子略有不同）：
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-HTTP/1.1 200 OK
-Date: Sat, 31 Aug 2019 05:00:41 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
-
-{..."key":"\/apisix\/routes\/1","modifiedIndex":61921},"action":"set"}
-```
+当我们接受到成功应答，表示该 Route 已成功创建。
 
 #### Route option
 
