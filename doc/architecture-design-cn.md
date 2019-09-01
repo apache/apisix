@@ -46,17 +46,17 @@ plugins:                        # plugin name list
 
 ## Route
 
-Route 字面意思就是路由，实际就是我们通过定义一些规则来匹配客户端的请求，然后根据匹配结果执行相应的插件，并把请求转发给到指定上游。
+Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
+插件，并把请求转发给到指定 Upstream。
 
-![](./images/router.png)
+Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
+请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
 
-通过上图可以看到，Route 中主要包含三方面内容：Route 自身、绑定的插件（完成限流、限速等行为）和目标 Upstream 地址，除了 Route 自身是必须的，后两者均是可选的。
+<img src="./images/routes-example.png" width="50%" height="50%">
 
-如果我们直接在 Route 中配置需要的所有参数，比如上面的示例图。这种方式的有点是容易设置，每个 Route 都是相对独立，对于后期管理来说自由度比较高。但当我们规则比较多的时候，缺点也就越发明显，会有比较多的重复。比如当我们需要修改某个已有 Upstream 时，就需要逐个更新每个 Route 的配置，后期管理维护成本略高。
+我们直接在 Route 中完成所有参数的配置，优点是容易设置，每个 Route 都相对独立自由度比较高。但当我们的 Route 有比较多的重复配置（比如启用相同的插件配置或上游信息），一旦我们要更新这些相同属性时，就需要遍历所有 Route 并进行修改，给后期管理维护增加不少复杂度。
 
-上面提及的缺点在 APISIX 中独立抽象了 [Service](#service) 和 [Upstream](#upstream) 两个概念来解决。
-
-Route 默认存储到路径是 `/apisix/routes/`。
+上面提及重复的缺点在 APISIX 中独立抽象了 [Service](#service) 和 [Upstream](#upstream) 两个概念来解决。
 
 下面创建的 Route 示例，是把 uri 为 "/index.html" 的请求代理到地址为 "39.97.63.215:80" 的 Upstream 服务：
 
@@ -83,9 +83,9 @@ Server: APISIX web server
 ```
 
 当我们接受到 201 的应答，表示该 Route 已成功创建。
-该 Route 被存到 "/apisix/routes/00000000000000061925" 这个路径下，`00000000000000061925` 就是这条 Route 的 ID。
+该 Route 被存到 "/apisix/routes/00000000000000061925" 这个路径下，`00000000000000061925` 是为这条 Route 自动生成的 ID。
 
-具体 Route 的获取、更新、删除都是依赖这个 ID 来管理维护，有时候需指定 ID 的方式来创建或更新 Route（注意这里的 uri 地址和对应的 method 与上面的例子略有不同）：
+该 Route 后面的更新管理都是依赖这个 ID，有时候需指定 ID 的方式来创建或更新 Route（注意：uri 地址和 method 方法与上面的例子略有不同）：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
@@ -108,19 +108,19 @@ Server: APISIX web server
 {..."key":"\/apisix\/routes\/1","modifiedIndex":61921},"action":"set"}
 ```
 
-
 #### Route option
 
-|name     |option   |description|
-|---------|---------|-----------|
-|uri      |required |除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
-|host     |optional |当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
-|remote_addr|optional |客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也支持 IPv6 匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
-|methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
-|plugins|optional |启用的插件配置，详见 [Plugin](#plugin) |
-|upstream|optional |启用的 upstream 配置，详见 [Upstream](#upstream)|
-|upstream_id|optional |启用的 upstream id，详见 [Upstream](#upstream)|
-|service_id|optional |绑定的 Service 配置，详见 [Service](#service)|
+|name     |option   |type|description|
+|---------|---------|----|-----------|
+|uri      |required |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
+|host     |optional |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
+|remote_addr|optional |匹配规则|客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也支持 IPv6 匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
+|methods  |optional |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
+|plugins|optional |Plugin|详见 [Plugin](#plugin) |
+|upstream|optional |Upstream|启用的 Upstream 配置，详见 [Upstream](#upstream)|
+|upstream_id|optional |Upstream|启用的 upstream id，详见 [Upstream](#upstream)|
+|service_id|optional |Service|绑定的 Service 配置，详见 [Service](#service)|
+
 
 [返回目录](#目录)
 
