@@ -1,6 +1,6 @@
 ## 目录
-- [**apisix**](#apisix)
-- [**apisix Config**](#apisix-config)
+- [**APISIX**](#apisix)
+- [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Consumer**](#consumer)
@@ -9,7 +9,7 @@
 - [**Router**](#router)
 - [**Debug mode**](#Debug-mode)
 
-## apisix
+## APISIX
 
 ### 插件加载流程
 
@@ -19,13 +19,13 @@
 
 <img src="./images/flow-plugin-internal.png" width="50%" height="50%">
 
-## apisix Config
+## APISIX Config
 
-通过修改本地 `conf/config.yaml` 文件完成对 apisix 服务本身的基本配置。
+通过修改本地 `conf/config.yaml` 文件完成对 APISIX 服务本身的基本配置。
 
 ```yaml
 apisix:
-  node_listen: 9080             # apisix listening port
+  node_listen: 9080             # APISIX listening port
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
@@ -39,7 +39,7 @@ plugins:                        # plugin name list
   - ...
 ```
 
-*注意* 不要手工修改 apisix 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
+*注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
 
 [返回目录](#目录)
@@ -181,7 +181,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 `Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service` 或 `Consumer`上。而对于同一
 个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Service`。
 
-在 `conf/config.yaml` 中，可以声明本地 apisix 节点都支持哪些插件。这是个白名单机制，不在该
+在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该
 白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
 
 插件的配置可以被直接绑定在指定 route 中，也可以被绑定在 service 中，不过 route 中的插件配置
@@ -211,12 +211,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 并不是所有插件都有具体配置项，比如 `prometheus` 下是没有任何具体配置项，这时候用一个空的对象
 标识即可。
 
-目前 apisix 已支持插件：
+目前 APISIX 已支持插件：
 
 * [key-auth](../doc/plugins/key-auth-cn.md)
+* [grpc-transcode](../doc/plugins/grpc-transcode-cn.md)
+* ip-restriction
+* [jwt-auth](../doc/plugins/jwt-auth-cn.md)
+* [key-auth](../doc/plugins/key-auth-cn.md)
+* [limit-conn](../doc/plugins/limit-conn-cn.md)
 * [limit-count](../doc/plugins/limit-count-cn.md)
 * [limit-req](../doc/plugins/limit-req-cn.md)
+* openid-connect
 * [prometheus](../doc/plugins/prometheus.md)
+* [serverless](../doc/plugins/serverless-cn.md)
+* [zipkin](../doc/plugins/zipkin.md)
 
 [返回目录](#目录)
 
