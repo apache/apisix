@@ -235,14 +235,18 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 
 ## Upstream
 
-上游对象表示虚拟主机名，可用于通过多个服务（目标）对传入请求进行负载均衡。
+Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当有 Upstream 有重复时，就需要用“引用”方式避免重复了。
 
-上游的配置使用方法，与 `plugin` 非常相似，也可以同时被绑定到 `Route` 或 `Service` 上，并根据优先级决
-定执行顺序。
+<img src="./images/upstream-example.png" width="50%" height="50%">
 
-APISIX 支持对上游的健康检查，你可以设置需要检查的 host、uri、失败和恢复的次数等。
+如上图所示，通过创建 Upstream 对象，在 `Route` 用 ID 方式引用，就可以确保只维护一个对象的值了。
+
+Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑定在 `Service` 中，不过 `Route` 中的配置
+优先级更高。这里的优先级行为与 `Plugin` 非常相似
 
 #### 配置参数
+
+APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面表格。
 
 |名字    |可选|说明|
 |-------         |-----|------|
@@ -254,7 +258,7 @@ APISIX 支持对上游的健康检查，你可以设置需要检查的 host、ur
 |scheme          |可选|转发到上游的 `schema` 协议，可以是 `http` 或 `https`，默认 `http` 协议|
 |uri             |可选|转发到上游的新 `uri` 地址|
 |host            |可选|转发到上游的新 `host`|
-|enable_websocket|可选|是否启用 websocket （布尔值），默认不启用|
+|enable_websocket|可选|是否启用 `websocket` （布尔值），默认不启用|
 
 创建上游对象用例：
 
