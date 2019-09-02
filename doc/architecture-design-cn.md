@@ -42,26 +42,28 @@ plugins:                        # plugin name list
 *注意* 不要手工修改 apisix 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
 
-目前读写 `etcd` 操作使用的是 v2 协议，所有配置均存储在 `/v2/keys` 目录下。
-
 [返回目录](#目录)
 
 ## Route
 
-默认路径：`/apisix/routes/`
+Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
+插件，并把请求转发给到指定 Upstream。
 
-`Route` 是如何匹配用户请求的具体描述。目前 apisix 支持 `URI` 和 `Method` 两种方式匹配
-用户请求。其他比如 `Host` 方式，将会持续增加。
+Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
+请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
 
-路径中最后的数字，会被用作路由 `id` 做唯一标识，比如下面示例的路由 `id` 是 `100`。
+<img src="./images/routes-example.png" width="50%" height="50%">
+
+我们直接在 Route 中完成所有参数的配置，优点是容易设置，每个 Route 都相对独立自由度比较高。但当我们的 Route 有比较多的重复配置（比如启用相同的插件配置或上游信息），一旦我们要更新这些相同属性时，就需要遍历所有 Route 并进行修改，给后期管理维护增加不少复杂度。
+
+上面提及重复的缺点在 APISIX 中独立抽象了 [Service](#service) 和 [Upstream](#upstream) 两个概念来解决。
+
+下面创建的 Route 示例，是把 uri 为 "/index.html" 的请求代理到地址为 "39.97.63.215:80" 的 Upstream 服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 {
     "uri": "/index.html",
-    "id": "100",
-    "plugins": {
-    },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -69,21 +71,32 @@ curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
         }
     }
 }'
+
+HTTP/1.1 201 Created
+Date: Sat, 31 Aug 2019 01:17:15 GMT
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX web server
+
+{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
+
+当我们接受到成功应答，表示该 Route 已成功创建。
 
 #### Route option
 
-|name     |option   |description|
-|---------|---------|-----------|
-|uri      |required |除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
-|id       |optional |如果有，必须与路径中最后的数字保持一致|
-|host     |optional |当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
-|remote_addr|optional |客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也支持 IPv6 匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
-|methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
-|plugins|optional |启用的插件配置，详见 [Plugin](#plugin) |
-|upstream|optional |启用的 upstream 配置，详见 [Upstream](#upstream)|
-|upstream_id|optional |启用的 upstream id，详见 [Upstream](#upstream)|
-|service_id|optional |绑定的 Service 配置，详见 [Service](#service)|
+|name     |option   |type|description|
+|---------|---------|----|-----------|
+|uri      |required |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
+|host     |optional |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
+|remote_addr|optional |匹配规则|客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也支持 IPv6 匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
+|methods  |optional |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
+|plugins|optional |Plugin|详见 [Plugin](#plugin) |
+|upstream|optional |Upstream|启用的 Upstream 配置，详见 [Upstream](#upstream)|
+|upstream_id|optional |Upstream|启用的 upstream id，详见 [Upstream](#upstream)|
+|service_id|optional |Service|绑定的 Service 配置，详见 [Service](#service)|
+
 
 [返回目录](#目录)
 
@@ -332,20 +345,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 
 ## Router
 
-APISIX 区别于其他 API 网关的一大特点是允许用户选择不同路由实现来更好匹配自由业务。这样可以更好的在性能、自由之间做最佳选择。
+APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Router 来更好匹配自由业务，在性能、自由之间做最适合选择。
 
-在本地配置 `conf/config.yaml` 中设置最符合自身业务需求的路由，可获得更好的匹配效率。
+在本地配置 `conf/config.yaml` 中设置最符合自身业务需求的路由。
 
 * `apisix.router.http`: HTTP 请求路由。
     * `radixtree_uri`: （默认）只使用 `uri` 作为主索引。基于 `radix tree` 引擎，支持全量和深前缀匹配，更多见 [如何使用 libradixtree](libradixtree.md)。
         * `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
         * `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
         * `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。
+        <!-- * `任意过滤属性`：允许指定任何 Ningx 内置变量作为过滤条件，比如 uri 请求参数、请求头、cookie 等。 -->
     * `r3_uri`: 只使用 `uri` 作为主索引（基于 r3 引擎）。基于 `r3` 的 trie tree 是支持正则匹配的，比如 `/foo/{:\w+}/{:\w+}`，更多见 [如何使用 r3](libr3.md)。
     * `r3_host_uri`: 使用 `host + uri` 作为主索引（基于 r3 引擎）,对当前请求会同时匹配 host 和 uri。
 
 * `apisix.router.ssl`: SSL 加载匹配路由。
-    * `radixtree_sni`: 默认值，使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
+    * `radixtree_sni`: （默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
     * `r3_sni`: 使用 `SNI` (Server Name Indication) 作为主索引（基于 r3 引擎）。
 
 [返回目录](#目录)
