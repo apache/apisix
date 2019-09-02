@@ -86,32 +86,36 @@ Server: APISIX web server
 
 #### Route option
 
-|name     |option   |type|description|
+除了 uri 匹配条件外，还支持更多过滤条件。
+
+|名字      |可选项   |类型 |说明        |
 |---------|---------|----|-----------|
-|uri      |required |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
-|host     |optional |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
-|remote_addr|optional |匹配规则|客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也支持 IPv6 匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
-|methods  |optional |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
-|plugins|optional |Plugin|详见 [Plugin](#plugin) |
-|upstream|optional |Upstream|启用的 Upstream 配置，详见 [Upstream](#upstream)|
-|upstream_id|optional |Upstream|启用的 upstream id，详见 [Upstream](#upstream)|
-|service_id|optional |Service|绑定的 Service 配置，详见 [Service](#service)|
+|uri      |必须 |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
+|host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
+|remote_addr|可选 |匹配规则|客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
+|methods  |可选 |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
+|plugins  |可选 |Plugin|详见 [Plugin](#plugin) |
+|upstream |可选 |Upstream|启用的 Upstream 配置，详见 [Upstream](#upstream)|
+|upstream_id|可选 |Upstream|启用的 upstream id，详见 [Upstream](#upstream)|
+|service_id|可选 |Service|绑定的 Service 配置，详见 [Service](#service)|
 
 
 [返回目录](#目录)
 
 ## Service
 
-`Service` 是某类功能的提供者，比如订单、账户服务。它通常与上游服务抽象是一对一的，`Route`
-与 `Service` 之间，通常是 N:1 的关系，即多个 `Route` 规则可以对应同一个 `Service`。
+`Service` 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route`
+与 `Service` 之间，通常是 N:1 的关系，参看下图。
 
-多个 route 规则同时绑定到一个 service 上，这些路由将具有相同的上游和插件配置，减少冗余配置。
+<img src="./images/service-example.png" width="50%" height="50%">
 
-比如下面的例子，先创建了一个 service，并开启了限流插件，
-然后把 id 为 `100`、`101` 的 route 都绑定在这个 service 上。
+不同 Route 规则同时绑定到一个 Service 上，这些 Route 将具有相同的上游和插件配置，减少冗余配置。
+
+比如下面的例子，创建了一个启用限流插件的 Service，然后把 id 为 `100`、`101` 的 Route 都绑定在这个 Service 上。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/services/200 -X PUT -d '
+# create new Service
+$ curl http://127.0.0.1:9080/apisix/admin/services/200 -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -129,6 +133,7 @@ curl http://127.0.0.1:9080/apisix/admin/services/200 -X PUT -d '
     }
 }'
 
+# create new Route and reference the service by id `200`
 curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
 {
     "methods": ["GET"],
@@ -144,7 +149,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/101 -X PUT -d '
 }'
 ```
 
-你也可以为 route 单独制定不同的插件和参数，比如下面这个示例设置了不同的限流参数：
+当然我们也可以为 Route 指定不同的插件参数或上游，比如下面这个 Route 设置了不同的限流参数，这样设置只配置相同部分，不同部分（比如上游）则继续使用 Service 中的配置参数。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
@@ -163,7 +168,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 }'
 ```
 
-当 route 和 service 都开启同一个插件时，route 的优先级高于 service。
+注意：当 Route 和 Service 都开启同一个插件时，Route 参数的优先级是高于 Service 的。
 
 [返回目录](#目录)
 
@@ -184,13 +189,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该
 白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
 
-插件的配置可以被直接绑定在指定 route 中，也可以被绑定在 service 中，不过 route 中的插件配置
+插件的配置可以被直接绑定在指定 Route 中，也可以被绑定在 Service 中，不过 Route 中的插件配置
 优先级更高。
 
-一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 route 或 service）。
+一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
 插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../doc/plugins/example-plugin.lua#L16)。
 
-插件配置作为 route 或 service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
+插件配置作为 Route 或 Service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
 名字作为哈希的 key 来保存不同插件的配置项。
 
 ```json
@@ -232,25 +237,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 
 上游对象表示虚拟主机名，可用于通过多个服务（目标）对传入请求进行负载均衡。
 
-上游的配置使用方法，与 `plugin` 非常相似，也可以同时被绑定到 `route` 或 `service` 上，并根据优先级决
+上游的配置使用方法，与 `plugin` 非常相似，也可以同时被绑定到 `Route` 或 `Service` 上，并根据优先级决
 定执行顺序。
 
 APISIX 支持对上游的健康检查，你可以设置需要检查的 host、uri、失败和恢复的次数等。
 
 #### 配置参数
 
-* `type`：`roundrobin` 或 `chash`
-    * `roundrobin`：支持权重的负载
-    * `chash`：一致性 `hash`
-* `nodes`: 上游机器地址列表（目前仅支持 IP+Port 方式）
-* `key`: 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的
-`key` 在同一个对象中，永远返回相同 id 。
-* `retries`: APISIX 将使用底层的 Nginx 重试机制将请求传递给下一个上游。这是一个可选项，默认是不启用重试机制。
-* `checks`: 配置健康检查的参数。
-* `scheme`: 转发到上游的 `schema` 协议，可以是 `http` 或 `https`，默认 `http` 协议。
-* `uri`: 转发到上游的新 `uri` 地址。
-* `host`: 转发到上游的新 `host`。
-* `enable_websocket`: 是否启用 websocket （布尔值），默认不启用。
+|名字    |可选|说明|
+|-------         |-----|------|
+|type            |必需|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
+|nodes           |必需|数组，内部元素是上游机器地址列表（IP+Port 方式）|
+|key             |必需|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id|
+|checks          |可选|配置健康检查的参数|
+|retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制|
+|scheme          |可选|转发到上游的 `schema` 协议，可以是 `http` 或 `https`，默认 `http` 协议|
+|uri             |可选|转发到上游的新 `uri` 地址|
+|host            |可选|转发到上游的新 `host`|
+|enable_websocket|可选|是否启用 websocket （布尔值），默认不启用|
 
 创建上游对象用例：
 
@@ -276,7 +280,7 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -X PUT -d '
 }'
 ```
 
-上游对象创建后，均可以被具体 `route` 或 `service` 引用，例如：
+上游对象创建后，均可以被具体 `Route` 或 `Service` 引用，例如：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -286,7 +290,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-为了方便使用，也可以直接把上游地址直接绑到某个 `route` 或 `service` ，例如：
+为了方便使用，也可以直接把上游地址直接绑到某个 `Route` 或 `Service` ，例如：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
