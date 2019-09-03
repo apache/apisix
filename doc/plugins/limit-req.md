@@ -17,22 +17,22 @@ Here's an example, enable the limit req plugin on the specified route:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"plugins": {
-		"limit-req": {
-			"rate": 1,
-			"burst": 2,
-			"rejected_code": 503,
-			"key": "remote_addr"
-		}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
@@ -68,17 +68,17 @@ When you want to disable the limit req plugin, it is very simple,
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
