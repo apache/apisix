@@ -31,7 +31,6 @@ do_install() {
     sudo apt-get update
 
     sudo apt-get install openresty-debug
-    sudo apt-get install golang
 
     export GO111MOUDULE=on
 
@@ -44,6 +43,8 @@ do_install() {
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
+        sudo apt-get install golang
+
         git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
 
         cd grpc_server_example/
