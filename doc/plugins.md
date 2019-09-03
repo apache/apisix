@@ -13,7 +13,7 @@ Now we support the following plugins:
 * [limit-conn](plugins/limit-conn.md): limite request concurrency (or concurrent connections).
 * [prometheus](plugins/prometheus.md): expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
 * [OpenTracing](plugins/zipkin.md): support Zikpin and Apache SkyWalking.
-* [grpc-transcode](../doc/plugins/grpc-transcode-cn.md): REST <--> gRPC transcoding。
-* [serverless](../doc/plugins/serverless-cn.md)：allow to dynamically run Lua code at *different* phase in APISIX.
-* ip-restriction
+* [grpc-transcode](plugins/grpc-transcode-cn.md): REST <--> gRPC transcoding。
+* [serverless](plugins/serverless-cn.md)：allow to dynamically run Lua code at *different* phase in APISIX.
+* [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
 * openid-connect

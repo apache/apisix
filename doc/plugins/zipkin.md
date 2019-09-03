@@ -25,20 +25,20 @@ Here's an example, enable the zipkin plugin on the specified route:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"plugins": {
-		"zipkin": {
-			"endpoint": "http://127.0.0.1:9411/api/v2/spans",
-			"sample_ratio": 1
-		}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "zipkin": {
+            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
+            "sample_ratio": 1
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
@@ -79,16 +79,16 @@ When you want to disable the zipkin plugin, it is very simple,
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"plugins": {
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
