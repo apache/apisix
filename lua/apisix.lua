@@ -60,6 +60,10 @@ function _M.http_init_worker()
     require("apisix.http.service").init_worker()
     require("apisix.plugin").init_worker()
     require("apisix.consumer").init_worker()
+
+    if core.config == require("apisix.core.config_yaml") then
+        core.config.init_worker()
+    end
 end
 
 

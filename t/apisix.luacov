@@ -7,6 +7,7 @@ return {
       ["lua/apisix/http/*"] = "http",
       ["lua/apisix/http/router/*"] = "http/router",
       ["lua/apisix/plugins/*"] = "plugins",
+      ["lua/apisix/plugins/grpc-transcode/*"] = "plugins/grpc-transcode",
       ["lua/apisix/plugins/prometheus/*"] = "plugins/prometheus",
       ["lua/apisix/plugins/zipkin/*"] = "plugins/zipkin",
    },

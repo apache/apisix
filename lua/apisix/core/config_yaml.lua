@@ -1,12 +1,12 @@
 -- Copyright (C) Yuansheng Wang
 
 local config_local = require("apisix.core.config_local")
+local yaml         = require("apisix.core.yaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
-local etcd         = require("resty.etcd")
 local new_tab      = require("table.new")
-local clone_tab    = require("table.clone")
 local check_schema = require("apisix.core.schema").check
+local lfs          = require("lfs")
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
 local type         = type
@@ -17,8 +17,12 @@ local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
 local sub_str      = string.sub
 local tostring     = tostring
-local tonumber     = tonumber
 local pcall        = pcall
+local io           = io
+local ngx          = ngx
+local error        = error
+local re_find      = ngx.re.find
+local apisix_yaml_path  = ngx.config.prefix() .. "conf/apisix.yaml"
 
 
 local _M = {
@@ -27,81 +31,60 @@ local _M = {
     clear_local_cache = config_local.clear_cache,
 }
 
+
 local mt = {
     __index = _M,
     __tostring = function(self)
-        return " apisix.yaml key: " .. self.key
+        return "apisix.yaml key: " .. (self.key or "")
     end
 }
 
-local function readdir(etcd_cli, key)
-    if not etcd_cli then
-        return nil, nil, "not inited"
-    end
 
-    local data, err = etcd_cli:readdir(key, true)
-    if not data then
-        -- log.error("failed to get key from etcd: ", err)
+    local apisix_yaml
+    local apisix_yaml_ctime
+local function read_apisix_yaml(pre_mtime)
+    local attributes, err = lfs.attributes(apisix_yaml_path)
+    if not attributes then
         return nil, nil, err
     end
 
-    local body = data.body
-
-    if type(body) ~= "table" then
-        return nil, nil, "failed to read etcd dir"
-    end
-
-    if body.message then
-        return nil, nil, body.message
-    end
-
-    return body.node, data.headers
-end
-
-local function waitdir(etcd_cli, key, modified_index)
-    if not etcd_cli then
-        return nil, nil, "not inited"
-    end
-
-    local data, err = etcd_cli:waitdir(key, modified_index)
-    if not data then
-        -- log.error("failed to get key from etcd: ", err)
-        return nil, nil, err
-    end
-
-    local body = data.body or {}
-
-    if body.message then
-        return nil, nil, body.message
-    end
-
-    return body.node, data.headers
-end
-
-
-local function short_key(self, str)
-    return sub_str(str, #self.key + 2)
-end
-
-
-function _M.upgrade_version(self, new_ver)
-    new_ver = tonumber(new_ver)
-    if not new_ver then
+    -- log.info("change: ", json.encode(attributes))
+    local last_change_time = attributes.change
+    if apisix_yaml_ctime == last_change_time then
         return
     end
 
-    local pre_index = self.prev_index
-    if not pre_index then
-        self.prev_index = new_ver
+    local f = io.open(apisix_yaml_path, "r")
+    if not f then
+        return nil, nil, "conf/apisix.yaml not found"
+    end
+
+    local found_end_flag
+    for i = 1, 10 do
+        f:seek('end', -i)
+
+        local end_flag = f:read("*a")
+        -- log.info(i, " flag: ", end_flag)
+        if re_find(end_flag, [[#END\s*]], "jo") then
+            found_end_flag = true
+            break
+        end
+    end
+
+    if not found_end_flag then
         return
     end
 
-    if new_ver <= pre_index then
-        return
+    f:seek('set')
+    local yaml_config = f:read("*a")
+    f:close()
+
+    apisix_yaml = yaml.parse(yaml_config)
+    if not apisix_yaml then
+        return nil, nil, "failed to parse the content of file conf/apisix.yaml"
     end
 
-    self.prev_index = new_ver
-    return
+    apisix_yaml_ctime = last_change_time
 end
 
 
@@ -110,149 +93,59 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if self.values == nil then
-        local dir_res, headers, err = readdir(self.etcd_cli, self.key)
-        log.debug("readdir key: ", self.key, " res: ",
-                  json.delay_encode(dir_res))
-        if not dir_res then
-            return false, err
-        end
+    if not apisix_yaml_ctime then
+        log.warn("wait for more time")
+        return nil, "failed to read local file conf/apisix.yaml"
+    end
 
-        if not dir_res.dir then
-            return false, self.key .. " is not a dir"
-        end
-
-        if not dir_res.nodes then
-            dir_res.nodes = {}
-        end
-
-        self.values = new_tab(#dir_res.nodes, 0)
-        self.values_hash = new_tab(0, #dir_res.nodes)
-
-        local changed = false
-        for _, item in ipairs(dir_res.nodes) do
-            local key = short_key(self, item.key)
-            local data_valid = true
-            if type(item.value) ~= "table" then
-                data_valid = false
-                log.error("invalid item data of [", self.key .. "/" .. key,
-                          "], val: ", tostring(item.value),
-                          ", it shoud be a object")
-            end
-
-            if data_valid and self.item_schema then
-                data_valid, err = check_schema(self.item_schema, item.value)
-                if not data_valid then
-                    log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.encode(item.value))
-                end
-            end
-
-            if data_valid then
-                changed = true
-                insert_tab(self.values, item)
-                self.values_hash[key] = #self.values
-                item.value.id = key
-                item.clean_handlers = {}
-            end
-
-            self:upgrade_version(item.modifiedIndex)
-        end
-
-        if headers then
-            self:upgrade_version(headers["X-Etcd-Index"])
-        end
-
-        if changed then
-            self.conf_version = self.conf_version + 1
-        end
+    if self.conf_version == apisix_yaml_ctime then
         return true
     end
 
-    local res, headers, err = waitdir(self.etcd_cli, self.key,
-                                      self.prev_index + 1)
-    log.debug("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-    log.debug("res: ", json.delay_encode(res, true))
-    log.debug("headers: ", json.delay_encode(headers, true))
-    if not res then
-        return false, err
+    local items = apisix_yaml[self.key]
+    log.info(self.key, " items: ", json.delay_encode(items))
+    if not items then
+        self.values = new_tab(8, 0)
+        self.values_hash = new_tab(0, 8)
+        self.conf_version = apisix_yaml_ctime
+        return true
     end
 
-    local key = short_key(self, res.key)
-    if res.value and type(res.value) ~= "table" then
-        self:upgrade_version(res.modifiedIndex)
-        return false, "invalid item data of [" .. self.key .. "/" .. key
-                      .. "], val: " .. tostring(res.value)
-                      .. ", it shoud be a object"
-    end
+    self.values = new_tab(#items, 0)
+    self.values_hash = new_tab(0, #items)
 
-    if res.value and self.item_schema then
-        local ok, err = check_schema(self.item_schema, res.value)
-        if not ok then
-            self:upgrade_version(res.modifiedIndex)
-
-            return false, "failed to check item data of ["
-                          .. self.key .. "] err:" .. err
-        end
-    end
-
-    self:upgrade_version(res.modifiedIndex)
-
-    if res.dir then
-        if res.value then
-            return false, "todo: support for parsing `dir` response "
-                          .. "structures. " .. json.encode(res)
-        end
-        return false
-    end
-
-    local pre_index = self.values_hash[key]
-    if pre_index then
-        local pre_val = self.values[pre_index]
-        if pre_val and pre_val.clean_handlers then
-            for _, clean_handler in ipairs(pre_val.clean_handlers) do
-                clean_handler(pre_val)
-            end
-            pre_val.clean_handlers = nil
+    local err
+    for i, item in ipairs(items) do
+        local id = tostring(i)
+        local data_valid = true
+        if type(item) ~= "table" then
+            data_valid = false
+            log.error("invalid item data of [", self.key .. "/" .. id,
+                        "], val: ", json.delay_encode(item),
+                        ", it shoud be a object")
         end
 
-        if res.value then
-            res.value.id = key
-            self.values[pre_index] = res
-            res.clean_handlers = {}
+        local apisix_item = {value = item, modifiedIndex = apisix_yaml_ctime}
 
-        else
-            self.sync_times = self.sync_times + 1
-            self.values[pre_index] = false
-        end
-
-    elseif res.value then
-        insert_tab(self.values, res)
-        self.values_hash[key] = #self.values
-        res.value.id = key
-    end
-
-    -- avoid space waste
-    -- todo: need to cover this path, it is important.
-    if self.sync_times > 100 then
-        local count = 0
-        for i = 1, #self.values do
-            local val = self.values[i]
-            self.values[i] = nil
-            if val then
-                count = count + 1
-                self.values[count] = val
+        if data_valid and self.item_schema then
+            data_valid, err = check_schema(self.item_schema, item)
+            if not data_valid then
+                log.error("failed to check item data of [", self.key,
+                          "] err:", err, " ,val: ", json.delay_encode(item))
             end
         end
 
-        for i = 1, count do
-            key = short_key(self, self.values[i].key)
-            self.values_hash[key] = i
+        if data_valid then
+            insert_tab(self.values, apisix_item)
+            local item_id = apisix_item.value.id or self.key .. "#" .. id
+            self.values_hash[item_id] = #self.values
+            apisix_item.value.id = item_id
+            apisix_item.clean_handlers = {}
         end
     end
 
-    self.conf_version = self.conf_version + 1
-    return self.values
+    self.conf_version = apisix_yaml_ctime
+    return true
 end
 
 
@@ -281,16 +174,16 @@ local function _automatic_fetch(premature, self)
         local ok, ok2, err = pcall(sync_data, self)
         if not ok then
             err = ok2
-            log.error("failed to fetch data from etcd: ", err, ", ",
-                      tostring(self))
+            log.error("failed to fetch data from local file apisix.yaml: ",
+                      err, ", ", tostring(self))
             ngx_sleep(3)
             break
 
         elseif not ok2 and err then
             if err ~= "timeout" and err ~= "Key not found"
                and self.last_err ~= err then
-                log.error("failed to fetch data from etcd: ", err, ", ",
-                          tostring(self))
+                log.error("failed to fetch data from local file apisix.yaml: ",
+                          err, ", ", tostring(self))
             end
 
             if err ~= self.last_err then
@@ -305,6 +198,9 @@ local function _automatic_fetch(premature, self)
 
         elseif not ok2 then
             ngx_sleep(0.05)
+
+        else
+            ngx_sleep(0.1)
         end
     end
 
@@ -320,22 +216,15 @@ function _M.new(key, opts)
         return nil, err
     end
 
-    local etcd_conf = clone_tab(local_conf.etcd)
-    local prefix = etcd_conf.prefix
-    etcd_conf.prefix = nil
-
-    local etcd_cli
-    etcd_cli, err = etcd.new(etcd_conf)
-    if not etcd_cli then
-        return nil, err
-    end
-
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
 
+    -- like /routes and /upstreams, remove first char `/`
+    if key then
+        key = sub_str(key, 2)
+    end
+
     local obj = setmetatable({
-        etcd_cli = etcd_cli,
-        key = key and prefix .. key,
         automatic = automatic,
         item_schema = item_schema,
         sync_times = 0,
@@ -346,6 +235,7 @@ function _M.new(key, opts)
         prev_index = nil,
         last_err = nil,
         last_err_time = nil,
+        key = key,
     }, mt)
 
     if automatic then
@@ -367,6 +257,16 @@ end
 
 function _M.server_version(self)
     return "apisix.yaml " .. _M.version
+end
+
+
+function _M.init_worker()
+    local _, _, err = read_apisix_yaml()
+    if err then
+        error("failed to read apisix_yaml: " .. err)
+    end
+
+    ngx.timer.every(1, read_apisix_yaml)
 end
 
 

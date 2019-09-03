@@ -25,25 +25,67 @@ run_tests();
 __DATA__
 
 === TEST 1: sanity
---- config
-location /t {
-    content_by_lua_block {
-        local core = require("apisix.core")
-        ngx.say("done")
-    }
-}
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
-uri: /hello
-upstream:
-    nodes:
-        "127.0.0.1:1980": 1
-    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
 --- request
-GET /t
+GET /hello
 --- response_body
-done
+hello world
 --- error_log
 use config_center: yaml
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: route:uri + host (missing host, not hit)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    host: foo.com
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+use config_center: yaml
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: route:uri + host
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    host: foo.com
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- more_headers
+host: foo.com
+--- request
+GET /hello
+--- response_body
+hello world
 --- no_error_log
 [error]
