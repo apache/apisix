@@ -197,6 +197,14 @@ _EOC_
 
     $block->set_value("config", $config);
 
+    my $user_apisix_yaml = $block->apisix_yaml // "";
+    if ($user_apisix_yaml) {
+        $user_apisix_yaml = <<_EOC_;
+>>> ../conf/apisix.yaml
+$user_apisix_yaml
+_EOC_
+    }
+
     my $user_yaml_config = $block->yaml_config // $yaml_config;
 
     my $user_files = $block->user_files;
@@ -207,6 +215,7 @@ $user_yaml_config
 $ssl_crt
 >>> ../conf/cert/apisix.key
 $ssl_key
+$user_apisix_yaml
 _EOC_
 
     $block->set_value("user_files", $user_files);
