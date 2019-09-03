@@ -26,11 +26,11 @@
 curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 {
     "username": "jack",
-	"plugins": {
-		"key-auth": {
-			"key": "keykey"
-		}
-	}
+    "plugins": {
+        "key-auth": {
+            "key": "keykey"
+        }
+    }
 }'
 ```
 
@@ -39,18 +39,18 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-		"key-auth": {}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
@@ -85,17 +85,17 @@ HTTP/1.1 401 Unauthorized
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 

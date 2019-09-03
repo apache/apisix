@@ -17,22 +17,22 @@
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"plugins": {
-		"limit-req": {
-			"rate": 1,
-			"burst": 2,
-			"rejected_code": 503,
-			"key": "remote_addr"
-		}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
@@ -67,14 +67,14 @@ Server: APISIX web server
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 

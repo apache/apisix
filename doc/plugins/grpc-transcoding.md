@@ -15,17 +15,17 @@ Here's an example, adding a proto which `id` is `1`:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 {
- "content" : "syntax = \"proto3\";
-   package helloworld;
-   service Greeter {
-       rpc SayHello (HelloRequest) returns (HelloReply) {}
-   }
-   message HelloRequest {
-       string name = 1;
-   }
-   message HelloReply {
-       string message = 1;
-      }"
+    "content" : "syntax = \"proto3\";
+    package helloworld;
+    service Greeter {
+        rpc SayHello (HelloRequest) returns (HelloReply) {}
+    }
+    message HelloRequest {
+        string name = 1;
+    }
+    message HelloReply {
+        string message = 1;
+    }"
 }'
 ```
 
