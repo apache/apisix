@@ -216,20 +216,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 并不是所有插件都有具体配置项，比如 `prometheus` 下是没有任何具体配置项，这时候用一个空的对象
 标识即可。
 
-目前 APISIX 已支持插件：
-
-* [key-auth](../doc/plugins/key-auth-cn.md)
-* [grpc-transcode](../doc/plugins/grpc-transcode-cn.md)
-* ip-restriction
-* [jwt-auth](../doc/plugins/jwt-auth-cn.md)
-* [key-auth](../doc/plugins/key-auth-cn.md)
-* [limit-conn](../doc/plugins/limit-conn-cn.md)
-* [limit-count](../doc/plugins/limit-count-cn.md)
-* [limit-req](../doc/plugins/limit-req-cn.md)
-* openid-connect
-* [prometheus](../doc/plugins/prometheus.md)
-* [serverless](../doc/plugins/serverless-cn.md)
-* [zipkin](../doc/plugins/zipkin.md)
+[查看 APISIX 已支持插件列表](plugins-cn.md)
 
 [返回目录](#目录)
 
