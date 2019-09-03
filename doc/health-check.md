@@ -5,6 +5,7 @@ Health Check of APISIX is based on [lua-resty-healthcheck](https://github.com/Ko
 you can use it for upstream.
 
 The following is a example of health check:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {

@@ -84,7 +84,7 @@ Server: APISIX web server
 
 当我们接受到成功应答，表示该 Route 已成功创建。
 
-#### Route option
+#### Route 选项
 
 除了 uri 匹配条件外，还支持更多过滤条件。
 
@@ -149,7 +149,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/101 -X PUT -d '
 }'
 ```
 
-当然我们也可以为 Route 指定不同的插件参数或上游，比如下面这个 Route 设置了不同的限流参数，这样设置只配置相同部分，不同部分（比如上游）则继续使用 Service 中的配置参数。
+当然我们也可以为 Route 指定不同的插件参数或上游，比如下面这个 Route 设置了不同的限流参数，其他部分（比如上游）则继续使用 Service 中的配置参数。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
@@ -240,7 +240,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |type            |必需|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
 |nodes           |必需|数组，内部元素是上游机器地址列表（IP+Port 方式）|
 |key             |必需|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id|
-|checks          |可选|配置健康检查的参数|
+|checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制|
 |scheme          |可选|转发到上游的 `schema` 协议，可以是 `http` 或 `https`，默认 `http` 协议|
 |uri             |可选|转发到上游的新 `uri` 地址|
