@@ -22,7 +22,7 @@ local pcall        = pcall
 
 
 local _M = {
-    version = 0.2,
+    version = 0.1,
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
 }
@@ -30,7 +30,7 @@ local _M = {
 local mt = {
     __index = _M,
     __tostring = function(self)
-        return " etcd key: " .. self.key
+        return " apisix.yaml key: " .. self.key
     end
 }
 
@@ -365,31 +365,8 @@ function _M.close(self)
 end
 
 
-local function read_etcd_version(etcd_cli)
-    if not etcd_cli then
-        return nil, "not inited"
-    end
-
-    local data, err = etcd_cli:version()
-    if not data then
-        return nil, err
-    end
-
-    local body = data.body
-    if type(body) ~= "table" then
-        return nil, "failed to read response body when try to fetch etcd "
-                    .. "version"
-    end
-
-    return body
-end
-
 function _M.server_version(self)
-    if not self.running then
-        return nil, "stoped"
-    end
-
-    return read_etcd_version(self.etcd_cli)
+    return "apisix.yaml " .. _M.version
 end
 
 

@@ -18,6 +18,7 @@ our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/config_center: etcd/config_center: yaml/;
+$yaml_config =~ s/enable_admin: true/enable_admin: false/;
 
 run_tests();
 

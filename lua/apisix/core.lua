@@ -1,7 +1,8 @@
 local log = require("apisix.core.log")
 local local_conf = require("apisix.core.config_local").local_conf()
 
-local config_center = local_conf.apisix.config_center or "etcd"
+local config_center = local_conf.apisix and local_conf.apisix.config_center
+                      or "etcd"
 log.info("use config_center: ", config_center)
 
 return {
