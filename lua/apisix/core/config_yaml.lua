@@ -138,6 +138,7 @@ local function sync_data(self)
         if data_valid then
             insert_tab(self.values, apisix_item)
             local item_id = apisix_item.value.id or self.key .. "#" .. id
+            item_id = tostring(item_id)
             self.values_hash[item_id] = #self.values
             apisix_item.value.id = item_id
             apisix_item.clean_handlers = {}
