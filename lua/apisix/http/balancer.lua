@@ -34,8 +34,8 @@ local _M = {
 }
 
 --[[
--- 根据ip:port转化成 ip,port
- ]]
+    根据ip:port转化成 ip,port
+--]]
 local function parse_addr(addr)
     local pos = find_str(addr, ":", 1, true)
     if not pos then
@@ -48,8 +48,8 @@ local function parse_addr(addr)
 end
 
 --[[
--- 提取健康的上有节点
- ]]
+    提取健康的上有节点
+--]]
 local function fetch_health_nodes(upstream, checker)
     -- 没有设置健康检查，返回所有配置的上游节点
     if not checker then
@@ -117,8 +117,8 @@ local function create_checker(upstream, healthcheck_parent)
 end
 
 --[[
--- 提取健康检查器
- ]]
+    取健康检查器
+--]]
 local function fetch_healthchecker(upstream, healthcheck_parent, version)
     -- 是否配置健康检查的参数
     if not upstream.checks then
@@ -137,8 +137,8 @@ local function fetch_healthchecker(upstream, healthcheck_parent, version)
 end
 
 --[[
--- 创建负载分发选择器
- ]]
+    创建负载分发选择器
+--]]
 local function create_server_picker(upstream, checker)
     if upstream.type == "roundrobin" then
         local up_nodes = fetch_health_nodes(upstream, checker)
@@ -184,8 +184,8 @@ local function create_server_picker(upstream, checker)
 end
 
 --[[
---  根据负载策略提取上游主机实例
- ]]
+    根据负载策略提取上游主机实例
+--]]
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))

@@ -59,7 +59,7 @@ local function readdir(etcd_cli, key)
 end
 
 --[[
--- 监听某个key 变动
+    监听某个key 变动
 --]]
 local function waitdir(etcd_cli, key, modified_index)
     if not etcd_cli then
@@ -84,16 +84,16 @@ local function waitdir(etcd_cli, key, modified_index)
 end
 
 --[[
---  取短key
---  例：
- ]]
+    取短key
+    例：
+--]]
 local function short_key(self, str)
     return sub_str(str, #self.key + 2)
 end
 
 --[[
---版本升级
- ]]
+    版本升级
+--]]
 function _M.upgrade_version(self, new_ver)
     new_ver = tonumber(new_ver)
     if not new_ver then
@@ -117,8 +117,8 @@ function _M.upgrade_version(self, new_ver)
 end
 
 --[[
---  同步配置数据
- ]]
+    同步配置数据
+--]]
 local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
@@ -308,11 +308,11 @@ function _M.get(self, key)
 end
 
 --[[
---  功能： 自动提取配置
---  @premature  回调第一个参数 premature，则是用于标识触发该回调的原因是否由于 timer 的到期。
---   Nginx worker 的退出，也会触发当前所有有效的 timer。 这时候 premature 会被设置为 true。
---   详见 https://github.com/openresty/lua-nginx-module#ngxtimerat
---  @self  当前
+    功能： 自动提取配置
+    @premature  回调第一个参数 premature，则是用于标识触发该回调的原因是否由于 timer 的到期。
+                Nginx worker 的退出，也会触发当前所有有效的 timer。 这时候 premature 会被设置为 true。
+                详见 https://github.com/openresty/lua-nginx-module#ngxtimerat
+    @self  当前
 --]]
 local function _automatic_fetch(premature, self)
     if premature then

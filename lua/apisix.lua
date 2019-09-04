@@ -42,7 +42,7 @@ function _M.http_init()
 end
 
 --[[
---
+
 --]]
 function _M.http_init_worker()
     -- 一种将事件发送到 Nginx 服务器中其他工作进程的方法。
@@ -70,10 +70,10 @@ function _M.http_init_worker()
 end
 
 --[[
---在指定的阶段运行指定的插件
---@phase   阶段
---@plugins 插件
---@api_ctx apisix上下文
+    在指定的阶段运行指定的插件
+    @phase   阶段
+    @plugins 插件
+    @api_ctx apisix上下文
 --]]
 local function run_plugin(phase, plugins, api_ctx)
     api_ctx = api_ctx or ngx.ctx.api_ctx
@@ -235,8 +235,8 @@ function _M.http_access_phase()
 end
 
 --[[
---参见 http_access_phase 方法，基本上是一致的。
- ]]
+    参见 http_access_phase 方法，基本上是一致的。
+--]]
 function _M.grpc_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -323,8 +323,8 @@ function _M.http_log_phase()
 end
 
 --[[
---  执行balancer 阶段
- ]]
+    执行balancer 阶段
+--]]
 function _M.http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then

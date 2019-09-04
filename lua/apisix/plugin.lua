@@ -1,5 +1,5 @@
 --[[
--- 插件类
+     插件类
 --]]
 local require = require
 local core = require("apisix.core")
@@ -27,7 +27,7 @@ local function sort_plugin(l, r)
 end
 
 --[[
---  加载某个插件
+    加载某个插件
 --]]
 local function load_plugin(name)
     local pkg_name = "apisix.plugins." .. name
@@ -65,7 +65,7 @@ local function load_plugin(name)
 end
 
 --[[
---  初始化配置加载
+     初始化配置加载
 --]]
 local function load()
     core.table.clear(local_plugins)
@@ -119,9 +119,9 @@ _M.load = load
 
 
 --[[
---为了明确变量的作用域,采用 变量加同名函数，来明确 routes 的作用域。
---有些插件被启用后，是希望拦截特定 uri 对外有输出，这里主要是提取插件里存在api功能的
---如 https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/prometheus.lua#L32
+    为了明确变量的作用域,采用 变量加同名函数，来明确 routes 的作用域。
+    有些插件被启用后，是希望拦截特定 uri 对外有输出，这里主要是提取插件里存在api功能的
+    如 https://github.com/iresty/apisix/blob/master/lua/apisix/plugins/prometheus.lua#L32
 --]]
 local fetch_api_routes
 do
@@ -156,16 +156,16 @@ end
 end -- do
 
 --[[
--- 插件里存在的api路由
- ]]
+     插件里存在的api路由
+--]]
 function _M.api_routes()
     return core.lrucache.global("plugin_routes", _M.load_times,
                                 fetch_api_routes)
 end
 
 --[[
--- 过滤当前匹配路由的插件
- ]]
+     过滤当前匹配路由的插件
+--]]
 function _M.filter(user_route, plugins)
     plugins = plugins or core.table.new(#local_plugins * 2, 0)
     -- 获取当前路由配置的插件
@@ -203,9 +203,9 @@ function _M.filter(user_route, plugins)
 end
 
 --[[
--- 合并 route 信息配置到 service
--- @service_conf
--- @route_conf
+    合并 route 信息配置到 service
+    @service_conf
+    @route_conf
 --]]
 function _M.merge_service_route(service_conf, route_conf)
     core.log.info("service conf: ", core.json.delay_encode(service_conf))

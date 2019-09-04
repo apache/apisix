@@ -1,6 +1,6 @@
 --[[
--- 封装了自己的上下文
- ]]
+    封装了自己的上下文
+--]]
 local tablepool = require("tablepool")
 local get_var = require("resty.ngxvar").fetch
 local get_request = require("resty.ngxvar").request
@@ -35,8 +35,8 @@ do
     }
 
 --[[
--- 设置变量元表
- ]]
+    设置变量元表
+--]]
 function _M.set_vars_meta(ctx)
     local var = tablepool.fetch("ctx_var", 0, 32)
     var._request = get_request()
@@ -45,8 +45,8 @@ function _M.set_vars_meta(ctx)
 end
 
 --[[
--- 释放变量
- ]]
+    释放变量
+--]]
 function _M.release_vars(ctx)
     if ctx.var == nil then
         return

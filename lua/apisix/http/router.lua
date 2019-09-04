@@ -1,6 +1,6 @@
 --[[
---路由的facecade类、代理类
- ]]
+    路由的facecade类、代理类
+--]]
 local require = require
 local core = require("apisix.core")
 local local_conf = core.config.local_conf
