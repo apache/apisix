@@ -1,3 +1,4 @@
+local table = require("apisix.core.table")
 local ngx_re = require("ngx.re")
 local open = io.open
 
@@ -27,6 +28,13 @@ end
 
 function _M.split_uri(uri)
     return ngx_re.split(uri, "/")
+end
+
+
+function _M.capture(opt)
+    local new_opt = table.clone(opt)
+    new_opt.ctx = ngx.ctx
+    new_opt.share_all_vars = true
 end
 
 
