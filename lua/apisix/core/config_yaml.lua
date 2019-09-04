@@ -4,6 +4,7 @@ local config_local = require("apisix.core.config_local")
 local yaml         = require("apisix.core.yaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
+local process      = require("ngx.process")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local lfs          = require("lfs")
@@ -45,7 +46,8 @@ local mt = {
 local function read_apisix_yaml(pre_mtime)
     local attributes, err = lfs.attributes(apisix_yaml_path)
     if not attributes then
-        return nil, nil, err
+        log.error("failed to fetch ", apisix_yaml_path, " attributes: ", err)
+        return
     end
 
     -- log.info("change: ", json.encode(attributes))
@@ -54,9 +56,10 @@ local function read_apisix_yaml(pre_mtime)
         return
     end
 
-    local f = io.open(apisix_yaml_path, "r")
+    local f, err = io.open(apisix_yaml_path, "r")
     if not f then
-        return nil, nil, "conf/apisix.yaml not found"
+        log.error("failed to open file ", apisix_yaml_path, " : ", err)
+        return
     end
 
     local found_end_flag
@@ -72,6 +75,8 @@ local function read_apisix_yaml(pre_mtime)
     end
 
     if not found_end_flag then
+        f:close()
+        log.warn("missing valid end flag in file ", apisix_yaml_path)
         return
     end
 
@@ -79,11 +84,13 @@ local function read_apisix_yaml(pre_mtime)
     local yaml_config = f:read("*a")
     f:close()
 
-    apisix_yaml = yaml.parse(yaml_config)
-    if not apisix_yaml then
-        return nil, nil, "failed to parse the content of file conf/apisix.yaml"
+    local apisix_yaml_new = yaml.parse(yaml_config)
+    if not apisix_yaml_new then
+        log.error("failed to parse the content of file conf/apisix.yaml")
+        return
     end
 
+    apisix_yaml = apisix_yaml_new
     apisix_yaml_ctime = last_change_time
 end
 
@@ -274,11 +281,11 @@ end
 
 
 function _M.init_worker()
-    local _, _, err = read_apisix_yaml()
-    if err then
-        error("failed to read apisix_yaml: " .. err)
+    if process.type() ~= "worker" and process.type() ~= "single" then
+        return
     end
 
+    read_apisix_yaml()
     ngx.timer.every(1, read_apisix_yaml)
 end
 
