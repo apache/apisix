@@ -112,13 +112,17 @@ local uri_route = {
 
 function _M.init_worker()
     local local_conf = core.config.local_conf()
+    -- 判断是否启用了admin
     if not local_conf.apisix or not local_conf.apisix.enable_admin then
         return
     end
-
+    -- 后端默认使用了radixtree路由引擎
     router = route.new(uri_route)
     events = require("resty.worker.events")
-
+    -- 注册事件机制
+    -- reload_plugins 回调
+    -- reload_event 事件源1
+    -- "PUT" 事件源2
     events.register(reload_plugins, reload_event, "PUT")
 end
 

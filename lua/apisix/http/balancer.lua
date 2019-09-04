@@ -33,7 +33,9 @@ local _M = {
     name = module_name,
 }
 
-
+--[[
+-- 根据ip:port转化成 ip,port
+ ]]
 local function parse_addr(addr)
     local pos = find_str(addr, ":", 1, true)
     if not pos then
@@ -45,8 +47,11 @@ local function parse_addr(addr)
     return host, tonumber(port)
 end
 
-
+--[[
+-- 提取健康的上有节点
+ ]]
 local function fetch_health_nodes(upstream, checker)
+    -- 没有设置健康检查，返回所有配置的上游节点
     if not checker then
         return upstream.nodes
     end
@@ -54,14 +59,17 @@ local function fetch_health_nodes(upstream, checker)
     local host = upstream.checks and upstream.checks.host
     local up_nodes = core.table.new(0, #upstream.nodes)
 
+    -- 轮询获取上游主机的状态
     for addr, weight in pairs(upstream.nodes) do
         local ip, port = parse_addr(addr)
         local ok = checker:get_target_status(ip, port, host)
         if ok then
+            -- 将权重加入到上线主机列表中心去
             up_nodes[addr] = weight
         end
     end
 
+    --  如果所有节点都不健康，默认所有节点
     if core.table.nkeys(up_nodes) == 0 then
         core.log.warn("all upstream nodes is unhealth, use default")
         up_nodes = upstream.nodes
@@ -78,6 +86,7 @@ local function create_checker(upstream, healthcheck_parent)
         checks = upstream.checks,
     })
 
+    -- 增加checker 的目的地址
     for addr, weight in pairs(upstream.nodes) do
         local ip, port = parse_addr(addr)
         local ok, err = checker:add_target(ip, port, upstream.checks.host)
@@ -87,15 +96,18 @@ local function create_checker(upstream, healthcheck_parent)
         end
     end
 
+    -- 如果upstream是通过upstream_id应用的， parent指向被引用的route
     if upstream.parent then
         core.table.insert(upstream.parent.clean_handlers, function ()
             core.log.info("try to release checker: ", tostring(checker))
+            --停止检查器
             checker:stop()
         end)
 
     else
         core.table.insert(healthcheck_parent.clean_handlers, function ()
             core.log.info("try to release checker: ", tostring(checker))
+            --停止检查器
             checker:stop()
         end)
     end
@@ -104,8 +116,11 @@ local function create_checker(upstream, healthcheck_parent)
     return checker
 end
 
-
+--[[
+-- 提取健康检查器
+ ]]
 local function fetch_healthchecker(upstream, healthcheck_parent, version)
+    -- 是否配置健康检查的参数
     if not upstream.checks then
         return
     end
@@ -114,18 +129,21 @@ local function fetch_healthchecker(upstream, healthcheck_parent, version)
         return
     end
 
+    -- 加入到lru缓存
     local checker = lrucache_checker(upstream, version,
                                      create_checker, upstream,
                                      healthcheck_parent)
     return checker
 end
 
-
+--[[
+-- 创建负载分发选择器
+ ]]
 local function create_server_picker(upstream, checker)
     if upstream.type == "roundrobin" then
         local up_nodes = fetch_health_nodes(upstream, checker)
         core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))
-
+        --初始化一个RR算法的负载策略
         local picker = roundrobin:new(up_nodes)
         return {
             upstream = upstream,
@@ -148,8 +166,9 @@ local function create_server_picker(upstream, checker)
             servers[id] = serv
             nodes[id] = weight
         end
-
+        --初始化一个chash 算法的负载策略
         local picker = resty_chash:new(nodes)
+        --对这个key进行hash
         local key = upstream.key
         return {
             upstream = upstream,
@@ -164,7 +183,9 @@ local function create_server_picker(upstream, checker)
     return nil, "invalid balancer type: " .. upstream.type, 0
 end
 
-
+--[[
+--  根据负载策略提取上游主机实例
+ ]]
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
@@ -184,6 +205,7 @@ local function pick_server(route, ctx)
                              .. "upstream information"
         end
 
+        -- 根据upstream_id 获取upstream_obj
         local upstream_obj = upstreams_etcd:get(tostring(up_id))
         if not upstream_obj then
             return nil, nil, "failed to find upstream by id: " .. up_id
@@ -191,15 +213,20 @@ local function pick_server(route, ctx)
         core.log.info("upstream: ", core.json.delay_encode(upstream_obj))
 
         healthcheck_parent = upstream_obj
+        -- 对象实例
         upstream = upstream_obj.value
+        -- etcd上的配置版本
         version = upstream_obj.modifiedIndex
+        -- key
         key = upstream.type .. "#upstream_" .. up_id
-
     else
+        -- 从配置conf_version获取
         version = ctx.conf_version
+        -- route
         key = upstream.type .. "#route_" .. route.value.id
     end
 
+    -- 提取健康检查
     local checker = fetch_healthchecker(upstream, healthcheck_parent, version)
     local retries = upstream.retries
     if retries and retries > 0 then
@@ -208,20 +235,24 @@ local function pick_server(route, ctx)
             local state, code = get_last_failure()
             if state == "failed" then
                 if code == 504 then
+                    --报告超时
                     checker:report_timeout(ctx.balancer_ip, ctx.balancer_port,
                                            upstream.checks.host)
                 else
+                    --报告tcp失败
                     checker:report_tcp_failure(ctx.balancer_ip,
                         ctx.balancer_port, upstream.checks.host)
                 end
 
             else
+                --报告http状态
                 checker:report_http_status(ctx.balancer_ip, ctx.balancer_port,
                                            upstream.checks.host, code)
             end
         end
 
         if ctx.balancer_try_count == 1 then
+            -- 设置更多尝试
             set_more_tries(retries)
         end
     end
@@ -236,11 +267,13 @@ local function pick_server(route, ctx)
         return nil, nil, "failed to fetch server picker"
     end
 
+    -- 获取到上游服务
     local server, err = server_picker.get(ctx)
     if not server then
         return nil, nil, "failed to find valid upstream server" .. err
     end
 
+    -- 关于转发上游超时的设置
     if upstream.timeout then
         local timeout = upstream.timeout
         local ok, err = set_timeouts(timeout.connect, timeout.send,
@@ -250,6 +283,7 @@ local function pick_server(route, ctx)
         end
     end
 
+    -- 标记到上下文中去
     local ip, port, err = parse_addr(server)
     ctx.balancer_ip = ip
     ctx.balancer_port = port
@@ -261,12 +295,14 @@ _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
+    -- 根据策略算法提取上游主机的一个ip、port
     local ip, port, err = pick_server(route, ctx)
     if err then
         core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
 
+    -- 负载均衡器导流
     local ok, err = balancer.set_current_peer(ip, port)
     if not ok then
         core.log.error("failed to set server peer: ", err)

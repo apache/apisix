@@ -52,7 +52,7 @@ local function create_r3_router(routes)
 end
 
 
-    local match_opts = {}
+local match_opts = {}
 function _M.match(api_ctx)
     if not cached_version or cached_version ~= user_routes.conf_version then
         create_r3_router(user_routes.values)

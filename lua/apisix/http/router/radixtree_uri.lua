@@ -15,6 +15,7 @@ local _M = {version = 0.1}
 
 
     local uri_routes = {}
+    -- 用来存放初始化的radixtree路由
     local uri_router
 local function create_radixtree_router(routes)
     routes = routes or {}
@@ -22,6 +23,7 @@ local function create_radixtree_router(routes)
     local api_routes = plugin.api_routes()
     core.table.clear(uri_routes)
 
+    --针对插件里需要进行url拦截的，创建指定的路由动作，路由动作是插件里定义的
     for _, route in ipairs(api_routes) do
         if type(route) == "table" then
             core.table.insert(uri_routes, {
@@ -32,6 +34,7 @@ local function create_radixtree_router(routes)
         end
     end
 
+    --对传过来的routes 进行路由创建，路由动作，标记当前的路由的参数、匹配的理由route
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             core.table.insert(uri_routes, {
@@ -53,20 +56,24 @@ end
 
     local match_opts = {}
 function _M.match(api_ctx)
+    -- 如果配置版本不匹配，则缓存数据已经落后，需要重新创建radixtree路由
     if not cached_version or cached_version ~= user_routes.conf_version then
         create_radixtree_router(user_routes.values)
         cached_version = user_routes.conf_version
     end
 
+    -- 如果数据不存在
     if not uri_router then
         core.log.error("failed to fetch valid `uri` router: ")
         return core.response.exit(404)
     end
 
+    -- 构建匹配选项
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.method
     match_opts.host = api_ctx.var.host
 
+    -- 路由匹配分发
     local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
@@ -93,7 +100,7 @@ function _M.init_worker()
             item_schema = core.schema.route
         })
     if not user_routes then
-        error("failed to create etcd instance for fetching /routes : " .. err)
+        error("failed to create etcd  for finstanceetching /routes : " .. err)
     end
 end
 

@@ -15,5 +15,7 @@ return {
     etcd     = require("apisix.core.etcd"),
     http     = require("apisix.core.http"),
     consumer = require("apisix.consumer"),
+    --针对LuaJIT的Lua表格资源回收池
+    --详见：https://www.ctolib.com/lua-tablepool.html
     tablepool= require("tablepool"),
 }
