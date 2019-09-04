@@ -111,6 +111,18 @@ local function sync_data(self)
         return true
     end
 
+    if self.values then
+        for _, item in ipairs(self.values) do
+            if item.clean_handlers then
+                for _, clean_handler in ipairs(item.clean_handlers) do
+                    clean_handler(item)
+                end
+                item.clean_handlers = nil
+            end
+        end
+        self.values = nil
+    end
+
     self.values = new_tab(#items, 0)
     self.values_hash = new_tab(0, #items)
 
