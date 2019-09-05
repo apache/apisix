@@ -18,7 +18,7 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "/hello",
-                    "vars": ["arg_k", "v"],
+                    "vars": [ ["arg_k", "v"] ],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -82,16 +82,16 @@ hello world
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [[{
+                [=[{
                     "uri": "/hello",
-                    "vars": ["cookie_k", "v"],
+                    "vars": [["cookie_k", "v"]],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     }
-                }]]
+                }]=]
                 )
 
             if code >= 300 then
@@ -152,16 +152,16 @@ hello world
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [[{
+                [=[{
                     "uri": "/hello",
-                    "vars": ["http_k", "v"],
+                    "vars": [["http_k", "v"]],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     }
-                }]]
+                }]=]
                 )
 
             if code >= 300 then
@@ -222,16 +222,16 @@ hello world
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [[{
+                [=[{
                     "uri": "/hello",
-                    "vars": ["http_k", "header", "cookie_k", "cookie", "arg_k", "uri_arg"],
+                    "vars": [["http_k", "header"], ["cookie_k", "cookie"], ["arg_k", "uri_arg"]],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     }
-                }]]
+                }]=]
                 )
 
             if code >= 300 then

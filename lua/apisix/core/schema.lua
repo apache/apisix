@@ -300,7 +300,7 @@ local route = [[{
             "type": "array",
             "items": {
                 "description": "Nginx builtin variable name and value",
-                "type": "string"
+                "type": "array"
             }
         },
         "remote_addr": {
