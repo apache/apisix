@@ -53,13 +53,17 @@ Here are the rules:
 ### How to filter route by Nginx builtin variable
 
 Please take a look at [radixtree-new](https://github.com/iresty/lua-resty-radixtree#new),
-here is an example:
+here is an simple example:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 {
     "uri": "/index.html",
-    "vars": ["http_host", "iresty.com", "cookie__device_id", "a66f0cdc4ba2df8c096f74c9110163a9", "arg_name", "jack"],
+    "vars": [
+        ["http_host", "iresty.com"],
+        ["cookie__device_id", "a66f0cdc4ba2df8c096f74c9110163a9"],
+        ["arg_name", "jack"]
+    ],
     "upstream": {
         "type": "roundrobin",
         "nodes": {
