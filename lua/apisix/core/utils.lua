@@ -31,10 +31,12 @@ function _M.split_uri(uri)
 end
 
 
-function _M.capture(opt)
+function _M.capture_opt(opt)
     local new_opt = table.clone(opt)
     new_opt.ctx = ngx.ctx
     new_opt.share_all_vars = true
+
+    return 
 end
 
 

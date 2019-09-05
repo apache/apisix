@@ -137,7 +137,7 @@ _EOC_
             }
         }
 
-        location \@/ {
+        location \@/internal {
             access_by_lua_block {
                 ngx.log(ngx.WARN, "access_by_lua_block")
             }
