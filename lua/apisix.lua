@@ -334,17 +334,18 @@ function _M.http_balancer_phase()
 
     -- first time
     if not api_ctx.balancer_name then
-        -- 执行插件的balancer阶段
+        -- 执行插件的balancer阶段，捆绑上自己实现的balancer
         run_plugin("balancer", nil, api_ctx)
         if api_ctx.balancer_name then
             return
         end
     end
-
+    -- 实现了一个自己的负载插件，没有走默认的balancer
     if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
         return run_plugin("balancer", nil, api_ctx)
     end
 
+    -- 走默认的balancer处理
     api_ctx.balancer_name = "default"
     load_balancer(api_ctx.matched_route, api_ctx)
 end

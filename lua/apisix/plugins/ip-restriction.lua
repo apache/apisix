@@ -1,5 +1,10 @@
+--[[
+    ip 黑白名单类,暂时缺少ipv6的支持
+    详见：
+    https://github.com/hamishforbes/lua-resty-iputils
+    https://github.com/GUI/lua-libcidr-ffi
+--]]
 local ipairs = ipairs
-
 local core = require("apisix.core")
 local iputils = require("resty.iputils")
 
@@ -94,7 +99,7 @@ end
 function _M.access(conf, ctx)
     local block = false
     local binary_remote_addr = ctx.var.binary_remote_addr
-
+    -- 黑名单
     if conf.blacklist and #conf.blacklist > 0 then
         local name = plugin_name .. 'black'
         local parsed_cidrs = core.lrucache.plugin_ctx(name, ctx, create_cidrs,
@@ -102,6 +107,7 @@ function _M.access(conf, ctx)
         block = iputils.binip_in_cidrs(binary_remote_addr, parsed_cidrs)
     end
 
+    -- 白名单
     if conf.whitelist and #conf.whitelist > 0 then
         local name = plugin_name .. 'white'
         local parsed_cidrs = core.lrucache.plugin_ctx(name, ctx, create_cidrs,

@@ -1,3 +1,8 @@
+--[[
+    限流
+    详见：
+    https://blog.csdn.net/cn_yaojin/article/details/81774380
+--]]
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
 local sleep = ngx.sleep
@@ -42,6 +47,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
+    -- 构建插件上下文
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                               create_limit_obj, conf)
     if not lim then
@@ -51,7 +57,7 @@ function _M.access(conf, ctx)
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     local rejected_code = conf.rejected_code
-
+    -- 执行限制
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then

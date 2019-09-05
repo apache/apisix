@@ -68,7 +68,9 @@ local function run()
     end
 end
 
-
+--[[
+    获取本地的插件列表
+--]]
 local function get_plugins_list()
     local plugins = resources.plugins.get_plugins_list()
     core.response.exit(200, plugins)
@@ -84,7 +86,9 @@ local function post_reload_plugins()
     core.response.exit(200, success)
 end
 
-
+--[[
+    重载插件
+--]]
 local function reload_plugins(data, event, source, pid)
     core.log.info("start to hot reload plugins")
     plugin.load()

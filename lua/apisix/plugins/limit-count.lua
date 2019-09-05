@@ -1,3 +1,8 @@
+--[[
+    限流
+    详见：
+    https://blog.csdn.net/cn_yaojin/article/details/81774380
+--]]
 local limit_count_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local plugin_name = "limit-count"
@@ -37,6 +42,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
+    -- 构建插件上下文
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                               create_limit_obj, conf)
     if not lim then
@@ -46,7 +52,7 @@ function _M.access(conf, ctx)
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     core.log.info("key: ", key)
-
+    -- 执行限流
     local delay, remaining = lim:incoming(key, true)
     if not delay then
         local err = remaining
@@ -57,7 +63,7 @@ function _M.access(conf, ctx)
         core.log.error("failed to limit req: ", err)
         return 500
     end
-
+    -- 设置response消息头信息
     core.response.set_header("X-RateLimit-Limit", conf.count,
                              "X-RateLimit-Remaining", remaining)
 end

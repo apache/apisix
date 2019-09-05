@@ -1,3 +1,8 @@
+--[[
+    jwt 授权
+    详见：
+    https://github.com/SkyLothar/lua-resty-jwt
+--]]
 local core  = require("apisix.core")
 local jwt   = require("resty.jwt")
 local ck    = require("resty.cookie")
@@ -133,7 +138,9 @@ function _M.rewrite(conf, ctx)
     core.log.info("hit jwt-auth rewrite")
 end
 
-
+--[[
+    获取token
+--]]
 local function gen_token()
     local args = ngx.req.get_uri_args()
     if not args or not args.key then
@@ -170,7 +177,7 @@ local function gen_token()
             }
         }
     )
-
+    -- 返回token
     core.response.exit(200, jwt_token)
 end
 

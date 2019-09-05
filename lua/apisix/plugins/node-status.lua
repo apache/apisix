@@ -1,3 +1,8 @@
+--[[
+    节点状态
+    详见：
+    http://nginx.org/en/docs/http/ngx_http_stub_status_module.html
+--]]
 local core = require("apisix.core")
 local ngx = ngx
 local re_gmatch = ngx.re.gmatch
@@ -19,7 +24,9 @@ local ngx_statu_items = {
     "reading", "writing", "waiting"
 }
 
-
+--[[
+    从 etcd 中收集数据
+--]]
 local function collect()
     core.log.info("try to collect node status from etcd: ",
                   "/node_status/" .. apisix_id)
@@ -31,8 +38,12 @@ local function collect()
     return res.status, res.body
 end
 
-
+--[[
+    向 etcd 上报数据
+--]]
 local function run_loop()
+    -- 提取nginx状态，该请求是在配置文件中配置的，启用了的openresty的http_stub_status_module模块
+    -- 详细请查看配置文件
     local res, err = core.http.request_self("/apisix/nginx_status", {
                                                 keepalive = false,
                                             })
@@ -70,6 +81,7 @@ local function run_loop()
         ngx_status[name] = val[0]
     end
 
+    -- 存储状态
     local res, err = core.etcd.set("/node_status/" .. apisix_id, ngx_status)
     if not res then
         core.log.error("failed to create etcd client: ", err)
@@ -97,6 +109,7 @@ end
 
     local timer
 function _M.init()
+    -- 只要有一个work启动即可
     if timer or ngx.worker.id() ~= 0 then
         return
     end

@@ -61,7 +61,9 @@ function _M.get(name)
     return 200, json_schema
 end
 
-
+--[[
+    获取本地的插件列表
+--]]
 function _M.get_plugins_list()
     local plugins = core.config.local_conf().plugins
     if plugins[1] == 'example-plugin' then

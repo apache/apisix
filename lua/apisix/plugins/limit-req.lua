@@ -1,3 +1,8 @@
+--[[
+    限流
+    详见：
+    https://blog.csdn.net/cn_yaojin/article/details/81774380
+--]]
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
 local plugin_name = "limit-req"
@@ -36,11 +41,13 @@ end
 
 local function create_limit_obj(conf)
     core.log.info("create new limit-req plugin instance")
+    -- 设置一个频率的漏桶
     return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
 end
 
 
 function _M.access(conf, ctx)
+    -- 构建插件上下文
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
     if not lim then
@@ -49,6 +56,7 @@ function _M.access(conf, ctx)
     end
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    -- 执行限流操作
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then

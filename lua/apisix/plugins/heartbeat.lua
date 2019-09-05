@@ -1,12 +1,14 @@
--- Copyright (C) Yuansheng Wang
-
+--[[
+    心跳，报告当前apisix节点信息的
+    需要修改上报目标地址，才能用
+--]]
 local core = require("apisix.core")
 local http = require("resty.http")
 local encode_args = ngx.encode_args
 local plugin_name = "heartbeat"
 local ngx = ngx
 
-
+-- 上报中心，需要调整成总部中心
 local apisix_heartbeat_addr = "https://www.iresty.com/apisix/heartbeat?"
 
 
@@ -54,11 +56,12 @@ local function report()
         core.log.error("failed to fetch etcd version: ", err)
     end
 
+    --上报信息
     local info = {
-        version = core.version,
-        plugins = core.config.local_conf().plugins,
-        etcd_version = etcd_version.body,
-        uuid = core.id.get(),
+        version = core.version,       --版本号
+        plugins = core.config.local_conf().plugins, --当前节点的启动插件
+        etcd_version = etcd_version.body,   --etcd链接信息
+        uuid = core.id.get(),    --当前节点的唯一标志id
     }
 
     -- core.log.info(core.json.delay_encode(info, true))

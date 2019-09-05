@@ -245,7 +245,8 @@ local function sync_data(self)
         local pre_val = self.values[pre_index]
         if pre_val and pre_val.clean_handlers then
             for _, clean_handler in ipairs(pre_val.clean_handlers) do
-                -- clean_handler ??? 执行的意义是什么?
+                -- 主要针对balancer的checker功能,配置退出后需要stop健康检查
+                -- 详见balancer.lua L100
                 clean_handler(pre_val)
             end
             pre_val.clean_handlers = nil
