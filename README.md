@@ -81,6 +81,8 @@ You now have two ways to install APISIX: if you are using CentOS 7, it is recomm
 
 We will add support for Docker and more OS shortly.
 
+*NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
+
 ### Install from RPM for CentOS 7
 
 ```shell
