@@ -99,7 +99,7 @@ install:
 		cd apisix && \
 		git submodule update --init --recursive && \
 		cp -r dashboard/* /usr/local/apisix/dashboard
-	chmod -R 644 /usr/local/apisix/dashboard
+	chmod -R 755 /usr/local/apisix/dashboard
 
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
