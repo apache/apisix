@@ -8,11 +8,11 @@
 
 > Released on 2019/09/06
 
-这个版本带来很多新的特性，比如 IP 黑白名单、gPRC 协议转换、支持 IPv6、对接 IdP（身份认证提供商）服务、serverless、radix tree 路由等。
+这个版本带来很多新的特性，比如 IP 黑白名单、gPRC 协议转换、支持 IPv6、对接 IdP（身份认证提供商）服务、serverless、默认路由修改为radix tree（**不向下兼容**）等。
 
 ### Core
 - :sunrise: **[gRPC 协议转换](https://github.com/iresty/apisix/blob/master/doc/plugins/grpc-transcoding-cn.md)**: 支持 gRPC 协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API. [#395](https://github.com/iresty/apisix/issues/395)
-- :sunrise: **[radix tree 路由](https://github.com/iresty/apisix/blob/master/doc/router-radixtree.md)**: 将 radix tree 作为默认的路由器实现，支持把 uri、host、cookie、请求头、请求参数、Nginx 内置变量等作为路由的条件，并支持等于、大于、小于等常见操作符，更加强大和灵活. [#414](https://github.com/iresty/apisix/issues/414)
+- :sunrise: **[radix tree 路由](https://github.com/iresty/apisix/blob/master/doc/router-radixtree.md)**: 默认的路由器更改为 radix tree，支持把 uri、host、cookie、请求头、请求参数、Nginx 内置变量等作为路由的条件，并支持等于、大于、小于等常见操作符，更加强大和灵活. **需要注意的是，这个改动不向下兼容，所有使用历史版本的用户，需要手动修改路由才能正常使用**。[#414](https://github.com/iresty/apisix/issues/414)
 - 动态上游支持更多的参数，可以指定上游的 uri 和 host，以及是否开启 websocket. [#451](https://github.com/iresty/apisix/pull/451)
 - 支持从 `ctx.var` 中直接获取 cookie 中的值. [#449](https://github.com/iresty/apisix/pull/449)
 - 路由支持 IPv6. [#331](https://github.com/iresty/apisix/issues/331)
