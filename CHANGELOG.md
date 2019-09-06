@@ -9,11 +9,11 @@
 
 > Released on 2019/09/06
 
-This release brings many new features, such as IP black and white list, gPRC protocol transcoding, IPv6, IdP (identity provider) services, serverless, radix tree routing, and more.
+This release brings many new features, such as IP black and white list, gPRC protocol transcoding, IPv6, IdP (identity provider) services, serverless, Change the default route to radix tree (**not downward compatible**), and more.
 
 ### Core
 - :sunrise: **[gRPC transcoding](https://github.com/iresty/apisix/blob/master/doc/plugins/grpc-transcoding.md)**: supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON. [#395](https://github.com/iresty/apisix/issues/395)
-- :sunrise: **[radix tree router](https://github.com/iresty/apisix/blob/master/doc/router-radixtree.md)**: The radix tree is used as the default router implementation. It supports the uri, host, cookie, request header, request parameters, Nginx built-in variables, etc. as the routing conditions, and supports common operators such as equal, greater than, less than, etc., more powerful and flexible. [#414](https://github.com/iresty/apisix/issues/414)
+- :sunrise: **[radix tree router](https://github.com/iresty/apisix/blob/master/doc/router-radixtree.md)**: The radix tree is used as the default router implementation. It supports the uri, host, cookie, request header, request parameters, Nginx built-in variables, etc. as the routing conditions, and supports common operators such as equal, greater than, less than, etc., more powerful and flexible.**IMPORTANT: This change is not downward compatible. All users who use historical versions need to manually modify their routing to work properly.** [#414](https://github.com/iresty/apisix/issues/414)
 - Dynamic upstream supports more parameters, you can specify the upstream uri and host, and whether to enable websocket. [#451](https://github.com/iresty/apisix/pull/451)
 - Support for get values from cookies directly from `ctx.var`. [#449](https://github.com/iresty/apisix/pull/449)
 - Routing support IPv6. [#331](https://github.com/iresty/apisix/issues/331)
