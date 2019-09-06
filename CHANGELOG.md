@@ -25,10 +25,10 @@ This release brings many new features, such as IP black and white list, gPRC pro
 - [IP black and white list](https://github.com/iresty/apisix/blob/master/doc/plugins/ip-restriction.md) Support IP black and white list for security. [#398](https://github.com/iresty/apisix/pull/398)
 
 ### CLI
-- Add the `version` directive to get the version number of APISIX. [420](https://github.com/iresty/apisix/issues/420)
+- Add the `version` directive to get the version number of APISIX. [#420](https://github.com/iresty/apisix/issues/420)
 
 ### Admin
-- The `PATCH` API is supported and can be modified individually for a configuration without submitting the entire configuration. [365](https://github.com/iresty/apisix/pull/365)
+- The `PATCH` API is supported and can be modified individually for a configuration without submitting the entire configuration. [#365](https://github.com/iresty/apisix/pull/365)
 
 ### Dashboard
 - :sunrise: **Add the online version of the dashboard**，users can [experience APISIX](http://apisix.iresty.com/) without install. [#374](https://github.com/iresty/apisix/issues/374)
@@ -57,7 +57,7 @@ This release brings many new features such as health check and circuit breaker, 
 - [JWT auth](https://github.com/iresty/apisix/blob/master/doc/plugins/jwt-auth-cn.md). [#303](https://github.com/iresty/apisix/pull/303)
 
 ### CLI
-- support multiple ips of `allow`. [340](https://github.com/iresty/apisix/pull/340)
+- support multiple ips of `allow`. [#340](https://github.com/iresty/apisix/pull/340)
 - supported real_ip configure in nginx.conf and added functions to get ip and remote ip. [#236](https://github.com/iresty/apisix/pull/236)
 
 ### Dashboard

@@ -24,10 +24,10 @@
 - [IP 黑白名单](https://github.com/iresty/apisix/blob/master/doc/plugins/ip-restriction.md) 支持 IP 黑白名单，提供更高的安全性。[#398](https://github.com/iresty/apisix/pull/398)
 
 ### CLI
-- 增加 `version` 指令，获取 APISIX 的版本号. [420](https://github.com/iresty/apisix/issues/420)
+- 增加 `version` 指令，获取 APISIX 的版本号. [#420](https://github.com/iresty/apisix/issues/420)
 
 ### Admin
-- 支持 `PATCH` API，可以针对某个配置单独修改，而不再用提交整段配置。[365](https://github.com/iresty/apisix/pull/365)
+- 支持 `PATCH` API，可以针对某个配置单独修改，而不再用提交整段配置。[#365](https://github.com/iresty/apisix/pull/365)
 
 ### Dashboard
 - :sunrise: **增加在线版本的 dashboard**，用户不用安装即可[体验 APISIX](http://apisix.iresty.com/). [#374](https://github.com/iresty/apisix/issues/374)
@@ -57,7 +57,7 @@
 - [JWT 认证](https://github.com/iresty/apisix/blob/master/doc/plugins/jwt-auth-cn.md). [#303](https://github.com/iresty/apisix/pull/303)
 
 ### CLI
-- `allow` 指令中支持多个 ip 地址. [340](https://github.com/iresty/apisix/pull/340)
+- `allow` 指令中支持多个 ip 地址. [#340](https://github.com/iresty/apisix/pull/340)
 - 支持在 nginx.conf 中配置 real_ip 指令，以及增加函数来获取 ip. [#236](https://github.com/iresty/apisix/pull/236)
 
 ### Dashboard
