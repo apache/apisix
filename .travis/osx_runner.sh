@@ -43,7 +43,7 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
-    brew services start etcd
+    etcd --enable-v2=true &
     sleep 1
 
     luarocks install luacheck
