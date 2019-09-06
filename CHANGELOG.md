@@ -37,7 +37,7 @@ This release brings many new features, such as IP black and white list, gPRC pro
 [Back to TOC](#table-of-contents)
 
 
-## [0.6.0]
+## 0.6.0
 
 > Released on 2019/08/05
 
