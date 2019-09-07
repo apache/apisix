@@ -49,3 +49,7 @@ for example the uri is `/blog/post/foo/12`, libr3 will return `{"name":"foo", "i
 
 for example the uri is `/blog/post/foo/12`, libr3 will return `{"1":"foo", "id":"12"}`.
 
+### How to filter route by Nginx builtin variable
+libr3 can not support Nginx builtin variable, http headers and uri args now,
+you can use [radixtree](route-radixtree.md) instead.
+

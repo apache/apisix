@@ -14,7 +14,7 @@ __DATA__
 --- request
 GET /apisix/admin/schema/route
 --- response_body eval
-qr/"plugins": \{"type":"object"}/
+qr/"plugins":\{"type":"object"}/
 --- no_error_log
 [error]
 
@@ -33,7 +33,7 @@ qr/"required":\["upstream"\]/
 === TEST 3: get not exist schema
 --- request
 GET /apisix/admin/schema/noexits
---- error_code: 404
+--- error_code: 400
 --- no_error_log
 [error]
 

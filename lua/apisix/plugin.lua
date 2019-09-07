@@ -1,18 +1,18 @@
 local require = require
 local core = require("apisix.core")
 local pkg_loaded = package.loaded
-local insert_tab = table.insert
 local sort_tab = table.sort
 local pcall = pcall
 local ipairs = ipairs
 local pairs = pairs
 local type = type
-local local_plugins = {}
-local local_plugins_hash = {}
+local local_plugins = core.table.new(32, 0)
+local local_plugins_hash = core.table.new(0, 32)
+local local_conf
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     load_times = 0,
     plugins = local_plugins,
     plugins_hash = local_plugins_hash,
@@ -20,7 +20,7 @@ local _M = {
 
 
 local function sort_plugin(l, r)
-    return l.priority >= r.priority
+    return l.priority > r.priority
 end
 
 
@@ -46,7 +46,7 @@ local function load_plugin(name)
     end
 
     plugin.name = name
-    insert_tab(local_plugins, plugin)
+    core.table.insert(local_plugins, plugin)
 
     if plugin.init then
         plugin.init()
@@ -60,7 +60,7 @@ local function load()
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
-    local local_conf = core.config.local_conf()
+    local_conf = core.config.local_conf(true)
     local plugin_names = local_conf.plugins
     if not plugin_names then
         return nil, "failed to read plugin list form local file"
@@ -83,11 +83,18 @@ local function load()
         sort_tab(local_plugins, sort_plugin)
     end
 
-    for _, plugin in ipairs(local_plugins) do
+    for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
+        if local_conf and local_conf.apisix
+           and local_conf.apisix.enable_debug then
+            core.log.warn("loaded plugin and sort by priority:",
+                          " ", plugin.priority,
+                          " name: ", plugin.name)
+        end
     end
 
     _M.load_times = _M.load_times + 1
+    core.log.info("load plugin times: ", _M.load_times)
     return local_plugins
 end
 _M.load = load
@@ -137,6 +144,9 @@ function _M.filter(user_route, plugins)
     plugins = plugins or core.table.new(#local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
+        if local_conf and local_conf.apisix.enable_debug then
+            core.response.set_header("Apisix-Plugins", "no plugin")
+        end
         return plugins
     end
 
@@ -145,9 +155,17 @@ function _M.filter(user_route, plugins)
         local plugin_conf = user_plugin_conf[name]
 
         if type(plugin_conf) == "table" and not plugin_conf.disable then
-            insert_tab(plugins, plugin_obj)
-            insert_tab(plugins, plugin_conf)
+            core.table.insert(plugins, plugin_obj)
+            core.table.insert(plugins, plugin_conf)
         end
+    end
+
+    if local_conf.apisix.enable_debug then
+        local t = {}
+        for i = 1, #plugins, 2 do
+            core.table.insert(t, plugins[i].name)
+        end
+        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
     end
 
     return plugins
@@ -155,28 +173,55 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    -- core.log.info("service conf: ", core.json.delay_encode(service_conf))
+    core.log.info("service conf: ", core.json.delay_encode(service_conf))
     -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
+
+    -- optimize: use LRU to cache merged result
+    local new_service_conf
+
     local changed = false
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
-            service_conf.value.plugins[name] = conf
+            if not new_service_conf then
+                new_service_conf = core.table.deepcopy(service_conf)
+            end
+            new_service_conf.value.plugins[name] = conf
         end
         changed = true
     end
 
-    if route_conf.value.upstream then
-        service_conf.value.upstream = route_conf.value.upstream
+    local route_upstream = route_conf.value.upstream
+    if route_upstream then
+        if not new_service_conf then
+            new_service_conf = core.table.deepcopy(service_conf)
+        end
+        new_service_conf.value.upstream = route_upstream
+
+        if route_upstream.checks then
+            route_upstream.parent = route_conf
+        end
         changed = true
     end
 
-    -- core.log.info("merged conf : ", core.json.delay_encode(service_conf))
-    return service_conf, changed
+    if route_conf.value.upstream_id then
+        if not new_service_conf then
+            new_service_conf = core.table.deepcopy(service_conf)
+        end
+        new_service_conf.value.upstream_id = route_conf.value.upstream_id
+    end
+
+    -- core.log.info("merged conf : ", core.json.delay_encode(new_service_conf))
+    return new_service_conf or service_conf, changed
 end
 
 
 function _M.init_worker()
     load()
+end
+
+
+function _M.get(name)
+    return local_plugins_hash and local_plugins_hash[name]
 end
 
 

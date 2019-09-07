@@ -27,30 +27,40 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 
 ## 功能
 
-- **云原生**
-- **动态负载均衡**
-- **支持一致性 hash 的负载均衡**
-- **SSL**
-- **监控**
+- **云原生**: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
+- **热更新和热插件**: 无需重启服务，就可以持续更新配置和插件。
+- **动态负载均衡**：动态支持有权重的 round-robin 负载平衡。
+- **支持一致性 hash 的负载均衡**：动态支持一致性 hash 的负载均衡。
+- **SSL**：动态加载 SSL 证书。
 - **反向代理**
-- **身份认证**
-- **Limit-rate**
-- **Limit-count**
-- **Limit-concurrency**
-- **CLI**
+- **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
+- **熔断器**: 智能跟踪不健康上游服务.
+- **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT]([key-auth](doc/plugins/jwt-auth-cn.md))。
+- **[限制速率](doc/plugins/limit-req-cn.md)**
+- **[限制请求数](doc/plugins/limit-count-cn.md)**
+- **[限制并发](doc/plugins/limit-conn-cn.md)**
+- **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
+- **监控和指标**: [Prometheus](doc/plugins/prometheus-cn.md)
+- **[gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)**：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
+- **[Serverless](doc/plugins/serverless-cn.md)**: 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
+- **自定义插件**: 允许挂载常见阶段，例如`rewrite`，`access`，`header filer`，`body filter`和`log`，还允许挂载 `balancer` 阶段。
+- **控制台**: 内置控制台来操作 APISIX 集群。
+- **版本控制**：支持操作的多次回滚。
+- **CLI**: 使用命令行来启动、关闭和重启 APISIX。
 - **REST API**
-- **集群**
-- **可扩展**
-- **高性能**
-- **自定义插件**
+- **Proxy Websocket**
+- **IPv6**：支持使用 IPv6 格式匹配路由。
+- **集群**：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
+- **可扩展**：简单易用的插件机制方便扩展。
+- **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.6 毫秒。
 - **防御 ReDoS(正则表达式拒绝服务)**
-- **健康检查**: TODO
-- **缓存**: TODO.
-- **管理控制台**: TODO.
-- **OAuth2.0**: TODO.
-- **ACL**: TODO.
-- **Bot detection**: TODO.
-- **IP 黑名单**: TODO.
+- **IP 黑名单**
+- **OAuth2.0**: TODO。
+- **ACL**: TODO。
+- **Bot detection**: TODO。
+
+## 在线演示版本
+我们部署了一个在线的 [dashboard](http://apisix.iresty.com) ，方便您了解 APISIX。
 
 ## 安装
 
@@ -58,11 +68,16 @@ APISIX 在以下操作系统中做过安装和运行测试:
 
 | 操作系统     | OpenResty | 状态 |
 | ------------ | --------- | ---- |
-| CentOS 7     | 1.15.8.1  | √    |
-| Ubuntu 18.04 | 1.15.8.1  | √    |
-| Debian 9     | 1.15.8.1  | √    |
+| CentOS 7     | 1.15.8.1  | √      |
+| Ubuntu 16.04 | 1.15.8.1  | √      |
+| Ubuntu 18.04 | 1.15.8.1  | √      |
+| Debian 9     | 1.15.8.1  | √      |
+| Mac OSX      | 1.15.8.1  | √      |
 
 现在有两种方式来安装: 如果你是 CentOS 7 的系统，推荐使用 RPM 包安装；其他的系统推荐使用 Luarocks 安装。
+
+*NOTE*: APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。
+需要在启动参数中添加 `--enable-v2=true`，才能启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
 
 ### 通过 RPM 包安装（CentOS 7）
 
@@ -72,7 +87,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.5/apisix-0.5-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.7/apisix-0.7-0.el7.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
@@ -91,65 +106,17 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
 
+如果你得到 `unknow flag --lua-dir` 这类错误，这是因为 `luarocks` 版本过低。这时我们需要移除 `lua-dir` 选项重新运行：`luarocks install apisix`。
+
 如果一切顺利，你会在最后看到这样的信息：
 
 > apisix is now built and installed in /usr (license: Apache License 2.0)
 
 恭喜你，APISIX 已经安装成功了。
 
-## 搭建开发环境
+## 开发环境
 
-如果你是开发人员，可以通过下面的命令快速搭建本地开发环境。
-
-```shell
-git clone git@github.com:iresty/apisix.git
-cd apisix
-make dev
-```
-
-如果一切顺利，你会在最后看到这样的信息：
-
-> Stopping after installing dependencies for apisix
-
-下面是预期的开发环境目录结构：
-
-```shell
-$ tree -L 2 -d apisix
-apisix
-├── bin
-├── conf
-├── deps                # 依赖的 Lua 和动态库，放在了这里
-│   ├── lib64
-│   └── share
-├── doc
-│   └── images
-├── lua
-│   └── apisix
-├── t
-│   ├── admin
-│   ├── core
-│   ├── lib
-│   ├── node
-│   └── plugin
-└── utils
-```
-
-`make` 可以辅助我们完成更多其他功能, 比如:
-
-```shell
-$ make help
-Makefile rules:
-
-    help:         Show Makefile rules.
-    dev:          Create a development ENV
-    check:        Check Lua srouce code
-    init:         Initialize the runtime environment
-    run:          Start the apisix server
-    stop:         Stop the apisix server
-    clean:        Remove generated files
-    reload:       Reload the apisix server
-    install:      Install the apisix
-```
+如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤.
 
 ## 快速上手
 
@@ -161,47 +128,16 @@ sudo apisix start
 
 2. 测试限流插件
 
-为了方便测试，下面的示例中设置的是 60 秒最多只能有 2 个请求，如果超过就返回 503：
+你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可.
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
+更进一步，你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
 
-```shell
-$ curl -i http://127.0.0.1:9080/index.html
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 1
-Server: APISIX web server
-Date: Mon, 03 Jun 2019 09:38:32 GMT
-Last-Modified: Wed, 24 Apr 2019 00:14:17 GMT
-ETag: "5cbfaa59-3377"
-Accept-Ranges: bytes
+## 控制台
+APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard` 即可使用，
+不用填写用户名和密码，直接登录。
 
-...
-```
-
-你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
+dashboard 默认只放行了 `127.0.0.0/24` 的本地 IP，其他地址禁止访问。
+你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，来增加更多可以访问 dashboard 的 IP。
 
 ## 性能测试
 
@@ -209,9 +145,26 @@ Accept-Ranges: bytes
 
 你可以看出[性能测试文档](doc/benchmark-cn.md)来了解更多详细内容。
 
-## 开发文档
+## 架构设计
 
 [详细设计文档](doc/architecture-design-cn.md)
+
+## 视频和幻灯片
+
+- [APISIX 的选型、测试和持续集成](https://www.upyun.com/opentalk/432.html)
+
+- [APISIX 高性能实践](https://www.upyun.com/opentalk/429.html)
+
+## 全景图
+
+APISIX 被纳入 [云原生软件基金会 API 网关全景图](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
+
+![](doc/images/cncf-landscope.jpg)
+
+## 常见问题（FAQ）
+在社区中经常会有开发者问到的一些问题，我们整理在下面这份 [FAQ](FAQ_CN.md) 中：
+
+如果你关心的问题没有在其中，欢迎提交 issue 或者加入下面的 QQ 群和我们沟通。
 
 ## 参与社区
 

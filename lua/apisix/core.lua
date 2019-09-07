@@ -1,5 +1,5 @@
 return {
-    version  = "v0.5-beta",
+    version  = require("apisix.core.version"),
     log      = require("apisix.core.log"),
     config   = require("apisix.core.config_etcd"),
     json     = require("apisix.core.json"),

@@ -8,7 +8,10 @@ local schema = {
     properties = {
         count = {type = "integer", minimum = 0},
         time_window = {type = "integer",  minimum = 0},
-        key = {type = "string", enum = {"remote_addr"}},
+        key = {type = "string",
+            enum = {"remote_addr", "server_addr", "http_x_real_ip",
+                    "http_x_forwarded_for"},
+        },
         rejected_code = {type = "integer", minimum = 200, maximum = 600},
     },
     additionalProperties = false,
@@ -44,15 +47,14 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local ip = core.request.get_remote_client_ip(ctx)
-    local key = ip .. ctx.conf_version
-    local rejected_code = conf.rejected_code
+    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    core.log.info("limit key: ", key)
 
     local delay, remaining = lim:incoming(key, true)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            return rejected_code
+            return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)

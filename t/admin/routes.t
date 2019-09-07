@@ -16,16 +16,17 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "methods": ["GET"],
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "uri": "/index.html"
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
                 }]],
                 [[{
                     "node": {
@@ -34,6 +35,7 @@ __DATA__
                                 "GET"
                             ],
                             "uri": "/index.html",
+                            "desc": "new route",
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -75,6 +77,7 @@ passed
                                 "GET"
                             ],
                             "uri": "/index.html",
+                            "desc": "new route",
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:8080": 1
@@ -932,5 +935,156 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/remote_addr\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: all method
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET", "POST", "PUT", "DELETE", "PATCH",
+                                    "HEAD", "OPTIONS"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: patch route(new methods)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1/methods',
+                ngx.HTTP_PATCH,
+                '["GET"]',
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ]
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: patch route(new uri)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1/uri',
+                ngx.HTTP_PATCH,
+                '"/patch_test"',
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/patch_test"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: patch route(whole)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1/',
+                ngx.HTTP_PATCH,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "desc": "new route",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

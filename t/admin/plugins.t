@@ -13,7 +13,7 @@ __DATA__
 === TEST 1: get plugins' name
 --- request
 GET /apisix/admin/plugins/list
---- response_body
-["example-plugin","limit-req","limit-count","key-auth","prometheus","limit-conn","node-status"]
+--- response_body_like eval
+qr/\["limit-req","limit-count","limit-conn","key-auth","prometheus","node-status","jwt-auth","zipkin","ip-restriction","grpc-transcode","serverless-pre-function","serverless-post-function","openid-connect"\]/
 --- no_error_log
 [error]

@@ -12,6 +12,8 @@ Apisix 的限制并发请求（或并发连接）插件。
 
     For example, one can use the host name (or server zone) as the key so that we limit concurrency per host name. Otherwise, we can also use the client address as the key so that we can avoid a single client from flooding our service with too many parallel connections or requests.
 
+    Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.
+
 * `rejected_code`: The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.
 
 #### enable plugin

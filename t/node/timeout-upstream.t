@@ -2,7 +2,7 @@ use t::APISix 'no_plan';
 
 repeat_each(1);
 log_level('info');
-worker_connections(1024);
+worker_connections(256);
 no_root_location();
 no_shuffle();
 
@@ -23,9 +23,14 @@ __DATA__
                             "nodes": {
                                 "127.0.0.1:1980": 1
                             },
-                            "type": "roundrobin"
+                            "type": "roundrobin",
+                            "timeout": {
+                                "connect": 0.5,
+                                "send": 0.5,
+                                "read": 0.5
+                            }
                         },
-                        "uri": "/hello"
+                        "uri": "/sleep1"
                 }]]
                 )
 
@@ -44,21 +49,11 @@ passed
 
 
 
-=== TEST 2: /not_found
+=== TEST 2: hit routes (timeout)
 --- request
-GET /not_found
---- error_code: 404
+GET /sleep1
+--- error_code: 504
 --- response_body eval
-qr/404 Not Found/
---- no_error_log
-[error]
-
-
-
-=== TEST 3: hit routes
---- request
-GET /hello
---- response_body
-hello world
---- no_error_log
-[error]
+qr/504 Gateway Time-out/
+--- error_log
+timed out) while reading response header from upstream

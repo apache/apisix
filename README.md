@@ -30,30 +30,40 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 
 ## Features
 
-- **Cloud-Native**
-- **Dynamic Load Balancing**
-- **Hash-based Load Balancing**
-- **SSL**
-- **Monitoring**
+- **Cloud-Native**: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
+- **hot updates and hot plugins**: Continuously updates its configurations and plugins without restarts!
+- **Dynamic Load Balancing**: Round-robin load balancing with weight.
+- **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
+- **SSL**: Dynamically load an SSL certificate.
 - **Forward Proxy**
-- **Authentications**
-- **Limit-rate**
-- **Limit-count**
-- **Limit-concurrency**
-- **CLI**
+- **[Health Checks](doc/health-check.md)**：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
+- **Circuit-Breaker**: Intelligent tracking of unhealthy upstream services.
+- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md)
+- **[Limit-req](doc/plugins/limit-req.md)**
+- **[Limit-count](doc/plugins/limit-count.md)**
+- **[Limit-concurrency](doc/plugins/limit-conn.md)**
+- **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
+- **Monitoring and Metrics**: [Prometheus](doc/plugins/prometheus.md)
+- **[gRPC transcoding](doc/plugins/grpc-transcoding.md)**：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
+- **[Serverless](doc/plugins/serverless.md)**: Invoke functions in each phase in APISIX.
+- **Custom plugins**: Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
+- **Dashboard**: Built-in dashboard to control APISIX.
+- **Version Control**: Supports rollbacks of operations.
+- **CLI**: start\stop\reload APISIX through the command line.
 - **REST API**
-- **Clustering**
-- **Scalability**
-- **High performance**
-- **Custom plugins**
+- **Proxy Websocket**
+- **IPv6**: Use IPv6 to match route.
+- **Clustering**: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md).
+- **Scalability**: plug-in mechanism is easy to extend.
+- **High performance**: The single-core QPS reaches 24k with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
-- **Health Checks**: TODO.
-- **Caching**: TODO.
-- **Dashboard**: TODO.
+- **IP whitelist/blacklist**
 - **OAuth2.0**: TODO.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
-- **IP blacklist**: TODO.
+
+## Online Demo Dashboard
+We provide an online dashboard [demo version](http://apisix.iresty.com)， make it easier for you to understand APISIX.
 
 ## Install
 
@@ -62,12 +72,16 @@ APISIX Installed and tested in the following systems:
 | OS           | OpenResty | Status |
 | ------------ | --------- | ------ |
 | CentOS 7     | 1.15.8.1  | √      |
+| Ubuntu 16.04 | 1.15.8.1  | √      |
 | Ubuntu 18.04 | 1.15.8.1  | √      |
 | Debian 9     | 1.15.8.1  | √      |
+| Mac OSX      | 1.15.8.1  | √      |
 
 You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
 
 We will add support for Docker and more OS shortly.
+
+*NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
 
 ### Install from RPM for CentOS 7
 
@@ -77,7 +91,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.5/apisix-0.5-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.7/apisix-0.7-0.el7.noarch.rpm
 ```
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
@@ -93,8 +107,11 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 #### Install APISIX
 
 ```shell
-sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
+luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
+
+If you got some error like `unknow flag --lua-dir`, this is because `luarocks` version is too low.
+We need to remove option `lua-dir` and run again: `luarocks install apisix`.
 
 If all goes well, you will see the message like this:
 
@@ -102,59 +119,9 @@ If all goes well, you will see the message like this:
 
 Congratulations, you have already installed APISIX successfully.
 
-## Install APISIX Development Environment
+## Development Manual of APISIX
 
-If you are a developer, you can set up a local development environment with the following commands.
-
-```shell
-git clone git@github.com:iresty/apisix.git
-cd apisix
-make dev
-```
-
-If all goes well, you will see this message at the end:
-
-> Stopping after installing dependencies for apisix
-
-The following is the expected development environment directory structure:
-
-```shell
-$ tree -L 2 -d apisix
-apisix
-├── bin
-├── conf
-├── deps                # dependent Lua and dynamic libraries
-│   ├── lib64
-│   └── share
-├── doc
-│   └── images
-├── lua
-│   └── apisix
-├── t
-│   ├── admin
-│   ├── core
-│   ├── lib
-│   ├── node
-│   └── plugin
-└── utils
-```
-
-We can use more actions in the `make` command, for example:
-
-```shell
-$ make help
-Makefile rules:
-
-    help:         Show Makefile rules.
-    dev:          Create a development ENV
-    check:        Check Lua srouce code
-    init:         Initialize the runtime environment
-    run:          Start the apisix server
-    stop:         Stop the apisix server
-    clean:        Remove generated files
-    reload:       Reload the apisix server
-    install:      Install the apisix
-```
+If you are a developer, you can view the [dev manual](doc/dev-manual.md) for more detailed information.
 
 ## Quickstart
 
@@ -166,48 +133,18 @@ sudo apisix start
 
 2. try limit count plugin
 
-For the convenience of testing, we set up a maximum of 2 visits in 60 seconds,
-and return 503 if the threshold is exceeded:
+Limit count plugin is a good start to try APISIX,
+you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
+Then you can try more [plugins](doc/plugins.md).
 
-```shell
-$ curl -i http://127.0.0.1:9080/index.html
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 1
-Server: APISIX web server
-Date: Mon, 03 Jun 2019 09:38:32 GMT
-Last-Modified: Wed, 24 Apr 2019 00:14:17 GMT
-ETag: "5cbfaa59-3377"
-Accept-Ranges: bytes
+## Dashboard
 
-...
-```
+APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard` with a browser and try it.
 
-You can try more [plugins](doc/plugins.md) follow the documentation.
+Do not need to fill the user name and password, log in directly.
+
+dashboard only allow `127.0.0.0/24` by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to add more IPs.
 
 ## Benchmark
 
@@ -215,11 +152,28 @@ Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency 
 
 You can view the [benchmark documentation](doc/benchmark.md) for more detailed information.
 
-## Documentation
+## Architecture Design
 
 English Development Documentation: TODO
 
 [中文开发文档](doc/architecture-design-cn.md)
+
+## Videos and slides
+
+- [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/432.html)
+
+- [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
+
+## Landscape
+
+APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
+
+![](doc/images/cncf-landscope.jpg)
+
+## FAQ
+There are often some questions asked by developers in the community. We have arranged them in the [FAQ](FAQ.md).
+
+If your concerns are not among them, please submit issue to communicate with us.
 
 ## Contributing
 

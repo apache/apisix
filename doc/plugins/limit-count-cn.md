@@ -8,7 +8,7 @@
 * `count`：指定时间窗口内的请求数量阈值
 * `time_window`：时间窗口的大小（以秒为单位），超过这个时间就会重置
 * `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503
-* `key`：是用来做请求计数的依据，当前只接受终端 IP 做为 key，即 "remote_addr"
+* `key`：是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。
 
 ### 示例
 
@@ -16,7 +16,7 @@
 下面是一个示例，在指定的 route 上开启了 limit count 插件:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X POST -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -35,6 +35,12 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X POST -d '
     }
 }'
 ```
+
+你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard`，通过 web 界面来完成上面的操作，先增加一个 route：
+![](../images/plugin/limit-count-1.png)
+
+然后在 route 页面中添加 limit-count 插件：
+![](../images/plugin/limit-count-2.png)
 
 #### 测试插件
 上述配置限制了 60 秒内只能访问 2 次，前两次访问都会正常访问：

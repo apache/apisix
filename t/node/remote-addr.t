@@ -100,8 +100,9 @@ passed
 === TEST 5: not hit route: 127.0.0.2 =~ 127.0.0.1
 --- request
 GET /hello
---- response_body
-hello world
+--- error_code: 404
+--- response_body_like eval
+qr/404 Not Found/
 --- no_error_log
 [error]
 
