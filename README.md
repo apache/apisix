@@ -34,7 +34,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **hot updates and hot plugins**: Continuously updates its configurations and plugins without restarts!
 - **Dynamic Load Balancing**: Round-robin load balancing with weight.
 - **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
-- **SSL**: Dynamically load an SSL certificate.
+- **[SSL](doc/https.md)**: Dynamically load an SSL certificate.
 - **Forward Proxy**
 - **[Health Checks](doc/health-check.md)**：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 - **Circuit-Breaker**: Intelligent tracking of unhealthy upstream services.
