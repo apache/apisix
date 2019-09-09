@@ -58,7 +58,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **High performance**: The single-core QPS reaches 24k with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
 - **IP whitelist/blacklist**
-- **OAuth2.0**: TODO.
+- **IdP**: Support external authentication services, such as Auth0, okta, etc., users can use this to connect to Oauth2.0 and other authentication methods.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
 
@@ -171,13 +171,14 @@ APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/categ
 ![](doc/images/cncf-landscope.jpg)
 
 ## FAQ
+
 There are often some questions asked by developers in the community. We have arranged them in the [FAQ](FAQ.md).
 
 If your concerns are not among them, please submit issue to communicate with us.
 
 ## Contributing
 
-Contributions are welcomed and greatly appreciated.
+See [CONTRIBUTING](Contributing.md) for details on submitting patches and the contribution workflow.
 
 ## Acknowledgments
 
