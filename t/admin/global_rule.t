@@ -39,7 +39,7 @@ __DATA__
                                 }
                             }
                         },
-                        "key": "/apisix/global_rule"
+                        "key": "/apisix/global_rules/1"
                     },
                     "action": "set"
                 }]]
@@ -78,7 +78,7 @@ passed
                                 }
                             }
                         },
-                        "key": "/apisix/global_rule"
+                        "key": "/apisix/global_rules/1"
                     },
                     "action": "get"
                 }]]

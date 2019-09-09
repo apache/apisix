@@ -401,7 +401,7 @@ _M.proto = {
 }
 
 
-_M.global_rules = {
+_M.global_rule = {
     type = "object",
     properties = {
         plugins = plugins_schema

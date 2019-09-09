@@ -13,9 +13,9 @@ local function check_conf(conf)
         return nil, {error_msg = "missing configurations"}
     end
 
-    core.log.info("schema: ", core.json.delay_encode(core.schema.global_rules))
+    core.log.info("schema: ", core.json.delay_encode(core.schema.global_rule))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.global_rules, conf)
+    local ok, err = core.schema.check(core.schema.global_rule, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -35,7 +35,7 @@ function _M.put(_, conf)
         return 400, err
     end
 
-    local key = "/global_rule"
+    local key = "/global_rules/1"
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put global rule[", key, "]: ", err)
@@ -47,7 +47,7 @@ end
 
 
 function _M.get()
-    local key = "/global_rule"
+    local key = "/global_rules/1"
     local res, err = core.etcd.get(key)
     if not res then
         core.log.error("failed to get global rule[", key, "]: ", err)
@@ -59,7 +59,7 @@ end
 
 
 function _M.delete()
-    local key = "/global_rule"
+    local key = "/global_rules/1"
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then
@@ -80,8 +80,7 @@ function _M.patch(_, conf, sub_path)
         return 400, {error_msg = "missing new configuration"}
     end
 
-    local key = "/global_rule"
-
+    local key = "/global_rules/1"
     local res_old, err = core.etcd.get(key)
     if not res_old then
         core.log.error("failed to get global rule [", key, "]: ", err)
