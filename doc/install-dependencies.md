@@ -103,6 +103,6 @@ Mac OSX
 # install openresty, etcd and some compilation tools
 brew install autoconf automake check pkg-config pcre cmake libtool openresty/brew/openresty etcd luarocks
 
-# start etcd server
-brew services start etcd
+# start etcd server with v2 protocol
+etcd --enable-v2=true &
 ```
