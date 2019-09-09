@@ -56,6 +56,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **防御 ReDoS(正则表达式拒绝服务)**
 - **IP 黑名单**
 - **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，okta 等，用户可以借此来对接 Oauth2.0 等认证方式。
+- **[单机模式](doc/stand-alone-cn.md)**: 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
 - **ACL**: TODO。
 - **Bot detection**: TODO。
 
