@@ -35,7 +35,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **反向代理**
 - **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
 - **熔断器**: 智能跟踪不健康上游服务.
-- **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT]([key-auth](doc/plugins/jwt-auth-cn.md))。
+- **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md)。
 - **[限制速率](doc/plugins/limit-req-cn.md)**
 - **[限制请求数](doc/plugins/limit-count-cn.md)**
 - **[限制并发](doc/plugins/limit-conn-cn.md)**
