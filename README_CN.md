@@ -31,7 +31,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **热更新和热插件**: 无需重启服务，就可以持续更新配置和插件。
 - **动态负载均衡**：动态支持有权重的 round-robin 负载平衡。
 - **支持一致性 hash 的负载均衡**：动态支持一致性 hash 的负载均衡。
-- **SSL**：动态加载 SSL 证书。
+- **[SSL](doc/https-cn.md)**：动态加载 SSL 证书。
 - **反向代理**
 - **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
 - **熔断器**: 智能跟踪不健康上游服务.
@@ -42,13 +42,16 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
 - **监控和指标**: [Prometheus](doc/plugins/prometheus-cn.md)
 - **[gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)**：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
+- **[Serverless](doc/plugins/serverless-cn.md)**: 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
 - **自定义插件**: 允许挂载常见阶段，例如`rewrite`，`access`，`header filer`，`body filter`和`log`，还允许挂载 `balancer` 阶段。
 - **控制台**: 内置控制台来操作 APISIX 集群。
 - **版本控制**：支持操作的多次回滚。
 - **CLI**: 使用命令行来启动、关闭和重启 APISIX。
 - **REST API**
-- **集群**
-- **可扩展**
+- **Proxy Websocket**
+- **IPv6**：支持使用 IPv6 格式匹配路由。
+- **集群**：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
+- **可扩展**：简单易用的插件机制方便扩展。
 - **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.6 毫秒。
 - **防御 ReDoS(正则表达式拒绝服务)**
 - **IP 黑名单**
@@ -73,6 +76,9 @@ APISIX 在以下操作系统中做过安装和运行测试:
 
 现在有两种方式来安装: 如果你是 CentOS 7 的系统，推荐使用 RPM 包安装；其他的系统推荐使用 Luarocks 安装。
 
+*NOTE*: APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。
+需要在启动参数中添加 `--enable-v2=true`，才能启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
+
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
@@ -81,7 +87,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.6/apisix-0.6-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.7/apisix-0.7-0.el7.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
@@ -99,6 +105,8 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 ```shell
 sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
+
+如果你得到 `unknow flag --lua-dir` 这类错误，这是因为 `luarocks` 版本过低。这时我们需要移除 `lua-dir` 选项重新运行：`luarocks install apisix`。
 
 如果一切顺利，你会在最后看到这样的信息：
 

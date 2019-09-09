@@ -8,7 +8,7 @@
 * `count`：指定时间窗口内的请求数量阈值
 * `time_window`：时间窗口的大小（以秒为单位），超过这个时间就会重置
 * `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503
-* `key`：是用来做请求计数的依据，当前只接受终端 IP 做为 key，即 "remote_addr"
+* `key`：是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。
 
 ### 示例
 

@@ -7,7 +7,7 @@ limit request rate using the "leaky bucket" method.
 * `rate`: is the specified request rate (number per second) threshold.Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.
 * `burst`: is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.
 * `rejected_code`: The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.
-* `key`: is the user specified key to limit the rate, now only accept "remote_addr"(client's IP) as key
+* `key`: is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.
 
 ### example
 
@@ -17,22 +17,22 @@ Here's an example, enable the limit req plugin on the specified route:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"plugins": {
-		"limit-req": {
-			"rate": 1,
-			"burst": 2,
-			"rejected_code": 503,
-			"key": "remote_addr"
-		}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
@@ -68,17 +68,17 @@ When you want to disable the limit req plugin, it is very simple,
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 

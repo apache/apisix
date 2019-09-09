@@ -99,7 +99,7 @@ install:
 		cd apisix && \
 		git submodule update --init --recursive && \
 		cp -r dashboard/* /usr/local/apisix/dashboard
-	chmod -R 644 /usr/local/apisix/dashboard
+	chmod -R 755 /usr/local/apisix/dashboard
 
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
@@ -114,6 +114,9 @@ install:
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/http
 	$(INSTALL) lua/apisix/http/*.lua $(INST_LUADIR)/apisix/lua/apisix/http/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/http/router
+	$(INSTALL) lua/apisix/http/router/*.lua $(INST_LUADIR)/apisix/lua/apisix/http/router
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/
 	$(INSTALL) lua/apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/prometheus/

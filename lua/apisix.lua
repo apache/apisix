@@ -13,6 +13,8 @@ local ngx_exit = ngx.exit
 local ngx_ERROR = ngx.ERROR
 local math = math
 local error = error
+local ngx_var = ngx.var
+local ipairs = ipairs
 local load_balancer
 
 
@@ -55,17 +57,17 @@ function _M.http_init_worker()
 
     -- 加载负载均衡处理逻辑
     load_balancer = require("apisix.http.balancer").run
-    -- admin处理逻辑初始化
+    -- admin 处理逻辑初始化
     require("apisix.admin.init").init_worker()
-    -- 负载均衡器逻辑初始化，从配置中心加载upstreams配置数据
+    -- 负载均衡器逻辑初始化，从配置中心加载 pstreams 配置数据
     require("apisix.http.balancer").init_worker()
     -- 路由代理初始化，完成指定路由的初始化
     router.init_worker()
-    -- 服务初始化，从配置中心加载service配置数据
+    -- 服务初始化，从配置中心加载 service 配置数据
     require("apisix.http.service").init_worker()
-    -- 插件初始化，从本地配置文件加载plugin数据，初始化加载插件
+    -- 插件初始化，从本地配置文件加载 plugin 数据，初始化加载插件
     require("apisix.plugin").init_worker()
-    -- 客户初始化，从配置中心加载consumer配置数据
+    -- 客户初始化，从配置中心加载 consumer 配置数据
     require("apisix.consumer").init_worker()
 end
 
@@ -131,7 +133,7 @@ local function run_plugin(phase, plugins, api_ctx)
     for i = 1, #plugins, 2 do
         local phase_fun = plugins[i][phase]
         if phase_fun then
-            -- 执行对应的phase功能
+            -- 执行对应的 phase 功能
             phase_fun(plugins[i + 1], api_ctx)
         end
     end
@@ -159,12 +161,23 @@ function _M.http_ssl_phase()
 end
 
 
+    local upstream_vars = {
+        uri        = "upstream_uri",
+        scheme     = "upstream_scheme",
+        host       = "upstream_host",
+        upgrade    = "upstream_upgrade",
+        connection = "upstream_connection",
+    }
+    local upstream_names = {}
+    for name, _ in pairs(upstream_vars) do
+        core.table.insert(upstream_names, name)
+    end
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
     if not api_ctx then
-        --从table资源池中提取一个命名为api_ctx的lua table（如果不存在就新建）
+        --从 table 资源池中提取一个命名为 api_ctx 的 lua table（如果不存在就新建）
         api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
         ngx_ctx.api_ctx = api_ctx
     end
@@ -184,13 +197,29 @@ function _M.http_access_phase()
         return core.response.exit(404)
     end
 
-    --进行grpc匹配
+    --进行 grpc 匹配
     if route.value.service_protocol == "grpc" then
         return ngx.exec("@grpc_pass")
     end
 
-    -- 确定匹配到一个route后，则进行后续的处理
-    -- 如果路由配置信息是映射到一个service的id
+    -- 确定匹配到一个 route 后，则进行后续的处理
+
+    -- 如果 route 配置信息是映射到一个 upstream
+    local upstream = route.value.upstream
+    if upstream then
+        for _, name in ipairs(upstream_names) do
+            if upstream[name] then
+                ngx_var[upstream_vars[name]] = upstream[name]
+            end
+        end
+        -- 是否开启 websocket
+        if upstream.enable_websocket then
+            api_ctx.var["upstream_upgrade"] = api_ctx.var["http_upgrade"]
+            api_ctx.var["upstream_connection"] = api_ctx.var["http_connection"]
+        end
+    end
+
+    -- 如果 route 配置信息是映射到一个 service 的id
     if route.value.service_id then
         -- core.log.info("matched route: ", core.json.delay_encode(route.value))
         -- 根据服务的id 提取到该 service 的配置
@@ -202,7 +231,7 @@ function _M.http_access_phase()
         end
 
         local changed
-        -- 插件对service、route进行合并
+        -- 插件对 service、route 进行合并
         route, changed = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
 
@@ -224,7 +253,7 @@ function _M.http_access_phase()
         api_ctx.conf_id = route.value.id
     end
 
-    -- 提取到命名为 plugins 的lua table，初始化，空表
+    -- 提取到命名为 plugins 的 lua table，初始化，空表
     local plugins = core.tablepool.fetch("plugins", 32, 0)
     -- 过滤当前匹配路由的插件,在上下文中标记出来
     api_ctx.plugins = plugin.filter(route, plugins)
@@ -340,12 +369,12 @@ function _M.http_balancer_phase()
             return
         end
     end
-    -- 实现了一个自己的负载插件，没有走默认的balancer
+    -- 实现了一个自己的负载插件，没有走默认的 balancer
     if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
         return run_plugin("balancer", nil, api_ctx)
     end
 
-    -- 走默认的balancer处理
+    -- 走默认的 balancer 处理
     api_ctx.balancer_name = "default"
     load_balancer(api_ctx.matched_route, api_ctx)
 end

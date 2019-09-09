@@ -67,6 +67,7 @@ function _M.match(api_ctx)
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.method
     match_opts.host = api_ctx.var.host
+    match_opts.remote_addr = api_ctx.var.remote_addr
 
     local ok = uri_router:dispatch2(nil, api_ctx.var.uri, match_opts, api_ctx)
     if not ok then

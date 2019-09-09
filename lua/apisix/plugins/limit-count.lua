@@ -13,7 +13,10 @@ local schema = {
     properties = {
         count = {type = "integer", minimum = 0},
         time_window = {type = "integer",  minimum = 0},
-        key = {type = "string", enum = {"remote_addr", "server_addr"}},
+        key = {type = "string",
+            enum = {"remote_addr", "server_addr", "http_x_real_ip",
+                    "http_x_forwarded_for"},
+        },
         rejected_code = {type = "integer", minimum = 200, maximum = 600},
     },
     additionalProperties = false,
@@ -51,7 +54,8 @@ function _M.access(conf, ctx)
     end
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
-    core.log.info("key: ", key)
+    core.log.info("limit key: ", key)
+
     -- 执行限流
     local delay, remaining = lim:incoming(key, true)
     if not delay then

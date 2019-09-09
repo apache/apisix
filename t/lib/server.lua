@@ -32,6 +32,24 @@ function _M.sleep1()
     ngx.say("ok")
 end
 
+function _M.uri()
+    -- ngx.sleep(1)
+    ngx.say("uri: ", ngx.var.uri)
+    local headers = ngx.req.get_headers()
+    for k, v in pairs(headers) do
+        ngx.say(k, ": ", v)
+    end
+end
+
+function _M.old_uri()
+    -- ngx.sleep(1)
+    ngx.say("uri: ", ngx.var.uri)
+    local headers = ngx.req.get_headers()
+    for k, v in pairs(headers) do
+        ngx.say(k, ": ", v)
+    end
+end
+
 
 function _M.opentracing()
     ngx.say("opentracing")

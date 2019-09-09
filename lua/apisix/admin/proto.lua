@@ -119,7 +119,8 @@ function _M.delete(id)
         for _, route in ipairs(routes) do
             if type(route) == "table" and route.value
                and route.value.plugins then
-                  return _M.check_proto_used(route.value.plugins, id, "route", route.value.id)
+                  return _M.check_proto_used(route.value.plugins, id, "route",
+                                             route.value.id)
             end
         end
     end
@@ -133,7 +134,8 @@ function _M.delete(id)
         for _, service in ipairs(services) do
             if type(service) == "table" and service.value
                and service.value.plugins then
-                  return _M.check_proto_used(service.value.plugins, id, "service", service.value.id)
+                  return _M.check_proto_used(service.value.plugins, id,
+                                             "service", service.value.id)
             end
         end
     end

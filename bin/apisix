@@ -93,6 +93,11 @@ http {
     lua_shared_dict upstream-healthcheck 10m;
     lua_shared_dict worker-events        10m;
 
+    # for openid-connect plugin
+    lua_shared_dict discovery             1m; # cache for discovery metadata documents
+    lua_shared_dict jwks                  1m; # cache for JWKs
+    lua_shared_dict introspection        10m; # cache for JWT verification results
+
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
@@ -146,11 +151,12 @@ http {
         listen {* port_admin *};
 
         location /apisix/admin/ {
-            {% for _, allow_ip in ipairs(allow_admin) do %}
-            allow {*allow_ip*};
-            {% end %}
-            deny all;
-
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -161,6 +167,10 @@ http {
     server {
         listen {* node_listen *};
         listen {* node_ssl_listen *} ssl;
+        {% if enable_ipv6 then %}
+        listen [::]:{* node_listen *};
+        listen [::]:{* node_ssl_listen *} ssl;
+        {% end %}
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
@@ -176,10 +186,12 @@ http {
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
-            {% for _, allow_ip in ipairs(allow_admin) do %}
-            allow {*allow_ip*};
-            {% end %}
-            deny all;
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
 
             content_by_lua_block {
                 apisix.http_admin()
@@ -193,10 +205,12 @@ http {
 
         location /apisix/dashboard/ {
             index index.html;
-            {% for _, allow_ip in ipairs(allow_admin) do %}
-            allow {*allow_ip*};
-            {% end %}
-            deny all;
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
 
             alias dashboard/;
 

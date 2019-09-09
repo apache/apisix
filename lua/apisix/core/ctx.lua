@@ -1,37 +1,78 @@
 --[[
     封装了自己的上下文
 --]]
-local tablepool = require("tablepool")
-local get_var = require("resty.ngxvar").fetch
-local get_request = require("resty.ngxvar").request
+local log          = require("apisix.core.log")
+local tablepool    = require("tablepool")
+local get_var      = require("resty.ngxvar").fetch
+local get_request  = require("resty.ngxvar").request
+local ck           = require "resty.cookie"
 local setmetatable = setmetatable
+local ffi          = require("ffi")
+local C            = ffi.C
+local sub_str      = string.sub
+local rawset       = rawset
+local ngx_var      = ngx.var
 
 
-local _M = {version = 0.1}
+ffi.cdef[[
+int memcmp(const void *s1, const void *s2, size_t n);
+]]
+
+
+local _M = {version = 0.2}
 
 
 do
     local var_methods = {
-        ["method"] = ngx.req.get_method
+        method = ngx.req.get_method,
+        cookie = function () return ck:new() end
+    }
+
+    local ngx_var_names = {
+        upstream_scheme     = true,
+        upstream_host       = true,
+        upstream_upgrade    = true,
+        upstream_connection = true,
+        upstream_uri        = true,
     }
 
     local mt = {
-        __index = function(t, name)
+        __index = function(t, key)
             local val
-            local method = var_methods[name]
+            local method = var_methods[key]
             if method then
                 val = method()
 
+            elseif C.memcmp(key, "cookie_", 7) == 0 then
+                local cookie = t.cookie
+                if cookie then
+                    local err
+                    val, err = cookie:get(sub_str(key, 8))
+                    if not val then
+                        log.warn("failed to fetch cookie value by key: ",
+                                 key, " error: ", err)
+                    end
+                end
+
             else
-                val = get_var(name, t._request)
+                val = get_var(key, t._request)
             end
 
             if val ~= nil then
-                t[name] = val
+                rawset(t, key, val)
             end
 
             return val
-        end
+        end,
+
+        __newindex = function(t, key, val)
+            if ngx_var_names[key] then
+                ngx_var[key] = val
+            end
+
+            -- log.info("key: ", key, " new val: ", val)
+            rawset(t, key, val)
+        end,
     }
 
 --[[

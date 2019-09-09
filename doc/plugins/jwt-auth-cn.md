@@ -12,9 +12,9 @@
 
 `jwt-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
 
-添加 JWT Authentication 到一个 `service` 或 `route`。 然后，`consumer` 将其密钥添加到查询字符串参数、请求头或 `cookie` 中以验证其请求。
+添加 JWT Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其密钥添加到查询字符串参数、请求头或 `cookie` 中以验证其请求。
 
-有关 JWT 的更多信息，可移步 [JWT](https://jwt.io/) 查看更多信息。
+有关 JWT 的更多信息，可参考 [JWT](https://jwt.io/) 查看更多信息。
 
 ## 属性
 
@@ -33,7 +33,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
     "username": "jack",
     "plugins": {
         "jwt-auth": {
-            "key": "user-key",
+            "key": "your-consumer-key",
             "secret": "secret-key"
         }
     }
@@ -64,7 +64,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 #### 首先进行登录获取 `jwt-auth` token:
 
 ```shell
-$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=user-key -i
+$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=consumer-key -i
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
 Content-Type: text/plain

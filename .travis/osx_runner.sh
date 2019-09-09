@@ -31,8 +31,8 @@ do_install() {
     make dev
     make dev_r3
 
-    git clone https://github.com/membphis/test-nginx.git test-nginx
-    git clone https://github.com/nic-chen/grpc_server_example.git grpc_server_example
+    git clone https://github.com/iresty/test-nginx.git test-nginx
+    git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
 
     cd grpc_server_example/
     go build -o grpc_server_example main.go
@@ -43,7 +43,7 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
-    brew services start etcd
+    etcd --enable-v2=true &
     sleep 1
 
     luarocks install luacheck
