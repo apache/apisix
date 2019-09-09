@@ -18,7 +18,7 @@ One of the goals of APISIX design and development is the highest performance in 
 
 APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
 
-##Does APISIX have a console interface?
+## Does APISIX have a console interface?
 
 Yes, in version 0.6 we have dashboard built in, you can operate APISIX through the web interface.
 
