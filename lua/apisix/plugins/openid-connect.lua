@@ -94,7 +94,8 @@ local function introspect(ctx, conf)
             return res
         end
         if conf.bearer_only then
-            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '",error="' .. err .. '"'
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm
+                                             .. '",error="' .. err .. '"'
             return ngx.HTTP_UNAUTHORIZED, err
         end
     end

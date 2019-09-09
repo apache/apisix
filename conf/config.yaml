@@ -1,10 +1,12 @@
 apisix:
-  node_listen: 9080             # APISIX listening port
+  node_listen: 9080              # APISIX listening port
   node_ssl_listen: 9443
   enable_heartbeat: true
   enable_admin: true
   enable_debug: false
   enable_ipv6: true
+  config_center: etcd             # etcd: use etcd to store the config value
+                                  # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
   # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
   #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"

@@ -1,7 +1,14 @@
+local log = require("apisix.core.log")
+local local_conf = require("apisix.core.config_local").local_conf()
+
+local config_center = local_conf.apisix and local_conf.apisix.config_center
+                      or "etcd"
+log.info("use config_center: ", config_center)
+
 return {
     version  = require("apisix.core.version"),
-    log      = require("apisix.core.log"),
-    config   = require("apisix.core.config_etcd"),
+    log      = log,
+    config   = require("apisix.core.config_" .. config_center),
     json     = require("apisix.core.json"),
     table    = require("apisix.core.table"),
     request  = require("apisix.core.request"),

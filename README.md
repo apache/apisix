@@ -59,6 +59,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Anti-ReDoS(Regular expression Denial of Service)**
 - **IP whitelist/blacklist**
 - **IdP**: Support external authentication services, such as Auth0, okta, etc., users can use this to connect to Oauth2.0 and other authentication methods.
+- **[Stand-alone mode](doc/stand-alone.md)**: Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 - **ACL**: TODO.
 - **Bot detection**: TODO.
 

@@ -75,6 +75,7 @@ script() {
 }
 
 after_success() {
+    cat luacov.stats.out
     luacov-coveralls
 }
 
