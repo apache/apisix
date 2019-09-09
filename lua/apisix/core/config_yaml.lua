@@ -21,7 +21,6 @@ local tostring     = tostring
 local pcall        = pcall
 local io           = io
 local ngx          = ngx
-local error        = error
 local re_find      = ngx.re.find
 local apisix_yaml_path  = ngx.config.prefix() .. "conf/apisix.yaml"
 
