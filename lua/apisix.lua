@@ -32,7 +32,7 @@ function _M.http_init()
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    --
+    -- 随机种子
     local seed, err = core.utils.get_seed_from_urandom()
     if not seed then
         core.log.warn('failed to get seed from urandom: ', err)
@@ -44,7 +44,7 @@ function _M.http_init()
 end
 
 --[[
-
+    初始化 worker
 --]]
 function _M.http_init_worker()
     -- 一种将事件发送到 Nginx 服务器中其他工作进程的方法。
@@ -61,7 +61,7 @@ function _M.http_init_worker()
     require("apisix.admin.init").init_worker()
     -- 负载均衡器逻辑初始化，从配置中心加载 pstreams 配置数据
     require("apisix.http.balancer").init_worker()
-    -- 路由代理初始化，完成指定路由的初始化
+    -- router 初始化，完成指定路由引擎（ r3 或者 radixtree ）的初始化
     router.init_worker()
     -- 服务初始化，从配置中心加载 service 配置数据
     require("apisix.http.service").init_worker()
@@ -73,8 +73,8 @@ end
 
 --[[
     在指定的阶段运行指定的插件
-    @phase   阶段
-    @plugins 插件
+    @phase   阶段名称
+    @plugins 插件数组
     @api_ctx apisix上下文
 --]]
 local function run_plugin(phase, plugins, api_ctx)
@@ -96,9 +96,9 @@ local function run_plugin(phase, plugins, api_ctx)
             phase_fun(balancer_plugin, api_ctx)
             return api_ctx
         end
-        -- plugins 上的插件是一个插件2条（一条是本地加载的信息，一条是配置信息），所以循环步长为2
+        -- plugins 数组上的项目是一个插件存有2条数据（一条是本地加载的信息，一条是配置信息），所以循环步长为2
         for i = 1, #plugins, 2 do
-            -- 取出插件的phase功能
+            -- 取出插件对应 phase 上的功能函数
             local phase_fun = plugins[i][phase]
             -- 插件功能存在并且 balancer_name 插件名相同
             if phase_fun and
@@ -115,11 +115,11 @@ local function run_plugin(phase, plugins, api_ctx)
     end
 
     if phase ~= "log" then
-        -- plugins 上的插件是一个插件2条（一条是缓存的实例对象，一条是对应的配置信息），所以循环步长为2
+        -- plugins 数组上的项目是一个插件存有2条数据（一条是缓存的实例对象，一条是对应的配置信息），所以循环步长为2
         for i = 1, #plugins, 2 do
             local phase_fun = plugins[i][phase]
             if phase_fun then
-                -- 执行log动作，并且完成 response 返回
+                -- 执行 log 动作，并且完成 response 返回
                 local code, body = phase_fun(plugins[i + 1], api_ctx)
                 if code or body then
                     core.response.exit(code, body)
@@ -190,14 +190,14 @@ function _M.http_access_phase()
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
 
-    -- 在路由进行匹配的时候，会把matched_route标记出来
+    -- 在路由进行匹配的时候，会把 matched_route 标记出来
     -- 详见 radixtree_uri.lua 文件 create_radixtree_router 方法
     local route = api_ctx.matched_route
     if not route then
         return core.response.exit(404)
     end
 
-    --进行 grpc 匹配
+    -- 进行 grpc 匹配
     if route.value.service_protocol == "grpc" then
         return ngx.exec("@grpc_pass")
     end
@@ -363,12 +363,11 @@ function _M.http_balancer_phase()
 
     -- first time
     if not api_ctx.balancer_name then
-        -- 执行插件的balancer阶段，捆绑上自己实现的balancer
+        -- 执行插件的 balancer 阶段，捆绑上自己实现的 balancer
         run_plugin("balancer", nil, api_ctx)
         if api_ctx.balancer_name then
             return
         end
-    end
     -- 实现了一个自己的负载插件，没有走默认的 balancer
     if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
         return run_plugin("balancer", nil, api_ctx)
