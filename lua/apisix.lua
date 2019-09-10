@@ -387,4 +387,30 @@ end
 end -- do
 
 
+function _M.stream_init()
+    core.log.info("enter stream_init")
+end
+
+
+function _M.stream_init_worker()
+    core.log.info("enter stream_init_worker")
+end
+
+
+function _M.stream_preread_phase()
+    ngx.say("hello world")
+    core.log.info("enter stream_preread_phase")
+end
+
+
+function _M.stream_balancer_phase()
+    core.log.info("enter stream_balancer_phase")
+end
+
+
+function _M.stream_log_phase()
+    core.log.info("enter stream_log_phase")
+end
+
+
 return _M
