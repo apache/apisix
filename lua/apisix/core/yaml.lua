@@ -740,7 +740,7 @@ end
 
 local function parse(source)
   local lines = {}
-  for line in string.gmatch(source .. '\n', '(.-)\n') do
+  for line in string.gmatch(source .. '\n', '(.-)\r?\n') do
     tinsert(lines, line)
   end
 
