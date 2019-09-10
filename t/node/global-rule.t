@@ -25,7 +25,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rule',
+            local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
@@ -90,7 +90,7 @@ GET /hello
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rule', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
 
             if code >= 300 then
                 ngx.status = code
