@@ -103,6 +103,22 @@ local function configure_origin(conf)
 
     local req_origin = core.request.get_header("origin")
     if req_origin then
+        for _, domain in ipairs(origins) do
+            local from, _, err = re_find(req_origin, domain, "jo")
+            if err then
+                ngx_log(ngx.ERR, "[cors] could not search for domain: ", err)
+            end
+
+            if from then
+                ngx.header["Access-Control-Allow-Origin"] = req_origin
+                ngx.header["Vary"] = "Origin"
+                return
+            end
+        end
+    end
+    --[[
+    local req_origin = core.request.get_header("origin")
+    if req_origin then
         local cached_domains = config_cache[conf]
         if not cached_domains then
             cached_domains = {}
@@ -165,6 +181,7 @@ local function configure_origin(conf)
             end
         end
     end
+    ]]
 
     return false
 end
