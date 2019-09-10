@@ -24,7 +24,8 @@ local schema = {
         ac_allow_headers = {type = "string"},
         ac_expose_headers = {type = "string"},
         ac_allow_credentials = {type = "boolean", default = true},
-        ac_max_age = {type = "integer"}
+        ac_max_age = {type = "integer"},
+        preflight_continue = {type = "boolean", default = false}
     },
 }
 
