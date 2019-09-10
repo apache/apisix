@@ -106,9 +106,10 @@ function _M.match(api_ctx)
         return false, "failed to fetch ssl router: " .. err
     end
 
-    local sni = ngx_ssl.server_name()
+    local sni
+    sni, err = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        return false, "failed to fetch SNI: " .. err
+        return false, "failed to fetch SNI: " .. (err or "not found")
     end
 
     core.log.debug("sni: ", sni)
