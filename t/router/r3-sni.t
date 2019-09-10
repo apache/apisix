@@ -1,4 +1,4 @@
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 log_level('debug');
 no_root_location();
