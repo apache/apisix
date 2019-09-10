@@ -400,6 +400,7 @@ end
 function _M.stream_preread_phase()
     ngx.say("hello world")
     core.log.info("enter stream_preread_phase")
+    ngx.exit(1)
 end
 
 

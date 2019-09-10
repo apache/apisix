@@ -38,6 +38,7 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
+    my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
     lua_package_path "$pwd/deps/share/lua/5.1/?.lua;$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
     lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
@@ -65,7 +66,9 @@ _EOC_
     }
 _EOC_
 
-    $block->set_value("stream_config", $stream_config);
+    if (defined $stream_enable) {
+        $block->set_value("stream_config", $stream_config);
+    }
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
     preread_by_lua_block {
@@ -79,7 +82,9 @@ _EOC_
     }
 _EOC_
 
-    $block->set_value("stream_server_config", $stream_server_config);
+    if (defined $stream_enable) {
+        $block->set_value("stream_server_config", $stream_server_config);
+    }
 
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     require "resty.core"

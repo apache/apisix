@@ -7,7 +7,8 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: basic print
+=== TEST 1: sanity
+--- stream_enable
 --- stream_response
 hello world
 --- no_error_log
