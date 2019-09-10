@@ -38,7 +38,7 @@ local function create_limit_obj(conf)
 end
 
 
-function _M.access(conf, ctx)
+function _M.rewrite(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                               create_limit_obj, conf)
