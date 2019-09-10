@@ -112,9 +112,10 @@ function _M.match(api_ctx)
         radixtree_router_ver = ssl_certificates.conf_version
     end
 
-    local sni = ngx_ssl.server_name()
+    local sni
+    sni, err = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        return false, "failed to fetch SNI: " .. err
+        return false, "failed to fetch SNI: " .. (err or "not found")
     end
 
     core.log.debug("sni: ", sni)
