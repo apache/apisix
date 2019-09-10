@@ -18,6 +18,7 @@ local resources = {
     ssl       = require("apisix.admin.ssl"),
     plugins   = require("apisix.admin.plugins"),
     proto     = require("apisix.admin.proto"),
+    global_rules= require("apisix.admin.global_rules"),
 }
 
 

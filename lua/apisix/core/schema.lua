@@ -401,4 +401,14 @@ _M.proto = {
 }
 
 
+_M.global_rule = {
+    type = "object",
+    properties = {
+        plugins = plugins_schema
+    },
+    required = {"plugins"},
+    additionalProperties = false,
+}
+
+
 return _M

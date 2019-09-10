@@ -144,6 +144,7 @@ function _M.http_ssl_phase()
 end
 
 
+do
     local upstream_vars = {
         uri        = "upstream_uri",
         scheme     = "upstream_scheme",
@@ -155,6 +156,7 @@ end
     for name, _ in pairs(upstream_vars) do
         core.table.insert(upstream_names, name)
     end
+
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -165,6 +167,26 @@ function _M.http_access_phase()
     end
 
     core.ctx.set_vars_meta(api_ctx)
+
+    -- load and run global rule
+    if router.global_rules.values and #router.global_rules.values > 0 then
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        for _, global_rule in ipairs(router.global_rules.values) do
+            api_ctx.conf_type = "global_rule"
+            api_ctx.conf_version = global_rule.modifiedIndex
+            api_ctx.conf_id = global_rule.value.id
+
+            core.table.clear(plugins)
+            api_ctx.plugins = plugin.filter(global_rule, plugins)
+            run_plugin("rewrite", plugins, api_ctx)
+        end
+
+        core.tablepool.release("plugins", plugins)
+        api_ctx.plugins = nil
+        api_ctx.conf_type = nil
+        api_ctx.conf_version = nil
+        api_ctx.conf_id = nil
+    end
 
     router.router_http.match(api_ctx)
 
@@ -233,6 +255,9 @@ function _M.http_access_phase()
     run_plugin("access", plugins, api_ctx)
 end
 
+end -- do
+
+
 function _M.grpc_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -293,14 +318,15 @@ function _M.grpc_access_phase()
 end
 
 
-
 function _M.http_header_filter_phase()
     run_plugin("header_filter")
 end
 
+
 function _M.http_body_filter_phase()
     run_plugin("body_filter")
 end
+
 
 function _M.http_log_phase()
     local api_ctx = run_plugin("log")
