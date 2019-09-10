@@ -8,9 +8,22 @@ local _M = {
 }
 
 
-local function check_conf(conf)
+local function check_conf(id, conf, need_id)
     if not conf then
         return nil, {error_msg = "missing configurations"}
+    end
+
+    id = id or conf.id
+    if need_id and not id then
+        return nil, {error_msg = "missing route id"}
+    end
+
+    if not need_id and id then
+        return nil, {error_msg = "wrong route id, do not need it"}
+    end
+
+    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
+        return nil, {error_msg = "wrong route id"}
     end
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.global_rule))
@@ -29,13 +42,13 @@ local function check_conf(conf)
 end
 
 
-function _M.put(_, conf)
-    local ok, err = check_conf(conf)
+function _M.put(id, conf)
+    local ok, err = check_conf(id, conf, true)
     if not ok then
         return 400, err
     end
 
-    local key = "/global_rules/1"
+    local key = "/global_rules/" .. id
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put global rule[", key, "]: ", err)
@@ -46,8 +59,8 @@ function _M.put(_, conf)
 end
 
 
-function _M.get()
-    local key = "/global_rules/1"
+function _M.get(id)
+    local key = "/global_rules/" .. id
     local res, err = core.etcd.get(key)
     if not res then
         core.log.error("failed to get global rule[", key, "]: ", err)
@@ -58,8 +71,8 @@ function _M.get()
 end
 
 
-function _M.delete()
-    local key = "/global_rules/1"
+function _M.delete(id)
+    local key = "/global_rules/" .. id
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then
@@ -71,7 +84,11 @@ function _M.delete()
 end
 
 
-function _M.patch(_, conf, sub_path)
+function _M.patch(id, conf, sub_path)
+    if not id then
+        return 400, {error_msg = "missing global rule id"}
+    end
+
     if not sub_path then
         return 400, {error_msg = "missing sub-path"}
     end
@@ -80,7 +97,7 @@ function _M.patch(_, conf, sub_path)
         return 400, {error_msg = "missing new configuration"}
     end
 
-    local key = "/global_rules/1"
+    local key = "/global_rules/" .. id
     local res_old, err = core.etcd.get(key)
     if not res_old then
         core.log.error("failed to get global rule [", key, "]: ", err)
@@ -122,7 +139,7 @@ function _M.patch(_, conf, sub_path)
     end
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local ok, err = check_conf(node_value)
+    local ok, err = check_conf(id, node_value, true)
     if not ok then
         return 400, err
     end
