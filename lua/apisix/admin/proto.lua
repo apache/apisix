@@ -1,7 +1,7 @@
 local type = type
 local ipairs = ipairs
 local core = require("apisix.core")
-local get_routes = require("apisix.http.router").http_routes
+local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local tostring = tostring
 
