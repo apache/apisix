@@ -8,7 +8,7 @@ BEGIN {
     }
 }
 
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 log_level('info');

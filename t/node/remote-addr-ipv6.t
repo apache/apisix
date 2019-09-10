@@ -1,4 +1,4 @@
-use t::APISix;
+use t::APISIX;
 
 no_root_location();
 

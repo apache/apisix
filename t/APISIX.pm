@@ -1,4 +1,4 @@
-package t::APISix;
+package t::APISIX;
 
 use lib 'lib';
 use Cwd qw(cwd);

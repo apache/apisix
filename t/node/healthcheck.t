@@ -8,7 +8,7 @@ BEGIN {
     }
 }
 
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 master_on();
 repeat_each(1);
