@@ -56,7 +56,7 @@ function _M.http_init_worker()
     require("apisix.admin.init").init_worker()
     require("apisix.http.balancer").init_worker()
 
-    router.init_worker()
+    router.http_init_worker()
     require("apisix.http.service").init_worker()
     require("apisix.plugin").init_worker()
     require("apisix.consumer").init_worker()
@@ -394,13 +394,36 @@ end
 
 function _M.stream_init_worker()
     core.log.info("enter stream_init_worker")
+    router.stream_init_worker()
 end
 
 
 function _M.stream_preread_phase()
+    -- only for test
     ngx.say("hello world")
     core.log.info("enter stream_preread_phase")
-    ngx.exit(1)
+
+    local ngx_ctx = ngx.ctx
+    local api_ctx = ngx_ctx.api_ctx
+
+    if not api_ctx then
+        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+        ngx_ctx.api_ctx = api_ctx
+    end
+
+    core.ctx.set_vars_meta(api_ctx)
+
+    router.router_stream.match(api_ctx)
+
+    core.log.info("matched route: ",
+                  core.json.delay_encode(api_ctx.matched_route, true))
+
+    local matched_route = api_ctx.matched_route
+    if not matched_route then
+        return ngx_exit(1)
+    end
+
+    ngx_exit(1)
 end
 
 
@@ -411,6 +434,7 @@ end
 
 function _M.stream_log_phase()
     core.log.info("enter stream_log_phase")
+    -- core.ctx.release_vars(api_ctx)
 end
 
 
