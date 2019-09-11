@@ -69,19 +69,21 @@ We provide an online dashboard [demo version](http://apisix.iresty.com)， make 
 
 ## Install
 
-APISIX Installed and tested in the following systems:
+APISIX Installed and tested in the following systems, and the version of OpenResty MUST >= 1.15.8.1:
 
-| OS           | OpenResty | Status | Description |
-| ------------ | --------- | ------ | ------     |
-| CentOS 7     | 1.15.8.1  | √      |            |
-| Ubuntu 16.04 | 1.15.8.1  | √      |            |
-| Ubuntu 18.04 | 1.15.8.1  | √      |            |
-| Debian 9     | 1.15.8.1  | √      |            |
-| Mac OSX      | 1.15.8.1  | √      | Only support development environment|
+| OS           |
+| ------------ |
+| CentOS 7     |
+| Ubuntu 16.04 |
+| Ubuntu 18.04 |
+| Debian 9     |
+| Mac OSX      |
 
-You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
-
-We will add support for Docker and more OS shortly.
+You now have four ways to install APISIX:
+- if you are using CentOS 7, it is recommended to use RPM;
+- if using MacOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
+- other systems please use Luarocks;
+- You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
 *NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
 
@@ -98,15 +100,15 @@ sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.7/apis
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
 
-### Install from Luarocks
+### Install from Luarocks (not support MacOS)
 
-#### Dependencies
+##### Dependencies
 
 APISIX is based on [OpenResty](https://openresty.org/), the configures data storage and distribution via [etcd](https://github.com/etcd-io/etcd).
 
 We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, and for different operating systems have different dependencies, see more: [Install Dependencies](doc/install-dependencies.md)
 
-#### Install APISIX
+##### Install APISIX
 
 ```shell
 luarocks install --lua-dir=/usr/local/openresty/luajit apisix
@@ -120,9 +122,6 @@ If all goes well, you will see the message like this:
 > apisix is now built and installed in /usr (license: Apache License 2.0)
 
 Congratulations, you have already installed APISIX successfully.
-
-*NOTICE*: For Mac OSX users, APISIX only supports running in a development
-environment, please take a look at [dev manual](doc/dev-manual.md).
 
 ## Development Manual of APISIX
 
