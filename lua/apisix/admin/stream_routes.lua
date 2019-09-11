@@ -1,6 +1,5 @@
 local core = require("apisix.core")
 local tostring = tostring
-local type = type
 
 
 local _M = {
