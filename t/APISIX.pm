@@ -44,6 +44,8 @@ _EOC_
     lua_package_path "$pwd/deps/share/lua/5.1/?.lua;$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
     lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
 
+    lua_socket_log_errors off;
+
     upstream apisix_backend {
         server 127.0.0.1:1900;
         balancer_by_lua_block {
