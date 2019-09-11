@@ -16,20 +16,23 @@ function _M.match(api_ctx)
         core.log.info("not find any user stream route")
         return ngx_exit(1)
     end
+    core.log.info("stream routes: ", core.json.delay_encode(routes))
 
     local remote_addr = api_ctx.var.remote_addr
     -- local server_addr = api_ctx.var.server_addr
     -- local server_port = api_ctx.var.server_port
 
     -- todo: need a better way
+    core.log.info("remote addr: ", remote_addr)
     for _, route in ipairs(routes) do
-        if route.remote_addr == remote_addr then
+        if route.value.remote_addr == remote_addr then
             api_ctx.matched_route = route
             return true
         end
     end
 
-    return ngx_exit(1)
+    core.log.info("not hit any route")
+    return true
 end
 
 

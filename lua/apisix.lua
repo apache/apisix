@@ -399,8 +399,6 @@ end
 
 
 function _M.stream_preread_phase()
-    -- only for test
-    ngx.say("hello world")
     core.log.info("enter stream_preread_phase")
 
     local ngx_ctx = ngx.ctx
@@ -420,9 +418,13 @@ function _M.stream_preread_phase()
 
     local matched_route = api_ctx.matched_route
     if not matched_route then
+        -- only for test
+        ngx.say("hello world")
         return ngx_exit(1)
     end
 
+    -- only for test
+    ngx.say("hello world")
     ngx_exit(1)
 end
 

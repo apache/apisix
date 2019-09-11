@@ -30,6 +30,7 @@ $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 
 add_block_preprocessor(sub {
     my ($block) = @_;
+    my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
@@ -72,6 +73,8 @@ _EOC_
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
     preread_by_lua_block {
+        -- wait for etcd sync
+        ngx.sleep($wait_etcd_sync)
         apisix.stream_preread_phase()
     }
 
@@ -157,8 +160,6 @@ _EOC_
     if (defined $block->listen_ipv6) {
         $ipv6_listen_conf = "listen \[::1\]:12345;"
     }
-
-    my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
     my $config = $block->config // '';
     $config .= <<_EOC_;
