@@ -108,6 +108,8 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 
 #### Install APISIX
 
+*NOTICE*: only supports Linux OS now.
+
 ```shell
 luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
