@@ -18,12 +18,26 @@ __DATA__
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "remote_addr": "127.0.0.1"
+                    "remote_addr": "127.0.0.1",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route"
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "remote_addr": "127.0.0.1"
+                            "remote_addr": "127.0.0.1",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new route"
                         },
                         "key": "/apisix/stream_routes/1"
                     },
@@ -55,7 +69,14 @@ passed
                 [[{
                     "node": {
                         "value": {
-                            "remote_addr": "127.0.0.1"
+                            "remote_addr": "127.0.0.1",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new route"
                         },
                         "key": "/apisix/stream_routes/1"
                     },
@@ -108,12 +129,26 @@ GET /t
             local code, message, res = t('/apisix/admin/stream_routes',
                 ngx.HTTP_POST,
                 [[{
-                    "remote_addr": "127.0.0.1"
+                    "remote_addr": "127.0.0.1",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route"
                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "remote_addr": "127.0.0.1"
+                            "remote_addr": "127.0.0.1",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new route"
                         }
                     },
                     "action": "create"

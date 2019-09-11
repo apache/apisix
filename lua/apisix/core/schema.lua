@@ -423,7 +423,13 @@ _M.stream_route = {
                            .. "/[0-9]{1,2}$"},
                 {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"}
             }
-        }
+        },
+        upstream = upstream_schema,
+        upstream_id = id_schema,
+    },
+    anyOf = {
+        {required = {"remote_addr", "upstream"}},
+        {required = {"remote_addr", "upstream_id"}},
     },
     required = {"remote_addr"},
 }
