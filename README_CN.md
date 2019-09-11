@@ -78,7 +78,7 @@ APISIX 在以下操作系统中做过安装和运行测试，需要注意的是�
 
 现在有 4 种方式来安装:
 - 如果你是 CentOS 7 的系统，推荐使用 RPM 包安装；
-- 如果是 MacOS，现在通过 git clone 和手工安装的方式，参考[开发文档](doc/dev-manual-cn.md)
+- 如果是 MacOS，只能通过 git clone 和手工安装的方式，参考[开发文档](doc/dev-manual-cn.md)
 - 其他的系统推荐使用 Luarocks 安装；
 - 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装.
 
