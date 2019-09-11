@@ -71,13 +71,13 @@ We provide an online dashboard [demo version](http://apisix.iresty.com)， make 
 
 APISIX Installed and tested in the following systems:
 
-| OS           | OpenResty | Status |
-| ------------ | --------- | ------ |
-| CentOS 7     | 1.15.8.1  | √      |
-| Ubuntu 16.04 | 1.15.8.1  | √      |
-| Ubuntu 18.04 | 1.15.8.1  | √      |
-| Debian 9     | 1.15.8.1  | √      |
-| Mac OSX      | 1.15.8.1  | √      |
+| OS           | OpenResty | Status | Description |
+| ------------ | --------- | ------ | ------     |
+| CentOS 7     | 1.15.8.1  | √      |            |
+| Ubuntu 16.04 | 1.15.8.1  | √      |            |
+| Ubuntu 18.04 | 1.15.8.1  | √      |            |
+| Debian 9     | 1.15.8.1  | √      |            |
+| Mac OSX      | 1.15.8.1  | √      | Only support development environment|
 
 You now have two ways to install APISIX: if you are using CentOS 7, it is recommended to use RPM, other systems please use Luarocks.
 
@@ -108,8 +108,6 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 
 #### Install APISIX
 
-*NOTICE*: only supports Linux OS now.
-
 ```shell
 luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 ```
@@ -122,6 +120,9 @@ If all goes well, you will see the message like this:
 > apisix is now built and installed in /usr (license: Apache License 2.0)
 
 Congratulations, you have already installed APISIX successfully.
+
+*NOTICE*: For Mac OSX users, APISIX only supports running in a development
+environment, please take a look at [dev manual](doc/dev-manual.md).
 
 ## Development Manual of APISIX
 
