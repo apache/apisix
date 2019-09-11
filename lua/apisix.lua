@@ -51,10 +51,9 @@ function _M.http_init_worker()
         error("failed to init worker event: " .. err)
     end
 
-    load_balancer = require("apisix.http.balancer").run
-
+    require("apisix.balancer").init_worker()
+    load_balancer = require("apisix.balancer").run
     require("apisix.admin.init").init_worker()
-    require("apisix.http.balancer").init_worker()
 
     router.http_init_worker()
     require("apisix.http.service").init_worker()
@@ -395,6 +394,7 @@ end
 function _M.stream_init_worker()
     core.log.info("enter stream_init_worker")
     router.stream_init_worker()
+    load_balancer = require("apisix.balancer").run
 end
 
 
@@ -418,19 +418,34 @@ function _M.stream_preread_phase()
 
     local matched_route = api_ctx.matched_route
     if not matched_route then
-        -- only for test
-        ngx.say("hello world")
         return ngx_exit(1)
     end
 
-    -- only for test
-    ngx.say("hello world")
-    ngx_exit(1)
 end
 
 
 function _M.stream_balancer_phase()
     core.log.info("enter stream_balancer_phase")
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        core.log.error("invalid api_ctx")
+        return ngx_exit(1)
+    end
+
+    -- first time
+    if not api_ctx.balancer_name then
+        run_plugin("balancer", nil, api_ctx)
+        if api_ctx.balancer_name then
+            return
+        end
+    end
+
+    if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
+        return run_plugin("balancer", nil, api_ctx)
+    end
+
+    api_ctx.balancer_name = "default"
+    load_balancer(api_ctx.matched_route, api_ctx)
 end
 
 

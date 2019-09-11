@@ -45,7 +45,7 @@ _EOC_
     lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
 
     upstream apisix_backend {
-        server 0.0.0.1:1980;
+        server 127.0.0.1:1900;
         balancer_by_lua_block {
             apisix.stream_balancer_phase()
         }
@@ -64,6 +64,16 @@ _EOC_
 
     init_worker_by_lua_block {
         apisix.stream_init_worker()
+    }
+
+    # fake server, only for test
+    server {
+        listen 1995;
+
+        content_by_lua_block {
+            ngx.say("hello world")
+            ngx.exit(1)
+        }
     }
 _EOC_
 
