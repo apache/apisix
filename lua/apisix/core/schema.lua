@@ -411,4 +411,22 @@ _M.global_rule = {
 }
 
 
+_M.stream_route = {
+    type = "object",
+    properties = {
+        remote_addr = {
+            description = "client IP",
+            type = "string",
+            anyOf = {
+                {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
+                {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+                           .. "/[0-9]{1,2}$"},
+                {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"}
+            }
+        }
+    },
+    required = {"remote_addr"},
+}
+
+
 return _M

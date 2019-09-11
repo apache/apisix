@@ -152,7 +152,7 @@ GET /t
 
 
 
-=== TEST 5: push route + delete
+=== TEST 5: post route + delete
 --- config
     location /t {
         content_by_lua_block {
