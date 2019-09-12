@@ -48,7 +48,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **版本控制**：支持操作的多次回滚。
 - **CLI**: 使用命令行来启动、关闭和重启 APISIX。
 - **REST API**
-- **Proxy Websocket**
+- **Websocket 代理**
 - **IPv6**：支持使用 IPv6 格式匹配路由。
 - **集群**：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
 - **可扩展**：简单易用的插件机制方便扩展。
@@ -58,6 +58,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，okta 等，用户可以借此来对接 Oauth2.0 等认证方式。
 - **[单机模式](doc/stand-alone-cn.md)**: 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
 - **全局规则**：允许对所有请求执行插件，比如黑白名单、限流限速等。
+- **[TCP/UDP 代理](doc/stream-proxy.md)**: 动态 TCP/UDP 代理。
 - **ACL**: TODO。
 - **Bot detection**: TODO。
 
