@@ -13,7 +13,7 @@ add_block_preprocessor(sub {
     apisix.http_init()
 
     function test(route, ctx, count)
-        local balancer = require("apisix.http.balancer")
+        local balancer = require("apisix.balancer")
         local res = {}
         for i = 1, count or 12 do
             local host, port, err = balancer.pick_server(route, ctx)
@@ -79,7 +79,7 @@ host: 39.97.63.217 count: 4
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local balancer = require("apisix.http.balancer")
+            local balancer = require("apisix.balancer")
 
             local route = {
                     value = {
@@ -114,7 +114,7 @@ host: 39.97.63.217 count: 6
 --- config
     location /t {
         content_by_lua_block {
-            local balancer = require("apisix.http.balancer")
+            local balancer = require("apisix.balancer")
 
             local route = {
                     value = {

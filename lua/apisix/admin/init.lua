@@ -10,15 +10,16 @@ local events
 
 
 local resources = {
-    routes    = require("apisix.admin.routes"),
-    services  = require("apisix.admin.services"),
-    upstreams = require("apisix.admin.upstreams"),
-    consumers = require("apisix.admin.consumers"),
-    schema    = require("apisix.admin.schema"),
-    ssl       = require("apisix.admin.ssl"),
-    plugins   = require("apisix.admin.plugins"),
-    proto     = require("apisix.admin.proto"),
-    global_rules= require("apisix.admin.global_rules"),
+    routes          = require("apisix.admin.routes"),
+    services        = require("apisix.admin.services"),
+    upstreams       = require("apisix.admin.upstreams"),
+    consumers       = require("apisix.admin.consumers"),
+    schema          = require("apisix.admin.schema"),
+    ssl             = require("apisix.admin.ssl"),
+    plugins         = require("apisix.admin.plugins"),
+    proto           = require("apisix.admin.proto"),
+    global_rules    = require("apisix.admin.global_rules"),
+    stream_routes   = require("apisix.admin.stream_routes"),
 }
 
 

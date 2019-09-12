@@ -6,7 +6,7 @@ local plugin = require("apisix.plugin")
 local service_fetch = require("apisix.http.service").get
 local admin_init = require("apisix.admin.init")
 local get_var = require("resty.ngxvar").fetch
-local router = require("apisix.http.router")
+local router = require("apisix.router")
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_exit = ngx.exit
@@ -51,12 +51,11 @@ function _M.http_init_worker()
         error("failed to init worker event: " .. err)
     end
 
-    load_balancer = require("apisix.http.balancer").run
-
+    require("apisix.balancer").init_worker()
+    load_balancer = require("apisix.balancer").run
     require("apisix.admin.init").init_worker()
-    require("apisix.http.balancer").init_worker()
 
-    router.init_worker()
+    router.http_init_worker()
     require("apisix.http.service").init_worker()
     require("apisix.plugin").init_worker()
     require("apisix.consumer").init_worker()
@@ -385,6 +384,75 @@ function _M.http_admin()
 end
 
 end -- do
+
+
+function _M.stream_init()
+    core.log.info("enter stream_init")
+end
+
+
+function _M.stream_init_worker()
+    core.log.info("enter stream_init_worker")
+    router.stream_init_worker()
+    load_balancer = require("apisix.balancer").run
+end
+
+
+function _M.stream_preread_phase()
+    core.log.info("enter stream_preread_phase")
+
+    local ngx_ctx = ngx.ctx
+    local api_ctx = ngx_ctx.api_ctx
+
+    if not api_ctx then
+        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+        ngx_ctx.api_ctx = api_ctx
+    end
+
+    core.ctx.set_vars_meta(api_ctx)
+
+    router.router_stream.match(api_ctx)
+
+    core.log.info("matched route: ",
+                  core.json.delay_encode(api_ctx.matched_route, true))
+
+    local matched_route = api_ctx.matched_route
+    if not matched_route then
+        return ngx_exit(1)
+    end
+
+end
+
+
+function _M.stream_balancer_phase()
+    core.log.info("enter stream_balancer_phase")
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        core.log.error("invalid api_ctx")
+        return ngx_exit(1)
+    end
+
+    -- first time
+    if not api_ctx.balancer_name then
+        run_plugin("balancer", nil, api_ctx)
+        if api_ctx.balancer_name then
+            return
+        end
+    end
+
+    if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
+        return run_plugin("balancer", nil, api_ctx)
+    end
+
+    api_ctx.balancer_name = "default"
+    load_balancer(api_ctx.matched_route, api_ctx)
+end
+
+
+function _M.stream_log_phase()
+    core.log.info("enter stream_log_phase")
+    -- core.ctx.release_vars(api_ctx)
+end
 
 
 return _M
