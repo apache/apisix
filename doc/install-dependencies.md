@@ -47,10 +47,15 @@ sudo apt-get install -y git etcd openresty curl luarocks\
 sudo service etcd start
 ```
 
-Debian 9
+Debian 9 && 10
 ========
 
 ```shell
+# optional
+sed -i 's|^deb http://deb.debian.org/debian|deb http://mirrors.huaweicloud.com/debian|g' /etc/apt/sources.list
+sed -i 's|^deb http://security.debian.org/debian-security|deb http://mirrors.huaweicloud.com/debian-security|g' /etc/apt/sources.list
+apt update
+apt install wget gnupg -y
 # add openresty source
 wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 sudo apt-get -y install software-properties-common
@@ -67,19 +72,16 @@ tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
 
 sudo apt-get install -y git openresty cmake curl \
     check libpcre3 libpcre3-dev libjemalloc-dev \
-    libjemalloc1 build-essential libtool automake autoconf pkg-config
+    build-essential libtool automake autoconf pkg-config
 
-install luarocks
-(the version must > 3.0, --lua-dir was first introduced in the luarocks 3.0 release)
+# install luarocks
+# (the version must > 3.0, --lua-dir was first introduced in the luarocks 3.0 release)
 
-```
--$ wget https://luarocks.org/releases/luarocks-3.1.3.tar.gz
--$ tar zxpf luarocks-3.1.3.tar.gz
--$ cd luarocks-3.1.3
+wget https://luarocks.org/releases/luarocks-3.1.3.tar.gz
+tar zxpf luarocks-3.1.3.tar.gz
+cd luarocks-3.1.3
 
-```
-
-* Run `./configure`. (This will attempt to detect your installation of Lua. If you get any error messages, see the section "Customizing your settings", below.)
+* Run `./configure --with-lua=/usr/local/openresty/luajit/`. (This will attempt to detect your installation of Lua. If you get any error messages, see the section "Customizing your settings", below.)
 * Run `make build`.
 * As superuser, run `make install`.
 ln -s /usr/local/bin/luarocks /usr/bin/luarocks
