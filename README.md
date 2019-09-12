@@ -77,6 +77,7 @@ APISIX Installed and tested in the following systems, and the version of OpenRes
 | Ubuntu 16.04 |
 | Ubuntu 18.04 |
 | Debian 9     |
+| Debian 10    |
 | Mac OSX      |
 
 You now have four ways to install APISIX:
