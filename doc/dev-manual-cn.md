@@ -5,8 +5,14 @@
 如果你是开发人员，可以通过下面的命令快速搭建本地开发环境。
 
 ```shell
+# clone project
 git clone git@github.com:iresty/apisix.git
 cd apisix
+
+# init submodule
+git submodule update --init --recursive
+
+# install dependency
 make dev
 ```
 
@@ -19,21 +25,37 @@ make dev
 ```shell
 $ tree -L 2 -d apisix
 apisix
+├── benchmark
+│   ├── fake-apisix
+│   └── server
 ├── bin
 ├── conf
-├── deps                # 依赖的 Lua 和动态库，放在了这里
+│   └── cert
+├── dashboard
+│   ├── css
+│   ├── fonts
+│   ├── img
+│   ├── js
+│   └── tinymce
+├── deps                    # 依赖的 Lua 和动态库，放在了这里
 │   ├── lib64
 │   └── share
 ├── doc
-│   └── images
+│   ├── images
+│   └── plugins
+├── logs
 ├── lua
 │   └── apisix
+├── rockspec
 ├── t
 │   ├── admin
+│   ├── config-center-yaml
 │   ├── core
 │   ├── lib
 │   ├── node
-│   └── plugin
+│   ├── plugin
+│   ├── router
+│   └── servroot
 └── utils
 ```
 
@@ -45,13 +67,15 @@ Makefile rules:
 
     help:         Show Makefile rules.
     dev:          Create a development ENV
-    check:        Check Lua srouce code
+    dev_r3:       Create a development ENV for r3
+    check:        Check Lua source code
     init:         Initialize the runtime environment
     run:          Start the apisix server
     stop:         Stop the apisix server
     clean:        Remove generated files
     reload:       Reload the apisix server
     install:      Install the apisix
+    test:         Run the test case
 ```
 
 

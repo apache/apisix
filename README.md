@@ -126,7 +126,7 @@ Congratulations, you have already installed APISIX successfully.
 
 ## Development Manual of APISIX
 
-If you are a developer, you can view the [dev manual](doc/dev-manual.md) for more detailed information.
+If you are a developer, you can view the [dev manual](doc/dev-manual.md) for more details.
 
 ## Quickstart
 
@@ -149,7 +149,7 @@ APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard
 
 Do not need to fill the user name and password, log in directly.
 
-dashboard only allow `127.0.0.0/24` by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to add more IPs.
+Dashboard allow any remote IP by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
 
 ## Benchmark
 

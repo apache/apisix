@@ -143,8 +143,7 @@ sudo apisix start
 APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard` 即可使用，
 不用填写用户名和密码，直接登录。
 
-dashboard 默认只放行了 `127.0.0.0/24` 的本地 IP，其他地址禁止访问。
-你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，来增加更多可以访问 dashboard 的 IP。
+Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
 
 ## 性能测试
 
