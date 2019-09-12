@@ -74,6 +74,7 @@ APISIX 在以下操作系统中做过安装和运行测试，需要注意的是�
 | Ubuntu 16.04 |
 | Ubuntu 18.04 |
 | Debian 9     |
+| Debian 10    |
 | Mac OSX      |
 
 现在有 4 种方式来安装:
