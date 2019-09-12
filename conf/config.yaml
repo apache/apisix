@@ -22,6 +22,13 @@ apisix:
 
     ssl: 'radixtree_sni'          # r3_sni: match route by SNI(base on r3)
                                   # radixtree_sni: match route by SNI(base on radixtree)
+  # stream_proxy:                 # TCP/UDP proxy
+  #   tcp:                        # TCP proxy port list
+  #     - 9100
+  #     - 9101
+  #   udp:                        # UDP proxy port list
+  #     - 9200
+  #     - 9211
 
 etcd:
   host: "http://127.0.0.1:2379"   # etcd address

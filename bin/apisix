@@ -79,6 +79,53 @@ working_directory   /tmp/apisix_cores/;
 
 worker_shutdown_timeout 3;
 
+{% if stream_proxy then %}
+stream {
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
+                      .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
+                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+                      .. [=[{*lua_cpath*};";
+    lua_socket_log_errors off;
+
+    upstream apisix_backend {
+        server 127.0.0.1:80;
+        balancer_by_lua_block {
+            apisix.stream_balancer_phase()
+        }
+    }
+
+    init_by_lua_block {
+        require "resty.core"
+        apisix = require("apisix")
+        apisix.stream_init()
+    }
+
+    init_worker_by_lua_block {
+        apisix.stream_init_worker()
+    }
+
+    server {
+        {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*port*};
+        {% end %}
+        {% for _, port in ipairs(stream_proxy.udp or {}) do %}
+        listen {*port*} udp;
+        {% end %}
+
+        preread_by_lua_block {
+            apisix.stream_preread_phase()
+        }
+
+        proxy_pass apisix_backend;
+
+        log_by_lua_block {
+            apisix.stream_log_phase()
+        }
+    }
+}
+{% end %}
+
 http {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
@@ -438,7 +485,7 @@ local function init_etcd(show_output)
 
     for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                "/plugins", "/consumers", "/node_status",
-                               "/ssl", "/global_rules"}) do
+                               "/ssl", "/global_rules", "/stream_routes"}) do
         local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true "
                     .. "--connect-timeout " .. timeout

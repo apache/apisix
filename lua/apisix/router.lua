@@ -7,7 +7,7 @@ local error = error
 local _M = {version = 0.2}
 
 
-function _M.init_worker()
+function _M.http_init_worker()
     local conf = local_conf()
     local router_http_name = "r3_uri"
     local router_ssl_name = "r3_sni"
@@ -34,6 +34,13 @@ function _M.init_worker()
               .. err)
     end
     _M.global_rules = global_rules
+end
+
+
+function _M.stream_init_worker()
+    local router_stream = require("apisix.stream.router.ip_remote")
+    router_stream.init_worker()
+    _M.router_stream = router_stream
 end
 
 

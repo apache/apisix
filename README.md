@@ -31,7 +31,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 ## Features
 
 - **Cloud-Native**: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
-- **hot updates and hot plugins**: Continuously updates its configurations and plugins without restarts!
+- **Hot Updates And Hot Plugins**: Continuously updates its configurations and plugins without restarts!
 - **Dynamic Load Balancing**: Round-robin load balancing with weight.
 - **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
 - **[SSL](doc/https.md)**: Dynamically load an SSL certificate.
@@ -43,7 +43,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **[Limit-count](doc/plugins/limit-count.md)**
 - **[Limit-concurrency](doc/plugins/limit-conn.md)**
 - **OpenTracing: [Zipkin](doc/plugins/zipkin.md)**
-- **Monitoring and Metrics**: [Prometheus](doc/plugins/prometheus.md)
+- **Monitoring And Metrics**: [Prometheus](doc/plugins/prometheus.md)
 - **[gRPC transcoding](doc/plugins/grpc-transcoding.md)**：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
 - **[Serverless](doc/plugins/serverless.md)**: Invoke functions in each phase in APISIX.
 - **Custom plugins**: Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
@@ -57,10 +57,11 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Scalability**: plug-in mechanism is easy to extend.
 - **High performance**: The single-core QPS reaches 24k with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
-- **IP whitelist/blacklist**
+- **IP Whitelist/Blacklist**
 - **IdP**: Support external authentication services, such as Auth0, okta, etc., users can use this to connect to Oauth2.0 and other authentication methods.
 - **[Stand-alone mode](doc/stand-alone.md)**: Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
-- **Global rule**: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
+- **Global Rule**: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
+- **[TCP/UDP Proxy](doc/stream-proxy.md)**: Dynamic TCP/UDP proxy.
 - **ACL**: TODO.
 - **Bot detection**: TODO.
 
