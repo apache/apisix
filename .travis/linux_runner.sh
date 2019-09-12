@@ -18,7 +18,6 @@ export_or_prefix() {
 
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
-    sudo luarocks install --lua-dir=/usr/local/openresty/luajit luacov-coveralls
 }
 
 do_install() {
@@ -31,13 +30,14 @@ do_install() {
     sudo apt-get update
 
     sudo apt-get install openresty-debug
+    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls
 
     export GO111MOUDULE=on
 
     export_or_prefix
 
-    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}luajit lua-resty-libr3 --tree=deps --local
+    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
 
@@ -58,6 +58,7 @@ do_install() {
 script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+    openresty -V
     sudo service etcd start
 
     ./build-cache/grpc_server_example &
