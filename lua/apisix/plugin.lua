@@ -161,6 +161,9 @@ function _M.load()
     if not ok then
         core.log.error("failed to load stream plugins: ", err)
     end
+
+    -- mainly for test
+    return local_plugins
 end
 
 
