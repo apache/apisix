@@ -184,7 +184,7 @@ GET /t
 
 
 
-=== TEST 5: set route with plugin(id: 1)
+=== TEST 5: set route with plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -194,11 +194,13 @@ GET /t
                 [[{
                     "remote_addr": "127.0.0.1",
                     "plugins": {
-                        "protocol_name": "MQTT",
-                        "protocol_level": 4,
-                        "upstream": {
-                            "ip": "127.0.0.1",
-                            "port": 1980
+                        "mqtt-proxy": {
+                            "protocol_name": "MQTT",
+                            "protocol_level": 4,
+                            "upstream": {
+                                "ip": "127.0.0.1",
+                                "port": 1980
+                            }
                         }
                     }
                 }]]
