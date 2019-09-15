@@ -7,6 +7,7 @@ local ipairs        = ipairs
 local pairs         = pairs
 local type          = type
 local local_plugins = core.table.new(32, 0)
+local ngx           = ngx
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
 local stream_local_plugins_hash = core.table.new(0, 32)
