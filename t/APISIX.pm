@@ -73,8 +73,9 @@ _EOC_
         listen 1995;
 
         content_by_lua_block {
+            local sock = ngx.req.socket()
+            local data = sock:receive(16)
             ngx.say("hello world")
-            ngx.exit(1)
         }
     }
 _EOC_

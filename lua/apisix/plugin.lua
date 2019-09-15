@@ -152,17 +152,19 @@ end
 function _M.load()
     local_conf = core.config.local_conf(true)
 
-    local ok, err = load()
-    if not ok then
-        core.log.error("failed to load plugins: ", err)
+    if ngx.config.subsystem == "http" then
+        local ok, err = load()
+        if not ok then
+            core.log.error("failed to load plugins: ", err)
+        end
     end
 
-    ok, err = load_stream()
+    local ok, err = load_stream()
     if not ok then
         core.log.error("failed to load stream plugins: ", err)
     end
 
-    -- mainly for test
+    -- for test
     return local_plugins
 end
 
@@ -217,6 +219,38 @@ function _M.filter(user_route, plugins)
     end
 
     for _, plugin_obj in ipairs(local_plugins) do
+        local name = plugin_obj.name
+        local plugin_conf = user_plugin_conf[name]
+
+        if type(plugin_conf) == "table" and not plugin_conf.disable then
+            core.table.insert(plugins, plugin_obj)
+            core.table.insert(plugins, plugin_conf)
+        end
+    end
+
+    if local_conf.apisix.enable_debug then
+        local t = {}
+        for i = 1, #plugins, 2 do
+            core.table.insert(t, plugins[i].name)
+        end
+        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
+    end
+
+    return plugins
+end
+
+
+function _M.stream_filter(user_route, plugins)
+    plugins = plugins or core.table.new(#stream_local_plugins * 2, 0)
+    local user_plugin_conf = user_route.value.plugins
+    if user_plugin_conf == nil then
+        if local_conf and local_conf.apisix.enable_debug then
+            core.response.set_header("Apisix-Plugins", "no plugin")
+        end
+        return plugins
+    end
+
+    for _, plugin_obj in ipairs(stream_local_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
