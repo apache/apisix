@@ -51,7 +51,7 @@ end
 
 
 function _M.balancer(conf, ctx)
-    core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin balancer phase, conf: ", core.json.encode(conf))
 
     if not conf.ip then
         return
