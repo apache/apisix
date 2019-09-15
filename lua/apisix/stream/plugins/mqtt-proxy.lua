@@ -127,6 +127,18 @@ function _M.preread(conf, ctx)
         end
     end
 
+    if res.protocol ~= conf.protocol_name then
+        core.log.error("expect protocol name: ", conf.protocol_name
+                       ", but got ", res.protocol)
+        return ngx_exit(1)
+    end
+
+    if res.protocol_ver ~= conf.protocol_level then
+        core.log.error("expect protocol level: ", conf.protocol_level
+                       ", but got ", res.protocol_ver)
+        return ngx_exit(1)
+    end
+
     core.log.info("mqtt client id: ", res.client_id)
 end
 
