@@ -2,7 +2,9 @@
 
 ## 在开发环境搭建 APISIX
 
-如果你是开发人员，可以通过下面的命令快速搭建本地开发环境。
+不同系统有不同依赖，查看[安装依赖](doc/install-dependencies.md)完成依赖项安装。
+
+如果你是开发人员，可以在完成上面安装依赖项后，通过下面的命令快速搭建本地开发环境。
 
 ```shell
 # clone project
@@ -59,9 +61,23 @@ apisix
 └── utils
 ```
 
-`make` 可以辅助我们完成更多其他功能, 比如:
+## 管理（启动、关闭等）APISIX 服务
+
+我们可以在 apisix 的目录下用 `make run` 命令来启动服务，或者用 `make stop` 方式关闭服务。
 
 ```shell
+# init nginx config file and etcd
+$ make init
+./bin/apisix init
+./bin/apisix init_etcd
+
+# start APISIX server
+$ make run
+
+# stop APISIX server
+$ make stop
+
+# more actions find by `help`
 $ make help
 Makefile rules:
 
@@ -77,7 +93,6 @@ Makefile rules:
     install:      Install the apisix
     test:         Run the test case
 ```
-
 
 ## 运行测试案例
 

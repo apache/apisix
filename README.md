@@ -137,6 +137,8 @@ If you are a developer, you can view the [dev manual](doc/dev-manual.md) for mor
 sudo apisix start
 ```
 
+*note*: If you are in a development environment, start server by command `make run`.
+
 2. try limit count plugin
 
 Limit count plugin is a good start to try APISIX,
