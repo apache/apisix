@@ -57,7 +57,7 @@ function _M.http_init_worker()
 
     router.http_init_worker()
     require("apisix.http.service").init_worker()
-    require("apisix.plugin").init_worker()
+    plugin.init_worker()
     require("apisix.consumer").init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
@@ -394,6 +394,8 @@ end
 function _M.stream_init_worker()
     core.log.info("enter stream_init_worker")
     router.stream_init_worker()
+    plugin.init_worker()
+
     load_balancer = require("apisix.balancer").run
 end
 
@@ -421,6 +423,11 @@ function _M.stream_preread_phase()
         return ngx_exit(1)
     end
 
+    local plugins = core.tablepool.fetch("plugins", 32, 0)
+    api_ctx.plugins = plugin.stream_filter(matched_route, plugins)
+    -- core.log.info("valid plugins: ", core.json.delay_encode(plugins, true))
+
+    run_plugin("preread", plugins, api_ctx)
 end
 
 
@@ -452,6 +459,7 @@ end
 function _M.stream_log_phase()
     core.log.info("enter stream_log_phase")
     -- core.ctx.release_vars(api_ctx)
+    run_plugin("log")
 end
 
 

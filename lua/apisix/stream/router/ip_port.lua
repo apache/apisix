@@ -10,6 +10,30 @@ local user_routes
 local _M = {version = 0.1}
 
 
+local function match_opts(route, api_ctx)
+    local vars = api_ctx.var
+
+    -- todo: use resty-ipmatcher to support multiple ip address
+    if route.value.remote_addr and
+       route.value.remote_addr ~= vars.remote_addr then
+        return false
+    end
+
+    if route.value.server_addr and
+       route.value.server_addr ~= vars.server_addr then
+        return false
+    end
+
+    -- todo: use resty-ipmatcher to support multiple ip address
+    if route.value.server_port and
+       route.value.server_port ~= vars.server_port then
+        return false
+    end
+
+    return true
+end
+
+
 function _M.match(api_ctx)
     local routes = _M.routes()
     if not routes then
@@ -18,14 +42,9 @@ function _M.match(api_ctx)
     end
     core.log.info("stream routes: ", core.json.delay_encode(routes))
 
-    local remote_addr = api_ctx.var.remote_addr
-    -- local server_addr = api_ctx.var.server_addr
-    -- local server_port = api_ctx.var.server_port
-
-    -- todo: need a better way
-    core.log.info("remote addr: ", remote_addr)
     for _, route in ipairs(routes) do
-        if route.value.remote_addr == remote_addr then
+        local hit = match_opts(route, api_ctx)
+        if hit then
             api_ctx.matched_route = route
             return true
         end
@@ -45,12 +64,13 @@ function _M.routes()
 end
 
 
-function _M.init_worker()
+function _M.stream_init_worker()
     local err
     user_routes, err = core.config.new("/stream_routes", {
             automatic = true,
             item_schema = core.schema.stream_route
         })
+
     if not user_routes then
         error("failed to create etcd instance for fetching /stream_routes : "
               .. err)

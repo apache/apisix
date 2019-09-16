@@ -1,4 +1,5 @@
 local core = require("apisix.core")
+local schema_plugin = require("apisix.admin.plugins").stream_check_schema
 local tostring = tostring
 
 
@@ -46,6 +47,13 @@ local function check_conf(id, conf, need_id)
             return nil, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "], "
                                      .. "response code: " .. res.status}
+        end
+    end
+
+    if conf.plugins then
+        local ok, err = schema_plugin(conf.plugins)
+        if not ok then
+            return nil, {error_msg = err}
         end
     end
 
