@@ -1,4 +1,4 @@
-local core = require("apisix.core")
+local core      = require("apisix.core")
 local balancer  = require("ngx.balancer")
 local ngx_exit  = ngx.exit
 local str_byte  = string.byte
@@ -27,7 +27,7 @@ local plugin_name = "mqtt-proxy"
 
 local _M = {
     version = 0.1,
-    priority = 0,        -- TODO: add a type field, may be a good idea
+    priority = 1000,
     name = plugin_name,
     schema = schema,
 }
@@ -127,13 +127,13 @@ function _M.preread(conf, ctx)
         end
     end
 
-    if res.protocol ~= conf.protocol_name then
+    if res.protocol and res.protocol ~= conf.protocol_name then
         core.log.error("expect protocol name: ", conf.protocol_name
                        ", but got ", res.protocol)
         return ngx_exit(1)
     end
 
-    if res.protocol_ver ~= conf.protocol_level then
+    if res.protocol_ver and res.protocol_ver ~= conf.protocol_level then
         core.log.error("expect protocol level: ", conf.protocol_level
                        ", but got ", res.protocol_ver)
         return ngx_exit(1)

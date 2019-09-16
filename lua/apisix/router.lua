@@ -38,7 +38,7 @@ end
 
 
 function _M.stream_init_worker()
-    local router_stream = require("apisix.stream.router.ip_remote")
+    local router_stream = require("apisix.stream.router.ip_port")
     router_stream.init_worker()
     _M.router_stream = router_stream
 end
