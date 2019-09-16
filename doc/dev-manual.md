@@ -2,7 +2,9 @@
 
 ## Install APISIX in development environment
 
-If you are a developer, you can set up a local development environment with the following commands.
+For different operating systems have different dependencies, see detail: [Install Dependencies](doc/install-dependencies.md).
+
+If you are a developer, we can set up a local development environment with the following commands after we installed dependencies.
 
 ```shell
 git clone git@github.com:iresty/apisix.git
@@ -58,9 +60,24 @@ apisix
 └── utils
 ```
 
-We can use more actions in the `make` command, for example:
+## Manage (start/stop) APISIX Server
+
+We can start the APISIX server by command `make run` in apisix home folder,
+or we can stop APISIX server by command `make stop`.
 
 ```shell
+# init nginx config file and etcd
+$ make init
+./bin/apisix init
+./bin/apisix init_etcd
+
+# start APISIX server
+$ make run
+
+# stop APISIX server
+$ make stop
+
+# more actions find by `help`
 $ make help
 Makefile rules:
 
