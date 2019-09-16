@@ -41,3 +41,22 @@ It means APISIX will proxy the request to `127.0.0.1:1995` which the client remo
 
 For more use cases, please take a look at [test case](../t/stream-node/sanity.t).
 
+## More Limit Options
+
+And we can add more limit options to match a route, here is an example:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -X PUT -d '
+{
+    "server_addr": "127.0.0.1",
+    "server_port": 2000,
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1995": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+It means APISIX will proxy the request to `127.0.0.1:1995` which the server remote address is `127.0.0.1` and the server port is equal `2000`.

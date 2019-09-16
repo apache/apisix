@@ -32,7 +32,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **动态负载均衡**：动态支持有权重的 round-robin 负载平衡。
 - **支持一致性 hash 的负载均衡**：动态支持一致性 hash 的负载均衡。
 - **[SSL](doc/https-cn.md)**：动态加载 SSL 证书。
-- **反向代理**
+- **HTTP(S) 反向代理**
 - **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
 - **熔断器**: 智能跟踪不健康上游服务.
 - **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md)。
@@ -59,6 +59,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **[单机模式](doc/stand-alone-cn.md)**: 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
 - **全局规则**：允许对所有请求执行插件，比如黑白名单、限流限速等。
 - **[TCP/UDP 代理](doc/stream-proxy.md)**: 动态 TCP/UDP 代理。
+- **[动态 MQTT 代理](doc/plugins/mqtt-proxy.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
 - **ACL**: TODO。
 - **Bot detection**: TODO。
 
