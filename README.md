@@ -148,7 +148,7 @@ Then you can try more [plugins](doc/plugins.md).
 
 ## Dashboard
 
-APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard` with a browser and try it.
+APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard/` with a browser and try it.
 
 Do not need to fill the user name and password, log in directly.
 
