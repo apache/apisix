@@ -135,6 +135,8 @@ sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
 sudo apisix start
 ```
 
+*注意*：如果你当前在开发环境下，应使用 `make run` 命令启动服务。
+
 2. 测试限流插件
 
 你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可.
