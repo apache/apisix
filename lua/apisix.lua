@@ -1,24 +1,29 @@
 -- Copyright (C) Yuansheng Wang
 
-local require = require
-local core = require("apisix.core")
-local plugin = require("apisix.plugin")
+local require       = require
+local core          = require("apisix.core")
+local plugin        = require("apisix.plugin")
 local service_fetch = require("apisix.http.service").get
-local admin_init = require("apisix.admin.init")
-local get_var = require("resty.ngxvar").fetch
-local router = require("apisix.router")
-local ngx = ngx
-local get_method = ngx.req.get_method
-local ngx_exit = ngx.exit
-local ngx_ERROR = ngx.ERROR
-local math = math
-local error = error
-local ngx_var = ngx.var
-local ipairs = ipairs
+local admin_init    = require("apisix.admin.init")
+local get_var       = require("resty.ngxvar").fetch
+local router        = require("apisix.router")
+local ngx           = ngx
+local get_method    = ngx.req.get_method
+local ngx_exit      = ngx.exit
+local ngx_ERROR     = ngx.ERROR
+local math          = math
+local error         = error
+local ngx_var       = ngx.var
+local ipairs        = ipairs
 local load_balancer
 
 
-local _M = {version = 0.2}
+local parsed_domain = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
+
+local _M = {version = 0.3}
 
 
 function _M.http_init()
@@ -143,6 +148,16 @@ function _M.http_ssl_phase()
 end
 
 
+local function parse_domain_in_up(up, ver)
+
+end
+
+
+local function parse_domain_in_route(route, ver)
+
+end
+
+
 do
     local upstream_vars = {
         uri        = "upstream_uri",
@@ -225,26 +240,34 @@ function _M.http_access_phase()
             return core.response.exit(404)
         end
 
-        local changed
-        route, changed = plugin.merge_service_route(service, route)
+        route = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
 
-        if changed then
-            api_ctx.conf_type = "route&service"
-            api_ctx.conf_version = route.modifiedIndex .. "&"
-                                   .. service.modifiedIndex
-            api_ctx.conf_id = route.value.id .. "&"
-                              .. service.value.id
-        else
-            api_ctx.conf_type = "service"
-            api_ctx.conf_version = service.modifiedIndex
-            api_ctx.conf_id = service.value.id
-        end
-
+        api_ctx.conf_type = "route&service"
+        api_ctx.conf_version = route.modifiedIndex .. "&"
+                                .. service.modifiedIndex
+        api_ctx.conf_id = route.value.id .. "&"
+                            .. service.value.id
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
         api_ctx.conf_id = route.value.id
+    end
+
+    local up_id = route.value.upstream_id
+    if up_id then
+        local upstreams_etcd = core.config.fetch_created_obj("/upstreams")
+        if upstreams_etcd then
+            local upstream = upstreams_etcd:get(tostring(up_id))
+            if upstream.has_domain then
+                parsed_domain(upstream, api_ctx.conf_version,
+                              parse_domain_in_up, upstream)
+            end
+        end
+
+    else if route.has_domain then
+        route = parsed_domain(route, api_ctx.conf_version,
+                              parse_domain_in_route, route)
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)
