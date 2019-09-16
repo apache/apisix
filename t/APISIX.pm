@@ -54,10 +54,10 @@ _EOC_
     }
 
     init_by_lua_block {
-        if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
-            require("luacov.runner")("t/apisix.luacov")
-            jit.off()
-        end
+        -- if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
+        --     require("luacov.runner")("t/apisix.luacov")
+        --     jit.off()
+        -- end
 
         require "resty.core"
 
