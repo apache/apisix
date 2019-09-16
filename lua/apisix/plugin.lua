@@ -8,14 +8,19 @@ local pairs         = pairs
 local type          = type
 local local_plugins = core.table.new(32, 0)
 local ngx           = ngx
+local tostring      = tostring
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
 local stream_local_plugins_hash = core.table.new(0, 32)
+
+local merged_route = core.lrucache.new({
+    ttl = 300, count = 512
+})
 local local_conf
 
 
 local _M = {
-    version         = 0.2,
+    version         = 0.3,
 
     load_times      = 0,
     plugins         = local_plugins,
@@ -273,46 +278,45 @@ function _M.stream_filter(user_route, plugins)
 end
 
 
-function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf))
-    -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
+local function new_merge_service_route(service_conf, route_conf)
+    local new_service_conf = core.table.deepcopy(service_conf)
 
-    -- optimize: use LRU to cache merged result
-    local new_service_conf
-
-    local changed = false
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
-            if not new_service_conf then
-                new_service_conf = core.table.deepcopy(service_conf)
-            end
             new_service_conf.value.plugins[name] = conf
         end
-        changed = true
+    end
+
+    if route_conf.value.upstream_id then
+        new_service_conf.value.upstream_id = route_conf.value.upstream_id
+        new_service_conf.value.upstream = nil
+        return new_service_conf
     end
 
     local route_upstream = route_conf.value.upstream
     if route_upstream then
-        if not new_service_conf then
-            new_service_conf = core.table.deepcopy(service_conf)
-        end
         new_service_conf.value.upstream = route_upstream
+        new_service_conf.value.upstream_id = nil
 
         if route_upstream.checks then
             route_upstream.parent = route_conf
         end
-        changed = true
-    end
 
-    if route_conf.value.upstream_id then
-        if not new_service_conf then
-            new_service_conf = core.table.deepcopy(service_conf)
-        end
-        new_service_conf.value.upstream_id = route_conf.value.upstream_id
+        return new_service_conf
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_service_conf))
-    return new_service_conf or service_conf, changed
+    return new_service_conf
+end
+
+
+function _M.merge_service_route(service_conf, route_conf)
+    core.log.info("service conf: ", core.json.delay_encode(service_conf))
+    -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
+
+    local flag = tostring(service_conf) .. tostring(route_conf)
+    return merged_route(flag, nil,
+                        new_merge_service_route, service_conf, route_conf)
 end
 
 

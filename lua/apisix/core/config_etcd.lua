@@ -19,6 +19,7 @@ local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
 local pcall        = pcall
+local created_obj  = {}
 
 
 local _M = {
@@ -356,12 +357,21 @@ function _M.new(key, opts)
         ngx_timer_at(0, _automatic_fetch, obj)
     end
 
+    if key then
+        created_obj[key] = obj
+    end
+
     return obj
 end
 
 
 function _M.close(self)
     self.running = false
+end
+
+
+function _M.fetch_created_obj(key)
+    return created_obj[key]
 end
 
 
