@@ -35,7 +35,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Dynamic Load Balancing**: Round-robin load balancing with weight.
 - **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
 - **[SSL](doc/https.md)**: Dynamically load an SSL certificate.
-- **Forward Proxy**
+- **HTTP(S) Forward Proxy**
 - **[Health Checks](doc/health-check.md)**：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 - **Circuit-Breaker**: Intelligent tracking of unhealthy upstream services.
 - **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md)
@@ -61,7 +61,8 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **IdP**: Support external authentication services, such as Auth0, okta, etc., users can use this to connect to Oauth2.0 and other authentication methods.
 - **[Stand-alone mode](doc/stand-alone.md)**: Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 - **Global Rule**: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
-- **[TCP/UDP Proxy](doc/stream-proxy.md)**: Dynamic TCP/UDP proxy.
+- **[TCP/UDP Proxy](doc/stream-proxy.md)**: Dynamic TCP/UDP proxy.- **[动态 MQTT 代理](doc/plugins/mqtt-proxy.md)
+- **[Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md)**: Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
 - **ACL**: TODO.
 - **Bot detection**: TODO.
 
