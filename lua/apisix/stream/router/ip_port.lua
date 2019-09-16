@@ -13,6 +13,7 @@ local _M = {version = 0.1}
 local function match_opts(route, api_ctx)
     local vars = api_ctx.var
 
+    -- todo: use resty-ipmatcher to support multiple ip address
     if route.value.remote_addr and
        route.value.remote_addr ~= vars.remote_addr then
         return false
@@ -23,6 +24,7 @@ local function match_opts(route, api_ctx)
         return false
     end
 
+    -- todo: use resty-ipmatcher to support multiple ip address
     if route.value.server_port and
        route.value.server_port ~= vars.server_port then
         return false
