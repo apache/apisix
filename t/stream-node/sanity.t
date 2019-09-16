@@ -42,6 +42,8 @@ passed
 
 === TEST 2: hit route
 --- stream_enable
+--- stream_request eval
+mmm
 --- stream_response
 hello world
 --- no_error_log

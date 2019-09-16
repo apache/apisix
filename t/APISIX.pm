@@ -74,7 +74,7 @@ _EOC_
 
         content_by_lua_block {
             local sock = ngx.req.socket()
-            local data = sock:receive(16)
+            local data = sock:receive("1")
             ngx.say("hello world")
         }
     }
