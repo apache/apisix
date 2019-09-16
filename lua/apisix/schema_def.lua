@@ -404,12 +404,13 @@ _M.stream_route = {
         },
         upstream = upstream_schema,
         upstream_id = id_schema,
+        plugins = plugins_schema,
     },
     anyOf = {
         {required = {"remote_addr", "upstream"}},
         {required = {"remote_addr", "upstream_id"}},
+        {required = {"remote_addr", "plugins"}},
     },
-    required = {"remote_addr"},
 }
 
 

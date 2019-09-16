@@ -1,15 +1,19 @@
 return {
-   modules = {
-      ["lua.*"] = "lua",
-      ["lua/apisix/*"] = "apisix",
-      ["lua/apisix/admin/*"] = "admin",
-      ["lua/apisix/core/*"] = "core",
-      ["lua/apisix/http/*"] = "http",
-      ["lua/apisix/http/router/*"] = "http/router",
-      ["lua/apisix/plugins/*"] = "plugins",
-      ["lua/apisix/plugins/grpc-transcode/*"] = "plugins/grpc-transcode",
-      ["lua/apisix/plugins/prometheus/*"] = "plugins/prometheus",
-      ["lua/apisix/plugins/zipkin/*"] = "plugins/zipkin",
+    modules = {
+        ["lua.*"] = "lua",
+        ["lua/apisix/*"] = "apisix",
+        ["lua/apisix/admin/*"] = "admin",
+        ["lua/apisix/core/*"] = "core",
+        ["lua/apisix/http/*"] = "http",
+        ["lua/apisix/http/router/*"] = "http/router",
+        ["lua/apisix/plugins/*"] = "plugins",
+        ["lua/apisix/plugins/grpc-transcode/*"] = "plugins/grpc-transcode",
+        ["lua/apisix/plugins/prometheus/*"] = "plugins/prometheus",
+        ["lua/apisix/plugins/zipkin/*"] = "plugins/zipkin",
+
+        -- can not enable both at http and stream, will fix it later.
+        --  ["lua/apisix/stream/*"] = "stream",
+        --  ["lua/apisix/stream/plugins/*"] = "stream/plugins",
+        --  ["lua/apisix/stream/router/*"] = "stream/router",
    },
-   savestepsize = 10
 }

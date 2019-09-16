@@ -54,11 +54,12 @@ _EOC_
     }
 
     init_by_lua_block {
+        -- if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
+        --     require("luacov.runner")("t/apisix.luacov")
+        --     jit.off()
+        -- end
+
         require "resty.core"
-        if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
-            require("luacov.runner")("t/apisix.luacov")
-            jit.off()
-        end
 
         apisix = require("apisix")
         apisix.stream_init()
@@ -73,8 +74,9 @@ _EOC_
         listen 1995;
 
         content_by_lua_block {
+            local sock = ngx.req.socket()
+            local data = sock:receive("1")
             ngx.say("hello world")
-            ngx.exit(1)
         }
     }
 _EOC_
@@ -102,11 +104,12 @@ _EOC_
     }
 
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
-    require "resty.core"
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
         require("luacov.runner")("t/apisix.luacov")
         jit.off()
     end
+
+    require "resty.core"
 
     apisix = require("apisix")
     apisix.http_init()

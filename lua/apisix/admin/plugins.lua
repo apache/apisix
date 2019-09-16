@@ -1,8 +1,9 @@
 local core = require("apisix.core")
 local local_plugins = require("apisix.plugin").plugins_hash
-local pairs = pairs
-local pcall = pcall
-local require = require
+local stream_local_plugins = require("apisix.plugin").stream_plugins_hash
+local pairs     = pairs
+local pcall     = pcall
+local require   = require
 local table_remove = table.remove
 
 local _M = {
@@ -35,6 +36,31 @@ function _M.check_schema(plugins_conf)
                 if not ok then
                     return false, "failed to check the configuration of plugin "
                                   .. name .. " err: " .. err
+                end
+            end
+        end
+    end
+
+    return true
+end
+
+
+function _M.stream_check_schema(plugins_conf)
+    for name, plugin_conf in pairs(plugins_conf) do
+        core.log.info("check stream plugin scheme, name: ", name,
+                      ": ", core.json.delay_encode(plugin_conf, true))
+        local plugin_obj = stream_local_plugins[name]
+        if not plugin_obj then
+            return false, "unknow plugin [" .. name .. "]"
+        end
+
+        if plugin_obj.check_schema then
+            local ok = core.schema.check(disable_schema, plugin_conf)
+            if not ok then
+                local ok, err = plugin_obj.check_schema(plugin_conf)
+                if not ok then
+                    return false, "failed to check the configuration of "
+                                  .. "stream plugin [" .. name .. "]: " .. err
                 end
             end
         end
