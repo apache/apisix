@@ -144,7 +144,7 @@ sudo apisix start
 更进一步，你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
 
 ## 控制台
-APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard` 即可使用，
+APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
 不用填写用户名和密码，直接登录。
 
 Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
