@@ -93,7 +93,7 @@ Server: APISIX web server
 |uri      |必须 |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
 |host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
 |remote_addr|可选 |匹配规则|客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
-|methods  |可选 |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
+|methods  |可选 |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS，CONNECT，TRACE。|
 |plugins  |可选 |Plugin|详见 [Plugin](#plugin) |
 |upstream |可选 |Upstream|启用的 Upstream 配置，详见 [Upstream](#upstream)|
 |upstream_id|可选 |Upstream|启用的 upstream id，详见 [Upstream](#upstream)|
