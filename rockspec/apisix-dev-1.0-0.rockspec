@@ -31,6 +31,7 @@ dependencies = {
     "lua-protobuf = 0.3.1",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
+    "lua-tinyyaml = 0.1",
 }
 
 build = {

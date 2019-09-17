@@ -1,7 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local config_local = require("apisix.core.config_local")
-local yaml         = require("apisix.core.yaml")
+local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local process      = require("ngx.process")

@@ -1,7 +1,7 @@
 -- Copyright (C) Yuansheng Wang
 
 local log = require("apisix.core.log")
-local yaml = require("apisix.core.yaml")
+local yaml = require("tinyyaml")
 local ngx = ngx
 local io_open = io.open
 local type = type
