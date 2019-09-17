@@ -949,7 +949,7 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET", "POST", "PUT", "DELETE", "PATCH",
-                                    "HEAD", "OPTIONS"],
+                                    "HEAD", "OPTIONS", "CONNECT", "TRACE"],
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:8080": 1

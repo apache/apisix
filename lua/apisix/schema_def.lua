@@ -257,7 +257,7 @@ local route = [[{
                 "description": "HTTP method",
                 "type": "string",
                 "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                         "OPTIONS"]
+                         "OPTIONS", "CONNECT", "TRACE"]
             },
             "uniqueItems": true
         },
