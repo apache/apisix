@@ -3,10 +3,10 @@
 - [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
 - [**Service**](#service)
-- [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
+- [**Consumer**](#consumer)
 - [**Debug mode**](#Debug-mode)
 
 ## APISIX
@@ -169,13 +169,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 ```
 
 注意：当 Route 和 Service 都开启同一个插件时，Route 参数的优先级是高于 Service 的。
-
-[返回目录](#目录)
-
-## Consumer
-
-`Consumer` 是某类具体服务的消费者，主要用来表述不同用户的概念。比如不同的客户请求同一个 API，
-经过用户认证体系，网关服务需知道当前请求用户身份信息，针对不同的消费用户，会有不同的限制处理逻辑。
 
 [返回目录](#目录)
 
@@ -364,6 +357,32 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 * `apisix.router.ssl`: SSL 加载匹配路由。
     * `radixtree_sni`: （默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
     * `r3_sni`: 使用 `SNI` (Server Name Indication) 作为主索引（基于 r3 引擎）。
+
+[返回目录](#目录)
+
+## Consumer
+
+对于 API 网关通常可以用请求域名、客户端 IP 地址等字段识别到某类请求方，
+然后进行插件过滤并转发请求到指定上游，但有时候这个深度不够。
+
+<img src="./images/consumer-who.png" width="50%" height="50%">
+
+如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
+
+在 APISIX 中，识别 Consumer 的过程如下图：
+
+<img src="./images/consumer-internal.png" width="50%" height="50%">
+
+1. 授权认证：比如有 [key-auth](doc/plugins/key-auth.md)、[JWT](doc/plugins/jwt-auth-cn.md) 等。
+2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
+3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
+
+概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
+比如不同的 Consumer 请求同一个 API，，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
+
+此外，大家也可以参考 [key-auth](doc/plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
+
+*注意*：目前 APISIX 的 Consumer 还不支持绑定插件或上游信息，如果大家对这个功能点感兴趣，欢迎在社区中反馈交流。
 
 [返回目录](#目录)
 
