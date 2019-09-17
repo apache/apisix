@@ -32,6 +32,7 @@ dependencies = {
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 0.1",
+    "iresty-nginx-lua-prometheus = 0.20190917",
 }
 
 build = {

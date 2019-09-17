@@ -1,18 +1,18 @@
 -- Copyright (C) Yuansheng Wang
 
-local base_prometheus = require("apisix.plugins.prometheus.base_prometheus")
-local prometheus
-local core = require("apisix.core")
-local ipairs = ipairs
+local base_prometheus = require("nginx.prometheus")
+local core      = require("apisix.core")
+local ipairs    = ipairs
 local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
+local prometheus
 
 
 local metrics = {}
 local tmp_tab = {}
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
 function _M.init()
