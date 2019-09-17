@@ -37,6 +37,7 @@ local methods = {
     [ngx.HTTP_DELETE ] = "DELETE",
     [ngx.HTTP_OPTIONS] = "OPTIONS",
     [ngx.HTTP_PATCH]   = "PATCH",
+    [ngx.HTTP_TRACE] = "TRACE",
 }
 
 
