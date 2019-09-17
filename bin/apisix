@@ -53,7 +53,7 @@ do
     end
 end
 
-local yaml = require("apisix.core.yaml")
+local yaml = require("tinyyaml")
 local template = require("resty.template")
 
 local ngx_tpl = [=[
