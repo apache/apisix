@@ -23,7 +23,7 @@ local created_obj  = {}
 
 
 local _M = {
-    version = 0.2,
+    version = 0.3,
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
 }
@@ -155,6 +155,10 @@ local function sync_data(self)
                 self.values_hash[key] = #self.values
                 item.value.id = key
                 item.clean_handlers = {}
+
+                if self.filter then
+                    self.filter(item)
+                end
             end
 
             self:upgrade_version(item.modifiedIndex)
@@ -205,6 +209,10 @@ local function sync_data(self)
                           .. "structures. " .. json.encode(res)
         end
         return false
+    end
+
+    if self.filter then
+        self.filter(res)
     end
 
     local pre_index = self.values_hash[key]
@@ -333,6 +341,7 @@ function _M.new(key, opts)
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
+    local filter_fun = opts and opts.filter
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
@@ -347,6 +356,7 @@ function _M.new(key, opts)
         prev_index = nil,
         last_err = nil,
         last_err_time = nil,
+        filter = filter_fun,
     }, mt)
 
     if automatic then

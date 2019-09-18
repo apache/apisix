@@ -150,6 +150,7 @@ end
 
 
 local function parse_domain_in_up(up, ver)
+    core.log.info("upstream need to parse: ", core.json.delay_encode(up))
     return up
 end
 

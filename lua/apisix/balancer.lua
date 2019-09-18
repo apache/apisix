@@ -1,20 +1,21 @@
 local healthcheck = require("resty.healthcheck")
 local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
-local balancer = require("ngx.balancer")
-local core = require("apisix.core")
-local sub_str = string.sub
-local find_str = string.find
-local upstreams_etcd
-local error = error
-local str_char = string.char
-local str_gsub = string.gsub
-local pairs = pairs
-local tonumber = tonumber
-local tostring = tostring
-local set_more_tries = balancer.set_more_tries
+local ipmatcher   = require("resty.ipmatcher")
+local balancer    = require("ngx.balancer")
+local core        = require("apisix.core")
+local sub_str     = string.sub
+local find_str    = string.find
+local error       = error
+local str_char    = string.char
+local str_gsub    = string.gsub
+local pairs       = pairs
+local tonumber    = tonumber
+local tostring    = tostring
+local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
-local set_timeouts = balancer.set_timeouts
+local set_timeouts     = balancer.set_timeouts
+local upstreams_etcd
 
 
 local module_name = "balancer"
@@ -280,9 +281,26 @@ end
 function _M.init_worker()
     local err
     upstreams_etcd, err = core.config.new("/upstreams", {
-                                automatic = true,
-                                item_schema = core.schema.upstream
-                            })
+            automatic = true,
+            item_schema = core.schema.upstream,
+            filter = function(upstream)
+                upstream.has_domain = false
+                if not upstream.value then
+                    return
+                end
+
+                for addr, _ in pairs(upstream.value.nodes or {}) do
+                    if not ipmatcher.parse_ipv4(addr) and
+                       not ipmatcher.parse_ipv6(addr) then
+                        upstream.has_domain = true
+                        break
+                    end
+                end
+
+                core.log.info("filter upstream: ",
+                              core.json.delay_encode(upstream))
+            end,
+        })
     if not upstreams_etcd then
         error("failed to create etcd instance for fetching upstream: " .. err)
         return
