@@ -40,8 +40,15 @@ luac.out
 *.hex
 
 # develop
-logs/*.log
-logs/*.pid
+*.log
+*.pid
 t/servroot
 go
 \.*
+conf/apisix.uid
+deps
+scgi_temp
+uwsgi_temp
+proxy_temp
+fastcgi_temp
+client_body_temp

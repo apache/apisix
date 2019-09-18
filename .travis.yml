@@ -1,7 +1,18 @@
-os: linux
 dist: xenial
-
 sudo: required
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+    - os: osx
+      if: type IN (push)
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /usr/local/Homebrew
+
+language: c
 
 addons:
   apt:
@@ -15,31 +26,27 @@ addons:
       - perl
       - etcd
       - luarocks
+      - cmake
+      - lua-check
+  homebrew:
+    update: true
 
 cache:
   directories:
-    - download-cache
+  - build-cache
 
-env:
-  global:
-    - OPENRESTY_PREFIX=/usr/local/openresty
+before_cache:
+  - brew cleanup
+
+before_install:
+  - echo $TRAVIS_OS_NAME
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh before_install
 
 install:
-  - sudo luarocks install lua-resty-http
-  - sudo luarocks install lua-typeof
-  - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-  - sudo apt-get -y install software-properties-common
-  - sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-  - sudo apt-get update
-  - sudo apt-get install openresty
-  - sudo luarocks install apisix-*.rockspec
-  - git clone https://github.com/openresty/test-nginx.git test-nginx
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh do_install
 
 script:
-  - cd test-nginx && (sudo cpanm . > build.log 2>&1 || (cat build.log && exit 1)) && cd ..
-  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$PATH
-  - sudo service etcd start
-  - curl http://127.0.0.1:2379/v2/keys/apisix/routes -X PUT -d dir=true
-  - curl http://127.0.0.1:2379/v2/keys/apisix/upstreams -X PUT -d dir=true
-  - curl http://127.0.0.1:2379/v2/keys/apisix/services -X PUT -d dir=true
-  - make test
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh script
+
+after_success:
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh after_success

@@ -1,6 +1,12 @@
-local exporter = require("apisix.plugins.prometheus.exporter")
 local core = require("apisix.core")
+local exporter = require("apisix.plugins.prometheus.exporter")
 local plugin_name = "prometheus"
+
+
+local schema = {
+    type = "object",
+    additionalProperties = false
+}
 
 
 local _M = {
@@ -9,10 +15,16 @@ local _M = {
     name = plugin_name,
     init = exporter.init,
     log  = exporter.log,
+    schema = schema,
 }
 
 
-function _M.check_args(conf)
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
     return true
 end
 
@@ -21,7 +33,7 @@ function _M.api()
     return {
         {
             methods = {"GET"},
-            uri = "/apisix.com/prometheus/metrics",
+            uri = "/apisix/prometheus/metrics",
             handler = exporter.collect
         }
     }
