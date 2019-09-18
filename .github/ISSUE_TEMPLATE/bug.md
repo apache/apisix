@@ -1,6 +1,6 @@
 ---
-name: Custom issue template
-about: Please use this template for reporting suspected bugs or requests for help.
+name: Bug report
+about: Please use this template for reporting suspected bugs.
 title: ''
 labels: ''
 assignees: ''
@@ -13,13 +13,16 @@ assignees: ''
 
 # Environment
 
-* apisix version (cmd: `apisix version`): 
-* OS: 
+* apisix version (cmd: `apisix version`):
+* OS:
 
 # Minimal test code / Steps to reproduce the issue
 
-```
-# your code
+```shell
+# your steps
+1.
+2.
+3.
 ```
 
 # What's the actual result? (include assertion message & call stack if applicable)
