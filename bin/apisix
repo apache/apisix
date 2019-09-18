@@ -150,7 +150,7 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %};
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} ipv6=off local=on;
     resolver_timeout 5;
 
     lua_http10_buffering off;

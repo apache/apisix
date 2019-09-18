@@ -1,8 +1,13 @@
-local ngx_re = require("ngx.re")
-local open = io.open
+local table    = require("apisix.core.table")
+local ngx_re   = require("ngx.re")
+local resolver = require("resty.dns.resolver")
+local open     = io.open
+local math     = math
+local sub_str  = string.sub
+local find_str = string.find
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
 function _M.get_seed_from_urandom()
@@ -27,6 +32,44 @@ end
 
 function _M.split_uri(uri)
     return ngx_re.split(uri, "/")
+end
+
+
+function _M.dns_parse(resolvers, domain)
+    local r, err = resolver:new{
+        nameservers = table.clone(resolvers),
+        retrans = 5,  -- 5 retransmissions on receive timeout
+        timeout = 2000,  -- 2 sec
+    }
+
+    if not r then
+        return nil, "failed to instantiate the resolver: " .. err
+    end
+
+    local answers, err = r:query(domain, nil, {})
+    if not answers then
+        return nil, "failed to query the DNS server: " .. err
+    end
+
+    if answers.errcode then
+        return nil, "server returned error code: " .. answers.errcode
+                    .. ": " .. answers.errstr
+    end
+
+    local idx = math.random(1, #answers)
+    return answers[idx]
+end
+
+
+function _M.parse_addr(addr)
+    local pos = find_str(addr, ":", 1, true)
+    if not pos then
+        return addr, 80
+    end
+
+    local host = sub_str(addr, 1, pos - 1)
+    local port = sub_str(addr, pos + 1)
+    return host, tonumber(port)
 end
 
 

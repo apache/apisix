@@ -150,7 +150,8 @@ local function load_stream()
     end
 
     _M.stream_load_times = _M.stream_load_times + 1
-    core.log.info("stream plugins: ", core.json.delay_encode())
+    core.log.info("stream plugins: ",
+                  core.json.delay_encode(stream_local_plugins, true))
     core.log.info("load stream plugin times: ", _M.stream_load_times)
     return true
 end

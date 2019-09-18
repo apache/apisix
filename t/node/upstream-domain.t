@@ -19,7 +19,8 @@ __DATA__
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
-                        "foo.com:1980": 1
+                        "baidu.com:80": 0,
+                        "127.0.0.1:1980": 1
                     },
                     "type": "roundrobin",
                     "desc": "new upstream"
@@ -87,3 +88,5 @@ GET /hello
 hello world
 --- no_error_log
 [error]
+--- error_log eval
+qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/

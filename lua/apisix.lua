@@ -7,6 +7,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
+local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
 local ngx_exit      = ngx.exit
@@ -150,7 +151,32 @@ end
 
 
 local function parse_domain_in_up(up, ver)
-    core.log.info("upstream need to parse: ", core.json.delay_encode(up))
+    local local_conf = core.config.local_conf()
+    local dns_resolver = local_conf and local_conf.apisix and
+                         local_conf.apisix.dns_resolver
+    local new_nodes = core.table.new(0, 8)
+
+    for addr, weight in pairs(up.value.nodes) do
+        local host, port = core.utils.parse_addr(addr)
+        if not ipmatcher.parse_ipv4(host) and
+           not ipmatcher.parse_ipv6(host) then
+            local ip_info = core.utils.dns_parse(dns_resolver, host)
+            core.log.info("parse addr: ", core.json.delay_encode(ip_info),
+                          " resolver: ", core.json.delay_encode(dns_resolver),
+                          " addr: ", addr)
+            if ip_info and ip_info.address then
+                new_nodes[ip_info.address .. ":" .. port] = weight
+                core.log.info("dns resolver domain: ", host, " to ",
+                              ip_info.address)
+            end
+        else
+            new_nodes[addr] = weight
+        end
+    end
+
+    up.dns_value = core.table.clone(up.value)
+    up.dns_value.nodes = new_nodes
+    core.log.info("parse upstream: ", core.json.encode(up))
     return up
 end
 
