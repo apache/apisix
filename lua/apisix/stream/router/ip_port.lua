@@ -64,11 +64,12 @@ function _M.routes()
 end
 
 
-function _M.stream_init_worker()
+function _M.stream_init_worker(filter)
     local err
     user_routes, err = core.config.new("/stream_routes", {
             automatic = true,
-            item_schema = core.schema.stream_route
+            item_schema = core.schema.stream_route,
+            filter = filter,
         })
 
     if not user_routes then

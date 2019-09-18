@@ -45,7 +45,7 @@ function _M.http_init_worker()
     _M.router_http = router_http
 
     local router_ssl = require("apisix.http.router." .. router_ssl_name)
-    router_ssl:init_worker()
+    router_ssl.init_worker()
     _M.router_ssl = router_ssl
 
     local global_rules, err = core.config.new("/global_rules", {
