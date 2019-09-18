@@ -186,7 +186,7 @@ local upstream_schema = {
                 [".*"] = {
                     description = "weight of node",
                     type = "integer",
-                    minimum = 1,
+                    minimum = 0,
                 }
             },
             minProperties = 1,
