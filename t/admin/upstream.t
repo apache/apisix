@@ -744,3 +744,41 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 23: patch upstream(weight is 0)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/nodes',
+                ngx.HTTP_PATCH,
+                [[{
+                    "127.0.0.1:8081": 0,
+                    "127.0.0.1:8082": 4
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8081": 0,
+                                "127.0.0.1:8082": 4
+                            },
+                            "type": "roundrobin",
+                            "desc": "new 21 upstream"
+                        }
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
