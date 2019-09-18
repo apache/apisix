@@ -23,10 +23,11 @@ local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
 local apisix_yaml_path  = ngx.config.prefix() .. "conf/apisix.yaml"
+local created_obj  = {}
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
 }
@@ -143,7 +144,7 @@ local function sync_data(self)
                         ", it shoud be a object")
         end
 
-        local apisix_item = {value = item, modifiedIndex = apisix_yaml_ctime}
+        local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime}
 
         if data_valid and self.item_schema then
             data_valid, err = check_schema(self.item_schema, item)
@@ -154,12 +155,16 @@ local function sync_data(self)
         end
 
         if data_valid then
-            insert_tab(self.values, apisix_item)
-            local item_id = apisix_item.value.id or self.key .. "#" .. id
+            insert_tab(self.values, conf_item)
+            local item_id = conf_item.value.id or self.key .. "#" .. id
             item_id = tostring(item_id)
             self.values_hash[item_id] = #self.values
-            apisix_item.value.id = item_id
-            apisix_item.clean_handlers = {}
+            conf_item.value.id = item_id
+            conf_item.clean_handlers = {}
+
+            if self.filter then
+                self.filter(conf_item)
+            end
         end
     end
 
@@ -237,6 +242,7 @@ function _M.new(key, opts)
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
+    local filter_fun = opts and opts.filter
 
     -- like /routes and /upstreams, remove first char `/`
     if key then
@@ -255,6 +261,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         key = key,
+        filter = filter_fun,
     }, mt)
 
     if automatic then
@@ -263,6 +270,10 @@ function _M.new(key, opts)
         end
 
         ngx_timer_at(0, _automatic_fetch, obj)
+    end
+
+    if key then
+        created_obj[key] = obj
     end
 
     return obj
@@ -276,6 +287,11 @@ end
 
 function _M.server_version(self)
     return "apisix.yaml " .. _M.version
+end
+
+
+function _M.fetch_created_obj(key)
+    return created_obj[key]
 end
 
 

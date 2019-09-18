@@ -19,10 +19,11 @@ local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
 local pcall        = pcall
+local created_obj  = {}
 
 
 local _M = {
-    version = 0.2,
+    version = 0.3,
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
 }
@@ -154,6 +155,10 @@ local function sync_data(self)
                 self.values_hash[key] = #self.values
                 item.value.id = key
                 item.clean_handlers = {}
+
+                if self.filter then
+                    self.filter(item)
+                end
             end
 
             self:upgrade_version(item.modifiedIndex)
@@ -204,6 +209,10 @@ local function sync_data(self)
                           .. "structures. " .. json.encode(res)
         end
         return false
+    end
+
+    if self.filter then
+        self.filter(res)
     end
 
     local pre_index = self.values_hash[key]
@@ -332,6 +341,7 @@ function _M.new(key, opts)
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
+    local filter_fun = opts and opts.filter
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
@@ -346,6 +356,7 @@ function _M.new(key, opts)
         prev_index = nil,
         last_err = nil,
         last_err_time = nil,
+        filter = filter_fun,
     }, mt)
 
     if automatic then
@@ -356,12 +367,21 @@ function _M.new(key, opts)
         ngx_timer_at(0, _automatic_fetch, obj)
     end
 
+    if key then
+        created_obj[key] = obj
+    end
+
     return obj
 end
 
 
 function _M.close(self)
     self.running = false
+end
+
+
+function _M.fetch_created_obj(key)
+    return created_obj[key]
 end
 
 

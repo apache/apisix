@@ -15,6 +15,7 @@ local _M = {
     nkeys   = nkeys,
     insert  = table.insert,
     concat  = table.concat,
+    clone   = require("table.clone"),
 }
 
 
