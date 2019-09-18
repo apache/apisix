@@ -2,7 +2,7 @@
 ### 测试环境
 使用谷歌云的服务器进行测试，型号为 n1-highcpu-8 (8 vCPUs, 7.2 GB memory)
 
-我们最多只使用 4 核去运行 APISIX, 剩下的 4 核用与系统和压力测试工具 [wrk](https://github.com/wg/wrk)。
+我们最多只使用 4 核去运行 APISIX, 剩下的 4 核用于系统和压力测试工具 [wrk](https://github.com/wg/wrk)。
 
 ### 测试反向代理
 我们把 APISIX 当做反向代理来使用，不开启任何插件，响应体的大小为 1KB。

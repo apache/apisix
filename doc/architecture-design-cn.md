@@ -82,7 +82,7 @@ Server: APISIX web server
 {"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
-当我们接受到成功应答，表示该 Route 已成功创建。
+当我们接收到成功应答，表示该 Route 已成功创建。
 
 #### Route 选项
 
@@ -215,7 +215,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 
 ## Upstream
 
-Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当有 Upstream 有重复时，就需要用“引用”方式避免重复了。
+Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，就需要用“引用”方式避免重复了。
 
 <img src="./images/upstream-example.png" width="50%" height="50%">
 
@@ -378,7 +378,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
-比如不同的 Consumer 请求同一个 API，，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
+比如不同的 Consumer 请求同一个 API，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
 
 此外，大家也可以参考 [key-auth](doc/plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
 
