@@ -338,6 +338,10 @@ function _M.http_access_phase()
     api_ctx.plugins = plugin.filter(route, plugins)
 
     run_plugin("rewrite", plugins, api_ctx)
+    if api_ctx.consumer then
+        api_ctx.plugins = plugin.filter(api_ctx.plugins,
+                                        api_ctx.consumer.plugins)
+    end
     run_plugin("access", plugins, api_ctx)
 end
 

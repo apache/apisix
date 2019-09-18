@@ -48,6 +48,10 @@ function _M.rewrite(conf, ctx)
     end
 
     local consumer_conf = core.consumer.plugin(plugin_name)
+    if not consumer_conf then
+        return 401, {message = "Missing related consumer"}
+    end
+
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
             consumer_conf.conf_version,
             create_consume_cache, consumer_conf)
@@ -58,7 +62,7 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    ctx.consumer_id = consumer.consumer_id
+    ctx.consumer = consumer
     core.log.info("hit key-auth rewrite")
 end
 

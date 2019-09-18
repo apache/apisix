@@ -49,7 +49,6 @@ local function plugin_consumer()
                 }
             end
 
-
             insert_tab(plugins[name].nodes,
                        {consumer_id = consumer.value.id, conf = conf})
         end
@@ -61,18 +60,17 @@ end
 
 function _M.plugin(plugin_name)
     local plugin_conf = lrucache.global("/consumers",
-                                        consumers.conf_version, plugin_consumer)
+                            consumers.conf_version, plugin_consumer)
     return plugin_conf[plugin_name]
 end
 
 
 function _M.init_worker()
     local err
-    consumers, err = config.new("/consumers",
-                        {
-                            automatic = true,
-                            item_schema = schema.consumer
-                        })
+    consumers, err = config.new("/consumers", {
+            automatic = true,
+            item_schema = schema.consumer
+        })
     if not consumers then
         error("failed to create etcd instance for fetching consumers: " .. err)
         return
