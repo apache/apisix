@@ -88,11 +88,12 @@ function _M.routes()
 end
 
 
-function _M.init_worker()
+function _M.init_worker(filter)
     local err
     user_routes, err = core.config.new("/routes", {
             automatic = true,
-            item_schema = core.schema.route
+            item_schema = core.schema.route,
+            filter = filter,
         })
     if not user_routes then
         error("failed to create etcd instance for fetching /routes : " .. err)
