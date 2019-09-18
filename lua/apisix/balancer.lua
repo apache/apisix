@@ -1,7 +1,6 @@
 local healthcheck = require("resty.healthcheck")
 local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
-local ipmatcher   = require("resty.ipmatcher")
 local balancer    = require("ngx.balancer")
 local core        = require("apisix.core")
 local sub_str     = string.sub
@@ -171,7 +170,8 @@ local function pick_server(route, ctx)
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local healthcheck_parent = route
     local up_id = route.value.upstream_id
-    local up_conf = route.value.upstream
+    local up_conf = (route.dns_value and route.dns_value.upstream)
+                    or route.value.upstream
     if not up_id and not up_conf then
         return nil, nil, "missing upstream configuration"
     end
@@ -291,8 +291,8 @@ function _M.init_worker()
 
                 for addr, _ in pairs(upstream.value.nodes or {}) do
                     local host = core.utils.parse_addr(addr)
-                    if not ipmatcher.parse_ipv4(host) and
-                       not ipmatcher.parse_ipv6(host) then
+                    if not core.utils.parse_ipv4(host) and
+                       not core.utils.parse_ipv6(host) then
                         upstream.has_domain = true
                         break
                     end

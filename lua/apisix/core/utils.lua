@@ -1,13 +1,19 @@
 local table    = require("apisix.core.table")
 local ngx_re   = require("ngx.re")
 local resolver = require("resty.dns.resolver")
+local ipmatcher= require("resty.ipmatcher")
 local open     = io.open
 local math     = math
 local sub_str  = string.sub
 local find_str = string.find
+local tonumber = tonumber
 
 
-local _M = {version = 0.2}
+local _M = {
+    version = 0.2,
+    parse_ipv4 = ipmatcher.parse_ipv4,
+    parse_ipv6 = ipmatcher.parse_ipv6,
+}
 
 
 function _M.get_seed_from_urandom()

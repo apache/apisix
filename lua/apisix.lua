@@ -16,6 +16,7 @@ local math          = math
 local error         = error
 local ngx_var       = ngx.var
 local ipairs        = ipairs
+local pairs         = pairs
 local tostring      = tostring
 local load_balancer
 
@@ -176,12 +177,40 @@ local function parse_domain_in_up(up, ver)
 
     up.dns_value = core.table.clone(up.value)
     up.dns_value.nodes = new_nodes
-    core.log.info("parse upstream: ", core.json.encode(up))
+    core.log.info("parse upstream which contain domain: ",
+                  core.json.delay_encode(up))
     return up
 end
 
 
 local function parse_domain_in_route(route, ver)
+    local local_conf = core.config.local_conf()
+    local dns_resolver = local_conf and local_conf.apisix and
+                         local_conf.apisix.dns_resolver
+    local new_nodes = core.table.new(0, 8)
+
+    for addr, weight in pairs(route.value.upstream.nodes) do
+        local host, port = core.utils.parse_addr(addr)
+        if not ipmatcher.parse_ipv4(host) and
+           not ipmatcher.parse_ipv6(host) then
+            local ip_info = core.utils.dns_parse(dns_resolver, host)
+            core.log.info("parse addr: ", core.json.delay_encode(ip_info),
+                          " resolver: ", core.json.delay_encode(dns_resolver),
+                          " addr: ", addr)
+            if ip_info and ip_info.address then
+                new_nodes[ip_info.address .. ":" .. port] = weight
+                core.log.info("dns resolver domain: ", host, " to ",
+                              ip_info.address)
+            end
+        else
+            new_nodes[addr] = weight
+        end
+    end
+
+    route.dns_value = core.table.deepcopy(route.value)
+    route.dns_value.upstream.nodes = new_nodes
+    core.log.info("parse route which contain domain: ",
+                  core.json.delay_encode(route))
     return route
 end
 
