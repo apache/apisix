@@ -13,6 +13,10 @@ local function filter(route)
         return
     end
 
+    if not route.value.upstream then
+        return
+    end
+
     for addr, _ in pairs(route.value.upstream.nodes or {}) do
         local host = core.utils.parse_addr(addr)
         if not core.utils.parse_ipv4(host) and
