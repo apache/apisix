@@ -172,6 +172,14 @@ English Development Documentation: TODO
 
 - [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
 
+## Who Uses APISIX?
+A wide variety of companies and organizations use APISIX for research, production and commercial product.
+Here is the User Wall of APISIX.
+
+<img src="doc/images/user-wall.jpg" width="50%" height="50%">
+
+Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
+
 ## Landscape
 
 APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
