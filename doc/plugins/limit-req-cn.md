@@ -36,6 +36,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
+你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+
+![](../images/plugin/limit-req-1.png)
+
+然后在 route 页面中添加 limit-req 插件：
+
+![](../images/plugin/limit-req-2.png)
+
 #### 测试插件
 上述配置限制了每秒请求速率为 1，大于 1 小于 3 的会被加上延时，速率超过 3 就会被拒绝：
 ```shell
