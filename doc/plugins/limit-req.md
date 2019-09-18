@@ -36,6 +36,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+
+![](../images/plugin/limit-req-1.png)
+
+Then add limit-req plugin:
+
+![](../images/plugin/limit-req-2.png)
+
 #### test plugin
 The above configuration limits the request rate to 1 per second. If it is greater than 1 and less than 3, the delay will be added. If the rate exceeds 3, it will be rejected:
 ```shell
