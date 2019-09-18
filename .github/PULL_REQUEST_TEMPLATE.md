@@ -1,4 +1,4 @@
-NOTE: Please read the CONTRIBUTING.md guidelines before submitting your patch:
+NOTE: Please read the Contributing.md guidelines before submitting your patch:
 
 https://github.com/iresty/apisix/blob/master/Contributing.md#how-to-add-a-new-feature-or-change-an-existing-one
 
