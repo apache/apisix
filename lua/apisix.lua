@@ -298,7 +298,7 @@ function _M.http_access_phase()
         end
 
         local changed
-        route, changed = plugin.merge_route(service, route)
+        route, changed = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
 
         if changed then
@@ -379,7 +379,7 @@ function _M.grpc_access_phase()
         end
 
         local changed
-        route, changed = plugin.merge_route(service, route)
+        route, changed = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
 
         if changed then
