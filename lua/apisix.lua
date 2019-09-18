@@ -15,6 +15,7 @@ local math          = math
 local error         = error
 local ngx_var       = ngx.var
 local ipairs        = ipairs
+local tostring      = tostring
 local load_balancer
 
 
