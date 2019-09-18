@@ -149,12 +149,12 @@ end
 
 
 local function parse_domain_in_up(up, ver)
-
+    return up
 end
 
 
 local function parse_domain_in_route(route, ver)
-
+    return route
 end
 
 
@@ -240,14 +240,21 @@ function _M.http_access_phase()
             return core.response.exit(404)
         end
 
-        route = plugin.merge_service_route(service, route)
+        local changed
+        route, changed = plugin.merge_route(service, route)
         api_ctx.matched_route = route
 
-        api_ctx.conf_type = "route&service"
-        api_ctx.conf_version = route.modifiedIndex .. "&"
-                                .. service.modifiedIndex
-        api_ctx.conf_id = route.value.id .. "&"
-                            .. service.value.id
+        if changed then
+            api_ctx.conf_type = "route&service"
+            api_ctx.conf_version = route.modifiedIndex .. "&"
+                                   .. service.modifiedIndex
+            api_ctx.conf_id = route.value.id .. "&"
+                              .. service.value.id
+        else
+            api_ctx.conf_type = "service"
+            api_ctx.conf_version = service.modifiedIndex
+            api_ctx.conf_id = service.value.id
+        end
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
@@ -265,7 +272,7 @@ function _M.http_access_phase()
             end
         end
 
-    else if route.has_domain then
+    elseif route.has_domain then
         route = parsed_domain(route, api_ctx.conf_version,
                               parse_domain_in_route, route)
     end
@@ -311,7 +318,7 @@ function _M.grpc_access_phase()
         end
 
         local changed
-        route, changed = plugin.merge_service_route(service, route)
+        route, changed = plugin.merge_route(service, route)
         api_ctx.matched_route = route
 
         if changed then
