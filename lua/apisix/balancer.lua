@@ -47,7 +47,14 @@ end
 
 
 local function fetch_health_nodes(upstream, checker)
+    local up_nodes = core.table.new(0, #upstream.nodes)
+
     if not checker then
+        for addr, weight in pairs(upstream.nodes) do
+            if weight > 0 then
+                up_nodes[addr] = weight
+            end
+        end
         return upstream.nodes
     end
 
@@ -55,10 +62,12 @@ local function fetch_health_nodes(upstream, checker)
     local up_nodes = core.table.new(0, #upstream.nodes)
 
     for addr, weight in pairs(upstream.nodes) do
-        local ip, port = parse_addr(addr)
-        local ok = checker:get_target_status(ip, port, host)
-        if ok then
-            up_nodes[addr] = weight
+        if weight > 0 then
+            local ip, port = parse_addr(addr)
+            local ok = checker:get_target_status(ip, port, host)
+            if ok then
+                up_nodes[addr] = weight
+            end
         end
     end
 
