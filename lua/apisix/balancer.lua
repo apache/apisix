@@ -1,20 +1,20 @@
 local healthcheck = require("resty.healthcheck")
 local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
-local balancer = require("ngx.balancer")
-local core = require("apisix.core")
-local sub_str = string.sub
-local find_str = string.find
-local upstreams_etcd
-local error = error
-local str_char = string.char
-local str_gsub = string.gsub
-local pairs = pairs
-local tonumber = tonumber
-local tostring = tostring
-local set_more_tries = balancer.set_more_tries
+local balancer    = require("ngx.balancer")
+local core        = require("apisix.core")
+local sub_str     = string.sub
+local find_str    = string.find
+local error       = error
+local str_char    = string.char
+local str_gsub    = string.gsub
+local pairs       = pairs
+local tonumber    = tonumber
+local tostring    = tostring
+local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
-local set_timeouts = balancer.set_timeouts
+local set_timeouts     = balancer.set_timeouts
+local upstreams_etcd
 
 
 local module_name = "balancer"
@@ -170,8 +170,9 @@ local function pick_server(route, ctx)
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local healthcheck_parent = route
     local up_id = route.value.upstream_id
-    local upstream = route.value.upstream
-    if not up_id and not upstream then
+    local up_conf = (route.dns_value and route.dns_value.upstream)
+                    or route.value.upstream
+    if not up_id and not up_conf then
         return nil, nil, "missing upstream configuration"
     end
 
@@ -184,24 +185,24 @@ local function pick_server(route, ctx)
                              .. "upstream information"
         end
 
-        local upstream_obj = upstreams_etcd:get(tostring(up_id))
-        if not upstream_obj then
+        local up_obj = upstreams_etcd:get(tostring(up_id))
+        if not up_obj then
             return nil, nil, "failed to find upstream by id: " .. up_id
         end
-        core.log.info("upstream: ", core.json.delay_encode(upstream_obj))
+        core.log.info("upstream: ", core.json.delay_encode(up_obj))
 
-        healthcheck_parent = upstream_obj
-        upstream = upstream_obj.value
-        version = upstream_obj.modifiedIndex
-        key = upstream.type .. "#upstream_" .. up_id
+        healthcheck_parent = up_obj
+        up_conf = up_obj.dns_value or up_obj.value
+        version = up_obj.modifiedIndex
+        key = up_conf.type .. "#upstream_" .. up_id
 
     else
         version = ctx.conf_version
-        key = upstream.type .. "#route_" .. route.value.id
+        key = up_conf.type .. "#route_" .. route.value.id
     end
 
-    local checker = fetch_healthchecker(upstream, healthcheck_parent, version)
-    local retries = upstream.retries
+    local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
+    local retries = up_conf.retries
     if retries and retries > 0 then
         ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
         if checker and ctx.balancer_try_count > 1 then
@@ -209,15 +210,15 @@ local function pick_server(route, ctx)
             if state == "failed" then
                 if code == 504 then
                     checker:report_timeout(ctx.balancer_ip, ctx.balancer_port,
-                                           upstream.checks.host)
+                                           up_conf.checks.host)
                 else
                     checker:report_tcp_failure(ctx.balancer_ip,
-                        ctx.balancer_port, upstream.checks.host)
+                        ctx.balancer_port, up_conf.checks.host)
                 end
 
             else
                 checker:report_http_status(ctx.balancer_ip, ctx.balancer_port,
-                                           upstream.checks.host, code)
+                                           up_conf.checks.host, code)
             end
         end
 
@@ -231,7 +232,7 @@ local function pick_server(route, ctx)
     end
 
     local server_picker = lrucache_server_picker(key, version,
-                            create_server_picker, upstream, checker)
+                            create_server_picker, up_conf, checker)
     if not server_picker then
         return nil, nil, "failed to fetch server picker"
     end
@@ -241,8 +242,8 @@ local function pick_server(route, ctx)
         return nil, nil, "failed to find valid upstream server" .. err
     end
 
-    if upstream.timeout then
-        local timeout = upstream.timeout
+    if up_conf.timeout then
+        local timeout = up_conf.timeout
         local ok, err = set_timeouts(timeout.connect, timeout.send,
                                      timeout.read)
         if not ok then
@@ -280,9 +281,27 @@ end
 function _M.init_worker()
     local err
     upstreams_etcd, err = core.config.new("/upstreams", {
-                                automatic = true,
-                                item_schema = core.schema.upstream
-                            })
+            automatic = true,
+            item_schema = core.schema.upstream,
+            filter = function(upstream)
+                upstream.has_domain = false
+                if not upstream.value then
+                    return
+                end
+
+                for addr, _ in pairs(upstream.value.nodes or {}) do
+                    local host = core.utils.parse_addr(addr)
+                    if not core.utils.parse_ipv4(host) and
+                       not core.utils.parse_ipv6(host) then
+                        upstream.has_domain = true
+                        break
+                    end
+                end
+
+                core.log.info("filter upstream: ",
+                              core.json.delay_encode(upstream))
+            end,
+        })
     if not upstreams_etcd then
         error("failed to create etcd instance for fetching upstream: " .. err)
         return

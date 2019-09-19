@@ -1,14 +1,37 @@
 local require = require
-local core = require("apisix.core")
-local local_conf = core.config.local_conf
+local core  = require("apisix.core")
 local error = error
+local pairs = pairs
 
 
 local _M = {version = 0.2}
 
 
+local function filter(route)
+    route.has_domain = false
+    if not route.value then
+        return
+    end
+
+    if not route.value.upstream then
+        return
+    end
+
+    for addr, _ in pairs(route.value.upstream.nodes or {}) do
+        local host = core.utils.parse_addr(addr)
+        if not core.utils.parse_ipv4(host) and
+           not core.utils.parse_ipv6(host) then
+            route.has_domain = true
+            break
+        end
+    end
+
+    core.log.info("filter route: ", core.json.delay_encode(route))
+end
+
+
 function _M.http_init_worker()
-    local conf = local_conf()
+    local conf = core.config.local_conf()
     local router_http_name = "r3_uri"
     local router_ssl_name = "r3_sni"
 
@@ -18,11 +41,11 @@ function _M.http_init_worker()
     end
 
     local router_http = require("apisix.http.router." .. router_http_name)
-    router_http.init_worker()
+    router_http.init_worker(filter)
     _M.router_http = router_http
 
     local router_ssl = require("apisix.http.router." .. router_ssl_name)
-    router_ssl:init_worker()
+    router_ssl.init_worker()
     _M.router_ssl = router_ssl
 
     local global_rules, err = core.config.new("/global_rules", {

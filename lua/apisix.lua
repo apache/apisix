@@ -1,24 +1,32 @@
 -- Copyright (C) Yuansheng Wang
 
-local require = require
-local core = require("apisix.core")
-local plugin = require("apisix.plugin")
+local require       = require
+local core          = require("apisix.core")
+local plugin        = require("apisix.plugin")
 local service_fetch = require("apisix.http.service").get
-local admin_init = require("apisix.admin.init")
-local get_var = require("resty.ngxvar").fetch
-local router = require("apisix.router")
-local ngx = ngx
-local get_method = ngx.req.get_method
-local ngx_exit = ngx.exit
-local ngx_ERROR = ngx.ERROR
-local math = math
-local error = error
-local ngx_var = ngx.var
-local ipairs = ipairs
+local admin_init    = require("apisix.admin.init")
+local get_var       = require("resty.ngxvar").fetch
+local router        = require("apisix.router")
+local ipmatcher     = require("resty.ipmatcher")
+local ngx           = ngx
+local get_method    = ngx.req.get_method
+local ngx_exit      = ngx.exit
+local ngx_ERROR     = ngx.ERROR
+local math          = math
+local error         = error
+local ngx_var       = ngx.var
+local ipairs        = ipairs
+local pairs         = pairs
+local tostring      = tostring
 local load_balancer
 
 
-local _M = {version = 0.2}
+local parsed_domain = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
+
+local _M = {version = 0.3}
 
 
 function _M.http_init()
@@ -143,6 +151,70 @@ function _M.http_ssl_phase()
 end
 
 
+local function parse_domain_in_up(up, ver)
+    local local_conf = core.config.local_conf()
+    local dns_resolver = local_conf and local_conf.apisix and
+                         local_conf.apisix.dns_resolver
+    local new_nodes = core.table.new(0, 8)
+
+    for addr, weight in pairs(up.value.nodes) do
+        local host, port = core.utils.parse_addr(addr)
+        if not ipmatcher.parse_ipv4(host) and
+           not ipmatcher.parse_ipv6(host) then
+            local ip_info = core.utils.dns_parse(dns_resolver, host)
+            core.log.info("parse addr: ", core.json.delay_encode(ip_info),
+                          " resolver: ", core.json.delay_encode(dns_resolver),
+                          " addr: ", addr)
+            if ip_info and ip_info.address then
+                new_nodes[ip_info.address .. ":" .. port] = weight
+                core.log.info("dns resolver domain: ", host, " to ",
+                              ip_info.address)
+            end
+        else
+            new_nodes[addr] = weight
+        end
+    end
+
+    up.dns_value = core.table.clone(up.value)
+    up.dns_value.nodes = new_nodes
+    core.log.info("parse upstream which contain domain: ",
+                  core.json.delay_encode(up))
+    return up
+end
+
+
+local function parse_domain_in_route(route, ver)
+    local local_conf = core.config.local_conf()
+    local dns_resolver = local_conf and local_conf.apisix and
+                         local_conf.apisix.dns_resolver
+    local new_nodes = core.table.new(0, 8)
+
+    for addr, weight in pairs(route.value.upstream.nodes) do
+        local host, port = core.utils.parse_addr(addr)
+        if not ipmatcher.parse_ipv4(host) and
+           not ipmatcher.parse_ipv6(host) then
+            local ip_info = core.utils.dns_parse(dns_resolver, host)
+            core.log.info("parse addr: ", core.json.delay_encode(ip_info),
+                          " resolver: ", core.json.delay_encode(dns_resolver),
+                          " addr: ", addr)
+            if ip_info and ip_info.address then
+                new_nodes[ip_info.address .. ":" .. port] = weight
+                core.log.info("dns resolver domain: ", host, " to ",
+                              ip_info.address)
+            end
+        else
+            new_nodes[addr] = weight
+        end
+    end
+
+    route.dns_value = core.table.deepcopy(route.value)
+    route.dns_value.upstream.nodes = new_nodes
+    core.log.info("parse route which contain domain: ",
+                  core.json.delay_encode(route))
+    return route
+end
+
+
 do
     local upstream_vars = {
         uri        = "upstream_uri",
@@ -226,7 +298,7 @@ function _M.http_access_phase()
         end
 
         local changed
-        route, changed = plugin.merge_service_route(service, route)
+        route, changed = plugin.merge_route(service, route)
         api_ctx.matched_route = route
 
         if changed then
@@ -240,11 +312,26 @@ function _M.http_access_phase()
             api_ctx.conf_version = service.modifiedIndex
             api_ctx.conf_id = service.value.id
         end
-
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
         api_ctx.conf_id = route.value.id
+    end
+
+    local up_id = route.value.upstream_id
+    if up_id then
+        local upstreams_etcd = core.config.fetch_created_obj("/upstreams")
+        if upstreams_etcd then
+            local upstream = upstreams_etcd:get(tostring(up_id))
+            if upstream.has_domain then
+                parsed_domain(upstream, api_ctx.conf_version,
+                              parse_domain_in_up, upstream)
+            end
+        end
+
+    elseif route.has_domain then
+        route = parsed_domain(route, api_ctx.conf_version,
+                              parse_domain_in_route, route)
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)
@@ -288,7 +375,7 @@ function _M.grpc_access_phase()
         end
 
         local changed
-        route, changed = plugin.merge_service_route(service, route)
+        route, changed = plugin.merge_route(service, route)
         api_ctx.matched_route = route
 
         if changed then
