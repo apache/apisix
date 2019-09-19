@@ -44,6 +44,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+
+![](../images/plugin/zipkin-1.png)
+
+Then add zipkin plugin:
+
+![](../images/plugin/zipkin-2.png)
+
 ## Test Plugin
 
 ### run the Zipkin instance

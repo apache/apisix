@@ -60,7 +60,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-## Test Plugin
+## 测试插件
 
 下面是一个正常通过 `key-auth` 验证的请求:
 
