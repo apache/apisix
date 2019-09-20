@@ -3,33 +3,38 @@ local schema   = require("apisix.core.schema")
 local config   = require("apisix.core.config_etcd")
 local log      = require("apisix.core.log")
 local tab      = require("apisix.core.table")
-local json     = require("apisix.core.json")
+-- local json     = require("apisix.core.json")
 local consumers
 local error = error
 local ipairs = ipairs
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
 }
 
 --[[
     {
         "id": "ShunFeng",
+        "auth_plugin": "key-auth",
+        "auth_key": "keykey",
         "plugins": {
-            "key-auth": {
-                "key": "dddxxyyy"
-            }
+            ...
         }
     }
 
     to
 
     {
-        key-auth: [
+        "key-auth": [
             {
-                "key": "dddxxyyy",
-                "consumer_id": "ShunFeng"
+                "id": "ShunFeng",
+                "consumer_id": "ShunFeng",
+                "auth_plugin": "key-auth",
+                "auth_key": "keykey",
+                "plugins": {
+                    ...
+                }
             }
         ]
     }
@@ -42,17 +47,19 @@ local function plugin_consumer()
     end
 
     for _, consumer in ipairs(consumers.values) do
-        local auth_plugin = consumer.value.auth_plugin
-        if not plugins[auth_plugin] then
-            plugins[auth_plugin] = {
-                nodes = {},
-                conf_version = consumers.conf_version,
-            }
-        end
+        for name, config in pairs(consumer.value.auth_plugin or {}) do
+            if not plugins[name] then
+                plugins[name] = {
+                    nodes = {},
+                    conf_version = consumers.conf_version
+                }
 
-        local new_consumer = tab.clone(consumer.value)
-        new_consumer.consumer_id = new_consumer.id
-        tab.insert(plugins[auth_plugin].nodes, new_consumer)
+                local new_consumer = tab.clone(consumer.value)
+                new_consumer.consumer_id = new_consumer.id
+                new_consumer.auth_conf = config
+                tab.insert(plugins[name].nodes, new_consumer)
+            end
+        end
     end
 
     return plugins

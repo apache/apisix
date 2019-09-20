@@ -16,8 +16,11 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
-                    "auth_plugin": "key-auth",
-                    "auth_key": "auth-one",
+                    "auth_plugin": {
+                        "key-auth": {
+                            "key": "auth-one"
+                        }
+                    },
                     "plugins": {
                         "limit-count": {
                             "count": 2,
@@ -31,8 +34,11 @@ __DATA__
                     "node": {
                         "value": {
                             "username": "jack",
-                            "auth_plugin": "key-auth",
-                            "auth_key": "auth-one",
+                            "auth_plugin": {
+                                "key-auth": {
+                                    "key": "auth-one"
+                                }
+                            },
                             "plugins": {
                                 "limit-count": {
                                     "count": 2,

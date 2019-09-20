@@ -27,8 +27,8 @@ do
         core.table.clear(consumer_ids)
 
         for _, consumer in ipairs(consumers.nodes) do
-            --core.log.info("each consumer: ", core.json.delay_encode(consumer))
-            consumer_ids[consumer.auth_key] = consumer
+            core.log.info("consumer node: ", core.json.delay_encode(consumer))
+            consumer_ids[consumer.auth_conf.key] = consumer
         end
 
         return consumer_ids
