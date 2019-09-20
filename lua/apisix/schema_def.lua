@@ -341,7 +341,7 @@ _M.consumer = {
         desc = {type = "string", maxLength = 256},
         auth_plugin = plugins_schema,
     },
-    required = {"username", "auth_plugin"},
+    required = {"username"},
     additionalProperties = false,
 }
 
