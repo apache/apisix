@@ -37,7 +37,8 @@ do
         core.table.clear(consumer_ids)
 
         for _, consumer in ipairs(consumers.nodes) do
-            consumer_ids[consumer.conf.key] = consumer
+            core.log.info("consumer node: ", core.json.delay_encode(consumer))
+            consumer_ids[consumer.auth_conf.key] = consumer
         end
 
         return consumer_ids
@@ -113,6 +114,10 @@ function _M.rewrite(conf, ctx)
     end
 
     local consumer_conf = core.consumer.plugin(plugin_name)
+    if not consumer_conf then
+        return 401, {message = "Missing related consumer"}
+    end
+
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
             consumer_conf.conf_version,
             create_consume_cache, consumer_conf)
@@ -123,12 +128,13 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    jwt_obj = jwt:verify_jwt_obj(consumer.conf.secret, jwt_obj)
+    jwt_obj = jwt:verify_jwt_obj(consumer.auth_conf.secret, jwt_obj)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.verified then
         return 401, {message = jwt_obj.reason}
     end
 
+    ctx.consumer = consumer
     ctx.consumer_id = consumer.consumer_id
     core.log.info("hit jwt-auth rewrite")
 end
@@ -157,16 +163,18 @@ local function gen_token()
         return core.response.exit(404)
     end
 
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
+
     local jwt_token = jwt:sign(
-        consumer.conf.secret,
+        consumer.auth_conf.secret,
         {
             header={
                 typ = "JWT",
-                alg = consumer.conf.algorithm
+                alg = consumer.auth_conf.algorithm
             },
             payload={
                 key = key,
-                exp = ngx_time() + consumer.conf.exp
+                exp = ngx_time() + consumer.auth_conf.exp
             }
         }
     )
