@@ -250,6 +250,7 @@ function _M.http_access_phase()
             core.table.clear(plugins)
             api_ctx.plugins = plugin.filter(global_rule, plugins)
             run_plugin("rewrite", plugins, api_ctx)
+            run_plugin("access", plugins, api_ctx)
         end
 
         core.tablepool.release("plugins", plugins)
