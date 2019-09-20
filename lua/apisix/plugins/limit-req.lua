@@ -1,16 +1,38 @@
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
 local plugin_name = "limit-req"
+local sleep = ngx.sleep
+
+
+local schema = {
+    type = "object",
+    properties = {
+        rate = {type = "number", minimum = 0},
+        burst = {type = "number",  minimum = 0},
+        key = {type = "string",
+            enum = {"remote_addr", "server_addr", "http_x_real_ip",
+                    "http_x_forwarded_for"},
+        },
+        rejected_code = {type = "integer", minimum = 200},
+    },
+    required = {"rate", "burst", "key", "rejected_code"}
+}
 
 
 local _M = {
     version = 0.1,
     priority = 1001,        -- TODO: add a type field, may be a good idea
     name = plugin_name,
+    schema = schema,
 }
 
 
-function _M.check_args(conf)
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
     return true
 end
 
@@ -24,31 +46,26 @@ end
 function _M.access(conf, ctx)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                create_limit_obj, conf)
-
     if not lim then
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
-        return ngx.HTTP_INTERNAL_SERVER_ERROR
+        return 500
     end
 
-    if conf.key ~= 'remote_addr' then
-        core.log.error("only support 'remote_addr' as key now")
-        return ngx.HTTP_INTERNAL_SERVER_ERROR
-    end
+    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    core.log.info("limit key: ", key)
 
-    local key = ctx.var[conf.key]
-    local rejected_code = conf.rejected_code or ngx.HTTP_SERVICE_UNAVAILABLE
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
-            return rejected_code
+            return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)
-        return ngx.HTTP_INTERNAL_SERVER_ERROR
+        return 500
     end
 
     if delay >= 0.001 then
-        ngx.sleep(delay)
+        sleep(delay)
     end
 end
 

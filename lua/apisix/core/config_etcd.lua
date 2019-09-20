@@ -1,27 +1,33 @@
 -- Copyright (C) Yuansheng Wang
 
-local log = require("apisix.core.log")
-local fetch_local_conf = require("apisix.core.config_local").local_conf
-local encode_json = require("cjson.safe").encode
-local etcd = require("resty.etcd")
-local new_tab = require("table.new")
-local exiting = ngx.worker.exiting
-local insert_tab = table.insert
-local type = type
-local ipairs = ipairs
+local config_local = require("apisix.core.config_local")
+local log          = require("apisix.core.log")
+local json         = require("apisix.core.json")
+local etcd         = require("resty.etcd")
+local new_tab      = require("table.new")
+local clone_tab    = require("table.clone")
+local check_schema = require("apisix.core.schema").check
+local exiting      = ngx.worker.exiting
+local insert_tab   = table.insert
+local type         = type
+local ipairs       = ipairs
 local setmetatable = setmetatable
-local ngx_sleep = ngx.sleep
+local ngx_sleep    = ngx.sleep
 local ngx_timer_at = ngx.timer.at
-local ngx_time = ngx.time
-local sub_str = string.sub
-local tostring = tostring
-local pcall=pcall
+local ngx_time     = ngx.time
+local sub_str      = string.sub
+local tostring     = tostring
+local tonumber     = tonumber
+local pcall        = pcall
+local created_obj  = {}
 
 
 local _M = {
-    version = 0.1,
-    local_conf = fetch_local_conf,
+    version = 0.3,
+    local_conf = config_local.local_conf,
+    clear_local_cache = config_local.clear_cache,
 }
+
 local mt = {
     __index = _M,
     __tostring = function(self)
@@ -31,46 +37,46 @@ local mt = {
 
 local function readdir(etcd_cli, key)
     if not etcd_cli then
-        return nil, "not inited"
+        return nil, nil, "not inited"
     end
 
     local data, err = etcd_cli:readdir(key, true)
     if not data then
         -- log.error("failed to get key from etcd: ", err)
-        return nil, err
+        return nil, nil, err
     end
 
     local body = data.body
 
     if type(body) ~= "table" then
-        return nil, "failed to read etcd dir"
+        return nil, nil, "failed to read etcd dir"
     end
 
     if body.message then
-        return nil, body.message
+        return nil, nil, body.message
     end
 
-    return body.node
+    return body.node, data.headers
 end
 
 local function waitdir(etcd_cli, key, modified_index)
     if not etcd_cli then
-        return nil, "not inited"
+        return nil, nil, "not inited"
     end
 
     local data, err = etcd_cli:waitdir(key, modified_index)
     if not data then
         -- log.error("failed to get key from etcd: ", err)
-        return nil, err
+        return nil, nil, err
     end
 
     local body = data.body or {}
 
     if body.message then
-        return nil, body.message
+        return nil, nil, body.message
     end
 
-    return body.node
+    return body.node, data.headers
 end
 
 
@@ -79,64 +85,150 @@ local function short_key(self, str)
 end
 
 
-function _M.fetch(self)
+function _M.upgrade_version(self, new_ver)
+    new_ver = tonumber(new_ver)
+    if not new_ver then
+        return
+    end
+
+    local pre_index = self.prev_index
+    if not pre_index then
+        self.prev_index = new_ver
+        return
+    end
+
+    if new_ver <= pre_index then
+        return
+    end
+
+    self.prev_index = new_ver
+    return
+end
+
+
+local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
     end
 
     if self.values == nil then
-        local dir_res, err = readdir(self.etcd_cli, self.key)
+        local dir_res, headers, err = readdir(self.etcd_cli, self.key)
+        log.debug("readdir key: ", self.key, " res: ",
+                  json.delay_encode(dir_res))
         if not dir_res then
-            return nil, err
+            return false, err
         end
 
         if not dir_res.dir then
-            return nil, self.key .. " is not a dir"
+            return false, self.key .. " is not a dir"
         end
 
         if not dir_res.nodes then
-            ngx_sleep(1)
-            return nil
+            dir_res.nodes = {}
         end
 
         self.values = new_tab(#dir_res.nodes, 0)
         self.values_hash = new_tab(0, #dir_res.nodes)
 
+        local changed = false
         for _, item in ipairs(dir_res.nodes) do
-            insert_tab(self.values, item)
             local key = short_key(self, item.key)
-            self.values_hash[key] = #self.values
-
-            if not self.prev_index or item.modifiedIndex > self.prev_index then
-                self.prev_index = item.modifiedIndex
+            local data_valid = true
+            if type(item.value) ~= "table" then
+                data_valid = false
+                log.error("invalid item data of [", self.key .. "/" .. key,
+                          "], val: ", tostring(item.value),
+                          ", it shoud be a object")
             end
+
+            if data_valid and self.item_schema then
+                data_valid, err = check_schema(self.item_schema, item.value)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.encode(item.value))
+                end
+            end
+
+            if data_valid then
+                changed = true
+                insert_tab(self.values, item)
+                self.values_hash[key] = #self.values
+                item.value.id = key
+                item.clean_handlers = {}
+
+                if self.filter then
+                    self.filter(item)
+                end
+            end
+
+            self:upgrade_version(item.modifiedIndex)
         end
 
-        self.conf_version = self.conf_version + 1
-        return self.values
+        if headers then
+            self:upgrade_version(headers["X-Etcd-Index"])
+        end
+
+        if changed then
+            self.conf_version = self.conf_version + 1
+        end
+        return true
     end
 
-    local res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    local res, headers, err = waitdir(self.etcd_cli, self.key,
+                                      self.prev_index + 1)
+    log.debug("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
+    log.debug("res: ", json.delay_encode(res, true))
+    log.debug("headers: ", json.delay_encode(headers, true))
     if not res then
-        return nil, err
-    end
-
-    if res.dir then
-        log.error("todo: support for parsing `dir` response structures. ",
-                  encode_json(res))
-        return self.values
-    end
-    -- log.warn("waitdir: ", encode_json(res))
-
-    if not self.prev_index or res.modifiedIndex > self.prev_index then
-        self.prev_index = res.modifiedIndex
+        return false, err
     end
 
     local key = short_key(self, res.key)
+    if res.value and type(res.value) ~= "table" then
+        self:upgrade_version(res.modifiedIndex)
+        return false, "invalid item data of [" .. self.key .. "/" .. key
+                      .. "], val: " .. tostring(res.value)
+                      .. ", it shoud be a object"
+    end
+
+    if res.value and self.item_schema then
+        local ok, err = check_schema(self.item_schema, res.value)
+        if not ok then
+            self:upgrade_version(res.modifiedIndex)
+
+            return false, "failed to check item data of ["
+                          .. self.key .. "] err:" .. err
+        end
+    end
+
+    self:upgrade_version(res.modifiedIndex)
+
+    if res.dir then
+        if res.value then
+            return false, "todo: support for parsing `dir` response "
+                          .. "structures. " .. json.encode(res)
+        end
+        return false
+    end
+
+    if self.filter then
+        self.filter(res)
+    end
+
     local pre_index = self.values_hash[key]
     if pre_index then
+        local pre_val = self.values[pre_index]
+        if pre_val and pre_val.clean_handlers then
+            for _, clean_handler in ipairs(pre_val.clean_handlers) do
+                clean_handler(pre_val)
+            end
+            pre_val.clean_handlers = nil
+        end
+
         if res.value then
+            res.value.id = key
             self.values[pre_index] = res
+            res.clean_handlers = {}
 
         else
             self.sync_times = self.sync_times + 1
@@ -146,6 +238,7 @@ function _M.fetch(self)
     elseif res.value then
         insert_tab(self.values, res)
         self.values_hash[key] = #self.values
+        res.value.id = key
     end
 
     -- avoid space waste
@@ -173,6 +266,10 @@ end
 
 
 function _M.get(self, key)
+    if not self.values_hash then
+        return
+    end
+
     local arr_idx = self.values_hash[tostring(key)]
     if not arr_idx then
         return nil
@@ -190,22 +287,20 @@ local function _automatic_fetch(premature, self)
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
-        local ok, res, err = pcall(self.fetch, self)
+        local ok, ok2, err = pcall(sync_data, self)
         if not ok then
-            err = res
+            err = ok2
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
-            ngx_sleep(5)
+            ngx_sleep(3)
             break
 
-        elseif not res and err then
+        elseif not ok2 and err then
             if err ~= "timeout" and err ~= "Key not found"
                and self.last_err ~= err then
                 log.error("failed to fetch data from etcd: ", err, ", ",
                           tostring(self))
             end
-
-            ngx_sleep(3)
 
             if err ~= self.last_err then
                 self.last_err = err
@@ -215,8 +310,10 @@ local function _automatic_fetch(premature, self)
                     self.last_err = nil
                 end
             end
+            ngx_sleep(0.5)
 
-            break
+        elseif not ok2 then
+            ngx_sleep(0.05)
         end
     end
 
@@ -227,26 +324,30 @@ end
 
 
 function _M.new(key, opts)
-    local local_conf, err = fetch_local_conf()
+    local local_conf, err = config_local.local_conf()
     if not local_conf then
         return nil, err
     end
 
-    local prefix = local_conf.etcd.prefix
-    local_conf.etcd.prefix = nil
+    local etcd_conf = clone_tab(local_conf.etcd)
+    local prefix = etcd_conf.prefix
+    etcd_conf.prefix = nil
 
     local etcd_cli
-    etcd_cli, err = etcd.new(local_conf.etcd)
+    etcd_cli, err = etcd.new(etcd_conf)
     if not etcd_cli then
         return nil, err
     end
 
     local automatic = opts and opts.automatic
+    local item_schema = opts and opts.item_schema
+    local filter_fun = opts and opts.filter
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
         key = key and prefix .. key,
         automatic = automatic,
+        item_schema = item_schema,
         sync_times = 0,
         running = true,
         conf_version = 0,
@@ -255,6 +356,7 @@ function _M.new(key, opts)
         prev_index = nil,
         last_err = nil,
         last_err_time = nil,
+        filter = filter_fun,
     }, mt)
 
     if automatic then
@@ -265,12 +367,21 @@ function _M.new(key, opts)
         ngx_timer_at(0, _automatic_fetch, obj)
     end
 
+    if key then
+        created_obj[key] = obj
+    end
+
     return obj
 end
 
 
 function _M.close(self)
     self.running = false
+end
+
+
+function _M.fetch_created_obj(key)
+    return created_obj[key]
 end
 
 
