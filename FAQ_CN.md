@@ -14,7 +14,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：https://github.com/iresty/apisix/blob/master/doc/benchmark-cn.md。
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/iresty/apisix/blob/master/doc/benchmark-cn.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
