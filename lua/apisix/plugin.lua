@@ -320,17 +320,14 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf))
+    -- core.log.info("service conf: ", core.json.delay_encode(service_conf))
     -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
 
     local flag = tostring(service_conf) .. tostring(route_conf)
     local new_service_conf = merged_route(flag, nil, merge_service_route,
                                         service_conf, route_conf)
-    if new_service_conf == service_conf then
-        return new_service_conf, false
-    end
 
-    return new_service_conf, true
+    return new_service_conf, new_service_conf ~= service_conf
 end
 
 
@@ -352,14 +349,14 @@ end
 
 
 function _M.merge_consumer_route(route_conf, consumer_conf)
-    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
-    core.log.info("route conf  : ", core.json.delay_encode(route_conf))
+    -- core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
+    -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
 
     local flag = tostring(route_conf) .. tostring(consumer_conf)
-    local new_route_conf = merged_route(flag, nil,
+    local new_conf = merged_route(flag, nil,
                             merge_consumer_route, route_conf, consumer_conf)
 
-    return new_route_conf, new_route_conf ~= route_conf
+    return new_conf, new_conf ~= route_conf
 end
 
 
