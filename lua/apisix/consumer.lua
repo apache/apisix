@@ -4,9 +4,10 @@ local config   = require("apisix.core.config_etcd")
 local log      = require("apisix.core.log")
 local tab      = require("apisix.core.table")
 local json     = require("apisix.core.json")
+local error    = error
+local ipairs   = ipairs
+local pairs    = pairs
 local consumers
-local error = error
-local ipairs = ipairs
 
 
 local _M = {
