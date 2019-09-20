@@ -3,7 +3,7 @@ local schema   = require("apisix.core.schema")
 local config   = require("apisix.core.config_etcd")
 local log      = require("apisix.core.log")
 local tab      = require("apisix.core.table")
--- local json     = require("apisix.core.json")
+local json     = require("apisix.core.json")
 local consumers
 local error = error
 local ipairs = ipairs
@@ -13,32 +13,7 @@ local _M = {
     version = 0.2,
 }
 
---[[
-    {
-        "id": "ShunFeng",
-        "auth_plugin": "key-auth",
-        "auth_key": "keykey",
-        "plugins": {
-            ...
-        }
-    }
 
-    to
-
-    {
-        "key-auth": [
-            {
-                "id": "ShunFeng",
-                "consumer_id": "ShunFeng",
-                "auth_plugin": "key-auth",
-                "auth_key": "keykey",
-                "plugins": {
-                    ...
-                }
-            }
-        ]
-    }
-    ]]
 local function plugin_consumer()
     local plugins = {}
 
@@ -57,6 +32,7 @@ local function plugin_consumer()
                 local new_consumer = tab.clone(consumer.value)
                 new_consumer.consumer_id = new_consumer.id
                 new_consumer.auth_conf = config
+                log.info("new consumer: ", json.delay_encode(new_consumer))
                 tab.insert(plugins[name].nodes, new_consumer)
             end
         end
