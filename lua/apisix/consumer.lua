@@ -1,18 +1,19 @@
 local lrucache = require("apisix.core.lrucache")
 local schema   = require("apisix.core.schema")
 local config   = require("apisix.core.config_etcd")
-local insert_tab = table.insert
+local log      = require("apisix.core.log")
+local tab      = require("apisix.core.table")
+local json     = require("apisix.core.json")
 local consumers
 local error = error
 local ipairs = ipairs
-local pairs = pairs
 
 
 local _M = {
     version = 0.1,
 }
 
-    --[[
+--[[
     {
         "id": "ShunFeng",
         "plugins": {
@@ -41,17 +42,17 @@ local function plugin_consumer()
     end
 
     for _, consumer in ipairs(consumers.values) do
-        for name, conf in pairs(consumer.value.plugins) do
-            if not plugins[name] then
-                plugins[name] = {
-                    nodes = {},
-                    conf_version = consumers.conf_version,
-                }
-            end
-
-            insert_tab(plugins[name].nodes,
-                       {consumer_id = consumer.value.id, conf = conf})
+        local auth_plugin = consumer.value.auth_plugin
+        if not plugins[auth_plugin] then
+            plugins[auth_plugin] = {
+                nodes = {},
+                conf_version = consumers.conf_version,
+            }
         end
+
+        local new_consumer = tab.clone(consumer.value)
+        new_consumer.consumer_id = new_consumer.id
+        tab.insert(plugins[auth_plugin].nodes, new_consumer)
     end
 
     return plugins

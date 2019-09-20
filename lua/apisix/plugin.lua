@@ -356,10 +356,10 @@ function _M.merge_consumer_route(route_conf, consumer_conf)
     core.log.info("route conf  : ", core.json.delay_encode(route_conf))
 
     local flag = tostring(route_conf) .. tostring(consumer_conf)
-    local new_route_conf = merged_route(flag, nil, merge_consumer_route,
-                                        route_conf, consumer_conf)
+    local new_route_conf = merged_route(flag, nil,
+                            merge_consumer_route, route_conf, consumer_conf)
 
-    return new_route_conf, new_route_conf == route_conf
+    return new_route_conf, new_route_conf ~= route_conf
 end
 
 

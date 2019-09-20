@@ -27,7 +27,8 @@ do
         core.table.clear(consumer_ids)
 
         for _, consumer in ipairs(consumers.nodes) do
-            consumer_ids[consumer.conf.key] = consumer
+            --core.log.info("each consumer: ", core.json.delay_encode(consumer))
+            consumer_ids[consumer.auth_key] = consumer
         end
 
         return consumer_ids
@@ -63,6 +64,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     ctx.consumer = consumer
+    ctx.consumer_id = consumer.consumer_id
     core.log.info("hit key-auth rewrite")
 end
 

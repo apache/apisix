@@ -339,6 +339,12 @@ _M.consumer = {
         },
         plugins = plugins_schema,
         desc = {type = "string", maxLength = 256},
+        auth_plugin = {
+            type = "string", minLength = 1, maxLength = 64
+        },
+        auth_key = {
+            type = "string", minLength = 1, maxLength = 128
+        },
     },
     required = {"username"},
     additionalProperties = false,

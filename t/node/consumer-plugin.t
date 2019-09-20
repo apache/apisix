@@ -13,28 +13,32 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "username": "jack",
+                    "auth_plugin": "key-auth",
+                    "auth_key": "auth-one",
                     "plugins": {
-                            "key-auth": {
-                                "key": "auth-one"
-                            },
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
                         }
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "username": "jack",
+                            "auth_plugin": "key-auth",
+                            "auth_key": "auth-one",
                             "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
+                                "limit-count": {
+                                    "count": 2,
+                                    "time_window": 60,
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
                                 }
                             }
                         }
@@ -112,5 +116,17 @@ GET /hello
 apikey: auth-one
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- more_headers
+apikey: auth-one
+--- error_code eval
+[200, 200, 503, 503]
 --- no_error_log
 [error]
