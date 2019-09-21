@@ -26,9 +26,9 @@
 curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 {
     "username": "jack",
-    "plugins": {
+    "auth_plugin": {
         "key-auth": {
-            "key": "keykey"
+            "key": "auth-one"
         }
     }
 }'
