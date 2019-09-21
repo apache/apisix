@@ -1,4 +1,5 @@
 local core     = require("apisix.core")
+local plugin   = require("apisix.plugin")
 local error    = error
 local ipairs   = ipairs
 local pairs    = pairs
@@ -18,8 +19,10 @@ local function plugin_consumer()
     end
 
     for _, consumer in ipairs(consumers.values) do
-        for name, config in pairs(consumer.value.auth_plugin or {}) do
-            if not plugins[name] then
+        for name, config in pairs(consumer.value.plugins or {}) do
+            local plugin_obj = plugin.get(name)
+            if plugin_obj and plugin_obj.type == "auth"
+               and not plugins[name] then
                 plugins[name] = {
                     nodes = {},
                     conf_version = consumers.conf_version
@@ -28,8 +31,10 @@ local function plugin_consumer()
                 local new_consumer = core.table.clone(consumer.value)
                 new_consumer.consumer_id = new_consumer.id
                 new_consumer.auth_conf = config
-                core.log.info("new consumer: ", core.json.delay_encode(new_consumer))
+                core.log.info("consumer: ", core.json.delay_encode(new_consumer))
                 core.table.insert(plugins[name].nodes, new_consumer)
+
+                break
             end
         end
     end

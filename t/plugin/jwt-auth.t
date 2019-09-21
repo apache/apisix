@@ -66,7 +66,7 @@ done
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
-                    "auth_plugin": {
+                    "plugins": {
                         "jwt-auth": {
                             "key": "user-key",
                             "secret": "my-secret-key"
@@ -77,7 +77,7 @@ done
                     "node": {
                         "value": {
                             "username": "jack",
-                            "auth_plugin": {
+                            "plugins": {
                                 "jwt-auth": {
                                     "key": "user-key",
                                     "secret": "my-secret-key"

@@ -16,17 +16,15 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
-                    "auth_plugin": {
-                        "key-auth": {
-                            "key": "auth-one"
-                        }
-                    },
                     "plugins": {
                         "limit-count": {
                             "count": 2,
                             "time_window": 60,
                             "rejected_code": 503,
                             "key": "remote_addr"
+                        },
+                        "key-auth": {
+                            "key": "auth-one"
                         }
                     }
                 }]],
@@ -34,17 +32,15 @@ __DATA__
                     "node": {
                         "value": {
                             "username": "jack",
-                            "auth_plugin": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
-                            },
                             "plugins": {
                                 "limit-count": {
                                     "count": 2,
                                     "time_window": 60,
                                     "rejected_code": 503,
                                     "key": "remote_addr"
+                                },
+                                "key-auth": {
+                                    "key": "auth-one"
                                 }
                             }
                         }
@@ -112,6 +108,7 @@ apikey: 123
 {"message":"Invalid API key in request"}
 --- no_error_log
 [error]
+--- LAST
 
 
 
@@ -134,5 +131,47 @@ hello world
 apikey: auth-one
 --- error_code eval
 [200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: two auth plugins (not allow)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "auth_plugin": {
+                        "key-auth": {
+                            "key": "auth-one"
+                        },
+                        "jwt-auth": {
+                            "key": "auth-one"
+                        }
+                    },
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"only one auth plugin is allowed"}
 --- no_error_log
 [error]

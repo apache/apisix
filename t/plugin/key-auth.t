@@ -61,7 +61,7 @@ done
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
-                    "auth_plugin": {
+                    "plugins": {
                         "key-auth": {
                             "key": "auth-one"
                         }
@@ -71,7 +71,7 @@ done
                     "node": {
                         "value": {
                             "username": "jack",
-                            "auth_plugin": {
+                            "plugins": {
                                 "key-auth": {
                                     "key": "auth-one"
                                 }

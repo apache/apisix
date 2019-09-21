@@ -338,8 +338,7 @@ _M.consumer = {
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
         plugins = plugins_schema,
-        desc = {type = "string", maxLength = 256},
-        auth_plugin = plugins_schema,
+        desc = {type = "string", maxLength = 256}
     },
     required = {"username"},
     additionalProperties = false,
