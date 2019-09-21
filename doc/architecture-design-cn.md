@@ -390,7 +390,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 如何对某个 Consumer 开启指定插件，可以看下面例子：
 
 ```shell
-# 创建 Consumer ，指定认证插件 key-auth ,并开启特定插件 limit-count
+# 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
 $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -d '
 {
     "username": "jack",
