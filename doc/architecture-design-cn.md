@@ -369,10 +369,10 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
 
-|字段|可选|说明|
+|字段|必选|说明|
 |---|----|----|
-|username|必选|Consumer 名称。|
-|plugins|可选|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。|
+|username|是|Consumer 名称。|
+|plugins|否|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。|
 
 在 APISIX 中，识别 Consumer 的过程如下图：
 
