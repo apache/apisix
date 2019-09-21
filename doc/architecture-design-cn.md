@@ -372,8 +372,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 |字段|可选|说明|
 |---|----|----|
 |username|必选|Consumer 名称。|
-|auth_plugin|可选|启用的认证插件类型以及配置参数，具体参数查看对应的认证插件，比如：[key-auth](./plugins/key-auth.md)、[JWT](./plugins/jwt-auth-cn.md)。|
-|plugins|可选|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。|
+|plugins|可选|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。|
 
 在 APISIX 中，识别 Consumer 的过程如下图：
 
@@ -395,12 +394,10 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -d '
 {
     "username": "jack",
-    "auth_plugin": {
+    "plugins": {
         "key-auth": {
             "key": "auth-one"
-        }
-    },
-    "plugins": {
+        },
         "limit-count": {
             "count": 2,
             "time_window": 60,

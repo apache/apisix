@@ -1,5 +1,6 @@
-local core = require("apisix.core")
+local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
+local plugin  = require("apisix.plugin")
 
 local _M = {
     version = 0.1,
@@ -28,6 +29,18 @@ local function check_conf(consumer_name, conf)
         ok, err = plugins.check_schema(conf.plugins)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
+        end
+
+        local has_consumer = false
+        for name, conf in pairs(conf.plugins) do
+            local plugin_obj = plugin.get(name)
+            if plugin_obj.type == 'auth' then
+                if not has_consumer then
+                    has_consumer = true
+                else
+                    return nil, {error_msg = "only one auth plugin is allowed"}
+                end
+            end
         end
     end
 

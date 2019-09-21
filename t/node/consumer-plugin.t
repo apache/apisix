@@ -108,7 +108,6 @@ apikey: 123
 {"message":"Invalid API key in request"}
 --- no_error_log
 [error]
---- LAST
 
 
 
@@ -145,20 +144,18 @@ apikey: auth-one
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
-                    "auth_plugin": {
-                        "key-auth": {
-                            "key": "auth-one"
-                        },
-                        "jwt-auth": {
-                            "key": "auth-one"
-                        }
-                    },
                     "plugins": {
                         "limit-count": {
                             "count": 2,
                             "time_window": 60,
                             "rejected_code": 503,
                             "key": "remote_addr"
+                        },
+                        "key-auth": {
+                            "key": "auth-one"
+                        },
+                        "jwt-auth": {
+                            "key": "auth-one"
                         }
                     }
                 }]]
