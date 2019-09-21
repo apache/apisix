@@ -25,12 +25,12 @@ Two steps are required:
 1. creates a consumer object, and set the attributes of plugin `key-auth`.
 
 ```shell
-    curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 {
     "username": "jack",
     "plugins": {
         "key-auth": {
-            "key": "keykey"
+            "key": "auth-one"
         }
     }
 }'

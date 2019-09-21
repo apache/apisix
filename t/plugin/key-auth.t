@@ -58,14 +58,14 @@ done
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "username": "jack",
                     "plugins": {
-                            "key-auth": {
-                                "key": "auth-one"
-                            }
+                        "key-auth": {
+                            "key": "auth-one"
                         }
+                    }
                 }]],
                 [[{
                     "node": {
@@ -101,18 +101,18 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "key-auth": {}
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 

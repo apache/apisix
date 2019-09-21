@@ -33,8 +33,8 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
     "username": "jack",
     "plugins": {
         "jwt-auth": {
-            "key": "your-consumer-key",
-            "secret": "secret-key"
+            "key": "user-key",
+            "secret": "my-secret-key"
         }
     }
 }'
@@ -141,8 +141,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
     "methods": ["GET"],
     "uri": "/index.html",
     "id": 1,
-    "plugins": {
-    },
+    "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
