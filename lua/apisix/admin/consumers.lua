@@ -32,16 +32,19 @@ local function check_conf(consumer_name, conf)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        local has_consumer = false
+        local count_auth_plugin = 0
         for name, conf in pairs(conf.plugins) do
             local plugin_obj = plugin.get(name)
             if plugin_obj.type == 'auth' then
-                if not has_consumer then
-                    has_consumer = true
-                else
+                count_auth_plugin = count_auth_plugin + 1
+                if count_auth_plugin > 1 then
                     return nil, {error_msg = "only one auth plugin is allowed"}
                 end
             end
+        end
+
+        if count_auth_plugin == 0 then
+            return nil, {error_msg = "require one auth plugin"}
         end
     end
 
