@@ -369,20 +369,72 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
 
+|字段|必选|说明|
+|---|----|----|
+|username|是|Consumer 名称。|
+|plugins|否|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。|
+
 在 APISIX 中，识别 Consumer 的过程如下图：
 
 <img src="./images/consumer-internal.png" width="50%" height="50%">
 
-1. 授权认证：比如有 [key-auth](doc/plugins/key-auth.md)、[JWT](doc/plugins/jwt-auth-cn.md) 等。
+1. 授权认证：比如有 [key-auth](./plugins/key-auth.md)、[JWT](./plugins/jwt-auth-cn.md) 等。
 2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
 比如不同的 Consumer 请求同一个 API，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
 
-此外，大家也可以参考 [key-auth](doc/plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
+此外，大家也可以参考 [key-auth](./plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
 
-*注意*：目前 APISIX 的 Consumer 还不支持绑定插件或上游信息，如果大家对这个功能点感兴趣，欢迎在社区中反馈交流。
+如何对某个 Consumer 开启指定插件，可以看下面例子：
+
+```shell
+# 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    }
+}'
+
+# 创建 Router，设置路由规则和启用插件配置
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/hello"
+}'
+
+# 发测试请求，前两次返回正常，没达到限速阈值
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+...
+
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+...
+
+# 第三次测试返回 503，请求被限制
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+HTTP/1.1 503 Service Temporarily Unavailable
+...
+
+```
 
 [返回目录](#目录)
 

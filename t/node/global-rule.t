@@ -54,12 +54,20 @@ passed
 
 
 
-=== TEST 2: /not_found
+=== TEST 2: delete route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+
+            ngx.say("passed")
+        }
+    }
 --- request
-GET /not_found
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
 
@@ -67,7 +75,7 @@ qr/404 Not Found/
 
 === TEST 3: /not_found
 --- request
-GET /hello
+GET /not_found
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
@@ -79,13 +87,24 @@ qr/404 Not Found/
 === TEST 4: /not_found
 --- request
 GET /hello
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: /not_found
+--- request
+GET /hello
 --- error_code: 503
 --- no_error_log
 [error]
 
 
 
-=== TEST 5: delete global rule
+=== TEST 6: delete global rule
 --- config
     location /t {
         content_by_lua_block {

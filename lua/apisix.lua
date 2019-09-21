@@ -250,6 +250,7 @@ function _M.http_access_phase()
             core.table.clear(plugins)
             api_ctx.plugins = plugin.filter(global_rule, plugins)
             run_plugin("rewrite", plugins, api_ctx)
+            run_plugin("access", plugins, api_ctx)
         end
 
         core.tablepool.release("plugins", plugins)
@@ -298,7 +299,7 @@ function _M.http_access_phase()
         end
 
         local changed
-        route, changed = plugin.merge_route(service, route)
+        route, changed = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
 
         if changed then
@@ -338,6 +339,14 @@ function _M.http_access_phase()
     api_ctx.plugins = plugin.filter(route, plugins)
 
     run_plugin("rewrite", plugins, api_ctx)
+    if api_ctx.consumer then
+        local changed
+        route, changed = plugin.merge_consumer_route(route, api_ctx.consumer)
+        if changed then
+            core.table.clear(api_ctx.plugins)
+            api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+        end
+    end
     run_plugin("access", plugins, api_ctx)
 end
 
@@ -375,7 +384,7 @@ function _M.grpc_access_phase()
         end
 
         local changed
-        route, changed = plugin.merge_route(service, route)
+        route, changed = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
 
         if changed then
