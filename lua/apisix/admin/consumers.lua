@@ -27,14 +27,16 @@ local function check_conf(consumer_name, conf)
     if conf.plugins then
         ok, err = plugins.check_schema(conf.plugins)
         if not ok then
-            return nil, {error_msg = "invalid configuration: " .. err}
+            return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
     end
 
     if conf.auth_plugin then
         ok, err = plugins.check_schema(conf.auth_plugin)
         if not ok then
-            return nil, {error_msg = "invalid configuration: " .. err}
+            return nil, {
+                error_msg = "invalid auth_plugin configuration: " .. err
+            }
         end
     end
 
