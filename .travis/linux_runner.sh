@@ -36,8 +36,18 @@ do_install() {
 
     export_or_prefix
 
-    make dev
-    make dev_r3
+
+    diff rockspec/apisix-dev-1.0-0.rockspec build-cache/apisix-dev-1.0-0.rockspec > /dev/null
+    if [ $0 == 0 ]; then
+        echo "Use lua deps cache"
+        cp -r build-cache/deps ./
+    else
+        sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+        sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
+        echo "Create lua deps cache"
+        cp -r deps build-cache/
+        cp rockspec/apisix-dev-1.0-0.rockspec build-cache/
+    fi
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
 
