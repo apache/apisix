@@ -1,6 +1,7 @@
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local plugin  = require("apisix.plugin")
+local pairs   = pairs
 
 local _M = {
     version = 0.1,
