@@ -1,6 +1,7 @@
-local core = require("apisix.core")
+local core     = require("apisix.core")
+local consumer = require("apisix.consumer")
 local plugin_name = "key-auth"
-local ipairs = ipairs
+local ipairs   = ipairs
 
 
 local schema = {
@@ -48,7 +49,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing API key found in request"}
     end
 
-    local consumer_conf = core.consumer.plugin(plugin_name)
+    local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
         return 401, {message = "Missing related consumer"}
     end

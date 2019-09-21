@@ -1,8 +1,9 @@
-local core  = require("apisix.core")
-local jwt   = require("resty.jwt")
-local ck    = require("resty.cookie")
-local ipairs= ipairs
-local ngx   = ngx
+local core     = require("apisix.core")
+local jwt      = require("resty.jwt")
+local ck       = require("resty.cookie")
+local consumer = require("apisix.consumer")
+local ipairs   = ipairs
+local ngx      = ngx
 local ngx_time = ngx.time
 local plugin_name = "jwt-auth"
 
@@ -113,7 +114,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "missing user key in JWT token"}
     end
 
-    local consumer_conf = core.consumer.plugin(plugin_name)
+    local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
         return 401, {message = "Missing related consumer"}
     end
@@ -148,7 +149,7 @@ local function gen_token()
 
     local key = args.key
 
-    local consumer_conf = core.consumer.plugin(plugin_name)
+    local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
         return core.response.exit(404)
     end
