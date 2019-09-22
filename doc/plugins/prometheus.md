@@ -30,6 +30,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+
+![](../images/plugin/prometheus-1.png)
+
+Then add prometheus plugin:
+
+![](../images/plugin/prometheus-2.png)
+
 ## How to fetch the metric data
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
