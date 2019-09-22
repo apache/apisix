@@ -36,6 +36,12 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 }'
 ```
 
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+![](../images/plugin/key-auth-1.png)
+
+Then add key-auth plugin:
+![](../images/plugin/key-auth-2.png)
+
 2. creates a route or service object, and enable plugin `key-auth`.
 
 ```shell

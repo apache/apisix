@@ -29,6 +29,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
+你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+
+![](../images/plugin/prometheus-1.png)
+
+然后在 route 页面中添加 prometheus 插件：
+
+![](../images/plugin/prometheus-2.png)
+
 ## 如何提取指标数据
 
 我们可以从指定的url中提取指标数据 `/apisix/prometheus/metrics`.

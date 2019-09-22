@@ -34,6 +34,12 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 }'
 ```
 
+你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
+![](../images/plugin/key-auth-1.png)
+
+然后在 consumer 页面中添加 key-auth 插件：
+![](../images/plugin/key-auth-2.png)
+
 2. 创建 route 或 service 对象，并开启 `key-auth` 插件。
 
 ```shell
@@ -54,7 +60,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-## Test Plugin
+## 测试插件
 
 下面是一个正常通过 `key-auth` 验证的请求:
 
