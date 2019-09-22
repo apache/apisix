@@ -1,4 +1,7 @@
 
+Reference document
+==================
+
 * [APISIX Readme](../README.md)
 * [Architecture Design](architecture-design-cn.md)
 * [Benchmark](benchmark.md)
@@ -9,7 +12,10 @@
     * [radixtree](router-radixtree.md)
     * [r3](router-r3.md)
 * [Stand Alone Model](stand-alone.md)
-* [stream-proxy](stream-proxy.md)
+* [Stream Proxy](stream-proxy.md)
+* [Changelog](../CHANGELOG.md)
+* [Code Style](../CODE_STYLE.md)
+* [FAQ](../FAQ.md)
 * [Plugins](plugins.md)
     * [key-auth](plugins/key-auth.md): User authentication based on Key Authentication.
     * [JWT-auth](plugins/jwt-auth-cn.md): User authentication based on [JWT](https://jwt.io/) (JSON Web Tokens) Authentication.
