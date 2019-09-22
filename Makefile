@@ -42,6 +42,7 @@ else ifneq ($(LUAROCKS_VER),'luarocks 3.')
 else
 	luarocks install --lua-dir=/usr/local/openresty/luajit lua-resty-libr3 --tree=deps --local
 endif
+	wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
 
 
 ### check:        Check Lua source code
