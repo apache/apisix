@@ -196,6 +196,10 @@ If your concerns are not among them, please submit issue to communicate with us.
 
 See [CONTRIBUTING](Contributing.md) for details on submitting patches and the contribution workflow.
 
+## Reference document
+
+See more document, please take look at [Reference document](doc/doc-index.md).
+
 ## Acknowledgments
 
 inspired by Kong and Orange.
