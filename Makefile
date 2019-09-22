@@ -31,6 +31,8 @@ else ifneq ($(LUAROCKS_VER),'luarocks 3.')
 else
 	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
 endif
+	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
+	chmod a+x utils/lj-releng
 
 ### dev_r3:       Create a development ENV for r3
 .PHONY: dev_r3

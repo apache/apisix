@@ -58,6 +58,8 @@ do_install() {
     fi
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
+    wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
+	chmod a+x utils/lj-releng
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
