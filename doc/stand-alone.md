@@ -10,7 +10,7 @@ This method is more suitable for two types of users:
 
 The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. And every time interval (default 1 second), will try to detect whether the file content is updated, if there is an update, reload the rule.
 
-*Note*: When reloading and updating routing rules, they are all hot memory updates, and there will be no replacement of working processes.
+*Note*: When reloading and updating routing rules, they are all hot memory updates, and there will be no replacement of working processes, it is a hot update.
 
 To enable Stand-alone model, we can set `apisix.config_center` to `yaml` in file `conf/config.yaml`.
 
