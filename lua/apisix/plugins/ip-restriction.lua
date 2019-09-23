@@ -1,7 +1,12 @@
-local ipairs = ipairs
-
-local core = require("apisix.core")
-local iputils = require("resty.iputils")
+local ipairs    = ipairs
+local core      = require("apisix.core")
+local ipmatcher = require("resty.ipmatcher")
+local str_sub   = string.sub
+local str_find  = string.find
+local tonumber  = tonumber
+local lrucache  = core.lrucache.new({
+    ttl = 300, count = 512
+})
 
 
 local schema = {
@@ -36,14 +41,29 @@ local _M = {
 }
 
 
--- TODO: support IPv6
-local function validate_cidr_v4(ip)
-    local lower, err = iputils.parse_cidr(ip)
-    if not lower and err then
-        return nil, "invalid cidr range: " .. err
+local function valid_ip(ip)
+    local mask = 0
+    local sep_pos = str_find(ip, "/", 1, true)
+    if sep_pos then
+        mask = str_sub(ip, sep_pos + 1)
+        mask = tonumber(mask)
+        if mask < 0 or mask > 128 then
+            return false
+        end
+        ip = str_sub(ip, 1, sep_pos - 1)
     end
 
-    return true
+    if ipmatcher.parse_ipv4(ip) then
+        if mask < 0 or mask > 32 then
+            return false
+        end
+        return true
+    end
+
+    if mask < 0 or mask > 128 then
+        return false
+    end
+    return ipmatcher.parse_ipv6(ip)
 end
 
 
@@ -56,18 +76,16 @@ function _M.check_schema(conf)
 
     if conf.whitelist and #conf.whitelist > 0 then
         for _, cidr in ipairs(conf.whitelist) do
-            ok, err = validate_cidr_v4(cidr)
-            if not ok then
-                return false, err
+            if not valid_ip(cidr) then
+                return false, "invalid ip address: " .. cidr
             end
         end
     end
 
     if conf.blacklist and #conf.blacklist > 0 then
         for _, cidr in ipairs(conf.blacklist) do
-            ok, err = validate_cidr_v4(cidr)
-            if not ok then
-                return false, err
+            if not valid_ip(cidr) then
+                return false, "invalid ip address: " .. cidr
             end
         end
     end
@@ -76,37 +94,36 @@ function _M.check_schema(conf)
 end
 
 
-local function create_cidrs(ip_list)
-    local parsed_cidrs = core.table.new(#ip_list, 0)
-    for i, cidr in ipairs(ip_list) do
-        local lower, upper = iputils.parse_cidr(cidr)
-        if not lower and upper then
-            local err = upper
-            return nil, "invalid cidr range: " .. err
-        end
-        parsed_cidrs[i] = {lower, upper}
+local function create_ip_mather(ip_list)
+    local ip, err = ipmatcher.new(ip_list)
+    if not ip then
+        core.log.error("failed to create ip matcher: ", err,
+                       " ip list: ", core.json.delay_encode(ip_list))
+        return nil
     end
 
-    return parsed_cidrs
+    return ip
 end
 
 
 function _M.access(conf, ctx)
     local block = false
-    local binary_remote_addr = ctx.var.binary_remote_addr
+    local remote_addr = ctx.var.remote_addr
 
     if conf.blacklist and #conf.blacklist > 0 then
-        local name = plugin_name .. 'black'
-        local parsed_cidrs = core.lrucache.plugin_ctx(name, ctx, create_cidrs,
-                                                      conf.blacklist)
-        block = iputils.binip_in_cidrs(binary_remote_addr, parsed_cidrs)
+        local matcher = lrucache(conf.blacklist, nil,
+                                 create_ip_mather, conf.blacklist)
+        if matcher then
+            block = matcher:match(remote_addr)
+        end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        local name = plugin_name .. 'white'
-        local parsed_cidrs = core.lrucache.plugin_ctx(name, ctx, create_cidrs,
-                                                      conf.whitelist)
-        block = not iputils.binip_in_cidrs(binary_remote_addr, parsed_cidrs)
+        local matcher = lrucache(conf.whitelist, nil,
+                                 create_ip_mather, conf.whitelist)
+        if matcher then
+            block = not matcher:match(remote_addr)
+        end
     end
 
     if block then
