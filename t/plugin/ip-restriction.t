@@ -69,7 +69,7 @@ GET /t
 --- request
 GET /t
 --- response_body_like eval
-qr/invalid cidr range: Invalid octet: 256/
+qr/invalid ip address: 10.255.256.0\/24/
 --- no_error_log
 [error]
 
@@ -97,7 +97,7 @@ qr/invalid cidr range: Invalid octet: 256/
 --- request
 GET /t
 --- response_body_like eval
-qr@invalid cidr range: Invalid prefix: /38@
+qr@invalid ip address: 10.255.254.0/38@
 --- no_error_log
 [error]
 
@@ -218,8 +218,9 @@ passed
 === TEST 8: hit route and ip cidr in the whitelist
 --- request
 GET /hello
+--- error_code: 403
 --- response_body
-hello world
+{"message":"Your IP address is not allowed"}
 --- no_error_log
 [error]
 
@@ -233,8 +234,9 @@ real_ip_header X-Forwarded-For;
 X-Forwarded-For: 113.74.26.106
 --- request
 GET /hello
+--- error_code: 403
 --- response_body
-hello world
+{"message":"Your IP address is not allowed"}
 --- no_error_log
 [error]
 
@@ -248,9 +250,8 @@ real_ip_header X-Forwarded-For;
 X-Forwarded-For: 114.114.114.114
 --- request
 GET /hello
---- error_code: 403
 --- response_body
-{"message":"Your IP address is not allowed"}
+hello world
 --- no_error_log
 [error]
 
@@ -264,9 +265,8 @@ real_ip_header X-Forwarded-For;
 X-Forwarded-For: 2001:db8::2
 --- request
 GET /hello
---- error_code: 403
 --- response_body
-{"message":"Your IP address is not allowed"}
+hello world
 --- no_error_log
 [error]
 
