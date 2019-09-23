@@ -119,7 +119,7 @@ function _M.access(conf, ctx)
         local matcher = lrucache(conf.whitelist, nil,
                                  create_ip_mather, conf.whitelist)
         if matcher then
-            block = matcher:match(remote_addr)
+            block = not matcher:match(remote_addr)
         end
     end
 
