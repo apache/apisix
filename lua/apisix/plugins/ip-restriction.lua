@@ -1,6 +1,9 @@
 local ipairs    = ipairs
 local core      = require("apisix.core")
 local ipmatcher = require("resty.ipmatcher")
+local str_sub   = string.sub
+local str_find  = string.find
+local tonumber  = tonumber
 local lrucache  = core.lrucache.new({
     ttl = 300, count = 512
 })
@@ -40,14 +43,14 @@ local _M = {
 
 local function valid_ip(ip)
     local mask = 0
-    local sep_pos = string.find(ip, "/", 1, true)
+    local sep_pos = str_find(ip, "/", 1, true)
     if sep_pos then
-        mask = string.sub(ip, sep_pos + 1)
+        mask = str_sub(ip, sep_pos + 1)
         mask = tonumber(mask)
         if mask < 0 or mask > 128 then
             return false
         end
-        ip = string.sub(ip, 1, sep_pos - 1)
+        ip = str_sub(ip, 1, sep_pos - 1)
     end
 
     if ipmatcher.parse_ipv4(ip) then
