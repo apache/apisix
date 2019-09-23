@@ -39,8 +39,28 @@ local _M = {
 
 
 local function valid_ip(ip)
-    return ipmatcher.parse_ipv4(ip) or
-           ipmatcher.parse_ipv6(ip)
+    local mask = 0
+    local sep_pos = string.find(ip, "/", 1, true)
+    if sep_pos then
+        mask = string.sub(ip, sep_pos + 1)
+        mask = tonumber(mask)
+        if mask < 0 or mask > 128 then
+            return false
+        end
+        ip = string.sub(ip, 1, sep_pos - 1)
+    end
+
+    if ipmatcher.parse_ipv4(ip) then
+        if mask < 0 or mask > 32 then
+            return false
+        end
+        return true
+    end
+
+    if mask < 0 or mask > 128 then
+        return false
+    end
+    return ipmatcher.parse_ipv6(ip)
 end
 
 
