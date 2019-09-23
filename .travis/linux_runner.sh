@@ -47,9 +47,11 @@ do_install() {
 
     if [ ! -f "build-cache/apisix-dev-1.0-0.rockspec" ]; then
         create_lua_deps
+
     else
-        diff rockspec/apisix-dev-1.0-0.rockspec build-cache/apisix-dev-1.0-0.rockspec > /dev/null
-        if [ $? == 0 ]; then
+        src=`md5sum rockspec/apisix-dev-1.0-0.rockspec`
+        src_cp=`md5sum build-cache/apisix-dev-1.0-0.rockspec`
+        if [ "$src" = "$src_cp" ]; then
             echo "Use lua deps cache"
             sudo cp -r build-cache/deps ./
         else
