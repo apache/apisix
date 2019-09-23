@@ -523,3 +523,31 @@ GET /hello
 {"message":"Your IP address is not allowed"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 24: wrong IPv6 format
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ip-restriction")
+            for i, ip in ipairs({"::1/129", "::ffgg"}) do
+                local conf = {
+                    whitelist = {
+                        ip
+                    }
+                }
+                local ok, err = plugin.check_schema(conf)
+                if not ok then
+                    ngx.say(err)
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid ip address: ::1/129
+invalid ip address: ::ffgg
+--- no_error_log
+[error]
