@@ -7,6 +7,7 @@ UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
 LUA_JIT_DIR ?= $(shell TMP='./v_tmp' && $(OR_EXEC) -V &>$${TMP} && cat $${TMP} | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/' && rm $${TMP})luajit
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
+lj-releng-exist = $(shell if [ -f 'utils/lj-releng' ]; then echo "exist"; else echo "not_exist"; fi;)
 
 
 .PHONY: default
@@ -31,8 +32,10 @@ else ifneq ($(LUAROCKS_VER),'luarocks 3.')
 else
 	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
 endif
+ifeq ($(lj-releng-exist), not_exist)
 	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
 	chmod a+x utils/lj-releng
+endif
 
 ### dev_r3:       Create a development ENV for r3
 .PHONY: dev_r3
