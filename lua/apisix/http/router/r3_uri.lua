@@ -39,7 +39,12 @@ local function create_r3_router(routes)
                 method = route.value.methods,
                 host = route.value.host,
                 handler = function (params, api_ctx)
-                    api_ctx.matched_params = params
+                    --[[
+                        If you need to get the parameters, you need to replace the first parameter
+                        nil of dispatch2 with an empty table and open the following comment, but
+                        this will affect performance.
+                    --]]
+                    -- api_ctx.matched_params = params
                     api_ctx.matched_route = route
                 end
             })
