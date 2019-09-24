@@ -73,7 +73,7 @@ end
 
 local function create_checker(upstream, healthcheck_parent)
     local checker = healthcheck.new({
-        name = "upstream#" .. tostring(upstream),
+        name = "upstream#" .. healthcheck_parent.key,
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
     })
