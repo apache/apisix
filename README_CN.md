@@ -80,9 +80,9 @@ APISIX 在以下操作系统中做过安装和运行测试，需要注意的是�
 | Mac OSX      |
 
 现在有 4 种方式来安装:
-- 如果你是 CentOS 7 的系统，推荐使用 RPM 包安装；
-- 如果是 MacOS，只能通过 git clone 和手工安装的方式，参考[开发文档](doc/dev-manual-cn.md)
-- 其他的系统推荐使用 Luarocks 安装；
+- 如果你是 CentOS 7 的系统，推荐使用 [RPM 包安装](#通过-rpm-包安装centos-7)；
+- 如果是 MacOS，只支持安装开发环境，参考[开发环境](doc/dev-manual-cn.md)；
+- 其他的系统推荐使用 [Luarocks 安装](#通过-luarocks-安装-不支持-macos)；
 - 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装.
 
 *NOTE*: APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。
@@ -111,17 +111,33 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 
 ##### 安装 APISIX
 
+在终端中执行下面命令完成 APISIX 的安装：
+
+> 通过 curl
+
 ```shell
-sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-如果你得到 `unknow flag --lua-dir` 这类错误，这是因为 `luarocks` 版本过低。这时我们需要移除 `lua-dir` 选项重新运行：`luarocks install apisix`。
+> 人工检查
 
-如果一切顺利，你会在最后看到这样的信息：
+对你不熟悉项目的安装脚本做检查，是个非常好的习惯。可以先下载这个脚本，确保他都是正常脚本，然后运行：
 
-> apisix is now built and installed in /usr (license: Apache License 2.0)
+```shell
+curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
+sudo sh install.sh
+```
 
-恭喜你，APISIX 已经安装成功了。
+> 安装完成
+
+```
+    apisix 0.7-0 is now built and installed in /usr/local/apisix/deps (license: Apache License 2.0)
+
+    + sudo rm -f /usr/local/bin/apisix
+    + sudo ln -s /usr/local/apisix/deps/bin/apisix /usr/local/bin/apisix
+```
+
+恭喜，APISIX 已经安装成功。
 
 ## 开发环境
 
