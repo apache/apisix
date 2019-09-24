@@ -122,14 +122,14 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/
 
 > Manual inspection
 
-It's a good idea to inspect the install script from projects you don't yet know. You can do that by downloading the install script first, looking through it so everything looks normal, then running it:
+It's a good idea to inspect the installation script from projects you don't know yet. You can do that by downloading the installation script first, looking through it so everything looks normal, then running it:
 
 ```shell
 curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
 sudo sh install.sh
 ```
 
-> install finish
+> installation complete
 
 If all goes well, you will see the message like this:
 
