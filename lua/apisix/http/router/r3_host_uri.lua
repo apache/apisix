@@ -50,8 +50,9 @@ local function push_valid_route(route)
             remote_addr = route.value.remote_addr,
             handler = function (params, api_ctx)
                 --[[
-                    If you need to get the parameters, you need to replace the first parameter nil of dispatch2 with
-                    an empty table and open the following comment, but this will affect performance.
+                    If you need to get the parameters, you need to replace the first parameter
+                    nil of dispatch2 with an empty table and open the following comment, but
+                    this will affect performance.
                 --]]
                 -- api_ctx.matched_params = params
                 api_ctx.matched_route = route
@@ -72,8 +73,9 @@ local function push_valid_route(route)
         remote_addr = route.value.remote_addr,
         handler = function (params, api_ctx)
             --[[
-                If you need to get the parameters, you need to replace the first parameter nil of dispatch2 with
-                an empty table and open the following comment, but this will affect performance.
+                If you need to get the parameters, you need to replace the first parameter
+                nil of dispatch2 with an empty table and open the following comment, but
+                this will affect performance.
             --]]
             -- api_ctx.matched_params = params
             api_ctx.matched_route = route
