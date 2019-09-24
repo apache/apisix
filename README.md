@@ -82,9 +82,9 @@ APISIX Installed and tested in the following systems, and the version of OpenRes
 | Mac OSX      |
 
 You now have four ways to install APISIX:
-- if you are using CentOS 7, it is recommended to use RPM;
+- if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
 - if using MacOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
-- other systems please use Luarocks;
+- other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
 - You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
 *NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
@@ -112,16 +112,33 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 
 ##### Install APISIX
 
+APISIX is installed by running the following commands in your terminal.
+
+> via curl
+
 ```shell
-luarocks install --lua-dir=/usr/local/openresty/luajit apisix
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-If you got some error like `unknow flag --lua-dir`, this is because `luarocks` version is too low.
-We need to remove option `lua-dir` and run again: `luarocks install apisix`.
+> Manual inspection
+
+It's a good idea to inspect the installation script from projects you don't know yet. You can do that by downloading the installation script first, looking through it so everything looks normal, then running it:
+
+```shell
+curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
+sudo sh install.sh
+```
+
+> installation complete
 
 If all goes well, you will see the message like this:
 
-> apisix is now built and installed in /usr (license: Apache License 2.0)
+```
+    apisix 0.7-0 is now built and installed in /usr/local/apisix/deps (license: Apache License 2.0)
+
+    + sudo rm -f /usr/local/bin/apisix
+    + sudo ln -s /usr/local/apisix/deps/bin/apisix /usr/local/bin/apisix
+```
 
 Congratulations, you have already installed APISIX successfully.
 
