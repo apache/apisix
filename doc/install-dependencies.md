@@ -1,8 +1,8 @@
 # Install Dependencies
 
 * [CentOS 7](#centos-7)
-* [Ubuntu 16.04 & 18.04](#ubuntu-1604-&-1804)
-* [Debian 9 & 10](#debian-9-&-10)
+* [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
+* [Debian 9 & 10](#debian-9--10)
 * [CentOS 6](#centos-6)
 * [Mac OSX](#mac-osx)
 
