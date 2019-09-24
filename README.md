@@ -82,9 +82,9 @@ APISIX Installed and tested in the following systems, and the version of OpenRes
 | Mac OSX      |
 
 You now have four ways to install APISIX:
-- if you are using CentOS 7, it is recommended to use [RPM](install-from-rpm-for-centos-7);
+- if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
 - if using MacOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
-- other systems please use [Luarocks](install-from-luarocks-not-support-macos);
+- other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
 - You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
 *NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.

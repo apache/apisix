@@ -80,9 +80,9 @@ APISIX 在以下操作系统中做过安装和运行测试，需要注意的是�
 | Mac OSX      |
 
 现在有 4 种方式来安装:
-- 如果你是 CentOS 7 的系统，推荐使用 [RPM 包安装](通过-rpm-包安装centos-7)；
+- 如果你是 CentOS 7 的系统，推荐使用 [RPM 包安装](#通过-rpm-包安装centos-7)；
 - 如果是 MacOS，只支持安装开发环境，参考[开发环境](doc/dev-manual-cn.md)；
-- 其他的系统推荐使用 [Luarocks 安装](通过-luarocks-安装-不支持-macos)；
+- 其他的系统推荐使用 [Luarocks 安装](#通过-luarocks-安装-不支持-macos)；
 - 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装.
 
 *NOTE*: APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。
