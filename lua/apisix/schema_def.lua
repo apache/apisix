@@ -1,9 +1,8 @@
 local schema    = require('apisix.core.schema')
-local json      = require("apisix.core.json")
 local setmetatable = setmetatable
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
 setmetatable(_M, {__index = schema})
@@ -176,6 +175,14 @@ local health_checker = {
 }
 
 
+local valid_ip_fmts = {
+    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
+    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+                .. "/[0-9]{1,2}$"},
+    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"}
+}
+
+
 local upstream_schema = {
     type = "object",
     properties = {
@@ -247,69 +254,57 @@ local upstream_schema = {
     additionalProperties = false,
 }
 
-
-local route = [[{
-    "type": "object",
-    "properties": {
-        "methods": {
-            "type": "array",
-            "items": {
-                "description": "HTTP method",
-                "type": "string",
-                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                         "OPTIONS", "CONNECT", "TRACE"]
+local route = {
+    type = "object",
+    properties = {
+        methods = {
+            type = "array",
+            items = {
+                description = "HTTP method",
+                type = "string",
+                enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+                         "OPTIONS", "CONNECT", "TRACE"}
             },
-            "uniqueItems": true
+            uniqueItems = true,
         },
-        "service_protocol": {
-            "enum": [ "grpc", "http" ]
+        service_protocol = {
+            enum = {"grpc", "http"}
         },
-        "desc": {"type": "string", "maxLength": 256},
-        "plugins": ]] .. json.encode(plugins_schema) .. [[,
-        "upstream": ]] .. json.encode(upstream_schema) .. [[,
-        "uri": {
-            "type": "string"
+        desc = {type = "string", maxLength = 256},
+        plugins = plugins_schema,
+        upstream = upstream_schema,
+        uri = {
+            type = "string",
         },
-        "host": {
-            "type": "string",
-            "pattern": "^\\*?[0-9a-zA-Z-.]+$"
+        host = {
+            type = "string",
+            pattern = "^\\*?[0-9a-zA-Z-.]+$",
         },
-        "vars": {
-            "type": "array",
-            "items": {
-                "description": "Nginx builtin variable name and value",
-                "type": "array"
+        vars = {
+            type = "array",
+            items = {
+                description = "Nginx builtin variable name and value",
+                type = "array",
             }
         },
-        "remote_addr": {
-            "description": "client IP",
-            "type": "string",
-            "anyOf": [
-              {"pattern": "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
-              {"pattern": "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}]]
-              .. [[/[0-9]{1,2}$"},
-              {"pattern": "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"}
-            ]
+        remote_addr = {
+            description = "client IP",
+            type = "string",
+            anyOf = valid_ip_fmts,
         },
-        "service_id": ]] .. json.encode(id_schema) .. [[,
-        "upstream_id": ]] .. json.encode(id_schema) .. [[,
-        "id": ]] .. json.encode(id_schema) .. [[
+        service_id = id_schema,
+        upstream_id = id_schema,
+        id = id_schema,
     },
-    "anyOf": [
-        {"required": ["plugins", "uri"]},
-        {"required": ["upstream", "uri"]},
-        {"required": ["upstream_id", "uri"]},
-        {"required": ["service_id", "uri"]}
-    ],
-    "additionalProperties": false
-}]]
-do
-    local route_t, err = json.decode(route)
-    if err then
-        error("invalid route: " .. route)
-    end
-    _M.route = route_t
-end
+    anyOf = {
+        {required = {"plugins", "uri"}},
+        {required = {"upstream", "uri"}},
+        {required = {"upstream_id", "uri"}},
+        {required = {"service_id", "uri"}},
+    },
+    additionalProperties = false,
+}
+_M.route = route
 
 
 _M.service = {
@@ -386,14 +381,6 @@ _M.global_rule = {
     },
     required = {"plugins"},
     additionalProperties = false,
-}
-
-
-local valid_ip_fmts = {
-    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
-    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-                .. "/[0-9]{1,2}$"},
-    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"}
 }
 
 
