@@ -2,6 +2,7 @@ local core        = require("apisix.core")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
+local ngx         = ngx
 
 local schema = {
     type = "object",
