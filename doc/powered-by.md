@@ -11,6 +11,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. Meizu 魅族 https://www.meizu.com/
 1. sinovatech 炎黄新星 https://www.sinovatech.com
 1. souche 大搜车 https://www.souche.com/
+1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
 1. zuzuche 租租车 https://www.zuzuche.com/
 
 
