@@ -5,7 +5,7 @@ INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
-LUA_JIT_DIR ?= $(shell TMP='./v_tmp' && $(OR_EXEC) -V &>$${TMP} && cat $${TMP} | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/' && rm $${TMP})luajit
+LUA_JIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 lj-releng-exist = $(shell if [ -f 'utils/lj-releng' ]; then echo "exist"; else echo "not_exist"; fi;)
 
