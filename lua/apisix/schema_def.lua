@@ -179,7 +179,8 @@ local valid_ip_fmts = {
     {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
     {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
                 .. "/[0-9]{1,2}$"},
-    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"}
+    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"},
+    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}/[0-9]{1,3}$"},
 }
 
 
@@ -299,6 +300,8 @@ local route = {
                 description = "Nginx builtin variable name and value",
                 type = "array",
                 items = {
+                    maxItems = 3,
+                    mixItems = 2,
                     anyOf = {
                         {type = "string",},
                         {type = "number",},
