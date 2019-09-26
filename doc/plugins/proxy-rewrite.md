@@ -4,12 +4,12 @@
 upstream proxy info rewrite plugin.
 
 ### Parameters
-|Name    |Must|Description|
+|Name    |Required|Description|
 |-------         |-----|------|
 |scheme          |No| Upstream new `schema` forwarding protocol,options can be `http` or `https`,default `http`.|
 |uri             |No| Upstream new `uri` forwarding address.|
-|host            |No| Upstream new `host` forwarding address, can be `192.168.80.128:8080` or `192.168.80.128` format, not set up port default `80`, priority over `upstream.nodes` configuration. |
-|enable_websocket|No| enable `websocket`(boolean), default disable.|
+|host            |No| Upstream new `host` forwarding address, example `iresty.com`. |
+|enable_websocket|No| enable `websocket`(boolean), default `false`.|
 
 ### Example
 
@@ -25,7 +25,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
         "proxy-rewrite": {
             "uri": "/test/home.html",
             "scheme": "http",
-            "host": "192.168.80.128:8080",
+            "host": "iresty.com",
             "enable_websocket": true
         }
     },
@@ -39,16 +39,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 ```
 
 #### Test Plugin
-Testing based on the above examples, add the access log output upstream information variable 
-`$upstream_scheme $upstream_addr $upstream_uri` to the nginx configuration file before testing :
+Testing based on the above examples :
 ```shell
 curl -X GET http://127.0.0.1:9080/test/index.html
 ```
 
-Send the request and see `access.log', if the output information is consistent with the configuration :
+Send the request and see upstream `access.log', if the output information is consistent with the configuration :
 ```
-127.0.0.1 - - [25/Sep/2019:19:35:58 +0800] 127.0.0.1:9080 "GET /test/index.html HTTP/1.1" 200 38 0.007 
-"-" "curl/7.29.0" http 192.168.80.128:8080 /test/home.html 200 0.007
+127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
 ```
 
 This means that the proxy rewrite plugin is in effect.
