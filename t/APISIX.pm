@@ -154,6 +154,7 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
+        server_name apisix.iresty.com;
 
         server_tokens off;
 

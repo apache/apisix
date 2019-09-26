@@ -1,4 +1,5 @@
 local json_decode = require("cjson").decode
+local json_encode = require("cjson").encode
 
 local _M = {}
 
@@ -22,6 +23,13 @@ function _M.limit_conn()
     ngx.say("hello world")
 end
 
+function _M.plugin_proxy_rewrite()
+    local req_info = {}
+    req_info['uri'] = ngx.var.uri
+    req_info['host'] = ngx.var.host
+    req_info['scheme'] = ngx.var.scheme
+    ngx.say(json_encode(req_info))
+end
 
 function _M.status()
     ngx.say("ok")
