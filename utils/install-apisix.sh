@@ -12,7 +12,7 @@ if [ $CHECK_OR_EXIST -eq 1 ];then
       exit 1;
 fi
 
-LUA_JIT_DIR=`TMP='./v_tmp' && $OR_EXEC -V &>$${TMP} && cat $${TMP} | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/' && rm $${TMP}`
+LUA_JIT_DIR=`$OR_EXEC -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/'`
 LUA_JIT_DIR="${LUA_JIT_DIR}luajit"
 echo $LUA_JIT_DIR
 
