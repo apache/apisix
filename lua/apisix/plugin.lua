@@ -28,6 +28,7 @@ end
 
 --[[
     加载某个插件
+    @name 插件名
 --]]
 local function load_plugin(name)
     local pkg_name = "apisix.plugins." .. name
@@ -99,7 +100,7 @@ local function load()
         sort_tab(local_plugins, sort_plugin)
     end
 
-    -- 把已经加载的插件缓存存储到hash，便于get获取
+    -- 把已经加载的插件缓存存储到 hash 表，便于get获取
     for i, plugin in ipairs(local_plugins) do
         local_plugins_hash[plugin.name] = plugin
         if local_conf and local_conf.apisix

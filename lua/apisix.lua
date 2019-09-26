@@ -47,7 +47,7 @@ end
     初始化 worker
 --]]
 function _M.http_init_worker()
-    -- 一种将事件发送到 Nginx 服务器中其他工作进程的方法。
+    -- 一种将事件发送到 Nginx 服务中其他工作进程的方法。
     -- 通信是通过存储事件数据的共享内存区域进行的。
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
@@ -59,7 +59,7 @@ function _M.http_init_worker()
     load_balancer = require("apisix.http.balancer").run
     -- admin 处理逻辑初始化
     require("apisix.admin.init").init_worker()
-    -- 负载均衡器逻辑初始化，从配置中心加载 pstreams 配置数据
+    -- 负载均衡器逻辑初始化，从配置中心加载 upstreams 配置数据
     require("apisix.http.balancer").init_worker()
     -- router 初始化，完成指定路由引擎（ r3 或者 radixtree ）的初始化
     router.init_worker()
