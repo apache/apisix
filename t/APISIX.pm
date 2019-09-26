@@ -132,10 +132,6 @@ _EOC_
 
     lua_socket_log_errors off;
 
-    real_ip_header X-Real-IP;
-    set_real_ip_from 127.0.0.1;
-    set_real_ip_from unix:;
-
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {

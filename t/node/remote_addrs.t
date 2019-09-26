@@ -45,6 +45,10 @@ passed
 
 
 === TEST 2: /not_found
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 127.0.0.1;
+set_real_ip_from unix:;
 --- request
 GET /not_found
 --- error_code: 404
@@ -56,6 +60,10 @@ qr/404 Not Found/
 
 
 === TEST 3: /not_found
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 127.0.0.1;
+set_real_ip_from unix:;
 --- request
 GET /hello
 --- more_headers
@@ -69,6 +77,10 @@ qr/404 Not Found/
 
 
 === TEST 4: hit routes
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 127.0.0.1;
+set_real_ip_from unix:;
 --- request
 GET /hello
 --- more_headers
@@ -81,6 +93,10 @@ hello world
 
 
 === TEST 5: hit routes
+--- http_config
+real_ip_header X-Real-IP;
+set_real_ip_from 127.0.0.1;
+set_real_ip_from unix:;
 --- request
 GET /hello
 --- more_headers
