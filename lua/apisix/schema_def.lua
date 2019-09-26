@@ -1,10 +1,7 @@
 local schema    = require('apisix.core.schema')
 local setmetatable = setmetatable
 
-
-local _M = {version = 0.2}
-
-
+local _M = {version = 0.3}
 setmetatable(_M, {__index = schema})
 
 
@@ -24,6 +21,33 @@ local id_schema = {
 }
 
 
+local host_def_pat = "^\\*?[0-9a-zA-Z-.]+$"
+local host_def = {
+    type = "string",
+    pattern = host_def_pat,
+}
+_M.host_def = host_def
+
+
+local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+local ipv6_def = "([a-fA-F0-9]{0,4}:){0,8}(:[a-fA-F0-9]{0,4}){0,8}"
+                 .. "([a-fA-F0-9]{0,4})?"
+local ip_def = {
+    {pattern = "^" .. ipv4_def .. "$"},
+    {pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
+    {pattern = "^" .. ipv6_def .. "$"},
+    {pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
+}
+_M.ip_def = ip_def
+
+
+local remote_addr_def = {
+    description = "client IP",
+    type = "string",
+    anyOf = ip_def,
+}
+
+
 -- todo: support all options
 --   default value: https://github.com/Kong/lua-resty-healthcheck/
 --   blob/master/lib/resty/healthcheck.lua#L1121
@@ -40,7 +64,7 @@ local health_checker = {
                 },
                 timeout = {type = "integer", default = 1},
                 concurrency = {type = "integer", default = 10},
-                host = {type = "string"},
+                host = host_def,
                 http_path = {type = "string", default = "/"},
                 https_verify_certificate = {type = "boolean", default = true},
                 healthy = {
@@ -175,15 +199,6 @@ local health_checker = {
 }
 
 
-local valid_ip_fmts = {
-    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
-    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-                .. "/[0-9]{1,2}$"},
-    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"},
-    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}/[0-9]{1,3}$"},
-}
-
-
 local upstream_schema = {
     type = "object",
     properties = {
@@ -233,6 +248,7 @@ local upstream_schema = {
         host = {
             description = "host of upstream",
             type = "string",
+            pattern = host_def_pat,
         },
         upgrade = {
             description = "upgrade header for upstream",
@@ -255,16 +271,7 @@ local upstream_schema = {
     additionalProperties = false,
 }
 
-local host = {
-    type = "string",
-    pattern = "^\\*?[0-9a-zA-Z-.]+$",
-}
 
-local remote_addr = {
-    description = "client IP",
-    type = "string",
-    anyOf = valid_ip_fmts,
-}
 
 local route = {
     type = "object",
@@ -282,16 +289,16 @@ local route = {
             },
             uniqueItems = true,
         },
-        host = host,
+        host = host_def,
         hosts = {
             type = "array",
-            items = host,
+            items = host_def,
             uniqueItems = true,
         },
-        remote_addr = remote_addr,
+        remote_addr = remote_addr_def,
         remote_addrs = {
             type = "array",
-            items = remote_addr,
+            items = remote_addr_def,
             uniqueItems = true,
         },
         vars = {
@@ -411,19 +418,15 @@ _M.global_rule = {
 _M.stream_route = {
     type = "object",
     properties = {
-        remote_addr = {
-            description = "client IP",
-            type = "string",
-            anyOf = valid_ip_fmts,
-        },
+        remote_addr = remote_addr_def,
         server_addr = {
             description = "server IP",
             type = "string",
-            anyOf = valid_ip_fmts,
+            anyOf = ip_def,
         },
         server_port = {
             description = "server port",
-            type = "number",
+            type = "integer",
         },
         upstream = upstream_schema,
         upstream_id = id_schema,
