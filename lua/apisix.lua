@@ -240,7 +240,8 @@ function _M.http_access_phase()
     core.ctx.set_vars_meta(api_ctx)
 
     -- load and run global rule
-    if router.global_rules.values and #router.global_rules.values > 0 then
+    if router.global_rules and router.global_rules.values
+       and #router.global_rules.values > 0 then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         for _, global_rule in ipairs(router.global_rules.values) do
             api_ctx.conf_type = "global_rule"
