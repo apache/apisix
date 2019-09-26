@@ -179,7 +179,8 @@ local valid_ip_fmts = {
     {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
     {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
                 .. "/[0-9]{1,2}$"},
-    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"}
+    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"},
+    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}/[0-9]{1,3}$"},
 }
 
 
@@ -254,46 +255,69 @@ local upstream_schema = {
     additionalProperties = false,
 }
 
+local host = {
+    type = "string",
+    pattern = "^\\*?[0-9a-zA-Z-.]+$",
+}
+
+local remote_addr = {
+    description = "client IP",
+    type = "string",
+    anyOf = valid_ip_fmts,
+}
+
 local route = {
     type = "object",
     properties = {
+        uri = {type = "string", minLength = 1, maxLength = 4096},
+        desc = {type = "string", maxLength = 256},
+
         methods = {
             type = "array",
             items = {
                 description = "HTTP method",
                 type = "string",
                 enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                         "OPTIONS", "CONNECT", "TRACE"}
+                        "OPTIONS", "CONNECT", "TRACE"}
             },
             uniqueItems = true,
         },
-        service_protocol = {
-            enum = {"grpc", "http"}
+        host = host,
+        hosts = {
+            type = "array",
+            items = host,
+            uniqueItems = true,
         },
-        desc = {type = "string", maxLength = 256},
-        plugins = plugins_schema,
-        upstream = upstream_schema,
-        uri = {
-            type = "string",
-        },
-        host = {
-            type = "string",
-            pattern = "^\\*?[0-9a-zA-Z-.]+$",
+        remote_addr = remote_addr,
+        remote_addrs = {
+            type = "array",
+            items = remote_addr,
+            uniqueItems = true,
         },
         vars = {
             type = "array",
             items = {
                 description = "Nginx builtin variable name and value",
                 type = "array",
+                items = {
+                    maxItems = 3,
+                    mixItems = 2,
+                    anyOf = {
+                        {type = "string",},
+                        {type = "number",},
+                    }
+                }
             }
         },
-        remote_addr = {
-            description = "client IP",
-            type = "string",
-            anyOf = valid_ip_fmts,
-        },
+
+        plugins = plugins_schema,
+        upstream = upstream_schema,
+
         service_id = id_schema,
         upstream_id = id_schema,
+        service_protocol = {
+            enum = {"grpc", "http"}
+        },
         id = id_schema,
     },
     anyOf = {

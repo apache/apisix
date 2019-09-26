@@ -41,7 +41,7 @@ local function create_router(ssl_items)
             local sni = ssl.value.sni:reverse()
             idx = idx + 1
             route_items[idx] = {
-                path = sni,
+                paths = sni,
                 handler = function (api_ctx)
                     if not api_ctx then
                         return
