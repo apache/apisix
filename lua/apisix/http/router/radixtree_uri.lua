@@ -25,9 +25,9 @@ local function create_radixtree_router(routes)
     for _, route in ipairs(api_routes) do
         if type(route) == "table" then
             core.table.insert(uri_routes, {
-                path = route.uri,
+                paths = route.uris or route.uri,
+                methods = route.methods,
                 handler = route.handler,
-                method = route.methods,
             })
         end
     end
@@ -35,10 +35,11 @@ local function create_radixtree_router(routes)
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             core.table.insert(uri_routes, {
-                path = route.value.uri,
-                method = route.value.methods,
-                host = route.value.host,
-                remote_addr = route.value.remote_addr,
+                paths = route.value.uris or route.value.uri,
+                methods = route.value.methods,
+                hosts = route.value.hosts or route.value.host,
+                remote_addrs = route.value.remote_addrs
+                               or route.value.remote_addr,
                 vars = route.value.vars,
                 handler = function (api_ctx)
                     api_ctx.matched_params = nil

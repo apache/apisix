@@ -13,6 +13,7 @@ Reference document
     * [r3](router-r3.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 * [Stream Proxy](stream-proxy.md)
+* [Admin API](admin-api-cn.md)
 * [Changelog](../CHANGELOG.md)
 * [Code Style](../CODE_STYLE.md)
 * [FAQ](../FAQ.md)
