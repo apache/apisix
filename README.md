@@ -37,7 +37,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **HTTP(S) Forward Proxy**
 - **[Health Checks](doc/health-check.md)**：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 - **Circuit-Breaker**: Intelligent tracking of unhealthy upstream services.
-- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md)
+- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md)
 - **[Limit-req](doc/plugins/limit-req.md)**
 - **[Limit-count](doc/plugins/limit-count.md)**
 - **[Limit-concurrency](doc/plugins/limit-conn.md)**
