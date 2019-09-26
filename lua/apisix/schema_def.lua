@@ -29,13 +29,16 @@ local host_def = {
 _M.host_def = host_def
 
 
+local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+local ipv6_def = "([a-fA-F0-9]{0,4}:){0,8}(:[a-fA-F0-9]{0,4}){0,8}"
+                 .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
-    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"},
-    {pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-                .. "/[0-9]{1,2}$"},
-    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}$"},
-    {pattern = "^([a-f0-9]{0,4}:){0,8}(:[a-f0-9]{0,4}){0,8}/[0-9]{1,3}$"},
+    {pattern = "^" .. ipv4_def .. "$"},
+    {pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
+    {pattern = "^" .. ipv6_def .. "$"},
+    {pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
+_M.ip_def = ip_def
 
 
 local remote_addr_def = {
@@ -43,7 +46,6 @@ local remote_addr_def = {
     type = "string",
     anyOf = ip_def,
 }
-_M.remote_addr_def = remote_addr_def
 
 
 -- todo: support all options

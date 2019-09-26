@@ -14,12 +14,12 @@ local schema = {
     properties = {
         whitelist = {
             type = "array",
-            items = {type = "string"},
+            items = {type = "string", anyOf = core.schema.ip_def},
             minItems = 1
         },
         blacklist = {
             type = "array",
-            items = {type = "string"},
+            items = {type = "string", anyOf = core.schema.ip_def},
             minItems = 1
         }
     },

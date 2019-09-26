@@ -423,7 +423,8 @@ hello world
             local conf = {
                 whitelist = {
                     "::1",
-                    "fe80::/32"
+                    "fe80::/32",
+                    "2001:DB8:0:23:8:800:200C:417A",
                 }
             }
             local ok, err = plugin.check_schema(conf)
@@ -548,6 +549,6 @@ GET /hello
 GET /t
 --- response_body
 invalid ip address: ::1/129
-invalid ip address: ::ffgg
+invalid "anyOf" in docuement at pointer "#/whitelist/0"
 --- no_error_log
 [error]
