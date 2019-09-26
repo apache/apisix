@@ -2,8 +2,15 @@
 
 set -ex
 
-OR_EXEC=`which openresty`
+OR_EXEC=`which openresty 2>&1`
 echo $OR_EXEC
+
+# check the openresty exist
+CHECK_OR_EXIST=`echo $OR_EXEC | grep ": no openresty" | wc -l`
+if [ $CHECK_OR_EXIST -eq 1 ];then
+      echo "can not find the openresty, install failed"
+      exit 1;
+fi
 
 LUA_JIT_DIR=`TMP='./v_tmp' && $OR_EXEC -V &>$${TMP} && cat $${TMP} | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/' && rm $${TMP}`
 LUA_JIT_DIR="${LUA_JIT_DIR}luajit"
