@@ -193,7 +193,7 @@ English Development Documentation: TODO
 A wide variety of companies and organizations use APISIX for research, production and commercial product.
 Here is the User Wall of APISIX.
 
-<img src="doc/images/user-wall.jpg" width="50%" height="50%">
+![](doc/images/user-wall.jpg)
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 
