@@ -221,10 +221,6 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |key             |必需|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制|
-|scheme          |可选|转发到上游的 `schema` 协议，可以是 `http` 或 `https`，默认 `http` 协议|
-|uri             |可选|转发到上游的新 `uri` 地址|
-|host            |可选|转发到上游的新 `host`|
-|enable_websocket|可选|是否启用 `websocket` （布尔值），默认不启用|
 
 创建上游对象用例：
 
