@@ -64,7 +64,7 @@ worker_processes auto;
 worker_cpu_affinity auto;
 {% end %}
 
-error_log logs/error.log error;
+error_log logs/error.log {*error_log.level or "error"*};
 pid logs/nginx.pid;
 
 worker_rlimit_nofile 20480;
@@ -208,6 +208,24 @@ http {
                 apisix.http_admin()
             }
         }
+
+        location /apisix/dashboard {
+            index index.html;
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
+
+            alias dashboard/;
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Real-PORT $remote_port;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            try_files $uri $uri/ /index.html;
+        }
     }
     {% end %}
 
@@ -244,13 +262,8 @@ http {
                 apisix.http_admin()
             }
         }
-        {% end %}
 
-        ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
-        }
-
-        location /apisix/dashboard/ {
+        location /apisix/dashboard {
             index index.html;
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -266,6 +279,11 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
             try_files $uri $uri/ /index.html;
+        }
+        {% end %}
+
+        ssl_certificate_by_lua_block {
+            apisix.http_ssl_phase()
         }
 
         location / {
@@ -444,6 +462,7 @@ local function init()
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         node_ssl_listen = 9443,     -- default value
+        error_log = {level = "warn"},
     }
     for k,v in pairs(yaml_conf.apisix) do
         sys_conf[k] = v
