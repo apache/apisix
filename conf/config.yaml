@@ -31,6 +31,8 @@ apisix:
   #     - 9211
   dns_resolver:                   # use 114.114.114.114 as default DNS resolver, disable IPv6 and enable local DNS.
     - 114.114.114.114
+  error_log:
+    level: warn
 
 etcd:
   host: "http://127.0.0.1:2379"   # etcd address
