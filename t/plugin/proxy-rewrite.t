@@ -199,7 +199,7 @@ passed
                                 "uri": "/plugin_proxy_rewrite",
                                 "scheme": "http",
                                 "host": "apisix.iresty.com",
-                                "enable_websocket": false
+                                "enable_websocket": true
                             }
                         },
                         "upstream": {
@@ -228,8 +228,10 @@ passed
 
 === TEST 7: rewrite
 --- request
-GET /hello
+GET /hello HTTP/1.1
 --- response_body
-{"host":"apisix.iresty.com","scheme":"http","uri":"\/plugin_proxy_rewrite"}
+uri: /plugin_proxy_rewrite
+host: apisix.iresty.com
+scheme: http
 --- no_error_log
 [error]

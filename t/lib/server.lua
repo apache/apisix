@@ -24,11 +24,9 @@ function _M.limit_conn()
 end
 
 function _M.plugin_proxy_rewrite()
-    local req_info = {}
-    req_info['uri'] = ngx.var.uri
-    req_info['host'] = ngx.var.host
-    req_info['scheme'] = ngx.var.scheme
-    ngx.say(json_encode(req_info))
+    ngx.say("uri: ", ngx.var.uri)
+    ngx.say("host: ", ngx.var.host)
+    ngx.say("scheme: ", ngx.var.scheme)
 end
 
 function _M.status()

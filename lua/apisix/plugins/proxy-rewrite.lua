@@ -7,20 +7,28 @@ local schema = {
     type = "object",
     properties = {
         uri = {
-            type = "string"
+            description = "new uri for upstream",
+            type        = "string",
+            minLength   = 1,
+            maxLength   = 4096
         },
         host = {
-            type = "string"
+            description = "new host for upstream",
+            type        = "string",
+            pattern     = "^\\*?[0-9a-zA-Z-.]+$",
         },
         scheme = {
+            description = "new scheme for upstream",
             type    = "string",
             enum    = {"http", "https"}
         },
         enable_websocket = {
-            type = "boolean",
-            default = false
+            description = "enable websocket for request",
+            type        = "boolean",
+            default     = false
         }
     },
+    minProperties = 1,
 }
 
 local _M = {
