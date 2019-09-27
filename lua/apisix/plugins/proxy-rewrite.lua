@@ -3,6 +3,7 @@ local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
 
+
 local schema = {
     type = "object",
     properties = {
@@ -15,7 +16,7 @@ local schema = {
         host = {
             description = "new host for upstream",
             type        = "string",
-            pattern     = "^\\*?[0-9a-zA-Z-.]+$",
+            pattern     = "^[0-9a-zA-Z-.]+$",
         },
         scheme = {
             description = "new scheme for upstream",
@@ -31,12 +32,14 @@ local schema = {
     minProperties = 1,
 }
 
+
 local _M = {
     version  = 0.1,
     priority = 1008,
     name     = plugin_name,
     schema   = schema,
 }
+
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -45,6 +48,7 @@ function _M.check_schema(conf)
     end
     return true
 end
+
 
 do
     local upstream_vars = {
@@ -73,5 +77,6 @@ function _M.rewrite(conf, ctx)
 end
 
 end  -- do
+
 
 return _M
