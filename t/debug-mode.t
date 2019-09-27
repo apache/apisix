@@ -44,6 +44,7 @@ loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth
+loaded plugin and sort by priority: 1008 name: proxy-rewrite
 loaded plugin and sort by priority: 1003 name: limit-conn
 loaded plugin and sort by priority: 1002 name: limit-count
 loaded plugin and sort by priority: 1001 name: limit-req
