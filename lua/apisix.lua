@@ -14,7 +14,6 @@ local ngx_exit      = ngx.exit
 local ngx_ERROR     = ngx.ERROR
 local math          = math
 local error         = error
-local ngx_var       = ngx.var
 local ipairs        = ipairs
 local pairs         = pairs
 local tostring      = tostring
@@ -215,19 +214,6 @@ local function parse_domain_in_route(route, ver)
 end
 
 
-do
-    local upstream_vars = {
-        uri        = "upstream_uri",
-        scheme     = "upstream_scheme",
-        host       = "upstream_host",
-        upgrade    = "upstream_upgrade",
-        connection = "upstream_connection",
-    }
-    local upstream_names = {}
-    for name, _ in pairs(upstream_vars) do
-        core.table.insert(upstream_names, name)
-    end
-
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -271,27 +257,11 @@ function _M.http_access_phase()
         return core.response.exit(404)
     end
 
-    --
     if route.value.service_protocol == "grpc" then
         return ngx.exec("@grpc_pass")
     end
 
-    local upstream = route.value.upstream
-    if upstream then
-        for _, name in ipairs(upstream_names) do
-            if upstream[name] then
-                ngx_var[upstream_vars[name]] = upstream[name]
-            end
-        end
-
-        if upstream.enable_websocket then
-            api_ctx.var["upstream_upgrade"] = api_ctx.var["http_upgrade"]
-            api_ctx.var["upstream_connection"] = api_ctx.var["http_connection"]
-        end
-    end
-
     if route.value.service_id then
-        -- core.log.info("matched route: ", core.json.delay_encode(route.value))
         local service = service_fetch(route.value.service_id)
         if not service then
             core.log.error("failed to fetch service configuration by ",
@@ -350,8 +320,6 @@ function _M.http_access_phase()
     end
     run_plugin("access", plugins, api_ctx)
 end
-
-end -- do
 
 
 function _M.grpc_access_phase()
