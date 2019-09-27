@@ -154,7 +154,23 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
-        server_name apisix.iresty.com;
+
+        server_tokens off;
+
+        location / {
+            content_by_lua_block {
+                require("lib.server").go()
+            }
+
+            more_clear_headers Date;
+        }
+    }
+
+    server {
+        listen 1983 ssl;
+        ssl_certificate             cert/apisix.crt;
+        ssl_certificate_key         cert/apisix.key;
+        lua_ssl_trusted_certificate cert/apisix.crt;
 
         server_tokens off;
 

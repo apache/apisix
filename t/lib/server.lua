@@ -1,5 +1,4 @@
 local json_decode = require("cjson").decode
-local json_encode = require("cjson").encode
 
 local _M = {}
 
