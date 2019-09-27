@@ -14,7 +14,6 @@ local ngx_exit      = ngx.exit
 local ngx_ERROR     = ngx.ERROR
 local math          = math
 local error         = error
-local ngx_var       = ngx.var
 local ipairs        = ipairs
 local pairs         = pairs
 local tostring      = tostring
