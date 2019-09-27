@@ -26,10 +26,14 @@ end
 _M.new = new
 
 
-function _M.get(key)
+function _M.get(key, no_prefix)
     local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
+    end
+
+    if no_prefix then
+        prefix = ""
     end
 
     return etcd_cli:get(prefix .. key)
