@@ -1,5 +1,6 @@
 use t::APISIX 'no_plan';
 
+master_on();
 repeat_each(1);
 no_long_string();
 no_root_location();

@@ -12,7 +12,7 @@ function _M.get(id)
         key = key .. "/" .. id
     end
 
-    local res, err = core.etcd.get(key, true)
+    local res, err = core.etcd.get(key)
     if not res then
         core.log.error("failed to get route[", key, "]: ", err)
         return 500, {error_msg = err}
