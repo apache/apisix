@@ -11,6 +11,7 @@ This release brings many new features, such as stream proxy, support MQTT protoc
 and support for ARM platform, and proxy rewrite plugin.
 
 ### Core
+- :sunrise: **[support stand-alone mode](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly for kubernetes. [464](https://github.com/iresty/apisix/pull/464)
 - :sunrise: **[support stream proxy](https://github.com/iresty/apisix/blob/master/doc/stream-proxy.md)**. [513](https://github.com/iresty/apisix/pull/513)
 - :sunrise: support consumer bind plugins. [544](https://github.com/iresty/apisix/pull/544)
 - support domain name in upstream, not only IP. [522](https://github.com/iresty/apisix/pull/522)

@@ -11,6 +11,7 @@
 这个版本带来很多新的特性，比如四层协议的代理, 支持 MQTT 协议代理，以及对 ARM 平台的支持, 和代理改写插件等。
 
 ### Core
+- :sunrise: **[增加单机模式](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: 使用 yaml 配置文件来更新 APISIX 的配置，这对于kubernetes 更加友好。 [464](https://github.com/iresty/apisix/pull/464)
 - :sunrise: **[支持 stream 代理](https://github.com/iresty/apisix/blob/master/doc/stream-proxy-cn.md)**. [513](https://github.com/iresty/apisix/pull/513)
 - :sunrise: 支持[在 consumer 上绑定插件](https://github.com/iresty/apisix/blob/master/doc/architecture-design-cn.md#consumer). [544](https://github.com/iresty/apisix/pull/544)
 - 上游增加对域名的支持，而不仅是 IP。[522](https://github.com/iresty/apisix/pull/522)
