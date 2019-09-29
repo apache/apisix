@@ -28,9 +28,11 @@ addons:
       - luarocks
       - cmake
       - lua-check
-      - redis
   homebrew:
     update: true
+
+services:
+ - redis-server
 
 cache:
   directories:
