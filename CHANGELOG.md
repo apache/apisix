@@ -11,7 +11,7 @@ This release brings many new features, such as stream proxy, support MQTT protoc
 and support for ARM platform, and proxy rewrite plugin.
 
 ### Core
-- :sunrise: **[support stand-alone mode](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly for kubernetes. [464](https://github.com/iresty/apisix/pull/464)
+- :sunrise: **[support stand-alone mode](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [464](https://github.com/iresty/apisix/pull/464)
 - :sunrise: **[support stream proxy](https://github.com/iresty/apisix/blob/master/doc/stream-proxy.md)**. [513](https://github.com/iresty/apisix/pull/513)
 - :sunrise: support consumer bind plugins. [544](https://github.com/iresty/apisix/pull/544)
 - support domain name in upstream, not only IP. [522](https://github.com/iresty/apisix/pull/522)
@@ -24,6 +24,16 @@ and support for ARM platform, and proxy rewrite plugin.
 
 ### ARM
 - :sunrise: **APISIX can run normally under Ubuntu 18.04 of ARM64 architecture**, so you can use APISIX as IoT gateway with MQTT plugin.
+
+### lua-resty-*
+- lua-resty-ipmatcher
+    - support IPv6
+    - IP white/black list, route.
+- lua-resty-radixtree
+    - allow to specify multiple host, remote_addr and uri.
+    - allow to define user-function to filter request.
+    - use `lua-resty-ipmatcher` instead of `lua-resty-iputils`, `lua-resty-ipmatcher` matches fast and support IPv6.
+
 
 ### Bugfix
 - healthcheck: the checker name is wrong if APISIX works under multiple processes. [568](https://github.com/iresty/apisix/issues/568)

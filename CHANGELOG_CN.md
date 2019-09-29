@@ -11,7 +11,7 @@
 这个版本带来很多新的特性，比如四层协议的代理, 支持 MQTT 协议代理，以及对 ARM 平台的支持, 和代理改写插件等。
 
 ### Core
-- :sunrise: **[增加单机模式](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: 使用 yaml 配置文件来更新 APISIX 的配置，这对于kubernetes 更加友好。 [464](https://github.com/iresty/apisix/pull/464)
+- :sunrise: **[增加单机模式](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: 使用 yaml 配置文件来更新 APISIX 的配置，这对于 kubernetes 更加友好。 [464](https://github.com/iresty/apisix/pull/464)
 - :sunrise: **[支持 stream 代理](https://github.com/iresty/apisix/blob/master/doc/stream-proxy-cn.md)**. [513](https://github.com/iresty/apisix/pull/513)
 - :sunrise: 支持[在 consumer 上绑定插件](https://github.com/iresty/apisix/blob/master/doc/architecture-design-cn.md#consumer). [544](https://github.com/iresty/apisix/pull/544)
 - 上游增加对域名的支持，而不仅是 IP。[522](https://github.com/iresty/apisix/pull/522)
@@ -23,6 +23,16 @@
 
 ### ARM
 - :sunrise: **APISIX 可以在基于 ARM64 架构的 Ubuntu 18.04 系统中正常运行**, 搭配上 MQTT 插件，你可以把它当做 IoT 网关来使用。
+
+### lua-resty-*
+- lua-resty-ipmatcher
+    - 支持 IPv6。
+    - 支持 IP 黑白名单和路由。
+- lua-resty-radixtree
+    - 允许指定多个 host, remote_addr 和 uri。
+    - 允许设置用户自定义函数来做额外的过滤。
+    - 使用 `lua-resty-ipmatcher` 替代 `lua-resty-iputils`, `lua-resty-ipmatcher` 支持 IPv6 并且速度更快。
+
 
 ### Bugfix
 - 健康检查: 修复在多 worker 下运行的话，健康检查 checker 的名字错误。 [568](https://github.com/iresty/apisix/issues/568)
