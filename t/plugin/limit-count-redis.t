@@ -61,7 +61,7 @@ GET /t
 
 
 
-=== TEST 3: set route, with redis host and port
+=== TEST 2: set route, with redis host and port
 --- config
     location /t {
         content_by_lua_block {
@@ -108,7 +108,7 @@ passed
 
 
 
-=== TEST 4: up the limit
+=== TEST 3: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -118,7 +118,7 @@ passed
 
 
 
-=== TEST 5: up the limit
+=== TEST 4: up the limit
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval

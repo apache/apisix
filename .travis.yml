@@ -28,6 +28,7 @@ addons:
       - luarocks
       - cmake
       - lua-check
+      - redis
   homebrew:
     update: true
 

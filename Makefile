@@ -132,6 +132,9 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/grpc-transcode/
 	$(INSTALL) lua/apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/grpc-transcode/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/limit-count/
+	$(INSTALL) lua/apisix/plugins/limit-count/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/limit-count/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins
 	$(INSTALL) lua/apisix/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/
 
