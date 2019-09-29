@@ -41,6 +41,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **[Limit-req](doc/plugins/limit-req.md)**
 - **[Limit-count](doc/plugins/limit-count.md)**
 - **[Limit-concurrency](doc/plugins/limit-conn.md)**
+- **[Proxy Rewrite](doc/plugins/proxy-rewrite.md)**: Support for rewriting the `host`, `uri`, `schema`, `enable_websocket` information upstream of the request.
 - **OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)**
 - **Monitoring And Metrics**: [Prometheus](doc/plugins/prometheus.md)
 - **[gRPC transcoding](doc/plugins/grpc-transcoding.md)**：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.

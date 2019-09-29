@@ -24,6 +24,7 @@ Reference document
     * [limit-count](plugins/limit-count.md): Rate limiting based on a "fixed window" implementation.
     * [limit-req](plugins/limit-req.md): Request rate limiting and adjustment based on the "leaky bucket" method.
     * [limit-conn](plugins/limit-conn.md): Limite request concurrency (or concurrent connections).
+    * [proxy-rewrite](plugins/proxy-rewrite.md): Rewrite upstream request information.
     * [prometheus](plugins/prometheus.md): Expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
     * [OpenTracing](plugins/zipkin.md): Supports Zikpin and Apache SkyWalking.
     * [grpc-transcode](plugins/grpc-transcode-cn.md): REST <--> gRPC transcoding。
