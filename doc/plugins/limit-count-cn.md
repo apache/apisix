@@ -5,10 +5,17 @@
 在指定的时间范围内，限制总的请求个数。并且在 HTTP 响应头中返回剩余可以请求的个数。
 
 ### 参数
-* `count`：指定时间窗口内的请求数量阈值
-* `time_window`：时间窗口的大小（以秒为单位），超过这个时间就会重置
-* `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503
-* `key`：是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。
+
+|名称           |可选项  |说明|
+|---------     |--------|-----------|
+|count         |必选     |指定时间窗口内的请求数量阈值|
+|time_window   |必选     |时间窗口的大小（以秒为单位），超过这个时间就会重置|
+|key           |必选     |是用来做请求计数的依据，当前接受的 key 有: "remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for"。|
+|rejected_code |optional|T当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503|
+|policy        |optional|用于检索和增加限制的速率限制策略。可选的值有：`local`(计数器被以内存方式保存在节点本地) 和 `redis`(计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速).|
+|redis.host    |optional|使用 `redis` 限速策略，该属性是 Redis 服务节点的地址。|
+|redis.port    |optional|使用 `redis` 限速策略，该属性是 Redis 服务节点的端口。|
+|redis.timeout |optional|使用 `redis` 限速策略，该属性是 Redis 服务节点的通讯超时时间。|
 
 ### 示例
 
