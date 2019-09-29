@@ -43,7 +43,7 @@ function _M.incoming(self, key)
             return nil, err
         end
 
-        return true, limit -1
+        return 0, limit -1
     end
 
     remaining, err = red:incrby(key, -1)
