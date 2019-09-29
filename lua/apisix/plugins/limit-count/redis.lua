@@ -53,8 +53,7 @@ function _M.incoming(self, key)
 
     local ok, err = red:set_keepalive(10000, 100)
     if not ok then
-        ngx.say("failed to set keepalive: ", err)
-        return
+        return nil, err
     end
 
     if remaining < 0 then
