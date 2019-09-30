@@ -81,8 +81,13 @@ function _M.rewrite(conf, ctx)
     end
 
     if conf.headers then
-        for hkey, hval in pairs(conf.headers) do
-            core.request.set_header(hkey, hval)
+        for header_name, header_value in pairs(conf.headers) do
+            if header_value == "null" then
+                -- Remove Header
+                core.request.set_header(header_name, "")
+            else
+                core.request.set_header(header_name, header_value)
+            end
         end
     end
 end

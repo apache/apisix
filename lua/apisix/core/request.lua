@@ -24,26 +24,24 @@ local function _headers(ctx)
     return headers
 end
 
-local function _validate_header(name, value)
+local function _validate_header_name(name)
     local tname = type(name)
     if tname ~= "string" then
-        error(str_fmt("invalid header name %q: got %s, " ..
-                "expected string", name, tname), 3)
+        return nil, str_fmt("invalid header name %q: got %s, " ..
+                "expected string", name, tname)
     end
 
+    return name, nil
+end
+
+local function _validate_header_value(value)
     local tvalue = type(value)
-    if tvalue ~= "string" then
-        if tvalue == "number" or tvalue == "boolean" then
-            value = tostring(value)
-        else
-            error(str_fmt("invalid header value for %q: got %s, expected " ..
-                    "string, number or boolean", name, tvalue), 3)
-        end
+    if tvalue ~= "string" and tvalue ~= "number" and tvalue ~= "boolean" then
+        return nil, str_fmt("invalid header value for %q: got %s, expected " ..
+                    "string, number or boolean", value, tvalue)
     end
-    -- If the length of the value is 0, the header cannot be set successfully.
-    value = value == "" and " " or value
 
-    return value
+    return value, nil
 end
 
 _M.headers = _headers
@@ -57,9 +55,28 @@ function _M.header(ctx, name)
 end
 
 
-function _M.set_header(name, value)
-    value = _validate_header(name, value)
-    ngx.req.set_header(name, value)
+function _M.set_header(header_name, header_value)
+    local err
+    header_name, err = _validate_header_name(header_name)
+    if err then
+        error(err)
+    end
+
+    -- if header value is nil, remove this header.
+    header_value, err = _validate_header_value(header_value)
+    if err then
+        error(err)
+    end
+
+    ngx.req.set_header(header_name, header_value)
+end
+
+function _M.del_header(header_name)
+    local err
+    header_name, err = _validate_header_name(header_name)
+    if err then
+        error(err)
+    end
 end
 
 
