@@ -70,14 +70,6 @@ function _M.set_header(header_name, header_value)
     ngx.req.set_header(header_name, header_value)
 end
 
-function _M.del_header(header_name)
-    local err
-    header_name, err = _validate_header_name(header_name)
-    if err then
-        error(err)
-    end
-end
-
 
 -- return the remote address of client which directly connecting to APISIX.
 -- so if there is a load balancer between downstream client and APISIX,
