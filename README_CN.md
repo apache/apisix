@@ -97,7 +97,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.7/apisix-0.7-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
