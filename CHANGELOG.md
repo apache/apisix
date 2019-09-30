@@ -11,14 +11,14 @@ This release brings many new features, such as stream proxy, support MQTT protoc
 and support for ARM platform, and proxy rewrite plugin.
 
 ### Core
-- :sunrise: **[support stand-alone mode](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [464](https://github.com/iresty/apisix/pull/464)
-- :sunrise: **[support stream proxy](https://github.com/iresty/apisix/blob/master/doc/stream-proxy.md)**. [513](https://github.com/iresty/apisix/pull/513)
-- :sunrise: support consumer bind plugins. [544](https://github.com/iresty/apisix/pull/544)
-- support domain name in upstream, not only IP. [522](https://github.com/iresty/apisix/pull/522)
-- ignored upstream node when it's weight is 0. [536](https://github.com/iresty/apisix/pull/536)
+- :sunrise: **[support stand-alone mode](https://github.com/iresty/apisix/blob/master/doc/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/iresty/apisix/pull/464)
+- :sunrise: **[support stream proxy](https://github.com/iresty/apisix/blob/master/doc/stream-proxy.md)**. [#513](https://github.com/iresty/apisix/pull/513)
+- :sunrise: support consumer bind plugins. [#544](https://github.com/iresty/apisix/pull/544)
+- support domain name in upstream, not only IP. [#522](https://github.com/iresty/apisix/pull/522)
+- ignored upstream node when it's weight is 0. [#536](https://github.com/iresty/apisix/pull/536)
 
 ### Plugins
-- :sunrise: **[MQTT Proxy](https://github.com/iresty/apisix/blob/master/doc/plugins/mqtt-proxy.md)**: support to load balance MQTT by `client_id`, both support MQTT 3.1 and 5.0. [513](https://github.com/iresty/apisix/pull/513)
+- :sunrise: **[MQTT Proxy](https://github.com/iresty/apisix/blob/master/doc/plugins/mqtt-proxy.md)**: support to load balance MQTT by `client_id`, both support MQTT 3.1 and 5.0. [#513](https://github.com/iresty/apisix/pull/513)
 - [proxy-rewrite](https://github.com/iresty/apisix/blob/master/doc/plugins/proxy-rewrite.md): rewrite uri,
  schema, host for upstream. [#594](https://github.com/iresty/apisix/pull/594)
 
@@ -36,7 +36,7 @@ and support for ARM platform, and proxy rewrite plugin.
 
 
 ### Bugfix
-- healthcheck: the checker name is wrong if APISIX works under multiple processes. [568](https://github.com/iresty/apisix/issues/568)
+- healthcheck: the checker name is wrong if APISIX works under multiple processes. [#568](https://github.com/iresty/apisix/issues/568)
 
 ### Dependencies
 - removed `lua-tinyyaml` from source code base, and install through Luarocks.
