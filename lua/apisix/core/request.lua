@@ -3,7 +3,6 @@
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local tonumber = tonumber
-local tostring = tostring
 local error    = error
 local type     = type
 local str_fmt  = string.format
