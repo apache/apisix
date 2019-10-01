@@ -30,7 +30,7 @@ local function _validate_header_name(name)
                 "expected string", name, tname)
     end
 
-    return name, nil
+    return name
 end
 
 local function _validate_header_value(value)
@@ -40,7 +40,7 @@ local function _validate_header_value(value)
                     "string, number or boolean", value, tvalue)
     end
 
-    return value, nil
+    return value
 end
 
 _M.headers = _headers
