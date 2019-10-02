@@ -34,6 +34,19 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
+    if conf.host and conf.hosts then
+        return nil, {error_msg = "only one of host or hosts is allowed"}
+    end
+
+    if conf.remote_addr and conf.remote_addrs then
+        return nil, {error_msg = "only one of remote_addr or remote_addrs is "
+                                 .. "allowed"}
+    end
+
+    if conf.host and conf.hosts then
+        return nil, {error_msg = "only one of host or hosts is allowed"}
+    end
+
     local upstream_id = conf.upstream_id
     if upstream_id then
         local key = "/upstreams/" .. upstream_id

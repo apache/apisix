@@ -22,6 +22,11 @@ function _M.limit_conn()
     ngx.say("hello world")
 end
 
+function _M.plugin_proxy_rewrite()
+    ngx.say("uri: ", ngx.var.uri)
+    ngx.say("host: ", ngx.var.host)
+    ngx.say("scheme: ", ngx.var.scheme)
+end
 
 function _M.status()
     ngx.say("ok")

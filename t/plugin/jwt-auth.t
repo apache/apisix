@@ -63,15 +63,15 @@ done
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "username": "jack",
                     "plugins": {
-                            "jwt-auth": {
-                                "key": "user-key",
-                                "secret": "my-secret-key"
-                            }
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
                         }
+                    }
                 }]],
                 [[{
                     "node": {
@@ -108,18 +108,18 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "jwt-auth": {}
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
