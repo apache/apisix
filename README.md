@@ -73,14 +73,12 @@ We provide an online dashboard [demo version](http://apisix.iresty.com)， make 
 
 APISIX Installed and tested in the following systems, and the version of OpenResty MUST >= 1.15.8.1:
 
-| OS           |
-| ------------ |
-| CentOS 7     |
-| Ubuntu 16.04 |
-| Ubuntu 18.04 |
-| Debian 9     |
-| Debian 10    |
-| Mac OSX      |
+* CentOS 7
+* Ubuntu 16.04
+* Ubuntu 18.04
+* Debian 9
+* Debian 10
+* Mac OSX
 
 You now have four ways to install APISIX:
 - if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
