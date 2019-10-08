@@ -30,7 +30,7 @@ local function _validate_header_name(name)
                 "expected string", name, tname)
     end
 
-    return name, nil
+    return name
 end
 
 _M.headers = _headers
