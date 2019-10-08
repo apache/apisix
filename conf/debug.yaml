@@ -1,0 +1,8 @@
+hook_conf:
+  enable: true
+  log_level: warn
+
+hooks:
+  apisix: http_access_phase # run_plugin http_access_phase
+
+#END
