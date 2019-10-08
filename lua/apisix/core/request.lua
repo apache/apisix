@@ -33,16 +33,6 @@ local function _validate_header_name(name)
     return name, nil
 end
 
-local function _validate_header_value(value)
-    local tvalue = type(value)
-    if tvalue ~= "string" and tvalue ~= "number" and tvalue ~= "boolean" then
-        return nil, str_fmt("invalid header value for %q: got %s, expected " ..
-                    "string, number or boolean", value, tvalue)
-    end
-
-    return value, nil
-end
-
 _M.headers = _headers
 
 
@@ -60,13 +50,6 @@ function _M.set_header(header_name, header_value)
     if err then
         error(err)
     end
-
-    -- if header value is nil, remove this header.
-    header_value, err = _validate_header_value(header_value)
-    if err then
-        error(err)
-    end
-
     ngx.req.set_header(header_name, header_value)
 end
 

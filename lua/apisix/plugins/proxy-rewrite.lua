@@ -80,14 +80,10 @@ function _M.rewrite(conf, ctx)
         ctx.var["upstream_connection"] = ctx.var["http_connection"]
     end
 
+    -- TODO: support deleted header
     if conf.headers then
         for header_name, header_value in pairs(conf.headers) do
-            if header_value == "null" then
-                -- Remove Header
-                core.request.set_header(header_name, "")
-            else
-                core.request.set_header(header_name, header_value)
-            end
+            core.request.set_header(header_name, header_value)
         end
     end
 end
