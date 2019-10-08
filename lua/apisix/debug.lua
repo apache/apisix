@@ -13,6 +13,7 @@ local setmetatable = setmetatable
 local sub_str      = string.sub
 local pcall        = pcall
 local ipairs       = ipairs
+local unpack       = unpack
 local debug_yaml_path = ngx.config.prefix() .. "conf/debug.yaml"
 local debug_yaml
 local debug_yaml_ctime
