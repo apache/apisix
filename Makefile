@@ -112,10 +112,11 @@ install:
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/cert/apisix.* /usr/local/apisix/conf/cert/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/admin
+	$(INSTALL) lua/apisix/admin/*.lua $(INST_LUADIR)/apisix/lua/apisix/admin/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/core
-	$(INSTALL) lua/*.lua $(INST_LUADIR)/apisix/lua/
 	$(INSTALL) lua/apisix/core/*.lua $(INST_LUADIR)/apisix/lua/apisix/core/
-	$(INSTALL) lua/apisix/*.lua $(INST_LUADIR)/apisix/lua/apisix/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/http
 	$(INSTALL) lua/apisix/http/*.lua $(INST_LUADIR)/apisix/lua/apisix/http/
@@ -132,11 +133,16 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/grpc-transcode/
 	$(INSTALL) lua/apisix/plugins/grpc-transcode/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/grpc-transcode/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins
 	$(INSTALL) lua/apisix/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/admin
-	$(INSTALL) lua/apisix/admin/*.lua $(INST_LUADIR)/apisix/lua/apisix/admin/
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/stream/plugins
+	$(INSTALL) lua/apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/stream/plugins/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/stream/router
+	$(INSTALL) lua/apisix/stream/router/*.lua $(INST_LUADIR)/apisix/lua/apisix/stream/router/
+
+	$(INSTALL) lua/apisix/*.lua $(INST_LUADIR)/apisix/lua/apisix/
+	$(INSTALL) lua/*.lua $(INST_LUADIR)/apisix/lua/
 
 	$(INSTALL) COPYRIGHT $(INST_CONFDIR)/COPYRIGHT
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
