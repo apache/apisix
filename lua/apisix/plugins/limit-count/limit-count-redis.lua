@@ -1,8 +1,11 @@
 local redis_new = require("resty.redis").new
 local core = require("apisix.core")
+local assert = assert
+local setmetatable = setmetatable
+local tostring = tostring
 
 
-local _M = {}
+local _M = {version = 0.1}
 
 
 local mt = {
@@ -10,10 +13,11 @@ local mt = {
 }
 
 
-function _M.new(limit, window, redis_conf)
+function _M.new(plugin_name, limit, window, redis_conf)
     assert(limit > 0 and window > 0)
 
-    local self = {limit = limit, window = window, redis = redis_conf}
+    local self = {limit = limit, window = window, redis = redis_conf,
+                  plugin_name = plugin_name}
     return setmetatable(self, mt)
 end
 
@@ -34,6 +38,7 @@ function _M.incoming(self, key)
     local limit = self.limit
     local window = self.window
     local remaining
+    key = self.plugin_name .. tostring(key)
 
     local ret, err = red:ttl(key)
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)

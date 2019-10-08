@@ -58,7 +58,8 @@ check:
 		lua/apisix/core/*.lua \
 		lua/apisix/http/*.lua \
 		lua/apisix/plugins/*.lua \
-		lua/apisix/plugins/grpc-transcode/*.lua > \
+		lua/apisix/plugins/grpc-transcode/*.lua \
+		lua/apisix/plugins/limit-count/*.lua > \
 		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 

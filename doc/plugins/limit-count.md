@@ -9,7 +9,7 @@
 |time_window   |required|the time window in seconds before the request count is reset.|
 |key           |required|the user specified key to limit the rate. Here is fully key list: "remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for".|
 |rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
-|policy        |optional|The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually used it to do the global speed limit).|
+|policy        |optional|The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node, default value) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually used it to do the global speed limit).|
 |redis.host    |optional|When using the `redis` policy, this property specifies the address of the Redis server.|
 |redis.port    |optional|When using the `redis` policy, this property specifies the port of the Redis server. The default port is 6379.|
 |redis.timeout |optional|When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server. The default timeout is 1000 ms(1 second).|

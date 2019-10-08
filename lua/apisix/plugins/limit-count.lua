@@ -84,7 +84,8 @@ local function create_limit_obj(conf)
     end
 
     if conf.policy == "redis" then
-        return limit_redis_new(conf.count, conf.time_window, conf.redis)
+        return limit_redis_new("plugin-" .. plugin_name,
+                               conf.count, conf.time_window, conf.redis)
     end
 
     return nil
