@@ -1,8 +1,15 @@
 hook_conf:
-  enable: true
+  enable: false
+  name: hooks_phase
   log_level: warn
+  is_print_input_args: true
+  is_print_return_value: true
 
-hooks:
-  apisix: http_access_phase # run_plugin http_access_phase
+hooks_phase:
+  apisix.lua:
+    - http_access_phase
+    - http_header_filter_phase
+    - http_body_filter_phase
+    - http_log_phase
 
 #END

@@ -7,6 +7,12 @@ local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
 local type         = type
+local pairs        = pairs
+local require      = require
+local setmetatable = setmetatable
+local sub_str      = string.sub
+local pcall        = pcall
+local ipairs       = ipairs
 local debug_yaml_path = ngx.config.prefix() .. "conf/debug.yaml"
 local debug_yaml
 local debug_yaml_ctime
@@ -72,6 +78,51 @@ local sync_debug_hooks
 do
     local pre_mtime
     local enabled_hooks = {}
+
+local function apple_new_fun(module, fun_name, file_path, hook_conf)
+    local log_level = hook_conf.log_level or "warn"
+
+    if not module or type(module[fun_name]) ~= "function" then
+        log.error("failed to find function [", fun_name,
+                  "] in module:", file_path)
+        return
+    end
+
+    local fun = module[fun_name]
+    local fun_org
+    if enabled_hooks[fun] then
+        fun_org = enabled_hooks[fun].org
+        enabled_hooks[fun] = nil
+    else
+        fun_org = fun
+    end
+
+    local t = {fun_org = fun_org}
+    local mt = {}
+
+    function mt.__call(self, ...)
+        local arg = {...}
+        if hook_conf.is_print_input_args then
+            log[log_level]("call require(\"", file_path, "\").", fun_name,
+                           "() args:", json.delay_encode(arg, true))
+        end
+
+        local ret = {self.fun_org(...)}
+        if hook_conf.is_print_return_value then
+            log[log_level]("call require(\"", file_path, "\").", fun_name,
+                           "() return:", json.delay_encode(ret, true))
+        end
+        return unpack(ret)
+    end
+
+    setmetatable(t, mt)
+    enabled_hooks[t] = {
+        org = fun_org, new = t, mod = module,
+        fun_name = fun_name
+    }
+    module[fun_name] = t
+end
+
 function sync_debug_hooks()
     if not debug_yaml_ctime or debug_yaml_ctime == pre_mtime then
         return
@@ -85,48 +136,32 @@ function sync_debug_hooks()
 
     enabled_hooks = {}
 
-    if not debug_yaml.hook_conf.enable then
+    local hook_conf = debug_yaml.hook_conf
+    if not hook_conf.enable then
         pre_mtime = debug_yaml_ctime
         return
     end
 
-    local log_level = debug_yaml.hook_conf.log_level or "warn"
+    local hook_name = hook_conf.name or ""
+    local hooks = debug_yaml[hook_name]
+    if not hooks then
+        pre_mtime = debug_yaml_ctime
+        return
+    end
 
-    for file_path, fun_name in pairs(debug_yaml.hooks) do
+    for file_path, fun_names in pairs(hooks) do
+        if sub_str(file_path, -4) == ".lua" then
+            file_path = sub_str(file_path, 1, -5)
+        end
+
         local ok, module = pcall(require, file_path)
         if not ok then
             log.error("failed to load module [", file_path, "]: ", module)
 
-        elseif not module or type(module[fun_name]) ~= "function" then
-            log.error("failed to find function [", fun_name, "] in module:",
-                      file_path)
-
         else
-            local fun = module[fun_name]
-            local fun_org
-            if enabled_hooks[fun] then
-                fun_org = enabled_hooks[fun].org
-                enabled_hooks[fun] = nil
-            else
-                fun_org = fun
+            for _, fun_name in ipairs(fun_names) do
+                apple_new_fun(module, fun_name, file_path, hook_conf)
             end
-
-            local t = {fun_org = fun_org}
-            local mt = {}
-
-            function mt.__call(self, ...)
-                local arg = {...}
-                log[log_level]("module: ", file_path, " fun: ", fun_name,
-                               " input args:", json.delay_encode(arg, true))
-                return self.fun_org(...)
-            end
-
-            setmetatable(t, mt)
-            enabled_hooks[t] = {
-                org = fun_org, new = t, mod = module,
-                fun_name = fun_name
-            }
-            module[fun_name] = t
         end
     end
 
