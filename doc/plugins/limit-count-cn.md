@@ -49,6 +49,37 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 然后在 route 页面中添加 limit-count 插件：
 ![](../images/plugin/limit-count-2.png)
 
+如果你需要一个集群级别的流量控制，我们可以借助 redis server 来完成。不同的 APISIX 节点之间将共享流量限速结果，实现集群流量限速。
+
+请看下面例子：
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "policy": "redis",
+            "redis": {
+                "host": "127.0.0.1",
+                "port": 6379,
+                "timeout": 1001
+            }
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
 #### 测试插件
 上述配置限制了 60 秒内只能访问 2 次，前两次访问都会正常访问：
 ```shell

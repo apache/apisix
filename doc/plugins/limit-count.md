@@ -18,6 +18,7 @@
 ### example
 
 #### enable plugin
+
 Here's an example, enable the `limit count` plugin on the specified route:
 
 ```shell
@@ -46,6 +47,37 @@ You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`
 
 Then add limit-count plugin:
 ![](../images/plugin/limit-count-2.png)
+
+If you need a cluster-level precision traffic limit, then we can do it with the redis server. The rate limit of the traffic will be shared between different APISIX nodes to limit the rate of cluster traffic.
+
+Here is the example:
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "policy": "redis",
+            "redis": {
+                "host": "127.0.0.1",
+                "port": 6379,
+                "timeout": 1001
+            }
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
 
 #### test plugin
 The above configuration limits access to only 2 times in 60 seconds. The first two visits will be normally:
