@@ -2,6 +2,7 @@ local core        = require("apisix.core")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
+local str_sub     = string.sub
 
 
 local schema = {
@@ -52,7 +53,6 @@ end
 
 do
     local upstream_vars = {
-        uri        = "upstream_uri",
         scheme     = "upstream_scheme",
         host       = "upstream_host",
         upgrade    = "upstream_upgrade",
@@ -68,6 +68,13 @@ function _M.rewrite(conf, ctx)
         if conf[name] then
             ctx.var[upstream_vars[name]] = conf[name]
         end
+    end
+
+    local upstream_uri = conf.uri or ctx.var.uri
+    if ctx.var.is_args == "?" or str_sub(ctx.var.request_uri, -1) == "?" then
+        ctx.var["upstream_uri"] = upstream_uri .. "?" .. (ctx.var.args or "")
+    else
+        ctx.var["upstream_uri"] = upstream_uri
     end
 
     if conf.enable_websocket then
