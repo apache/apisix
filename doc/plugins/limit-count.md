@@ -11,14 +11,14 @@
 |rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
 |policy        |optional|The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually used it to do the global speed limit).|
 |redis.host    |optional|When using the `redis` policy, this property specifies the address of the Redis server.|
-|redis.port    |optional|When using the `redis` policy, this property specifies the port of the Redis server.|
-|redis.timeout |optional|When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server.|
+|redis.port    |optional|When using the `redis` policy, this property specifies the port of the Redis server. The default port is 6379.|
+|redis.timeout |optional|When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server. The default timeout is 1000 ms(1 second).|
 
 
 ### example
 
 #### enable plugin
-Here's an example, enable the limit count plugin on the specified route:
+Here's an example, enable the `limit count` plugin on the specified route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -82,10 +82,10 @@ Server: APISIX web server
 </html>
 ```
 
-This means that the limit count plugin is in effect.
+This means that the `limit count` plugin is in effect.
 
 #### disable plugin
-When you want to disable the limit count plugin, it is very simple,
+When you want to disable the `limit count` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 ```shell
@@ -102,4 +102,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-The limit count plugin has been disabled now. It works for other plugins.
+The `limit count` plugin has been disabled now. It works for other plugins.

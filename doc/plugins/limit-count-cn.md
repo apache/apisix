@@ -11,16 +11,16 @@
 |count         |必选     |指定时间窗口内的请求数量阈值|
 |time_window   |必选     |时间窗口的大小（以秒为单位），超过这个时间就会重置|
 |key           |必选     |是用来做请求计数的依据，当前接受的 key 有: "remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for"。|
-|rejected_code |optional|T当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503|
-|policy        |optional|用于检索和增加限制的速率限制策略。可选的值有：`local`(计数器被以内存方式保存在节点本地) 和 `redis`(计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速).|
-|redis.host    |optional|使用 `redis` 限速策略，该属性是 Redis 服务节点的地址。|
-|redis.port    |optional|使用 `redis` 限速策略，该属性是 Redis 服务节点的端口。|
-|redis.timeout |optional|使用 `redis` 限速策略，该属性是 Redis 服务节点的通讯超时时间。|
+|rejected_code |可选     |T当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认是 503|
+|policy        |可选     |用于检索和增加限制的速率限制策略。可选的值有：`local`(计数器被以内存方式保存在节点本地) 和 `redis`(计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速).|
+|redis.host    |可选     |当使用 `redis` 限速策略时，该属性是 Redis 服务节点的地址。|
+|redis.port    |可选     |当使用 `redis` 限速策略时，该属性是 Redis 服务节点的端口，默认值 6379。|
+|redis.timeout |可选     |当使用 `redis` 限速策略时，该属性是 Redis 服务节点的通讯超时时间，默认值 1000 ms（1 秒）。|
 
 ### 示例
 
 #### 开启插件
-下面是一个示例，在指定的 route 上开启了 limit count 插件:
+下面是一个示例，在指定的 `route` 上开启了 `limit count` 插件:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -83,10 +83,10 @@ Server: APISIX web server
 </html>
 ```
 
-这就表示 limit count 插件生效了。
+这就表示 `limit count` 插件生效了。
 
 #### 移除插件
-当你想去掉 limit count 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你想去掉 `limit count` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -102,4 +102,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-现在就已经移除了 limit count 插件了。其他插件的开启和移除也是同样的方法。
+现在就已经移除了 `limit count` 插件了。其他插件的开启和移除也是同样的方法。

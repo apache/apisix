@@ -1,7 +1,11 @@
 local limit_local_new = require("resty.limit.count").new
-local limit_redis_new = require("apisix.plugins.limit-count.redis").new
 local core = require("apisix.core")
 local plugin_name = "limit-count"
+local limit_redis_new
+do
+    local redis_src = "apisix.plugins.limit-count.limit-count-redis"
+    limit_redis_new = require(redis_src).new
+end
 
 
 local schema = {
@@ -41,8 +45,8 @@ local schema = {
 
 
 local _M = {
-    version = 0.1,
-    priority = 1002,        -- TODO: add a type field, may be a good idea
+    version = 0.2,
+    priority = 1002,
     name = plugin_name,
     schema = schema,
 }
@@ -62,6 +66,9 @@ function _M.check_schema(conf)
         if not conf.redis then
             return false, "missing valid redis options"
         end
+
+        conf.redis.port = conf.redis.port or 6379
+        conf.redis.timeout = conf.redis.timeout or 1000
     end
 
     return true
