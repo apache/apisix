@@ -25,7 +25,7 @@ local _M = {version = 0.1}
 local function read_debug_yaml()
     local attributes, err = lfs.attributes(debug_yaml_path)
     if not attributes then
-        log.error("failed to fetch ", debug_yaml_path, " attributes: ", err)
+        log.notice("failed to fetch ", debug_yaml_path, " attributes: ", err)
         return
     end
 
