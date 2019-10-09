@@ -287,9 +287,12 @@ _EOC_
     }
 
     my $user_yaml_config = $block->yaml_config // $yaml_config;
+    my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;
+>>> ../conf/debug.yaml
+$user_debug_config
 >>> ../conf/config.yaml
 $user_yaml_config
 >>> ../conf/cert/apisix.crt
