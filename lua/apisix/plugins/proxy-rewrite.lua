@@ -71,14 +71,14 @@ function _M.rewrite(conf, ctx)
 
     local upstream_uri = conf.uri or ctx.var.uri
     if ctx.var.is_args == "?" then
-        ctx.var["upstream_uri"] = upstream_uri .. "?" .. (ctx.var.args or "")
+        ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
     else
-        ctx.var["upstream_uri"] = upstream_uri
+        ctx.var.upstream_uri = upstream_uri
     end
 
     if conf.enable_websocket then
-        ctx.var["upstream_upgrade"]    = ctx.var["http_upgrade"]
-        ctx.var["upstream_connection"] = ctx.var["http_connection"]
+        ctx.var.upstream_upgrade    = ctx.var.http_upgrade
+        ctx.var.upstream_connection = ctx.var.http_connection
     end
 end
 
