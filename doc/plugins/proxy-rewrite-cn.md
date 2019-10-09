@@ -10,6 +10,7 @@
 |uri             |可选| 转发到上游的新`uri` 地址|
 |host            |可选| 转发到上游的新`host` 地址，例如：`iresty.com` |
 |enable_websocket|可选| 是否启用`websocket`（布尔值），默认不启用|
+|headers         |可选| 转发到上游的新`headers`，可以设置多个。头信息如果存在将重写，不存在则添加。|
 
 ### 示例
 
@@ -26,7 +27,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "uri": "/test/home.html",
             "scheme": "http",
             "host": "iresty.com",
-            "enable_websocket": true
+            "enable_websocket": true,
+            "headers": {
+                "X-Api-Version": "v1",
+                "X-Api-Engine": "apisix"
+            }
         }
     },
     "upstream": {

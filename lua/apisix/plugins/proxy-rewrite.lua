@@ -27,7 +27,12 @@ local schema = {
             description = "enable websocket for request",
             type        = "boolean",
             default     = false
-        }
+        },
+        headers = {
+            description = "new headers for request",
+            type = "object",
+            minProperties = 1,
+        },
     },
     minProperties = 1,
 }
@@ -73,6 +78,13 @@ function _M.rewrite(conf, ctx)
     if conf.enable_websocket then
         ctx.var["upstream_upgrade"]    = ctx.var["http_upgrade"]
         ctx.var["upstream_connection"] = ctx.var["http_connection"]
+    end
+
+    -- TODO: support deleted header
+    if conf.headers then
+        for header_name, header_value in pairs(conf.headers) do
+            core.request.set_header(header_name, header_value)
+        end
     end
 end
 
