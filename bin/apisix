@@ -44,12 +44,16 @@ end
 -- print("apisix_home: ", apisix_home)
 
 do
-    local ok, json = pcall(require, "cjson")
-    if ok and json then
-        io.stderr:write("please remove the cjson library in Lua, it may "
-                        .. "conflict with the cjson library in openresty. "
-                        .. "\n luarocks remove cjson\n")
-        return
+    -- skip luajit environment
+    local ok = pcall(require, "table.new")
+    if not ok then
+        local ok, json = pcall(require, "cjson")
+        if ok and json then
+            io.stderr:write("please remove the cjson library in Lua, it may "
+                            .. "conflict with the cjson library in openresty. "
+                            .. "\n luarocks remove cjson\n")
+            return
+        end
     end
 end
 
