@@ -291,6 +291,10 @@ end
 
 
 function _M.fetch_created_obj(key)
+    -- like /routes and /upstreams, remove first char `/`
+    if key then
+        key = sub_str(key, 2)
+    end
     return created_obj[key]
 end
 
