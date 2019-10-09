@@ -6,6 +6,7 @@ matrix:
   include:
     - os: linux
     - os: osx
+      if: type IN (push)
       cache:
         directories:
           - $HOME/Library/Caches/Homebrew
