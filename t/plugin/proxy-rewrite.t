@@ -572,7 +572,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 14: set route(rewrite uri args)
+=== TEST 20: set route(rewrite uri args)
 --- config
     location /t {
         content_by_lua_block {
@@ -611,7 +611,7 @@ passed
 
 
 
-=== TEST 15: rewrite uri args
+=== TEST 21: rewrite uri args
 --- request
 GET /hello?q=apisix&a=iresty HTTP/1.1
 --- response_body
@@ -661,7 +661,7 @@ passed
 [error]
 
 
-=== TEST 17: rewrite uri empty args
+=== TEST 22: rewrite uri empty args
 --- request
 GET /hello HTTP/1.1
 --- response_body
