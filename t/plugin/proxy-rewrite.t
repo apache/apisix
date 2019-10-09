@@ -569,3 +569,102 @@ x-api-test: hello
 x-real-ip: 127.0.0.1
 --- no_error_log
 [error]
+
+
+
+=== TEST 20: set route(rewrite uri args)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_args",
+                                "enable_websocket": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: rewrite uri args
+--- request
+GET /hello?q=apisix&a=iresty HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args
+q: apisix
+a: iresty
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: set route(rewrite uri empty args)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_args",
+                                "enable_websocket": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+=== TEST 22: rewrite uri empty args
+--- request
+GET /hello HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args
+--- no_error_log
+[error]
