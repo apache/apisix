@@ -455,22 +455,22 @@ hello world
 |hook_conf.enable|必选项|是否开启 hook 追踪调试。开启后将打印指定模块方法的请求参数或返回值|false|
 |hook_conf.name|必选项|开启 hook 追踪调试的模块列表名称||
 |hook_conf.log_level|必选项|打印请求参数和返回值的日志级别|warn|
-|hook_conf.is_print_input_args|必选项|是否打印请求参数|true|
+|hook_conf.is_print_input_args|必选项|是否打印输入参数|true|
 |hook_conf.is_print_return_value|必选项|是否打印返回值|true|
 
 请看下面示例：
 
 ```yaml
 hook_conf:
-  enable: false                 # enable or disable this feature
-  name: hook_phase              # the name of module and function list
-  log_level: warn               # log level
-  is_print_input_args: true     # print the input arguments
-  is_print_return_value: true   # print the return value
+  enable: false                 # 是否开启 hook 追踪调试
+  name: hook_phase              # 开启 hook 追踪调试的模块列表名称
+  log_level: warn               # 日志级别
+  is_print_input_args: true     # 是否打印输入参数
+  is_print_return_value: true   # 是否打印返回值
 
-hook_phase:                     # module and function list, name: hook_phase
-  apisix.lua:                   # module file name
-    - http_access_phase         # function name
+hook_phase:                     # 模块函数列表，名字：hook_phase
+  apisix:                       # 引用的模块名称
+    - http_access_phase         # 函数名：数组
     - http_header_filter_phase
     - http_body_filter_phase
     - http_log_phase

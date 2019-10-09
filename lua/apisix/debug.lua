@@ -10,7 +10,6 @@ local type         = type
 local pairs        = pairs
 local require      = require
 local setmetatable = setmetatable
-local sub_str      = string.sub
 local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
@@ -55,7 +54,7 @@ local function read_debug_yaml()
 
     if not found_end_flag then
         f:close()
-        log.warn("missing valid end flag in file ", debug_yaml_path)
+        log.notice("missing valid end flag in file ", debug_yaml_path)
         return
     end
 
@@ -124,6 +123,7 @@ local function apple_new_fun(module, fun_name, file_path, hook_conf)
     module[fun_name] = t
 end
 
+
 function sync_debug_hooks()
     if not debug_yaml_ctime or debug_yaml_ctime == pre_mtime then
         return
@@ -151,10 +151,6 @@ function sync_debug_hooks()
     end
 
     for file_path, fun_names in pairs(hooks) do
-        if sub_str(file_path, -4) == ".lua" then
-            file_path = sub_str(file_path, 1, -5)
-        end
-
         local ok, module = pcall(require, file_path)
         if not ok then
             log.error("failed to load module [", file_path, "]: ", module)

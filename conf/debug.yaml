@@ -6,7 +6,7 @@ hook_conf:
   is_print_return_value: true   # print the return value
 
 hook_phase:                     # module and function list, name: hook_phase
-  apisix.lua:                   # module file name
+  apisix:                       # required module name
     - http_access_phase         # function name
     - http_header_filter_phase
     - http_body_filter_phase
