@@ -239,33 +239,7 @@ local upstream_schema = {
             enum = {"remote_addr"},
         },
         desc = {type = "string", maxLength = 256},
-        id = id_schema,
-        scheme = {
-            description = "scheme of upstream",
-            type = "string",
-            enum = {"http", "https"},
-        },
-        host = {
-            description = "host of upstream",
-            type = "string",
-            pattern = host_def_pat,
-        },
-        upgrade = {
-            description = "upgrade header for upstream",
-            type = "string",
-        },
-        connection = {
-            description = "connection header for upstream",
-            type = "string",
-        },
-        uri = {
-            description = "new uri for upstream",
-            type = "string",
-        },
-        enable_websocket = {
-            description = "enable websocket for request",
-            type = "boolean",
-        }
+        id = id_schema
     },
     required = {"nodes", "type"},
     additionalProperties = false,
