@@ -70,6 +70,8 @@ function _M.http_init_worker()
     if core.config == require("apisix.core.config_yaml") then
         core.config.init_worker()
     end
+
+    require("apisix.debug").init_worker()
 end
 
 
