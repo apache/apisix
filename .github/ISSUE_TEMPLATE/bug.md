@@ -1,3 +1,12 @@
+---
+name: Bug report template
+about: Please use this template for reporting suspected bugs.
+title: 'bug: '
+labels: ''
+assignees: ''
+
+---
+
 ### Issue description
 
 
