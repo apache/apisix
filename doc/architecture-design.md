@@ -443,33 +443,31 @@ hello world
 
 ### Advanced Debug Mode
 
-设置 `conf/debug.yaml` 中的选项，开启高级调试模式。由于 APISIX 服务启动后是每秒定期检查该文件，
-当可以正常读取到 `#END` 结尾时，才认为文件处于写完关闭状态。
+Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will have a check every second, only the checker reads the `#END` flag, and the file would consider as closed.
 
-根据文件最后修改时间判断文件内容是否有变化，如有变化则重新加载，如没变化则跳过本次检查。
-所以高级调试模式的开启、关闭都是热更新方式完成。
+The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
 
-|名字|可选项|说明|默认值|
+|Key|Optional|Description|Default|
 |----|-----|---------|---|
-|hook_conf.enable|必选项|是否开启 hook 追踪调试。开启后将打印指定模块方法的请求参数或返回值|false|
-|hook_conf.name|必选项|开启 hook 追踪调试的模块列表名称||
-|hook_conf.log_level|必选项|打印请求参数和返回值的日志级别|warn|
-|hook_conf.is_print_input_args|必选项|是否打印输入参数|true|
-|hook_conf.is_print_return_value|必选项|是否打印返回值|true|
+|hook_conf.enable|required|Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled.|false|
+|hook_conf.name|required|The module list name of hook which has enabled debug trace||
+|hook_conf.log_level|required|Logging levels for input arguments & returned value|warn|
+|hook_conf.is_print_input_args|required|Enable/Disable input arguments print|true|
+|hook_conf.is_print_return_value|required|Enable/Disable returned value print|true|
 
-请看下面示例：
+Example:
 
 ```yaml
 hook_conf:
-  enable: false                 # 是否开启 hook 追踪调试
-  name: hook_phase              # 开启 hook 追踪调试的模块列表名称
-  log_level: warn               # 日志级别
-  is_print_input_args: true     # 是否打印输入参数
-  is_print_return_value: true   # 是否打印返回值
+  enable: false                 # Enable/Disable Hook Debug Trace
+  name: hook_phase              # The Module List Name of Hook which has enabled Debug Trace
+  log_level: warn               # Logging Levels
+  is_print_input_args: true     # Enable/Disable Input Arguments Print
+  is_print_return_value: true   # Enable/Disable Returned Value Print
 
-hook_phase:                     # 模块函数列表，名字：hook_phase
-  apisix:                       # 引用的模块名称
-    - http_access_phase         # 函数名：数组
+hook_phase:                     # Module Function List, Name: hook_phase
+  apisix:                       # Referenced Module Name
+    - http_access_phase         # Function Names：Array
     - http_header_filter_phase
     - http_body_filter_phase
     - http_log_phase
