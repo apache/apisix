@@ -13,7 +13,7 @@
 2.
 3.
 
-### What's the actual result? (include assertion message & call stack if applicable)
+### What's the actual result? (including assertion message & call stack if applicable)
 
 
 
