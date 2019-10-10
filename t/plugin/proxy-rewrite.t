@@ -623,7 +623,7 @@ a: iresty
 
 
 
-=== TEST 16: set route(rewrite uri empty args)
+=== TEST 22: set route(rewrite uri empty args)
 --- config
     location /t {
         content_by_lua_block {
@@ -661,7 +661,8 @@ passed
 [error]
 
 
-=== TEST 22: rewrite uri empty args
+
+=== TEST 23: rewrite uri empty args
 --- request
 GET /hello HTTP/1.1
 --- response_body
