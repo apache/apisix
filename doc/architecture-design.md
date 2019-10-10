@@ -1,4 +1,4 @@
-## 目录
+## Welcome
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
@@ -11,11 +11,11 @@
 
 ## APISIX
 
-### 插件加载流程
+### Plugin Loading Process
 
 ![](./images/flow-load-plugin.png)
 
-### 插件内部结构
+### Plugin Hierarchy Structure
 
 <img src="./images/flow-plugin-internal.png" width="50%" height="50%">
 
@@ -42,7 +42,7 @@ plugins:                        # plugin name list
 *注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
 
-[返回目录](#目录)
+[Back to top](#Welcome)
 
 ## Route
 
@@ -86,7 +86,7 @@ Server: APISIX web server
 
 有关 Route 的具体选项，可具体查阅 [Admin API 之 Route](admin-api-cn.md#route)。
 
-[返回目录](#目录)
+[Back to top](#Welcome)
 
 ## Service
 
@@ -156,7 +156,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 
 注意：当 Route 和 Service 都开启同一个插件时，Route 参数的优先级是高于 Service 的。
 
-[返回目录](#目录)
+[Back to top](#Welcome)
 
 ## Plugin
 
@@ -197,7 +197,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 
 [查看 APISIX 已支持插件列表](plugins-cn.md)
 
-[返回目录](#目录)
+[Back to top](#Welcome)
 
 ## Upstream
 
@@ -210,7 +210,7 @@ Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规�
 Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑定在 `Service` 中，不过 `Route` 中的配置
 优先级更高。这里的优先级行为与 `Plugin` 非常相似
 
-#### 配置参数
+#### Configuration
 
 APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面表格。
 
@@ -318,7 +318,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 
 更多细节可以参考[健康检查的文档](health-check.md)。
 
-[返回目录](#目录)
+[Back to top](#Welcome)
 
 
 ## Router
@@ -340,7 +340,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
     * `radixtree_sni`: （默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
     * `r3_sni`: 使用 `SNI` (Server Name Indication) 作为主索引（基于 r3 引擎）。
 
-[返回目录](#目录)
+[Back to top](#Welcome)
 
 ## Consumer
 
@@ -418,11 +418,11 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
-[返回目录](#目录)
+[Back to top](#Welcome)
 
 ## Debug mode
 
-### 基本调试模式
+### Basic Debug Mode
 
 设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启基本调试模式。
 
@@ -442,7 +442,7 @@ Server: openresty
 hello world
 ```
 
-### 高级调试模式
+### Advanced Debug Mode
 
 设置 `conf/debug.yaml` 中的选项，开启高级调试模式。由于 APISIX 服务启动后是每秒定期检查该文件，
 当可以正常读取到 `#END` 结尾时，才认为文件处于写完关闭状态。
@@ -478,4 +478,4 @@ hook_phase:                     # 模块函数列表，名字：hook_phase
 #END
 ```
 
-[返回目录](#目录)
+[Back to top](#Welcome)
