@@ -78,11 +78,11 @@ APISIX Installed and tested in the following systems, and the version of OpenRes
 * Ubuntu 18.04
 * Debian 9
 * Debian 10
-* Mac OSX
+* macOS
 
 You now have four ways to install APISIX:
 - if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
-- if using MacOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
+- if using macOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
 - other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
 - You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
@@ -101,7 +101,7 @@ sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.8/apis
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
 
-### Install from Luarocks (not support MacOS)
+### Install from Luarocks (not support macOS)
 
 ##### Dependencies
 
