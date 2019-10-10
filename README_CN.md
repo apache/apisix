@@ -79,7 +79,7 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
 
 目前有 4 种安装方式:
 - 如果你在使用 CentOS 7，我们推荐使用 [RPM 包安装](#通过-rpm-包安装centos-7)；
-- 在 MacOS 中，你需要克隆该仓库并手动安装，请参考[开发手册](doc/dev-manual-cn.md)；
+- 在 macOS 中，你需要克隆该仓库并手动安装，请参考[开发手册](doc/dev-manual-cn.md)；
 - 其它操作系统，我们推荐使用 [Luarocks 安装方式](#通过-luarocks-安装-不支持-macos)；
 - 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装。
 
@@ -99,7 +99,7 @@ sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.8/apis
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
 
-### 通过 Luarocks 安装 （不支持 MacOS）
+### 通过 Luarocks 安装 （不支持 macOS）
 
 ##### 依赖项
 
