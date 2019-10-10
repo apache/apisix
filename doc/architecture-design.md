@@ -21,7 +21,7 @@
 
 ## APISIX Config
 
-通过修改本地 `conf/config.yaml` 文件完成对 APISIX 服务本身的基本配置。
+We can start using APISIX just by modifying `conf/config.yaml` file.
 
 ```yaml
 apisix:
@@ -39,8 +39,7 @@ plugins:                        # plugin name list
   - ...
 ```
 
-*注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
-会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
+*Note* `apisix` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* that file.
 
 [Back to top](#Welcome)
 
