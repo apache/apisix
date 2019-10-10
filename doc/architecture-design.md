@@ -423,9 +423,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ### Basic Debug Mode
 
-设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启基本调试模式。
+Enable basic debug mode just by setting `apisix.enable_debug = true` in `conf/config.yaml` file.
 
-比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
+e.g Using both `limit-conn` and `limit-count` plugins for a `/hello` request, there will have a response header called `Apisix-Plugins: limit-conn, limit-count`.
 
 ```shell
 $ curl http://127.0.0.1:1984/hello -i
