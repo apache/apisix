@@ -185,9 +185,9 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: handshake failed
+failed to do SSL handshake: certificate host mismatch
 --- error_log
-SSL_do_handshake() failed (SSL: error:
+not found any valid sni configuration
 
 
 
