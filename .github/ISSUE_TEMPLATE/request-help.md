@@ -7,17 +7,10 @@ assignees: ''
 
 ---
 
-# Issue description
+### Issue description
 
 
-
-# Environment
+### Environment
 
 * apisix version (cmd: `apisix version`):
 * OS:
-
-# What's the actual result? (include assertion message & call stack if applicable)
-
-
-
-# What's the expected result?
