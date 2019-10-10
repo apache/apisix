@@ -146,9 +146,6 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin
 	$(INSTALL) lua/apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/lua/apisix/plugins/zipkin/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/stream
-	$(INSTALL) lua/apisix/stream/*.lua $(INST_LUADIR)/apisix/lua/apisix/stream/
-
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/stream/plugins
 	$(INSTALL) lua/apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/lua/apisix/stream/plugins/
 
