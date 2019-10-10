@@ -71,7 +71,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 #### 首先进行登录获取 `jwt-auth` token:
 
 ```shell
-$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=consumer-key -i
+$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=user-key -i
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
 Content-Type: text/plain

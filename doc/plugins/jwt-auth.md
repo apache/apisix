@@ -10,7 +10,7 @@
 
 ## Name
 
-`jwt-auth` is an authentication plugin that need to work with `consumer'. Add JWT Authentication to a `service'or `route'. 
+`jwt-auth` is an authentication plugin that need to work with `consumer'. Add JWT Authentication to a `service'or `route'.
 
 The `consumer` then adds its key to the query string parameter, request header, or `cookie' to verify its request.
 
@@ -25,7 +25,7 @@ For more information on JWT, refer to [JWT] (https://jwt.io/) for more informati
 
 ## How To Enable
 
-1. set a consumer and  config the value of the`jwt-auth` option 
+1. set a consumer and  config the value of the`jwt-auth` option
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
@@ -71,7 +71,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 #### get the token in `jwt-auth` plugin:
 
 ```shell
-$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=consumer-key -i
+$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=user-key -i
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
 Content-Type: text/plain
