@@ -235,14 +235,23 @@ http {
 
     server {
         listen {* node_listen *};
-        listen {* node_ssl_listen *} ssl;
+        {% if ssl.enable then %}
+        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        {% end %}
+
         {% if enable_ipv6 then %}
         listen [::]:{* node_listen *};
-        listen [::]:{* node_ssl_listen *} ssl;
+        {% if ssl.enable then %}
+        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
         {% end %}
+        {% end %} {% -- if enable_ipv6 %}
+
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
+
+        ssl_protocols {* ssl.ssl_protocols *};
+        ssl_ciphers {* ssl.ssl_ciphers *};
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
