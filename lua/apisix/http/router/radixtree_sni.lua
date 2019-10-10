@@ -68,6 +68,8 @@ local function set_pem_ssl_key(cert, pkey)
         return false, "no request found"
     end
 
+    ngx_ssl.clear_certs()
+
     local out = ffi.new("char [?]", #cert)
     local rc = C.ngx_http_lua_ffi_cert_pem_to_der(cert, #cert, out, errmsg)
     if rc < 1 then
@@ -99,9 +101,7 @@ local function set_pem_ssl_key(cert, pkey)
 end
 
 
-function _M.match(api_ctx)
-    ngx_ssl.clear_certs()
-
+function _M.match_and_set(api_ctx)
     local err
     if not radixtree_router or
        radixtree_router_ver ~= ssl_certificates.conf_version then
