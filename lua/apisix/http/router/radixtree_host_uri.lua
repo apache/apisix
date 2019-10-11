@@ -94,7 +94,9 @@ local function create_radixtree_router(routes)
     end
 
     -- create router: host_uri_router
-    host_uri_router = router.new(host_uri_routes)
+    if #host_uri_routes > 0 then
+        host_uri_router = router.new(host_uri_routes)
+    end
 
     -- create router: only_uri_router
     local routes = plugin.api_routes()
@@ -128,17 +130,17 @@ function _M.match(api_ctx)
     match_opts.vars = api_ctx.var
     match_opts.host = api_ctx.var.host
 
-    local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
-    if ok then
-        return true
-    end
-
     if host_uri_router then
         local host_uri = api_ctx.var.host .. api_ctx.var.uri
         local ok = host_uri_router:dispatch(host_uri, match_opts, api_ctx)
         if ok then
             return true
         end
+    end
+
+    local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
+    if ok then
+        return true
     end
 
     core.log.info("not find any matched route")
