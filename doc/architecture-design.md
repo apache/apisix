@@ -47,7 +47,7 @@ plugins:                        # plugin name list
 
 The route matches the client's request by defining rules, then loads and executes the corresponding plugin based on the matching result, and forwards the request to the specified Upstream.
 
-The route mainly consists of three parts: matching rules (e.g uri, host, remote_addr, etc.), plugin configuration (traffic limit & rate limit, etc.) and upstream information.
+The route mainly consists of three parts: matching rules (e.g uri, host, remote_addr, etc.), plugin configuration (current-limit & rate-limit, etc.) and upstream information.
 
 The following image shows an example of some Route rules. When some attribute values are the same, the figure is identified by the same color.
 
@@ -89,14 +89,13 @@ For specific options of Route, please refer to [Admin API](admin-api-cn.md#route
 
 ## Service
 
-`Service` 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route`
-与 `Service` 之间，通常是 N:1 的关系，参看下图。
+A `Service` is an abstraction of an API (which can also be understood as a set of Route abstractions). It usually corresponds to the upstream service abstraction. Between `Route` and `Service`, usually the relationship of N:1, please see the following image.
 
 <img src="./images/service-example.png" width="50%" height="50%">
 
-不同 Route 规则同时绑定到一个 Service 上，这些 Route 将具有相同的上游和插件配置，减少冗余配置。
+Different Route rules are bound to a Service at the same time. These Routes will have the same upstream and plugin configuration, reducing redundant configuration.
 
-比如下面的例子，创建了一个启用限流插件的 Service，然后把 id 为 `100`、`101` 的 Route 都绑定在这个 Service 上。
+The following example creates a Service that enables the current-limit plugin, and then binds the Route with the id of `100` and `101` to the Service.
 
 ```shell
 # create new Service
@@ -134,7 +133,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/101 -X PUT -d '
 }'
 ```
 
-当然我们也可以为 Route 指定不同的插件参数或上游，比如下面这个 Route 设置了不同的限流参数，其他部分（比如上游）则继续使用 Service 中的配置参数。
+Of course, we can also specify different plugin parameters or upstream for Route. Some of the following Routes have different current-limit parameters. Other parts (such as upstream) continue to use the configuration parameters in Service.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
@@ -153,7 +152,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 }'
 ```
 
-注意：当 Route 和 Service 都开启同一个插件时，Route 参数的优先级是高于 Service 的。
+Note: When both Route and Service enable the same plugin, the Route parameter has a higher priority than Service.
 
 [Back to top](#Table-of-contents)
 
