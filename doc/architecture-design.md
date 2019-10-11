@@ -45,19 +45,19 @@ plugins:                        # plugin name list
 
 ## Route
 
-Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
-插件，并把请求转发给到指定 Upstream。
+The route matches the client's request by defining rules, then loads and executes the corresponding plugin based on the matching result, and forwards the request to the specified Upstream.
 
-Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
-请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
+The route mainly consists of three parts: matching rules (e.g uri, host, remote_addr, etc.), plugin configuration (traffic limit & rate limit, etc.) and upstream information.
+
+The following image shows an example of some Route rules. When some attribute values are the same, the figure is identified by the same color.
 
 <img src="./images/routes-example.png" width="50%" height="50%">
 
-我们直接在 Route 中完成所有参数的配置，优点是容易设置，每个 Route 都相对独立自由度比较高。但当我们的 Route 有比较多的重复配置（比如启用相同的插件配置或上游信息），一旦我们要更新这些相同属性时，就需要遍历所有 Route 并进行修改，给后期管理维护增加不少复杂度。
+We configure all the parameters directly in the Route, it's easy to set up, and each Route has a relatively high degree of freedom. But when our Route has more repetitive configurations (such as enabling the same plugin configuration or upstream information), once we need update these same properties, we have to traverse all the Routes and modify them, so it adding a lot of complexity of management and maintenance.
 
-上面提及重复的缺点在 APISIX 中独立抽象了 [Service](#service) 和 [Upstream](#upstream) 两个概念来解决。
+The shortcomings mentioned above are independently abstracted in APISIX by the two concepts [Service](#service) and [Upstream](#upstream).
 
-下面创建的 Route 示例，是把 uri 为 "/index.html" 的请求代理到地址为 "39.97.63.215:80" 的 Upstream 服务：
+The route example created below is to proxy the request with uri `/index.html` to the Upstream service with the address `39.97.63.215:80`:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
@@ -81,9 +81,9 @@ Server: APISIX web server
 {"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
-当我们接收到成功应答，表示该 Route 已成功创建。
+When we receive a successful response, it indicates that the route was successfully created.
 
-有关 Route 的具体选项，可具体查阅 [Admin API 之 Route](admin-api-cn.md#route)。
+For specific options of Route, please refer to [Admin API] (admin-api-cn.md#route).
 
 [Back to top](#Table-of-contents)
 
