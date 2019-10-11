@@ -207,7 +207,7 @@ Upstream configuration can be directly bound to the specified `Route` or it can 
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
-|name    |Optional|Description|
+|Name    |Optional|Description|
 |-------         |-----|------|
 |type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
 |nodes           |required|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
@@ -338,35 +338,35 @@ Set the route that best suits your business needs in the local configuration `co
 
 ## Consumer
 
-对于 API 网关通常可以用请求域名、客户端 IP 地址等字段识别到某类请求方，
-然后进行插件过滤并转发请求到指定上游，但有时候这个深度不够。
+For the API gateway, it is usually possible to identify a certain type of requester by using a domain name such as a request domain name, a client IP address, etc., and then perform plugin filtering and forward the request to the specified upstream, but sometimes the depth is insufficient.
 
 <img src="./images/consumer-who.png" width="50%" height="50%">
 
-如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
+As shown in the image above, as an API gateway, you should know who the API Consumer is, so you can configure different rules for different API Consumers.
 
-|字段|必选|说明|
+|Field|Required|Description|
 |---|----|----|
-|username|是|Consumer 名称。|
-|plugins|否|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。|
+|username|Yes|Consumer Name.|
+|plugins|No|The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section.|
 
-在 APISIX 中，识别 Consumer 的过程如下图：
+In APISIX, the process of identifying a Consumer is as follows:
 
 <img src="./images/consumer-internal.png" width="50%" height="50%">
 
-1. 授权认证：比如有 [key-auth](./plugins/key-auth.md)、[JWT](./plugins/jwt-auth-cn.md) 等。
-2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
-3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
+1. Authorization certification: e.g [key-auth](./plugins/key-auth.md), [JWT](./plugins/jwt-auth-cn.md), etc.
+2. Get consumer_id: By authorization, you can naturally get the corresponding Consumer `id`, which is the unique identifier of the Consumer object.
+3. Get the Plugin or Upstream information bound to the Consumer: Complete the different configurations for different Consumers.
 
-概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
-比如不同的 Consumer 请求同一个 API，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
+To sum up, Consumer is a consumer of certain types of services and needs to be used in conjunction with the user authentication system.
 
-此外，大家也可以参考 [key-auth](./plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
+For example, different consumers request the same API, and the gateway service corresponds to different Plugin or Upstream configurations according to the current request user information.
 
-如何对某个 Consumer 开启指定插件，可以看下面例子：
+In addition, you can refer to the [key-auth](./plugins/key-auth.md) authentication authorization plugin call logic to help you further understand the Consumer concept and usage.
+
+How to enable a specific plugin for a Consumer, you can see the following example:
 
 ```shell
-# 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
+# Create a Consumer , specify the authentication plugin key-auth, and enable the specific plugin limit-count
 $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -d '
 {
     "username": "jack",
@@ -383,7 +383,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -d '
     }
 }'
 
-# 创建 Router，设置路由规则和启用插件配置
+# Create a Router, set routing rules and enable plugin configuration
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "plugins": {
@@ -398,14 +398,14 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     "uri": "/hello"
 }'
 
-# 发测试请求，前两次返回正常，没达到限速阈值
+# Send a test request, the first two return to normal, did not reach the speed limit threshold
 $ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
 ...
 
 $ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
 ...
 
-# 第三次测试返回 503，请求被限制
+# The third test returns 503 and the request is restricted
 $ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
 HTTP/1.1 503 Service Temporarily Unavailable
 ...
