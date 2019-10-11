@@ -252,6 +252,7 @@ http {
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
+        ssl_prefer_server_ciphers on;
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
