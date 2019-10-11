@@ -13,6 +13,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. souche 大搜车 https://www.souche.com/
 1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
 1. zuzuche 租租车 https://www.zuzuche.com/
+1. chaolian 超链云商 https://www.chaolian360.com/
 
 
 # User Cases
