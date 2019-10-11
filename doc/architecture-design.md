@@ -317,22 +317,22 @@ More details can be found in [Health Checking Documents](health-check.md).
 
 ## Router
 
-APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Router 来更好匹配自由业务，在性能、自由之间做最适合选择。
+A distinguishing feature of APISIX from other API gateways is that it allows users to choose different routers to better match free services, making the best choice between performance and freedom.
 
-在本地配置 `conf/config.yaml` 中设置最符合自身业务需求的路由。
+Set the route that best suits your business needs in the local configuration `conf/config.yaml`.
 
-* `apisix.router.http`: HTTP 请求路由。
-    * `radixtree_uri`: （默认）只使用 `uri` 作为主索引。基于 `radix tree` 引擎，支持全量和深前缀匹配，更多见 [如何使用 router-radixtree](router-radixtree.md)。
-        * `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
-        * `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
-        * `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。
-        * `任意过滤属性`：允许指定任何 Ningx 内置变量作为过滤条件，比如 uri 请求参数、请求头、cookie 等。
-    * `r3_uri`: 只使用 `uri` 作为主索引（基于 r3 引擎）。基于 `r3` 的 trie tree 是支持正则匹配的，比如 `/foo/{:\w+}/{:\w+}`，更多见 [如何使用 router-r3](router-r3.md)。
-    * `r3_host_uri`: 使用 `host + uri` 作为主索引（基于 r3 引擎）,对当前请求会同时匹配 host 和 uri。
+* `apisix.router.http`: HTTP Request Route。
+    * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radix tree` engine, see [How to use router-radixtree](router-radixtree.md).
+        * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
+        * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
+        * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
+        * `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as uri request parameters, request headers, cookies, and so on.
+    * `r3_uri`: Use only `uri` as the primary index (based on the r3 engine). The trie tree based on `r3` supports regular matching, such as `/foo/{:\w+}/{:\w+}`, see [How to use router-r3](router-r3.md).
+    * `r3_host_uri`: Use `host + uri` as the primary index (based on the r3 engine), matching both host and uri for the current request.
 
-* `apisix.router.ssl`: SSL 加载匹配路由。
-    * `radixtree_sni`: （默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
-    * `r3_sni`: 使用 `SNI` (Server Name Indication) 作为主索引（基于 r3 引擎）。
+* `apisix.router.ssl`: SSL loads the matching route.
+    * `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).
+    * `r3_sni`: Use `SNI` (Server Name Indication) as the primary index (based on the r3 engine).
 
 [Back to top](#Table-of-contents)
 
