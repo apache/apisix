@@ -158,22 +158,19 @@ Note: When both Route and Service enable the same plugin, the Route parameter ha
 
 ## Plugin
 
-`Plugin` 表示将在 `HTTP` 请求/响应生命周期期间执行的插件配置。
+`Plugin` represents the plugin configuration that will be executed during the `HTTP` request/response lifecycle.
 
-`Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service` 或 `Consumer`上。而对于同一
-个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Service`。
+The `Plugin` configuration can be bound directly to `Route` or it can be bound to `Service` or `Consumer`. For the configuration of the same plugin, only one copy is valid, and the configuration selection priority is always `Consumer` > `Route` > `Service`.
 
-在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该
-白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
+In `conf/config.yaml`, you can declare which plugins are supported by the local APISIX node. This is a whitelisting mechanism. Plugins that are not in this whitelist will be automatically ignored. This feature can be used to temporarily turn off or turn on specific plugins, which is very effective in dealing with unexpected situations.
 
-插件的配置可以被直接绑定在指定 Route 中，也可以被绑定在 Service 中，不过 Route 中的插件配置
-优先级更高。
+The configuration of the plugin can be directly bound to the specified Route, or it can be bound to the Service, but the plugin configuration in Route has a higher priority.
 
-一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
-插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../doc/plugins/example-plugin.lua#L16)。
+A plugin will only be executed once in a single request, even if it is bound to multiple different objects (such as Route or Service).
 
-插件配置作为 Route 或 Service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
-名字作为哈希的 key 来保存不同插件的配置项。
+The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../doc/plugins/example-plugin.lua#L16)。
+
+The plugin configuration is submitted as part of Route or Service and placed under `plugins`. It internally uses the plugin name as the hash's key to hold configuration items for different plugins.
 
 ```json
 {
@@ -190,10 +187,9 @@ Note: When both Route and Service enable the same plugin, the Route parameter ha
 }
 ```
 
-并不是所有插件都有具体配置项，比如 `prometheus` 下是没有任何具体配置项，这时候用一个空的对象
-标识即可。
+Not all plugins have specific configuration items. For example, there is no specific configuration item under `prometheus`. In this case, an empty object identifier can be used.
 
-[查看 APISIX 已支持插件列表](plugins-cn.md)
+[APISIX supported plugin list](plugins-cn.md)
 
 [Back to top](#Table-of-contents)
 
