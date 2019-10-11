@@ -83,7 +83,7 @@ Server: APISIX web server
 
 When we receive a successful response, it indicates that the route was successfully created.
 
-For specific options of Route, please refer to [Admin API] (admin-api-cn.md#route).
+For specific options of Route, please refer to [Admin API](admin-api-cn.md#route).
 
 [Back to top](#Table-of-contents)
 
