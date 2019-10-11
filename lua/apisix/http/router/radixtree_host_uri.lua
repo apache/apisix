@@ -1,5 +1,3 @@
--- Copyright (C) bobo pan
-
 local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")
