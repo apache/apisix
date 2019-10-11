@@ -36,10 +36,12 @@ apisix:
     enable: true
     enable_http2: true
     listen_port: 9443
-    ssl_protocols_mode: intermediate # https://ssl-config.mozilla.org/#server=nginx&server-version=1.15.8&config=intermediate
-                                     # modern: Services with clients that support TLS 1.3 and don't need backward compatibility
-                                     # intermediate: General-purpose servers with a variety of clients, recommended for almost all systems
-                                     # old: Compatible with a number of very old clients, and should be used only as a last resort
+    ssl_protocols_suite: intermediate # https://ssl-config.mozilla.org/#server=nginx&server-version=1.15.8&config=intermediate
+                                      # three suites:
+                                      # modern: Services with clients that support TLS 1.3 and don't need backward compatibility
+                                      # intermediate: General-purpose servers with a variety of clients, recommended for almost all systems
+                                      # old: Compatible with a number of very old clients, and should be used only as a last resort
+                                      # NOTE: If you have to support IE8 on Windows XP, please choose `old`.
 etcd:
   host: "http://127.0.0.1:2379"   # etcd address
   prefix: "/apisix"               # apisix configurations prefix
