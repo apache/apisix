@@ -18,23 +18,23 @@ local host_uri_router
 local _M = {version = 0.1}
 
 
-local function add_host_uri_routes(paths, host, route)
+local function add_host_uri_routes(path, host, route)
     if host:sub(1, 1) == "*" then
         core.log.error("TODO: not supported wildcard host name now: ", host,
                        " route: ", core.json.delay_encode(route, true))
         return
     end
 
-    core.log.info("route rule: ", paths)
+    core.log.info("add new route: ", path)
     core.table.insert(host_uri_routes, {
-        paths = paths,
+        paths = {path},
         methods = route.value.methods,
         remote_addrs = route.value.remote_addrs or route.value.remote_addr,
         vars = route.value.vars,
         handler = function (api_ctx)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
-        end
+        end,
     })
 end
 
@@ -55,6 +55,19 @@ local function push_radixtree_host_router(route)
         else
             add_host_uri_routes(host_path .. uri, host_path, route)
         end
+    end
+
+    if #hosts == 0 then
+        core.table.insert(only_uri_routes, {
+            paths = uri,
+            method = route.value.methods,
+            remote_addrs = route.value.remote_addrs or route.value.remote_addr,
+            vars = route.value.vars,
+            handler = function (api_ctx)
+                api_ctx.matched_params = nil
+                api_ctx.matched_route = route
+            end,
+        })
     end
 
     return
