@@ -263,3 +263,52 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: set route(wildcard host + uri)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "*.foo.com",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- yaml_config eval: $::yaml_config
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: hit routes(TODO: not support wildcard host name now)
+--- request
+GET /hello
+--- yaml_config eval: $::yaml_config
+--- more_headers
+Host: foo.com
+--- response_body
+hello world
+--- error_log
+add new route: foo.com/hello
+--- SKIP
