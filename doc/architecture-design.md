@@ -1,4 +1,4 @@
-## Welcome
+## Table of Contents
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
@@ -41,7 +41,7 @@ plugins:                        # plugin name list
 
 *Note* `apisix` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* that file.
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
 
 ## Route
 
@@ -85,7 +85,7 @@ Server: APISIX web server
 
 有关 Route 的具体选项，可具体查阅 [Admin API 之 Route](admin-api-cn.md#route)。
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
 
 ## Service
 
@@ -155,7 +155,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 
 注意：当 Route 和 Service 都开启同一个插件时，Route 参数的优先级是高于 Service 的。
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
 
 ## Plugin
 
@@ -196,7 +196,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 
 [查看 APISIX 已支持插件列表](plugins-cn.md)
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
 
 ## Upstream
 
@@ -317,7 +317,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 
 更多细节可以参考[健康检查的文档](health-check.md)。
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
 
 
 ## Router
@@ -339,7 +339,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
     * `radixtree_sni`: （默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
     * `r3_sni`: 使用 `SNI` (Server Name Indication) 作为主索引（基于 r3 引擎）。
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
 
 ## Consumer
 
@@ -417,7 +417,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
 
 ## Debug mode
 
@@ -475,4 +475,4 @@ hook_phase:                     # Module Function List, Name: hook_phase
 #END
 ```
 
-[Back to top](#Welcome)
+[Back to top](#Table-of-contents)
