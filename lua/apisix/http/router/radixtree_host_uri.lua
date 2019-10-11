@@ -19,15 +19,9 @@ local _M = {version = 0.1}
 
 
 local function add_host_uri_routes(path, host, route)
-    if host:sub(1, 1) == "*" then
-        core.log.error("TODO: not supported wildcard host name now: ", host,
-                       " route: ", core.json.delay_encode(route, true))
-        return
-    end
-
-    core.log.info("add new route: ", path)
+    core.log.info("add host+uri route, host: ", host, " path: ", path)
     core.table.insert(host_uri_routes, {
-        paths = {path},
+        paths = {host .. path},
         methods = route.value.methods,
         remote_addrs = route.value.remote_addrs or route.value.remote_addr,
         vars = route.value.vars,
@@ -45,30 +39,45 @@ local function push_radixtree_host_router(route)
     end
 
     local hosts = route.value.hosts or {route.value.host}
-    local uri = route.value.uris or route.value.uri
+    local hosts_wildcard = {}
+    local uris = route.value.uris or {route.value.uri}
 
-    for _, host_path in ipairs(hosts) do
-        if type(uri) == 'table' then
-            for _, uri_path in ipairs(uri) do
-                add_host_uri_routes(host_path .. uri_path, host_path, route)
-            end
+    local added_count = 0
+    for _, host in ipairs(hosts) do
+        if host:sub(1, 1) == "*" then
+            core.table.insert(hosts_wildcard, host)
         else
-            add_host_uri_routes(host_path .. uri, host_path, route)
+            for _, uri in ipairs(uris) do
+                add_host_uri_routes(uri, host, route)
+            end
+            added_count = added_count + 1
         end
     end
 
-    if #hosts == 0 then
-        core.table.insert(only_uri_routes, {
-            paths = uri,
-            method = route.value.methods,
-            remote_addrs = route.value.remote_addrs or route.value.remote_addr,
-            vars = route.value.vars,
-            handler = function (api_ctx)
-                api_ctx.matched_params = nil
-                api_ctx.matched_route = route
-            end,
-        })
+    -- 4 cases:
+    -- hosts = {}
+    -- hosts = {"foo.com"}
+    -- hosts = {"*.foo.com", "bar.com"}
+    -- hosts = {"*.foo.com", "*.bar.com"}
+    if added_count > 0 and added_count == #hosts then
+        return
     end
+
+    if #hosts_wildcard == 0 then
+        hosts_wildcard = nil
+    end
+
+    core.table.insert(only_uri_routes, {
+        paths = uris,
+        method = route.value.methods,
+        hosts = hosts_wildcard,
+        remote_addrs = route.value.remote_addrs or route.value.remote_addr,
+        vars = route.value.vars,
+        handler = function (api_ctx)
+            api_ctx.matched_params = nil
+            api_ctx.matched_route = route
+        end,
+    })
 
     return
 end
@@ -77,12 +86,17 @@ end
 local function create_radixtree_router(routes)
     core.table.clear(host_uri_routes)
     core.table.clear(only_uri_routes)
+    host_uri_router = nil
+    only_uri_router = nil
+
     for _, route in ipairs(routes or {}) do
         push_radixtree_host_router(route)
     end
 
+    -- create router: host_uri_router
     host_uri_router = router.new(host_uri_routes)
 
+    -- create router: only_uri_router
     local routes = plugin.api_routes()
     core.log.info("routes", core.json.delay_encode(routes, true))
 
@@ -112,6 +126,7 @@ function _M.match(api_ctx)
     match_opts.method = api_ctx.var.method
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
+    match_opts.host = api_ctx.var.host
 
     local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
     if ok then

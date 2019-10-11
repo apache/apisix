@@ -118,8 +118,6 @@ GET /hello
 Host: foo.com
 --- response_body
 hello world
---- error_log
-add new route: foo.com/hello
 
 
 
@@ -301,14 +299,11 @@ passed
 
 
 
-=== TEST 15: hit routes(TODO: not support wildcard host name now)
+=== TEST 15: hit routes
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- more_headers
-Host: foo.com
+Host: www.foo.com
 --- response_body
 hello world
---- error_log
-add new route: foo.com/hello
---- SKIP
