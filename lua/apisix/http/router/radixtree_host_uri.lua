@@ -87,7 +87,6 @@ local function push_radixtree_host_router(route)
             end
         end
     end
-
     -- only one host
     if host and type(host) == "string" then
         local paths = "/" .. str_reverse(host)
