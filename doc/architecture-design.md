@@ -195,28 +195,27 @@ Not all plugins have specific configuration items. For example, there is no spec
 
 ## Upstream
 
-Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，就需要用“引用”方式避免重复了。
+Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to configuration rules. Upstream address information can be directly configured to `Route` (or `Service`). When Upstream has duplicates, you need to use "reference" to avoid duplication.
 
 <img src="./images/upstream-example.png" width="50%" height="50%">
 
-如上图所示，通过创建 Upstream 对象，在 `Route` 用 ID 方式引用，就可以确保只维护一个对象的值了。
+As shown in the image above, by creating an Upstream object and referencing it by ID in `Route`, you can ensure that only the value of an object is maintained.
 
-Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑定在 `Service` 中，不过 `Route` 中的配置
-优先级更高。这里的优先级行为与 `Plugin` 非常相似
+Upstream configuration can be directly bound to the specified `Route` or it can be bound to `Service`, but the configuration in `Route` has a higher priority. The priority behavior here is very similar to `Plugin`.
 
 #### Configuration
 
-APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面表格。
+In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
-|名字    |可选|说明|
+|name    |Optional|Description|
 |-------         |-----|------|
-|type            |必需|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
-|nodes           |必需|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|
-|key             |必需|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id|
-|checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
-|retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制|
+|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
+|nodes           |required|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
+|key             |required|This option is only valid if the type is `chash`. Find the corresponding node `id` according to `key`, the same `key` in the same object, always return the same id.|
+|checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
+|retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is not enabled by default.|
 
-创建上游对象用例：
+Create an upstream object use case:
 
 ```json
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -X PUT -d '
@@ -240,7 +239,7 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -X PUT -d '
 }'
 ```
 
-上游对象创建后，均可以被具体 `Route` 或 `Service` 引用，例如：
+After the upstream object is created, it can be referenced by specific `Route` or `Service`, for example:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -250,7 +249,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-为了方便使用，也可以直接把上游地址直接绑到某个 `Route` 或 `Service` ，例如：
+For convenience, you can also directly bind the upstream address to a `Route` or `Service`, for example:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -273,7 +272,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-下面是一个配置了健康检查的示例：
+Here's an example of configuring a health check:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
@@ -310,7 +310,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-更多细节可以参考[健康检查的文档](health-check.md)。
+More details can be found in [Health Checking Documents](health-check.md).
 
 [Back to top](#Table-of-contents)
 
