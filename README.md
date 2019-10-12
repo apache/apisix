@@ -178,9 +178,7 @@ You can view the [benchmark documentation](doc/benchmark.md) for more detailed i
 
 ## Architecture Design
 
-English Development Documentation: TODO
-
-[中文开发文档](doc/architecture-design-cn.md)
+[Development Documentation](doc/architecture-design.md)
 
 ## Videos and slides
 
