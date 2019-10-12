@@ -15,9 +15,10 @@ apisix:
     - 127.0.0.1
     - 'unix:'
   router:
-    http: 'radixtree_uri'         # r3_uri: match route by uri(base on r3)
+    http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
+                                  # radixtree_host_uri: match route by host + uri(base on radixtree)
+                                  # r3_uri: match route by uri(base on r3)
                                   # r3_host_uri: match route by host + uri(base on r3)
-                                  # radixtree_uri: match route by uri(base on radixtree)
 
     ssl: 'radixtree_sni'          # r3_sni: match route by SNI(base on r3)
                                   # radixtree_sni: match route by SNI(base on radixtree)
