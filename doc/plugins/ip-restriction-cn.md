@@ -20,12 +20,12 @@
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 ip-restriction 插件:
+下面是一个示例，在指定的 route 上开启了 `ip-restriction` 插件:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-    "uri": "/hello",
+    "uri": "/index.html",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -57,14 +57,14 @@ HTTP/1.1 200 OK
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html -i
-HTTP/1.1 403 Unauthorized
+HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
 ```
 
 ## 禁用插件
 
-当你想去掉 ip-restriction 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你想去掉 `ip-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
@@ -80,5 +80,5 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 }'
 ```
 
-现在就已经移除了 ip-restriction 插件了。其他插件的开启和移除也是同样的方法。
+现在就已移除 `ip-restriction` 插件，其它插件的开启和移除也类似。
 

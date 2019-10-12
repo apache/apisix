@@ -31,6 +31,9 @@ addons:
   homebrew:
     update: true
 
+services:
+ - redis-server
+
 cache:
   directories:
   - build-cache

@@ -37,10 +37,11 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **HTTP(S) Forward Proxy**
 - **[Health Checks](doc/health-check.md)**：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 - **Circuit-Breaker**: Intelligent tracking of unhealthy upstream services.
-- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth-cn.md)
+- **Authentications**: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md)
 - **[Limit-req](doc/plugins/limit-req.md)**
 - **[Limit-count](doc/plugins/limit-count.md)**
 - **[Limit-concurrency](doc/plugins/limit-conn.md)**
+- **[Proxy Rewrite](doc/plugins/proxy-rewrite.md)**: Support for rewriting the `host`, `uri`, `schema`, `enable_websocket`, `headers` information upstream of the request.
 - **OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)**
 - **Monitoring And Metrics**: [Prometheus](doc/plugins/prometheus.md)
 - **[gRPC transcoding](doc/plugins/grpc-transcoding.md)**：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
@@ -72,19 +73,17 @@ We provide an online dashboard [demo version](http://apisix.iresty.com)， make 
 
 APISIX Installed and tested in the following systems, and the version of OpenResty MUST >= 1.15.8.1:
 
-| OS           |
-| ------------ |
-| CentOS 7     |
-| Ubuntu 16.04 |
-| Ubuntu 18.04 |
-| Debian 9     |
-| Debian 10    |
-| Mac OSX      |
+* CentOS 7
+* Ubuntu 16.04
+* Ubuntu 18.04
+* Debian 9
+* Debian 10
+* macOS
 
 You now have four ways to install APISIX:
-- if you are using CentOS 7, it is recommended to use RPM;
-- if using MacOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
-- other systems please use Luarocks;
+- if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
+- if using macOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
+- other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
 - You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
 *NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
@@ -97,12 +96,12 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.7/apisix-0.7-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
 ```
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
 
-### Install from Luarocks (not support MacOS)
+### Install from Luarocks (not support macOS)
 
 ##### Dependencies
 
@@ -112,16 +111,33 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 
 ##### Install APISIX
 
+APISIX is installed by running the following commands in your terminal.
+
+> via curl
+
 ```shell
-luarocks install --lua-dir=/usr/local/openresty/luajit apisix
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-If you got some error like `unknow flag --lua-dir`, this is because `luarocks` version is too low.
-We need to remove option `lua-dir` and run again: `luarocks install apisix`.
+> Manual inspection
+
+It's a good idea to inspect the installation script from projects you don't know yet. You can do that by downloading the installation script first, looking through it so everything looks normal, then running it:
+
+```shell
+curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
+sudo sh install.sh
+```
+
+> installation complete
 
 If all goes well, you will see the message like this:
 
-> apisix is now built and installed in /usr (license: Apache License 2.0)
+```
+    apisix 0.7-0 is now built and installed in /usr/local/apisix/deps (license: Apache License 2.0)
+
+    + sudo rm -f /usr/local/bin/apisix
+    + sudo ln -s /usr/local/apisix/deps/bin/apisix /usr/local/bin/apisix
+```
 
 Congratulations, you have already installed APISIX successfully.
 
@@ -162,9 +178,7 @@ You can view the [benchmark documentation](doc/benchmark.md) for more detailed i
 
 ## Architecture Design
 
-English Development Documentation: TODO
-
-[中文开发文档](doc/architecture-design-cn.md)
+[Development Documentation](doc/architecture-design.md)
 
 ## Videos and slides
 
@@ -176,7 +190,7 @@ English Development Documentation: TODO
 A wide variety of companies and organizations use APISIX for research, production and commercial product.
 Here is the User Wall of APISIX.
 
-<img src="doc/images/user-wall.jpg" width="50%" height="50%">
+![](doc/images/user-wall.jpg)
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 
@@ -195,6 +209,10 @@ If your concerns are not among them, please submit issue to communicate with us.
 ## Contributing
 
 See [CONTRIBUTING](Contributing.md) for details on submitting patches and the contribution workflow.
+
+## Reference document
+
+See more document, please take look at [Reference document](doc/doc-index.md).
 
 ## Acknowledgments
 

@@ -39,6 +39,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **[限制速率](doc/plugins/limit-req-cn.md)**
 - **[限制请求数](doc/plugins/limit-count-cn.md)**
 - **[限制并发](doc/plugins/limit-conn-cn.md)**
+- **[代理请求重写](doc/plugins/proxy-rewrite.md)**: 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
 - **OpenTracing: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin.md)**
 - **监控和指标**: [Prometheus](doc/plugins/prometheus-cn.md)
 - **[gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)**：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
@@ -58,8 +59,8 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，okta 等，用户可以借此来对接 Oauth2.0 等认证方式。
 - **[单机模式](doc/stand-alone-cn.md)**: 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
 - **全局规则**：允许对所有请求执行插件，比如黑白名单、限流限速等。
-- **[TCP/UDP 代理](doc/stream-proxy.md)**: 动态 TCP/UDP 代理。
-- **[动态 MQTT 代理](doc/plugins/mqtt-proxy.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
+- **[TCP/UDP 代理](doc/stream-proxy-cn.md)**: 动态 TCP/UDP 代理。
+- **[动态 MQTT 代理](doc/plugins/mqtt-proxy-cn.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
 - **ACL**: TODO。
 - **Bot detection**: TODO。
 
@@ -68,22 +69,19 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 
 ## 安装
 
-APISIX 在以下操作系统中做过安装和运行测试，需要注意的是，OpenResty 的版本必须 >= 1.15.8.1:
+APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注意的是：OpenResty 的版本必须 >= 1.15.8.1：
+- CentOS 7
+- Ubuntu 16.04
+- Ubuntu 18.04
+- Debian 9
+- Debian 10
+- macOS
 
-| 操作系统      |
-| ------------ |
-| CentOS 7     |
-| Ubuntu 16.04 |
-| Ubuntu 18.04 |
-| Debian 9     |
-| Debian 10    |
-| Mac OSX      |
-
-现在有 4 种方式来安装:
-- 如果你是 CentOS 7 的系统，推荐使用 RPM 包安装；
-- 如果是 MacOS，只能通过 git clone 和手工安装的方式，参考[开发文档](doc/dev-manual-cn.md)
-- 其他的系统推荐使用 Luarocks 安装；
-- 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装.
+目前有 4 种安装方式:
+- 如果你在使用 CentOS 7，我们推荐使用 [RPM 包安装](#通过-rpm-包安装centos-7)；
+- 在 macOS 中，你需要克隆该仓库并手动安装，请参考[开发手册](doc/dev-manual-cn.md)；
+- 其它操作系统，我们推荐使用 [Luarocks 安装方式](#通过-luarocks-安装-不支持-macos)；
+- 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装。
 
 *NOTE*: APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。
 需要在启动参数中添加 `--enable-v2=true`，才能启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
@@ -96,12 +94,12 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.7/apisix-0.7-0.el7.noarch.rpm
+sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
 
-### 通过 Luarocks 安装 （不支持 MacOS）
+### 通过 Luarocks 安装 （不支持 macOS）
 
 ##### 依赖项
 
@@ -111,17 +109,33 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 
 ##### 安装 APISIX
 
+在终端中执行下面命令完成 APISIX 的安装：
+
+> 通过 curl
+
 ```shell
-sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-如果你得到 `unknow flag --lua-dir` 这类错误，这是因为 `luarocks` 版本过低。这时我们需要移除 `lua-dir` 选项重新运行：`luarocks install apisix`。
+> 人工检查
 
-如果一切顺利，你会在最后看到这样的信息：
+对你不熟悉项目的安装脚本做检查，是个非常好的习惯。可以先下载这个脚本，确保他都是正常脚本，然后运行：
 
-> apisix is now built and installed in /usr (license: Apache License 2.0)
+```shell
+curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
+sudo sh install.sh
+```
 
-恭喜你，APISIX 已经安装成功了。
+> 安装完成
+
+```
+    apisix 0.7-0 is now built and installed in /usr/local/apisix/deps (license: Apache License 2.0)
+
+    + sudo rm -f /usr/local/bin/apisix
+    + sudo ln -s /usr/local/apisix/deps/bin/apisix /usr/local/bin/apisix
+```
+
+恭喜，APISIX 已经安装成功。
 
 ## 开发环境
 
@@ -168,7 +182,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中。下面是 APISIX 的用户墙：
 
-<img src="doc/images/user-wall.jpg" width="50%" height="50%">
+![](doc/images/user-wall.jpg)
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 

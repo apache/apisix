@@ -84,21 +84,7 @@ Server: APISIX web server
 
 当我们接收到成功应答，表示该 Route 已成功创建。
 
-#### Route 选项
-
-除了 uri 匹配条件外，还支持更多过滤条件。
-
-|名字      |可选项   |类型 |说明        |
-|---------|---------|----|-----------|
-|uri      |必须 |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](#router) 还允许更高级匹配，更多见 [Router](#router)。|
-|host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
-|remote_addr|可选 |匹配规则|客户端请求 IP 地址，比如 `192.168.1.101`、`192.168.1.102`，也支持 CIDR 格式如 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配，比如：`::1`，`fe80::1`, `fe80::1/64` 等。|
-|methods  |可选 |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS，CONNECT，TRACE。|
-|plugins  |可选 |Plugin|详见 [Plugin](#plugin) |
-|upstream |可选 |Upstream|启用的 Upstream 配置，详见 [Upstream](#upstream)|
-|upstream_id|可选 |Upstream|启用的 upstream id，详见 [Upstream](#upstream)|
-|service_id|可选 |Service|绑定的 Service 配置，详见 [Service](#service)|
-
+有关 Route 的具体选项，可具体查阅 [Admin API 之 Route](admin-api-cn.md#route)。
 
 [返回目录](#目录)
 
@@ -235,10 +221,6 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |key             |必需|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制|
-|scheme          |可选|转发到上游的 `schema` 协议，可以是 `http` 或 `https`，默认 `http` 协议|
-|uri             |可选|转发到上游的新 `uri` 地址|
-|host            |可选|转发到上游的新 `host`|
-|enable_websocket|可选|是否启用 `websocket` （布尔值），默认不启用|
 
 创建上游对象用例：
 
@@ -369,30 +351,82 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
 
+|字段|必选|说明|
+|---|----|----|
+|username|是|Consumer 名称。|
+|plugins|否|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。|
+
 在 APISIX 中，识别 Consumer 的过程如下图：
 
 <img src="./images/consumer-internal.png" width="50%" height="50%">
 
-1. 授权认证：比如有 [key-auth](doc/plugins/key-auth.md)、[JWT](doc/plugins/jwt-auth-cn.md) 等。
+1. 授权认证：比如有 [key-auth](./plugins/key-auth.md)、[JWT](./plugins/jwt-auth-cn.md) 等。
 2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
 比如不同的 Consumer 请求同一个 API，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
 
-此外，大家也可以参考 [key-auth](doc/plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
+此外，大家也可以参考 [key-auth](./plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
 
-*注意*：目前 APISIX 的 Consumer 还不支持绑定插件或上游信息，如果大家对这个功能点感兴趣，欢迎在社区中反馈交流。
+如何对某个 Consumer 开启指定插件，可以看下面例子：
+
+```shell
+# 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    }
+}'
+
+# 创建 Router，设置路由规则和启用插件配置
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/hello"
+}'
+
+# 发测试请求，前两次返回正常，没达到限速阈值
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+...
+
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+...
+
+# 第三次测试返回 503，请求被限制
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+HTTP/1.1 503 Service Temporarily Unavailable
+...
+
+```
 
 [返回目录](#目录)
 
 ## Debug mode
 
-开启调试模式后，会在请求应答时，输出更多的内部信息，比如加载了哪些插件等。
+### 基本调试模式
 
-设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启调试模式。
+设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启基本调试模式。
 
-比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count` 出现。
+比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
 
 ```shell
 $ curl http://127.0.0.1:1984/hello -i
@@ -406,6 +440,42 @@ X-RateLimit-Remaining: 1
 Server: openresty
 
 hello world
+```
+
+### 高级调试模式
+
+设置 `conf/debug.yaml` 中的选项，开启高级调试模式。由于 APISIX 服务启动后是每秒定期检查该文件，
+当可以正常读取到 `#END` 结尾时，才认为文件处于写完关闭状态。
+
+根据文件最后修改时间判断文件内容是否有变化，如有变化则重新加载，如没变化则跳过本次检查。
+所以高级调试模式的开启、关闭都是热更新方式完成。
+
+|名字|可选项|说明|默认值|
+|----|-----|---------|---|
+|hook_conf.enable|必选项|是否开启 hook 追踪调试。开启后将打印指定模块方法的请求参数或返回值|false|
+|hook_conf.name|必选项|开启 hook 追踪调试的模块列表名称||
+|hook_conf.log_level|必选项|打印请求参数和返回值的日志级别|warn|
+|hook_conf.is_print_input_args|必选项|是否打印输入参数|true|
+|hook_conf.is_print_return_value|必选项|是否打印返回值|true|
+
+请看下面示例：
+
+```yaml
+hook_conf:
+  enable: false                 # 是否开启 hook 追踪调试
+  name: hook_phase              # 开启 hook 追踪调试的模块列表名称
+  log_level: warn               # 日志级别
+  is_print_input_args: true     # 是否打印输入参数
+  is_print_return_value: true   # 是否打印返回值
+
+hook_phase:                     # 模块函数列表，名字：hook_phase
+  apisix:                       # 引用的模块名称
+    - http_access_phase         # 函数名：数组
+    - http_header_filter_phase
+    - http_body_filter_phase
+    - http_log_phase
+
+#END
 ```
 
 [返回目录](#目录)
