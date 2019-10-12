@@ -104,8 +104,16 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
 - 其它操作系统，我们推荐使用 [Luarocks 安装方式](#通过-luarocks-安装-不支持-macos)；
 - 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装。
 
-*NOTE*: APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。
-需要在启动参数中添加 `--enable-v2=true`，才能启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
+安装 APISIX 的主要步骤：
+
+1. 运行时依赖：OpenResty 或 Tengine。
+    * OpenResty: 参考 [http://openresty.org/en/installation.html](http://openresty.org/en/installation.html)。
+    * Tengine：参考该安装脚本 [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh)。
+2. 配置存储中心：参考 [etcd](https://github.com/etcd-io/etcd)。
+
+    *NOTE*：APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。 在启动参数中添加 `--enable-v2=true`，启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
+
+3. 安装 APISIX 服务。
 
 ### 通过 RPM 包安装（CentOS 7）
 

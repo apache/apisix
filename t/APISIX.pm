@@ -143,7 +143,7 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
 
-    resolver ipv6=off local=on;
+    resolver 8.8.8.8 114.114.114.114 ipv6=off;
     resolver_timeout 5;
 
     lua_socket_log_errors off;

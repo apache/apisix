@@ -171,7 +171,7 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} ipv6=off local=on;
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} ipv6=off;
     resolver_timeout 5;
 
     lua_http10_buffering off;
@@ -422,11 +422,18 @@ local function get_openresty_version()
     local str = "nginx version: openresty/"
     local ret = excute_cmd("openresty -v 2>&1")
     local pos = string.find(ret,str)
-    if pos ~= 1 then
-        return nil
+    if pos then
+        return string.sub(ret, pos + string.len(str))
     end
 
-    return string.sub(ret,string.len(str)+1)
+    str = "nginx version: nginx/"
+    ret = excute_cmd("openresty -v 2>&1")
+    pos = string.find(ret, str)
+    if pos then
+        return string.sub(ret, pos + string.len(str))
+    end
+
+    return nil
 end
 
 local function split(self, sep)
@@ -523,7 +530,7 @@ local function init()
 
     local need_ver = "1.15.8"
     if not check_or_version(op_ver, need_ver) then
-        io.stderr:write("openresty version must >=", need_ver, "\n")
+        io.stderr:write("openresty version must >=", need_ver, " current ", op_ver, "\n")
         return
     end
 end

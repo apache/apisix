@@ -79,7 +79,7 @@ upstreams:
 #END
 --- request
 GET /hello
---- error_code: 502
+--- error_code_like: ^(?:50\d)$
 --- error_log
 failed to find upstream by id: 1111
 
