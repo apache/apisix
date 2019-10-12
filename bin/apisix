@@ -44,12 +44,16 @@ end
 -- print("apisix_home: ", apisix_home)
 
 do
-    local ok, json = pcall(require, "cjson")
-    if ok and json then
-        io.stderr:write("please remove the cjson library in Lua, it may "
-                        .. "conflict with the cjson library in openresty. "
-                        .. "\n luarocks remove cjson\n")
-        return
+    -- skip luajit environment
+    local ok = pcall(require, "table.new")
+    if not ok then
+        local ok, json = pcall(require, "cjson")
+        if ok and json then
+            io.stderr:write("please remove the cjson library in Lua, it may "
+                            .. "conflict with the cjson library in openresty. "
+                            .. "\n luarocks remove cjson\n")
+            return
+        end
     end
 end
 
@@ -64,7 +68,7 @@ worker_processes auto;
 worker_cpu_affinity auto;
 {% end %}
 
-error_log logs/error.log error;
+error_log logs/error.log {*error_log.level or "error"*};
 pid logs/nginx.pid;
 
 worker_rlimit_nofile 20480;
@@ -208,19 +212,47 @@ http {
                 apisix.http_admin()
             }
         }
+
+        location /apisix/dashboard {
+            index index.html;
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
+
+            alias dashboard/;
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Real-PORT $remote_port;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            try_files $uri $uri/ /index.html;
+        }
     }
     {% end %}
 
     server {
         listen {* node_listen *};
-        listen {* node_ssl_listen *} ssl;
+        {% if ssl.enable then %}
+        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        {% end %}
+
         {% if enable_ipv6 then %}
         listen [::]:{* node_listen *};
-        listen [::]:{* node_ssl_listen *} ssl;
+        {% if ssl.enable then %}
+        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
         {% end %}
+        {% end %} {% -- if enable_ipv6 %}
+
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
+
+        ssl_protocols {* ssl.ssl_protocols *};
+        ssl_ciphers {* ssl.ssl_ciphers *};
+        ssl_prefer_server_ciphers on;
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
@@ -244,13 +276,8 @@ http {
                 apisix.http_admin()
             }
         }
-        {% end %}
 
-        ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
-        }
-
-        location /apisix/dashboard/ {
+        location /apisix/dashboard {
             index index.html;
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -266,6 +293,11 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
             try_files $uri $uri/ /index.html;
+        }
+        {% end %}
+
+        ssl_certificate_by_lua_block {
+            apisix.http_ssl_phase()
         }
 
         location / {
@@ -444,6 +476,7 @@ local function init()
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         node_ssl_listen = 9443,     -- default value
+        error_log = {level = "warn"},
     }
     for k,v in pairs(yaml_conf.apisix) do
         sys_conf[k] = v

@@ -16,6 +16,15 @@ export_or_prefix() {
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
 }
 
+create_lua_deps() {
+    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
+    echo "Create lua deps cache"
+    sudo rm -rf build-cache/deps
+    sudo cp -r deps build-cache/
+    sudo cp rockspec/apisix-dev-1.0-0.rockspec build-cache/
+}
+
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
 }
@@ -36,10 +45,23 @@ do_install() {
 
     export_or_prefix
 
-    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
+    if [ ! -f "build-cache/apisix-dev-1.0-0.rockspec" ]; then
+        create_lua_deps
+
+    else
+        src=`md5sum rockspec/apisix-dev-1.0-0.rockspec | awk '{print $1}'`
+        src_cp=`md5sum build-cache/apisix-dev-1.0-0.rockspec | awk '{print $1}'`
+        if [ "$src" = "$src_cp" ]; then
+            echo "Use lua deps cache"
+            sudo cp -r build-cache/deps ./
+        else
+            create_lua_deps
+        fi
+    fi
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
+    wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
+	chmod a+x utils/lj-releng
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then

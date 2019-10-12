@@ -166,6 +166,23 @@ _EOC_
         }
     }
 
+    server {
+        listen 1983 ssl;
+        ssl_certificate             cert/apisix.crt;
+        ssl_certificate_key         cert/apisix.key;
+        lua_ssl_trusted_certificate cert/apisix.crt;
+
+        server_tokens off;
+
+        location / {
+            content_by_lua_block {
+                require("lib.server").go()
+            }
+
+            more_clear_headers Date;
+        }
+    }
+
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -270,9 +287,12 @@ _EOC_
     }
 
     my $user_yaml_config = $block->yaml_config // $yaml_config;
+    my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;
+>>> ../conf/debug.yaml
+$user_debug_config
 >>> ../conf/config.yaml
 $user_yaml_config
 >>> ../conf/cert/apisix.crt

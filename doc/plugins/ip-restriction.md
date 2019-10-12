@@ -33,7 +33,7 @@ Two steps are required:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-    "uri": "/hello",
+    "uri": "/index.html",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -65,7 +65,7 @@ Requests to `127.0.0.2`:
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html -i
-HTTP/1.1 403 Unauthorized
+HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
 ```

@@ -33,8 +33,8 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
     "username": "jack",
     "plugins": {
         "jwt-auth": {
-            "key": "your-consumer-key",
-            "secret": "secret-key"
+            "key": "user-key",
+            "secret": "my-secret-key"
         }
     }
 }'
@@ -45,7 +45,14 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 然后在 consumer 页面中添加 jwt-auth 插件：
 ![](../images/plugin/jwt-auth-2.png)
 
-2. 创建 route 或 service 对象，并开启 `jwt-auth` 插件。
+你可以访问 Dashboard `http://127.0.0.1:9080/apisix/dashboard/` 并通过 Web 控制台来增加一个 Consumer：
+
+![](../images/plugin/jwt-auth-1.png)
+
+然后在 Consumer 页面中添加 jwt-auth 插件：
+![](../images/plugin/jwt-auth-2.png)
+
+2. 创建 Route 或 Service 对象，并开启 `jwt-auth` 插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -69,7 +76,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 #### 首先进行登录获取 `jwt-auth` token:
 
 ```shell
-$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=consumer-key -i
+$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=user-key -i
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
 Content-Type: text/plain
@@ -146,8 +153,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
     "methods": ["GET"],
     "uri": "/index.html",
     "id": 1,
-    "plugins": {
-    },
+    "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {

@@ -20,6 +20,7 @@ local resources = {
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
     stream_routes   = require("apisix.admin.stream_routes"),
+    node_status     = require("apisix.admin.node_status"),
 }
 
 
@@ -95,19 +96,19 @@ end
 
 local uri_route = {
     {
-        path = [[/apisix/admin/*]],
+        paths = [[/apisix/admin/*]],
+        methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
         handler = run,
-        method = {"GET", "PUT", "POST", "DELETE", "PATCH"},
     },
     {
-        path = [[/apisix/admin/plugins/list]],
+        paths = [[/apisix/admin/plugins/list]],
+        methods = {"GET", "PUT", "POST", "DELETE"},
         handler = get_plugins_list,
-        method = {"GET", "PUT", "POST", "DELETE"},
     },
     {
-        path = reload_event,
+        paths = reload_event,
+        methods = {"PUT"},
         handler = post_reload_plugins,
-        method = {"PUT"},
     },
 }
 

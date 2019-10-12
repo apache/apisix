@@ -280,57 +280,83 @@ function _M.stream_filter(user_route, plugins)
 end
 
 
-local function merge_route(base_route_conf, route_conf)
-    local new_route_conf
+local function merge_service_route(service_conf, route_conf)
+    local new_service_conf
 
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
-            if not new_route_conf then
-                new_route_conf = core.table.deepcopy(base_route_conf)
+            if not new_service_conf then
+                new_service_conf = core.table.deepcopy(service_conf)
             end
-            new_route_conf.value.plugins[name] = conf
+            new_service_conf.value.plugins[name] = conf
         end
     end
 
     local route_upstream = route_conf.value.upstream
     if route_upstream then
-        if not new_route_conf then
-            new_route_conf = core.table.deepcopy(base_route_conf)
+        if not new_service_conf then
+            new_service_conf = core.table.deepcopy(service_conf)
         end
-        new_route_conf.value.upstream = route_upstream
+        new_service_conf.value.upstream = route_upstream
 
         if route_upstream.checks then
             route_upstream.parent = route_conf
         end
 
-        new_route_conf.value.upstream_id = nil
-        return new_route_conf
+        new_service_conf.value.upstream_id = nil
+        return new_service_conf
     end
 
     if route_conf.value.upstream_id then
-        if not new_route_conf then
-            new_route_conf = core.table.deepcopy(base_route_conf)
+        if not new_service_conf then
+            new_service_conf = core.table.deepcopy(service_conf)
         end
-        new_route_conf.value.upstream_id = route_conf.value.upstream_id
+        new_service_conf.value.upstream_id = route_conf.value.upstream_id
     end
 
-    -- core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
-    return new_route_conf or base_route_conf
+    -- core.log.info("merged conf : ", core.json.delay_encode(new_service_conf))
+    return new_service_conf or service_conf
 end
 
 
-function _M.merge_route(base_route_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(base_route_conf))
-    -- core.log.info("route conf  : ", core.json.delay_encode(route_conf))
+function _M.merge_service_route(service_conf, route_conf)
+    core.log.info("service conf: ", core.json.delay_encode(service_conf))
+    core.log.info("route conf: ", core.json.delay_encode(route_conf))
 
-    local flag = tostring(base_route_conf) .. tostring(route_conf)
-    local new_route_conf = merged_route(flag, nil, merge_route,
-                                        base_route_conf, route_conf)
-    if new_route_conf == base_route_conf then
-        return new_route_conf, false
+    local flag = tostring(service_conf) .. tostring(route_conf)
+    local new_service_conf = merged_route(flag, nil, merge_service_route,
+                                        service_conf, route_conf)
+
+    return new_service_conf, new_service_conf ~= service_conf
+end
+
+
+local function merge_consumer_route(route_conf, consumer_conf)
+    local new_route_conf
+
+    if consumer_conf.plugins then
+        for name, conf in pairs(consumer_conf.plugins) do
+            if not new_route_conf then
+                new_route_conf = core.table.deepcopy(route_conf)
+            end
+            new_route_conf.value.plugins[name] = conf
+        end
     end
 
-    return new_route_conf, true
+    core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
+    return new_route_conf or route_conf
+end
+
+
+function _M.merge_consumer_route(route_conf, consumer_conf)
+    core.log.info("route conf: ", core.json.delay_encode(route_conf))
+    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
+
+    local flag = tostring(route_conf) .. tostring(consumer_conf)
+    local new_conf = merged_route(flag, nil,
+                            merge_consumer_route, route_conf, consumer_conf)
+
+    return new_conf, new_conf ~= route_conf
 end
 
 
