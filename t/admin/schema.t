@@ -69,10 +69,10 @@ location /t {
                 type = "object",
                 properties = {
                     cert = {
-                        type = "string", minLength = 128, maxLength = 4096
+                        type = "string", minLength = 128, maxLength = 64*1024
                     },
                     key = {
-                        type = "string", minLength = 128, maxLength = 4096
+                        type = "string", minLength = 128, maxLength = 64*1024
                     },
                     sni = {
                         type = "string",
