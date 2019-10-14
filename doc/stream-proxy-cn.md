@@ -28,7 +28,7 @@ APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。 在 ng
 
 ## 如何开启 Stream 代理?
 
-在 `conf/config.yaml` 配置文件设置 `stream_proxy` 选项， 指定一组需要进行动态代理的IP地址。默认情况不开启stream代理。 
+在 `conf/config.yaml` 配置文件设置 `stream_proxy` 选项， 指定一组需要进行动态代理的IP地址。默认情况不开启stream代理.
 
 ```
 apisix:
@@ -58,8 +58,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -X PUT -d '
 }'
 ```
 
-例子中 APISIX 对客户端IP为 127.0.0.1`的请求代理转发到上游主机 `127.0.0.1:1995` 
-
+例子中 APISIX 对客户端IP为 127.0.0.1`的请求代理转发到上游主机 `127.0.0.1:1995`。
 更多用例，请参照 [test case](../t/stream-node/sanity.t).
 
 ## 更多限制选项

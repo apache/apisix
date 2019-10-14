@@ -67,5 +67,4 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -X PUT -d '
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/stream_routes/1 -X DELETE
 ```
-
 现在就已经移除了 mqtt-proxy 插件了。

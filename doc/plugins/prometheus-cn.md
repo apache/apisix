@@ -17,7 +17,8 @@
 #
 -->
 
-[English](prometheus.md) 
+[English](prometheus.md)
+
 # prometheus
 
 此插件是提供符合prometheus数据格式的监控指标数据。
