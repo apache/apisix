@@ -17,7 +17,7 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    WITHOUT_DASHBOARD=1 sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
     sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
     echo "Create lua deps cache"
     sudo rm -rf build-cache/deps
@@ -66,15 +66,22 @@ do_install() {
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
         sudo apt-get install golang
-
         git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-
         cd grpc_server_example/
         go build -o grpc_server_example main.go
         mv grpc_server_example ../build-cache/
+        mv proto/ ../build-cache/
         cd ..
     fi
 
+    if [ ! -f "build-cache/grpcurl" ]; then
+        sudo apt-get install golang
+        git clone https://github.com/fullstorydev/grpcurl.git grpcurl
+        cd grpcurl
+        go build -o grpcurl  ./cmd/grpcurl
+        mv grpcurl ../build-cache/
+        cd ..
+    fi
 }
 
 script() {
@@ -91,10 +98,30 @@ script() {
     ./bin/apisix start
     mkdir -p logs
     sleep 1
+
+    #test grpc proxy
+    curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+    {
+        "methods": ["POST", "GET"],
+        "uri": "/helloworld.Greeter/SayHello",
+        "service_protocol": "grpc",
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:50051": 1
+            }
+        }
+    }'
+
+    ./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
+
+    sleep 1
+
     ./bin/apisix stop
     sleep 1
     make check || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
+
 }
 
 after_success() {
