@@ -28,7 +28,7 @@ dev:
 ifeq ($(UNAME),Darwin)
 	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	APISIX_WITHOUT_DASHBOARD=1 luarocks install rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+	WITHOUT_DASHBOARD=1 luarocks install rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
 else
 	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
 endif
@@ -99,7 +99,7 @@ reload:
 ### install:      Install the apisix
 .PHONY: install
 install:
-ifneq ($(APISIX_WITHOUT_DASHBOARD),1)
+ifneq ($(WITHOUT_DASHBOARD),1)
 	$(INSTALL) -d /usr/local/apisix/dashboard
 	cd `mktemp -d /tmp/apisix.XXXXXX` && \
 		git clone https://github.com/iresty/apisix.git && \
