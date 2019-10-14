@@ -71,6 +71,12 @@ do_install() {
         cd grpc_server_example/
         go build -o grpc_server_example main.go
         mv grpc_server_example ../build-cache/
+        cd ..
+    fi
+
+    if [ ! -f "build-cache/proto/helloworld.proto" ]; then
+        git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
+        cd grpc_server_example/
         mv proto/ ../build-cache/
         cd ..
     fi
