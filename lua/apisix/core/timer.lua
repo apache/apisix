@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local log = require("apisix.core.log")
 local sleep = ngx.sleep
 local timer_every = ngx.timer.every

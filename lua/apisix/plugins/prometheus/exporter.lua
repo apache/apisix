@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local base_prometheus = require("nginx.prometheus")
 local core      = require("apisix.core")
 local ipairs    = ipairs

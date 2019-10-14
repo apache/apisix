@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-### BEGIN ###
-# Author: idevz
-# Since: 08:52:47 2019/07/08
-# Description:         travis_runnerz_linux.sh
-# travis_runner_linux  ./travis_runner_linux.sh
-#
-# Environment variables that control this script:
-# OPENRESTY_PREFIX
-### END ###
-
 set -ex
 
 export_or_prefix() {

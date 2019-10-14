@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local core      = require("apisix.core")
 local ipairs    = ipairs
 local error     = error

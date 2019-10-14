@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local core = require("apisix.core")
 local http = require("resty.http")
 local encode_args = ngx.encode_args

@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-### BEGIN ###
-# Author: idevz
-# Since: 08:52:47 2019/07/08
-# Description:       travis_runner_osx.sh
-# travis_runner_osx  ./travis_runner_osx.sh
-#
-# Environment variables that control this script:
-#
-### END ###
-
 set -ex
 
 export_or_prefix() {

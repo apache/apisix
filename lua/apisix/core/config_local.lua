@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local log = require("apisix.core.log")
 local yaml = require("tinyyaml")
 local ngx = ngx

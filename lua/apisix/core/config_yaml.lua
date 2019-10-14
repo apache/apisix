@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local config_local = require("apisix.core.config_local")
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")

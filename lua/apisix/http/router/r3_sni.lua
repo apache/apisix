@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local get_request = require("resty.core.base").get_request
 local r3router = require("resty.r3")
 local core     = require("apisix.core")

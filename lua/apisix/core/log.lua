@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local ngx = ngx
 local ngx_log  = ngx.log
 local ngx_DEBUG= ngx.DEBUG

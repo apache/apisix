@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local ngx_say = ngx.say

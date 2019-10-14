@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local tonumber = tonumber

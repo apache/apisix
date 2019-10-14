@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")

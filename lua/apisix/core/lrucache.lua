@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local lru_new = require("resty.lrucache").new
 local setmetatable = setmetatable
 local getmetatable = getmetatable

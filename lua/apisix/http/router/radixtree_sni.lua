@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local get_request      = require("resty.core.base").get_request
 local radixtree_new    = require("resty.radixtree").new
 local core             = require("apisix.core")

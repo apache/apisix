@@ -1,5 +1,3 @@
--- Copyright (C) Yuansheng Wang
-
 local require       = require
 local core          = require("apisix.core")
 local plugin        = require("apisix.plugin")
