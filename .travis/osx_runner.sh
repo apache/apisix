@@ -47,7 +47,7 @@ do_install() {
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 
-    git clone git@github.com:apache/openwhisk-utilities.git .travis/openwhisk-utilities
+    git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
     cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     cd grpc_server_example/
