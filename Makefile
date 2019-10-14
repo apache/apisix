@@ -52,6 +52,7 @@ endif
 ### check:        Check Lua source code
 .PHONY: check
 check:
+	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 	luacheck -q lua
 	./utils/lj-releng lua/*.lua lua/apisix/*.lua \
 		lua/apisix/admin/*.lua \

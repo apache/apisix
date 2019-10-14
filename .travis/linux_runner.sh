@@ -69,6 +69,9 @@ do_install() {
     wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
 	chmod a+x utils/lj-releng
 
+    git clone git@github.com:apache/openwhisk-utilities.git .travis/openwhisk-utilities
+    cp .travis/ASF* .travis/openwhisk-utilities/scancode/
+
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
         sudo apt-get install golang
