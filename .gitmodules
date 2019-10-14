@@ -1,3 +1,0 @@
-[submodule "apisix_dashboard_built"]
-	path = apisix_dashboard_built
-	url = https://github.com/iresty/apisix_dashboard_built.git
