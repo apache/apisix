@@ -157,7 +157,6 @@ endif
 	$(INSTALL) COPYRIGHT $(INST_CONFDIR)/COPYRIGHT
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
-	echo $(APISIX_WITHOUT_DASHBOARD)
 
 
 ### test:         Run the test case
