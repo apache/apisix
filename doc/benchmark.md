@@ -1,3 +1,4 @@
+[中文](benchmark-cn.md)
 ### Benchmark Environments
 n1-highcpu-8 (8 vCPUs, 7.2 GB memory) on Google Cloud
 
@@ -25,12 +26,10 @@ The result of Flame Graph:
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
-    "id": 1,
-    "plugin_config": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -68,12 +67,11 @@ The result of Flame Graph:
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
 ```shell
-curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
-    "id": 1,
-    "plugin_config": {
+    "plugins": {
         "limit-count": {
             "count": 999999999,
             "time_window": 60,

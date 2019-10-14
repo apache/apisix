@@ -10,7 +10,8 @@ local type = type
 local ngx_exit = ngx.exit
 local insert_tab = table.insert
 local concat_tab = table.concat
-
+local str_sub = string.sub
+local tonumber = tonumber
 
 local _M = {version = 0.1}
 
@@ -23,7 +24,7 @@ do
 function resp_exit(code, ...)
     idx = 0
 
-    if type(code) ~= "number" then
+    if code and type(code) ~= "number" then
         insert_tab(t, code)
         code = nil
     end
@@ -54,7 +55,7 @@ function resp_exit(code, ...)
     end
 
     if code then
-        ngx_exit(code)
+        return ngx_exit(code)
     end
 end
 
@@ -77,5 +78,10 @@ function _M.set_header(...)
     end
 end
 
+
+function _M.get_upstream_status(ctx)
+    -- $upstream_status maybe including mutiple status, only need the last one
+    return tonumber(str_sub(ctx.var.upstream_status or "", -3))
+end
 
 return _M

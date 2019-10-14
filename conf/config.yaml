@@ -1,14 +1,69 @@
 apisix:
-  node_listen: 9080             # Apisix listening port
+  node_listen: 9080              # APISIX listening port
+  enable_heartbeat: true
+  enable_admin: true
+  enable_debug: false
+  enable_ipv6: true
+  config_center: etcd             # etcd: use etcd to store the config value
+                                  # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
+  # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+  #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
+  #   - "::/64"
+  # port_admin: 9180              # use a separate port
+  real_ip_header: "X-Real-IP"     # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
+  real_ip_from:                   # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
+    - 127.0.0.1
+    - 'unix:'
+  router:
+    http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
+                                  # radixtree_host_uri: match route by host + uri(base on radixtree)
+                                  # r3_uri: match route by uri(base on r3)
+                                  # r3_host_uri: match route by host + uri(base on r3)
+
+    ssl: 'radixtree_sni'          # r3_sni: match route by SNI(base on r3)
+                                  # radixtree_sni: match route by SNI(base on radixtree)
+  # stream_proxy:                 # TCP/UDP proxy
+  #   tcp:                        # TCP proxy port list
+  #     - 9100
+  #     - 9101
+  #   udp:                        # UDP proxy port list
+  #     - 9200
+  #     - 9211
+  dns_resolver:                   # default DNS resolver, with disable IPv6 and enable local DNS
+    - 114.114.114.114
+    - 223.5.5.5
+    - 1.1.1.1
+    - 8.8.8.8
+  error_log:
+    level: warn
+  ssl:
+    enable: true
+    enable_http2: true
+    listen_port: 9443
+    ssl_protocols: "TLSv1 TLSv1.1 TLSv1.2 TLSv1.3"
+    ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA"
 
 etcd:
-  host: "http://127.0.0.1:2379" # etcd address
-  prefix: "/apisix"             # apisix configurations prefix
-  timeout: 60
+  host: "http://127.0.0.1:2379"   # etcd address
+  prefix: "/apisix"               # apisix configurations prefix
+  timeout: 1                      # 1 seconds
 
-plugins:                        # plugin name list
+plugins:                          # plugin list
   - example-plugin
   - limit-req
   - limit-count
+  - limit-conn
   - key-auth
   - prometheus
+  - node-status
+  - jwt-auth
+  - zipkin
+  - ip-restriction
+  - grpc-transcode
+  - serverless-pre-function
+  - serverless-post-function
+  - openid-connect
+  - proxy-rewrite
+
+stream_plugins:
+  - mqtt-proxy
