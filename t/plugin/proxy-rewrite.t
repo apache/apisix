@@ -723,7 +723,7 @@ X-Api-Engine: bar
 --- response_body
 uri: /uri/plugin_proxy_rewrite
 host: localhost
-x-real-ip: 127.0.0.1
 x-api-engine: APISIX
+x-real-ip: 127.0.0.1
 --- no_error_log
 [error]
