@@ -68,14 +68,20 @@ worker_processes auto;
 worker_cpu_affinity auto;
 {% end %}
 
-error_log logs/error.log {*error_log.level or "error"*};
+error_log {* error_log *} {* error_log_level or "error" *};
 pid logs/nginx.pid;
 
 worker_rlimit_nofile 20480;
 
 events {
     accept_mutex off;
-    worker_connections 10620;
+    worker_connections {* event.worker_connections *};
+    {% if event.use_epoll then %}
+    use epoll;
+    {% end %}
+    {% if event.multi_accept then %}
+    multi_accept on;
+    {% end %}
 }
 
 worker_rlimit_core  500M;
@@ -164,9 +170,13 @@ http {
 
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
 
-    access_log logs/access.log main buffer=32768 flush=3;
+    access_log {* http.access_log *} main buffer=32768 flush=3;
     open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
+    keepalive_timeout {* http.keepalive_timeout *};
+    client_header_timeout {* http.client_header_timeout *};
+    client_body_timeout {* http.client_body_timeout *};
+    send_timeout {* http.send_timeout *};
 
     server_tokens off;
     more_set_headers 'Server: APISIX web server';
@@ -479,6 +489,9 @@ local function init()
         error_log = {level = "warn"},
     }
     for k,v in pairs(yaml_conf.apisix) do
+        sys_conf[k] = v
+    end
+    for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
     end
 
