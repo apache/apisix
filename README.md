@@ -30,7 +30,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 ## Features
 
 - **Cloud-Native**: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
-- **Hot Updates And Hot Plugins**: Continuously updates its configurations and plugins without restarts!
+- **[Hot Updates And Hot Plugins](doc/plugins.md)**: Continuously updates its configurations and plugins without restarts!
 - **Dynamic Load Balancing**: Round-robin load balancing with weight.
 - **Hash-based Load Balancing**: Load balance with consistent hashing sessions.
 - **[SSL](doc/https.md)**: Dynamically load an SSL certificate.
