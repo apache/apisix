@@ -76,6 +76,7 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
 - Debian 9
 - Debian 10
 - macOS
+- **ARM64** Ubuntu 18.04
 
 目前有 4 种安装方式:
 - 如果你在使用 CentOS 7，我们推荐使用 [RPM 包安装](#通过-rpm-包安装centos-7)；

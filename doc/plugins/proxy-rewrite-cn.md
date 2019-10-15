@@ -6,11 +6,11 @@
 #### 配置参数
 |名字    |可选|说明|
 |-------         |-----|------|
-|scheme          |可选| 转发到上游的新`schema` 协议，可以是`http`或`https`，默认`http`协议|
-|uri             |可选| 转发到上游的新`uri` 地址|
-|host            |可选| 转发到上游的新`host` 地址，例如：`iresty.com` |
-|enable_websocket|可选| 是否启用`websocket`（布尔值），默认不启用|
-|headers         |可选| 转发到上游的新`headers`，可以设置多个。头信息如果存在将重写，不存在则添加。|
+|scheme          |可选| 转发到上游的新 `schema` 协议，可以是 `http` 或 `https`，默认 `http` 协议|
+|uri             |可选| 转发到上游的新 `uri` 地址|
+|host            |可选| 转发到上游的新 `host` 地址，例如：`iresty.com` |
+|enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
+|headers         |可选| 转发到上游的新`headers`，可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可|
 
 ### 示例
 
@@ -30,7 +30,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "enable_websocket": true,
             "headers": {
                 "X-Api-Version": "v1",
-                "X-Api-Engine": "apisix"
+                "X-Api-Engine": "apisix",
+                "X-Api-useless": "",
             }
         }
     },

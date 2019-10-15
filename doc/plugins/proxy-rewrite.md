@@ -10,7 +10,7 @@ upstream proxy info rewrite plugin.
 |uri             |No| Upstream new `uri` forwarding address.|
 |host            |No| Upstream new `host` forwarding address, example `iresty.com`. |
 |enable_websocket|No| enable `websocket`(boolean), default `false`.|
-|headers         |No| Forward to the new `headers` of the upstream, can set up multiple. If it exists, rewrite the header; if it does not exist, add the header.|
+|headers         |No| Forward to the new `headers` of the upstream, can set up multiple. If it exists, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header.|
 
 ### Example
 
@@ -30,7 +30,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "enable_websocket": true,
             "headers": {
                 "X-Api-Version": "v1",
-                "X-Api-Engine": "apisix"
+                "X-Api-Engine": "apisix",
+                "X-Api-useless": ""
             }
         }
     },
