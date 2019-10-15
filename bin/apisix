@@ -79,6 +79,9 @@ events {
     {% if event.use_epoll then %}
     use epoll;
     {% end %}
+    {% if event.multi_accept then %}
+    multi_accept on;
+    {% end %}
 }
 
 worker_rlimit_core  500M;
