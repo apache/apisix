@@ -669,3 +669,61 @@ GET /hello HTTP/1.1
 uri: /plugin_proxy_rewrite_args
 --- no_error_log
 [error]
+
+
+
+=== TEST 24: remove header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/uri/plugin_proxy_rewrite",
+                                "headers": {
+                                    "X-Api-Engine": "APISIX",
+                                    "X-Api-Test": ""
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: remove header
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+X-Api-Test: foo
+X-Api-Engine: bar
+--- response_body
+uri: /uri/plugin_proxy_rewrite
+host: localhost
+x-api-engine: APISIX
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
