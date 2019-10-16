@@ -1,7 +1,7 @@
 [English](grpc-proxy.md)
 # grpc-proxy
 
-通过apisix代理grpc连接，并使用apisix的大部分特性管理你的grpc服务。 
+通过APISIX代理gRPC连接，并使用APISIX的大部分特性管理你的grpc服务。 
 
 
 
@@ -16,10 +16,10 @@
 
 #### 创建代理grpc的route 
 
-在指定 route 中，代理 grpc 服务接口:
+在指定 route 中，代理 gRPC 服务接口:
 
 * 注意： 这个 route 的属性`service_protocal` 必须设置为 `grpc`
-* 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
+* 例子所代理的 gRPC 服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
