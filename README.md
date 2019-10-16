@@ -12,7 +12,7 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 APISIX is based on OpenResty and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
 
-[Install](#Install) | [Documentation](doc/doc-index.md) | [Development ENV](#development-manual-of-apisix) | [FAQ](FAQ.md)
+[Install](#Install) | [Documentation](doc/README.md) | [Development ENV](#development-manual-of-apisix) | [FAQ](FAQ.md)
 
 ## Why APISIX?
 
@@ -160,7 +160,7 @@ sudo apisix start
 Limit count plugin is a good start to try APISIX,
 you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
-Then you can try more [plugins](doc/doc-index.md#plugins).
+Then you can try more [plugins](doc/README.md#plugins).
 
 ## Dashboard
 

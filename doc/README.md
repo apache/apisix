@@ -1,3 +1,4 @@
+[中文](README_CN.md)
 
 Reference document
 ==================

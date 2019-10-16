@@ -11,7 +11,7 @@ APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
 它是基于 OpenResty 和 etcd 来实现，和传统 API 网关相比，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
 
-[安装](#安装) | [文档](doc/doc-index.md) | [开发环境](#开发环境) | [FAQ](FAQ.md)
+[安装](#安装) | [文档](doc/README_CN.md) | [开发环境](#开发环境) | [FAQ](FAQ.md)
 
 ## 为什么选择 APISIX？
 
@@ -156,7 +156,7 @@ sudo apisix start
 
 你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可。
 
-更进一步，你可以跟着文档来尝试更多的[插件](doc/doc-index-cn.md#插件)。
+更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
 ## 控制台
 APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
