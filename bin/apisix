@@ -77,7 +77,12 @@ events {
     accept_mutex off;
     worker_connections {* event.worker_connections *};
     {% if event.use_epoll then %}
+        {% if os_name == "Linux" then %}
     use epoll;
+        {% end %}
+        {% if os_name == "Darwin" then %}
+    use kqueue;
+        {% end %}
     {% end %}
     {% if event.multi_accept then %}
     multi_accept on;
