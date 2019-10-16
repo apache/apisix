@@ -1,5 +1,5 @@
-package = "apisix-master"
-version = "1.0-0"
+package = "apisix"
+version = "master-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
