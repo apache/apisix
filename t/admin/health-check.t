@@ -145,8 +145,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"maximum\" in docuement at pointer \"#\/upstream\/checks\/active\/healthy\/successes\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -175,8 +175,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"minimum\" in docuement at pointer \"#\/upstream\/checks\/active\/healthy\/successes\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -205,8 +205,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"maximum\" in docuement at pointer \"#\/upstream\/checks\/passive\/unhealthy\/http_statuses\/1\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -233,8 +233,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"enum\" in docuement at pointer \"#\/upstream\/checks\/active\/type\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -263,8 +263,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"uniqueItems\" in docuement at pointer \"#\/upstream\/checks\/active\/healthy\/http_statuses\/1\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -293,7 +293,7 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"type\" in docuement at pointer \"#\/upstream\/checks\/active\/unhealthy\/http_failures\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]

@@ -444,8 +444,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -471,8 +471,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -498,8 +498,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -525,8 +525,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/upstream_id\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 

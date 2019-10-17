@@ -218,8 +218,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/host\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -242,7 +242,7 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"required\" in docuement at pointer \"#\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]

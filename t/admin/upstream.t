@@ -218,8 +218,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"minProperties\" in docuement at pointer \"#\/nodes\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 
 
 
@@ -343,8 +343,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -373,8 +373,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -404,8 +404,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -476,8 +476,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"enum\" in docuement at pointer \"#\/type\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -506,8 +506,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"patternProperties\" in docuement at pointer \"#\/nodes\/127.0.0.1%3A8080\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
@@ -536,8 +536,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"patternProperties\" in docuement at pointer \"#\/nodes\/127.0.0.1%3A8080\""}
+--- response_body_like eval
+qr/{"error_msg":"invalid configuration:/
 --- no_error_log
 [error]
 
