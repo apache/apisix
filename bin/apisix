@@ -76,12 +76,6 @@ worker_rlimit_nofile 20480;
 events {
     accept_mutex off;
     worker_connections {* event.worker_connections *};
-    {% if event.use_epoll then %}
-    use epoll;
-    {% end %}
-    {% if event.multi_accept then %}
-    multi_accept on;
-    {% end %}
 }
 
 worker_rlimit_core  500M;
