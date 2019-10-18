@@ -84,7 +84,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDg
 
 #### try request with token
 
-* without token
+* without token:
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html -i
