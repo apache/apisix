@@ -47,8 +47,6 @@ nginx_config:                     # config for render the template to genarate n
   error_log_level: "warn"         # warn,error
   event:
     worker_connections: 10620
-    use_epoll: true
-    multi_accept: true            # true is on ,false is off
   http:
     access_log: "logs/access.log"
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
