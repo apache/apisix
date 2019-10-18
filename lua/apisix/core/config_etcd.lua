@@ -73,7 +73,7 @@ local function waitdir(etcd_cli, key, modified_index)
     local body = data.body or {}
 
     if body.message then
-        return nil, nil, body.message
+        return body.node, data.headers, body.message
     end
 
     return body.node, data.headers
@@ -180,6 +180,9 @@ local function sync_data(self)
     log.debug("res: ", json.delay_encode(res, true))
     log.debug("headers: ", json.delay_encode(headers, true))
     if not res then
+        if headers then
+          self:upgrade_version(headers["X-Etcd-Index"])
+        end
         return false, err
     end
 
