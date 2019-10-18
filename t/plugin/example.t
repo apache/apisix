@@ -48,7 +48,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "required" in docuement at pointer "#"
+property "i" is required
 done
 --- no_error_log
 [error]
@@ -71,7 +71,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "minimum" in docuement at pointer "#/i"
+property "i" validation failed: expected -1 to be greater than 0
 done
 --- no_error_log
 [error]
@@ -94,7 +94,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/s"
+property "s" validation failed: wrong type: expected string, got number
 done
 --- no_error_log
 [error]
@@ -117,7 +117,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/t"
+property "t" validation failed: expect array to have at least 1 items
 done
 --- no_error_log
 [error]

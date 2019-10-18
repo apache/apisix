@@ -56,7 +56,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "enum" in docuement at pointer "#/key"
+property "key" validation failed: matches non of the enum values
 done
 --- no_error_log
 [error]
@@ -212,7 +212,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"required\" in docuement at pointer \"#\""}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
 --- no_error_log
 [error]
 
@@ -254,7 +254,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -296,7 +296,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -336,7 +336,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"required\" in docuement at pointer \"#\""}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
 --- no_error_log
 [error]
 
@@ -377,7 +377,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -418,7 +418,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: invalid \"minimum\" in docuement at pointer \"#\/count\""}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" validation failed: expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 

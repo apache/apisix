@@ -66,7 +66,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "enum" in docuement at pointer "#/scheme"
+property "scheme" validation failed: matches non of the enum values
 done
 --- no_error_log
 [error]

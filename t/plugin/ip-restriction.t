@@ -120,7 +120,7 @@ qr@invalid ip address: 10.255.254.0/38@
 --- request
 GET /t
 --- response_body
-invalid "oneOf" in docuement at pointer "#"
+value sould match only one schema, but matches none
 done
 --- no_error_log
 [error]
@@ -144,7 +144,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/blacklist"
+property "blacklist" validation failed: expect array to have at least 1 items
 done
 --- no_error_log
 [error]
@@ -167,7 +167,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "oneOf" in docuement at pointer "#"
+value sould match only one schema, but matches both schemas 1 and 2
 done
 --- no_error_log
 [error]
@@ -549,6 +549,6 @@ GET /hello
 GET /t
 --- response_body
 invalid ip address: ::1/129
-invalid "anyOf" in docuement at pointer "#/whitelist/0"
+property "whitelist" validation failed: failed to validate item 1: object matches none of the alternatives
 --- no_error_log
 [error]
