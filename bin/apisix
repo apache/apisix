@@ -525,7 +525,8 @@ local function init_etcd(show_output)
 
     for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                "/plugins", "/consumers", "/node_status",
-                               "/ssl", "/global_rules", "/stream_routes"}) do
+                               "/ssl", "/global_rules", "/stream_routes",
+                               "/proto"}) do
         local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true "
                     .. "--connect-timeout " .. timeout
