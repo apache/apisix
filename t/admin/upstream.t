@@ -801,30 +801,32 @@ passed
 
 
 
-=== TEST 24: set upstream(id: 1)
+=== TEST 24: set upstream(type: chash)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                ngx.HTTP_PUT,
-                [[{
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "remote_addr",
                     "nodes": {
-                        "127.0.0.1:8080": 1,
-                        "127.0.0.1:8081": 2
+                        "127.0.0.1:8080": 1
                     },
-                    "type": "chash",
-                    "key": "uri",
-                    "desc": "new upstream"
+                    "type": "chash"
                 }]],
-                  [[{
-                    "nodes": {
-                        "127.0.0.1:8080": 1,
-                        "127.0.0.1:8081": 2
+                [[{
+                    "node": {
+                        "value": {
+                            "key": "server_name",
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "chash"
+                        },
+                        "key": "/apisix/upstreams/1"
                     },
-                    "type": "chash",
-                    "key": "arg_device_id",
-                    "desc": "new upstream"
+                    "action": "set"
                 }]]
                 )
 
@@ -841,7 +843,7 @@ passed
 
 
 
-=== TEST 25: set upstream(id: 1)
+=== TEST 25:  wrong upstream key
 --- config
     location /t {
         content_by_lua_block {
