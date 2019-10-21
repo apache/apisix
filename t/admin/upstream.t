@@ -818,7 +818,7 @@ passed
                 )
 
             ngx.status = code
-            ngx.say(body)
+            ngx.print(body)
         }
     }
 --- request
