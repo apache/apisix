@@ -809,24 +809,11 @@ passed
             local code, body = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "key": "uri",
+                    "key": "server_name",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "chash"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "key": "server_name",
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "chash"
-                        },
-                        "key": "/apisix/upstreams/2"
-                    },
-                    "action": "set"
                 }]]
                 )
 
