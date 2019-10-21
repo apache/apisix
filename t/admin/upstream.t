@@ -809,7 +809,7 @@ passed
             local code, body = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "key": "remote_addr",
+                    "key": "uri",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
@@ -824,7 +824,7 @@ passed
                             },
                             "type": "chash"
                         },
-                        "key": "/apisix/upstreams/1"
+                        "key": "/apisix/upstreams/2"
                     },
                     "action": "set"
                 }]]
