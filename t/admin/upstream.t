@@ -889,3 +889,75 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 24: set upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1,
+                        "127.0.0.1:8081": 2
+                    },
+                    "type": "chash",
+                    "key": "uri",
+                    "desc": "new upstream"
+                }]],
+                  [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1,
+                        "127.0.0.1:8081": 2
+                    },
+                    "type": "chash",
+                    "key": "arg_device_id",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: set upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1,
+                        "127.0.0.1:8081": 2
+                    },
+                    "type": "chash",
+                    "key": "not_support",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: invalid \"pattern\" in docuement at pointer \"#\/key\""}
+--- no_error_log
+[error]
