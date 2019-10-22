@@ -94,20 +94,10 @@ Makefile rules:
     test:         Run the test case
 ```
 
-
 ## Test
 
-Running the test cases at local machine:
+1. Install perl's package manager `cpanminus` first
+2. Then install `test-gninx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
+3. clone source code：`git clone https://github.com/openresty/test-nginx.git`;
+4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory: `prove -Itest-nginx/lib -r t`
 
-```shell
-make test
-```
-
-The following dependencies are required to run the test suite:
-
-* Nginx: version >= 1.4.2
-
-* Perl modules:
-    `Test::Nginx` https://github.com/openresty/test-nginx
-
-For the detail on how to install dependencies, please take a look at [travis.yml](.travis.yml).
