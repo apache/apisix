@@ -1,4 +1,4 @@
-local jsonschema = require('jsonschema.init')
+local jsonschema = require('resty.jsonschema')
 local lrucache = require("apisix.core.lrucache")
 
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
