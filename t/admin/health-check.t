@@ -145,8 +145,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"healthy\" validation failed: property \"successes\" validation failed: expected 255 to be smaller than 254"}
 --- no_error_log
 [error]
 
@@ -175,8 +175,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"healthy\" validation failed: property \"successes\" validation failed: expected 0 to be greater than 1"}
 --- no_error_log
 [error]
 
@@ -205,8 +205,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"passive\" validation failed: property \"unhealthy\" validation failed: property \"http_statuses\" validation failed: failed to validate item 2: expected 600 to be smaller than 599"}
 --- no_error_log
 [error]
 
@@ -233,8 +233,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"type\" validation failed: matches non of the enum values"}
 --- no_error_log
 [error]
 
@@ -263,8 +263,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 2 and 1 are equal"}
 --- no_error_log
 [error]
 
@@ -293,7 +293,7 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"unhealthy\" validation failed: property \"http_failures\" validation failed: wrong type: expected integer, got number"}
 --- no_error_log
 [error]

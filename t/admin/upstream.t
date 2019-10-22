@@ -218,8 +218,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: expect object to have at least 1 properties"}
 
 
 
@@ -343,8 +343,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -373,8 +373,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -404,8 +404,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 
@@ -476,8 +476,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"type\" validation failed: matches non of the enum values"}
 --- no_error_log
 [error]
 
@@ -506,8 +506,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): wrong type: expected integer, got string"}
 --- no_error_log
 [error]
 
@@ -536,8 +536,8 @@ qr/{"error_msg":"invalid configuration:/
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 

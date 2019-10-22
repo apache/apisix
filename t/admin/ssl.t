@@ -209,8 +209,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body_like eval
-qr/{"error_msg":"invalid configuration:/
+--- response_body
+{"error_msg":"invalid configuration: property \"cert\" is required"}
 --- no_error_log
 [error]
 
