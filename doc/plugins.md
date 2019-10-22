@@ -1,6 +1,6 @@
 [中文](plugins-cn.md)
 
-## hot reload without reload service
+## Hot reload
 APISIX plug-ins are hot-loaded. No matter you add, delete or modify plug-ins, you don't need to restart the service.
 
 Just send an HTTP request through admin API:

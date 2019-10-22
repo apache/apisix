@@ -12,7 +12,7 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 APISIX is based on OpenResty and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
 
-[Install](#Install) | [Documentation](doc/README.md) | [Development ENV](#development-manual-of-apisix) | [FAQ](FAQ.md)
+[Installation](#Installation) | [Documentation](doc/README.md) | [Development ENV](#development-manual-of-apisix) | [FAQ](FAQ.md)
 
 ## Why APISIX?
 
@@ -68,7 +68,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 ## Online Demo Dashboard
 We provide an online dashboard [demo version](http://apisix.iresty.com)， make it easier for you to understand APISIX.
 
-## Install
+## Installation
 
 APISIX Installed and tested in the following systems, and the version of OpenResty MUST >= 1.15.8.1:
 
