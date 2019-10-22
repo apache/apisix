@@ -814,20 +814,6 @@ passed
                         "127.0.0.1:8080": 1
                     },
                     "type": "chash"
-                }]],
-                [[
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "chash",
-                            "key": "arg_device_id",
-                            "desc": "new chash upstream"
-                        },
-                        "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -871,5 +857,35 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: invalid \"pattern\" in docuement at pointer \"#\/key\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: set upstream with args(type: chash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "arg_device_id",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
