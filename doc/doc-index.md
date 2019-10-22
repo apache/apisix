@@ -10,7 +10,6 @@ Reference document
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 * Router
     * [radixtree](router-radixtree.md)
-    * [r3](router-r3.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 * [Stream Proxy](stream-proxy.md)
 * [Admin API](admin-api-cn.md)

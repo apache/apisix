@@ -83,7 +83,6 @@ Makefile rules:
 
     help:         Show Makefile rules.
     dev:          Create a development ENV
-    dev_r3:       Create a development ENV for r3
     check:        Check Lua source code
     init:         Initialize the runtime environment
     run:          Start the apisix server
