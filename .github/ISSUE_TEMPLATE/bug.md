@@ -16,8 +16,6 @@ assignees: ''
 * OS:
 
 ### Minimal test code / Steps to reproduce the issue
-
-# your steps
 1.
 2.
 3.
