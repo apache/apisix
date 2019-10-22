@@ -96,17 +96,7 @@ Makefile rules:
 
 ## 运行测试案例
 
-在你本地运行测试案例：
-
-```shell
-make test
-```
-
-下面是运行测试的依赖项：
-
-* Nginx: version >= 1.4.2
-
-* Perl modules:
-    `Test::Nginx` https://github.com/openresty/test-nginx
-
-更多细节，可以参考 [travis.yml](.travis.yml).
+1. 先安装 perl 的包管理器 cpanminus
+2. 然后通过 cpanm 来安装 test-gninx：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
+3. 然后 clone 最新的源码：`git clone https://github.com/openresty/test-nginx.git`
+4. 通过 perl 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集:`prove -Itest-nginx/lib -r t`
