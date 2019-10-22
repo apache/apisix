@@ -17,12 +17,12 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    WITHOUT_DASHBOARD=1 sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+    WITHOUT_DASHBOARD=1 sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
     sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
     echo "Create lua deps cache"
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
-    sudo cp rockspec/apisix-dev-1.0-0.rockspec build-cache/
+    sudo cp rockspec/apisix-master-0.rockspec build-cache/
 }
 
 before_install() {
@@ -45,12 +45,12 @@ do_install() {
 
     export_or_prefix
 
-    if [ ! -f "build-cache/apisix-dev-1.0-0.rockspec" ]; then
+    if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
 
     else
-        src=`md5sum rockspec/apisix-dev-1.0-0.rockspec | awk '{print $1}'`
-        src_cp=`md5sum build-cache/apisix-dev-1.0-0.rockspec | awk '{print $1}'`
+        src=`md5sum rockspec/apisix-master-0.rockspec | awk '{print $1}'`
+        src_cp=`md5sum build-cache/apisix-master-0.rockspec | awk '{print $1}'`
         if [ "$src" = "$src_cp" ]; then
             echo "Use lua deps cache"
             sudo cp -r build-cache/deps ./

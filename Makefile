@@ -26,11 +26,11 @@ help:
 .PHONY: dev
 dev:
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	WITHOUT_DASHBOARD=1 luarocks install rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+	WITHOUT_DASHBOARD=1 luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
-	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 endif
 ifeq ($(lj-releng-exist), not_exist)
 	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
