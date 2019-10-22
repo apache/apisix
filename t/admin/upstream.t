@@ -814,6 +814,20 @@ passed
                         "127.0.0.1:8080": 1
                     },
                     "type": "chash"
+                }]],
+                [[
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "chash",
+                            "key": "arg_device_id",
+                            "desc": "new chash upstream"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
                 }]]
                 )
 
