@@ -2,7 +2,7 @@
 
 ## Install APISIX in development environment
 
-For different operating systems have different dependencies, see detail: [Install Dependencies](doc/install-dependencies.md).
+For different operating systems have different dependencies, see detail: [Install Dependencies](install-dependencies.md).
 
 If you are a developer, we can set up a local development environment with the following commands after we installed dependencies.
 
