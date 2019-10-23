@@ -20,7 +20,6 @@ addons:
       - cpanminus
       - build-essential
       - libncurses5-dev
-      - libpcre3-dev
       - libreadline-dev
       - libssl-dev
       - perl

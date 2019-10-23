@@ -37,17 +37,6 @@ ifeq ($(lj-releng-exist), not_exist)
 	chmod a+x utils/lj-releng
 endif
 
-### dev_r3:       Create a development ENV for r3
-.PHONY: dev_r3
-dev_r3:
-ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) lua-resty-libr3 --tree=deps --local
-else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	luarocks install lua-resty-libr3 --tree=deps --local
-else
-	luarocks install --lua-dir=/usr/local/openresty/luajit lua-resty-libr3 --tree=deps --local
-endif
-
 
 ### check:        Check Lua source code
 .PHONY: check
