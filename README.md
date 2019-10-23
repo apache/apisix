@@ -117,10 +117,10 @@ APISIX is installed by running the following commands in your terminal.
 > Gets the specified version via Luarock: 
 
 ```shell
-# example to install apisix with version v0.8
+# install apisix with version v0.8
 sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
 
-# old luarocks may not support `lua-dir`, we can remove this option
+# old luarocks may not support `lua-dir`, we can remove option `lua-dir`
 sudo luarocks install apisix 0.8
 ```
 
