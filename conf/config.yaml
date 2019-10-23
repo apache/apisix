@@ -71,6 +71,7 @@ plugins:                          # plugin list
   - serverless-post-function
   - openid-connect
   - proxy-rewrite
+  - rewrite
 
 stream_plugins:
   - mqtt-proxy
