@@ -1,5 +1,4 @@
 local core = require("apisix.core")
-local balancer = require("ngx.balancer")
 local tab_insert = table.insert
 local tab_concat = table.concat
 local lrucache = core.lrucache.new({
@@ -91,7 +90,8 @@ function _M.rewrite(conf, ctx)
 
     local new_uri, err = concat_new_uri(conf.uri, ctx)
     if not new_uri then
-        core.log.error("failed to genera new uri by: ", conf.uri)
+        core.log.error("failed to genera new uri by: ", conf.uri, " error: ", 
+                       err)
         core.response.exit(500)
     end
 
