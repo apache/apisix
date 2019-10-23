@@ -35,3 +35,4 @@ Plugins
 * [serverless](plugins/serverless-cn.md)：AllowS to dynamically run Lua code at *different* phase in APISIX.
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
 * openid-connect
+* [redirect](plugins/redirect.md): Client redirect with new uri.
