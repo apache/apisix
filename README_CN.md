@@ -112,19 +112,29 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 
 在终端中执行下面命令完成 APISIX 的安装：
 
-> 通过 curl
+> 通过 curl 安装 master 分支
 
 ```shell
 sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-> 人工检查
+> 人工检查安装 master 分支
 
 对你不熟悉项目的安装脚本做检查，是个非常好的习惯。可以先下载这个脚本，确保他都是正常脚本，然后运行：
 
 ```shell
 curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
 sudo sh install.sh
+```
+
+> 通过 Luarocks 安装指定的版本： 
+
+```shell
+# 安装 apisix 的 0.8 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+
+# 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
+sudo luarocks install apisix 0.8
 ```
 
 > 安装完成
