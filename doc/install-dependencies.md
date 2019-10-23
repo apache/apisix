@@ -94,7 +94,7 @@ CentOS 6
 
 TODO
 
-Failed to compile `rapidjson`, and the compilation of `libr3` relies on later versions of `autoconf` and `pcre`, but the CentOS 6 comes with a lower version, will support CentOS 6 later.
+Failed to compile `rapidjson`, but the CentOS 6 comes with a lower version, will support CentOS 6 later.
 
 Mac OSX
 =======

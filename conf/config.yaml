@@ -17,11 +17,7 @@ apisix:
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
-                                  # r3_uri: match route by uri(base on r3)
-                                  # r3_host_uri: match route by host + uri(base on r3)
-
-    ssl: 'radixtree_sni'          # r3_sni: match route by SNI(base on r3)
-                                  # radixtree_sni: match route by SNI(base on radixtree)
+    ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
   # stream_proxy:                 # TCP/UDP proxy
   #   tcp:                        # TCP proxy port list
   #     - 9100
