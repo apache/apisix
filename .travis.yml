@@ -20,13 +20,11 @@ addons:
       - cpanminus
       - build-essential
       - libncurses5-dev
-      - libpcre3-dev
       - libreadline-dev
       - libssl-dev
       - perl
       - etcd
       - luarocks
-      - cmake
       - lua-check
   homebrew:
     update: true

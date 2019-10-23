@@ -59,7 +59,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "additionalProperties" in docuement at pointer "#/invalid"
+additional properties forbidden, found invalid
 --- no_error_log
 [error]
 
@@ -174,7 +174,7 @@ qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin prometheus err: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+{"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 
@@ -212,7 +212,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin prometheus err: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+{"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 

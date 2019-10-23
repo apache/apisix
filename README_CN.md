@@ -7,11 +7,11 @@
 - **QQ 交流群**: 552030619
 - [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-## 什么是 APISIX？
-
 APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
 它是基于 OpenResty 和 etcd 来实现，和传统 API 网关相比，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
+
+[安装](#安装) | [文档](doc/README_CN.md) | [开发环境](#开发环境) | [FAQ](FAQ.md)
 
 ## 为什么选择 APISIX？
 
@@ -34,7 +34,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **[SSL](doc/https-cn.md)**：动态加载 SSL 证书。
 - **HTTP(S) 反向代理**
 - **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
-- **熔断器**: 智能跟踪不健康上游服务.
+- **熔断器**: 智能跟踪不健康上游服务。
 - **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md)。
 - **[限制速率](doc/plugins/limit-req-cn.md)**
 - **[限制请求数](doc/plugins/limit-count-cn.md)**
@@ -112,19 +112,29 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 
 在终端中执行下面命令完成 APISIX 的安装：
 
-> 通过 curl
+> 通过 curl 安装 master 分支
 
 ```shell
 sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-> 人工检查
+> 人工检查安装 master 分支
 
 对你不熟悉项目的安装脚本做检查，是个非常好的习惯。可以先下载这个脚本，确保他都是正常脚本，然后运行：
 
 ```shell
 curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
 sudo sh install.sh
+```
+
+> 通过 Luarocks 安装指定的版本： 
+
+```shell
+# 安装 apisix 的 0.8 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+
+# 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
+sudo luarocks install apisix 0.8
 ```
 
 > 安装完成
@@ -140,7 +150,7 @@ sudo sh install.sh
 
 ## 开发环境
 
-如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤.
+如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤。
 
 ## 快速上手
 
@@ -154,9 +164,9 @@ sudo apisix start
 
 2. 测试限流插件
 
-你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可.
+你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可。
 
-更进一步，你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
+更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
 ## 控制台
 APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，

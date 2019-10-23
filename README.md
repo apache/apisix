@@ -8,12 +8,11 @@
 - [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 - [![Twitter](https://img.shields.io/twitter/follow/apisixfast.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=apisixfast)
 
-## What's APISIX?
-
 APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
 
 APISIX is based on OpenResty and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
 
+[Installation](#Installation) | [Documentation](doc/README.md) | [Development ENV](#development-manual-of-apisix) | [FAQ](FAQ.md)
 
 ## Why APISIX?
 
@@ -69,7 +68,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 ## Online Demo Dashboard
 We provide an online dashboard [demo version](http://apisix.iresty.com)， make it easier for you to understand APISIX.
 
-## Install
+## Installation
 
 APISIX Installed and tested in the following systems, and the version of OpenResty MUST >= 1.15.8.1:
 
@@ -114,13 +113,13 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 
 APISIX is installed by running the following commands in your terminal.
 
-> via curl
+> Gets the master branch via curl
 
 ```shell
 sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-> Manual inspection
+> Gets the master branch with manual inspection
 
 It's a good idea to inspect the installation script from projects you don't know yet. You can do that by downloading the installation script first, looking through it so everything looks normal, then running it:
 
@@ -129,7 +128,17 @@ curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils
 sudo sh install.sh
 ```
 
-> installation complete
+> Gets the specified version via Luarock: 
+
+```shell
+# install apisix with version v0.8
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+
+# old luarocks may not support `lua-dir`, we can remove option `lua-dir`
+sudo luarocks install apisix 0.8
+```
+
+> Installation complete
 
 If all goes well, you will see the message like this:
 
@@ -161,7 +170,7 @@ sudo apisix start
 Limit count plugin is a good start to try APISIX,
 you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
-Then you can try more [plugins](doc/plugins.md).
+Then you can try more [plugins](doc/README.md#plugins).
 
 ## Dashboard
 
@@ -210,10 +219,6 @@ If your concerns are not among them, please submit issue to communicate with us.
 ## Contributing
 
 See [CONTRIBUTING](Contributing.md) for details on submitting patches and the contribution workflow.
-
-## Reference document
-
-See more document, please take look at [Reference document](doc/doc-index.md).
 
 ## Acknowledgments
 

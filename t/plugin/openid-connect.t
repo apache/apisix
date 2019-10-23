@@ -45,7 +45,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "required" in docuement at pointer "#"
+property "client_id" is required
 done
 --- no_error_log
 [error]
@@ -68,7 +68,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/client_id"
+property "client_id" validation failed: wrong type: expected string, got number
 done
 --- no_error_log
 [error]

@@ -32,8 +32,8 @@ end
 
 function _M.http_init_worker()
     local conf = core.config.local_conf()
-    local router_http_name = "r3_uri"
-    local router_ssl_name = "r3_sni"
+    local router_http_name = "radixtree_uri"
+    local router_ssl_name = "radixtree_sni"
 
     if conf and conf.apisix and conf.apisix.router then
         router_http_name = conf.apisix.router.http or router_http_name
