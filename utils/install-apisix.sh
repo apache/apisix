@@ -4,6 +4,7 @@ set -ex
 
 OR_EXEC=`which openresty 2>&1`
 echo $OR_EXEC
+APISIX_VER="https://raw.githubusercontent.com/iresty/apisix/master/rockspec/apisix-master-0.rockspec"
 
 # check the openresty exist
 CHECK_OR_EXIST=`echo $OR_EXEC | grep ": no openresty" | wc -l`
@@ -25,13 +26,13 @@ echo $UNAME
 
 do_install() {
     if [ "$UNAME" == "Darwin" ]; then
-        luarocks install --lua-dir=$LUA_JIT_DIR apisix --tree=/usr/local/apisix/deps --local
+        luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
 
     elif [ "$LUAROCKS_VER" == 'luarocks 3.' ]; then
-        luarocks install --lua-dir=$LUA_JIT_DIR apisix --tree=/usr/local/apisix/deps --local
+        luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
 
     else
-        luarocks install apisix --tree=/usr/local/apisix/deps --local
+        luarocks install $APISIX_VER --tree=/usr/local/apisix/deps --local
     fi
 
     sudo rm -f /usr/local/bin/apisix
