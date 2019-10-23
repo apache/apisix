@@ -113,13 +113,13 @@ We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, a
 
 APISIX is installed by running the following commands in your terminal.
 
-> via curl
+> Gets the master branch via curl
 
 ```shell
 sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
 ```
 
-> Manual inspection
+> Gets the master branch with manual inspection
 
 It's a good idea to inspect the installation script from projects you don't know yet. You can do that by downloading the installation script first, looking through it so everything looks normal, then running it:
 
@@ -128,7 +128,17 @@ curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils
 sudo sh install.sh
 ```
 
-> installation complete
+> Gets the specified version via Luarock: 
+
+```shell
+# install apisix with version v0.8
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+
+# old luarocks may not support `lua-dir`, we can remove option `lua-dir`
+sudo luarocks install apisix 0.8
+```
+
+> Installation complete
 
 If all goes well, you will see the message like this:
 
