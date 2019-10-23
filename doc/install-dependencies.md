@@ -1,13 +1,33 @@
 # Install Dependencies
 
-* [CentOS 6 & 7](#centos-6--7)
+* [CentOS 6](#centos-6)
+* [CentOS 7](#centos-7)
 * [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
 * [Debian 9 & 10](#debian-9--10)
-* [CentOS 6](#centos-6)
 * [Mac OSX](#mac-osx)
 
-CentOS 6 & 7
-============
+CentOS 6
+========
+
+```shell
+# add openresty source
+sudo yum install yum-utils
+sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+
+# install openresty, etcd and some compilation tools
+sudo yum install -y openresty curl git gcc luarocks lua-devel make
+
+wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
+    cd etcd-v3.3.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# start etcd server
+nohup etcd &
+```
+
+CentOS 7
+========
 
 ```shell
 # install epel, `luarocks` need it.
