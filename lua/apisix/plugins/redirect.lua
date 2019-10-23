@@ -30,7 +30,11 @@ local _M = {
 
 
 local function parse_uri(uri)
-    local reg = [[ (\\\$[0-9a-zA-Z_]+) | \$\{([0-9a-zA-Z_]+)\} | \$([0-9a-zA-Z_]+) | (\$|[^$\\]+) ]]
+
+    local reg = [[ (\\\$[0-9a-zA-Z_]+) | ]]         -- \$host
+                .. [[ \$\{([0-9a-zA-Z_]+)\} | ]]    -- ${host}
+                .. [[ \$([0-9a-zA-Z_]+) | ]]        -- $host
+                .. [[ (\$|[^$\\]+) ]]               -- $ or others
     local iterator, err = re_gmatch(uri, reg, "jiox")
     if not iterator then
         return nil, err
