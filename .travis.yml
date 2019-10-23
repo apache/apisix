@@ -5,6 +5,9 @@ matrix:
   fast_finish: true
   include:
     - os: linux
+      arch: amd64
+    - os: linux
+      arch: arm64
     - os: osx
       if: type IN (push)
       cache:
