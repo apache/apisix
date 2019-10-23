@@ -7,8 +7,8 @@ upstream proxy info rewrite plugin.
 ### Parameters
 |Name    |Required|Description|
 |------- |-----|------|
-|uri     |required| New uri which can contain Ningx variable, eg: `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`.|
-|ret_code|option|Response code to client, the default value is `302`.|
+|uri     |required| New uri which can contain Ningx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`.|
+|ret_code|option|Response code, the default value is `302`.|
 
 ### Example
 
