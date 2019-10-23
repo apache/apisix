@@ -1,6 +1,9 @@
 local core = require("apisix.core")
 local tab_insert = table.insert
 local tab_concat = table.concat
+local re_gmatch = ngx.re.gmatch
+local ipairs = ipairs
+
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
 })
@@ -26,19 +29,9 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    return true
-end
-
-
 local function parse_uri(uri)
-    local reg = [[\$\{([0-9a-zA-Z_]+)\} | \$([0-9a-zA-Z_]+) | ([^$]+)]]
-    local iterator, err = ngx.re.gmatch(uri, reg, "jiox")
+    local reg = [[ (\\\$[0-9a-zA-Z_]+) | \$\{([0-9a-zA-Z_]+)\} | \$([0-9a-zA-Z_]+) | (\$|[^$\\]+) ]]
+    local iterator, err = re_gmatch(uri, reg, "jiox")
     if not iterator then
         return nil, err
     end
@@ -61,27 +54,48 @@ local function parse_uri(uri)
 end
 
 
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    local uri_segs, err = parse_uri(conf.uri)
+    if not uri_segs then
+        return false, err
+    end
+    core.log.info(core.json.delay_encode(uri_segs))
+
+    return true
+end
+
+
+    local tmp = {}
 local function concat_new_uri(uri, ctx)
     local pased_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
     if not pased_uri_segs then
         return nil, err
     end
 
-    local t = {}
+    core.table.clear(tmp)
+
     for _, uri_segs in ipairs(pased_uri_segs) do
-        local pat1, pat2, plain_text = uri_segs[1], uri_segs[2], uri_segs[3]
+        local pat1 = uri_segs[1]
+        local pat2 = uri_segs[2]
+        local pat3 = uri_segs[3]
+        local pat4 = uri_segs[4]
         core.log.info(core.json.delay_encode(uri_segs))
 
-        if pat1 then
-            tab_insert(t, ctx.var[pat1])
-        elseif pat2 then
-            tab_insert(t, ctx.var[pat2])
+        if pat2 then
+            tab_insert(tmp, ctx.var[pat2])
+        elseif pat3 then
+            tab_insert(tmp, ctx.var[pat3])
         else
-            tab_insert(t, plain_text)
+            tab_insert(tmp, pat1 or pat4)
         end
     end
 
-    return tab_concat(t, "")
+    return tab_concat(tmp, "")
 end
 
 
@@ -90,7 +104,7 @@ function _M.rewrite(conf, ctx)
 
     local new_uri, err = concat_new_uri(conf.uri, ctx)
     if not new_uri then
-        core.log.error("failed to genera new uri by: ", conf.uri, " error: ", 
+        core.log.error("failed to generate new uri by: ", conf.uri, " error: ",
                        err)
         core.response.exit(500)
     end

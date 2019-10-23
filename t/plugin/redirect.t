@@ -23,7 +23,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.rewrite")
+            local plugin = require("apisix.plugins.redirect")
             local ok, err = plugin.check_schema({
                 ret_code = 302,
                 uri = '/foo',
@@ -48,7 +48,7 @@ done
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.rewrite")
+            local plugin = require("apisix.plugins.redirect")
             local ok, err = plugin.check_schema({
                 -- ret_code = 302,
                 uri = '/foo',
@@ -75,10 +75,10 @@ done
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "plugins": {
-                        "rewrite": {
+                        "redirect": {
                             "uri": "/test/add",
                             "ret_code": 301
                         }
@@ -102,7 +102,7 @@ passed
 
 
 
-=== TEST 4: rewrite
+=== TEST 4: redirect
 --- request
 GET /hello
 --- response_headers
@@ -119,10 +119,10 @@ Location: /test/add
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "plugins": {
-                        "rewrite": {
+                        "redirect": {
                             "uri": "$uri/test/add",
                             "ret_code": 301
                         }
@@ -146,7 +146,7 @@ passed
 
 
 
-=== TEST 6: rewrite
+=== TEST 6: redirect
 --- request
 GET /hello
 --- response_headers
@@ -163,10 +163,10 @@ Location: /hello/test/add
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "plugins": {
-                        "rewrite": {
+                        "redirect": {
                             "uri": "$uri/test/a${arg_name}c",
                             "ret_code": 302
                         }
@@ -190,11 +190,99 @@ passed
 
 
 
-=== TEST 8: rewrite
+=== TEST 8: redirect
 --- request
 GET /hello?name=json
 --- response_headers
 Location: /hello/test/ajsonc
 --- error_code: 302
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: add plugin with new uri: /foo$$uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "uri": "/foo$$uri",
+                            "ret_code": 302
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: redirect
+--- request
+GET /hello?name=json
+--- response_headers
+Location: /foo$/hello
+--- error_code: 302
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: add plugin with new uri: \\$uri/foo$uri\\$uri/bar
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "uri": "\\$uri/foo$uri\\$uri/bar",
+                            "ret_code": 301
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: redirect
+--- request
+GET /hello
+--- response_headers
+Location: \$uri/foo/hello\$uri/bar
+--- error_code: 301
 --- no_error_log
 [error]
