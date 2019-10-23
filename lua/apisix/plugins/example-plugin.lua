@@ -1,9 +1,6 @@
 local core = require("apisix.core")
 local balancer = require("ngx.balancer")
 
--- You can follow this document to write schema:
--- https://github.com/Tencent/rapidjson/blob/master/bin/draft-04/schema
--- rapidjson not supported `format` in draft-04 yet
 local schema = {
     type = "object",
     properties = {

@@ -20,7 +20,6 @@ dependencies = {
     "lua-resty-balancer = 0.02rc5",
     "lua-resty-ngxvar = 0.4",
     "lua-resty-jit-uuid = 0.0.7",
-    "rapidjson = 0.6.1",
     "lua-resty-healthcheck-iresty = 1.0.1",
     "lua-resty-jwt = 0.2.0",
     "lua-resty-cookie = 0.1.0",
@@ -32,6 +31,7 @@ dependencies = {
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 0.1",
     "iresty-nginx-lua-prometheus = 0.20190917",
+    "lua-resty-jsonschema = 0.2",
 }
 
 build = {

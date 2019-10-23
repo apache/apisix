@@ -210,7 +210,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"required\" in docuement at pointer \"#\""}
+{"error_msg":"invalid configuration: property \"cert\" is required"}
 --- no_error_log
 [error]
 

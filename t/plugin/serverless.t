@@ -89,7 +89,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "enum" in docuement at pointer "#/phase"
+property "phase" validation failed: matches non of the enum values
 done
 --- no_error_log
 [error]

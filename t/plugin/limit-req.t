@@ -57,7 +57,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "required" in docuement at pointer "#"
+property "conn" is required
 done
 --- no_error_log
 [error]
@@ -273,7 +273,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-req err: invalid \"minimum\" in docuement at pointer \"#\/rate\""}
+{"error_msg":"failed to check the configuration of plugin limit-req err: property \"rate\" validation failed: expected -1 to be greater than 0"}
 --- no_error_log
 [error]
 

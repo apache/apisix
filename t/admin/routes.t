@@ -377,8 +377,7 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: invalid \"uniqueItems\" in docuement at pointer \"#\/methods\/1\""}
+--- response_body_like
 --- no_error_log
 [error]
 
@@ -405,7 +404,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"enum\" in docuement at pointer \"#\/methods\/0\""}
+{"error_msg":"invalid configuration: property \"methods\" validation failed: failed to validate item 1: matches non of the enum values"}
 --- no_error_log
 [error]
 
@@ -432,7 +431,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/service_id\""}
+{"error_msg":"invalid configuration: property \"service_id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -540,7 +539,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -567,7 +566,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/upstream_id\""}
+{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -766,7 +765,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"pattern\" in docuement at pointer \"#\/host\""}
+{"error_msg":"invalid configuration: property \"host\" validation failed: failed to match pattern \"^\\\\*?[0-9a-zA-Z-.]+$\" with \"a.*.foo.com\""}
 --- no_error_log
 [error]
 
@@ -799,7 +798,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"pattern\" in docuement at pointer \"#\/host\""}
+{"error_msg":"invalid configuration: property \"host\" validation failed: failed to match pattern \"^\\\\*?[0-9a-zA-Z-.]+$\" with \"*.a.*.foo.com\""}
 --- no_error_log
 [error]
 
@@ -934,7 +933,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/remote_addr\""}
+{"error_msg":"invalid configuration: property \"remote_addr\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
