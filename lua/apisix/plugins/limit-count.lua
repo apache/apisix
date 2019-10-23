@@ -23,20 +23,14 @@ local schema = {
             type = "string",
             enum = {"local", "redis"},
         },
-        redis = {
-            type = "object",
-            properties = {
-                host = {
-                    type = "string", minLength = 2
-                },
-                port = {
-                    type = "integer", minimum = 1
-                },
-                timeout = {
-                    type = "integer", minimum = 1
-                },
-            },
-            required = {"host"},
+        redis_host = {
+            type = "string", minLength = 2
+        },
+        redis_port = {
+            type = "integer", minimum = 1
+        },
+        redis_timeout = {
+            type = "integer", minimum = 1
         },
     },
     additionalProperties = false,
@@ -45,7 +39,7 @@ local schema = {
 
 
 local _M = {
-    version = 0.2,
+    version = 0.3,
     priority = 1002,
     name = plugin_name,
     schema = schema,
@@ -63,12 +57,12 @@ function _M.check_schema(conf)
     end
 
     if conf.policy == "redis" then
-        if not conf.redis then
-            return false, "missing valid redis options"
+        if not conf.redis_host then
+            return false, "missing valid redis option host"
         end
 
-        conf.redis.port = conf.redis.port or 6379
-        conf.redis.timeout = conf.redis.timeout or 1000
+        conf.redis_port = conf.redis_port or 6379
+        conf.redis_timeout = conf.redis_timeout or 1000
     end
 
     return true
@@ -85,7 +79,7 @@ local function create_limit_obj(conf)
 
     if conf.policy == "redis" then
         return limit_redis_new("plugin-" .. plugin_name,
-                               conf.count, conf.time_window, conf.redis)
+                               conf.count, conf.time_window, conf)
     end
 
     return nil
