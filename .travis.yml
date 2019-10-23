@@ -26,7 +26,6 @@ addons:
       - perl
       - etcd
       - luarocks
-      - cmake
       - lua-check
   homebrew:
     update: true

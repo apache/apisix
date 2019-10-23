@@ -107,7 +107,7 @@ qr/"nodes":\{"127.0.0.1:1980":1\}/
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
-qr{failed to check item data of \[/apisix/upstreams\] err:invalid "enum" in docuement at pointer "#/type"}
+qr{failed to check item data of \[/apisix/upstreams\] err:property "type" validation failed}
 
 
 

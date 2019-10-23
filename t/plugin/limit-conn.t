@@ -92,7 +92,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "required" in docuement at pointer "#"
+property "burst" is required
 done
 --- no_error_log
 [error]
@@ -369,7 +369,7 @@ GET /test_concurrency
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"required\" in docuement at pointer \"#\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
 --- no_error_log
 [error]
 
@@ -412,7 +412,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"minimum\" in docuement at pointer \"#\/conn\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -453,7 +453,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"required\" in docuement at pointer \"#\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
 --- no_error_log
 [error]
 
@@ -495,7 +495,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: invalid \"minimum\" in docuement at pointer \"#\/conn\""}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
 --- no_error_log
 [error]
 

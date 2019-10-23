@@ -219,7 +219,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"minProperties\" in docuement at pointer \"#\/nodes\""}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: expect object to have at least 1 properties"}
 
 
 
@@ -344,7 +344,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -374,7 +374,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -405,7 +405,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+{"error_msg":"invalid configuration: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 
@@ -477,7 +477,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"enum\" in docuement at pointer \"#\/type\""}
+{"error_msg":"invalid configuration: property \"type\" validation failed: matches non of the enum values"}
 --- no_error_log
 [error]
 
@@ -507,7 +507,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"patternProperties\" in docuement at pointer \"#\/nodes\/127.0.0.1%3A8080\""}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): wrong type: expected integer, got string"}
 --- no_error_log
 [error]
 
@@ -537,7 +537,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"patternProperties\" in docuement at pointer \"#\/nodes\/127.0.0.1%3A8080\""}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 

@@ -5,7 +5,7 @@ local plugin_name = "prometheus"
 
 local schema = {
     type = "object",
-    additionalProperties = false
+    additionalProperties = false,
 }
 
 

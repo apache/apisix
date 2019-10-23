@@ -20,9 +20,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 
 # install openresty, etcd and some compilation tools
 sudo yum install -y etcd openresty curl git automake autoconf \
-    gcc pcre-devel libtool gcc-c++ luarocks cmake3 lua-devel
-
-sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
+    gcc pcre-devel libtool gcc-c++ luarocks lua-devel
 
 # start etcd server
 sudo service etcd start
@@ -41,7 +39,7 @@ sudo apt-get update
 # install openresty, etcd and some compilation tools
 sudo apt-get install -y git etcd openresty curl luarocks\
     check libpcre3 libpcre3-dev libjemalloc-dev \
-    libjemalloc1 build-essential libtool automake autoconf pkg-config cmake
+    libjemalloc1 build-essential libtool automake autoconf pkg-config
 
 # start etcd server
 sudo service etcd start
@@ -70,7 +68,7 @@ tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
 
 # install openresty and some compilation tools
 
-sudo apt-get install -y git openresty cmake curl \
+sudo apt-get install -y git openresty curl \
     check libpcre3 libpcre3-dev libjemalloc-dev \
     build-essential libtool automake autoconf pkg-config
 
@@ -103,7 +101,7 @@ Mac OSX
 
 ```shell
 # install openresty, etcd and some compilation tools
-brew install autoconf automake check pkg-config pcre cmake libtool openresty/brew/openresty etcd luarocks
+brew install autoconf automake check pkg-config pcre libtool openresty/brew/openresty etcd luarocks
 
 # start etcd server with v2 protocol
 etcd --enable-v2=true &

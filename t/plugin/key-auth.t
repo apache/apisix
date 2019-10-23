@@ -45,7 +45,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/key"
+property "key" validation failed: wrong type: expected string, got number
 done
 --- no_error_log
 [error]
