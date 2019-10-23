@@ -5,7 +5,7 @@ local setmetatable = setmetatable
 local tostring = tostring
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
 local mt = {
@@ -13,24 +13,24 @@ local mt = {
 }
 
 
-function _M.new(plugin_name, limit, window, redis_conf)
+function _M.new(plugin_name, limit, window, conf)
     assert(limit > 0 and window > 0)
 
-    local self = {limit = limit, window = window, redis = redis_conf,
+    local self = {limit = limit, window = window, conf = conf,
                   plugin_name = plugin_name}
     return setmetatable(self, mt)
 end
 
 
 function _M.incoming(self, key)
+    local conf = self.conf
     local red = redis_new()
-    local conf = self.redis
-    local timeout = conf.timeout or 1000    -- 1sec
+    local timeout = conf.redis_timeout or 1000    -- 1sec
     core.log.info("ttl key: ", key, " timeout: ", timeout)
 
     red:set_timeouts(timeout, timeout, timeout)
 
-    local ok, err = red:connect(conf.host, conf.port or 6379)
+    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379)
     if not ok then
         return false, err
     end
