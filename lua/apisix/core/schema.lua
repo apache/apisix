@@ -1,8 +1,6 @@
-local jsonschema = require('resty.jsonschema')
+local jsonschema = require('jsonschema')
 local lrucache = require("apisix.core.lrucache")
-
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
-local opts = {match_pattern = ngx.re.find}
 
 local _M = {version = 0.3}
 
@@ -12,7 +10,7 @@ local function create_validator(schema)
     -- local file2=io.output("/tmp/2.txt")
     -- file2:write(code)
     -- file2:close()
-    return jsonschema.generate_validator(schema, opts)
+    return jsonschema.generate_validator(schema)
 end
 
 
