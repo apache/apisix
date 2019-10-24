@@ -2,9 +2,10 @@
 
 # redirect
 
-upstream proxy info rewrite plugin.
+URI redirect.
 
 ### Parameters
+
 |Name    |Required|Description|
 |------- |-----|------|
 |uri     |required| New uri which can contain Ningx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`.|
@@ -14,7 +15,7 @@ upstream proxy info rewrite plugin.
 
 #### Enable Plugin
 
-Here's an example, enable the `redirect` plugin on the specified route:
+Here's a mini example, enable the `redirect` plugin on the specified route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -23,6 +24,27 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     "plugins": {
         "redirect": {
             "uri": "/test/default.html",
+            "ret_code": 301
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
+
+And we can use any Nginx built-in variable in the new URI.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/test",
+    "plugins": {
+        "redirect": {
+            "uri": "$uri/index.html",
             "ret_code": 301
         }
     },
