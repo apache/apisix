@@ -24,7 +24,7 @@ local ipairs = ipairs
 
 local _M = {
     version = 0.1,
-    priority = 1000,        -- TODO: add a type field, may be a good idea
+    priority = 1000,
     name = plugin_name,
 }
 
@@ -37,32 +37,15 @@ local ngx_statu_items = {
 
 
 local function collect()
-    core.log.info("try to collect node status from etcd: ",
-                  "/node_status/" .. apisix_id)
-    local res, err = core.etcd.get("/node_status/" .. apisix_id)
-    if not res then
-        return 500, {error = err}
-    end
-
-    return res.status, res.body
-end
-
-
-local function run_loop()
     local res, err = core.http.request_self("/apisix/nginx_status", {
                                                 keepalive = false,
                                             })
     if not res then
-        if err then
-            return core.log.error("failed to fetch nginx status: ", err)
-        end
-        return
+        return 500, "failed to fetch nginx status: " .. err
     end
 
     if res.status ~= 200 then
-        core.log.error("failed to fetch nginx status, response code: ",
-                       res.status)
-        return
+        return res.status
     end
 
     -- Active connections: 2
@@ -72,8 +55,7 @@ local function run_loop()
 
     local iterator, err = re_gmatch(res.body, [[(\d+)]], "jmo")
     if not iterator then
-        core.log.error("failed to re.gmatch Nginx status: ", err)
-        return
+        return 500, "failed to re.gmatch Nginx status: " .. err
     end
 
     core.table.clear(ngx_status)
@@ -86,17 +68,7 @@ local function run_loop()
         ngx_status[name] = val[0]
     end
 
-    local res, err = core.etcd.set("/node_status/" .. apisix_id, ngx_status)
-    if not res then
-        core.log.error("failed to create etcd client: ", err)
-        return
-    end
-
-    if res.status >= 300 then
-        core.log.error("failed to update node status, code: ", res.status,
-                       " body: ", core.json.encode(res.body, true))
-        return
-    end
+    return 200, core.json.encode({id = apisix_id, status = ngx_status})
 end
 
 
@@ -108,15 +80,6 @@ function _M.api()
             handler = collect,
         }
     }
-end
-
-
-    local timer
-function _M.init()
-    if timer or ngx.worker.id() ~= 0 then
-        return
-    end
-    timer = core.timer.new(plugin_name, run_loop, {check_interval = 5 * 60})
 end
 
 
