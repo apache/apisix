@@ -63,19 +63,22 @@ end
 
 local function report()
     -- ngx.sleep(3)
-    local etcd_version = {}
-    if core.config.local_conf().apisix.config_center == "etcd" then
-        local err
-        etcd_version, err = core.etcd.server_version()
+    local etcd_version, etcd_version_err
+    local local_conf = core.config.local_conf()
+
+    if local_conf.apisix.config_center == "etcd" then
+        etcd_version, etcd_version_err = core.etcd.server_version()
         if not etcd_version then
-            core.log.error("failed to fetch etcd version: ", err)
+            core.log.error("failed to fetch etcd version: ", etcd_version_err)
         end
     end
 
     local info = {
         version = core.version,
-        plugins = core.config.local_conf().plugins,
-        etcd_version = etcd_version.body,
+        plugins = local_conf.plugins,
+        config_center = local_conf.apisix.config_center,
+        etcd_version = etcd_version and etcd_version.body,
+        etcd_version_err = etcd_version_err,
         uuid = core.id.get(),
     }
 
