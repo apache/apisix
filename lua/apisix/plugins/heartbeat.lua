@@ -70,14 +70,18 @@ local function report()
         etcd_version, etcd_version_err = core.etcd.server_version()
         if not etcd_version then
             core.log.error("failed to fetch etcd version: ", etcd_version_err)
+        else
+            etcd_version = etcd_version.body and etcd_version.body.etcdserver
         end
     end
+
+    core.log.warn(core.json.encode(etcd_version))
 
     local info = {
         version = core.version,
         plugins = local_conf.plugins,
         config_center = local_conf.apisix.config_center,
-        etcd_version = etcd_version and etcd_version.body,
+        etcd_version = etcd_version,
         etcd_version_err = etcd_version_err,
         uuid = core.id.get(),
     }
@@ -88,7 +92,7 @@ local function report()
         core.log.error("failed to encode hearbeat information: ", err)
         return
     end
-    core.log.debug("heartbeat body: ", args)
+    core.log.warn("heartbeat body: ", args)
 
     local res
     res, err = request_apisix_svr(args)
