@@ -856,7 +856,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"pattern\" in docuement at pointer \"#\/key\""}
+{"error_msg":"invalid configuration: property \"key\" validation failed: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
 --- no_error_log
 [error]
 
