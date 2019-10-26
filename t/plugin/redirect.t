@@ -326,7 +326,7 @@ passed
 --- request
 GET /hello
 --- response_headers
-Location: \$uri/foo/hello\$uri/bar
+Location: /hello//bar
 --- error_code: 301
 --- no_error_log
 [error]

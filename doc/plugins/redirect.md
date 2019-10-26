@@ -1,4 +1,4 @@
-[中文](redirect.md)
+[中文](redirect-cn.md)
 
 # redirect
 
@@ -8,7 +8,7 @@ URI redirect.
 
 |Name    |Required|Description|
 |------- |-----|------|
-|uri     |required| New uri which can contain Ningx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`.|
+|uri     |required| New uri which can contain Ningx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`. If you refer to a variable name that does not exist, this will not produce an error, and it will be used as an empty string.|
 |ret_code|option|Response code, the default value is `302`.|
 
 ### Example
