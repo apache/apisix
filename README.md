@@ -57,7 +57,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **High performance**: The single-core QPS reaches 24k with an average delay of less than 0.6 milliseconds.
 - **Anti-ReDoS(Regular expression Denial of Service)**
 - **IP Whitelist/Blacklist**
-- **IdP**: Support external authentication services, such as Auth0, okta, etc., users can use this to connect to Oauth2.0 and other authentication methods.
+- **IdP**: Support external authentication services, such as Auth0, okta, Authing, etc., users can use this to connect to Oauth2.0 and other authentication methods.
 - **[Stand-alone mode](doc/stand-alone.md)**: Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 - **Global Rule**: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
 - **[TCP/UDP Proxy](doc/stream-proxy.md)**: Dynamic TCP/UDP proxy.
