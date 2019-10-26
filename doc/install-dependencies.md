@@ -75,7 +75,7 @@ sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_releas
 sudo apt-get update
 
 # install openresty, etcd and some compilation tools
-sudo apt-get install -y git etcd openresty curl luarocks 
+sudo apt-get install -y git etcd openresty curl luarocks
 
 # start etcd server
 sudo service etcd start
