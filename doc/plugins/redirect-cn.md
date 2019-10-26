@@ -2,7 +2,7 @@
 
 # redirect
 
-URI 重定向插件
+URI 重定向插件。
 
 ### 参数
 
