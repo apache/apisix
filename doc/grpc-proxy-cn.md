@@ -7,7 +7,7 @@
 
 ### 参数
 
-* `service_protocol": "`:  这个 route 的属性`service_protocal` 必须设置为 `grpc`
+* `service_protocol`:  这个 route 的属性 `service_protocal` 必须设置为 `grpc`
 * `uri`:   格式为 /service/method 如：/helloworld.Greeter/SayHello
 
 
@@ -18,8 +18,8 @@
 
 在指定 route 中，代理 gRPC 服务接口:
 
-* 注意： 这个 route 的属性`service_protocal` 必须设置为 `grpc`
-* 注意： APISIX 使用TLS加密的HTTP/2暴露gRPC服务, 所以需要先[配置SSL证书](https://github.com/iresty/apisix/blob/master/doc/https-cn.md)
+* 注意： 这个 route 的属性 `service_protocal` 必须设置为 `grpc`
+* 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务, 所以需要先[配置 SSL 证书](https://github.com/iresty/apisix/blob/master/doc/https-cn.md)
 * 例子所代理的 gRPC 服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell

@@ -18,8 +18,6 @@ export_or_prefix() {
 
 create_lua_deps() {
     WITHOUT_DASHBOARD=1 sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
-    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
     echo "Create lua deps cache"
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -75,7 +73,11 @@ do_install() {
     fi
 
     if [ ! -f "build-cache/proto/helloworld.proto" ]; then
-        git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
+
+        if [ ! -f "grpc_server_example/main.go" ]; then
+            git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
+        fi
+
         cd grpc_server_example/
         mv proto/ ../build-cache/
         cd ..
@@ -106,29 +108,14 @@ script() {
     mkdir -p logs
     sleep 1
 
-    #test grpc proxy
-    curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-    {
-        "methods": ["POST", "GET"],
-        "uri": "/helloworld.Greeter/SayHello",
-        "service_protocol": "grpc",
-        "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:50051": 1
-            }
-        }
-    }'
-
-    ./build-cache/grpcurl -insecure -import-path ./build-cache/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
-
+    sudo sh ./t/grpc-proxy-test.sh
     sleep 1
 
     ./bin/apisix stop
     sleep 1
+
     make check || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
-
 }
 
 after_success() {
