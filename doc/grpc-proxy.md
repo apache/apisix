@@ -6,7 +6,7 @@ gRPC client -> APISIX -> gRPC server
 
 ### Parameters
 
-* `service_protocol": "`:  the route's option `service_protocal` must be `grpc`
+* `service_protocol`:  the route's option `service_protocal` must be `grpc`
 * `uri`:   format likes /service/method , Example：/helloworld.Greeter/SayHello
 
 
@@ -18,6 +18,7 @@ gRPC client -> APISIX -> gRPC server
 Here's an example, to proxying gRPC service by specified route:
 
 * attention: the route's option `service_protocal` must be `grpc`
+* attention: APISIX use TLS‑encrypted HTTP/2 to expose gRPC service, so need to [config SSL certificate](https://github.com/iresty/apisix/blob/master/doc/https.md)
 * the grpc server example：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell
