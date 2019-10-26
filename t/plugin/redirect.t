@@ -286,3 +286,47 @@ Location: \$uri/foo/hello\$uri/bar
 --- error_code: 301
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: add plugin with new uri: $uri/$bad_var/bar
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "uri": "$uri/$bad_var/bar",
+                            "ret_code": 301
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: redirect
+--- request
+GET /hello
+--- response_headers
+Location: \$uri/foo/hello\$uri/bar
+--- error_code: 301
+--- no_error_log
+[error]
