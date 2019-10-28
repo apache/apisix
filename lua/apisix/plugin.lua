@@ -281,53 +281,43 @@ end
 
 
 local function merge_service_route(service_conf, route_conf)
-    local new_service_conf
+    local new_conf = core.table.deepcopy(service_conf)
+    new_conf.value.service_id = new_conf.value.id
+    new_conf.value.id = route_conf.value.id
 
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
-            if not new_service_conf then
-                new_service_conf = core.table.deepcopy(service_conf)
-            end
-            new_service_conf.value.plugins[name] = conf
+            new_conf.value.plugins[name] = conf
         end
     end
 
     local route_upstream = route_conf.value.upstream
     if route_upstream then
-        if not new_service_conf then
-            new_service_conf = core.table.deepcopy(service_conf)
-        end
-        new_service_conf.value.upstream = route_upstream
+        new_conf.value.upstream = route_upstream
 
         if route_upstream.checks then
             route_upstream.parent = route_conf
         end
 
-        new_service_conf.value.upstream_id = nil
-        return new_service_conf
+        new_conf.value.upstream_id = nil
     end
 
     if route_conf.value.upstream_id then
-        if not new_service_conf then
-            new_service_conf = core.table.deepcopy(service_conf)
-        end
-        new_service_conf.value.upstream_id = route_conf.value.upstream_id
+        new_conf.value.upstream_id = route_conf.value.upstream_id
     end
 
-    -- core.log.info("merged conf : ", core.json.delay_encode(new_service_conf))
-    return new_service_conf or service_conf
+    -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
+    return new_conf
 end
 
 
 function _M.merge_service_route(service_conf, route_conf)
     core.log.info("service conf: ", core.json.delay_encode(service_conf))
-    core.log.info("route conf: ", core.json.delay_encode(route_conf))
+    core.log.info("  route conf: ", core.json.delay_encode(route_conf))
 
-    local flag = tostring(service_conf) .. tostring(route_conf)
-    local new_service_conf = merged_route(flag, nil, merge_service_route,
-                                        service_conf, route_conf)
-
-    return new_service_conf, new_service_conf ~= service_conf
+    return merged_route(route_conf, service_conf,
+                        merge_service_route,
+                        service_conf, route_conf)
 end
 
 
@@ -354,7 +344,7 @@ function _M.merge_consumer_route(route_conf, consumer_conf)
 
     local flag = tostring(route_conf) .. tostring(consumer_conf)
     local new_conf = merged_route(flag, nil,
-                            merge_consumer_route, route_conf, consumer_conf)
+                        merge_consumer_route, route_conf, consumer_conf)
 
     return new_conf, new_conf ~= route_conf
 end
