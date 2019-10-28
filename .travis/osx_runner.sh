@@ -33,7 +33,6 @@ do_install() {
     export_or_prefix
 
     make dev
-    make dev_r3
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
     git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
