@@ -53,7 +53,7 @@ nginx_config:                     # config for render the template to genarate n
 etcd:
   host: "http://127.0.0.1:2379"   # etcd address
   prefix: "/apisix"               # apisix configurations prefix
-  timeout: 1                      # 1 seconds
+  timeout: 3                      # 3 seconds
 
 plugins:                          # plugin list
   - example-plugin
