@@ -191,7 +191,7 @@ function fetch_api_routes()
                            core.json.delay_encode(api_routes, true))
             for _, route in ipairs(api_routes) do
                 core.table.insert(routes, {
-                        method = route.methods,
+                        methods = route.methods,
                         uri = route.uri,
                         handler = function (...)
                             local code, body = route.handler(...)
