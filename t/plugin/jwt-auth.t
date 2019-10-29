@@ -148,7 +148,7 @@ qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
 
 
 
-=== TEST 6: test for unsupport method
+=== TEST 6: test for unsupported method
 --- request
 PATCH /apisix/plugin/jwt/sign?key=user-key
 --- error_code: 404

@@ -141,7 +141,7 @@ qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
 
 
 
-=== TEST 8: test for unsupport method
+=== TEST 8: test for unsupported method
 --- request
 PATCH /apisix/prometheus/metrics
 --- error_code: 404

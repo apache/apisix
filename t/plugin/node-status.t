@@ -58,7 +58,7 @@ qr/"accepted"/
 
 
 
-=== TEST 3: test for unsupport method
+=== TEST 3: test for unsupported method
 --- request
 PATCH /apisix/status
 --- error_code: 404
