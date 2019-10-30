@@ -1,6 +1,11 @@
-local limit_count_new = require("resty.limit.count").new
+local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local plugin_name = "limit-count"
+local limit_redis_new
+do
+    local redis_src = "apisix.plugins.limit-count.limit-count-redis"
+    limit_redis_new = require(redis_src).new
+end
 
 
 local schema = {
@@ -8,8 +13,25 @@ local schema = {
     properties = {
         count = {type = "integer", minimum = 0},
         time_window = {type = "integer",  minimum = 0},
-        key = {type = "string", enum = {"remote_addr"}},
+        key = {
+            type = "string",
+            enum = {"remote_addr", "server_addr", "http_x_real_ip",
+                    "http_x_forwarded_for"},
+        },
         rejected_code = {type = "integer", minimum = 200, maximum = 600},
+        policy = {
+            type = "string",
+            enum = {"local", "redis"},
+        },
+        redis_host = {
+            type = "string", minLength = 2
+        },
+        redis_port = {
+            type = "integer", minimum = 1
+        },
+        redis_timeout = {
+            type = "integer", minimum = 1
+        },
     },
     additionalProperties = false,
     required = {"count", "time_window", "key", "rejected_code"},
@@ -17,21 +39,50 @@ local schema = {
 
 
 local _M = {
-    version = 0.1,
-    priority = 1002,        -- TODO: add a type field, may be a good idea
+    version = 0.3,
+    priority = 1002,
     name = plugin_name,
     schema = schema,
 }
 
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    if not conf.policy then
+        conf.policy = "local"
+    end
+
+    if conf.policy == "redis" then
+        if not conf.redis_host then
+            return false, "missing valid redis option host"
+        end
+
+        conf.redis_port = conf.redis_port or 6379
+        conf.redis_timeout = conf.redis_timeout or 1000
+    end
+
+    return true
 end
 
 
 local function create_limit_obj(conf)
     core.log.info("create new limit-count plugin instance")
-    return limit_count_new("plugin-limit-count", conf.count, conf.time_window)
+
+    if not conf.policy or conf.policy == "local" then
+        return limit_local_new("plugin-" .. plugin_name, conf.count,
+                               conf.time_window)
+    end
+
+    if conf.policy == "redis" then
+        return limit_redis_new("plugin-" .. plugin_name,
+                               conf.count, conf.time_window, conf)
+    end
+
+    return nil
 end
 
 
@@ -44,14 +95,14 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_version
-    local rejected_code = conf.rejected_code
+    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    core.log.info("limit key: ", key)
 
     local delay, remaining = lim:incoming(key, true)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            return rejected_code
+            return conf.rejected_code
         end
 
         core.log.error("failed to limit req: ", err)

@@ -1,4 +1,4 @@
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -23,7 +23,8 @@ __DATA__
                             "127.0.0.1:8080": 1
                         },
                         "type": "roundrobin"
-                    }
+                    },
+                    "desc": "new service"
                 }]],
                 [[{
                     "node": {
@@ -33,7 +34,8 @@ __DATA__
                                     "127.0.0.1:8080": 1
                                 },
                                 "type": "roundrobin"
-                            }
+                            },
+                            "desc": "new service"
                         },
                         "key": "/apisix/services/1"
                     },
@@ -70,7 +72,8 @@ passed
                                     "127.0.0.1:8080": 1
                                 },
                                 "type": "roundrobin"
-                            }
+                            },
+                            "desc": "new service"
                         },
                         "key": "/apisix/services/1"
                     },
@@ -442,7 +445,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -469,7 +472,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -496,7 +499,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+{"error_msg":"invalid configuration: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 
@@ -523,7 +526,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/upstream_id\""}
+{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -604,5 +607,131 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong service id, do not need it"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: patch service(whole)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1/',
+                ngx.HTTP_PATCH,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new 20 service"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new 20 service"
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: patch service(new desc)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1/desc',
+                ngx.HTTP_PATCH,
+                '"new 19 service"',
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new 19 service"
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: patch service(new nodes)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1/upstream',
+                ngx.HTTP_PATCH,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8081": 3,
+                        "127.0.0.1:8082": 4
+                    },
+                    "type": "roundrobin"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8081": 3,
+                                    "127.0.0.1:8082": 4
+                                },
+                                "type": "roundrobin"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

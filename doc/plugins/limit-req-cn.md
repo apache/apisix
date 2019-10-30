@@ -1,5 +1,5 @@
-# limit-req
 [English](limit-req.md)
+# limit-req
 
 限制请求速度的插件，使用的是漏桶算法。
 
@@ -7,7 +7,7 @@
 * `rate`：指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时
 * `burst`：请求速率超过 （`rate` + `brust`）的请求会被直接拒绝
 * `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码
-* `key`：是用来做请求计数的依据，当前只接受终端 IP 做为 key，即 "remote_addr"
+* `key`：是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。
 
 ### 示例
 
@@ -17,24 +17,32 @@
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"plugins": {
-		"limit-req": {
-			"rate": 1,
-			"burst": 2,
-			"rejected_code": 503,
-			"key": "remote_addr"
-		}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "limit-req": {
+            "rate": 1,
+            "burst": 2,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
+
+你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+
+![](../images/plugin/limit-req-1.png)
+
+然后在 route 页面中添加 limit-req 插件：
+
+![](../images/plugin/limit-req-2.png)
 
 #### 测试插件
 上述配置限制了每秒请求速率为 1，大于 1 小于 3 的会被加上延时，速率超过 3 就会被拒绝：
@@ -67,14 +75,14 @@ Server: APISIX web server
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 

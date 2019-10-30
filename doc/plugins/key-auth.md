@@ -1,4 +1,4 @@
-[中文](key-auth-cn.md) [英文](key-auth.md)
+[中文](key-auth-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -25,34 +25,40 @@ Two steps are required:
 1. creates a consumer object, and set the attributes of plugin `key-auth`.
 
 ```shell
-    curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 {
     "username": "jack",
-	"plugins": {
-		"key-auth": {
-			"key": "keykey"
-		}
-	}
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
+        }
+    }
 }'
 ```
+
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+![](../images/plugin/key-auth-1.png)
+
+Then add key-auth plugin:
+![](../images/plugin/key-auth-2.png)
 
 2. creates a route or service object, and enable plugin `key-auth`.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-		"key-auth": {}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
@@ -82,25 +88,22 @@ HTTP/1.1 401 Unauthorized
 
 ## Disable Plugin
 
-When you want to disable the limit req plugin, it is very simple,
+When you want to disable the `key-auth` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "uri": "/index.html",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
-The limit req plugin has been disabled now. It works for other plugins.
+The `key-auth` plugin has been disabled now. It works for other plugins.

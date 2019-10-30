@@ -1,4 +1,4 @@
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -14,7 +14,7 @@ __DATA__
 --- request
 GET /apisix/admin/schema/route
 --- response_body eval
-qr/"plugins": \{"type":"object"}/
+qr/"plugins":\{"type":"object"}/
 --- no_error_log
 [error]
 
@@ -33,7 +33,7 @@ qr/"required":\["upstream"\]/
 === TEST 3: get not exist schema
 --- request
 GET /apisix/admin/schema/noexits
---- error_code: 404
+--- error_code: 400
 --- no_error_log
 [error]
 
@@ -69,10 +69,10 @@ location /t {
                 type = "object",
                 properties = {
                     cert = {
-                        type = "string", minLength = 128, maxLength = 4096
+                        type = "string", minLength = 128, maxLength = 64*1024
                     },
                     key = {
-                        type = "string", minLength = 128, maxLength = 4096
+                        type = "string", minLength = 128, maxLength = 64*1024
                     },
                     sni = {
                         type = "string",

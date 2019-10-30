@@ -8,7 +8,7 @@ BEGIN {
     }
 }
 
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -57,7 +57,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "required" in docuement at pointer "#"
+property "conn" is required
 done
 --- no_error_log
 [error]
@@ -86,6 +86,7 @@ done
                             },
                             "type": "roundrobin"
                         },
+                        "desc": "上游节点",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -105,6 +106,7 @@ done
                                 },
                                 "type": "roundrobin"
                             },
+                            "desc": "上游节点",
                             "uri": "/hello"
                         },
                         "key": "/apisix/routes/1"
@@ -271,7 +273,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-req err: invalid \"minimum\" in docuement at pointer \"#\/rate\""}
+{"error_msg":"failed to check the configuration of plugin limit-req err: property \"rate\" validation failed: expected -1 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -317,5 +319,47 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 200, 200]
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: set route (key: server_addr)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-req": {
+                            "rate": 4,
+                            "burst": 2,
+                            "rejected_code": 503,
+                            "key": "server_addr"
+                        }
+                    },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "desc": "上游节点",
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

@@ -1,12 +1,21 @@
-local select = select
+local newproxy     = newproxy
+local getmetatable = getmetatable
+local setmetatable = setmetatable
+local select       = select
+local new_tab      = require("table.new")
+local nkeys        = require("table.nkeys")
+local pairs        = pairs
+local type         = type
+
 
 local _M = {
     version = 0.1,
-    new    = require("table.new"),
-    clear  = require("table.clear"),
-    nkeys  = require("table.nkeys"),
-    insert = table.insert,
-    concat = table.concat,
+    new     = new_tab,
+    clear   = require("table.clear"),
+    nkeys   = nkeys,
+    insert  = table.insert,
+    concat  = table.concat,
+    clone   = require("table.clone"),
 }
 
 
@@ -29,6 +38,31 @@ function _M.set(tab, ...)
         tab[i] = select(i, ...)
     end
 end
+
+
+-- only work under lua51 or luajit
+function _M.setmt__gc(t, mt)
+    local prox = newproxy(true)
+    getmetatable(prox).__gc = function() mt.__gc(t) end
+    t[prox] = true
+    return setmetatable(t, mt)
+end
+
+
+local function deepcopy(orig)
+    local orig_type = type(orig)
+    if orig_type ~= 'table' then
+        return orig
+    end
+
+    local copy = new_tab(0, nkeys(orig))
+    for orig_key, orig_value in pairs(orig) do
+        copy[orig_key] = deepcopy(orig_value)
+    end
+
+    return copy
+end
+_M.deepcopy = deepcopy
 
 
 return _M

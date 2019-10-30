@@ -1,7 +1,18 @@
-os: linux
 dist: xenial
-
 sudo: required
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+    - os: osx
+      if: type IN (push)
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /usr/local/Homebrew
+
+language: c
 
 addons:
   apt:
@@ -9,45 +20,34 @@ addons:
       - cpanminus
       - build-essential
       - libncurses5-dev
-      - libpcre3-dev
       - libreadline-dev
       - libssl-dev
       - perl
       - etcd
       - luarocks
-      - cmake
       - lua-check
+  homebrew:
+    update: true
 
-env:
-  global:
-    - OPENRESTY_PREFIX=/usr/local/openresty-debug
+services:
+ - redis-server
+
+cache:
+  directories:
+  - build-cache
+
+before_cache:
+  - brew cleanup
 
 before_install:
-  - sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
-  - sudo luarocks install --lua-dir=/usr/local/openresty/luajit luacov-coveralls
+  - echo $TRAVIS_OS_NAME
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh before_install
 
 install:
-  - wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-  - sudo apt-get -y install software-properties-common
-  - sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-  - sudo apt-get update
-  - sudo apt-get install openresty-debug
-  - sudo luarocks install --lua-dir=/usr/local/openresty/luajit apisix-*.rockspec --only-deps
-  - git clone https://github.com/openresty/test-nginx.git test-nginx
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh do_install
 
 script:
-  - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
-  - sudo service etcd start
-  - ./bin/apisix help
-  - ./bin/apisix init
-  - ./bin/apisix init_etcd
-  - ./bin/apisix start
-  - mkdir -p logs
-  - sleep 1
-  - ./bin/apisix stop
-  - sleep 1
-  - make check || exit 1
-  - APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh script
 
 after_success:
-  - luacov-coveralls
+  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh after_success

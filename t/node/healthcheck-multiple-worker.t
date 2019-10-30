@@ -1,0 +1,124 @@
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
+use t::APISIX 'no_plan';
+
+master_on();
+repeat_each(1);
+log_level('info');
+no_root_location();
+no_shuffle();
+workers(2);
+worker_connections(256);
+
+run_tests();
+
+__DATA__
+
+=== TEST 1: set route(two upstream node: one healthy + one unhealthy)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1970": 1
+                        },
+                        "checks": {
+                            "active": {
+                                "http_path": "/status",
+                                "host": "foo.com",
+                                "healthy": {
+                                    "interval": 1,
+                                    "successes": 1
+                                },
+                                "unhealthy": {
+                                    "interval": 1,
+                                    "http_failures": 2
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- grep_error_log eval
+qr/^.*?\[error\](?!.*process exiting).*/
+--- grep_error_log_out
+
+
+
+=== TEST 2: hit routes (two upstream node: one healthy + one unhealthy)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            end
+
+            ngx.sleep(2.5)
+
+            local ports_count = {}
+            for i = 1, 12 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+
+                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+            end
+
+            local ports_arr = {}
+            for port, count in pairs(ports_count) do
+                table.insert(ports_arr, {port = port, count = count})
+            end
+
+            local function cmd(a, b)
+                return a.port > b.port
+            end
+            table.sort(ports_arr, cmd)
+
+            ngx.say(require("cjson").encode(ports_arr))
+            ngx.exit(200)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[{"count":12,"port":"1980"}]
+--- grep_error_log eval
+qr/unhealthy TCP increment/
+--- grep_error_log_out
+unhealthy TCP increment
+unhealthy TCP increment
+--- timeout: 10

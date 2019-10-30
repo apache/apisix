@@ -1,4 +1,4 @@
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -16,12 +16,13 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
-                    "type": "roundrobin"
+                    "type": "roundrobin",
+                    "desc": "new upstream"
                 }]],
                 [[{
                     "node": {
@@ -29,7 +30,8 @@ __DATA__
                             "nodes": {
                                 "127.0.0.1:8080": 1
                             },
-                            "type": "roundrobin"
+                            "type": "roundrobin",
+                            "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/1"
                     },
@@ -64,7 +66,8 @@ passed
                             "nodes": {
                                 "127.0.0.1:8080": 1
                             },
-                            "type": "roundrobin"
+                            "type": "roundrobin",
+                            "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/1"
                     },
@@ -216,7 +219,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"minProperties\" in docuement at pointer \"#\/nodes\""}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: expect object to have at least 1 properties"}
 
 
 
@@ -341,7 +344,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -371,7 +374,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"anyOf\" in docuement at pointer \"#\/id\""}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
 --- no_error_log
 [error]
 
@@ -402,7 +405,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+{"error_msg":"invalid configuration: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 
@@ -474,7 +477,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"enum\" in docuement at pointer \"#\/type\""}
+{"error_msg":"invalid configuration: property \"type\" validation failed: matches non of the enum values"}
 --- no_error_log
 [error]
 
@@ -504,7 +507,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"patternProperties\" in docuement at pointer \"#\/nodes\/127.0.0.1%3A8080\""}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): wrong type: expected integer, got string"}
 --- no_error_log
 [error]
 
@@ -534,7 +537,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: invalid \"patternProperties\" in docuement at pointer \"#\/nodes\/127.0.0.1%3A8080\""}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): expected -100 to be greater than 0"}
 --- no_error_log
 [error]
 
@@ -623,5 +626,159 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id, do not need it"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: patch upstream(whole)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/',
+                ngx.HTTP_PATCH,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "desc": "new upstream"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: patch upstream(new desc)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/desc',
+                ngx.HTTP_PATCH,
+                '"new 21 upstream"',
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "desc": "new 21 upstream"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: patch upstream(new nodes)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/nodes',
+                ngx.HTTP_PATCH,
+                [[{
+                    "127.0.0.1:8081": 3,
+                    "127.0.0.1:8082": 4
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8081": 3,
+                                "127.0.0.1:8082": 4
+                            },
+                            "type": "roundrobin",
+                            "desc": "new 21 upstream"
+                        }
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: patch upstream(weight is 0)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/nodes',
+                ngx.HTTP_PATCH,
+                [[{
+                    "127.0.0.1:8081": 0,
+                    "127.0.0.1:8082": 4
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8081": 0,
+                                "127.0.0.1:8082": 4
+                            },
+                            "type": "roundrobin",
+                            "desc": "new 21 upstream"
+                        }
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

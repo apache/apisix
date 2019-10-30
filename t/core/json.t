@@ -1,4 +1,4 @@
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 repeat_each(2);
 no_long_string();
@@ -91,5 +91,28 @@ qr/\{"test":"test","fun":"function: 0x[0-9a-f]+"}/
 GET /t
 --- response_body_like eval
 qr/encode: \{"test":"cdata\<char \*\[1\]>: 0x[0-9a-f]+"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: excessive nesting
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local a = {}
+            local b = {}
+            a.b = b
+            b.a = a
+
+            local json_data = core.json.encode(a, true)
+            ngx.say("encode: ", json_data)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/\{"b":\{"a":\{"b":"table: 0x[\w]+"\}\}\}/
 --- no_error_log
 [error]

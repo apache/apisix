@@ -8,7 +8,7 @@ BEGIN {
     }
 }
 
-use t::APISix 'no_plan';
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -59,7 +59,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "additionalProperties" in docuement at pointer "#/invalid"
+additional properties forbidden, found invalid
 --- no_error_log
 [error]
 
@@ -141,7 +141,14 @@ qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
 
 
 
-=== TEST 8: set it in route (with wrong property)
+=== TEST 8: test for unsupported method
+--- request
+PATCH /apisix/prometheus/metrics
+--- error_code: 404
+
+
+
+=== TEST 9: set it in route (with wrong property)
 --- config
     location /t {
         content_by_lua_block {
@@ -174,13 +181,13 @@ qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin prometheus err: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+{"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 9: set it in service (with wrong property)
+=== TEST 10: set it in service (with wrong property)
 --- config
     location /t {
         content_by_lua_block {
@@ -212,13 +219,13 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin prometheus err: invalid \"additionalProperties\" in docuement at pointer \"#\/invalid_property\""}
+{"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 10: set route without id in post body
+=== TEST 11: set route without id in post body
 --- config
     location /t {
         content_by_lua_block {
@@ -256,7 +263,7 @@ passed
 
 
 
-=== TEST 11: pipeline of client request
+=== TEST 12: pipeline of client request
 --- pipelined_requests eval
 ["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -266,7 +273,7 @@ passed
 
 
 
-=== TEST 12: fetch the prometheus metric data
+=== TEST 13: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
