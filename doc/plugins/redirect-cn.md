@@ -1,4 +1,4 @@
-[English](plugins/redirect.md)
+[English](redirect.md)
 
 # redirect
 
