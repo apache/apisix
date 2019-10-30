@@ -163,6 +163,16 @@ you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
 Then you can try more [plugins](doc/README.md#plugins).
 
+## Deploy to the Cloud
+
+### AWS
+
+The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
+
+See [this guide](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md) by [Pahud Hsieh](https://github.com/pahud) and learn how to provision the recommended architecture 100% in AWS CDK.
+
+
+
 ## Dashboard
 
 APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard/` with a browser and try it.
