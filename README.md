@@ -191,7 +191,7 @@ You can view the [benchmark documentation](doc/benchmark.md) for more detailed i
 
 [Development Documentation](doc/architecture-design.md)
 
-## Videos and slides
+## Videos And Articles
 
 - 2019.10.30 [Introduction to Apache APISIX Microservice Gateway Extreme Performance Architecture(Chinese)](https://www.upyun.com/opentalk/440.html) .
 - 2019.8.31 [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/433.html) .

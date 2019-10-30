@@ -175,7 +175,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 [详细设计文档](doc/architecture-design-cn.md)
 
-## 视频和幻灯片
+## 视频和文章
 
 - 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html) .
 - 2019.8.31 [APISIX 技术选型、测试和持续集成](https://www.upyun.com/opentalk/433.html) .
