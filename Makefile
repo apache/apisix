@@ -92,7 +92,7 @@ ifneq ($(WITHOUT_DASHBOARD),1)
 	$(INSTALL) -d /usr/local/apisix/dashboard
 	cd `mktemp -d /tmp/apisix.XXXXXX` && \
 		git clone https://github.com/apache/incubator-apisix.git && \
-		cd apisix && \
+		cd incubator-apisix && \
 		git submodule update --init --recursive && \
 		cp -r dashboard/* /usr/local/apisix/dashboard
 	chmod -R 755 /usr/local/apisix/dashboard
