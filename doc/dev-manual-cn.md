@@ -87,6 +87,7 @@ Makefile rules:
     init:         Initialize the runtime environment
     run:          Start the apisix server
     stop:         Stop the apisix server
+    restart:      restart the apisix server
     clean:        Remove generated files
     reload:       Reload the apisix server
     install:      Install the apisix
