@@ -97,6 +97,7 @@ Makefile rules:
 
 1. Install perl's package manager `cpanminus` first
 2. Then install `test-gninx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
-3. clone source code：`git clone https://github.com/openresty/test-nginx.git`;
-4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory: `prove -Itest-nginx/lib -r t`
-
+3. Clone source code：`git clone https://github.com/openresty/test-nginx.git`;
+4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
+    * Run the test cases: `prove -Itest-nginx/lib -r t`
+    * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
