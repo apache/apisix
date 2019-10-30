@@ -119,7 +119,7 @@ APISIX is installed by running the following commands in your terminal.
 sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
 ```
 
-> install the specified version via Luarock: 
+> install the specified version via Luarock:
 
 ```shell
 # install apisix with version v0.8
@@ -191,11 +191,13 @@ You can view the [benchmark documentation](doc/benchmark.md) for more detailed i
 
 [Development Documentation](doc/architecture-design.md)
 
-## Videos and slides
+## Videos And Articles
 
-- [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/432.html)
+- 2019.10.30 [Introduction to Apache APISIX Microservice Gateway Extreme Performance Architecture(Chinese)](https://www.upyun.com/opentalk/440.html) .
+- 2019.8.31 [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/433.html) .
+- 2019.8.31 [APISIX high performance practice 2(Chinese)](https://www.upyun.com/opentalk/437.html) .
+- 2019.7.6 [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html) .
 
-- [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
 
 ## Who Uses APISIX?
 A wide variety of companies and organizations use APISIX for research, production and commercial product.

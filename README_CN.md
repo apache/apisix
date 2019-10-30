@@ -118,7 +118,7 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
 ```
 
-> 通过 Luarocks 安装指定的版本： 
+> 通过 Luarocks 安装指定的版本：
 
 ```shell
 # 安装 apisix 的 0.8 版本
@@ -175,11 +175,12 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 [详细设计文档](doc/architecture-design-cn.md)
 
-## 视频和幻灯片
+## 视频和文章
 
-- [APISIX 的选型、测试和持续集成](https://www.upyun.com/opentalk/432.html)
-
-- [APISIX 高性能实践](https://www.upyun.com/opentalk/429.html)
+- 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html) .
+- 2019.8.31 [APISIX 技术选型、测试和持续集成](https://www.upyun.com/opentalk/433.html) .
+- 2019.8.31 [APISIX 高性能实战2](https://www.upyun.com/opentalk/437.html) .
+- 2019.7.6 [APISIX 高性能实战(Chinese)](https://www.upyun.com/opentalk/429.html) .
 
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中。下面是 APISIX 的用户墙：

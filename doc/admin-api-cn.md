@@ -3,7 +3,6 @@
 ===
 
 * [Route](#route)
-* [Node Status](#node-status)
 
 ## Route
 
@@ -70,74 +69,3 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 
 [Back to TOC](#目录)
 
-## Node Status
-
-*地址*：/apisix/admin/node_status
-
-*说明*：每 APISIX 节点固定周期定期上报状态到 etcd，该接口用于获取 APISIX 节点上报的状态。
-
-> 请求方法：
-
-|名字      |请求 uri|请求 body|说明        |
-|---------|-------------------------|--|------|
-|GET      |/apisix/admin/node_status|无|获取所有节点状态|
-|GET      |/apisix/admin/node_status/{node_id}|无|获取指定节点状态|
-
-> 获取所有节点
-
-```
-$ curl http://127.0.0.1:9080/apisix/admin/node_status | python -m json.tool
-
-{
-    "action": "get",
-    "node": {
-        "createdIndex": 6896,
-        "dir": true,
-        "key": "/node_status",
-        "modifiedIndex": 6896,
-        "nodes": [
-            {
-                "createdIndex": 7008,
-                # 不同节点 ID 会自动分配唯一标识 GUID
-                "key": "/node_status/b2814906-3a01-479c-8475-4abc72089c33",
-                "modifiedIndex": 7008,
-                "value": {
-                    "accepted": "16",   # 已接受的连接数
-                    "active": "1",      # 活跃连接数
-                    "handled": "16",    # 处理完的连接数
-                    "reading": "0",     # 正在读的连接数
-                    "total": "574",     # 总请求数
-                    "waiting": "0",     # 正在等的连接数
-                    "writing": "1"      # 正在写的连接数
-                }
-            }
-        ]
-    }
-}
-```
-
-> 获取指定节点
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/node_status/b2814906-3a01-479c-8475-4abc72089c33 | python -m json.tool
-
-{
-    "action": "get",
-    "node": {
-        "createdIndex": 7008,
-        "key": "/node_status/b2814906-3a01-479c-8475-4abc72089c33",
-        "modifiedIndex": 7008,
-        "value": {
-            "accepted": "16",
-            "active": "1",
-            "handled": "16",
-            "reading": "0",
-            "total": "574",
-            "waiting": "0",
-            "writing": "1"
-        }
-    }
-}
-```
-
-[Back to TOC](#目录)
