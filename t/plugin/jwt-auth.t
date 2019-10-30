@@ -148,7 +148,14 @@ qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
 
 
 
-=== TEST 6: verify, missing token
+=== TEST 6: test for unsupported method
+--- request
+PATCH /apisix/plugin/jwt/sign?key=user-key
+--- error_code: 404
+
+
+
+=== TEST 7: verify, missing token
 --- request
 GET /hello
 --- error_code: 401
@@ -159,7 +166,7 @@ GET /hello
 
 
 
-=== TEST 7: verify: invalid JWT token
+=== TEST 8: verify: invalid JWT token
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -170,7 +177,7 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 
 
 
-=== TEST 8: verify: expired JWT token
+=== TEST 9: verify: expired JWT token
 --- request
 GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -181,7 +188,7 @@ GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4
 
 
 
-=== TEST 9: verify (in argument)
+=== TEST 10: verify (in argument)
 --- request
 GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
@@ -191,7 +198,7 @@ hello world
 
 
 
-=== TEST 10: verify (in header)
+=== TEST 11: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -203,7 +210,7 @@ hello world
 
 
 
-=== TEST 11: verify (in cookie)
+=== TEST 12: verify (in cookie)
 --- request
 GET /hello
 --- more_headers

@@ -141,7 +141,14 @@ qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
 
 
 
-=== TEST 8: set it in route (with wrong property)
+=== TEST 8: test for unsupported method
+--- request
+PATCH /apisix/prometheus/metrics
+--- error_code: 404
+
+
+
+=== TEST 9: set it in route (with wrong property)
 --- config
     location /t {
         content_by_lua_block {
@@ -180,7 +187,7 @@ GET /t
 
 
 
-=== TEST 9: set it in service (with wrong property)
+=== TEST 10: set it in service (with wrong property)
 --- config
     location /t {
         content_by_lua_block {
@@ -218,7 +225,7 @@ GET /t
 
 
 
-=== TEST 10: set route without id in post body
+=== TEST 11: set route without id in post body
 --- config
     location /t {
         content_by_lua_block {
@@ -256,7 +263,7 @@ passed
 
 
 
-=== TEST 11: pipeline of client request
+=== TEST 12: pipeline of client request
 --- pipelined_requests eval
 ["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -266,7 +273,7 @@ passed
 
 
 
-=== TEST 12: fetch the prometheus metric data
+=== TEST 13: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
