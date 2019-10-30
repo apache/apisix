@@ -84,16 +84,14 @@ local function concat_new_uri(uri, ctx)
     core.table.clear(tmp)
 
     for _, uri_segs in ipairs(pased_uri_segs) do
-        local pat1 = uri_segs[1]
-        local pat2 = uri_segs[2]
-        local pat3 = uri_segs[3]
-        local pat4 = uri_segs[4]
-        core.log.info(core.json.delay_encode(uri_segs))
+        local pat1 = uri_segs[1]    -- \$host
+        local pat2 = uri_segs[2]    -- ${host}
+        local pat3 = uri_segs[3]    -- $host
+        local pat4 = uri_segs[4]    -- $ or others
+        core.log.info("parsed uri segs: ", core.json.delay_encode(uri_segs))
 
-        if pat2 then
-            tab_insert(tmp, ctx.var[pat2])
-        elseif pat3 then
-            tab_insert(tmp, ctx.var[pat3])
+        if pat2 or pat3 then
+            tab_insert(tmp, ctx.var[pat2 or pat3])
         else
             tab_insert(tmp, pat1 or pat4)
         end
