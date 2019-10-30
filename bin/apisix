@@ -450,6 +450,7 @@ init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
+restart:    restart the apisix server
 reload:     reload the apisix server
 version:    print the version of apisix
 ]])
@@ -562,6 +563,11 @@ function _M.stop()
     local cmd = openresty_args .. [[ -s stop]]
     -- print(cmd)
     os.execute(cmd)
+end
+
+function _M.restart()
+  _M.stop()
+  _M.start()
 end
 
 function _M.reload()
