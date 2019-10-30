@@ -55,3 +55,10 @@ GET /t
 qr/"accepted"/
 --- no_error_log
 [error]
+
+
+
+=== TEST 3: test for unsupported method
+--- request
+PATCH /apisix/status
+--- error_code: 404
