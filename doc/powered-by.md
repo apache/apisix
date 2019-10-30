@@ -3,7 +3,7 @@
 This page documents an **alphabetical list** of institutions that are using APISIX for research and production,
 or providing commercial products including APISIX.
 
-Users are encouraged to add themselves to this page, [issue](https://github.com/iresty/apisix/issues/487) and PR are welcomed.
+Users are encouraged to add themselves to this page, [issue](https://github.com/apache/incubator-apisix/issues/487) and PR are welcomed.
 
 1. cunw 湖南新云网 http://www.cunw.com.cn/
 1. fansup.mobi https://fansup.mobi/

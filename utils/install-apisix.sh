@@ -4,7 +4,7 @@ set -ex
 
 OR_EXEC=`which openresty 2>&1`
 echo $OR_EXEC
-APISIX_VER="https://raw.githubusercontent.com/iresty/apisix/master/rockspec/apisix-master-0.rockspec"
+APISIX_VER="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
 
 # check the openresty exist
 CHECK_OR_EXIST=`echo $OR_EXEC | grep ": no openresty" | wc -l`

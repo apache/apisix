@@ -3,13 +3,13 @@ version = "0.5-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
-    url = "git://github.com/iresty/apisix",
+    url = "git://github.com/apache/incubator-apisix",
     tag = "v0.5",
 }
 
 description = {
     summary = "APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.",
-    homepage = "https://github.com/iresty/apisix",
+    homepage = "https://github.com/apache/incubator-apisix",
     license = "Apache License 2.0",
     maintainer = "Yuansheng Wang <membphis@gmail.com>"
 }
