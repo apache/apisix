@@ -19,12 +19,12 @@ for name, log_level in pairs({stderr = ngx.STDERR,
                               warn   = ngx.WARN,
                               notice = ngx.NOTICE,
                               info   = ngx.INFO, }) do
-    _M[name] = function(...)
-        if cur_level and log_level > cur_level then
-            return
+    if cur_level and log_level > cur_level then
+        _M[name] = function() end
+    else
+        _M[name] = function(...)
+            return ngx_log(log_level, ...)
         end
-
-        return ngx_log(log_level, ...)
     end
 end
 
