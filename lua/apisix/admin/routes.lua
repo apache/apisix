@@ -104,6 +104,14 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    if conf.filter_func then
+        local func, err = loadstring("return " .. conf.filter_func)
+        if not func then
+            return nil, {error_msg = "failed to load 'filter_func' string: "
+                                     .. err}
+        end
+    end
+
     return need_id and id or true
 end
 

@@ -1258,3 +1258,75 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 35: filter function
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/index.html",
+                    "filter_func": "function(vars) return vars.arg_name == 'json' end",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]=],
+                [=[{
+                    "node": {
+                        "value": {
+                            "filter_func": "function(vars) return vars.arg_name == 'json' end"
+                        }
+                    }
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: filter function (invalid)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/index.html",
+                    "filter_func": "function(vars) ",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to load 'filter_func' string: [string \"return function(vars) \"]:1: 'end' expected near '<eof>'"}
+--- no_error_log
+[error]
