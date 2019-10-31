@@ -46,9 +46,6 @@ do_install() {
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 
-    git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
-    cp .travis/ASF* .travis/openwhisk-utilities/scancode/
-
     cd grpc_server_example/
     go build -o grpc_server_example main.go
     cd ..
@@ -75,7 +72,6 @@ script() {
     sudo make stop
 
     sleep 1
-    make check || exit 1
 
     ln -sf $PWD/deps/lib $PWD/deps/lib64
     sudo mkdir -p /usr/local/var/log/nginx/
