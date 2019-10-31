@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local type = type
+local loadstring = loadstring
 
 
 local _M = {
