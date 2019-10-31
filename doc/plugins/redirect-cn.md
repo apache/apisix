@@ -1,0 +1,96 @@
+[English](redirect.md)
+
+# redirect
+
+URI 重定向插件。
+
+### 参数
+
+|名称    |必须|描述|
+|------- |-----|------|
+|uri     |是| 可以包含 Nginx 变量的 URI，例如：`/test/index.html`, `$uri/index.html`。你可以通过类似于 `$ {xxx}` 的方式引用变量，以避免产生歧义，例如：`${uri}foo/index.html`。若你需要保留 `$` 字符，那么使用如下格式：`/\$foo/index.html`。|
+|ret_code|否|请求响应码，默认值为 `302`。|
+
+### 示例
+
+#### 启用插件
+
+下面是一个基本实例，为特定路由启用 `redirect` 插件：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/test/index.html",
+    "plugins": {
+        "redirect": {
+            "uri": "/test/default.html",
+            "ret_code": 301
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
+
+我们可以在新的 URI 中使用 Nginx 内置的任意变量：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/test",
+    "plugins": {
+        "redirect": {
+            "uri": "$uri/index.html",
+            "ret_code": 301
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
+
+#### 测试
+
+测试示例基于上述例子：
+
+```shell
+$ curl http://127.0.0.1:9080/test/index.html -i
+HTTP/1.1 301 Moved Permanently
+Date: Wed, 23 Oct 2019 13:48:23 GMT
+Content-Type: text/html
+Content-Length: 166
+Connection: keep-alive
+Location: /test/default.html
+
+...
+```
+
+我们可以检查响应码和响应头中的 `Location` 参数，它表示该插件已启用。
+
+#### 禁用插件
+
+移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/test/index.html",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
+
+这时该插件已被禁用。
