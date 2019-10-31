@@ -43,7 +43,7 @@ __DATA__
                         "type": "roundrobin"
                     }
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -60,7 +60,7 @@ passed
 
 
 
-=== TEST 2: /not_found
+=== TEST 2: not hit: name=unkown
 --- request
 GET /hello?name=unkown
 --- error_code: 404

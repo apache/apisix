@@ -111,6 +111,10 @@ local function check_conf(id, conf, need_id)
             return nil, {error_msg = "failed to load 'filter_func' string: "
                                      .. err}
         end
+
+        if type(func()) ~= "function" then
+            return nil, {error_msg = "'filter_func' should be a function"}
+        end
     end
 
     return need_id and id or true

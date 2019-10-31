@@ -21,6 +21,7 @@ local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
+local loadstring = loadstring
 local user_routes
 local cached_version
 local only_uri_routes = {}
@@ -34,11 +35,27 @@ local _M = {version = 0.1}
 
 local function add_host_uri_routes(path, host, route)
     core.log.info("add host+uri route, host: ", host, " path: ", path)
+
+    local filter_fun, err
+    if route.value.filter_func then
+        filter_fun, err = loadstring(
+                                "return " .. route.value.filter_func,
+                                "router#" .. route.value.id)
+        if not filter_fun then
+            core.log.error("failed to load filter function: ", err,
+                            " route id: ", route.value.id)
+            return
+        end
+
+        filter_fun = filter_fun()
+    end
+
     core.table.insert(host_uri_routes, {
         paths = {host .. path},
         methods = route.value.methods,
         remote_addrs = route.value.remote_addrs or route.value.remote_addr,
         vars = route.value.vars,
+        filter_fun = filter_fun,
         handler = function (api_ctx)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
@@ -81,12 +98,27 @@ local function push_radixtree_host_router(route)
         hosts_wildcard = nil
     end
 
+    local filter_fun, err
+    if route.value.filter_func then
+        filter_fun, err = loadstring(
+                                "return " .. route.value.filter_func,
+                                "router#" .. route.value.id)
+        if not filter_fun then
+            core.log.error("failed to load filter function: ", err,
+                            " route id: ", route.value.id)
+            return
+        end
+
+        filter_fun = filter_fun()
+    end
+
     core.table.insert(only_uri_routes, {
         paths = uris,
         method = route.value.methods,
         hosts = hosts_wildcard,
         remote_addrs = route.value.remote_addrs or route.value.remote_addr,
         vars = route.value.vars,
+        filter_fun = filter_fun,
         handler = function (api_ctx)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
