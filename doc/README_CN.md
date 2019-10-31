@@ -54,3 +54,4 @@ Reference document
 * [serverless](plugins/serverless-cn.md)：允许在 APISIX 中的不同阶段动态运行 Lua 代码。
 * [ip-restriction](plugins/ip-restriction-cn.md): IP 黑白名单。
 * openid-connect
+* [redirect](plugins/redirect-cn.md): URI 重定向。
