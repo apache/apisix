@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
-
-### BEGIN ###
-# Author: idevz
-# Since: 08:52:47 2019/07/08
-# Description:       travis_runner_osx.sh
-# travis_runner_osx  ./travis_runner_osx.sh
 #
-# Environment variables that control this script:
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
 #
-### END ###
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 set -ex
 
@@ -39,6 +45,9 @@ do_install() {
 
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
+
+    git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
+    cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     cd grpc_server_example/
     go build -o grpc_server_example main.go
