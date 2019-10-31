@@ -51,4 +51,4 @@ Using APISIX as a gateway, it uses the functions of current limiting, speed limi
 Using APISIX as a Web ACL gateway to deal with backend OA systems traffic.
 
 ## HelloTalk, Inc
-Using Apache APISIX as a API gateway to manager all API and SSL Certificates in test\dev\CMS environment.
+Using Apache APISIX as an API gateway to manage all API and SSL certificates in test\dev\CMS environment.
