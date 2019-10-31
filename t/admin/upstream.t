@@ -798,3 +798,185 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 24: set upstream(type: chash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "server_name",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25:  wrong upstream key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1,
+                        "127.0.0.1:8081": 2
+                    },
+                    "type": "chash",
+                    "key": "not_support",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"key\" validation failed: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: set upstream with args(type: chash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "arg_device_id",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: set upstream(type: chash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "server_name",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25:  wrong upstream key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1,
+                        "127.0.0.1:8081": 2
+                    },
+                    "type": "chash",
+                    "key": "not_support",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"key\" validation failed: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: set upstream with args(type: chash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "arg_device_id",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
