@@ -3,14 +3,6 @@ sudo: required
 
 matrix:
   fast_finish: true
-  include:
-    - os: linux
-    - os: osx
-      if: type IN (push)
-      cache:
-        directories:
-          - $HOME/Library/Caches/Homebrew
-          - /usr/local/Homebrew
 
 language: c
 
