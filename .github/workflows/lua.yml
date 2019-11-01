@@ -1,0 +1,20 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: install luarocks
+      run: apt-get install luarocks
+    - name: install apisix
+      run: luarocks install apisix
+    - name: apisix test
+      run: |
+        apisix init
+        apisix start
+        apisix stop
