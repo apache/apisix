@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local type = type
+local loadstring = loadstring
 
 
 local _M = {
@@ -97,6 +98,18 @@ local function check_conf(id, conf, need_id)
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
             return nil, {error_msg = err}
+        end
+    end
+
+    if conf.filter_func then
+        local func, err = loadstring("return " .. conf.filter_func)
+        if not func then
+            return nil, {error_msg = "failed to load 'filter_func' string: "
+                                     .. err}
+        end
+
+        if type(func()) ~= "function" then
+            return nil, {error_msg = "'filter_func' should be a function"}
         end
     end
 

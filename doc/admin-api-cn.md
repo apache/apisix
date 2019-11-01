@@ -51,7 +51,8 @@
 |remote_addr|可选 |匹配规则|客户端请求 IP 地址: `192.168.1.101`、`192.168.1.102` 以及 CIDR 格式的支持 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配：`::1`，`fe80::1`, `fe80::1/64` 等。|"192.168.1.0/24"|
 |remote_addrs|可选 |匹配规则|列表形态的 `remote_addr`，表示允许有多个不同 IP 地址，符合其中任意一个即可。|{"127.0.0.1", "192.0.0.0/8", "::1"}|
 |methods  |可选 |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个的组合：`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`，`CONNECT`，`TRACE`。|{"GET", "POST"}|
-|vars       |可选  |匹配规则(仅支持 `radixtree` 路由)|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`和`<`，特别的对于后面两个运算符，会把结果先转换成 number 然后再做比较。|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
+|vars       |可选  |匹配规则(仅支持 `radixtree` 路由)|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
+|filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
 |plugins  |可选 |Plugin|详见 [Plugin](architecture-design-cn.md#plugin) ||
 |upstream |可选 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design-cn.md#upstream)||
 |upstream_id|可选 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
@@ -85,6 +86,36 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 > 应答参数
 
 目前是直接返回与 etcd 交互后的结果。
+
+### 运算符列表
+
+|运算符   |描述       |例子|
+|--------|-----------|-------|
+|==      |相等      |{"arg_name", "==", "json"}|
+|~=      |不等于    |{"arg_name", "~=", "json"}|
+|>       |大于      |{"arg_age", ">", 24}|
+|<       |小于      |{"arg_age", "<", 24}|
+|~~      |正则匹配   |{"arg_name", "~~", "[a-z]+"}|
+
+请看下面例子，匹配请求参数 name 等于 json ，age 大于 18 且 address 开头是 China 的请求：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
+{
+    "uri": "/index.html",
+    "vars": [
+        ["arg_name", "==", "json"],
+        ["arg_age", ">", "18"],
+        ["arg_address", "~~", "China.*"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
 
 [Back to TOC](#目录)
 
