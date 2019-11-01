@@ -8,6 +8,8 @@ matrix:
 
   include:
     - os: linux
+      services:
+        - redis-server
     - os: osx
       if: type IN (push)
       cache:
@@ -31,9 +33,6 @@ addons:
       - lua-check
   homebrew:
     update: true
-
-services:
-  - redis-server
 
 cache:
   directories:
