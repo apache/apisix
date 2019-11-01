@@ -9,8 +9,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: install openresty
+      run: sudo apt-get install openresty -y
     - name: install luarocks
-      run: apt-get install luarocks
+      run: sudo apt-get install luarocks -y
     - name: install apisix
       run: luarocks install apisix
     - name: apisix test
