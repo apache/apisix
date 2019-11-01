@@ -3,6 +3,9 @@ sudo: required
 
 matrix:
   fast_finish: true
+  allow_failures:
+    - os: osx
+
   include:
     - os: linux
     - os: osx
@@ -30,11 +33,11 @@ addons:
     update: true
 
 services:
- - redis-server
+  - redis-server
 
 cache:
   directories:
-  - build-cache
+    - build-cache
 
 before_cache:
   - brew cleanup
