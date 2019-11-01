@@ -74,15 +74,32 @@ do_install() {
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
         sudo apt-get install golang
-
         git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-
         cd grpc_server_example/
         go build -o grpc_server_example main.go
         mv grpc_server_example ../build-cache/
         cd ..
     fi
 
+    if [ ! -f "build-cache/proto/helloworld.proto" ]; then
+
+        if [ ! -f "grpc_server_example/main.go" ]; then
+            git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
+        fi
+
+        cd grpc_server_example/
+        mv proto/ ../build-cache/
+        cd ..
+    fi
+
+    if [ ! -f "build-cache/grpcurl" ]; then
+        sudo apt-get install golang
+        git clone https://github.com/fullstorydev/grpcurl.git grpcurl
+        cd grpcurl
+        go build -o grpcurl  ./cmd/grpcurl
+        mv grpcurl ../build-cache/
+        cd ..
+    fi
 }
 
 script() {
@@ -99,8 +116,13 @@ script() {
     ./bin/apisix start
     mkdir -p logs
     sleep 1
+
+    sudo sh ./t/grpc-proxy-test.sh
+    sleep 1
+
     ./bin/apisix stop
     sleep 1
+
     make check || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 }

@@ -57,7 +57,7 @@
 |upstream |可选 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design-cn.md#upstream)||
 |upstream_id|可选 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
 |service_id|可选 |Service|绑定的 Service 配置，详见 [Service](architecture-design-cn.md#service)||
-|service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"|
+|service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
 
 对于同一类参数比如 `host` 与 `hosts`，`remote_addr` 与 `remote_addrs`，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
 

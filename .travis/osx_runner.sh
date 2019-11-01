@@ -49,6 +49,8 @@ do_install() {
     cd grpc_server_example/
     go build -o grpc_server_example main.go
     cd ..
+
+    brew install grpcurl
 }
 
 script() {
@@ -69,6 +71,25 @@ script() {
     sudo make run
     mkdir -p logs
     sleep 1
+
+    #test grpc proxy
+    curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+    {
+        "methods": ["POST", "GET"],
+        "uri": "/helloworld.Greeter/SayHello",
+        "service_protocol": "grpc",
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:50051": 1
+            }
+        }
+    }'
+
+    grpcurl -insecure -import-path ./grpc_server_example/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
+
+    sleep 1
+
     sudo make stop
 
     sleep 1
