@@ -82,12 +82,20 @@ init:
 run:
 	mkdir -p logs
 	mkdir -p /tmp/apisix_cores/
+ifeq ($(OR_EXEC), )
+	@echo "You have to install OpenResty and add the binary file to PATH first"
+	exit 1
+endif
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 
 
 ### stop:         Stop the apisix server
 .PHONY: stop
 stop:
+ifeq ($(OR_EXEC), )
+	@echo "You have to install OpenResty and add the binary file to PATH first"
+	exit 1
+endif
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
@@ -100,6 +108,10 @@ clean:
 ### reload:       Reload the apisix server
 .PHONY: reload
 reload:
+ifeq ($(OR_EXEC), )
+	@echo "You have to install OpenResty and add the binary file to PATH first"
+	exit 1
+endif
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
