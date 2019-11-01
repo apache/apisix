@@ -62,9 +62,9 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 > Accept: */*
 ```
 
-### 范域名
+### 泛域名
 
-一个 SSL 证书的域名也可能包含范域名，如`*.test.com`，它代表所有以`test.com`结尾的域名都可以使用该证书。
+一个 SSL 证书的域名也可能包含泛域名，如`*.test.com`，它代表所有以`test.com`结尾的域名都可以使用该证书。
 比如`*.test.com`，可以匹配 `www.test.com`、`mail.test.com`甚至`a.b.test.com`。
 
 看下面这个例子，请注意 `sni` 这个属性:
