@@ -84,3 +84,138 @@ GET /hello
 --- error_code: 404
 --- error_log
 failed to fetch service configuration by id: 1111
+
+
+
+=== TEST 3: service upstream priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: route service upstream priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1977": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: route service upstream by upstream_id priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+        upstream_id: 1
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: route service upstream priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1977": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
