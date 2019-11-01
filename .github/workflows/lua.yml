@@ -18,7 +18,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install openresty-debug
     - name: install luarocks
-      run: sudo apt-get install luarock
+      run: sudo apt-get install luarocks
     - name: install apisix
       run: sudo luarocks install apisix
     - name: apisix test
