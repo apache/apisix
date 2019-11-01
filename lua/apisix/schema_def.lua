@@ -16,9 +16,9 @@
 --
 local schema    = require('apisix.core.schema')
 local setmetatable = setmetatable
+local error     = error
 
-local _M = {version = 0.3}
-setmetatable(_M, {__index = schema})
+local _M = {version = 0.4}
 
 
 local plugins_schema = {
@@ -262,8 +262,7 @@ local upstream_schema = {
 }
 
 
-
-local route = {
+_M.route = {
     type = "object",
     properties = {
         uri = {type = "string", minLength = 1, maxLength = 4096},
@@ -306,6 +305,11 @@ local route = {
                 }
             }
         },
+        filter_func = {
+            type = "string",
+            minLength = 10,
+            pattern = [[^function]],
+        },
 
         plugins = plugins_schema,
         upstream = upstream_schema,
@@ -325,7 +329,6 @@ local route = {
     },
     additionalProperties = false,
 }
-_M.route = route
 
 
 _M.service = {
@@ -423,6 +426,12 @@ _M.stream_route = {
         plugins = plugins_schema,
     }
 }
+
+
+setmetatable(_M, {
+    __index = schema,
+    __newindex = function() error("no modification allowed") end,
+})
 
 
 return _M

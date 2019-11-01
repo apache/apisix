@@ -223,3 +223,58 @@ Host: foo.com
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "filter_func": "function(vars) return vars.arg_name == 'json' end",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: not hit: name=unkown
+--- request
+GET /hello?name=unkown
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: hit routes
+--- request
+GET /hello?name=json
+--- response_body
+hello world
+--- no_error_log
+[error]

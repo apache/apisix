@@ -21,6 +21,7 @@ local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
+local loadstring = loadstring
 local user_routes
 local cached_version
 
@@ -48,6 +49,20 @@ local function create_radixtree_router(routes)
 
     for _, route in ipairs(routes) do
         if type(route) == "table" then
+            local filter_fun, err
+            if route.value.filter_func then
+                filter_fun, err = loadstring(
+                                        "return " .. route.value.filter_func,
+                                        "router#" .. route.value.id)
+                if not filter_fun then
+                    core.log.error("failed to load filter function: ", err,
+                                   " route id: ", route.value.id)
+                    goto CONTINUE
+                end
+
+                filter_fun = filter_fun()
+            end
+
             core.table.insert(uri_routes, {
                 paths = route.value.uris or route.value.uri,
                 methods = route.value.methods,
@@ -55,11 +70,14 @@ local function create_radixtree_router(routes)
                 remote_addrs = route.value.remote_addrs
                                or route.value.remote_addr,
                 vars = route.value.vars,
+                filter_fun = filter_fun,
                 handler = function (api_ctx)
                     api_ctx.matched_params = nil
                     api_ctx.matched_route = route
                 end
             })
+
+            ::CONTINUE::
         end
     end
 

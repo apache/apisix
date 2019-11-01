@@ -23,7 +23,7 @@
 
 TCP is the protocol for many popular applications and services, such as LDAP, MySQL, and RTMP. UDP (User Datagram Protocol) is the protocol for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
 
-APISIX can dynamic load balancing TCP/UDP proxy. In NGINX world, we call TCP/UDP proxy to stream proxy, we followed this statement.
+APISIX can dynamic load balancing TCP/UDP proxy. In Nginx world, we call TCP/UDP proxy to stream proxy, we followed this statement.
 
 ## How to enable Stream proxy?
 
