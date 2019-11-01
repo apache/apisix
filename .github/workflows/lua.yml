@@ -9,14 +9,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: update
-      run: sudo apt-get update
     - name: install openresty
-      run: sudo apt-get install openresty -y
+      run: |
+        wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+        sudo apt-get -y update --fix-missing
+        sudo apt-get -y install software-properties-common
+        sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+        sudo apt-get update
+        sudo apt-get install openresty-debug
     - name: install luarocks
-      run: sudo apt-get install luarocks -y
+      run: sudo apt-get install luarock
     - name: install apisix
-      run: luarocks install apisix
+      run: sudo luarocks install apisix
     - name: apisix test
       run: |
         apisix init
