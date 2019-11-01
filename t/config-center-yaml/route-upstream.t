@@ -82,3 +82,29 @@ GET /hello
 --- error_code: 502
 --- error_log
 failed to find upstream by id: 1111
+
+
+=== TEST 3: upstream_id priority upstream
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        upstream_id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1981": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
