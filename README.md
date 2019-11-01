@@ -62,6 +62,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **[Proxy Rewrite](doc/plugins/proxy-rewrite.md)**: Support for rewriting the `host`, `uri`, `schema`, `enable_websocket`, `headers` information upstream of the request.
 - **OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)**
 - **Monitoring And Metrics**: [Prometheus](doc/plugins/prometheus.md)
+- **[gRPC proxy](doc/grpc-proxy.md)**：Proxying gRPC traffic.
 - **[gRPC transcoding](doc/plugins/grpc-transcoding.md)**：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
 - **[Serverless](doc/plugins/serverless.md)**: Invoke functions in each phase in APISIX.
 - **Custom plugins**: Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
