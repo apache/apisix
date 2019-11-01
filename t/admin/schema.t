@@ -129,3 +129,83 @@ GET /apisix/admin/schema/plugins/no-exist
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: serverless-pre-function
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/plugins/serverless-pre-function',
+            ngx.HTTP_GET,
+            nil,
+            [[{
+                "properties": {
+                    "phase": {
+                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "type": "string"
+                    },
+                    "functions": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": ["functions"],
+                "type": "object"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: serverless-post-function
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/plugins/serverless-post-function',
+            ngx.HTTP_GET,
+            nil,
+            [[{
+                "properties": {
+                    "phase": {
+                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "type": "string"
+                    },
+                    "functions": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": ["functions"],
+                "type": "object"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

@@ -45,6 +45,7 @@ return function(plugin_name, priority)
         version = 0.1,
         priority = priority,
         name = plugin_name,
+        schema = schema,
     }
 
     local function load_funcs(functions)
