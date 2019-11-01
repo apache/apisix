@@ -84,6 +84,7 @@ GET /hello
 failed to find upstream by id: 1111
 
 
+
 === TEST 3: upstream_id priority upstream
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
