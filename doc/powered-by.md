@@ -33,6 +33,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
 1. zuzuche 租租车 https://www.zuzuche.com/
 1. chaolian 超链云商 https://www.chaolian360.com/
+1. HelloTalk, Inc  https://www.hellotalk.com/
 
 
 # User Cases
@@ -48,3 +49,6 @@ Using APISIX as a gateway, it uses the functions of current limiting, speed limi
 
 ## souche.com
 Using APISIX as a Web ACL gateway to deal with backend OA systems traffic.
+
+## HelloTalk, Inc
+Using Apache APISIX as an API gateway to manage all API and SSL certificates in test\dev\CMS environment.
