@@ -27,6 +27,6 @@ jobs:
         export OPENRESTY_PREFIX="/usr/local/openresty-debug"
         export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
         openresty -V
-        apisix init
-        apisix start
-        apisix stop
+        sudo apisix init
+        sudo apisix start
+        sudo apisix stop
