@@ -36,7 +36,6 @@ local resources = {
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
     stream_routes   = require("apisix.admin.stream_routes"),
-    node_status     = require("apisix.admin.node_status"),
 }
 
 

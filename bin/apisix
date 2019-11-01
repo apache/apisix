@@ -536,6 +536,10 @@ local function init_etcd(show_output)
         error("failed to read local yaml config of apisix: " .. err)
     end
 
+    if yaml_conf.apisix.config_center ~= "etcd" then
+        return true
+    end
+
     local etcd_conf = yaml_conf.etcd
     local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
