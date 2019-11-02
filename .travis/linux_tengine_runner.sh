@@ -126,6 +126,7 @@ tengine_install() {
     mkdir -p build-cache${OPENRESTY_PREFIX}
     cp -r ${OPENRESTY_PREFIX}/* build-cache${OPENRESTY_PREFIX}
     ls build-cache${OPENRESTY_PREFIX}
+    rm -rf openresty-1.15.8.2
 }
 
 do_install() {
