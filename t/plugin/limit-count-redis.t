@@ -1,3 +1,19 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 BEGIN {
     if ($ENV{TEST_NGINX_CHECK_LEAK}) {
         $SkipReason = "unavailable for the hup tests";
@@ -55,7 +71,7 @@ __DATA__
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: missing valid redis options"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: missing valid redis option host"}
 --- no_error_log
 [error]
 
@@ -77,11 +93,9 @@ GET /t
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "policy": "redis",
-                            "redis": {
-                                "host": "127.0.0.1",
-                                "port": 6379,
-                                "timeout": 1001
-                            }
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_timeout": 1001
                         }
                     },
                     "upstream": {
@@ -124,9 +138,7 @@ passed
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "policy": "redis",
-                            "redis": {
-                                "host": "127.0.0.1"
-                            }
+                            "redis_host": "127.0.0.1"
                         }
                     },
                     "upstream": {
@@ -146,11 +158,9 @@ passed
                                     "rejected_code": 503,
                                     "key": "remote_addr",
                                     "policy": "redis",
-                                    "redis": {
-                                        "host": "127.0.0.1",
-                                        "port": 6379,
-                                        "timeout": 1000
-                                    }
+                                    "redis_host": "127.0.0.1",
+                                    "redis_port": 6379,
+                                    "redis_timeout": 1000
                                 }
                             },
                             "upstream": {

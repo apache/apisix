@@ -1,8 +1,27 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 # dev-manual
 
 ## Install APISIX in development environment
 
-For different operating systems have different dependencies, see detail: [Install Dependencies](doc/install-dependencies.md).
+For different operating systems have different dependencies, see detail: [Install Dependencies](install-dependencies.md).
 
 If you are a developer, we can set up a local development environment with the following commands after we installed dependencies.
 
@@ -83,31 +102,22 @@ Makefile rules:
 
     help:         Show Makefile rules.
     dev:          Create a development ENV
-    dev_r3:       Create a development ENV for r3
     check:        Check Lua source code
     init:         Initialize the runtime environment
     run:          Start the apisix server
     stop:         Stop the apisix server
+    restart:      restart the apisix server
     clean:        Remove generated files
     reload:       Reload the apisix server
     install:      Install the apisix
     test:         Run the test case
 ```
 
-
 ## Test
 
-Running the test cases at local machine:
-
-```shell
-make test
-```
-
-The following dependencies are required to run the test suite:
-
-* Nginx: version >= 1.4.2
-
-* Perl modules:
-    `Test::Nginx` https://github.com/openresty/test-nginx
-
-For the detail on how to install dependencies, please take a look at [travis.yml](.travis.yml).
+1. Install perl's package manager `cpanminus` first
+2. Then install `test-gninx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
+3. Clone source code：`git clone https://github.com/openresty/test-nginx.git`;
+4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
+    * Run the test cases: `prove -Itest-nginx/lib -r t`
+    * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`

@@ -1,3 +1,20 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 INST_PREFIX ?= /usr
 INST_LIBDIR ?= $(INST_PREFIX)/lib64/lua/5.1
 INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
@@ -26,32 +43,22 @@ help:
 .PHONY: dev
 dev:
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	WITHOUT_DASHBOARD=1 luarocks install rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
-	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-dev-1.0-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 endif
 ifeq ($(lj-releng-exist), not_exist)
 	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
 	chmod a+x utils/lj-releng
 endif
 
-### dev_r3:       Create a development ENV for r3
-.PHONY: dev_r3
-dev_r3:
-ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) lua-resty-libr3 --tree=deps --local
-else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	luarocks install lua-resty-libr3 --tree=deps --local
-else
-	luarocks install --lua-dir=/usr/local/openresty/luajit lua-resty-libr3 --tree=deps --local
-endif
-
 
 ### check:        Check Lua source code
 .PHONY: check
 check:
+	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 	luacheck -q lua
 	./utils/lj-releng lua/*.lua lua/apisix/*.lua \
 		lua/apisix/admin/*.lua \
@@ -75,12 +82,20 @@ init:
 run:
 	mkdir -p logs
 	mkdir -p /tmp/apisix_cores/
+ifeq ($(OR_EXEC), )
+	@echo "You have to install OpenResty and add the binary file to PATH first"
+	exit 1
+endif
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 
 
 ### stop:         Stop the apisix server
 .PHONY: stop
 stop:
+ifeq ($(OR_EXEC), )
+	@echo "You have to install OpenResty and add the binary file to PATH first"
+	exit 1
+endif
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
@@ -93,6 +108,10 @@ clean:
 ### reload:       Reload the apisix server
 .PHONY: reload
 reload:
+ifeq ($(OR_EXEC), )
+	@echo "You have to install OpenResty and add the binary file to PATH first"
+	exit 1
+endif
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
@@ -102,9 +121,8 @@ install:
 ifneq ($(WITHOUT_DASHBOARD),1)
 	$(INSTALL) -d /usr/local/apisix/dashboard
 	cd `mktemp -d /tmp/apisix.XXXXXX` && \
-		git clone https://github.com/iresty/apisix.git && \
+		git clone https://github.com/apache/incubator-apisix.git apisix --recursive && \
 		cd apisix && \
-		git submodule update --init --recursive && \
 		cp -r dashboard/* /usr/local/apisix/dashboard
 	chmod -R 755 /usr/local/apisix/dashboard
 endif

@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local plugin_name = "limit-count"
@@ -23,20 +39,14 @@ local schema = {
             type = "string",
             enum = {"local", "redis"},
         },
-        redis = {
-            type = "object",
-            properties = {
-                host = {
-                    type = "string", minLength = 2
-                },
-                port = {
-                    type = "integer", minimum = 1
-                },
-                timeout = {
-                    type = "integer", minimum = 1
-                },
-            },
-            required = {"host"},
+        redis_host = {
+            type = "string", minLength = 2
+        },
+        redis_port = {
+            type = "integer", minimum = 1
+        },
+        redis_timeout = {
+            type = "integer", minimum = 1
         },
     },
     additionalProperties = false,
@@ -45,7 +55,7 @@ local schema = {
 
 
 local _M = {
-    version = 0.2,
+    version = 0.3,
     priority = 1002,
     name = plugin_name,
     schema = schema,
@@ -63,12 +73,12 @@ function _M.check_schema(conf)
     end
 
     if conf.policy == "redis" then
-        if not conf.redis then
-            return false, "missing valid redis options"
+        if not conf.redis_host then
+            return false, "missing valid redis option host"
         end
 
-        conf.redis.port = conf.redis.port or 6379
-        conf.redis.timeout = conf.redis.timeout or 1000
+        conf.redis_port = conf.redis_port or 6379
+        conf.redis_timeout = conf.redis_timeout or 1000
     end
 
     return true
@@ -85,7 +95,7 @@ local function create_limit_obj(conf)
 
     if conf.policy == "redis" then
         return limit_redis_new("plugin-" .. plugin_name,
-                               conf.count, conf.time_window, conf.redis)
+                               conf.count, conf.time_window, conf)
     end
 
     return nil

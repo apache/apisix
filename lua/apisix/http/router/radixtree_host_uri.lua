@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")
@@ -5,6 +21,7 @@ local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
+local loadstring = loadstring
 local user_routes
 local cached_version
 local only_uri_routes = {}
@@ -18,11 +35,27 @@ local _M = {version = 0.1}
 
 local function add_host_uri_routes(path, host, route)
     core.log.info("add host+uri route, host: ", host, " path: ", path)
+
+    local filter_fun, err
+    if route.value.filter_func then
+        filter_fun, err = loadstring(
+                                "return " .. route.value.filter_func,
+                                "router#" .. route.value.id)
+        if not filter_fun then
+            core.log.error("failed to load filter function: ", err,
+                            " route id: ", route.value.id)
+            return
+        end
+
+        filter_fun = filter_fun()
+    end
+
     core.table.insert(host_uri_routes, {
         paths = {host .. path},
         methods = route.value.methods,
         remote_addrs = route.value.remote_addrs or route.value.remote_addr,
         vars = route.value.vars,
+        filter_fun = filter_fun,
         handler = function (api_ctx)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
@@ -65,12 +98,27 @@ local function push_radixtree_host_router(route)
         hosts_wildcard = nil
     end
 
+    local filter_fun, err
+    if route.value.filter_func then
+        filter_fun, err = loadstring(
+                                "return " .. route.value.filter_func,
+                                "router#" .. route.value.id)
+        if not filter_fun then
+            core.log.error("failed to load filter function: ", err,
+                            " route id: ", route.value.id)
+            return
+        end
+
+        filter_fun = filter_fun()
+    end
+
     core.table.insert(only_uri_routes, {
         paths = uris,
         method = route.value.methods,
         hosts = hosts_wildcard,
         remote_addrs = route.value.remote_addrs or route.value.remote_addr,
         vars = route.value.vars,
+        filter_fun = filter_fun,
         handler = function (api_ctx)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route

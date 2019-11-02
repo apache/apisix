@@ -1,17 +1,36 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 [English](README.md)
 ## APISIX
 
-[![Build Status](https://travis-ci.org/iresty/apisix.svg?branch=master)](https://travis-ci.org/iresty/apisix)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/apisix/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/apache/incubator-apisix.svg?branch=master)](https://travis-ci.org/apache/incubator-apisix)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/incubator-apisix/blob/master/LICENSE)
 
 - **QQ 交流群**: 552030619
+- 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可
 - [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-
-## 什么是 APISIX？
-
 APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
 它是基于 OpenResty 和 etcd 来实现，和传统 API 网关相比，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
+
+[安装](#安装) | [文档](doc/README_CN.md) | [开发环境](#开发环境) | [FAQ](FAQ.md)
 
 ## 为什么选择 APISIX？
 
@@ -34,7 +53,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **[SSL](doc/https-cn.md)**：动态加载 SSL 证书。
 - **HTTP(S) 反向代理**
 - **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
-- **熔断器**: 智能跟踪不健康上游服务.
+- **熔断器**: 智能跟踪不健康上游服务。
 - **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md)。
 - **[限制速率](doc/plugins/limit-req-cn.md)**
 - **[限制请求数](doc/plugins/limit-count-cn.md)**
@@ -42,6 +61,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **[代理请求重写](doc/plugins/proxy-rewrite.md)**: 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
 - **OpenTracing: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin.md)**
 - **监控和指标**: [Prometheus](doc/plugins/prometheus-cn.md)
+- **[gRPC 代理](doc/grpc-proxy-cn.md)**：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
 - **[gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)**：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
 - **[Serverless](doc/plugins/serverless-cn.md)**: 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
 - **自定义插件**: 允许挂载常见阶段，例如`rewrite`，`access`，`header filer`，`body filter`和`log`，还允许挂载 `balancer` 阶段。
@@ -56,7 +76,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.6 毫秒。
 - **防御 ReDoS(正则表达式拒绝服务)**
 - **IP 黑名单**
-- **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，okta 等，用户可以借此来对接 Oauth2.0 等认证方式。
+- **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
 - **[单机模式](doc/stand-alone-cn.md)**: 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
 - **全局规则**：允许对所有请求执行插件，比如黑白名单、限流限速等。
 - **[TCP/UDP 代理](doc/stream-proxy-cn.md)**: 动态 TCP/UDP 代理。
@@ -84,8 +104,16 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
 - 其它操作系统，我们推荐使用 [Luarocks 安装方式](#通过-luarocks-安装-不支持-macos)；
 - 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装。
 
-*NOTE*: APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。
-需要在启动参数中添加 `--enable-v2=true`，才能启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
+安装 APISIX 的主要步骤：
+
+1. 运行时依赖：OpenResty 或 Tengine。
+    * OpenResty: 参考 [http://openresty.org/en/installation.html](http://openresty.org/en/installation.html)。
+    * Tengine：参考该安装脚本 [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh)。
+2. 配置存储中心：参考 [etcd](https://github.com/etcd-io/etcd)。
+
+    *NOTE*：APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。 在启动参数中添加 `--enable-v2=true`，启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
+
+3. 安装 APISIX 服务。
 
 ### 通过 RPM 包安装（CentOS 7）
 
@@ -95,7 +123,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/centos/openrest
 sudo yum install -y openresty etcd
 sudo service etcd start
 
-sudo yum install -y https://github.com/iresty/apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
 ```
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
@@ -112,19 +140,20 @@ APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数�
 
 在终端中执行下面命令完成 APISIX 的安装：
 
-> 通过 curl
+> 通过脚本安装 master 分支的代码
 
 ```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh)"
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
 ```
 
-> 人工检查
-
-对你不熟悉项目的安装脚本做检查，是个非常好的习惯。可以先下载这个脚本，确保他都是正常脚本，然后运行：
+> 通过 Luarocks 安装指定的版本:
 
 ```shell
-curl -Lo install.sh https://raw.githubusercontent.com/iresty/apisix/master/utils/install-apisix.sh
-sudo sh install.sh
+# 安装 apisix 的 0.8 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+
+# 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
+sudo luarocks install apisix 0.8
 ```
 
 > 安装完成
@@ -140,7 +169,7 @@ sudo sh install.sh
 
 ## 开发环境
 
-如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤.
+如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤。
 
 ## 快速上手
 
@@ -154,9 +183,9 @@ sudo apisix start
 
 2. 测试限流插件
 
-你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可.
+你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可。
 
-更进一步，你可以跟着文档来尝试更多的[插件](doc/plugins-cn.md).
+更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
 ## 控制台
 APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
@@ -174,11 +203,12 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 [详细设计文档](doc/architecture-design-cn.md)
 
-## 视频和幻灯片
+## 视频和文章
 
-- [APISIX 的选型、测试和持续集成](https://www.upyun.com/opentalk/432.html)
-
-- [APISIX 高性能实践](https://www.upyun.com/opentalk/429.html)
+- 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html) .
+- 2019.8.31 [APISIX 技术选型、测试和持续集成](https://www.upyun.com/opentalk/433.html) .
+- 2019.8.31 [APISIX 高性能实战2](https://www.upyun.com/opentalk/437.html) .
+- 2019.7.6 [APISIX 高性能实战(Chinese)](https://www.upyun.com/opentalk/429.html) .
 
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中。下面是 APISIX 的用户墙：

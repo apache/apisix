@@ -1,3 +1,22 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 [中文](jwt-auth-cn.md)
 
 # Summary
@@ -10,22 +29,22 @@
 
 ## Name
 
-`jwt-auth` is an authentication plugin that need to work with `consumer'. Add JWT Authentication to a `service'or `route'.
+`jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.
 
-The `consumer` then adds its key to the query string parameter, request header, or `cookie' to verify its request.
+The `consumer` then adds its key to the query string parameter, request header, or `cookie` to verify its request.
 
-For more information on JWT, refer to [JWT] (https://jwt.io/) for more information.
+For more information on JWT, refer to [JWT](https://jwt.io/) for more information.
 
 ## Attributes
 
-* `key`: different `consumer` have different value, it's unique。different `consumer` use the same `key`, and there will be a request matching exception.
-* `secret`: optional, encryption key . if you do not specify, the value is auto-generated in the background。
-* `algorithm`：optional, encryption algorithm .support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.
-* `exp`: optional，token's expire time，the unit is second。 for example ,5 minutes ,need to set the value of 300.( 5 * 60 = 300 )`。
+* `key`: different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception.
+* `secret`: optional, encryption key. if you do not specify, the value is auto-generated in the background.
+* `algorithm`: optional, encryption algorithm .support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.
+* `exp`: optional, token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 * 60 = 300 ).
 
 ## How To Enable
 
-1. set a consumer and  config the value of the`jwt-auth` option
+1. set a consumer and config the value of the `jwt-auth` option
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
@@ -84,7 +103,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDg
 
 #### try request with token
 
-* without token
+* without token:
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html -i
@@ -93,7 +112,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing JWT token in request"}
 ```
 
-* request header with token：
+* request header with token:
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
@@ -108,7 +127,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* request params with token：
+* request params with token:
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
@@ -123,7 +142,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* request cookie with token :
+* request cookie with token:
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i

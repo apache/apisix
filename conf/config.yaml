@@ -1,3 +1,19 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 apisix:
   node_listen: 9080              # APISIX listening port
   enable_heartbeat: true
@@ -17,11 +33,7 @@ apisix:
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
-                                  # r3_uri: match route by uri(base on r3)
-                                  # r3_host_uri: match route by host + uri(base on r3)
-
-    ssl: 'radixtree_sni'          # r3_sni: match route by SNI(base on r3)
-                                  # radixtree_sni: match route by SNI(base on radixtree)
+    ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
   # stream_proxy:                 # TCP/UDP proxy
   #   tcp:                        # TCP proxy port list
   #     - 9100
@@ -47,8 +59,6 @@ nginx_config:                     # config for render the template to genarate n
   error_log_level: "warn"         # warn,error
   event:
     worker_connections: 10620
-    use_epoll: true
-    multi_accept: true            # true is on ,false is off
   http:
     access_log: "logs/access.log"
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
@@ -59,7 +69,7 @@ nginx_config:                     # config for render the template to genarate n
 etcd:
   host: "http://127.0.0.1:2379"   # etcd address
   prefix: "/apisix"               # apisix configurations prefix
-  timeout: 1                      # 1 seconds
+  timeout: 3                      # 3 seconds
 
 plugins:                          # plugin list
   - example-plugin
@@ -77,6 +87,7 @@ plugins:                          # plugin list
   - serverless-post-function
   - openid-connect
   - proxy-rewrite
+  - redirect
 
 stream_plugins:
   - mqtt-proxy
