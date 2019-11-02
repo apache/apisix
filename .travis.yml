@@ -19,6 +19,8 @@ matrix:
           - $HOME/Library/Caches/Homebrew
           - /usr/local/Homebrew
     - os: linux
+      services:
+        - redis-server
       env: OSNAME=linux_tengine
 
 language: c
