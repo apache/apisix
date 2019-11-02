@@ -61,7 +61,7 @@ end
 
 function _M.log(conf, ctx)
     core.table.clear(tmp_tab)
-    
+
     local service_name
     if ctx.matched_route and ctx.matched_route.value then
         service_name = ctx.matched_route.value.desc or ctx.matched_route.value.id
