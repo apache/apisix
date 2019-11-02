@@ -30,7 +30,7 @@
 
 APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
 
-APISIX is based on OpenResty and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
+APISIX is based on Nginx and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
 
 [Installation](#Installation) | [Documentation](doc/README.md) | [Development ENV](#development-manual-of-apisix) | [FAQ](FAQ.md)
 
@@ -48,6 +48,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 
 ## Features
 
+- **Run Environment**: Both OpenResty and Tengine are supported.
 - **Cloud-Native**: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
 - **[Hot Updates And Hot Plugins](doc/plugins.md)**: Continuously updates its configurations and plugins without restarts!
 - **Dynamic Load Balancing**: Round-robin load balancing with weight.
@@ -91,7 +92,7 @@ We provide an online dashboard [demo version](http://apisix.iresty.com)， make 
 
 ## Installation
 
-APISIX Installed and tested in the following systems, and the version of OpenResty MUST >= 1.15.8.1:
+APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1, or Tengine >= 2.3.2):
 
 - CentOS 7
 - Ubuntu 16.04
@@ -107,7 +108,16 @@ You now have four ways to install APISIX:
 - other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
 - You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
-*NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
+The main steps to install APISIX:
+
+1. Runtime dependency: OpenResty or Tengine.
+    * OpenResty: Reference [http://openresty.org/en/installation.html](http://openresty.org/en/installation.html).
+    * Tengine: Please take a look at this installation step script [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh).
+2. Configuration center: Reference [etcd](https://github.com/etcd-io/etcd).
+
+    *NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
+
+3. Install APISIX service.
 
 ### Install from RPM for CentOS 7
 
@@ -126,7 +136,7 @@ You can try APISIX with the [**Quickstart**](#quickstart) now.
 
 ##### Dependencies
 
-APISIX is based on [OpenResty](https://openresty.org/), the configures data storage and distribution via [etcd](https://github.com/etcd-io/etcd).
+APISIX is based on [OpenResty](https://openresty.org/) or [Tengine](http://tengine.taobao.org/), the configures data storage and distribution via [etcd](https://github.com/etcd-io/etcd).
 
 We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, and for different operating systems have different dependencies, see more: [Install Dependencies](doc/install-dependencies.md)
 

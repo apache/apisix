@@ -77,9 +77,9 @@ qr/404 Not Found/
 === TEST 3: hit routes
 --- request
 GET /hello
---- error_code: 502
+--- error_code_like: ^(?:50\d)$
 --- response_body eval
-qr/502 Bad Gateway/
+qr/502 Bad Gateway|500 Internal Server Error/
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
