@@ -158,7 +158,7 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: openresty
+received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
@@ -307,7 +307,7 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: openresty
+received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
@@ -418,7 +418,7 @@ sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: openresty
+received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log

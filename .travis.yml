@@ -10,12 +10,18 @@ matrix:
     - os: linux
       services:
         - redis-server
+      env: OSNAME=linux_openresty
     - os: osx
+      env: OSNAME=osx_openresty
       if: type IN (push)
       cache:
         directories:
           - $HOME/Library/Caches/Homebrew
           - /usr/local/Homebrew
+    - os: linux
+      services:
+        - redis-server
+      env: OSNAME=linux_tengine
 
 language: c
 
@@ -42,14 +48,14 @@ before_cache:
   - brew cleanup
 
 before_install:
-  - echo $TRAVIS_OS_NAME
-  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh before_install
+  - echo $OSNAME
+  - $PWD/.travis/${OSNAME}_runner.sh before_install
 
 install:
-  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh do_install
+  - $PWD/.travis/${OSNAME}_runner.sh do_install
 
 script:
-  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh script
+  - $PWD/.travis/${OSNAME}_runner.sh script
 
 after_success:
-  - $PWD/.travis/${TRAVIS_OS_NAME}_runner.sh after_success
+  - $PWD/.travis/${OSNAME}_runner.sh after_success
