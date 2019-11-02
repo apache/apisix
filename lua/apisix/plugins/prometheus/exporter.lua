@@ -21,6 +21,9 @@ local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
 local prometheus
 
+local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
+    80, 90, 100, 200, 300, 400, 500, 1000,
+    2000, 5000, 10000, 30000, 60000 }
 
 local metrics = {}
 local tmp_tab = {}
@@ -44,26 +47,35 @@ function _M.init()
     -- per service
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in Apisix",
-            {"code", "service"})
+            {"code", "service", "node"})
+
+    metrics.latency = prometheus:histogram("http_latency",
+        "HTTP request latency per service in Apisix",
+        {"type", "service", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in Apisix",
-            {"type", "service"})
+            {"type", "service", "node"})
 end
 
 
 function _M.log(conf, ctx)
     core.table.clear(tmp_tab)
+    
+    local service_name
+    if ctx.matched_route and ctx.matched_route.value then
+        service_name = ctx.matched_route.value.desc or ctx.matched_route.value.id
+    end
 
-    local host = ctx.var.host
-    core.table.set(tmp_tab, ctx.var.status, host)
-    metrics.status:inc(1, tmp_tab)
+    local balancer_ip = ctx.balancer_ip
+    metrics.status:inc(1, {ctx.var.status, service_name, balancer_ip})
 
-    tmp_tab[1] = "ingress"
-    metrics.bandwidth:inc(ctx.var.request_length, tmp_tab)
+    local latency = (ngx.now() - ngx.req.start_time()) * 1000
+    metrics.latency:observe(latency, {"request", service_name, balancer_ip})
 
-    tmp_tab[1] = "egress"
-    metrics.bandwidth:inc(ctx.var.bytes_sent, tmp_tab)
+    metrics.bandwidth:inc(ctx.var.request_length, {"ingress", service_name, balancer_ip})
+    metrics.bandwidth:inc(ctx.var.bytes_sent, {"egress", service_name, balancer_ip})
+
 end
 
 
