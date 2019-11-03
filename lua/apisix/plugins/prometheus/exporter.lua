@@ -43,19 +43,19 @@ function _M.init()
             {"state"})
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
-            "Config server etcd reachable from Apisix, 0 is unreachable")
+            "Config server etcd reachable from APISIX, 0 is unreachable")
 
     -- per service
     metrics.status = prometheus:counter("http_status",
-            "HTTP status codes per service in Apisix",
+            "HTTP status codes per service in APISIX",
             {"code", "service", "node"})
 
     metrics.latency = prometheus:histogram("http_latency",
-        "HTTP request latency per service in Apisix",
+        "HTTP request latency per service in APISIX",
         {"type", "service", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
-            "Total bandwidth in bytes consumed per service in Apisix",
+            "Total bandwidth in bytes consumed per service in APISIX",
             {"type", "service", "node"})
 end
 
@@ -69,13 +69,18 @@ function _M.log(conf, ctx)
     end
 
     local balancer_ip = ctx.balancer_ip
-    metrics.status:inc(1, {ctx.var.status, service_name, balancer_ip})
+    core.table.set(tmp_tab, ctx.var.status, service_name, balancer_ip)
+    metrics.status:inc(1, tmp_tab)
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    metrics.latency:observe(latency, {"request", service_name, balancer_ip})
+    tmp_tab[1] = "request"
+    metrics.latency:observe(latency, tmp_tab)
 
-    metrics.bandwidth:inc(ctx.var.request_length, {"ingress", service_name, balancer_ip})
-    metrics.bandwidth:inc(ctx.var.bytes_sent, {"egress", service_name, balancer_ip})
+    tmp_tab[1] = "ingress"
+    metrics.bandwidth:inc(ctx.var.request_length, tmp_tab)
+
+    tmp_tab[1] = "egress"
+    metrics.bandwidth:inc(ctx.var.bytes_sent, tmp_tab)
 
 end
 
