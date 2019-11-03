@@ -151,7 +151,7 @@ apisix_etcd_reachable 1
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
+qr/apisix_bandwidth\{type="egress",service="1",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
 
@@ -293,6 +293,15 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",service="localhost"\} \d+/
+qr/apisix_bandwidth\{type="egress",service="1",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+=== TEST 14: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_latency_count\{type="request",service="1",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
