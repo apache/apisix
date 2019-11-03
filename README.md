@@ -40,7 +40,7 @@ If you are building a website, mobile device or IoT (Internet of Things) applica
 
 APISIX is a cloud-based microservices API gateway that handles traditional north-south traffic and handles east-west traffic between services.
 
-APISIX provides dynamic load balancing, authentication, rate limiting, and other plugins through plugin mechanisms, and supports plugins you develop yourself.
+APISIX provides dynamic load balancing, authentication, rate limiting, other plugins through plugin mechanisms, and supports plugins you develop yourself.
 
 For more detailed information, see the [White Paper](https://www.iresty.com/download/Choosing%20the%20Right%20Microservice%20API%20Gateway%20for%20the%20Enterprise%20User.pdf).
 
@@ -102,9 +102,9 @@ APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1,
 - macOS
 - **ARM64** Ubuntu 18.04
 
-You now have four ways to install APISIX:
+There are four ways to install APISIX:
 - if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
-- if using macOS, only support git clone and install by manual, please take a look at [dev manual](doc/dev-manual.md);
+- if you are using macOS, only git clone and install by manual are supported. Please take a look at [dev manual](doc/dev-manual.md);
 - other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
 - You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
