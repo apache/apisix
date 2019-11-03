@@ -266,6 +266,14 @@ _M.route = {
     type = "object",
     properties = {
         uri = {type = "string", minLength = 1, maxLength = 4096},
+        uris = {
+            type = "array",
+            items = {
+                description = "Uris", 
+                type = "string",
+            },
+            uniqueItems = true,
+        },
         desc = {type = "string", maxLength = 256},
 
         methods = {
@@ -326,6 +334,10 @@ _M.route = {
         {required = {"upstream", "uri"}},
         {required = {"upstream_id", "uri"}},
         {required = {"service_id", "uri"}},
+ 
+        {required = {"upstream", "uris"}},
+        {required = {"upstream_id", "uris"}},
+        {required = {"service_id", "uris"}},
     },
     additionalProperties = false,
 }

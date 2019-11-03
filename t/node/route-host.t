@@ -42,7 +42,7 @@ __DATA__
                             "type": "roundrobin"
                         },
                         "host": "foo.com",
-                        "uri": "/hello"
+                        "uri": ["/hello","/uri/test"]
                 }]]
                 )
 
@@ -103,5 +103,15 @@ GET /hello
 Host: foo.com
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: hit routes second routes
+--- request
+GET /uri/test
+--- response_body_like
+^uri:\s\/uri\/test.*
 --- no_error_log
 [error]
