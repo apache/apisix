@@ -270,7 +270,7 @@ _M.route = {
         uris = {
             type = "array",
             items = {
-                description = "Uris",
+                description = "HTTP uri",
                 type = "string",
             },
             uniqueItems = true,

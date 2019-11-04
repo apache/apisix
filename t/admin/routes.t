@@ -1333,7 +1333,7 @@ GET /t
 
 
 
-=== TEST 37: support multi URI
+=== TEST 37: Support for multiple URIs
 --- config
     location /t {
         content_by_lua_block {

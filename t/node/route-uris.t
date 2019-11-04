@@ -41,8 +41,7 @@ __DATA__
                             },
                             "type": "roundrobin"
                         },
-                        "host": "foo.com",
-                        "uri": "/hello"
+                        "uris": ["/hello","/hello1"]
                 }]]
                 )
 
@@ -72,36 +71,20 @@ qr/404 Not Found/
 
 
 
-=== TEST 3: /not_found
+=== TEST 3: hit routes1
 --- request
 GET /hello
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
---- no_error_log
-[error]
-
-
-
-=== TEST 4: /not_found
---- request
-GET /hello
---- more_headers
-Host: not_found.com
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
---- no_error_log
-[error]
-
-
-
-=== TEST 5: hit routes
---- request
-GET /hello
---- more_headers
-Host: foo.com
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 4:  hit routes2
+--- request
+GET /hello1
+--- response_body
+hello1 world
 --- no_error_log
 [error]
