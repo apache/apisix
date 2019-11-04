@@ -1341,7 +1341,7 @@ GET /t
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [=[{
-                    "uris": ["/index.html","/index2.html"], 
+                    "uris": ["/index.html","/index2.html"],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -1352,7 +1352,7 @@ GET /t
                 )
 
             ngx.status = code
-            ngx.print(body)
+            ngx.say(body)
         }
     }
 --- request
