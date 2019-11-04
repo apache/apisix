@@ -298,6 +298,7 @@ qr/apisix_bandwidth\{type="egress",service="1",node="127.0.0.1"\} \d+/
 [error]
 
 
+
 === TEST 14: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics

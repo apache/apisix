@@ -862,7 +862,7 @@ GET /t
 
 
 
-=== TEST 24: set upstream with args(type: chash)
+=== TEST 26: set upstream with args(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -892,7 +892,7 @@ passed
 
 
 
-=== TEST 24: set upstream(type: chash)
+=== TEST 27: set upstream(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -921,7 +921,7 @@ passed
 
 
 
-=== TEST 25:  wrong upstream key
+=== TEST 28:  wrong upstream key
 --- config
     location /t {
         content_by_lua_block {
@@ -953,7 +953,7 @@ GET /t
 
 
 
-=== TEST 24: set upstream with args(type: chash)
+=== TEST 29: set upstream with args(type: chash)
 --- config
     location /t {
         content_by_lua_block {
