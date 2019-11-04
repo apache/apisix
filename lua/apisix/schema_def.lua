@@ -270,7 +270,7 @@ _M.route = {
         uris = {
             type = "array",
             items = {
-                description = "Uris", 
+                description = "Uris",
                 type = "string",
             },
             uniqueItems = true,
@@ -334,8 +334,7 @@ _M.route = {
         {required = {"plugins", "uri"}},
         {required = {"upstream", "uri"}},
         {required = {"upstream_id", "uri"}},
-        {required = {"service_id", "uri"}},
- 
+        {required = {"service_id", "uri"}}, 
         {required = {"upstream", "uris"}},
         {required = {"upstream_id", "uris"}},
         {required = {"service_id", "uris"}},
