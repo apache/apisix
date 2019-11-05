@@ -136,7 +136,7 @@ qr@invalid ip address: 10.255.254.0/38@
 --- request
 GET /t
 --- response_body
-value sould match only one schema, but matches none
+value should match only one schema, but matches none
 done
 --- no_error_log
 [error]
@@ -183,7 +183,7 @@ done
 --- request
 GET /t
 --- response_body
-value sould match only one schema, but matches both schemas 1 and 2
+value should match only one schema, but matches both schemas 1 and 2
 done
 --- no_error_log
 [error]

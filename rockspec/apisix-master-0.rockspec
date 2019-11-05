@@ -47,7 +47,7 @@ dependencies = {
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 0.1",
     "iresty-nginx-lua-prometheus = 0.20190917",
-    "jsonschema = 0.3",
+    "jsonschema = 0.4",
 }
 
 build = {
