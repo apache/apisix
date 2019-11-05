@@ -17,10 +17,11 @@
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
+local ngx = ngx
 local get_method = ngx.req.get_method
+local tonumber = tonumber
 local str_lower = string.lower
 local require = require
-local ngx = ngx
 local reload_event = "/apisix/admin/plugins/reload"
 local events
 
@@ -80,7 +81,16 @@ local function run()
         req_body = data
     end
 
-    local code, data = resource[method](seg_id, req_body, seg_sub_path)
+    local uri_args = ngx.req.get_uri_args() or {}
+    if uri_args.ttl then
+        if not tonumber(uri_args.ttl) then
+            core.response.exit(400, {error_msg = "invalid argument ttl: "
+                                                 .. "should be a number"})
+        end
+    end
+
+    local code, data = resource[method](seg_id, req_body, seg_sub_path,
+                                        uri_args)
     if code then
         core.response.exit(code, data)
     end
