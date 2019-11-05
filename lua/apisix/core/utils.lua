@@ -21,7 +21,7 @@ local ipmatcher= require("resty.ipmatcher")
 local open     = io.open
 local math     = math
 local sub_str  = string.sub
-local find_str = string.find
+local str_byte = string.byte
 local tonumber = tonumber
 
 
@@ -83,9 +83,25 @@ function _M.dns_parse(resolvers, domain)
 end
 
 
+local function rfind_char(s, ch, idx)
+    local b = str_byte(ch)
+    for i = idx or #s, 1, -1 do
+        if str_byte(s, i, i) == b then
+            return i
+        end
+    end
+    return nil
+end
+
+
 function _M.parse_addr(addr)
-    local pos = find_str(addr, ":", 1, true)
+    local pos = rfind_char(addr, ":", #addr - 1)
     if not pos then
+        return addr, 80
+    end
+
+    -- Is addr in [ip:v6] format?
+    if str_byte(addr, 1) == str_byte("[") and str_byte(addr, pos - 1) ~= str_byte("]") then
         return addr, 80
     end
 
