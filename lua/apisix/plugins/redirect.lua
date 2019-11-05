@@ -92,14 +92,14 @@ end
 
     local tmp = {}
 local function concat_new_uri(uri, ctx)
-    local pased_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
-    if not pased_uri_segs then
+    local passed_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
+    if not passed_uri_segs then
         return nil, err
     end
 
     core.table.clear(tmp)
 
-    for _, uri_segs in ipairs(pased_uri_segs) do
+    for _, uri_segs in ipairs(passed_uri_segs) do
         local pat1 = uri_segs[1]    -- \$host
         local pat2 = uri_segs[2]    -- ${host}
         local pat3 = uri_segs[3]    -- $host
