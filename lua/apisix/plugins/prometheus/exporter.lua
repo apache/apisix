@@ -29,7 +29,7 @@ local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
 local metrics = {}
 
 
-local _M = {version = 0.2}
+local _M = {version = 0.3}
 
 
 function _M.init()
