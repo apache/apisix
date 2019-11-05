@@ -60,7 +60,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 
 Here's an example, to enable the grpc-transcode plugin to specified route:
 
-* attention: the route's option `service_protocal` must be `grpc`
+* attention: the route's option `service_protocol` must be `grpc`
 * the grpc server example：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell

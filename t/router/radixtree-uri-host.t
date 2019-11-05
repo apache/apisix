@@ -260,9 +260,9 @@ passed
 
 
 
-=== TEST 13: not hit: name=unkown
+=== TEST 13: not hit: name=unknown
 --- request
-GET /hello?name=unkown
+GET /hello?name=unknown
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/

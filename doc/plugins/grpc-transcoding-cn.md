@@ -62,7 +62,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 
 在指定 route 中，代理 grpc 服务接口:
 
-* 注意： 这个 route 的属性`service_protocal` 必须设置为 `grpc`
+* 注意： 这个 route 的属性`service_protocol` 必须设置为 `grpc`
 * 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell
