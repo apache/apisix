@@ -39,3 +39,30 @@ __DATA__
 GET /t
 --- response_body_like eval
 qr/random seed \d+\ntwice: false/
+
+
+
+=== TEST 2: parse_addr
+--- config
+    location /t {
+        content_by_lua_block {
+            local parse_addr = require("apisix.core.utils").parse_addr
+            local cases = {
+                {addr = "127.0.0.1", host = "127.0.0.1", port = 80},
+                {addr = "127.0.0.1:90", host = "127.0.0.1", port = 90},
+                {addr = "www.test.com", host = "www.test.com", port = 80},
+                {addr = "www.test.com:90", host = "www.test.com", port = 90},
+                {addr = "[127.0.0.1:90", host = "[127.0.0.1:90", port = 80},
+                {addr = "[::1]", host = "::1", port = 80},
+                {addr = "[::1]:1234", host = "::1", port = 1234},
+                {addr = "[::1234:1234]:12345", host = "::1234:1234", port = 12345},
+            }
+            for _, case in ipairs(cases) do
+                local host, port = parse_addr(case.addr)
+                assert(host == case.host, string.format("host %s mismatch %s", host, case.host))
+                assert(port == case.port, string.format("port %s mismatch %s", port, case.port))
+            end
+        }
+    }
+--- request
+GET /t
