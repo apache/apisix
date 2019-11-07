@@ -22,6 +22,8 @@ local ipairs = ipairs
 local type = type
 local error = error
 local tab_insert = table.insert
+local loadstring = loadstring
+local pairs = pairs
 local user_routes
 local cached_version
 local host_router
