@@ -83,8 +83,8 @@ local function create_radixtree_router(routes)
 
         core.table.insert(host_router_routes, {
             paths = host_rev,
-            filter_fun = function(vars, opts, api_ctx, ...)
-                return sub_router:dispatch(vars.uri, opts, api_ctx, ...)
+            filter_fun = function(vars, opts, ...)
+                return sub_router:dispatch(vars.uri, opts, ...)
             end,
             handler = function (api_ctx)
             end
@@ -125,7 +125,6 @@ function _M.match(api_ctx)
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
     match_opts.host = api_ctx.var.host
-    api_ctx.radixtree_opts = match_opts
 
     if host_router then
         local host_uri = api_ctx.var.host
