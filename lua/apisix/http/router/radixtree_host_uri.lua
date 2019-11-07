@@ -36,6 +36,20 @@ local function push_host_router(route, host_routes, only_uri_routes)
         return
     end
 
+    local filter_fun, err
+    if route.value.filter_func then
+        filter_fun, err = loadstring(
+                                "return " .. route.value.filter_func,
+                                "router#" .. route.value.id)
+        if not filter_fun then
+            core.log.error("failed to load filter function: ", err,
+                            " route id: ", route.value.id)
+            return
+        end
+
+        filter_fun = filter_fun()
+    end
+
     local hosts = route.value.hosts or {route.value.host}
 
     local radixtree_route = {
@@ -44,7 +58,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
         remote_addrs = route.value.remote_addrs
                        or route.value.remote_addr,
         vars = route.value.vars,
-        -- filter_fun = filter_fun,
+        filter_fun = filter_fun,
         handler = function (api_ctx)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
