@@ -74,7 +74,7 @@ use config_center: yaml
 
 
 
-=== TEST 2: sanity
+=== TEST 2: *.test.com + uri
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -106,7 +106,7 @@ use config_center: yaml
 
 
 
-=== TEST 3: sanity
+=== TEST 3: *.test.com + /*
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -127,6 +127,72 @@ routes:
 
 --- request
 GET /server_port
+--- more_headers
+Host: www.test.com
+--- response_body eval
+qr/1981/
+--- error_log
+use config_center: yaml
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: filter_func(not match)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    host: *.test.com
+    filter_func: "function(vars) return vars.arg_name == 'json' end"
+    upstream:
+        nodes:
+            "127.0.0.1:1981": 1
+        type: roundrobin
+  -
+    uri: /server_port
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+
+--- request
+GET /server_port?name=unknown
+--- more_headers
+Host: www.test.com
+--- response_body eval
+qr/1980/
+--- error_log
+use config_center: yaml
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: filter_func(match)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    host: *.test.com
+    filter_func: "function(vars) return vars.arg_name == 'json' end"
+    upstream:
+        nodes:
+            "127.0.0.1:1981": 1
+        type: roundrobin
+  -
+    uri: /server_port
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+
+--- request
+GET /server_port?name=json
 --- more_headers
 Host: www.test.com
 --- response_body eval
