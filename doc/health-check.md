@@ -55,7 +55,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
                 "unhealthy": {
                     "interval": 1,
                     "http_failures": 2
-                }
+                },
+                "req_headers": ["User-Agent: curl/7.29.0"]
             },
             "passive": {
                 "healthy": {
@@ -88,6 +89,7 @@ contains: `active` or `passive`.
     The threshold fields of  `unhealthy` are:
     * `active.unhealthy.interval`: Interval between health checks for unhealthy targets (in seconds), the minimum is 1.
     * `active.unhealthy.http_failures`: The number of http failures times to determine the target is unhealthy, the minimum is 1.
+    * `active.req_headers`: Additional request header.
 
 * `passive`: To enable passive health checks, you need to specify the configuration items under `checks.passive` in the Upstream object configuration.
 
