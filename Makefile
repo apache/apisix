@@ -172,7 +172,6 @@ endif
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/stream/router
 	$(INSTALL) lua/apisix/stream/router/*.lua $(INST_LUADIR)/apisix/lua/apisix/stream/router/
 
-	$(INSTALL) COPYRIGHT $(INST_CONFDIR)/COPYRIGHT
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
