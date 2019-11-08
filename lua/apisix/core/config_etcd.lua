@@ -1,5 +1,19 @@
--- Copyright (C) Yuansheng Wang
-
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -19,10 +33,11 @@ local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
 local pcall        = pcall
+local created_obj  = {}
 
 
 local _M = {
-    version = 0.2,
+    version = 0.3,
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
 }
@@ -72,7 +87,7 @@ local function waitdir(etcd_cli, key, modified_index)
     local body = data.body or {}
 
     if body.message then
-        return nil, nil, body.message
+        return body.node, data.headers, body.message
     end
 
     return body.node, data.headers
@@ -154,6 +169,10 @@ local function sync_data(self)
                 self.values_hash[key] = #self.values
                 item.value.id = key
                 item.clean_handlers = {}
+
+                if self.filter then
+                    self.filter(item)
+                end
             end
 
             self:upgrade_version(item.modifiedIndex)
@@ -175,6 +194,9 @@ local function sync_data(self)
     log.debug("res: ", json.delay_encode(res, true))
     log.debug("headers: ", json.delay_encode(headers, true))
     if not res then
+        if headers then
+          self:upgrade_version(headers["X-Etcd-Index"])
+        end
         return false, err
     end
 
@@ -204,6 +226,10 @@ local function sync_data(self)
                           .. "structures. " .. json.encode(res)
         end
         return false
+    end
+
+    if self.filter then
+        self.filter(res)
     end
 
     local pre_index = self.values_hash[key]
@@ -332,6 +358,7 @@ function _M.new(key, opts)
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
+    local filter_fun = opts and opts.filter
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
@@ -346,6 +373,7 @@ function _M.new(key, opts)
         prev_index = nil,
         last_err = nil,
         last_err_time = nil,
+        filter = filter_fun,
     }, mt)
 
     if automatic then
@@ -356,12 +384,21 @@ function _M.new(key, opts)
         ngx_timer_at(0, _automatic_fetch, obj)
     end
 
+    if key then
+        created_obj[key] = obj
+    end
+
     return obj
 end
 
 
 function _M.close(self)
     self.running = false
+end
+
+
+function _M.fetch_created_obj(key)
+    return created_obj[key]
 end
 
 

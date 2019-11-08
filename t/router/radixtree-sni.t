@@ -1,4 +1,20 @@
-use t::APISix 'no_plan';
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+use t::APISIX 'no_plan';
 
 log_level('debug');
 no_root_location();
@@ -142,7 +158,7 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: openresty
+received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
@@ -185,9 +201,9 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: handshake failed
+failed to do SSL handshake: certificate host mismatch
 --- error_log
-SSL_do_handshake() failed (SSL: error:
+not found any valid sni configuration
 
 
 
@@ -291,7 +307,7 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: openresty
+received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log
@@ -402,7 +418,7 @@ sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: openresty
+received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- error_log

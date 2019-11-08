@@ -1,5 +1,22 @@
 #!/usr/bin/env lua
 
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
 local script_path = debug.getinfo(1).source:sub(2)
 
 local function trim(s)
@@ -44,16 +61,20 @@ end
 -- print("apisix_home: ", apisix_home)
 
 do
-    local ok, json = pcall(require, "cjson")
-    if ok and json then
-        io.stderr:write("please remove the cjson library in Lua, it may "
-                        .. "conflict with the cjson library in openresty. "
-                        .. "\n luarocks remove cjson\n")
-        return
+    -- skip luajit environment
+    local ok = pcall(require, "table.new")
+    if not ok then
+        local ok, json = pcall(require, "cjson")
+        if ok and json then
+            io.stderr:write("please remove the cjson library in Lua, it may "
+                            .. "conflict with the cjson library in openresty. "
+                            .. "\n luarocks remove cjson\n")
+            return
+        end
     end
 end
 
-local yaml = require("apisix.core.yaml")
+local yaml = require("tinyyaml")
 local template = require("resty.template")
 
 local ngx_tpl = [=[
@@ -64,20 +85,67 @@ worker_processes auto;
 worker_cpu_affinity auto;
 {% end %}
 
-error_log logs/error.log error;
+error_log {* error_log *} {* error_log_level or "error" *};
 pid logs/nginx.pid;
 
 worker_rlimit_nofile 20480;
 
 events {
     accept_mutex off;
-    worker_connections 10620;
+    worker_connections {* event.worker_connections *};
 }
 
 worker_rlimit_core  500M;
 working_directory   /tmp/apisix_cores/;
 
 worker_shutdown_timeout 3;
+
+{% if stream_proxy then %}
+stream {
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
+                      .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
+                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+                      .. [=[{*lua_cpath*};";
+    lua_socket_log_errors off;
+
+    upstream apisix_backend {
+        server 127.0.0.1:80;
+        balancer_by_lua_block {
+            apisix.stream_balancer_phase()
+        }
+    }
+
+    init_by_lua_block {
+        require "resty.core"
+        apisix = require("apisix")
+        apisix.stream_init()
+    }
+
+    init_worker_by_lua_block {
+        apisix.stream_init_worker()
+    }
+
+    server {
+        {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*port*};
+        {% end %}
+        {% for _, port in ipairs(stream_proxy.udp or {}) do %}
+        listen {*port*} udp;
+        {% end %}
+
+        preread_by_lua_block {
+            apisix.stream_preread_phase()
+        }
+
+        proxy_pass apisix_backend;
+
+        log_by_lua_block {
+            apisix.stream_log_phase()
+        }
+    }
+}
+{% end %}
 
 http {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
@@ -103,7 +171,7 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver ipv6=off local=on;
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} ipv6=off;
     resolver_timeout 5;
 
     lua_http10_buffering off;
@@ -113,9 +181,13 @@ http {
 
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
 
-    access_log logs/access.log main buffer=32768 flush=3;
+    access_log {* http.access_log *} main buffer=32768 flush=3;
     open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
+    keepalive_timeout {* http.keepalive_timeout *};
+    client_header_timeout {* http.client_header_timeout *};
+    client_body_timeout {* http.client_body_timeout *};
+    send_timeout {* http.send_timeout *};
 
     server_tokens off;
     more_set_headers 'Server: APISIX web server';
@@ -161,19 +233,47 @@ http {
                 apisix.http_admin()
             }
         }
+
+        location /apisix/dashboard {
+            index index.html;
+            {%if allow_admin then%}
+                {% for _, allow_ip in ipairs(allow_admin) do %}
+                allow {*allow_ip*};
+                {% end %}
+                deny all;
+            {%end%}
+
+            alias dashboard/;
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Real-PORT $remote_port;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            try_files $uri $uri/ /index.html;
+        }
     }
     {% end %}
 
     server {
         listen {* node_listen *};
-        listen {* node_ssl_listen *} ssl;
+        {% if ssl.enable then %}
+        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        {% end %}
+
         {% if enable_ipv6 then %}
         listen [::]:{* node_listen *};
-        listen [::]:{* node_ssl_listen *} ssl;
+        {% if ssl.enable then %}
+        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
         {% end %}
+        {% end %} {% -- if enable_ipv6 %}
+
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
+
+        ssl_protocols {* ssl.ssl_protocols *};
+        ssl_ciphers {* ssl.ssl_ciphers *};
+        ssl_prefer_server_ciphers on;
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
@@ -197,13 +297,8 @@ http {
                 apisix.http_admin()
             }
         }
-        {% end %}
 
-        ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
-        }
-
-        location /apisix/dashboard/ {
+        location /apisix/dashboard {
             index index.html;
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -219,6 +314,11 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
             try_files $uri $uri/ /index.html;
+        }
+        {% end %}
+
+        ssl_certificate_by_lua_block {
+            apisix.http_ssl_phase()
         }
 
         location / {
@@ -322,11 +422,18 @@ local function get_openresty_version()
     local str = "nginx version: openresty/"
     local ret = excute_cmd("openresty -v 2>&1")
     local pos = string.find(ret,str)
-    if pos ~= 1 then
-        return nil
+    if pos then
+        return string.sub(ret, pos + string.len(str))
     end
 
-    return string.sub(ret,string.len(str)+1)
+    str = "nginx version: nginx/"
+    ret = excute_cmd("openresty -v 2>&1")
+    pos = string.find(ret, str)
+    if pos then
+        return string.sub(ret, pos + string.len(str))
+    end
+
+    return nil
 end
 
 local function split(self, sep)
@@ -367,6 +474,7 @@ init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
+restart:    restart the apisix server
 reload:     reload the apisix server
 version:    print the version of apisix
 ]])
@@ -397,8 +505,12 @@ local function init()
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         node_ssl_listen = 9443,     -- default value
+        error_log = {level = "warn"},
     }
     for k,v in pairs(yaml_conf.apisix) do
+        sys_conf[k] = v
+    end
+    for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
     end
 
@@ -418,7 +530,7 @@ local function init()
 
     local need_ver = "1.15.8"
     if not check_or_version(op_ver, need_ver) then
-        io.stderr:write("openresty version must >=", need_ver, "\n")
+        io.stderr:write("openresty version must >=", need_ver, " current ", op_ver, "\n")
         return
     end
 end
@@ -431,6 +543,10 @@ local function init_etcd(show_output)
         error("failed to read local yaml config of apisix: " .. err)
     end
 
+    if yaml_conf.apisix.config_center ~= "etcd" then
+        return true
+    end
+
     local etcd_conf = yaml_conf.etcd
     local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
@@ -438,7 +554,8 @@ local function init_etcd(show_output)
 
     for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                "/plugins", "/consumers", "/node_status",
-                               "/ssl"}) do
+                               "/ssl", "/global_rules", "/stream_routes",
+                               "/proto"}) do
         local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true "
                     .. "--connect-timeout " .. timeout
@@ -474,6 +591,11 @@ function _M.stop()
     local cmd = openresty_args .. [[ -s stop]]
     -- print(cmd)
     os.execute(cmd)
+end
+
+function _M.restart()
+  _M.stop()
+  _M.start()
 end
 
 function _M.reload()

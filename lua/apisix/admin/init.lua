@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
@@ -10,14 +26,16 @@ local events
 
 
 local resources = {
-    routes    = require("apisix.admin.routes"),
-    services  = require("apisix.admin.services"),
-    upstreams = require("apisix.admin.upstreams"),
-    consumers = require("apisix.admin.consumers"),
-    schema    = require("apisix.admin.schema"),
-    ssl       = require("apisix.admin.ssl"),
-    plugins   = require("apisix.admin.plugins"),
-    proto     = require("apisix.admin.proto"),
+    routes          = require("apisix.admin.routes"),
+    services        = require("apisix.admin.services"),
+    upstreams       = require("apisix.admin.upstreams"),
+    consumers       = require("apisix.admin.consumers"),
+    schema          = require("apisix.admin.schema"),
+    ssl             = require("apisix.admin.ssl"),
+    plugins         = require("apisix.admin.plugins"),
+    proto           = require("apisix.admin.proto"),
+    global_rules    = require("apisix.admin.global_rules"),
+    stream_routes   = require("apisix.admin.stream_routes"),
 }
 
 
@@ -93,19 +111,19 @@ end
 
 local uri_route = {
     {
-        path = [[/apisix/admin/*]],
+        paths = [[/apisix/admin/*]],
+        methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
         handler = run,
-        method = {"GET", "PUT", "POST", "DELETE", "PATCH"},
     },
     {
-        path = [[/apisix/admin/plugins/list]],
+        paths = [[/apisix/admin/plugins/list]],
+        methods = {"GET", "PUT", "POST", "DELETE"},
         handler = get_plugins_list,
-        method = {"GET", "PUT", "POST", "DELETE"},
     },
     {
-        path = reload_event,
+        paths = reload_event,
+        methods = {"PUT"},
         handler = post_reload_plugins,
-        method = {"PUT"},
     },
 }
 

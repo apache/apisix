@@ -1,5 +1,19 @@
--- Copyright (C) Yuansheng Wang
-
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")
@@ -7,6 +21,7 @@ local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
+local loadstring = loadstring
 local user_routes
 local cached_version
 
@@ -25,26 +40,44 @@ local function create_radixtree_router(routes)
     for _, route in ipairs(api_routes) do
         if type(route) == "table" then
             core.table.insert(uri_routes, {
-                path = route.uri,
+                paths = route.uris or route.uri,
+                methods = route.methods,
                 handler = route.handler,
-                method = route.methods,
             })
         end
     end
 
     for _, route in ipairs(routes) do
         if type(route) == "table" then
+            local filter_fun, err
+            if route.value.filter_func then
+                filter_fun, err = loadstring(
+                                        "return " .. route.value.filter_func,
+                                        "router#" .. route.value.id)
+                if not filter_fun then
+                    core.log.error("failed to load filter function: ", err,
+                                   " route id: ", route.value.id)
+                    goto CONTINUE
+                end
+
+                filter_fun = filter_fun()
+            end
+
             core.table.insert(uri_routes, {
-                path = route.value.uri,
-                method = route.value.methods,
-                host = route.value.host,
-                remote_addr = route.value.remote_addr,
+                paths = route.value.uris or route.value.uri,
+                methods = route.value.methods,
+                hosts = route.value.hosts or route.value.host,
+                remote_addrs = route.value.remote_addrs
+                               or route.value.remote_addr,
                 vars = route.value.vars,
+                filter_fun = filter_fun,
                 handler = function (api_ctx)
                     api_ctx.matched_params = nil
                     api_ctx.matched_route = route
                 end
             })
+
+            ::CONTINUE::
         end
     end
 
@@ -90,11 +123,12 @@ function _M.routes()
 end
 
 
-function _M.init_worker()
+function _M.init_worker(filter)
     local err
     user_routes, err = core.config.new("/routes", {
             automatic = true,
-            item_schema = core.schema.route
+            item_schema = core.schema.route,
+            filter = filter,
         })
     if not user_routes then
         error("failed to create etcd instance for fetching /routes : " .. err)

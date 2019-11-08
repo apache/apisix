@@ -1,6 +1,23 @@
-local core = require("apisix.core")
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+local core     = require("apisix.core")
+local consumer = require("apisix.consumer")
 local plugin_name = "key-auth"
-local ipairs = ipairs
+local ipairs   = ipairs
 
 
 local schema = {
@@ -14,6 +31,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2500,
+    type = 'auth',
     name = plugin_name,
     schema = schema,
 }
@@ -27,7 +45,8 @@ do
         core.table.clear(consumer_ids)
 
         for _, consumer in ipairs(consumers.nodes) do
-            consumer_ids[consumer.conf.key] = consumer
+            core.log.info("consumer node: ", core.json.delay_encode(consumer))
+            consumer_ids[consumer.auth_conf.key] = consumer
         end
 
         return consumer_ids
@@ -47,7 +66,11 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing API key found in request"}
     end
 
-    local consumer_conf = core.consumer.plugin(plugin_name)
+    local consumer_conf = consumer.plugin(plugin_name)
+    if not consumer_conf then
+        return 401, {message = "Missing related consumer"}
+    end
+
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
             consumer_conf.conf_version,
             create_consume_cache, consumer_conf)
@@ -58,6 +81,7 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
+    ctx.consumer = consumer
     ctx.consumer_id = consumer.consumer_id
     core.log.info("hit key-auth rewrite")
 end

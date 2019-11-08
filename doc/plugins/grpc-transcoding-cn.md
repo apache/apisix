@@ -1,3 +1,22 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 [English](grpc-transcoding.md)
 # grpc-transcoding
 
@@ -43,7 +62,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 
 在指定 route 中，代理 grpc 服务接口:
 
-* 注意： 这个 route 的属性`service_protocal` 必须设置为 `grpc`
+* 注意： 这个 route 的属性`service_protocol` 必须设置为 `grpc`
 * 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)
 
 ```shell
