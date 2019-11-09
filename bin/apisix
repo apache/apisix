@@ -497,7 +497,7 @@ local function init()
         with_module_status = false
     end
 
-    -- -- Using template.render
+    -- Using template.render
     local sys_conf = {
         lua_path = package.path,
         lua_cpath = package.cpath,

@@ -56,3 +56,17 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 5. 高性能
 
 APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和KV数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
+
+## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
+
+遇到 luarocks 慢的问题，有以下两种可能：
+
+1. luarocks 安装所使用的服务器不能访问
+2. 你所在的网络到 github 服务器之间有地方对 `git` 协议进行封锁
+
+针对第一个问题，你可以使用 https_proxy 或者使用 `--server` 选项来指定一个你可以访问或者访问更快的
+luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令在 luarocks 3.0 版本后开始支持）
+可以查看有哪些可用服务。
+
+如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
+第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
