@@ -507,6 +507,15 @@ local function init()
         node_ssl_listen = 9443,     -- default value
         error_log = {level = "warn"},
     }
+
+    if not yaml_conf.apisix then
+        error("failed to read `apisix` field from yaml file")
+    end
+
+    if not yaml_conf.nginx_config then
+        error("failed to read `nginx_config` field from yaml file")
+    end
+
     for k,v in pairs(yaml_conf.apisix) do
         sys_conf[k] = v
     end
@@ -543,8 +552,16 @@ local function init_etcd(show_output)
         error("failed to read local yaml config of apisix: " .. err)
     end
 
+    if not yaml_conf.apisix then
+        error("failed to read `apisix` field from yaml file when init etcd")
+    end
+
     if yaml_conf.apisix.config_center ~= "etcd" then
         return true
+    end
+
+    if not yaml_conf.etcd then
+        error("failed to read `etcd` field from yaml file when init etcd")
     end
 
     local etcd_conf = yaml_conf.etcd
