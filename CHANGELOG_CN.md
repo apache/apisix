@@ -34,7 +34,7 @@
 - :sunrise: **[支持 stream 代理](https://github.com/apache/incubator-apisix/blob/master/doc/stream-proxy-cn.md)**. [#513](https://github.com/apache/incubator-apisix/pull/513)
 - :sunrise: 支持[在 consumer 上绑定插件](https://github.com/apache/incubator-apisix/blob/master/doc/architecture-design-cn.md#consumer). [#544](https://github.com/apache/incubator-apisix/pull/544)
 - 上游增加对域名的支持，而不仅是 IP。[#522](https://github.com/apache/incubator-apisix/pull/522)
-- 当上游节点的权重为 0 是自动忽略。[#536](https://github.com/apache/incubator-apisix/pull/536)
+- 当上游节点的权重为 0 时自动忽略。[#536](https://github.com/apache/incubator-apisix/pull/536)
 
 ### Plugins
 - :sunrise: **[MQTT 代理](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/mqtt-proxy-cn.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT 3.1 和 5.0 两个协议标准。 [#513](https://github.com/apache/incubator-apisix/pull/513)
@@ -54,7 +54,7 @@
 
 
 ### Bugfix
-- 健康检查: 修复在多 worker 下运行的话，健康检查 checker 的名字错误。 [#568](https://github.com/apache/incubator-apisix/issues/568)
+- 健康检查: 修复在多 worker 下运行时健康检查 checker 的名字错误。 [#568](https://github.com/apache/incubator-apisix/issues/568)
 
 ### Dependencies
 - 把 `lua-tinyyaml` 从源码中移除，通过 Luarocks 来安装。
