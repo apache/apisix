@@ -15,12 +15,12 @@
 -- limitations under the License.
 --
 package = "apisix"
-version = "master-0"
+version = "0.9-rc1"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/incubator-apisix",
-    branch = "master",
+    branch = "0.9-rc1",
 }
 
 description = {
