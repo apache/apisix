@@ -198,7 +198,7 @@ GET /add_more_consumer
 --- pipelined_requests eval
 ["GET /add_more_consumer", "GET /hello"]
 --- more_headers
-apikey: auth-one
+apikey: auth-13
 --- response_body eval
 ["passed\n", "hello world\n"]
 --- no_error_log
