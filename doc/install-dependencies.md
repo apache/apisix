@@ -24,6 +24,7 @@
 * [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
 * [Debian 9 & 10](#debian-9--10)
 * [Mac OSX](#mac-osx)
+* [How to compile the Openresty](#how-to-compile-the-openresty)
 
 CentOS 6
 ========
@@ -119,4 +120,25 @@ brew install openresty/brew/openresty etcd luarocks curl git
 
 # start etcd server with v2 protocol
 etcd --enable-v2=true &
+```
+
+How to compile the Openresty
+=======
+
+It is possible that you are using a custom version of Linux instead of a common distribution. In this case, you need to compile Openresty yourself. The following are commands about how to compile the Openresty.
+
+```
+## install common compile tools
+yum install -y yum-utils pcre-devel openssl-devel gcc curl
+
+## download the Openresty and compile
+wget https://openresty.org/download/openresty-1.15.8.2.tar.gz
+tar -zxvf openresty-1.15.8.2.tar.gz
+cd openresty-1.15.8.2
+./configure --with-pcre-jit --with-http_ssl_module --with-http_realip_module --with-http_stub_status_module --with-http_v2_module
+make -j2
+make install
+
+## config the PATH vars.
+export PATH=/usr/local/openresty/bin:$PATH
 ```
