@@ -170,7 +170,15 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
+_EOC_
 
+    my $ipv6_fake_server = "";
+    if (defined $block->listen_ipv6) {
+        $ipv6_fake_server = "listen \[::1\]:1980;";
+    }
+
+    $http_config .= <<_EOC_;
+        $ipv6_fake_server
         server_tokens off;
 
         location / {

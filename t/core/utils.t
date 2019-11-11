@@ -53,9 +53,9 @@ qr/random seed \d+\ntwice: false/
                 {addr = "www.test.com", host = "www.test.com", port = 80},
                 {addr = "www.test.com:90", host = "www.test.com", port = 90},
                 {addr = "[127.0.0.1:90", host = "[127.0.0.1:90", port = 80},
-                {addr = "[::1]", host = "::1", port = 80},
-                {addr = "[::1]:1234", host = "::1", port = 1234},
-                {addr = "[::1234:1234]:12345", host = "::1234:1234", port = 12345},
+                {addr = "[::1]", host = "[::1]", port = 80},
+                {addr = "[::1]:1234", host = "[::1]", port = 1234},
+                {addr = "[::1234:1234]:12345", host = "[::1234:1234]", port = 12345},
             }
             for _, case in ipairs(cases) do
                 local host, port = parse_addr(case.addr)
@@ -66,3 +66,5 @@ qr/random seed \d+\ntwice: false/
     }
 --- request
 GET /t
+--- no_error_log
+[error]
