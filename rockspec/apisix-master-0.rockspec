@@ -47,6 +47,7 @@ dependencies = {
     "lua-tinyyaml = 0.1",
     "iresty-nginx-lua-prometheus = 0.20190917",
     "jsonschema = 0.4",
+    "lua-resty-ipmatcher = 0.3",
 }
 
 build = {

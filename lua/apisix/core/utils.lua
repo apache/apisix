@@ -96,8 +96,8 @@ end
 
 -- parse_addr parses 'addr' into the host and the port parts. If the 'addr'
 -- doesn't have a port, 80 is used to return. For malformed 'addr', the entire
--- 'addr' is returned as the host part. For IPv6 literal host, like [::1], the
--- square brackets will be removed.
+-- 'addr' is returned as the host part. For IPv6 literal host, like [::1],
+-- the square brackets will be kept.
 function _M.parse_addr(addr)
     local default_port = 80
     if str_byte(addr, 1) == str_byte("[") then
@@ -106,7 +106,7 @@ function _M.parse_addr(addr)
         local len = #addr
         if str_byte(addr, len) == right_bracket then
             -- addr in [ip:v6] format
-            return sub_str(addr, 2, len-1), default_port
+            return addr, default_port
         else
             local pos = rfind_char(addr, ":", #addr - 1)
             if not pos or str_byte(addr, pos - 1) ~= right_bracket then
@@ -115,7 +115,7 @@ function _M.parse_addr(addr)
             end
 
             -- addr in [ip:v6]:port format
-            local host = sub_str(addr, 2, pos - 2)
+            local host = sub_str(addr, 1, pos - 1)
             local port = sub_str(addr, pos + 1)
             return host, tonumber(port)
         end

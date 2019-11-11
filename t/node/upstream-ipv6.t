@@ -16,8 +16,6 @@
 #
 use t::APISIX;
 
-no_root_location();
-
 my $travis_os_name = $ENV{TRAVIS_OS_NAME};
 if ((defined $travis_os_name) && $travis_os_name eq "linux") {
     plan(skip_all =>
@@ -26,33 +24,40 @@ if ((defined $travis_os_name) && $travis_os_name eq "linux") {
     plan 'no_plan';
 }
 
+repeat_each(1);
+log_level('info');
+worker_connections(256);
+no_root_location();
+no_shuffle();
+
+add_block_preprocessor(sub {
+    my $block = shift;
+    $block->set_value("listen_ipv6", 1);
+});
+
 run_tests();
 
 __DATA__
 
-=== TEST 1: set route: remote addr = ::1
+=== TEST 1: set upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "remote_addr": "::1",
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
+                    "nodes": {
+                        "[::1]:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
                 }]]
                 )
 
             if code >= 300 then
                 ngx.status = code
             end
-
             ngx.say(body)
         }
     }
@@ -65,71 +70,49 @@ passed
 
 
 
-=== TEST 2: IPv6 /not_found
---- listen_ipv6
+=== TEST 2: set route(id: 1)
 --- config
-location /t {
-    content_by_lua_block {
-        ngx.sleep(0.2)
-        local t = require("lib.test_admin").test_ipv6
-        t('/not_found')
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
     }
-}
---- request
-GET /t
---- response_body_like eval
-qr{.*404 Not Found.*}
---- no_error_log
-[error]
-
-
-
-=== TEST 3: IPv4 /not_found
---- listen_ipv6
---- request
-GET /not_found
---- error_code: 404
---- response_body_like eval
-qr{.*404 Not Found.*}
---- no_error_log
-[error]
-
-
-
-=== TEST 4: IPv6 /hello
---- listen_ipv6
---- config
-location /t {
-    content_by_lua_block {
-        ngx.sleep(0.2)
-        local t = require("lib.test_admin").test_ipv6
-        t('/hello')
-    }
-}
 --- request
 GET /t
 --- response_body
-connected: 1
-request sent: 59
-received: HTTP/1.1 200 OK
-received: Content-Type: text/plain
-received: Connection: close
-received: Server: openresty
-received: 
-received: hello world
-failed to receive a line: closed []
-close: 1 nil
+passed
 --- no_error_log
 [error]
 
 
 
-=== TEST 5: IPv4 /hello
---- listen_ipv6
+=== TEST 3: /not_found
+--- request
+GET /not_found
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: hit routes
 --- request
 GET /hello
---- error_code: 404
---- response_body_like eval
-qr{.*404 Not Found.*}
+--- response_body
+hello world
 --- no_error_log
 [error]
