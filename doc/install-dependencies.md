@@ -1,10 +1,49 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 # Install Dependencies
 
-* [CentOS 7](#centos-7)
-* [Ubuntu 18.04](#ubuntu-1804)
-* [Debian 9](#debian-9)
 * [CentOS 6](#centos-6)
+* [CentOS 7](#centos-7)
+* [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
+* [Debian 9 & 10](#debian-9--10)
 * [Mac OSX](#mac-osx)
+
+CentOS 6
+========
+
+```shell
+# add openresty source
+sudo yum install yum-utils
+sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+
+# install openresty, etcd and some compilation tools
+sudo yum install -y openresty curl git gcc luarocks lua-devel make
+
+wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
+    cd etcd-v3.3.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# start etcd server
+nohup etcd &
+```
 
 CentOS 7
 ========
@@ -19,17 +58,14 @@ sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
 # install openresty, etcd and some compilation tools
-sudo yum install -y etcd openresty curl git automake autoconf \
-    gcc pcre-devel libtool gcc-c++ luarocks cmake3 lua-devel
-
-sudo ln -s /usr/bin/cmake3 /usr/bin/cmake
+sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
 
 # start etcd server
 sudo service etcd start
 ```
 
-Ubuntu 18.04
-============
+Ubuntu 16.04 & 18.04
+====================
 
 ```shell
 # add openresty source
@@ -39,16 +75,14 @@ sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_releas
 sudo apt-get update
 
 # install openresty, etcd and some compilation tools
-sudo apt-get install -y git etcd openresty curl luarocks\
-    check libpcre3 libpcre3-dev libjemalloc-dev \
-    libjemalloc1 build-essential libtool automake autoconf pkg-config cmake
+sudo apt-get install -y git etcd openresty curl luarocks
 
 # start etcd server
 sudo service etcd start
 ```
 
-Debian 9 && 10
-========
+Debian 9 & 10
+=============
 
 ```shell
 # optional
@@ -56,6 +90,7 @@ sed -i 's|^deb http://deb.debian.org/debian|deb http://mirrors.huaweicloud.com/d
 sed -i 's|^deb http://security.debian.org/debian-security|deb http://mirrors.huaweicloud.com/debian-security|g' /etc/apt/sources.list
 apt update
 apt install wget gnupg -y
+
 # add openresty source
 wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 sudo apt-get -y install software-properties-common
@@ -69,41 +104,18 @@ tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install openresty and some compilation tools
-
-sudo apt-get install -y git openresty cmake curl \
-    check libpcre3 libpcre3-dev libjemalloc-dev \
-    build-essential libtool automake autoconf pkg-config
-
-# install luarocks
-# (the version must > 3.0, --lua-dir was first introduced in the luarocks 3.0 release)
-
-wget https://luarocks.org/releases/luarocks-3.1.3.tar.gz
-tar zxpf luarocks-3.1.3.tar.gz
-cd luarocks-3.1.3
-
-* Run `./configure --with-lua=/usr/local/openresty/luajit/`. (This will attempt to detect your installation of Lua. If you get any error messages, see the section "Customizing your settings", below.)
-* Run `make build`.
-* As superuser, run `make install`.
-ln -s /usr/local/bin/luarocks /usr/bin/luarocks
-
+sudo apt-get install -y git openresty curl luarocks make
 
 # start etcd server
 nohup etcd &
 ```
-
-CentOS 6
-========
-
-TODO
-
-Failed to compile `rapidjson`, and the compilation of `libr3` relies on later versions of `autoconf` and `pcre`, but the CentOS 6 comes with a lower version, will support CentOS 6 later.
 
 Mac OSX
 =======
 
 ```shell
 # install openresty, etcd and some compilation tools
-brew install autoconf automake check pkg-config pcre cmake libtool openresty/brew/openresty etcd luarocks
+brew install openresty/brew/openresty etcd luarocks curl git
 
 # start etcd server with v2 protocol
 etcd --enable-v2=true &
