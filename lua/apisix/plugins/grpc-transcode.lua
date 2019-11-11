@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local ngx         = ngx
 local core        = require("apisix.core")
 local plugin_name = "grpc-transcode"
@@ -52,7 +68,7 @@ function _M.access(conf, ctx)
 
     local ok, err = request(proto_obj, conf.service, conf.method)
     if not ok then
-        core.log.error("trasnform request error: ", err)
+        core.log.error("transform request error: ", err)
         return
     end
 
@@ -82,7 +98,7 @@ function _M.body_filter(conf, ctx)
 
     local err = response(proto_obj, conf.service, conf.method)
     if err then
-        core.log.error("trasnform response error: ", err)
+        core.log.error("transform response error: ", err)
         return
     end
 end

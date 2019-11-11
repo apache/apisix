@@ -1,3 +1,19 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 BEGIN {
     if ($ENV{TEST_NGINX_CHECK_LEAK}) {
         $SkipReason = "unavailable for the hup tests";
@@ -69,7 +85,7 @@ GET /t
 --- request
 GET /t
 --- response_body_like eval
-qr/invalid cidr range: Invalid octet: 256/
+qr/invalid ip address: 10.255.256.0\/24/
 --- no_error_log
 [error]
 
@@ -97,7 +113,7 @@ qr/invalid cidr range: Invalid octet: 256/
 --- request
 GET /t
 --- response_body_like eval
-qr@invalid cidr range: Invalid prefix: /38@
+qr@invalid ip address: 10.255.254.0/38@
 --- no_error_log
 [error]
 
@@ -120,7 +136,7 @@ qr@invalid cidr range: Invalid prefix: /38@
 --- request
 GET /t
 --- response_body
-invalid "oneOf" in docuement at pointer "#"
+value should match only one schema, but matches none
 done
 --- no_error_log
 [error]
@@ -144,7 +160,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/blacklist"
+property "blacklist" validation failed: expect array to have at least 1 items
 done
 --- no_error_log
 [error]
@@ -167,7 +183,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "oneOf" in docuement at pointer "#"
+value should match only one schema, but matches both schemas 1 and 2
 done
 --- no_error_log
 [error]
@@ -256,7 +272,7 @@ GET /hello
 
 
 
-=== TEST 11: hit route and ipv6 not not in the whitelist
+=== TEST 11: hit route and IPv6 not not in the whitelist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;
@@ -355,7 +371,7 @@ hello world
 
 
 
-=== TEST 16: hit route and ipv6 not not in the blacklist
+=== TEST 16: hit route and IPv6 not not in the blacklist
 --- http_config
 set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;
@@ -410,5 +426,145 @@ passed
 GET /hello
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: sanity(IPv6)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ip-restriction")
+            local conf = {
+                whitelist = {
+                    "::1",
+                    "fe80::/32",
+                    "2001:DB8:0:23:8:800:200C:417A",
+                }
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("pass")
+        }
+    }
+--- request
+GET /t
+--- response_body
+pass
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: set blacklist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ip-restriction": {
+                            "blacklist": [
+                                "::1",
+                                "fe80::/32"
+                            ]
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: hit route
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: hit route and IPv6 in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: ::1
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: hit route and IPv6 in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: fe80::1:1
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: wrong IPv6 format
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ip-restriction")
+            for i, ip in ipairs({"::1/129", "::ffgg"}) do
+                local conf = {
+                    whitelist = {
+                        ip
+                    }
+                }
+                local ok, err = plugin.check_schema(conf)
+                if not ok then
+                    ngx.say(err)
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid ip address: ::1/129
+property "whitelist" validation failed: failed to validate item 1: object matches none of the alternatives
 --- no_error_log
 [error]

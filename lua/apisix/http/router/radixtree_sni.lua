@@ -1,5 +1,19 @@
--- Copyright (C) Yuansheng Wang
-
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local get_request      = require("resty.core.base").get_request
 local radixtree_new    = require("resty.radixtree").new
 local core             = require("apisix.core")
@@ -41,7 +55,7 @@ local function create_router(ssl_items)
             local sni = ssl.value.sni:reverse()
             idx = idx + 1
             route_items[idx] = {
-                path = sni,
+                paths = sni,
                 handler = function (api_ctx)
                     if not api_ctx then
                         return
@@ -67,6 +81,8 @@ local function set_pem_ssl_key(cert, pkey)
     if r == nil then
         return false, "no request found"
     end
+
+    ngx_ssl.clear_certs()
 
     local out = ffi.new("char [?]", #cert)
     local rc = C.ngx_http_lua_ffi_cert_pem_to_der(cert, #cert, out, errmsg)
@@ -99,9 +115,7 @@ local function set_pem_ssl_key(cert, pkey)
 end
 
 
-function _M.match(api_ctx)
-    ngx_ssl.clear_certs()
-
+function _M.match_and_set(api_ctx)
     local err
     if not radixtree_router or
        radixtree_router_ver ~= ssl_certificates.conf_version then
