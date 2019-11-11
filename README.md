@@ -84,8 +84,6 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **Global Rule**: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
 - **[TCP/UDP Proxy](doc/stream-proxy.md)**: Dynamic TCP/UDP proxy.
 - **[Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md)**: Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
-- **ACL**: TODO.
-- **Bot detection**: TODO.
 
 ## Online Demo Dashboard
 We provide an online dashboard [demo version](http://apisix.iresty.com)， make it easier for you to understand APISIX.
