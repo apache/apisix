@@ -402,7 +402,7 @@ _M.proto = {
     type = "object",
     properties = {
         content = {
-            type = "string", minLength = 1, maxLength = 4096
+            type = "string", minLength = 1, maxLength = 1024*1024
         }
     },
     required = {"content"},
