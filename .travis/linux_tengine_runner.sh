@@ -68,9 +68,13 @@ tengine_install() {
 
     cd openresty-1.15.8.2
 
+    # patching start
     # https://github.com/alibaba/tengine/issues/1381#issuecomment-541493008
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-balancer_status_code.patch
-    patch -p1 < patches/nginx-1.17.4-balancer_status_code.patch
+    cd bundle/tengine-2.3.2
+    patch -p1 < ../../patches/nginx-1.17.4-balancer_status_code.patch
+    cd -
+    # patching end
 
     ./configure --prefix=${OPENRESTY_PREFIX} --with-debug \
         --with-compat \
