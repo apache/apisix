@@ -106,7 +106,7 @@ function _M.parse_addr(addr)
         local len = #addr
         if str_byte(addr, len) == right_bracket then
             -- addr in [ip:v6] format
-            return sub_str(addr, 1, len), default_port
+            return addr, default_port
         else
             local pos = rfind_char(addr, ":", #addr - 1)
             if not pos or str_byte(addr, pos - 1) ~= right_bracket then
