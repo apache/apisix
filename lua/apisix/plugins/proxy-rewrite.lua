@@ -49,6 +49,11 @@ local schema = {
             type = "object",
             minProperties = 1,
         },
+        resp_headers = {
+            description = "new headers for repsonse",
+            type = "object",
+            minProperties = 1,
+        },        
     },
     minProperties = 1,
 }
@@ -106,6 +111,18 @@ function _M.rewrite(conf, ctx)
     if conf.headers then
         for header_name, header_value in pairs(conf.headers) do
             core.request.set_header(header_name, header_value)
+        end
+    end
+end
+
+function _M.header_filter(conf, ctx)
+    if ngx.status >= 300 then
+        return
+    end
+
+    if conf.resp_headers then
+        for header_name, header_value in pairs(conf.resp_headers) do
+            ngx.header[header_name] = header_value
         end
     end
 end

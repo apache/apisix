@@ -30,6 +30,7 @@ upstream proxy info rewrite plugin.
 |host            |No| Upstream new `host` forwarding address, example `iresty.com`. |
 |enable_websocket|No| enable `websocket`(boolean), default `false`.|
 |headers         |No| Forward to the new `headers` of the upstream, can set up multiple. If it exists, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header.|
+|resp_headers    |No| set a new to `headers` , and return it to client, can set up multiple. If upstream aleady return the same head field, will rewrite the header, otherwise will add the header.|
 
 ### Example
 
