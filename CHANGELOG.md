@@ -28,7 +28,7 @@
 ## 0.9.0-RC1
 > Released on 2019/11/11
 
-This release brings many new features, such as support for running APISIX with Tengine, 
+This release brings many new features, such as support for running APISIX with Tengine,
 an advanced debugging mode that is more developer friendly, and a new URI redirection plugin.
 
 ### Core
