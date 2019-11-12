@@ -229,18 +229,27 @@ You can view the [benchmark documentation](doc/benchmark.md) for more detailed i
 
 
 ## Who Uses APISIX?
-A wide variety of companies and organizations use APISIX for research, production and commercial product.
-Here is the User Wall of APISIX.
-
-![](doc/images/user-wall.jpg)
+A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
+1. cunw.com.cn
+1. dasouche.com
+1. fansup.mobi
+1. haieruplus.com
+1. ke.com
+1. meizu.com
+1. taikang.com
+1. tangdou.com
+1. Tencent Cloud
+1. zuzuche.com
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 
 ## Landscape
-
-APISIX enriches the [CNCF API Gateway Landscape](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
-
-![](doc/images/cncf-landscope.jpg)
+<p align="left">
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
+<br/><br/>
+APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
+CNCF API Gateway Landscape.</a>
+</p>
 
 ## FAQ
 
