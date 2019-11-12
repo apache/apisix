@@ -757,10 +757,16 @@ x-real-ip: 127.0.0.1
                         "plugins": {
                             "proxy-rewrite": {
                                 "uri": "/uri/plugin_proxy_rewrite",
-                                "resp_headers": {
-                                    "Access-Control-Allow-Origin": "*",
-                                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
-                                }                              
+                                "resp_headers": [
+                                    {
+                                        "field":"Access-Control-Allow-Origin",
+                                        "value":"*"
+                                    },
+                                    {
+                                        "field":"Access-Control-Allow-Methods",
+                                        "value":"POST, OPTIONS"
+                                    }
+                                ]
                             }
                         },
                         "upstream": {
@@ -791,8 +797,8 @@ passed
 === TEST 27: check response headers
 --- request
 GET /hello HTTP/1.1
--- response_headers
+--- response_headers
 Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Methods: POST, OPTIONS
 --- no_error_log
 [error]

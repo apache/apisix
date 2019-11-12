@@ -51,8 +51,23 @@ local schema = {
         },
         resp_headers = {
             description = "new headers for repsonse",
-            type = "object",
-            minProperties = 1,
+            type = "array",
+            minItems = 1,
+            items = {
+                    type = "object",
+                    properties = {
+                        field = {
+                            type = "string",
+                            minLength   = 1,
+                            maxLength   = 256
+                        },
+                        value = {
+                            type = "string",
+                            minLength   = 0,
+                            maxLength   = 4096
+                        },
+                    }
+            },
         },
     },
     minProperties = 1,
@@ -121,8 +136,9 @@ function _M.header_filter(conf, ctx)
     end
 
     if conf.resp_headers then
-        for header_name, header_value in pairs(conf.resp_headers) do
-            ngx.header[header_name] = header_value
+        for _,v in ipairs(conf.resp_headers) do
+            -- will delete header if value is empty string
+            ngx.header[v.field] = v.value
         end
     end
 end
