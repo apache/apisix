@@ -157,17 +157,27 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 - 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
 ## APISIX 的用户有哪些？
-有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中。下面是 APISIX 的用户墙：
+有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
 
-![](doc/images/user-wall.jpg)
+1. cunw.com.cn 新云网
+1. dasouche.com 大搜车
+1. fansup.mobi
+1. haieruplus.com 海尔优家
+1. ke.com 贝壳找房
+1. meizu.com 魅族
+1. taikang.com 泰康云
+1. tangdou.com 糖豆网
+1. Tencent Cloud 腾讯云
+1. zuzuche.com 租租车
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 
 ## 全景图
-
-APISIX 被纳入 [云原生软件基金会 API 网关全景图](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
-
-![](doc/images/cncf-landscope.jpg)
+<p align="left">
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
+<br/><br/>
+APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
+</p>
 
 ## 常见问题（FAQ）
 在社区中经常会有开发者问到的一些问题，我们整理在下面这份 [FAQ](FAQ_CN.md) 中：
