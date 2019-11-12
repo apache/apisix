@@ -39,9 +39,9 @@ help:
 	@grep -E '^### [-A-Za-z0-9_]+:' Makefile | sed 's/###/   /'
 
 
-### dev:          Create a development ENV
-.PHONY: dev
-dev:
+### deps:         Installation dependencies
+.PHONY: deps
+deps:
 ifeq ($(UNAME),Darwin)
 	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
@@ -49,6 +49,11 @@ else ifneq ($(LUAROCKS_VER),'luarocks 3.')
 else
 	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 endif
+
+
+### utils:        Installation tools
+.PHONY: utils
+utils:
 ifeq ($(lj-releng-exist), not_exist)
 	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
 	chmod a+x utils/lj-releng
@@ -118,15 +123,6 @@ endif
 ### install:      Install the apisix
 .PHONY: install
 install:
-ifneq ($(WITHOUT_DASHBOARD),1)
-	$(INSTALL) -d /usr/local/apisix/dashboard
-	cd `mktemp -d /tmp/apisix.XXXXXX` && \
-		git clone https://github.com/apache/incubator-apisix.git apisix --recursive && \
-		cd apisix && \
-		cp -r dashboard/* /usr/local/apisix/dashboard
-	chmod -R 755 /usr/local/apisix/dashboard
-endif
-
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
