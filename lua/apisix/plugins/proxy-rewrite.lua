@@ -53,7 +53,7 @@ local schema = {
             description = "new headers for repsonse",
             type = "object",
             minProperties = 1,
-        },        
+        },
     },
     minProperties = 1,
 }
