@@ -33,7 +33,7 @@ cd apisix
 git submodule update --init --recursive
 
 # install dependency
-make dev
+make deps
 ```
 
 If all goes well, you will see this message at the end:
@@ -101,12 +101,12 @@ $ make help
 Makefile rules:
 
     help:         Show Makefile rules.
-    dev:          Create a development ENV
+    deps:         Installation dependencies
+    utils:        Installation utils
     check:        Check Lua source code
     init:         Initialize the runtime environment
     run:          Start the apisix server
     stop:         Stop the apisix server
-    restart:      restart the apisix server
     clean:        Remove generated files
     reload:       Reload the apisix server
     install:      Install the apisix
