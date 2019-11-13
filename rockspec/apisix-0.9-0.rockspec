@@ -15,12 +15,12 @@
 -- limitations under the License.
 --
 package = "apisix"
-version = "0.9-rc1"
+version = "0.9-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/incubator-apisix",
-    branch = "0.9-rc1",
+    branch = "v0.9",
 }
 
 description = {
@@ -47,6 +47,7 @@ dependencies = {
     "lua-tinyyaml = 0.1",
     "iresty-nginx-lua-prometheus = 0.20190917",
     "jsonschema = 0.4",
+    "lua-resty-ipmatcher = 0.3",
 }
 
 build = {
