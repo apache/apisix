@@ -66,7 +66,7 @@ function _M.access(conf, ctx)
         return
     end
 
-    local ok, err = request(proto_obj, conf.service, conf.method)
+    local ok, err = request(proto_obj, conf.service, conf.method, conf.option)
     if not ok then
         core.log.error("transform request error: ", err)
         return
@@ -96,7 +96,7 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local err = response(proto_obj, conf.service, conf.method)
+    local err = response(proto_obj, conf.service, conf.method, conf.option)
     if err then
         core.log.error("transform response error: ", err)
         return
