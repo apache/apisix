@@ -99,17 +99,17 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
 
 安装 APISIX 的主要步骤：
 
-1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档]((doc/install-dependencies.md).
+1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/install-dependencies.md).
 
     你可以把 OpenResty 替换为 Tengine，参考该安装脚本 [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh)。
 
     *注意*：APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。 在启动参数中添加 `--enable-v2=true`，启用 v2 协议。支持 etcd v3 协议的开发工作正在进行中。
 
 3. 有以下几种方式来安装 Apache APISIX:
-    - 如果你在使用 CentOS 7，我们推荐使用 [RPM 包安装](#通过-rpm-包安装centos-7)；
-    - 在 macOS 中，你需要克隆该仓库并手动安装，请参考[开发手册](doc/dev-manual-cn.md)；
-    - 其它操作系统，我们推荐使用 [Luarocks 安装方式](doc/install-cn.md#通过-luarocks-安装-不支持-macos)；
-    - 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装。
+    - 通过[源码安装](doc/install-cn.md#通过源码安装);
+    - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/install-cn.md#通过-rpm-包安装centos-7)；
+    - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/install-cn.md#通过-luarocks-安装-不支持-macos)；
+    - 你也可以使用 [Docker 镜像](https://github.com/apache/incubator-apisix-docker) 来安装。
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
 
@@ -159,9 +159,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
 
-1. cunw.com.cn 新云网
 1. dasouche.com 大搜车
-1. fansup.mobi
 1. haieruplus.com 海尔优家
 1. ke.com 贝壳找房
 1. meizu.com 魅族
