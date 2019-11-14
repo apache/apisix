@@ -65,11 +65,9 @@ nginx_config:                     # config for render the template to genarate n
     client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
     client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
     send_timeout: 10s              # timeout for transmitting a response to the client.then the connection is closed
-  client_body_buffer_size: 16k   # Sets buffer size for reading client request body
   #server:                          # set custusmized directives in nginx.conf server field, this is for HTTP server ONLY
-  #  server_tokens: on             # Enables emitting nginx version on error pages and in the "Server"
-  #  add_header: "API-Gateway-ID: '001'" # add custusmized header
-
+  #  client_body_buffer_size: 16k   # Sets buffer size for reading client request body
+ 
 etcd:
   host: "http://127.0.0.1:2379"   # etcd address
   prefix: "/apisix"               # apisix configurations prefix

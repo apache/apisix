@@ -260,7 +260,7 @@ http {
         {*directive*} {*directive_val*};
         {% end %}
         {% end %}
-            
+
         listen {* node_listen *};
         {% if ssl.enable then %}
         listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
