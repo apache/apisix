@@ -30,9 +30,6 @@
 git clone git@github.com:iresty/apisix.git
 cd apisix
 
-# init submodule
-git submodule update --init --recursive
-
 # install dependency
 make deps
 ```

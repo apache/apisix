@@ -17,8 +17,20 @@
 #
 -->
 
-## 通过 RPM 包安装（CentOS 7）
+## 通过源码安装
+你可以下载 Apache release 包（Apache APISIX 还没有发布 Apache release），
+或者从 GitHub 下载源码：
 
+```shell
+git clone git@github.com:iresty/apisix.git
+```
+
+### install dependency
+```
+luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
+```
+
+## 通过 RPM 包安装（CentOS 7）
 ```shell
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
@@ -30,7 +42,7 @@ sudo yum install -y https://github.com/apache/incubator-apisix/releases/download
 
 ## 通过 Luarocks 安装 （不支持 macOS）
 
-在终端中执行下面命令完成 APISIX 的安装：
+在终端中执行下面命令完成 APISIX 的安装（只推荐开发者使用）：
 
 > 通过脚本安装 master 分支的代码
 
