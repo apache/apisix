@@ -36,8 +36,8 @@
 在指定 Route 中，代理 gRPC 服务接口:
 
 * 注意： 这个 Route 的属性 `service_protocol` 必须设置为 `grpc`；
-* 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务, 所以需要先 [配置 SSL 证书](https://github.com/iresty/apisix/blob/master/doc/https-cn.md)；
-* 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/nic-chen/grpc_server_example)。
+* 注意： APISIX 使用 TLS 加密的 HTTP/2 暴露 gRPC 服务, 所以需要先 [配置 SSL 证书](https-cn.md)；
+* 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/iresty/grpc_server_example)。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
