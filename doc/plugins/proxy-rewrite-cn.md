@@ -50,7 +50,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "headers": {
                 "X-Api-Version": "v1",
                 "X-Api-Engine": "apisix",
-                "X-Api-useless": "",
+                "X-Api-useless": ""
             }
         }
     },
