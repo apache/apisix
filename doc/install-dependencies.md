@@ -124,7 +124,7 @@ etcd --enable-v2=true &
 ```
 
 How to compile the OpenResty
-=======
+============================
 
 Compiling OpenResty from source is very complicated, it's not easy to make it clear. So we recommend that you refer to the official installation documentation.
 
