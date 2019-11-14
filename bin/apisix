@@ -284,6 +284,12 @@ http {
         }
         {% end %}
 
+        {% if server then %}
+        {% for directive, directive_val in pairs(server) do %}
+        {*directive*} {*directive_val*};
+        {% end %}
+        {% end %}
+
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
             {%if allow_admin then%}
