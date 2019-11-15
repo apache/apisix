@@ -43,11 +43,11 @@ help:
 .PHONY: deps
 deps:
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 else
-	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 endif
 
 

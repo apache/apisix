@@ -32,8 +32,6 @@ APISIX is a cloud-native microservices API gateway, delivering the ultimate perf
 
 APISIX is based on Nginx and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
 
-[Installation](#Installation) | [Documentation](doc/README.md) | [Development ENV](#development-manual-of-apisix) | [FAQ](FAQ.md)
-
 ## Why APISIX?
 
 If you are building a website, mobile device or IoT (Internet of Things) application, you may need to use an API gateway to handle interface traffic.
@@ -171,10 +169,6 @@ If all goes well, you will see the message like this:
 
 Congratulations, you have already installed APISIX successfully.
 
-## Development Manual of APISIX
-
-If you are a developer, you can view the [dev manual](doc/dev-manual.md) for more details.
-
 ## Quickstart
 
 1. start server:
@@ -192,16 +186,6 @@ you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 
 Then you can try more [plugins](doc/README.md#plugins).
 
-## Deploy to the Cloud
-
-### AWS
-
-The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
-
-See [this guide](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md) by [Pahud Hsieh](https://github.com/pahud) and learn how to provision the recommended architecture 100% in AWS CDK.
-
-
-
 ## Dashboard
 
 APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard/` with a browser and try it.
@@ -216,17 +200,15 @@ Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency 
 
 You can view the [benchmark documentation](doc/benchmark.md) for more detailed information.
 
-## Architecture Design
-
-[Development Documentation](doc/architecture-design.md)
+## Document
+[Documents of Apache APISIX](doc/README.md)
 
 ## Videos And Articles
 
-- 2019.10.30 [Introduction to Apache APISIX Microservice Gateway Extreme Performance Architecture(Chinese)](https://www.upyun.com/opentalk/440.html) .
-- 2019.8.31 [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/433.html) .
-- 2019.8.31 [APISIX high performance practice 2(Chinese)](https://www.upyun.com/opentalk/437.html) .
-- 2019.7.6 [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html) .
-
+- 2019.10.30 [Introduction to Apache APISIX Microservice Gateway Extreme Performance Architecture(Chinese)](https://www.upyun.com/opentalk/440.html)
+- 2019.8.31 [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/433.html)
+- 2019.8.31 [APISIX high performance practice 2(Chinese)](https://www.upyun.com/opentalk/437.html)
+- 2019.7.6 [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
 
 ## Who Uses APISIX?
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
@@ -250,12 +232,6 @@ Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) pa
 APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
-
-## FAQ
-
-There are often some questions asked by developers in the community. We have arranged them in the [FAQ](FAQ.md).
-
-If your concerns are not among them, please submit issue to communicate with us.
 
 ## Contributing
 

@@ -30,8 +30,6 @@ APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
 它是基于 OpenResty 和 etcd 来实现，和传统 API 网关相比，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
 
-[安装](#安装) | [文档](doc/README_CN.md) | [开发环境](#开发环境) | [FAQ](FAQ.md)
-
 ## 为什么选择 APISIX？
 
 如果你正在构建网站、移动设备或 IoT（物联网）的应用，那么你可能需要使用 API 网关来处理接口流量。
@@ -106,16 +104,12 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
     *注意*：APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。 在启动参数中添加 `--enable-v2=true`，启用 v2 协议。支持 etcd v3 协议的开发工作正在进行中。
 
 3. 有以下几种方式来安装 Apache APISIX:
-    - 通过[源码安装](doc/install-cn.md#通过源码安装);
-    - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/install-cn.md#通过-rpm-包安装centos-7)；
-    - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/install-cn.md#通过-luarocks-安装-不支持-macos)；
+    - 通过[源码安装](doc/how-to-build-cn.md#通过源码安装);
+    - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/how-to-build-cn.md#通过-rpm-包安装centos-7)；
+    - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/how-to-build-cn.md#通过-luarocks-安装-不支持-macos)；
     - 你也可以使用 [Docker 镜像](https://github.com/apache/incubator-apisix-docker) 来安装。
 
 如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
-
-## 开发环境
-
-如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤。
 
 ## 快速上手
 
@@ -145,9 +139,9 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 你可以看出[性能测试文档](doc/benchmark-cn.md)来了解更多详细内容。
 
-## 架构设计
+## 文档
 
-[详细设计文档](doc/architecture-design-cn.md)
+[文档](doc/README_CN.md)
 
 ## 视频和文章
 
@@ -176,11 +170,6 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 <br/><br/>
 APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
-
-## 常见问题（FAQ）
-在社区中经常会有开发者问到的一些问题，我们整理在下面这份 [FAQ](FAQ_CN.md) 中：
-
-如果你关心的问题没有在其中，欢迎提交 issue 或者加入下面的 QQ 群和我们沟通。
 
 ## 参与社区
 
