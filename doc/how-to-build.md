@@ -17,78 +17,64 @@
 #
 -->
 
-# dev-manual
+# Build Apache APISIX
 
-## Install APISIX in development environment
+## 1. Install dependencies
+The runtime environment for Apache APISIX requires Nginx and etcd.
+So before installation, please follow the different operating systems [install Dependencies](install-dependencies.md).
 
-For different operating systems have different dependencies, see detail: [Install Dependencies](install-dependencies.md).
+## 2. Install Apache APISIX
 
-If you are a developer, we can set up a local development environment with the following commands after we installed dependencies.
+You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Luarocks.
+
+### Installation via source code
+
+You can download the Apache release package (Apache APISIX has not released the Apache release yet), or download the source code from GitHub:
 
 ```shell
 git clone git@github.com:iresty/apisix.git
 cd apisix
+```
 
-# init submodule
-git submodule update --init --recursive
-
-# install dependency
+Install the Lua library that the runtime depends on:
+```
 make deps
 ```
 
-If all goes well, you will see this message at the end:
-
-> Stopping after installing dependencies for apisix
-
-The following is the expected development environment directory structure:
+### Installation via RPM package (CentOS 7)
 
 ```shell
-$ tree -L 2 -d apisix
-apisix
-├── benchmark
-│   ├── fake-apisix
-│   └── server
-├── bin
-├── conf
-│   └── cert
-├── dashboard
-│   ├── css
-│   ├── fonts
-│   ├── img
-│   ├── js
-│   └── tinymce
-├── deps                    # dependent Lua and dynamic libraries
-│   ├── lib64
-│   └── share
-├── doc
-│   ├── images
-│   └── plugins
-├── logs
-├── lua
-│   └── apisix
-├── rockspec
-├── t
-│   ├── admin
-│   ├── config-center-yaml
-│   ├── core
-│   ├── lib
-│   ├── node
-│   ├── plugin
-│   ├── router
-│   └── servroot
-└── utils
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
+```
+
+### Installation via Luarocks (macOS not supported)
+
+Execute the following command in the terminal to complete the installation of APISIX (only recommended for developers):
+
+> Install the code for the master branch via a script
+
+```shell
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
+```
+
+> Install the specified version via Luarocks:
+
+```shell
+# Install version 0.8
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+
+# old luarocks not support the `lua-dir` parameter, you can remove this option
+sudo luarocks install apisix 0.8
 ```
 
 ## Manage (start/stop) APISIX Server
 
-We can start the APISIX server by command `make run` in apisix home folder,
+We can start the APISIX server by command `make run` in APISIX home folder,
 or we can stop APISIX server by command `make stop`.
 
 ```shell
 # init nginx config file and etcd
 $ make init
-./bin/apisix init
-./bin/apisix init_etcd
 
 # start APISIX server
 $ make run

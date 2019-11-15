@@ -24,8 +24,7 @@ Reference Documentation
 * [APISIX Readme](../README.md)
 * [Architecture Design](architecture-design.md)
 * [Benchmark](benchmark.md)
-* [Build development ENV](dev-manual.md)
-* [Install Dependencies](install-dependencies.md): How to install dependencies for different OS.
+* [How to build Apache APISIX](how-to-build.md)
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 * Router
     * [radixtree](router-radixtree.md)
@@ -55,3 +54,12 @@ Plugins
 * openid-connect
 * [redirect](plugins/redirect.md): URI redirect.
 * [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
+
+
+Deploy to the Cloud
+=======
+### AWS
+
+The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
+
+See [this guide](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md) by [Pahud Hsieh](https://github.com/pahud) and learn how to provision the recommended architecture 100% in AWS CDK.
