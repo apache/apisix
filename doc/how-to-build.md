@@ -38,7 +38,7 @@ cd apisix
 
 Install the Lua library that the runtime depends on:
 ```
-luarocks install rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
+make deps
 ```
 
 ### Installation via RPM package (CentOS 7)
