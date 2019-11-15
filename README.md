@@ -91,68 +91,12 @@ We provide an online dashboard [demo version](http://apisix.iresty.com)， make 
 APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1, or Tengine >= 2.3.2):
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-There are four ways to install APISIX:
-- if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
-- if you are using macOS, only git clone and install by manual are supported. Please take a look at [dev manual](doc/dev-manual.md);
-- other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
-- You can also install from [Docker image](https://github.com/iresty/docker-apisix).
-
 Steps to install APISIX:
 1. Runtime dependency: OpenResty or Tengine.
 
-### Install from RPM for CentOS 7
-
-```shell
-sudo yum install yum-utils
-sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-sudo yum install -y openresty etcd
-sudo service etcd start
-
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
-```
 
 You can try APISIX with the [**Quickstart**](#quickstart) now.
 
-### Install from Luarocks (not support macOS)
-
-##### Dependencies
-
-APISIX is based on [OpenResty](https://openresty.org/) or [Tengine](http://tengine.taobao.org/), the configures data storage and distribution via [etcd](https://github.com/etcd-io/etcd).
-
-We recommend that you use [luarocks](https://luarocks.org/) to install APISIX, and for different operating systems have different dependencies, see more: [Install Dependencies](doc/install-dependencies.md)
-
-##### Install APISIX
-
-APISIX is installed by running the following commands in your terminal.
-
-> install the master branch via curl
-
-```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
-```
-
-> install the specified version via Luarock:
-
-```shell
-# install apisix with version v0.8
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
-
-# old luarocks may not support `lua-dir`, we can remove option `lua-dir`
-sudo luarocks install apisix 0.8
-```
-
-> Installation complete
-
-If all goes well, you will see the message like this:
-
-```
-    apisix 0.7-0 is now built and installed in /usr/local/apisix/deps (license: Apache License 2.0)
-
-    + sudo rm -f /usr/local/bin/apisix
-    + sudo ln -s /usr/local/apisix/deps/bin/apisix /usr/local/bin/apisix
-```
-
-Congratulations, you have already installed APISIX successfully.
 
 ## Quickstart
 
