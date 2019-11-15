@@ -43,15 +43,12 @@ deps:
 ifeq ($(OR_EXEC), )
 	@echo "OpenResty not found. You have to install OpenResty and add the binary file to PATH first."
 	exit 1
+else ifeq ($(UNAME),Darwin)
+	luarocks install --lua-dir=$(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
+else ifneq ($(LUAROCKS_VER),'luarocks 3.')
+	luarocks install rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 else
-	ifeq ($(UNAME),Darwin)
-		LUA_JIT_DIR=$(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
-		luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
-	else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-		luarocks install rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
-	else
-		luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
-	endif
+	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 endif
 
 ### utils:        Installation tools

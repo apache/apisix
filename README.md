@@ -128,9 +128,7 @@ Dashboard allow any remote IP by default, and you can modify `allow_admin` in `c
 
 ## Benchmark
 
-Using Google Cloud's 4 core server, APISIX's QPS reach to 60,000 with a latency of only 500 microseconds.
-
-You can view the [benchmark documentation](doc/benchmark.md) for more detailed information.
+Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
 
 ## Document
 [Documents of Apache APISIX](doc/README.md)
