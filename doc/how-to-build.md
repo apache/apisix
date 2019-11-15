@@ -21,23 +21,25 @@
 
 ## 1. Install dependencies
 The runtime environment for Apache APISIX requires Nginx and etcd.
+
 So before installation, please follow the different operating systems [install Dependencies](install-dependencies.md).
 
 ## 2. Install Apache APISIX
 
 You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Luarocks.
 
-### Installation via source code
+### Installation via source release candidate
 
-You can download the Apache release package (Apache APISIX has not released the Apache release yet), or download the source code from GitHub:
+You need to download the source release candidate first:
 
 ```shell
-git clone git@github.com:iresty/apisix.git
-cd apisix
+wget https://dist.apache.org/repos/dist/dev/incubator/apisix/0.9-RC1/apache-apisix-0.9-rc1-incubating-src.tar.gz
+tar zxvf apache-apisix-0.9-rc1-incubating-src.tar.gz
 ```
 
-Install the Lua library that the runtime depends on:
-```
+Install the Lua libraries that the runtime depends on:
+```shell
+cd apache-apisix-0.9-rc1-incubating-src
 make deps
 ```
 
