@@ -92,11 +92,14 @@ APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1,
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
 Steps to install APISIX:
-1. Runtime dependency: OpenResty or Tengine.
+1. Installation runtime dependencies: OpenResty and etcd, refer to [documentation](doc/install-dependencies.md);
+2. There are several ways to install Apache APISIX:
+    - [Source code](doc/how-to-build.md#installation-via-source-code)
+    - [RPM package](doc/how-to-build.md#installation-via-RPM-package-CentOS-7) for CentOS 7
+    - [Luarocks](doc/how-to-build.md#installation-via-Luarocks-macOS-not-supported)
+    - [Docker](https://github.com/apache/incubator-apisix-docker)
 
-
-You can try APISIX with the [**Quickstart**](#quickstart) now.
-
+Then you can try APISIX with the [**Quickstart**](#quickstart) now.
 
 ## Quickstart
 
