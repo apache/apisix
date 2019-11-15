@@ -18,6 +18,11 @@
 -->
 
 # Install Dependencies
+**NOTE**
+- Apache APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default.
+You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
+
+- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh).
 
 - [Install Dependencies](#install-dependencies)
 - [CentOS 6](#centos-6)

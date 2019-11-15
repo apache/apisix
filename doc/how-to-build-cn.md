@@ -16,79 +16,63 @@
 # limitations under the License.
 #
 -->
+# 构建 Apache APISIX
 
-#  开发者手册
+## 1. 安装依赖
+Apache APISIX 的运行环境需要 Nginx 和 etcd，
+所以在安装前，请根据不同的操作系统来[安装依赖](install-dependencies.md)。
 
-## 在开发环境搭建 APISIX
+## 2. 安装 Apache APISIX
 
-不同系统有不同依赖，查看[安装依赖](install-dependencies.md)完成依赖项安装。
+你可以通过源码包、Docker、Luarocks 等多种方式来安装 Apache APISIX。
 
-如果你是开发人员，可以在完成上面安装依赖项后，通过下面的命令快速搭建本地开发环境。
+### 通过源码安装
+
+你可以下载 Apache release 包（Apache APISIX 还没有发布 Apache release），或者从 GitHub 下载源码：
 
 ```shell
-# clone project
 git clone git@github.com:iresty/apisix.git
 cd apisix
+```
 
-# init submodule
-git submodule update --init --recursive
-
-# install dependency
+安装运行时依赖的 Lua 库：
+```
 make deps
 ```
 
-如果一切顺利，你会在最后看到这样的信息：
-
-> Stopping after installing dependencies for apisix
-
-下面是预期的开发环境目录结构：
+### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-$ tree -L 2 -d apisix
-apisix
-├── benchmark
-│   ├── fake-apisix
-│   └── server
-├── bin
-├── conf
-│   └── cert
-├── dashboard
-│   ├── css
-│   ├── fonts
-│   ├── img
-│   ├── js
-│   └── tinymce
-├── deps                    # 依赖的 Lua 和动态库，放在了这里
-│   ├── lib64
-│   └── share
-├── doc
-│   ├── images
-│   └── plugins
-├── logs
-├── lua
-│   └── apisix
-├── rockspec
-├── t
-│   ├── admin
-│   ├── config-center-yaml
-│   ├── core
-│   ├── lib
-│   ├── node
-│   ├── plugin
-│   ├── router
-│   └── servroot
-└── utils
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
 ```
 
-## 管理（启动、关闭等）APISIX 服务
+### 通过 Luarocks 安装 （不支持 macOS）
+
+在终端中执行下面命令完成 APISIX 的安装（只推荐开发者使用）：
+
+> 通过脚本安装 master 分支的代码
+
+```shell
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
+```
+
+> 通过 Luarocks 安装指定的版本:
+
+```shell
+# 安装 apisix 的 0.8 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+
+# 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
+sudo luarocks install apisix 0.8
+```
+
+## 3. 管理（启动、关闭等）APISIX 服务
 
 我们可以在 apisix 的目录下用 `make run` 命令来启动服务，或者用 `make stop` 方式关闭服务。
 
 ```shell
 # init nginx config file and etcd
 $ make init
-./bin/apisix init
-./bin/apisix init_etcd
 
 # start APISIX server
 $ make run
@@ -113,7 +97,7 @@ Makefile rules:
     test:         Run the test case
 ```
 
-## 运行测试案例
+## 4. 运行测试案例
 
 1. 先安装 perl 的包管理器 cpanminus
 2. 然后通过 cpanm 来安装 test-gninx：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`

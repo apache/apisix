@@ -22,10 +22,8 @@ INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
-LUA_JIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 lj-releng-exist = $(shell if [ -f 'utils/lj-releng' ]; then echo "exist"; else echo "not_exist"; fi;)
-
 
 .PHONY: default
 default:
@@ -42,14 +40,16 @@ help:
 ### deps:         Installation dependencies
 .PHONY: deps
 deps:
-ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+ifeq ($(OR_EXEC), )
+	@echo "OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
+	exit 1
+else ifeq ($(UNAME),Darwin)
+	luarocks install --lua-dir=$(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 else
-	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 endif
-
 
 ### utils:        Installation tools
 .PHONY: utils

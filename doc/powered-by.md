@@ -19,22 +19,26 @@
 
 # Powered by APISIX
 
-This page documents an **alphabetical list** of institutions that are using APISIX for research and production,
+This page documents an alphabetical list of institutions that are using APISIX for research and production,
 or providing commercial products including APISIX.
 
 Users are encouraged to add themselves to this page, [issue](https://github.com/apache/incubator-apisix/issues/487) and PR are welcomed.
 
+1. chaolian 超链云商 https://www.chaolian360.com/
 1. cunw 湖南新云网 http://www.cunw.com.cn/
+1. dasouche 大搜车 https://www.dasouche.com/
 1. fansup.mobi https://fansup.mobi/
+1. haieruplus.com 海尔优家  http://haieruplus.com/
+1. HelloTalk, Inc  https://www.hellotalk.com/
 1. ke.com 贝壳找房 https://www.ke.com/
 1. Meizu 魅族 https://www.meizu.com/
 1. sinovatech 炎黄新星 https://www.sinovatech.com
-1. souche 大搜车 https://www.souche.com/
+1. taikang.com 泰康云   http://taikang.com/
+1. tangdou.com 糖豆网   http://www.tangdou.com/
 1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
 1. zuzuche 租租车 https://www.zuzuche.com/
 1. chaolian 超链云商 https://www.chaolian360.com/
 1. HelloTalk, Inc  https://www.hellotalk.com/
-1. tangdou 糖豆网 http://www.tangdou.com
 
 
 # User Cases
