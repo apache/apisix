@@ -55,7 +55,7 @@ local schema = {
         proto_id  = schema_def.id_schema,
         service   = { type = "string" },
         method    = { type = "string" },
-        pb_option = { type = "array",  
+        pb_option = { type = "array",
                       items = { type="string", anyOf = pb_option_def },
                       minItems = 1,
                     },
