@@ -253,7 +253,8 @@ local upstream_schema = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
             pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
-                      .. [[|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$]],
+                      .. [[|remote_addr|query_string|host|hostname)]]
+                      .. [[|arg_[0-9a-zA-z_-]+)$]],
         },
         desc = {type = "string", maxLength = 256},
         id = id_schema

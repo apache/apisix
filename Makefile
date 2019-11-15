@@ -65,10 +65,12 @@ endif
 check:
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 	luacheck -q lua
-	./utils/lj-releng lua/*.lua lua/apisix/*.lua \
+	./utils/lj-releng lua/*.lua \
+		lua/apisix/*.lua \
 		lua/apisix/admin/*.lua \
 		lua/apisix/core/*.lua \
 		lua/apisix/http/*.lua \
+		lua/apisix/http/router/*.lua \
 		lua/apisix/plugins/*.lua \
 		lua/apisix/plugins/grpc-transcode/*.lua \
 		lua/apisix/plugins/limit-count/*.lua > \
