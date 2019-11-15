@@ -89,14 +89,7 @@ We provide an online dashboard [demo version](http://apisix.iresty.com)， make 
 ## Installation
 
 APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1, or Tengine >= 2.3.2):
-
-- CentOS 7
-- Ubuntu 16.04
-- Ubuntu 18.04
-- Debian 9
-- Debian 10
-- macOS
-- **ARM64** Ubuntu 18.04
+CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
 There are four ways to install APISIX:
 - if you are using CentOS 7, it is recommended to use [RPM](#install-from-rpm-for-centos-7);
@@ -104,16 +97,8 @@ There are four ways to install APISIX:
 - other systems please use [Luarocks](#install-from-luarocks-not-support-macos);
 - You can also install from [Docker image](https://github.com/iresty/docker-apisix).
 
-The main steps to install APISIX:
-
+Steps to install APISIX:
 1. Runtime dependency: OpenResty or Tengine.
-    * OpenResty: Reference [http://openresty.org/en/installation.html](http://openresty.org/en/installation.html).
-    * Tengine: Please take a look at this installation step script [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh).
-2. Configuration center: Reference [etcd](https://github.com/etcd-io/etcd).
-
-    *NOTE*: APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default. You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
-
-3. Install APISIX service.
 
 ### Install from RPM for CentOS 7
 
