@@ -19,11 +19,13 @@
 
 # Install Dependencies
 
-* [CentOS 6](#centos-6)
-* [CentOS 7](#centos-7)
-* [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
-* [Debian 9 & 10](#debian-9--10)
-* [Mac OSX](#mac-osx)
+- [Install Dependencies](#install-dependencies)
+- [CentOS 6](#centos-6)
+- [CentOS 7](#centos-7)
+- [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
+- [Debian 9 & 10](#debian-9--10)
+- [Mac OSX](#mac-osx)
+- [How to compile the Openresty](#how-to-compile-the-openresty)
 
 CentOS 6
 ========
@@ -120,3 +122,11 @@ brew install openresty/brew/openresty etcd luarocks curl git
 # start etcd server with v2 protocol
 etcd --enable-v2=true &
 ```
+
+How to compile the Openresty
+=======
+
+Compiling OpenResty from source is very complicated, it's not easy to make it clear. So we recommend that you refer to the official installation documentation.
+
+http://openresty.org/en/linux-packages.html
+
