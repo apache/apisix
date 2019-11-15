@@ -22,7 +22,7 @@ local string = string
 local table  = table
 local ipairs = ipairs
 
-return function(proto, service, method, option)
+return function(proto, service, method, pb_option)
     local m = util.find_method(proto, service, method)
     if not m then
         return false, "2.Undefined service method: " .. service .. "/" .. method
@@ -51,8 +51,8 @@ return function(proto, service, method, option)
         buffer = string.sub(buffer, 6)
     end
 
-    if option then
-        for _, opt in ipairs(option) do
+    if pb_option then
+        for _, opt in ipairs(pb_option) do
             pb.option(opt)
         end
     end

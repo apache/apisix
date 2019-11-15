@@ -108,7 +108,7 @@ Proxy-Connection: keep-alive
 这表示已成功代理。
 
 
-#### 使用 grpc-transcode 插件的 option 选项
+#### 使用 grpc-transcode 插件的 pb_option 选项
 
 在指定 route 中，代理 grpc 服务接口:
 
@@ -143,7 +143,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/23 -X PUT -d '
          "proto_id": "1",
          "service": "gateway_protocol.Gateway",
          "method": "CreateWorkflowInstance",
-         "option":["int64_as_string"]
+         "pb_option":["int64_as_string"]
         }
     },
     "upstream": {

@@ -24,7 +24,7 @@ local string = string
 local table  = table
 local ipairs = ipairs
 
-return function (proto, service, method, option, default_values)
+return function (proto, service, method, pb_option, default_values)
     core.log.info("proto: ", core.json.delay_encode(proto, true))
     local m = util.find_method(proto, service, method)
     if not m then
@@ -34,8 +34,8 @@ return function (proto, service, method, option, default_values)
 
     ngx.req.read_body()
 
-    if option then
-        for _, opt in ipairs(option) do
+    if pb_option then
+        for _, opt in ipairs(pb_option) do
             pb.option(opt)
         end
     end
