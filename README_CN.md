@@ -87,23 +87,11 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 ## 安装
 
 APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注意的是：OpenResty 的版本必须 >= 1.15.8.1：
-- CentOS 7
-- Ubuntu 16.04
-- Ubuntu 18.04
-- Debian 9
-- Debian 10
-- macOS
-- **ARM64** Ubuntu 18.04
+CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-安装 APISIX 的主要步骤：
-
+安装 APISIX 的步骤：
 1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/install-dependencies.md).
-
-    你可以把 OpenResty 替换为 Tengine，参考该安装脚本 [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh)。
-
-    *注意*：APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。 在启动参数中添加 `--enable-v2=true`，启用 v2 协议。支持 etcd v3 协议的开发工作正在进行中。
-
-3. 有以下几种方式来安装 Apache APISIX:
+2. 有以下几种方式来安装 Apache APISIX:
     - 通过[源码安装](doc/how-to-build-cn.md#通过源码安装);
     - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/how-to-build-cn.md#通过-rpm-包安装centos-7)；
     - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/how-to-build-cn.md#通过-luarocks-安装-不支持-macos)；
