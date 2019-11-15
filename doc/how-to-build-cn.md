@@ -37,7 +37,7 @@ cd apisix
 
 安装运行时依赖的 Lua 库：
 ```
-luarocks install rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
+make deps
 ```
 
 ### 通过 RPM 包安装（CentOS 7）
