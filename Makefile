@@ -41,7 +41,7 @@ help:
 .PHONY: deps
 deps:
 ifeq ($(OR_EXEC), )
-	@echo "OpenResty not found. You have to install OpenResty and add the binary file to PATH first."
+	@echo "OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
 	exit 1
 else ifeq ($(UNAME),Darwin)
 	luarocks install --lua-dir=$(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
