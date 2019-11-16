@@ -89,7 +89,6 @@ property "body" validation failed: wrong type: expected string, got number
 
 
 
-
 === TEST 3: set header(rewrite header and body)
 --- config
     location /t {
