@@ -55,3 +55,4 @@ Reference document
 * [ip-restriction](plugins/ip-restriction-cn.md): IP 黑白名单。
 * openid-connect
 * [redirect](plugins/redirect-cn.md): URI 重定向。
+* [response-rewrite](plugins/response-rewrite.md): 重写上游返回的 `body`,`headers` 信息,可以支持 CORS。
