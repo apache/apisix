@@ -21,7 +21,7 @@
 # response-rewrite
 
 该插件支持修改上游服务返回的body和header信息。
-可以设置 `ccess-Control-Allow-*` 等header信息，来实现 CORS (跨域资源共享)的功能。
+可以设置 `Access-Control-Allow-*` 等header信息，来实现 CORS (跨域资源共享)的功能。
 
 #### 配置参数
 |名字    |可选|说明|

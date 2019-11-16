@@ -20,7 +20,9 @@
 [中文](response-rewrite-cn.md)
 # response-rewrite
 
-response rewrite plugin, can set `ccess-Control-Allow-*` series field to support CORS(Cross-origin resource sharing) .
+response rewrite plugin, can set `Access-Control-Allow-*` series field to support CORS(Cross-origin resource sharing) .
+
+also we can set customized `body` as output content.
 
 ### Parameters
 |Name    |Required|Description|
