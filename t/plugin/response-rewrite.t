@@ -34,7 +34,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity
+=== TEST 1:  add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -42,7 +42,7 @@ __DATA__
             local ok, err = plugin.check_schema({
                 body = 'Hello world',
                 headers = {
-                    "X-Server-id":"3"
+                    ["X-Server-id"] = "3"
                 }
             })
             if not ok then
@@ -55,13 +55,42 @@ __DATA__
 --- request
 GET /t
 --- response_body
-Hello world
+done
 --- no_error_log
 [error]
 
 
 
-=== TEST 2: add plugin
+=== TEST 2:  add plugin fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                body = 2,
+                headers = {
+                    ["X-Server-id"] = "3"
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "body" validation failed: wrong type: expected string, got number
+--- no_error_log
+[error]
+
+
+
+
+=== TEST 3: set header(rewrite header and body)
 --- config
     location /t {
         content_by_lua_block {
@@ -73,8 +102,8 @@ Hello world
                         "response-rewrite": {
                             "headers" : {
                                 "X-Server-id":"3"
-                            }
-                            "body": "stop"
+                            },
+                            "body": "new body"
                         }
                     },
                     "upstream": {
@@ -94,10 +123,68 @@ Hello world
         }
     }
 --- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: check header
+--- request
 GET /hello
 --- response_body
-stop
+new body
 --- response_headers
 X-Server-id: 3
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: set body only
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "body": "new body2"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: check body
+--- request
+GET /hello
+--- response_body
+new body2
 --- no_error_log
 [error]

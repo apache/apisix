@@ -88,6 +88,7 @@ plugins:                          # plugin list
   - openid-connect
   - proxy-rewrite
   - redirect
+  - response-rewrite
 
 stream_plugins:
   - mqtt-proxy

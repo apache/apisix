@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
-local plugin_name = "repsonse-rewrite"
+local plugin_name = "response-rewrite"
 local ngx         = ngx
 local pairs       = pairs
 local ipairs      = ipairs
@@ -40,7 +40,7 @@ local schema = {
 
 local _M = {
     version  = 0.1,
-    priority = 1008,
+    priority = 899,
     name     = plugin_name,
     schema   = schema,
 }
@@ -55,21 +55,29 @@ function _M.check_schema(conf)
     --reform header from object into array, so can avoid use pairs, which is NYI
     if conf.headers then
         conf.headers_for_jit = {}
-        for header_name, header_value in pairs(conf.resp_headers) do
-            core.table.insert(conf.headers_for_jit, header_name)
-            core.table.insert(conf.headers_for_jit, header_value)
-        end 
-    end 
+        for field, value in pairs(conf.headers) do
+            core.table.insert(conf.headers_for_jit, field)
+            core.table.insert(conf.headers_for_jit, value)
+        end
+    end
 
     return true
 end
 
 
 do
-  
+
 function _M.body_filter(conf, ctx)
+    if ngx.status >= 300 then
+        return
+    end
+
     if conf.body then
-        ngx.args[1] = conf.body .. "\\n"
+        if ngx.arg[2] then
+            ngx.arg[1] = conf.body .. "\n"
+        else
+            ngx.arg[1] = nil
+        end
     end
 end
 
