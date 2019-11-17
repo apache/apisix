@@ -22,12 +22,15 @@
 
 该插件支持修改上游服务返回的body和header信息。
 可以设置 `Access-Control-Allow-*` 等header信息，来实现 CORS (跨域资源共享)的功能。
+另外也可以通过status_code和Location的header来实现重定向。
 
 #### 配置参数
 |名字    |可选|说明|
 |------- |-----|------|
+|status_code   |可选| 修改上游返回状态码|
 |body          |可选| 修改上游返回的 `body` 内容，如果设置了新内容，header里面的content-type字段也会被修改|
 |headers       |可选| 返回给客户端的`headers`，可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可|
+
 
 ### 示例
 
@@ -41,7 +44,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     "uri": "/test/index.html",
     "plugins": {
         "response-rewrite": {
-            "body": "under construction",
+            "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
             "headers": {
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
@@ -67,13 +70,11 @@ curl -X GET -i  http://127.0.0.1:9080/test/index.html
 如果看到返回的头部信息和内容都被修改了，即表示 `response rewrite` 插件生效了。
 ```
 HTTP/1.1 200 OK
-Server: openresty
 Date: Sat, 16 Nov 2019 09:15:12 GMT
-Content-Type: text/html
 Transfer-Encoding: chunked
 Connection: keep-alive
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, OPTIONS
 
-under construction
+{"code":"ok","message":"new json body"}
 ```

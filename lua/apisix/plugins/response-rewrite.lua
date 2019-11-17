@@ -28,10 +28,16 @@ local schema = {
             type = "object",
             minProperties = 1,
         },
-        body    =   {
+        body = {
             description = "new body for repsonse",
             type = "string",
         },
+        status_code = {
+            description = "new status code for repsonse",
+            type = "number",
+            minimum = 200,
+            maximum = 598,
+        }
     },
     minProperties = 1,
 }
@@ -53,10 +59,10 @@ function _M.check_schema(conf)
 
     --reform header from object into array, so can avoid use pairs, which is NYI
     if conf.headers then
-        conf.headers_for_jit = {}
+        conf.headers_arr = {}
         for field, value in pairs(conf.headers) do
-            core.table.insert(conf.headers_for_jit, field)
-            core.table.insert(conf.headers_for_jit, value)
+            core.table.insert(conf.headers_arr, field)
+            core.table.insert(conf.headers_arr, value)
         end
     end
 
@@ -67,13 +73,9 @@ end
 do
 
 function _M.body_filter(conf, ctx)
-    if ngx.status >= 300 then
-        return
-    end
-
     if conf.body then
         if ngx.arg[2] then
-            ngx.arg[1] = conf.body .. "\n"
+            ngx.arg[1] = conf.body
         else
             ngx.arg[1] = nil
         end
@@ -81,14 +83,19 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.header_filter(conf, ctx)
-    if conf.body then
-        ngx.header.content_length = nil
+    if conf.status_code then
+        ngx.status = conf.status_code
     end
 
-    if conf.headers_for_jit then
-        local field_cnt = #conf.headers_for_jit
+    if conf.body then
+        ngx.header.content_length = nil
+        ngx.header.content_encoding = nil
+    end
+
+    if conf.headers_arr then
+        local field_cnt = #conf.headers_arr
         for i = field_cnt,1,-2 do
-            ngx.header[conf.headers_for_jit[i-1]] = conf.headers_for_jit[i]
+            ngx.header[conf.headers_arr[i-1]] = conf.headers_arr[i]
         end
     end
 end

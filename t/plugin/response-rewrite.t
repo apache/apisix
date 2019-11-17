@@ -61,7 +61,31 @@ done
 
 
 
-=== TEST 2:  add plugin fail
+=== TEST 2:  add plugin with wrong status_code
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                status_code = 599
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "status_code" validation failed: expected 599 to be smaller than 598
+--- no_error_log
+[error]
+
+
+
+=== TEST 3:  add plugin fail
 --- config
     location /t {
         content_by_lua_block {
@@ -89,7 +113,7 @@ property "body" validation failed: wrong type: expected string, got number
 
 
 
-=== TEST 3: set header(rewrite header and body)
+=== TEST 4: set header(rewrite header and body)
 --- config
     location /t {
         content_by_lua_block {
@@ -102,7 +126,7 @@ property "body" validation failed: wrong type: expected string, got number
                             "headers" : {
                                 "X-Server-id":"3"
                             },
-                            "body": "new body"
+                            "body": "new body\n"
                         }
                     },
                     "upstream": {
@@ -130,7 +154,7 @@ passed
 
 
 
-=== TEST 4: check header
+=== TEST 5: check header
 --- request
 GET /hello
 --- response_body
@@ -142,7 +166,7 @@ X-Server-id: 3
 
 
 
-=== TEST 5: set body only
+=== TEST 6: set body only
 --- config
     location /t {
         content_by_lua_block {
@@ -152,7 +176,7 @@ X-Server-id: 3
                  [[{
                     "plugins": {
                         "response-rewrite": {
-                            "body": "new body2"
+                            "body": "new body2\n"
                         }
                     },
                     "upstream": {
@@ -180,10 +204,63 @@ passed
 
 
 
-=== TEST 6: check body
+=== TEST 7: check body
 --- request
 GET /hello
 --- response_body
 new body2
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: set location header with 302 code
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers": {
+                                "Location":"https://www.iresty.com"
+                            },
+                            "status_code":302
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: check 302 redirect
+--- request
+GET /hello
+--- error_code eval
+302
+--- response_headers
+Location: https://www.iresty.com
 --- no_error_log
 [error]

@@ -27,6 +27,7 @@ also we can set customized `body` as output content.
 ### Parameters
 |Name    |Required|Description|
 |-------         |-----|------|
+|status_code   |No| New `status code` to client|
 |body          |No| New `body` to client, and the content-length will be reset too.|
 |headers             |No| Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
 
@@ -42,7 +43,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     "uri": "/test/index.html",
     "plugins": {
         "response-rewrite": {
-            "body": "under construction",
+            "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
             "headers": {
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
@@ -67,15 +68,13 @@ curl -X GET -i  http://127.0.0.1:9080/test/index.html
 It will output like below,no matter what kinf of content from upstream.
 ```
 HTTP/1.1 200 OK
-Server: openresty
 Date: Sat, 16 Nov 2019 09:15:12 GMT
-Content-Type: text/html
 Transfer-Encoding: chunked
 Connection: keep-alive
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, OPTIONS
 
-under construction
+{"code":"ok","message":"new json body"}
 ```
 
 This means that the `response rewrite` plugin is in effect.
