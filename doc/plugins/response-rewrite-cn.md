@@ -22,14 +22,14 @@
 
 该插件支持修改上游服务返回的body和header信息。
 可以设置 `Access-Control-Allow-*` 等header信息，来实现 CORS (跨域资源共享)的功能。
-另外也可以通过status_code和Location的header来实现重定向。
+另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向。
 
 #### 配置参数
 |名字    |可选|说明|
 |------- |-----|------|
 |status_code   |可选| 修改上游返回状态码|
-|body          |可选| 修改上游返回的 `body` 内容，如果设置了新内容，header里面的content-type字段也会被修改|
-|headers       |可选| 返回给客户端的`headers`，可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可|
+|body          |可选| 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-type 字段也会被修改|
+|headers       |可选| 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可|
 
 
 ### 示例

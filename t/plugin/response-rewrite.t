@@ -42,7 +42,7 @@ __DATA__
             local ok, err = plugin.check_schema({
                 body = 'Hello world',
                 headers = {
-                    ["X-Server-id"] = "3"
+                    ["X-Server-id"] = 3
                 }
             })
             if not ok then
@@ -124,7 +124,9 @@ property "body" validation failed: wrong type: expected string, got number
                     "plugins": {
                         "response-rewrite": {
                             "headers" : {
-                                "X-Server-id":"3"
+                                "X-Server-id":"3",                
+                                "Access-Control-Allow-Origin": "*",
+                                "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
                             },
                             "body": "new body\n"
                         }
@@ -161,6 +163,8 @@ GET /hello
 new body
 --- response_headers
 X-Server-id: 3
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
 --- no_error_log
 [error]
 
@@ -264,3 +268,58 @@ GET /hello
 Location: https://www.iresty.com
 --- no_error_log
 [error]
+
+
+
+=== TEST 7:  empty string in header field
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                status_code = 200,
+                headers = {
+                    [""] = 2
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid field length in header
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: array in header value
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                status_code = 200,
+                headers = {
+                    ["X-Name"] = {}
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid type as header value
+--- no_error_log
+[error]
+

@@ -34,7 +34,7 @@ local schema = {
         },
         status_code = {
             description = "new status code for repsonse",
-            type = "number",
+            type = "integer",
             minimum = 200,
             maximum = 598,
         }
@@ -60,11 +60,21 @@ function _M.check_schema(conf)
     --reform header from object into array, so can avoid use pairs, which is NYI
     if conf.headers then
         conf.headers_arr = {}
+
         for field, value in pairs(conf.headers) do
-            core.table.insert(conf.headers_arr, field)
-            core.table.insert(conf.headers_arr, value)
+            if type(field) == 'string' and (type(value) == 'string' or type(value) == 'number') then
+                if #field == 0 then
+                    return false,'invalid field length in header'
+                end
+                core.table.insert(conf.headers_arr, field)
+                core.table.insert(conf.headers_arr, value)
+            else
+                return false,'invalid type as header value'
+            end
+
         end
     end
+
 
     return true
 end
@@ -94,8 +104,8 @@ function _M.header_filter(conf, ctx)
 
     if conf.headers_arr then
         local field_cnt = #conf.headers_arr
-        for i = field_cnt,1,-2 do
-            ngx.header[conf.headers_arr[i-1]] = conf.headers_arr[i]
+        for i = 1, field_cnt, 2 do
+            ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
         end
     end
 end
