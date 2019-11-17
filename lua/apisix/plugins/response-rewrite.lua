@@ -18,6 +18,7 @@ local core        = require("apisix.core")
 local plugin_name = "response-rewrite"
 local ngx         = ngx
 local pairs       = pairs
+local type        = type
 
 
 local schema = {
