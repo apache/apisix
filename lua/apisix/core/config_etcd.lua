@@ -125,7 +125,7 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if self.values == nil then
+    if self.need_reload then
         local dir_res, headers, err = readdir(self.etcd_cli, self.key)
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
@@ -139,6 +139,20 @@ local function sync_data(self)
 
         if not dir_res.nodes then
             dir_res.nodes = {}
+        end
+
+        if self.values then
+            for i, val in ipairs(self.values) do
+                if val and val.clean_handlers then
+                    for _, clean_handler in ipairs(val.clean_handlers) do
+                        clean_handler(val)
+                    end
+                    val.clean_handlers = nil
+                end
+            end
+
+            self.values = nil
+            self.values_hash = nil
         end
 
         self.values = new_tab(#dir_res.nodes, 0)
@@ -185,6 +199,8 @@ local function sync_data(self)
         if changed then
             self.conf_version = self.conf_version + 1
         end
+
+        self.need_reload = false
         return true
     end
 
@@ -194,9 +210,13 @@ local function sync_data(self)
     log.debug("res: ", json.delay_encode(res, true))
     log.debug("headers: ", json.delay_encode(headers, true))
     if not res then
-        if headers then
-          self:upgrade_version(headers["X-Etcd-Index"])
+        if err == "The event in requested index is outdated and cleared" then
+            self.need_reload = true
+            log.warn("waitdir [", self.key, "] err: ", err,
+                     ", need to fully reload")
+            return false
         end
+
         return false, err
     end
 
@@ -369,6 +389,7 @@ function _M.new(key, opts)
         running = true,
         conf_version = 0,
         values = nil,
+        need_reload = true,
         routes_hash = nil,
         prev_index = nil,
         last_err = nil,
