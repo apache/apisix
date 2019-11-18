@@ -47,7 +47,6 @@ Plugins
 * [limit-req](plugins/limit-req.md): Request rate limiting and adjustment based on the "leaky bucket" method.
 * [limit-conn](plugins/limit-conn.md): Limite request concurrency (or concurrent connections).
 * [proxy-rewrite](plugins/proxy-rewrite.md): Rewrite upstream request information.
-* [response-rewrite](plugins/response-rewrite.md): Rewrite content (status_code,header,body) from upstream, support CORS (Cross-origin resource sharing) and redirect.
 * [prometheus](plugins/prometheus.md): Expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
 * [OpenTracing](plugins/zipkin.md): Supports Zikpin and Apache SkyWalking.
 * [grpc-transcode](plugins/grpc-transcoding.md): REST <--> gRPC transcoding。
@@ -55,3 +54,4 @@ Plugins
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
 * openid-connect
 * [redirect](plugins/redirect.md): URI redirect.
+* [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.

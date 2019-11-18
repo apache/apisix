@@ -20,9 +20,11 @@
 [中文](response-rewrite-cn.md)
 # response-rewrite
 
-response rewrite plugin, can set `Access-Control-Allow-*` series field to support CORS(Cross-origin resource sharing) .
+response rewrite plugin, rewrite the content from upstream.
 
-also we can set customized `body` as output content.
+senario:
+1、can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing) .
+2、we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use `redirect` plugin if you just want a redirect function.
 
 ### Parameters
 |Name    |Required|Description|
@@ -45,8 +47,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
         "response-rewrite": {
             "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
             "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+                "X-Server-id": 3,
+                "X-Server-status": "on"
             }
         }
     },
@@ -71,8 +73,8 @@ HTTP/1.1 200 OK
 Date: Sat, 16 Nov 2019 09:15:12 GMT
 Transfer-Encoding: chunked
 Connection: keep-alive
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, OPTIONS
+X-Server-id: 3
+X-Server-status: on
 
 {"code":"ok","message":"new json body"}
 ```

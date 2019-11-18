@@ -20,15 +20,17 @@
 [English](response-rewrite.md)
 # response-rewrite
 
-该插件支持修改上游服务返回的body和header信息。
-可以设置 `Access-Control-Allow-*` 等header信息，来实现 CORS (跨域资源共享)的功能。
-另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向。
+该插件支持修改上游服务返回的 body 和 header 信息。
+
+使用场景：
+1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS (跨域资源共享)的功能。
+2、另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向，当然如果只是需要重定向功能，最好使用 `redirect ` 插件。
 
 #### 配置参数
 |名字    |可选|说明|
 |------- |-----|------|
 |status_code   |可选| 修改上游返回状态码|
-|body          |可选| 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-type 字段也会被修改|
+|body          |可选| 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉|
 |headers       |可选| 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可|
 
 
@@ -46,8 +48,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
         "response-rewrite": {
             "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
             "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+                "X-Server-id": 3,
+                "X-Server-status": "on"
             }
         }
     },
@@ -73,8 +75,8 @@ HTTP/1.1 200 OK
 Date: Sat, 16 Nov 2019 09:15:12 GMT
 Transfer-Encoding: chunked
 Connection: keep-alive
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, OPTIONS
+X-Server-id: 3
+X-Server-status: on
 
 {"code":"ok","message":"new json body"}
 ```

@@ -65,17 +65,16 @@ function _M.check_schema(conf)
         for field, value in pairs(conf.headers) do
             if type(field) == 'string' and (type(value) == 'string' or type(value) == 'number') then
                 if #field == 0 then
-                    return false,'invalid field length in header'
+                    return false, 'invalid field length in header'
                 end
                 core.table.insert(conf.headers_arr, field)
                 core.table.insert(conf.headers_arr, value)
             else
-                return false,'invalid type as header value'
+                return false, 'invalid type as header value'
             end
 
         end
     end
-
 
     return true
 end
@@ -100,6 +99,7 @@ function _M.header_filter(conf, ctx)
 
     if conf.body then
         ngx.header.content_length = nil
+        -- in case of upstream content is compressed content
         ngx.header.content_encoding = nil
     end
 

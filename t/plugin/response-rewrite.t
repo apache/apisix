@@ -124,9 +124,9 @@ property "body" validation failed: wrong type: expected string, got number
                     "plugins": {
                         "response-rewrite": {
                             "headers" : {
-                                "X-Server-id":"3",                
-                                "Access-Control-Allow-Origin": "*",
-                                "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+                                "X-Server-id": 3,                
+                                "X-Server-status": "on",
+                                "Content-Type": ""
                             },
                             "body": "new body\n"
                         }
@@ -137,7 +137,7 @@ property "body" validation failed: wrong type: expected string, got number
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
+                    "uri": "/with_header"
                 }]]
                 )
 
@@ -156,21 +156,50 @@ passed
 
 
 
-=== TEST 5: check header
+=== TEST 5: check body with deleted header
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/with_header"
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.say(err)
+                return
+            end 
+
+            if res.headers['Content-Type'] then
+                ngx.say('fail content-type should not be exist, now is'..res.headers['Content-Type'])
+                return
+            end
+
+            if res.headers['X-Server-status'] ~= 'on' then
+                ngx.say('fail X-Server-status needs to be on')
+                return
+            end
+
+            if res.headers['X-Server-id'] ~= '3' then
+                ngx.say('fail X-Server-id needs to be 3')
+                return
+            end
+
+            ngx.print(res.body)
+            ngx.exit(200)
+        }
+    }
 --- request
-GET /hello
+GET /t
 --- response_body
 new body
---- response_headers
-X-Server-id: 3
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, OPTIONS
 --- no_error_log
 [error]
 
 
 
-=== TEST 6: set body only
+=== TEST 6: set body only and keep header the same
 --- config
     location /t {
         content_by_lua_block {
@@ -189,7 +218,7 @@ Access-Control-Allow-Methods: GET, POST, OPTIONS
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
+                    "uri": "/with_header"
                 }]]
                 )
 
@@ -208,17 +237,20 @@ passed
 
 
 
-=== TEST 7: check body
+=== TEST 7: check body and header not changed
 --- request
-GET /hello
+GET /with_header
 --- response_body
 new body2
+--- response_headers
+X-Server-id: 100
+Content-Type: application/xml
 --- no_error_log
 [error]
 
 
 
-=== TEST 6: set location header with 302 code
+=== TEST 8: set location header with 302 code
 --- config
     location /t {
         content_by_lua_block {
@@ -259,7 +291,7 @@ passed
 
 
 
-=== TEST 7: check 302 redirect
+=== TEST 9: check 302 redirect
 --- request
 GET /hello
 --- error_code eval
@@ -271,7 +303,7 @@ Location: https://www.iresty.com
 
 
 
-=== TEST 7:  empty string in header field
+=== TEST 10:  empty string in header field
 --- config
     location /t {
         content_by_lua_block {
@@ -298,7 +330,7 @@ invalid field length in header
 
 
 
-=== TEST 8: array in header value
+=== TEST 11: array in header value
 --- config
     location /t {
         content_by_lua_block {
@@ -322,4 +354,3 @@ GET /t
 invalid type as header value
 --- no_error_log
 [error]
-

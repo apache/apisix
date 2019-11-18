@@ -85,6 +85,15 @@ function _M.opentracing()
 end
 
 
+function _M.with_header()
+    ngx.header['Content-Type'] = 'application/xml'
+    ngx.header['X-Server-id'] = 100
+    --split into multiple chunk
+    ngx.say("hello")
+    ngx.say("world")
+    ngx.say("!")
+end
+
 function _M.mock_zipkin()
     ngx.req.read_body()
     local data = ngx.req.get_body_data()
