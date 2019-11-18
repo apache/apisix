@@ -84,11 +84,8 @@ do
 
 function _M.body_filter(conf, ctx)
     if conf.body then
-        if ngx.arg[2] then
-            ngx.arg[1] = conf.body
-        else
-            ngx.arg[1] = nil
-        end
+        ngx.arg[1] = conf.body
+        ngx.arg[2] = true
     end
 end
 
