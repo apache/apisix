@@ -75,7 +75,8 @@ function _M.check_schema(conf)
         conf.headers_arr = {}
 
         for field, value in pairs(conf.headers) do
-            if type(field) == 'string' and (type(value) == 'string' or type(value) == 'number') then
+            if type(field) == 'string'
+                and (type(value) == 'string' or type(value) == 'number') then
                 if #field == 0 then
                     return false, 'invalid field length in header'
                 end
