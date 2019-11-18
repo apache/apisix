@@ -19,6 +19,7 @@ local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
 local ngx         = ngx
+local type        = type
 
 
 local schema = {
