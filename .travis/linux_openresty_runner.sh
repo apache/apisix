@@ -123,7 +123,7 @@ script() {
     ./bin/apisix stop
     sleep 1
 
-    make check || exit 1
+    make linter || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 }
 
