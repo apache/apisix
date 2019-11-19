@@ -18,6 +18,8 @@ local core        = require("apisix.core")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
+local ngx         = ngx
+local type        = type
 
 
 local schema = {
@@ -67,6 +69,24 @@ function _M.check_schema(conf)
     if not ok then
         return false, err
     end
+
+    --reform header from object into array, so can avoid use pairs, which is NYI
+    if conf.headers then
+        conf.headers_arr = {}
+
+        for field, value in pairs(conf.headers) do
+            if type(field) == 'string'
+                and (type(value) == 'string' or type(value) == 'number') then
+                if #field == 0 then
+                    return false, 'invalid field length in header'
+                end
+                core.table.insert(conf.headers_arr, field)
+                core.table.insert(conf.headers_arr, value)
+            else
+                return false, 'invalid type as header value'
+            end
+        end
+    end
     return true
 end
 
@@ -102,10 +122,10 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_connection = ctx.var.http_connection
     end
 
-    -- TODO: support deleted header
-    if conf.headers then
-        for header_name, header_value in pairs(conf.headers) do
-            core.request.set_header(header_name, header_value)
+    if conf.headers_arr then
+        local field_cnt = #conf.headers_arr
+        for i = 1, field_cnt, 2 do
+            ngx.req.set_header(conf.headers_arr[i], conf.headers_arr[i+1])
         end
     end
 end
