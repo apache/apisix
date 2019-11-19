@@ -65,7 +65,7 @@ endif
 
 ### linter:       Check code style or error
 .PHONY: linter
-check: default
+linter: default
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 	luacheck -q lua
 	PATH="${LUTJIT_DIR}/bin:${PATH}" ./utils/lj-releng lua/*.lua lua/apisix/*.lua \
