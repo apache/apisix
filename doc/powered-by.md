@@ -33,7 +33,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. HelloTalk, Inc.  https://www.hellotalk.com/
 1. ke.com 贝壳找房 https://www.ke.com/
 1. Meizu 魅族 https://www.meizu.com/
-1. NASA JPL https://www.jpl.nasa.gov
+1. NASA JPL 美国国家航空航天局 喷气推进实验室 https://www.jpl.nasa.gov
 1. Netease 网易 http://www.163.com
 1. sinovatech 炎黄新星 https://www.sinovatech.com
 1. taikang.com 泰康云   http://taikang.com/
