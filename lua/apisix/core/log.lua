@@ -18,6 +18,7 @@ local ngx = ngx
 local ngx_log  = ngx.log
 local ngx_DEBUG= ngx.DEBUG
 local DEBUG    = ngx.config.debug
+local require  = require
 
 
 local _M = {version = 0.3}
