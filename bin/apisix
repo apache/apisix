@@ -234,7 +234,13 @@ http {
             }
         }
 
-        location /apisix/dashboard {
+        location = /apisix/dashboard {
+            content_by_lua_block {
+                ngx.exec("/apisix/dashboard/")
+            }
+        }
+
+        location /apisix/dashboard/ {
             index index.html;
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -295,6 +301,12 @@ http {
 
             content_by_lua_block {
                 apisix.http_admin()
+            }
+        }
+
+        location = /apisix/dashboard {
+            content_by_lua_block {
+                ngx.exec("/apisix/dashboard/")
             }
         }
 
