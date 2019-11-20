@@ -24,8 +24,13 @@ UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 
+
 .PHONY: default
 default:
+ifeq ($(OR_EXEC), )
+	@echo "OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
+	exit 1
+endif
 
 
 ### help:             Show Makefile rules.
@@ -38,12 +43,9 @@ help:
 
 ### deps:             Installation dependencies
 .PHONY: deps
-deps:
-ifeq ($(OR_EXEC), )
-	@echo "OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
-	exit 1
-else ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
+deps: default
+ifeq ($(UNAME),Darwin)
+	luarocks install --lua-dir=$(LUTJIT_DIR) rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
 	luarocks install rockspec/apisix-0.9-0.rockspec --tree=deps --only-deps --local
 else
@@ -78,30 +80,22 @@ lint: utils
 
 ### init:             Initialize the runtime environment
 .PHONY: init
-init:
+init: default
 	./bin/apisix init
 	./bin/apisix init_etcd
 
 
 ### run:              Start the apisix server
 .PHONY: run
-run:
+run: default
 	mkdir -p logs
 	mkdir -p /tmp/apisix_cores/
-ifeq ($(OR_EXEC), )
-	@echo "You have to install OpenResty and add the binary file to PATH first"
-	exit 1
-endif
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 
 
 ### stop:             Stop the apisix server
 .PHONY: stop
-stop:
-ifeq ($(OR_EXEC), )
-	@echo "You have to install OpenResty and add the binary file to PATH first"
-	exit 1
-endif
+stop: default
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
@@ -113,11 +107,7 @@ clean:
 
 ### reload:           Reload the apisix server
 .PHONY: reload
-reload:
-ifeq ($(OR_EXEC), )
-	@echo "You have to install OpenResty and add the binary file to PATH first"
-	exit 1
-endif
+reload: default
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
