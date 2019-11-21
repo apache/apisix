@@ -65,7 +65,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
 ![](../images/plugin/limit-conn-1.png)
 
-Then add limit-count plugin:
+Then add limit-conn plugin:
 ![](../images/plugin/limit-conn-2.png)
 
 #### test plugin
