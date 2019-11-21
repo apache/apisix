@@ -73,6 +73,7 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **CLI**: start\stop\reload APISIX through the command line.
 - **REST API**
 - **Proxy Websocket**
+- **[Response Rewrite](doc/plugins/response-rewrite.md)**: Set customized response status code, body and header to the client.
 - **IPv6**: Use IPv6 to match route.
 - **Clustering**: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md).
 - **Scalability**: plug-in mechanism is easy to extend.

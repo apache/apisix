@@ -55,3 +55,4 @@ Reference document
 * [ip-restriction](plugins/ip-restriction-cn.md): IP 黑白名单。
 * openid-connect
 * [redirect](plugins/redirect-cn.md): URI 重定向。
+* [response-rewrite](plugins/response-rewrite-cn.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
