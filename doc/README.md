@@ -54,3 +54,4 @@ Plugins
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
 * openid-connect
 * [redirect](plugins/redirect.md): URI redirect.
+* [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
