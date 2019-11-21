@@ -195,7 +195,7 @@ script() {
     sleep 1
     ./bin/apisix stop
     sleep 1
-    make check || exit 1
+    make lint && make license-check || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 }
 

@@ -100,17 +100,18 @@ $ make stop
 $ make help
 Makefile rules:
 
-    help:         Show Makefile rules.
-    deps:         Installation dependencies
-    utils:        Installation utils
-    check:        Check Lua source code
-    init:         Initialize the runtime environment
-    run:          Start the apisix server
-    stop:         Stop the apisix server
-    clean:        Remove generated files
-    reload:       Reload the apisix server
-    install:      Install the apisix
-    test:         Run the test case
+    help:          Show Makefile rules.
+    deps:          Installation dependencies
+    utils:         Installation tools
+    lint:          Lint Lua source code
+    init:          Initialize the runtime environment
+    run:           Start the apisix server
+    stop:          Stop the apisix server
+    clean:         Remove generated files
+    reload:        Reload the apisix server
+    install:       Install the apisix
+    test:          Run the test case
+    license-check: Check lua souce code for Apache License
 ```
 
 ## 运行测试案例
