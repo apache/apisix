@@ -480,6 +480,6 @@ passed
     }
 --- request
 GET /t
---- error_code: 502
+--- error_code_like: ^(?:50\d)$
 --- error_log
 failed to find valid upstream server, no valid upstream node
