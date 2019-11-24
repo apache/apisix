@@ -62,7 +62,7 @@ But code that is not a function type is illegal:
  ```
 local count = 1
 ngx.say(count)
-``` 
+```
 
 ## How To Enable
 
