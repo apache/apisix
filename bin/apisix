@@ -234,14 +234,7 @@ http {
             }
         }
 
-        location = /apisix/dashboard {
-            content_by_lua_block {
-                ngx.exec("/apisix/dashboard/")
-            }
-        }
-
-        location /apisix/dashboard/ {
-            index index.html;
+        location /apisix/dashboard {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
@@ -251,11 +244,7 @@ http {
 
             alias dashboard/;
 
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Real-PORT $remote_port;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-            try_files $uri $uri/ /index.html;
+            try_files $uri $uri/index.html /index.html;
         }
     }
     {% end %}
@@ -304,14 +293,7 @@ http {
             }
         }
 
-        location = /apisix/dashboard {
-            content_by_lua_block {
-                ngx.exec("/apisix/dashboard/")
-            }
-        }
-
         location /apisix/dashboard {
-            index index.html;
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
@@ -321,11 +303,7 @@ http {
 
             alias dashboard/;
 
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Real-PORT $remote_port;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-            try_files $uri $uri/ /index.html;
+            try_files $uri $uri/index.html /index.html;
         }
         {% end %}
 
