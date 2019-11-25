@@ -30,8 +30,6 @@ APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
 它是基于 OpenResty 和 etcd 来实现，和传统 API 网关相比，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
 
-[安装](#安装) | [文档](doc/README_CN.md) | [开发环境](#开发环境) | [FAQ](FAQ.md)
-
 ## 为什么选择 APISIX？
 
 如果你正在构建网站、移动设备或 IoT（物联网）的应用，那么你可能需要使用 API 网关来处理接口流量。
@@ -83,8 +81,6 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **全局规则**：允许对所有请求执行插件，比如黑白名单、限流限速等。
 - **[TCP/UDP 代理](doc/stream-proxy-cn.md)**: 动态 TCP/UDP 代理。
 - **[动态 MQTT 代理](doc/plugins/mqtt-proxy-cn.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
-- **ACL**: TODO。
-- **Bot detection**: TODO。
 
 ## 在线演示版本
 我们部署了一个在线的 [dashboard](http://apisix.iresty.com) ，方便您了解 APISIX。
@@ -92,87 +88,16 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 ## 安装
 
 APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注意的是：OpenResty 的版本必须 >= 1.15.8.1：
-- CentOS 7
-- Ubuntu 16.04
-- Ubuntu 18.04
-- Debian 9
-- Debian 10
-- macOS
-- **ARM64** Ubuntu 18.04
 
-目前有 4 种安装方式:
-- 如果你在使用 CentOS 7，我们推荐使用 [RPM 包安装](#通过-rpm-包安装centos-7)；
-- 在 macOS 中，你需要克隆该仓库并手动安装，请参考[开发手册](doc/dev-manual-cn.md)；
-- 其它操作系统，我们推荐使用 [Luarocks 安装方式](#通过-luarocks-安装-不支持-macos)；
-- 你也可以使用 [Docker 镜像](https://github.com/iresty/docker-apisix) 来安装。
+CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-安装 APISIX 的主要步骤：
-
-1. 运行时依赖：OpenResty 或 Tengine。
-    * OpenResty: 参考 [http://openresty.org/en/installation.html](http://openresty.org/en/installation.html)。
-    * Tengine：参考该安装脚本 [Install Tengine at Ubuntu](.travis/linux_tengine_runner.sh)。
-2. 配置存储中心：参考 [etcd](https://github.com/etcd-io/etcd)。
-
-    *NOTE*：APISIX 目前仅支持 etcd 的 v2 协议存储，但最新版的 etcd (3.4 开始）已经默认关闭 v2 协议。 在启动参数中添加 `--enable-v2=true`，启用 v2 协议。支持 etcd 的 v3 协议开发工作已经开始，很快就能与大家见面。
-
-3. 安装 APISIX 服务。
-
-### 通过 RPM 包安装（CentOS 7）
-
-```shell
-sudo yum install yum-utils
-sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-sudo yum install -y openresty etcd
-
-sudo systemctl start etcd
-
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
-```
-
-如果安装成功，就可以参考 [**快速上手**](#快速上手) 来进行体验。如果失败，欢迎反馈给我们。
-
-### 通过 Luarocks 安装 （不支持 macOS）
-
-##### 依赖项
-
-APISIX 是基于 [openresty](http://openresty.org/) 之上构建的, 配置数据的存储和分发是通过 [etcd](https://github.com/etcd-io/etcd) 来完成。
-
-我们推荐你使用 [luarocks](https://luarocks.org/) 来安装 APISIX，不同的操作系统发行版本有不同的依赖和安装步骤，具体可以参考: [安装前的依赖](doc/install-dependencies.md)
-
-##### 安装 APISIX
-
-在终端中执行下面命令完成 APISIX 的安装：
-
-> 通过脚本安装 master 分支的代码
-
-```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
-```
-
-> 通过 Luarocks 安装指定的版本:
-
-```shell
-# 安装 apisix 的 0.8 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
-
-# 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 0.8
-```
-
-> 安装完成
-
-```
-    apisix 0.7-0 is now built and installed in /usr/local/apisix/deps (license: Apache License 2.0)
-
-    + sudo rm -f /usr/local/bin/apisix
-    + sudo ln -s /usr/local/apisix/deps/bin/apisix /usr/local/bin/apisix
-```
-
-恭喜，APISIX 已经安装成功。
-
-## 开发环境
-
-如果你是一个开发者，可以从 [开发文档](doc/dev-manual-cn.md) 中获取搭建开发环境和运行测试案例的步骤。
+安装 APISIX 的步骤：
+1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/install-dependencies.md).
+2. 有以下几种方式来安装 Apache APISIX:
+    - 通过[源码候选版本](doc/how-to-build-cn.md#通过源码候选版本安装);
+    - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/how-to-build-cn.md#通过-rpm-包安装centos-7)；
+    - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/how-to-build-cn.md#通过-luarocks-安装-不支持-macos)；
+    - 你也可以使用 [Docker 镜像](https://github.com/apache/incubator-apisix-docker) 来安装。
 
 ## 快速上手
 
@@ -181,8 +106,6 @@ sudo luarocks install apisix 0.8
 ```shell
 sudo apisix start
 ```
-
-*注意*：如果你当前在开发环境下，应使用 `make run` 命令启动服务。
 
 2. 测试限流插件
 
@@ -198,38 +121,39 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 ## 性能测试
 
-使用谷歌云的 4 核心服务器来运行 APISIX，QPS 可以达到 60000，同时延时只有 0.5 毫秒。
+使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
 
-你可以看出[性能测试文档](doc/benchmark-cn.md)来了解更多详细内容。
+## 文档
 
-## 架构设计
-
-[详细设计文档](doc/architecture-design-cn.md)
+[文档](doc/README_CN.md)
 
 ## 视频和文章
 
-- 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html) .
-- 2019.8.31 [APISIX 技术选型、测试和持续集成](https://www.upyun.com/opentalk/433.html) .
-- 2019.8.31 [APISIX 高性能实战2](https://www.upyun.com/opentalk/437.html) .
-- 2019.7.6 [APISIX 高性能实战(Chinese)](https://www.upyun.com/opentalk/429.html) .
+- 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html)
+- 2019.8.31 [APISIX 技术选型、测试和持续集成](https://www.upyun.com/opentalk/433.html)
+- 2019.8.31 [APISIX 高性能实战2](https://www.upyun.com/opentalk/437.html)
+- 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
 ## APISIX 的用户有哪些？
-有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中。下面是 APISIX 的用户墙：
+有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
 
-![](doc/images/user-wall.jpg)
+1. dasouche.com 大搜车
+1. haieruplus.com 海尔优家
+1. ke.com 贝壳找房
+1. meizu.com 魅族
+1. taikang.com 泰康云
+1. tangdou.com 糖豆网
+1. Tencent Cloud 腾讯云
+1. zuzuche.com 租租车
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 
 ## 全景图
-
-APISIX 被纳入 [云原生软件基金会 API 网关全景图](https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category):
-
-![](doc/images/cncf-landscope.jpg)
-
-## 常见问题（FAQ）
-在社区中经常会有开发者问到的一些问题，我们整理在下面这份 [FAQ](FAQ_CN.md) 中：
-
-如果你关心的问题没有在其中，欢迎提交 issue 或者加入下面的 QQ 群和我们沟通。
+<p align="left">
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
+<br/><br/>
+APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
+</p>
 
 ## 参与社区
 

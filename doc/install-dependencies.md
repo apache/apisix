@@ -18,14 +18,13 @@
 -->
 
 # Install Dependencies
-
-- [Install Dependencies](#install-dependencies)
 - [CentOS 6](#centos-6)
 - [CentOS 7](#centos-7)
 - [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
 - [How to compile the OpenResty](#how-to-compile-the-openresty)
+- [Note](#note)
 
 CentOS 6
 ========
@@ -131,3 +130,10 @@ Compiling OpenResty from source is very complicated, it's not easy to make it cl
 
 http://openresty.org/en/linux-packages.html
 
+Note
+====
+- Apache APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default.
+
+You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
+
+- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](../.travis/linux_tengine_runner.sh).

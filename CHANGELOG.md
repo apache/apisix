@@ -19,14 +19,13 @@
 
 # Table of Contents
 
-- [0.9.0-RC1](#090-rc1)
+- [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
 
 
-## 0.9.0-RC1
-> Released on 2019/11/11
+## 0.9.0
 
 This release brings many new features, such as support for running APISIX with Tengine,
 an advanced debugging mode that is more developer friendly, and a new URI redirection plugin.
@@ -39,24 +38,24 @@ an advanced debugging mode that is more developer friendly, and a new URI redire
 - Removed router R3 [#725](https://github.com/apache/incubator-apisix/pull/725)
 
 ### Plugins
-- [Redirect URI](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/redirect.md):【New Plugin】Redirect URI plugin. [#732](https://github.com/apache/incubator-apisix/pull/732)
-- [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/proxy-rewrite.md):【New Feature】Supported remove `header` feature. [#658](https://github.com/apache/incubator-apisix/pull/658)
-- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/limit-count.md):【New Feature】Supported global limit count with `Redis Server`.[#624](https://github.com/apache/incubator-apisix/pull/624)
+- [Redirect URI](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/redirect.md): Redirect URI plugin. [#732](https://github.com/apache/incubator-apisix/pull/732)
+- [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/proxy-rewrite.md): Supported remove `header` feature. [#658](https://github.com/apache/incubator-apisix/pull/658)
+- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/limit-count.md): Supported global limit count with `Redis Server`.[#624](https://github.com/apache/incubator-apisix/pull/624)
 
 ### lua-resty-*
 - lua-resty-radixtree
-    - 【New Feature】Support for `host + uri` as an index.
+    - Support for `host + uri` as an index.
 - lua-resty-jsonschema
-    - 【New Plugin】This extension is a JSON data validator that replaces the existing `lua-rapidjson` extension.
+    - This extension is a JSON data validator that replaces the existing `lua-rapidjson` extension.
 
 ### Bugfix
-- 【Bug】key-auth plugin cannot run accurately in the case of multiple consumers. [#826](https://github.com/apache/incubator-apisix/pull/826)
-- 【Bug】Exported schema for plugin serverless. [#787](https://github.com/apache/incubator-apisix/pull/787)
-- 【Bug】Discard args of uri when using proxy-write plugin [#642](https://github.com/apache/incubator-apisix/pull/642)
-- 【Bug】Zipkin plugin not set tracing data to request header. [#715](https://github.com/apache/incubator-apisix/pull/715)
-- 【Optimization】Skipped check cjson for luajit environment in apisix CLI. [#652](https://github.com/apache/incubator-apisix/pull/652)
-- 【Optimization】Skipped to init etcd if use local file as config center. [#737](https://github.com/apache/incubator-apisix/pull/737)
-- 【Optimization】Support more built-in parameters when set chash balancer. [#775](https://github.com/apache/incubator-apisix/pull/775)
+- key-auth plugin cannot run accurately in the case of multiple consumers. [#826](https://github.com/apache/incubator-apisix/pull/826)
+- Exported schema for plugin serverless. [#787](https://github.com/apache/incubator-apisix/pull/787)
+- Discard args of uri when using proxy-write plugin [#642](https://github.com/apache/incubator-apisix/pull/642)
+- Zipkin plugin not set tracing data to request header. [#715](https://github.com/apache/incubator-apisix/pull/715)
+- Skipped check cjson for luajit environment in apisix CLI. [#652](https://github.com/apache/incubator-apisix/pull/652)
+- Skipped to init etcd if use local file as config center. [#737](https://github.com/apache/incubator-apisix/pull/737)
+- Support more built-in parameters when set chash balancer. [#775](https://github.com/apache/incubator-apisix/pull/775)
 
 ### Dependencies
 - Replace the `lua-rapidjson` module with `lua-resty-jsonschema` global,  `lua-resty-jsonschema` is faster and easier to compile.
