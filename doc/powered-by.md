@@ -19,7 +19,7 @@
 
 # Powered by APISIX
 
-This page documents an **alphabetical list** of institutions that are using APISIX for research and production,
+This page documents an alphabetical list of institutions that are using APISIX for research and production,
 or providing commercial products including APISIX.
 
 Users are encouraged to add themselves to this page, [issue](https://github.com/apache/incubator-apisix/issues/487) and PR are welcomed.
