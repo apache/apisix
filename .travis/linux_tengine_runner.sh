@@ -131,7 +131,6 @@ tengine_install() {
 do_install() {
     export_or_prefix
 
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
     sudo add-apt-repository -y ppa:longsleep/golang-backports
@@ -139,6 +138,9 @@ do_install() {
     sudo apt-get update
 
     tengine_install
+
+    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+    openresty -V
 
     sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls
 
@@ -180,8 +182,6 @@ do_install() {
 
 script() {
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
-    openresty -V
     sudo service etcd start
 
     ./build-cache/grpc_server_example &
