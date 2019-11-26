@@ -19,7 +19,7 @@
 set -ex
 
 export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty"
+    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
 }
 
 create_lua_deps() {

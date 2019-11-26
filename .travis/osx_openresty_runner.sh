@@ -19,11 +19,11 @@
 set -ex
 
 export_or_prefix() {
-    export OPENRESTY_PREFIX=$(brew --prefix openresty/brew/openresty)
+    export OPENRESTY_PREFIX=$(brew --prefix openresty/brew/openresty-debug)
 }
 
 before_install() {
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty redis
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis
     brew upgrade go
 
     sudo sed -i "" "s/requirepass/#requirepass/g" /usr/local/etc/redis.conf
