@@ -24,7 +24,6 @@ export_or_prefix() {
 
 create_lua_deps() {
     sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
     echo "Create lua deps cache"
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -132,7 +131,6 @@ tengine_install() {
 do_install() {
     export_or_prefix
 
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
     sudo add-apt-repository -y ppa:longsleep/golang-backports
