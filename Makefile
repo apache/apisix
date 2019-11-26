@@ -28,7 +28,7 @@ LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 .PHONY: default
 default:
 ifeq ($(OR_EXEC), )
-ifeq ($(shell which openresty-debug), )
+ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
 	@echo "ERROR: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
 	exit 1
 endif
