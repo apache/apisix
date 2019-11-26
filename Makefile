@@ -32,6 +32,7 @@ ifeq ($(OR_EXEC), )
 	exit 1
 endif
 
+LUTJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
 
 ### help:             Show Makefile rules.
 .PHONY: help
