@@ -84,9 +84,6 @@ For more detailed information, see the [White Paper](https://www.iresty.com/down
 - **[TCP/UDP Proxy](doc/stream-proxy.md)**: Dynamic TCP/UDP proxy.
 - **[Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md)**: Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
 
-## Online Demo Dashboard
-We provide an online dashboard [demo version](http://apisix.iresty.com)， make it easier for you to understand APISIX.
-
 ## Installation
 
 APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1, or Tengine >= 2.3.2):
@@ -117,12 +114,27 @@ you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 Then you can try more [plugins](doc/README.md#plugins).
 
 ## Dashboard
+APISIX has built-in support for dashboards, as follows:
 
-APISIX has the built-in dashboard，open `http://127.0.0.1:9080/apisix/dashboard/` with a browser and try it.
+- Download the source code of [dashboard] (https://github.com/apache/incubator-apisix-dashboard):
+```
+git clone https://github.com/apache/incubator-apisix-dashboard.git
+```
 
+- Install dependencies and compile
+```
+yarn install
+yarn run build: prod
+```
+
+- Integration with APISIX
+Copy the compiled files to the apisix / dashboard directory,
+open `http://127.0.0.1:9080/apisix/dashboard/` with a browser and try it.
 Do not need to fill the user name and password, log in directly.
 
 Dashboard allow any remote IP by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
+
+We provide an online dashboard [demo version](http://apisix.iresty.com), make it easier for you to understand APISIX.
 
 ## Benchmark
 
@@ -140,16 +152,20 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 ## Who Uses APISIX?
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
-1. cunw.com.cn
-1. dasouche.com
-1. fansup.mobi
-1. haieruplus.com
-1. ke.com
-1. meizu.com
-1. taikang.com
-1. tangdou.com
-1. Tencent Cloud
-1. zuzuche.com
+
+1. dasouche 大搜车 https://www.dasouche.com/
+1. ehomepay 理房通 https://www.ehomepay.com.cn/
+1. haieruplus.com 海尔优家  http://haieruplus.com/
+1. HelloTalk, Inc.  https://www.hellotalk.com/
+1. ke.com 贝壳找房 https://www.ke.com/
+1. Meizu 魅族 https://www.meizu.com/
+1. NASA JPL 美国国家航空航天局 喷气推进实验室 https://www.jpl.nasa.gov
+1. Netease 网易 http://www.163.com
+1. taikang.com 泰康云   http://taikang.com/
+1. tangdou.com 糖豆网   http://www.tangdou.com/
+1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
+1. Xin 优信二手车 https://www.xin.com/
+1. zuzuche 租租车 https://www.zuzuche.com/
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 

@@ -28,14 +28,17 @@ LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 .PHONY: default
 default:
 ifeq ($(OR_EXEC), )
-	@echo "OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
+ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
+	@echo "ERROR: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
 	exit 1
 endif
+endif
 
+LUTJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
 
 ### help:             Show Makefile rules.
 .PHONY: help
-help:
+help: default
 	@echo Makefile rules:
 	@echo
 	@grep -E '^### [-A-Za-z0-9_]+:' Makefile | sed 's/###/   /'

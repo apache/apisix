@@ -26,6 +26,7 @@
 - **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可
 - [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
 它是基于 OpenResty 和 etcd 来实现，和传统 API 网关相比，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
@@ -73,7 +74,7 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **IPv6**：支持使用 IPv6 格式匹配路由。
 - **集群**：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
 - **可扩展**：简单易用的插件机制方便扩展。
-- **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.6 毫秒。
+- **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.2 毫秒。
 - **防御 ReDoS(正则表达式拒绝服务)**
 - **IP 黑名单**
 - **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
@@ -81,9 +82,6 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 - **全局规则**：允许对所有请求执行插件，比如黑白名单、限流限速等。
 - **[TCP/UDP 代理](doc/stream-proxy-cn.md)**: 动态 TCP/UDP 代理。
 - **[动态 MQTT 代理](doc/plugins/mqtt-proxy-cn.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
-
-## 在线演示版本
-我们部署了一个在线的 [dashboard](http://apisix.iresty.com) ，方便您了解 APISIX。
 
 ## 安装
 
@@ -114,10 +112,28 @@ sudo apisix start
 更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
 ## 控制台
-APISIX 内置了 dashboard，使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
+
+APISIX 内置了对 dashboard 的支持，步骤如下：
+
+- 下载 [dashboard](https://github.com/apache/incubator-apisix-dashboard) 的源码：
+```
+git clone https://github.com/apache/incubator-apisix-dashboard.git
+```
+
+- 安装依赖和编译
+```
+yarn install
+yarn run build:prod
+```
+
+- 与 APISIX 集成
+把编译后的文件，拷贝到 apisix/dashboard 目录下。
+使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
 不用填写用户名和密码，直接登录。
 
 Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
+
+我们部署了一个在线的 [dashboard](http://apisix.iresty.com) ，方便您了解 APISIX。
 
 ## 性能测试
 
@@ -137,14 +153,19 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
 
-1. dasouche.com 大搜车
-1. haieruplus.com 海尔优家
-1. ke.com 贝壳找房
-1. meizu.com 魅族
-1. taikang.com 泰康云
-1. tangdou.com 糖豆网
-1. Tencent Cloud 腾讯云
-1. zuzuche.com 租租车
+1. dasouche 大搜车 https://www.dasouche.com/
+1. ehomepay 理房通 https://www.ehomepay.com.cn/
+1. haieruplus.com 海尔优家  http://haieruplus.com/
+1. HelloTalk, Inc.  https://www.hellotalk.com/
+1. ke.com 贝壳找房 https://www.ke.com/
+1. Meizu 魅族 https://www.meizu.com/
+1. NASA JPL 美国国家航空航天局 喷气推进实验室 https://www.jpl.nasa.gov
+1. Netease 网易 http://www.163.com
+1. taikang.com 泰康云   http://taikang.com/
+1. tangdou.com 糖豆网   http://www.tangdou.com/
+1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
+1. Xin 优信二手车 https://www.xin.com/
+1. zuzuche 租租车 https://www.zuzuche.com/
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 
