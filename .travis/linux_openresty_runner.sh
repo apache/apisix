@@ -19,7 +19,7 @@
 set -ex
 
 export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export OPENRESTY_PREFIX="/usr/local/openresty"
 }
 
 create_lua_deps() {
@@ -43,7 +43,7 @@ do_install() {
 
     sudo apt-get update
 
-    sudo apt-get install openresty-debug
+    sudo apt-get install openresty
     sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls
 
     export GO111MOUDULE=on
