@@ -139,9 +139,6 @@ do_install() {
 
     tengine_install
 
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
-    openresty -V
-
     sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls
 
     export GO111MOUDULE=on
@@ -182,6 +179,8 @@ do_install() {
 
 script() {
     export_or_prefix
+    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+    openresty -V
     sudo service etcd start
 
     ./build-cache/grpc_server_example &
