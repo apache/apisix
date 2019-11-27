@@ -19,18 +19,18 @@
 [中文](plugin-develop-cn.md)
 
 # table of contents
-- [**check dependencies**](#check dependencies)
-- [**name and config**](#*name and config)
-- [**schema and check**](#schema and check)
-- [**choose phase to run**](#choose phase to run)
-- [**implement the logic**](#implement the logic)
-- [**write test case**](#write test case)
+- [**check dependencies**](#check-dependencies)
+- [**name and config**](#name-and-config)
+- [**schema and check**](#schema-and-check)
+- [**choose phase to run**](#choose-phase-to-run)
+- [**implement the logic**](#implement-the-logic)
+- [**write test case**](#write-test-case)
 
 
 ## check dependencies
 
-if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it 
- needs to declare in __bin/apisix__, for example:
+if you have dependencies on external libraries , check the dependent items . if your plugin needs to use shared memory , it 
+ needs to declare in __bin/apisix__ , for example :
 
 ```nginx
     lua_shared_dict plugin-limit-req     10m;
@@ -48,20 +48,20 @@ if you have dependencies on external libraries, check the dependent items. if yo
 
 if the dependency of the plugin needs to be initialized when Nginx start , you may need to add logic to the initialization 
 method "http_init" in the file __Lua/apifix.lua__ , And you may need to add some processing on generated part of Nginx 
-configuration file in __bin/apisix__ file.
+configuration file in __bin/apisix__ file .
 
-Note: The plugin itself provides the init method. It is convenient for plugins to perform some initialization after 
-the plugin is loaded.
+Note : The plugin itself provides the init method . It is convenient for plugins to perform some initialization after 
+the plugin is loaded .
 
 ## name and config
 
-determine the name and priority of the plugin, and add to conf/config.yaml . For example , for the key-auth plugin , 
+determine the name and priority of the plugin , and add to conf/config.yaml . For example , for the key-auth plugin , 
 you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be 
-duplicate) , you can see the code in file "__lua/apisix/plugins/key-auth.lua__"
+duplicate) , you can see the code in file "__lua/apisix/plugins/key-auth.lua__" :
 
 ```lua
    local plugin_name = "key-auth"
-    ...
+   
    local _M = {
       version = 0.1,
       priority = 2500,
@@ -71,7 +71,7 @@ duplicate) , you can see the code in file "__lua/apisix/plugins/key-auth.lua__"
    }
 ```
 
-in the "__conf/config.yaml__" configuration file , the enabled plugins (all specified by plugin name) are listed
+in the "__conf/config.yaml__" configuration file , the enabled plugins (all specified by plugin name) are listed .
 
 ```yaml
 plugins:                          # plugin list
@@ -93,21 +93,21 @@ plugins:                          # plugin list
   - redirect
 ```
 
-Note: the order of the plugins is not related to the order of execution.
+Note : the order of the plugins is not related to the order of execution .
 
 ## schema and check
 
-Write [Json Schema](#https://json-schema.org) descriptions and check functions. similarly, take the key-auth plugin as an example to see its 
-configuration data:
+Write [Json Schema](https://json-schema.org) descriptions and check functions. similarly , take the key-auth plugin as an example to see its 
+configuration data :
 
 ```json
- "key-auth": {
-       "key": "auth-one"
+ "key-auth" : {
+       "key" : "auth-one"
   }
 ```
 
-The configuration data of the plugin is relatively simple. Only one attribute named key is supported. Let's look 
-at its schema description:
+The configuration data of the plugin is relatively simple . Only one attribute named key is supported . Let's look 
+at its schema description :
 
 ```lua
    local schema = {
@@ -118,7 +118,7 @@ at its schema description:
    }
 ```
 
-at the same time, we need to implement the __check_schema(conf)__ method to complete the specification verification.
+at the same time, we need to implement the __check_schema(conf)__ method to complete the specification verification .
 
 ```lua
    function _M.check_schema(conf)
@@ -127,7 +127,7 @@ at the same time, we need to implement the __check_schema(conf)__ method to comp
 ```
 
 Note: the project has provided the public method "__core.schema.check__" , which can be used directly to complete JSON 
-verification.
+verification .
 
 ## choose phase to run
 
@@ -145,9 +145,9 @@ Write the logic of the plugin in the corresponding phase .
 
 for functions , write and improve the test cases of various dimensions , do a comprehensive test for your plugin ! The
 test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out . the test framework 
-[****test-nginx****](#https://github.com/openresty/test-nginx)  adopted by the project. a test case, .t file is usually 
+[****test-nginx****](https://github.com/openresty/test-nginx)  adopted by the project. a test case, .t file is usually 
 divided into prologue and data parts by \__data\__ . Here we will briefly introduce the data part, that is, the part 
-of the real test case . For example, the key-auth plugin:
+of the real test case . For example, the key-auth plugin :
 
 ```perl
 === TEST 1: sanity
@@ -171,7 +171,7 @@ done
 [error]
 ```
 
-a test case consists of three parts:
+a test case consists of three parts :
 - __Program code__ : configuration content of Nginx location
 - __Input__ : http request information
 - __Output check__ : status, header, body, error log check

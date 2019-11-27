@@ -54,11 +54,11 @@
 ## 插件命名与配置
 
 给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
-需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __lua/apisix/plugins/key-auth.lua__ 文件中可以看到
+需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __lua/apisix/plugins/key-auth.lua__ 文件中可以看到：
 
 ```lua
    local plugin_name = "key-auth"
-   ...
+   
    local _M = {
        version = 0.1,
        priority = 2500,
@@ -68,7 +68,7 @@
    }
 ```
 
-在 __conf/config.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）
+在 __conf/config.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
 ```yaml
 plugins:                          # plugin list
@@ -90,16 +90,16 @@ plugins:                          # plugin list
   - redirect
 ```
 
-注：先后顺序与执行顺序无关
+注：先后顺序与执行顺序无关。
 
 ## 配置描述与校验
 
-定义插件的配置项，以及对应的 [Json Schema](#https://json-schema.org) 描述，并完成对 json 的校验，这样方便对配置的数据规
+定义插件的配置项，以及对应的 [Json Schema](https://json-schema.org) 描述，并完成对 json 的校验，这样方便对配置的数据规
 格进行验证，以确保数据的完整性以及程序的健壮性。同样，我们以 key-auth 插件为例，看看他的配置数据：
 
 ```json
- "key-auth": {
-       "key": "auth-one"
+ "key-auth" : {
+       "key" : "auth-one"
   }
 ```
 
@@ -132,12 +132,12 @@ plugins:                          # plugin list
 
 ## 编写执行逻辑
 
-在对应的阶段方法里编写功能的逻辑代码
+在对应的阶段方法里编写功能的逻辑代码。
 
 ## 编写测试用例
 
 针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 __t/plugin__ 目录下，可以前去了解。
-项目测试框架采用的 [****test-nginx****](#https://github.com/openresty/test-nginx)  
+项目测试框架采用的 [****test-nginx****](https://github.com/openresty/test-nginx)  。
 一个测试用例 __.t__ 文件，通常用 \__DATA\__ 分割成 序言部分 和 数据部分。这里我们简单介绍下数据部分，
 也就是真正测试用例的部分，仍然以 key-auth 插件为例：
 
@@ -170,11 +170,11 @@ done
 
 这里请求 __/t__ ，经过配置文件 __location__ ，调用 __content_by_lua_block__ 指令完成 lua 的脚本，最终返回。
 用例的断言是 response_body 返回 "done"，__no_error_log__ 表示会对 Nginx 的 error.log 检查，
-必须没有 ERROR 级别的记录
+必须没有 ERROR 级别的记录。
 
 ### 附上test-nginx 执行流程：
 
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
-包括 http status，http response header， http response body 等
+包括 http status，http response header， http response body 等。
 
