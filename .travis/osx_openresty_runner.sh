@@ -60,8 +60,6 @@ script() {
     etcd --enable-v2=true &
     sleep 1
 
-    luarocks install luacheck
-
     sudo cpanm Test::Nginx
 
     ./grpc_server_example/grpc_server_example &
