@@ -126,7 +126,7 @@ at the same time, we need to implement the __check_schema(conf)__ method to comp
    end
 ```
 
-Note: the project has provided the public method "__core.schema.check__" , which can be used directly to complete JSON 
+Note: the project has provided the public method "__core.schema.check__" , which can be used directly to complete JSON
 verification .
 
 ## choose phase to run
@@ -176,8 +176,8 @@ a test case consists of three parts :
 - __Input__ : http request information
 - __Output check__ : status, header, body, error log check
 
-when we request __/t__ , which config in the configuration file , the Nginx will call "__content_by_lua_block__" instruction to 
-complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
+when we request __/t__ , which config in the configuration file , the Nginx will call "__content_by_lua_block__" instruction to
+ complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
 "__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record .
 
 ### Attach the test-nginx execution process:
