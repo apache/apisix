@@ -91,9 +91,9 @@ APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1,
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
 Steps to install APISIX:
-1. Installation runtime dependencies: OpenResty and etcd, refer to [documentation](doc/install-dependencies.md);
+1. Installation runtime dependencies: OpenResty and etcd, refer to [documentation](doc/install-dependencies.md)
 2. There are several ways to install Apache APISIX:
-    - [Source Release Candidate](doc/how-to-build.md#installation-via-source-release-candidate)
+    - [Source Release](doc/how-to-build.md#installation-via-source-release)
     - [RPM package](doc/how-to-build.md#installation-via-rpm-package-centos-7) for CentOS 7
     - [Luarocks](doc/how-to-build.md#installation-via-luarocks-macos-not-supported)
     - [Docker](https://github.com/apache/incubator-apisix-docker)
@@ -116,7 +116,7 @@ Then you can try more [plugins](doc/README.md#plugins).
 ## Dashboard
 APISIX has built-in support for dashboards, as follows:
 
-- Download the source code of [dashboard] (https://github.com/apache/incubator-apisix-dashboard):
+- Download the source code of [dashboard](https://github.com/apache/incubator-apisix-dashboard):
 ```
 git clone https://github.com/apache/incubator-apisix-dashboard.git
 ```

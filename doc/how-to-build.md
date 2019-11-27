@@ -28,13 +28,13 @@ So before installation, please follow the different operating systems [install D
 
 You can install Apache APISIX in a variety of ways, including source code packages, Docker, and Luarocks.
 
-### Installation via source release candidate
+### Installation via source release
 
-You need to download the source release candidate first:
+You need to download the Apache source release first:
 
 ```shell
-wget https://dist.apache.org/repos/dist/dev/incubator/apisix/0.9-RC1/apache-apisix-0.9-rc1-incubating-src.tar.gz
-tar zxvf apache-apisix-0.9-rc1-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/0.9/apache-apisix-0.9-incubating-src.tar.gz
+tar zxvf apache-apisix-0.9-incubating-src.tar.gz
 ```
 
 Install the Lua libraries that the runtime depends on:
@@ -46,7 +46,7 @@ make deps
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.9/apisix-0.9-0.el7.noarch.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)
