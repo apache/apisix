@@ -29,7 +29,7 @@
 
 ## 检查外部依赖
 
-如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。如果插件需要用到共享内存，需要在 __bin/apisix__ 文
+如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 __bin/apisix__ 文
 件里面进行申明，例如：
 
 ```nginx
@@ -46,10 +46,11 @@
     lua_shared_dict introspection        10m; # cache for JWT verification results
 ```
 
-如果插件本身的依赖，需要在 Nginx 初始化启动，则可能需要在 __lua/apisix.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
-可能需要在 __bin/apisix__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。
+插件本身提供了 init 方法。方便插件加载后做初始化动作。
 
-注：插件本身提供了 init 方法。方便插件加载后做初始化动作。
+注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __lua/apisix.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
+    可能需要在 __bin/apisix__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
+    插件机制，我们不建议这样做，除非你已经对代码完全掌握。
 
 ## 插件命名与配置
 
@@ -67,6 +68,8 @@
        schema = schema,
    }
 ```
+
+注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。
 
 在 __conf/config.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
@@ -114,7 +117,7 @@ plugins:                          # plugin list
    }
 ```
 
-同时，需要实现 __check_schema(conf)__ 方法，完成规格的校验。
+同时，需要实现 __check_schema(conf)__ 方法，完成配置参数的合法性校验。
 
 ```lua
    function _M.check_schema(conf)
@@ -122,7 +125,7 @@ plugins:                          # plugin list
    end
 ```
 
-注：项目已经提供了 __core.schema.check__ 公共方法，直接使用即可完成 json 校验。
+注：项目已经提供了 __core.schema.check__ 公共方法，直接使用即可完成配置参数校验。
 
 ## 确定执行阶段
 
