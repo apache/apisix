@@ -27,13 +27,13 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 
 你可以通过源码包、Docker、Luarocks 等多种方式来安装 Apache APISIX。
 
-### 通过源码候选版本安装
+### 通过源码包安装
 
-你需要先下载源码候选版本：
+你需要先下载 Apache Release 源码包：
 
 ```shell
-wget https://dist.apache.org/repos/dist/dev/incubator/apisix/0.9-RC1/apache-apisix-0.9-rc1-incubating-src.tar.gz
-tar zxvf apache-apisix-0.9-rc1-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/0.9/apache-apisix-0.9-incubating-src.tar.gz
+tar zxvf apache-apisix-0.9-incubating-src.tar.gz
 ```
 
 安装运行时依赖的 Lua 库：
@@ -45,7 +45,7 @@ make deps
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.8/apisix-0.8-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v0.9/apisix-0.9-0.el7.noarch.rpm
 ```
 
 ### 通过 Luarocks 安装 （不支持 macOS）
