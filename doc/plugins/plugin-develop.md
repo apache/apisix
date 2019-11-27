@@ -29,7 +29,7 @@
 
 ## check dependencies
 
-if you have dependencies on external libraries , check the dependent items . if your plugin needs to use shared memory , it 
+if you have dependencies on external libraries , check the dependent items . if your plugin needs to use shared memory , it
  needs to declare in __bin/apisix__ , for example :
 
 ```nginx
@@ -46,22 +46,22 @@ if you have dependencies on external libraries , check the dependent items . if 
     lua_shared_dict introspection        10m; # cache for JWT verification results
 ```
 
-if the dependency of the plugin needs to be initialized when Nginx start , you may need to add logic to the initialization 
-method "http_init" in the file __Lua/apifix.lua__ , And you may need to add some processing on generated part of Nginx 
-configuration file in __bin/apisix__ file .
+if the dependency of the plugin needs to be initialized when Nginx start , you may need to add logic to the initialization
+method "http_init" in the file __Lua/apifix.lua__ , And you may need to add some processing on generated part of Nginx
+ configuration file in __bin/apisix__ file .
 
-Note : The plugin itself provides the init method . It is convenient for plugins to perform some initialization after 
-the plugin is loaded .
+Note : The plugin itself provides the init method . It is convenient for plugins to perform some initialization after
+ the plugin is loaded .
 
 ## name and config
 
-determine the name and priority of the plugin , and add to conf/config.yaml . For example , for the key-auth plugin , 
-you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be 
-duplicate) , you can see the code in file "__lua/apisix/plugins/key-auth.lua__" :
+determine the name and priority of the plugin , and add to conf/config.yaml . For example , for the key-auth plugin ,
+ you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
+ duplicate) , you can see the code in file "__lua/apisix/plugins/key-auth.lua__" :
 
 ```lua
    local plugin_name = "key-auth"
-   
+
    local _M = {
       version = 0.1,
       priority = 2500,
@@ -97,8 +97,8 @@ Note : the order of the plugins is not related to the order of execution .
 
 ## schema and check
 
-Write [Json Schema](https://json-schema.org) descriptions and check functions. similarly , take the key-auth plugin as an example to see its 
-configuration data :
+Write [Json Schema](https://json-schema.org) descriptions and check functions. similarly , take the key-auth plugin as an example to see its
+ configuration data :
 
 ```json
  "key-auth" : {
@@ -106,7 +106,7 @@ configuration data :
   }
 ```
 
-The configuration data of the plugin is relatively simple . Only one attribute named key is supported . Let's look 
+The configuration data of the plugin is relatively simple . Only one attribute named key is supported . Let's look
 at its schema description :
 
 ```lua
@@ -131,10 +131,10 @@ verification .
 
 ## choose phase to run
 
-determine which phase to run , generally access or rewrite . if you don't know the Openresty life cycle , it's 
-recommended to know it in advance . key-auth is an authentication plugin , as long as the authentication is completed 
+determine which phase to run , generally access or rewrite . if you don't know the Openresty life cycle , it's
+recommended to know it in advance . key-auth is an authentication plugin , as long as the authentication is completed
 before the business response after the request comes in . The plugin can be executed in the rewrite and access phases ,
-in the project, the authentication logic is implemented in the rewrite phase . Generally, IP access and interface 
+in the project, the authentication logic is implemented in the rewrite phase . Generally, IP access and interface
 permission are completed in the access phase .
 
 ## implement the logic
@@ -144,9 +144,9 @@ Write the logic of the plugin in the corresponding phase .
 ## write test case
 
 for functions , write and improve the test cases of various dimensions , do a comprehensive test for your plugin ! The
-test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out . the test framework 
-[****test-nginx****](https://github.com/openresty/test-nginx)  adopted by the project. a test case, .t file is usually 
-divided into prologue and data parts by \__data\__ . Here we will briefly introduce the data part, that is, the part 
+test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out . the test framework
+[****test-nginx****](https://github.com/openresty/test-nginx)  adopted by the project. a test case, .t file is usually
+divided into prologue and data parts by \__data\__ . Here we will briefly introduce the data part, that is, the part
 of the real test case . For example, the key-auth plugin :
 
 ```perl
@@ -177,12 +177,12 @@ a test case consists of three parts :
 - __Output check__ : status, header, body, error log check
 
 when we request __/t__ , which config in the configuration file , the Nginx will call "__content_by_lua_block__" instruction to 
-complete the Lua script, and finally return. The assertion of the use case is response_body return "done", 
+complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
 "__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record .
 
 ### Attach the test-nginx execution process:
 
-According to the path we configured in the makefile and some configuration items at the front of each __.t__ file, the 
-framework will assemble into a complete nginx.conf file. "__t/servroot__" is the working directory of Nginx and start the 
-Nginx instance. according to the information provided by the test case, initiate the http request and check that the 
+According to the path we configured in the makefile and some configuration items at the front of each __.t__ file, the
+framework will assemble into a complete nginx.conf file. "__t/servroot__" is the working directory of Nginx and start the
+Nginx instance. according to the information provided by the test case, initiate the http request and check that the
 return items of HTTP include HTTP status, HTTP response header, HTTP response body and so on .

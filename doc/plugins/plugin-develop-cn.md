@@ -32,7 +32,7 @@
 如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。如果插件需要用到共享内存，需要在 __bin/apisix__ 文
 件里面进行申明，例如：
 
-```nginx 
+```nginx
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
     lua_shared_dict prometheus-metrics   10m;
@@ -49,7 +49,7 @@
 如果插件本身的依赖，需要在 Nginx 初始化启动，则可能需要在 __lua/apisix.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
 可能需要在 __bin/apisix__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。
 
-注：插件本身提供了 init 方法。方便插件加载后做初始化动作。 
+注：插件本身提供了 init 方法。方便插件加载后做初始化动作。
 
 ## 插件命名与配置
 
@@ -58,7 +58,7 @@
 
 ```lua
    local plugin_name = "key-auth"
-   
+
    local _M = {
        version = 0.1,
        priority = 2500,
