@@ -20,9 +20,9 @@ local pb     = require("pb")
 local ngx    = ngx
 local string = string
 local table  = table
+local ipairs = ipairs
 
-
-return function(proto, service, method)
+return function(proto, service, method, pb_option)
     local m = util.find_method(proto, service, method)
     if not m then
         return false, "2.Undefined service method: " .. service .. "/" .. method
@@ -49,6 +49,12 @@ return function(proto, service, method)
     local buffer = table.concat(buffered)
     if not ngx.req.get_headers()["X-Grpc-Web"] then
         buffer = string.sub(buffer, 6)
+    end
+
+    if pb_option then
+        for _, opt in ipairs(pb_option) do
+            pb.option(opt)
+        end
     end
 
     local decoded = pb.decode(m.output_type, buffer)

@@ -67,7 +67,11 @@ local function get_from_request(name, kind)
 
     if prefix == "int" then
         if request_table[name] then
-            return tonumber(request_table[name])
+            if kind == "int64" then
+                return request_table[name]
+            else
+                return tonumber(request_table[name])
+            end
         end
     end
 
