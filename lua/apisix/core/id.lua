@@ -31,6 +31,23 @@ local function rtrim(str)
 end
 
 
+local function get_uid_file_path()
+    local uid_file_path = prefix .. "/conf/apisix.uid"
+
+    -- test if we can create file or file already exist
+    local file = open(uid_file_path, "w+")
+    if file then
+        file:close()
+        log.notice("use uid file: ", uid_file_path)
+        return uid_file_path
+    end
+
+    uid_file_path = "/etc/apisix/apisix.uid"
+    log.notice("use uid file: ", uid_file_path)
+    return uid_file_path
+end
+
+
 local function read_file(path)
     local file = open(path, "rb") -- r read mode and b binary mode
     if not file then
@@ -59,7 +76,7 @@ _M.gen_uuid_v4 = uuid.generate_v4
 
 
 function _M.init()
-    local uid_file_path = prefix .. "/conf/apisix.uid"
+    local uid_file_path = get_uid_file_path()
     apisix_uid = read_file(uid_file_path)
     if apisix_uid then
         return
