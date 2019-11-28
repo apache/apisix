@@ -53,7 +53,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 * `proto_id`: `.proto`内容的id.
 * `service`:  grpc服务名.
 * `method`:   grpc服务中要调用的方法名.
-
+* `option`:   proto 编码过程中的转换选项. [ "int64_as_string" / "enum_as_value" / "auto_default_values" / "enable_hooks" ]
 
 
 ### 示例
@@ -107,3 +107,72 @@ Proxy-Connection: keep-alive
 
 这表示已成功代理。
 
+
+#### 使用 grpc-transcode 插件的 pb_option 选项
+
+在指定 route 中，代理 grpc 服务接口:
+
+**选项清单**
+ * 枚举类型
+    > enum_as_name
+    > enum_as_value
+
+ * 64位整型
+    > int64_as_number
+    > int64_as_string
+    > int64_as_hexstring
+
+ * 使用默认值
+    > auto_default_values
+    > no_default_values
+    > use_default_values
+    > use_default_metatable
+
+  * Hooks开关
+    > enable_hooks
+    > disable_hooks
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/23 -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/zeebe/WorkflowInstanceCreate",
+    "service_protocol": "grpc",
+    "plugins": {
+        "grpc-transcode": {
+         "proto_id": "1",
+         "service": "gateway_protocol.Gateway",
+         "method": "CreateWorkflowInstance",
+         "pb_option":["int64_as_string"]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:26500": 1
+        }
+    }
+}'
+```
+
+#### 测试
+
+访问上面配置的 route：
+
+```
+$ curl -i "http://127.0.0.1:9080/zeebe/WorkflowInstanceCreate?bpmnProcessId=order-process&version=1&variables=\{\"orderId\":\"7\",\"ordervalue\":99\}"
+HTTP/1.1 200 OK
+Date: Wed, 13 Nov 2019 03:38:27 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+grpc-encoding: identity
+grpc-accept-encoding: gzip
+Server: APISIX web server
+Trailer: grpc-status
+Trailer: grpc-message
+
+{"workflowKey":"#2251799813685260","workflowInstanceKey":"#2251799813688013","bpmnProcessId":"order-process","version":1}
+```
+
+`"workflowKey":"#2251799813685260"` 这表示已成功。

@@ -22,9 +22,9 @@ local bit    = require("bit")
 local ngx    = ngx
 local string = string
 local table  = table
+local ipairs = ipairs
 
-
-return function (proto, service, method, default_values)
+return function (proto, service, method, pb_option, default_values)
     core.log.info("proto: ", core.json.delay_encode(proto, true))
     local m = util.find_method(proto, service, method)
     if not m then
@@ -33,8 +33,15 @@ return function (proto, service, method, default_values)
     end
 
     ngx.req.read_body()
-    local encoded = pb.encode(m.input_type,
-        util.map_message(m.input_type, default_values or {}))
+
+    if pb_option then
+        for _, opt in ipairs(pb_option) do
+            pb.option(opt)
+        end
+    end
+
+    local map_message = util.map_message(m.input_type, default_values or {})
+    local encoded = pb.encode(m.input_type, map_message)
 
     if not encoded then
         return false, "failed to encode request data to protobuf"
