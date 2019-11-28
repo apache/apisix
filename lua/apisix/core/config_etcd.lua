@@ -54,23 +54,17 @@ local function readdir(etcd_cli, key)
         return nil, nil, "not inited"
     end
 
-    local data, err = etcd_cli:readdir(key, true)
-    if not data then
+    local res, err = etcd_cli:readdir(key, true)
+    if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, nil, err
     end
 
-    local body = data.body
-
-    if type(body) ~= "table" then
-        return nil, nil, "failed to read etcd dir"
+    if type(res.body) ~= "table" then
+        return nil, "failed to read etcd dir"
     end
 
-    if body.message then
-        return nil, nil, body.message
-    end
-
-    return body.node, data.headers
+    return res
 end
 
 local function waitdir(etcd_cli, key, modified_index)
@@ -78,19 +72,17 @@ local function waitdir(etcd_cli, key, modified_index)
         return nil, nil, "not inited"
     end
 
-    local data, err = etcd_cli:waitdir(key, modified_index)
-    if not data then
+    local res, err = etcd_cli:waitdir(key, modified_index)
+    if not res then
         -- log.error("failed to get key from etcd: ", err)
-        return nil, nil, err
+        return nil, err
     end
 
-    local body = data.body or {}
-
-    if body.message then
-        return body.node, data.headers, body.message
+    if type(res.body) ~= "table" then
+        return nil, "failed to read etcd dir"
     end
 
-    return body.node, data.headers
+    return res
 end
 
 
@@ -126,7 +118,12 @@ local function sync_data(self)
     end
 
     if self.need_reload then
-        local dir_res, headers, err = readdir(self.etcd_cli, self.key)
+        local res, err = readdir(self.etcd_cli, self.key)
+        if not res then
+            return false, err
+        end
+
+        local dir_res, headers = res.body.node, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then
@@ -204,11 +201,26 @@ local function sync_data(self)
         return true
     end
 
-    local res, headers, err = waitdir(self.etcd_cli, self.key,
-                                      self.prev_index + 1)
-    log.debug("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-    log.debug("res: ", json.delay_encode(res, true))
-    log.debug("headers: ", json.delay_encode(headers, true))
+    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
+    log.info("res: ", json.delay_encode(dir_res, true))
+    if not dir_res then
+        return false, err
+    end
+
+    local res = dir_res.body.node
+    local err_msg = dir_res.body.message
+    if err_msg then
+        if err_msg == "The event in requested index is outdated and cleared"
+           and dir_res.body.errorCode == 401 then
+            self.need_reload = true
+            log.warn("waitdir [", self.key, "] err: ", err_msg,
+                     ", need to fully reload")
+            return false
+        end
+        return false, err
+    end
+
     if not res then
         if err == "The event in requested index is outdated and cleared" then
             self.need_reload = true
