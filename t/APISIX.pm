@@ -38,8 +38,8 @@ sub read_file($) {
 }
 
 my $yaml_config = read_file("conf/config.yaml");
-my $ssl_crt = read_file("conf/cert/apisix.crt");
-my $ssl_key = read_file("conf/cert/apisix.key");
+my $ssl_crt = read_file("conf/nginx/cert/apisix.crt");
+my $ssl_key = read_file("conf/nginx/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 
@@ -192,9 +192,9 @@ _EOC_
 
     server {
         listen 1983 ssl;
-        ssl_certificate             cert/apisix.crt;
-        ssl_certificate_key         cert/apisix.key;
-        lua_ssl_trusted_certificate cert/apisix.crt;
+        ssl_certificate             nginx/cert/apisix.crt;
+        ssl_certificate_key         nginx/cert/apisix.key;
+        lua_ssl_trusted_certificate nginx/cert/apisix.crt;
 
         server_tokens off;
 
@@ -222,9 +222,9 @@ _EOC_
         $ipv6_listen_conf
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
-        ssl_certificate             cert/apisix.crt;
-        ssl_certificate_key         cert/apisix.key;
-        lua_ssl_trusted_certificate cert/apisix.crt;
+        ssl_certificate             nginx/cert/apisix.crt;
+        ssl_certificate_key         nginx/cert/apisix.key;
+        lua_ssl_trusted_certificate nginx/cert/apisix.crt;
 
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
@@ -319,9 +319,9 @@ _EOC_
 $user_debug_config
 >>> ../conf/config.yaml
 $user_yaml_config
->>> ../conf/cert/apisix.crt
+>>> ../conf/nginx/cert/apisix.crt
 $ssl_crt
->>> ../conf/cert/apisix.key
+>>> ../conf/nginx/cert/apisix.key
 $ssl_key
 $user_apisix_yaml
 _EOC_

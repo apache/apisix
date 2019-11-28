@@ -19,13 +19,32 @@ local yaml = require("tinyyaml")
 local ngx = ngx
 local io_open = io.open
 local type = type
-local local_conf_path = ngx.config.prefix() .. "conf/config.yaml"
 local config_data
 
 
 local _M = {
     version = 0.2,
 }
+
+
+local function get_local_conf_path()
+    -- the config in prefix directory has high priority, check first.
+    local local_conf_path = ngx.config.prefix() .. "conf/config.yaml"
+    local file, err = io_open(local_conf_path, "rb")
+    if file then
+        file:close()
+        return local_conf_path
+    end
+
+    local_conf_path = "/etc/apisix/config.yaml"
+    file, err = io_open(local_conf_path, "rb")
+    if file then
+        file:close()
+        return local_conf_path
+    end
+
+    return nil, err
+end
 
 
 local function read_file(path)
@@ -48,6 +67,11 @@ end
 function _M.local_conf(force)
     if not force and config_data then
         return config_data
+    end
+
+    local local_conf_path, err = get_local_conf_path()
+    if not local_conf_path then
+        return nil, "failed to read config file:" .. err
     end
 
     local yaml_config, err = read_file(local_conf_path)
