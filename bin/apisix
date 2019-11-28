@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/local/openresty/luajit/bin/luajit
+#!/usr/bin/env lua
 
 --
 -- Licensed to the Apache Software Foundation (ASF) under one or more
