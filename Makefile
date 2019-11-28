@@ -118,10 +118,11 @@ reload: default
 .PHONY: install
 install:
 	$(INSTALL) -d /usr/local/apisix/logs/
-	$(INSTALL) -d /usr/local/apisix/conf/cert
-	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
+	$(INSTALL) -d /usr/local/apisix/conf/nginx/
+	$(INSTALL) -d /usr/local/apisix/conf/nginx/cert
+	$(INSTALL) conf/nginx/mime.types /usr/local/apisix/conf/nginx/mime.types
+	$(INSTALL) conf/nginx/cert/apisix.* /usr/local/apisix/conf/nginx/cert/
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
-	$(INSTALL) conf/cert/apisix.* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua
 	$(INSTALL) lua/*.lua $(INST_LUADIR)/apisix/lua/
