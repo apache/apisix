@@ -78,7 +78,7 @@ _M.gen_uuid_v4 = uuid.generate_v4
 function _M.init()
     local uid_file_path = get_uid_file_path()
     apisix_uid = read_file(uid_file_path)
-    if apisix_uid then
+    if apisix_uid and #apisix_uid > 0 then
         return
     end
 
