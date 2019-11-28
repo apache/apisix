@@ -317,7 +317,7 @@ http {
         {% end %} {% -- if enable_ipv6 %}
 
         ssl_certificate      {* config_dir *}/nginx/cert/apisix.crt;
-        ssl_certificate_key  {* config_dir *}/cert/apisix.key;
+        ssl_certificate_key  {* config_dir *}/nginx/cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
 
         ssl_protocols {* ssl.ssl_protocols *};
