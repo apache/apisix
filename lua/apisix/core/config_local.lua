@@ -35,8 +35,10 @@ local function get_local_conf_path()
         file:close()
         return local_conf_path
     end
+    log.warn("fail to load config file: " .. local_conf_path, ", error info:", err)
 
     local_conf_path = "/etc/apisix/config.yaml"
+    log.info("try to load config file: " .. local_conf_path)
     file, err = io_open(local_conf_path, "rb")
     if file then
         file:close()

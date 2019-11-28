@@ -56,7 +56,7 @@ else
 endif
 
 
-### utils:        Installation tools
+### utils:            Installation tools
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")
@@ -92,26 +92,30 @@ init: default
 .PHONY: run
 run: default
 	mkdir -p logs
+	mkdir -p tmp
+	mkdir -p run
 	mkdir -p /tmp/apisix_cores/
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
+	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx/nginx.conf
 
 
 ### stop:             Stop the apisix server
 .PHONY: stop
 stop: default
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
+	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx/nginx.conf -s stop
 
 
 ### clean:            Remove generated files
 .PHONY: clean
 clean:
 	rm -rf logs/
+	rm -rf tmp/
+	rm -rf run/
 
 
 ### reload:           Reload the apisix server
 .PHONY: reload
 reload: default
-	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
+	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx/nginx.conf -s reload
 
 
 ### install:          Install the apisix

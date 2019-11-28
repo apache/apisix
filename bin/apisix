@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env /usr/local/openresty/luajit/bin/luajit
 
 --
 -- Licensed to the Apache Software Foundation (ASF) under one or more
@@ -59,8 +59,11 @@ local function parse_args()
         elseif strsub(arg[i], 1, 13) == "--config-dir=" then
             options["config-dir"] = strsub(arg[i], 14)
             i = i + 1
+        elseif strsub(arg[i], 1, 9) == "--verbose" then
+            options["verbose"] = true
+            i = i + 1
         else
-            print("Unknown option: " .. arg[i])
+            print("Ignore unknown option: " .. arg[i])
             i = i + 1
         end
     end
@@ -591,7 +594,9 @@ local function init()
 end
 _M.init = init
 
-local function init_etcd(show_output)
+local function init_etcd()
+    show_output = options["verbose"]
+
     -- read_yaml_conf
     local yaml_conf, err = read_yaml_conf()
     if not yaml_conf then
@@ -642,8 +647,8 @@ local openresty_args = [[openresty  -p ]] .. prefix_dir .. [[ -c ]]
                        .. config_dir .. [[/nginx/nginx.conf]]
 
 function _M.start(...)
-    init(...)
-    init_etcd(...)
+    init()
+    init_etcd()
 
     local cmd = openresty_args
     -- print(cmd)
