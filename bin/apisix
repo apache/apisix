@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/usr/bin/env /usr/local/openresty/luajit/bin/luajit
 
 --
 -- Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,6 +17,8 @@
 -- limitations under the License.
 --
 
+local strsub = require("string").sub
+
 local script_path = debug.getinfo(1).source:sub(2)
 
 local function trim(s)
@@ -30,12 +32,49 @@ local function excute_cmd(cmd)
     return data
 end
 
+local function parse_args()
+    local options = {}
+    local i = 2
+    local n = #arg
+    while (i <= n) do
+        if arg[i] == "--prefix" or arg[i] == "-p" then
+            if i+1 <= n then
+                options["prefix"] = arg[i+1]
+                i = i + 2
+            else
+                print("Parse option " .. arg[i] .. " error: argument vaule required.")
+                os.exit(1)
+            end
+        elseif strsub(arg[i], 1, 9) == "--prefix=" then
+            options["prefix"] = strsub(arg[i], 10)
+            i = i + 1
+        elseif arg[i] == "--config-dir" or arg[i] == "-c" then
+            if i+1 <= n then
+                options["config-dir"] = arg[i+1]
+                i = i + 2
+            else
+                print("Parse option " .. arg[i] .. " error: argument vaule required.")
+                os.exit(1)
+            end
+        elseif strsub(arg[i], 1, 13) == "--config-dir=" then
+            options["config-dir"] = strsub(arg[i], 14)
+            i = i + 1
+        else
+            print("Unknown option: " .. arg[i])
+            i = i + 1
+        end
+    end
+    return options
+end
+
 local pwd = trim(excute_cmd("pwd"))
 if not pwd then
     error("failed to fetch current path")
 end
 
 excute_cmd("install -d -m 777 /tmp/apisix_cores/")
+
+local options = parse_args()
 
 local apisix_home = "/usr/local/apisix"
 if script_path:sub(1, 4) == '/usr' or script_path:sub(1, 4) == '/bin' then
@@ -59,6 +98,15 @@ else
                     .. package.path
 end
 -- print("apisix_home: ", apisix_home)
+
+local config_dir = apisix_home .. "/conf"
+local prefix_dir = apisix_home
+if options["config-dir"] then
+    config_dir = options["config-dir"]
+end
+if options["prefix"] then
+    prefix_dir = options["prefix"]
+end
 
 do
     -- skip luajit environment
@@ -86,7 +134,7 @@ worker_cpu_affinity auto;
 {% end %}
 
 error_log {* error_log *} {* error_log_level or "error" *};
-pid logs/nginx.pid;
+pid {* pidfile *};
 
 worker_rlimit_nofile 20480;
 
@@ -189,10 +237,16 @@ http {
     client_body_timeout {* http.client_body_timeout *};
     send_timeout {* http.send_timeout *};
 
+    client_body_temp_path {* http.temp_directory *}/client_body_temp;
+    fastcgi_temp_path {* http.temp_directory *}/fastcgi_temp;
+    proxy_temp_path {* http.temp_directory *}/proxy_temp;
+    scgi_temp_path {* http.temp_directory *}/scgi_temp;
+    uwsgi_temp_path {* http.temp_directory *}/uwsgi_temp;
+
     server_tokens off;
     more_set_headers 'Server: APISIX web server';
 
-    include mime.types;
+    include {* config_dir *}/nginx/mime.types;
 
     real_ip_header {* real_ip_header *};
     {% for _, real_ip in ipairs(real_ip_from) do %}
@@ -262,8 +316,8 @@ http {
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
-        ssl_certificate      cert/apisix.crt;
-        ssl_certificate_key  cert/apisix.key;
+        ssl_certificate      {* config_dir *}/nginx/cert/apisix.crt;
+        ssl_certificate_key  {* config_dir *}/cert/apisix.key;
         ssl_session_cache    shared:SSL:1m;
 
         ssl_protocols {* ssl.ssl_protocols *};
@@ -400,7 +454,7 @@ local function exec(command)
 end
 
 local function read_yaml_conf()
-    local ymal_conf, err = read_file(apisix_home .. "/conf/config.yaml")
+    local ymal_conf, err = read_file(config_dir .. "/config.yaml")
     if not ymal_conf then
         return nil, err
     end
@@ -496,6 +550,8 @@ local function init()
         with_module_status = with_module_status,
         node_ssl_listen = 9443,     -- default value
         error_log = {level = "warn"},
+        config_dir = config_dir,
+        prefix_dir = prefix_dir,
     }
 
     if not yaml_conf.apisix then
@@ -516,7 +572,7 @@ local function init()
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
 
-    local ok, err = write_file(apisix_home .. "/conf/nginx.conf", ngxconf)
+    local ok, err = write_file(config_dir .. "/nginx/nginx.conf", ngxconf)
     if not ok then
         error("failed to update nginx.conf: " .. err)
     end
@@ -582,8 +638,8 @@ local function init_etcd(show_output)
 end
 _M.init_etcd = init_etcd
 
-local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
-                       .. apisix_home .. [[/conf/nginx.conf]]
+local openresty_args = [[openresty  -p ]] .. prefix_dir .. [[ -c ]]
+                       .. config_dir .. [[/nginx/nginx.conf]]
 
 function _M.start(...)
     init(...)
