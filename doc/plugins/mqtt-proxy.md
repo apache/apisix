@@ -32,7 +32,7 @@
 The plugin `mqtt-proxy` only works in stream model, it help you to dynamic load
 balance by `client_id` of MQTT.
 
-And this plugin both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) and [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
+And this plugin both support MQTT protocol [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) and [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
 
 ## Attributes
 
@@ -45,6 +45,23 @@ And this plugin both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v
 
 
 ## How To Enable
+
+To enable this plugin, we need to enable the stream_proxy configuration in `conf/config.yaml` first.
+For example, the following configuration represents listening on the 9100 TCP port.
+
+```yaml
+    ...
+    router:
+        http: 'radixtree_uri'
+        ssl: 'radixtree_sni'
+    stream_proxy:                 # TCP/UDP proxy
+      tcp:                        # TCP proxy port list
+        - 9100
+    dns_resolver:
+    ...
+```
+
+Then send the MQTT request to port 9100.
 
 Creates a stream route, and enable plugin `mqtt-proxy`.
 
