@@ -72,14 +72,14 @@ do_install() {
     cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     ls -l ./
-    #if [ ! -f "build-cache/grpc_server_example" ]; then
-    #    sudo apt-get install golang
+    if [ ! -f "build-cache/grpc_server_example" ]; then
+        sudo apt-get install golang
         git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
         cd grpc_server_example/
         go build -o grpc_server_example main.go
         mv grpc_server_example ../build-cache/
         cd ..
-    #fi
+    fi
 
     if [ ! -f "build-cache/proto/helloworld.proto" ]; then
 
