@@ -72,3 +72,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
 第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
+
+## 切换版本时需要更新依赖？
+
+在开发环境下当版本从0.8升级到0.9版本后，添加路由时报错 {"error_msg":"unknow plugin [prometheus]"}，我们需要修改makefile中依赖项(https://github.com/apache/incubator-apisix/pull/908/files 该makefile已修复)，然后执行 `make deps` 命令使本地依赖更新到最新后正常。
