@@ -240,11 +240,11 @@ Connection refused) while connecting to upstream
                           string message = 1;
                          }
                       message PlusRequest {
-                          int32 a = 1;
-                          int32 b = 2;
+                          int64 a = 1;
+                          int64 b = 2;
                       }
                       message PlusReply {
-                          int32 result = 1;
+                          int64 result = 1;
                       }"
                    }]]
                 )
@@ -279,7 +279,8 @@ passed
                         "grpc-transcode": {
                             "proto_id": "1",
                             "service": "helloworld.Greeter",
-                            "method": "Plus"
+                            "method": "Plus",
+                            "pb_option":["int64_as_string"]
                         }
                     },
                     "upstream": {
@@ -311,5 +312,15 @@ passed
 GET /grpc_plus?a=1&b=2
 --- response_body eval
 qr/\{"result":3\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit route
+--- request
+GET /grpc_plus?a=1&b=2251799813685260
+--- response_body eval
+qr/\{"result":"#2251799813685261"\}/
 --- no_error_log
 [error]
