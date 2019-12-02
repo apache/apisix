@@ -53,7 +53,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
 * `proto_id`: `.proto`内容的id.
 * `service`:  grpc服务名.
 * `method`:   grpc服务中要调用的方法名.
-* `option`:   proto 编码过程中的转换选项. [ "int64_as_string" / "enum_as_value" / "auto_default_values" / "enable_hooks" ]
+* `pb_option`:   proto 编码过程中的转换选项. [ "int64_as_string" / "enum_as_value" / "auto_default_values" / "enable_hooks" ]
 
 
 ### 示例
