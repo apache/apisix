@@ -170,7 +170,7 @@ local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local healthcheck_parent = route
-    local up_id = route.value.upstream_id
+    local up_id = ctx.var.upstream_id or route.value.upstream_id -- allow custom upstream_id
     local up_conf = (route.dns_value and route.dns_value.upstream)
                     or route.value.upstream
     if not up_id and not up_conf then
