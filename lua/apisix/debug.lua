@@ -29,7 +29,6 @@ local setmetatable = setmetatable
 local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
-local debug_yaml_path = ngx.config.prefix() .. "conf/debug.yaml"
 local debug_yaml
 local debug_yaml_ctime
 
@@ -37,7 +36,19 @@ local debug_yaml_ctime
 local _M = {version = 0.1}
 
 
+local function get_debug_yaml_path()
+    local debug_yaml_path = ngx.config.prefix() .. "conf/debug.yaml"
+    local attributes, err = lfs.attributes(debug_yaml_path)
+    if not attributes then
+        log.notice("failed to fetch ", debug_yaml_path, " attributes: ", err)
+        debug_yaml_path = "/etc/apisix/debug.yaml"
+    end
+    return debug_yaml_path
+end
+
+
 local function read_debug_yaml()
+    local debug_yaml_path = get_debug_yaml_path()
     local attributes, err = lfs.attributes(debug_yaml_path)
     if not attributes then
         log.notice("failed to fetch ", debug_yaml_path, " attributes: ", err)
