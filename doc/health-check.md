@@ -89,7 +89,7 @@ contains: `active` or `passive`.
     The threshold fields of  `unhealthy` are:
     * `active.unhealthy.interval`: Interval between health checks for unhealthy targets (in seconds), the minimum is 1.
     * `active.unhealthy.http_failures`: The number of http failures times to determine the target is unhealthy, the minimum is 1.
-    * `active.req_headers`: Additional request header.
+    * `active.req_headers`: Additional request headers. Array format, so you can fill in multiple headers.
 
 * `passive`: To enable passive health checks, you need to specify the configuration items under `checks.passive` in the Upstream object configuration.
 
