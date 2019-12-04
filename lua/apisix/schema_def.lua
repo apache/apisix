@@ -64,9 +64,6 @@ local remote_addr_def = {
 }
 
 
--- todo: support all options
---   default value: https://github.com/Kong/lua-resty-healthcheck/
---   blob/master/lib/resty/healthcheck.lua#L1121
 local health_checker = {
     type = "object",
     properties = {
@@ -140,6 +137,14 @@ local health_checker = {
                             default = 3
                         }
                     }
+                },
+                req_headers = {
+                  type = "array",
+                  minItems = 1,
+                  items = {
+                      type = "string",
+                      uniqueItems = true,
+                  },
                 }
             }
         },
@@ -211,7 +216,8 @@ local health_checker = {
                 }
             }
         }
-    }
+    },
+    additionalProperties = false,
 }
 
 
