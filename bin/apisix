@@ -80,7 +80,7 @@ local template = require("resty.template")
 local ngx_tpl = [=[
 master_process on;
 
-worker_processes auto;
+worker_processes {* worker_processes *};
 {% if os_name == "Linux" then %}
 worker_cpu_affinity auto;
 {% end %}
@@ -511,6 +511,12 @@ local function init()
     end
     for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
+    end
+
+    if(sys_conf["enable_dev_mode"] == true) then
+        sys_conf["worker_processes"] = 1
+    else
+        sys_conf["worker_processes"] = "auto"
     end
 
     local conf_render = template.compile(ngx_tpl)
