@@ -106,3 +106,59 @@ hello world
 [error]
 --- error_log eval
 qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
+
+
+
+=== TEST 5: delete route
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_DELETE,
+                nil,
+                [[{"action": "delete"}]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: delete upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_DELETE,
+                nil,
+                [[{"action": "delete"}]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

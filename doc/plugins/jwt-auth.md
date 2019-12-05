@@ -17,7 +17,7 @@
 #
 -->
 
-[中文](jwt-auth-cn.md)
+[Chinese](jwt-auth-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -37,10 +37,12 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 
 ## Attributes
 
-* `key`: different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception.
-* `secret`: optional, encryption key. if you do not specify, the value is auto-generated in the background.
-* `algorithm`: optional, encryption algorithm .support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.
-* `exp`: optional, token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 * 60 = 300 ).
+|Name          |Requirement  |Description|
+|---------     |--------|-----------|
+| key         |required|different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception.|
+| secret      |optional|encryption key. if you do not specify, the value is auto-generated in the background.|
+| algorithm    |  optional|encryption algorithm. support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.|
+| exp          |optional|token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 * 60 = 300 )|
 
 ## How To Enable
 
@@ -157,7 +159,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-## *Disable Plugin
+## Disable Plugin
 
 When you want to disable the `jwt-auth` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,

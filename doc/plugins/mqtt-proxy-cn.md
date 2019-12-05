@@ -30,7 +30,7 @@
 
 `mqtt-proxy` 只工作在流模式，它可以帮助你根据 MQTT 的 `client_id` 实现动态负载均衡。
 
-这个插件都支持 MQTT [3.1.* ]( http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html )及[5.0]( https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html )。
+这个插件支持 MQTT [3.1.* ]( http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html )及[5.0]( https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html )两个协议。
 
 ## 属性
 
@@ -40,6 +40,22 @@
 * `upstream.port`: 必选，将当前请求转发到的上游的 端口，
 
 ## 如何启用
+
+为了启用该插件，需要先在 `conf/config.yaml` 中首先开启 stream_proxy 配置，比如下面配置代表监听 9100 TCP 端口：
+
+```yaml
+    ...
+    router:
+        http: 'radixtree_uri'
+        ssl: 'radixtree_sni'
+    stream_proxy:                 # TCP/UDP proxy
+      tcp:                        # TCP proxy port list
+        - 9100
+    dns_resolver:
+    ...
+```
+
+然后把 MQTT 请求发送到 9100 端口即可。
 
 下面是一个示例，在指定的 route 上开启了 mqtt-proxy 插件:
 

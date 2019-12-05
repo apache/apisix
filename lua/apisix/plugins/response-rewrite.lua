@@ -15,42 +15,30 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
-local plugin_name = "proxy-rewrite"
-local pairs       = pairs
-local ipairs      = ipairs
+local plugin_name = "response-rewrite"
 local ngx         = ngx
+local pairs       = pairs
 local type        = type
 
 
 local schema = {
     type = "object",
     properties = {
-        uri = {
-            description = "new uri for upstream",
-            type        = "string",
-            minLength   = 1,
-            maxLength   = 4096
-        },
-        host = {
-            description = "new host for upstream",
-            type        = "string",
-            pattern     = "^[0-9a-zA-Z-.]+$",
-        },
-        scheme = {
-            description = "new scheme for upstream",
-            type    = "string",
-            enum    = {"http", "https"}
-        },
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean",
-            default     = false
-        },
         headers = {
-            description = "new headers for request",
+            description = "new headers for repsonse",
             type = "object",
             minProperties = 1,
         },
+        body = {
+            description = "new body for repsonse",
+            type = "string",
+        },
+        status_code = {
+            description = "new status code for repsonse",
+            type = "integer",
+            minimum = 200,
+            maximum = 598,
+        }
     },
     minProperties = 1,
 }
@@ -58,7 +46,7 @@ local schema = {
 
 local _M = {
     version  = 0.1,
-    priority = 1008,
+    priority = 899,
     name     = plugin_name,
     schema   = schema,
 }
@@ -85,47 +73,38 @@ function _M.check_schema(conf)
             else
                 return false, 'invalid type as header value'
             end
+
         end
     end
+
     return true
 end
 
 
 do
-    local upstream_vars = {
-        scheme     = "upstream_scheme",
-        host       = "upstream_host",
-        upgrade    = "upstream_upgrade",
-        connection = "upstream_connection",
-    }
-    local upstream_names = {}
-    for name, _ in pairs(upstream_vars) do
-        core.table.insert(upstream_names, name)
+
+function _M.body_filter(conf, ctx)
+    if conf.body then
+        ngx.arg[1] = conf.body
+        ngx.arg[2] = true
+    end
+end
+
+function _M.header_filter(conf, ctx)
+    if conf.status_code then
+        ngx.status = conf.status_code
     end
 
-function _M.rewrite(conf, ctx)
-    for _, name in ipairs(upstream_names) do
-        if conf[name] then
-            ctx.var[upstream_vars[name]] = conf[name]
-        end
-    end
-
-    local upstream_uri = conf.uri or ctx.var.uri
-    if ctx.var.is_args == "?" then
-        ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
-    else
-        ctx.var.upstream_uri = upstream_uri
-    end
-
-    if conf.enable_websocket then
-        ctx.var.upstream_upgrade    = ctx.var.http_upgrade
-        ctx.var.upstream_connection = ctx.var.http_connection
+    if conf.body then
+        ngx.header.content_length = nil
+        -- in case of upstream content is compressed content
+        ngx.header.content_encoding = nil
     end
 
     if conf.headers_arr then
         local field_cnt = #conf.headers_arr
         for i = 1, field_cnt, 2 do
-            ngx.req.set_header(conf.headers_arr[i], conf.headers_arr[i+1])
+            ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
         end
     end
 end

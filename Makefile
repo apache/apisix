@@ -22,28 +22,33 @@ INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
-LUA_JIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
-lj-releng-exist = $(shell if [ -f 'utils/lj-releng' ]; then echo "exist"; else echo "not_exist"; fi;)
 
 
 .PHONY: default
 default:
+ifeq ($(OR_EXEC), )
+ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
+	@echo "ERROR: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
+	exit 1
+endif
+endif
 
+LUTJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
 
-### help:         Show Makefile rules.
+### help:             Show Makefile rules.
 .PHONY: help
-help:
+help: default
 	@echo Makefile rules:
 	@echo
 	@grep -E '^### [-A-Za-z0-9_]+:' Makefile | sed 's/###/   /'
 
 
-### deps:         Installation dependencies
+### deps:             Installation dependencies
 .PHONY: deps
-deps:
+deps: default
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=$(LUTJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
 	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
@@ -54,16 +59,15 @@ endif
 ### utils:        Installation tools
 .PHONY: utils
 utils:
-ifeq ($(lj-releng-exist), not_exist)
+ifeq ("$(wildcard utils/lj-releng)", "")
 	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
 	chmod a+x utils/lj-releng
 endif
 
 
-### check:        Check Lua source code
-.PHONY: check
-check:
-	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
+### lint:             Lint Lua source code
+.PHONY: lint
+lint: utils
 	luacheck -q lua
 	./utils/lj-releng lua/*.lua \
 		lua/apisix/*.lua \
@@ -77,52 +81,40 @@ check:
 		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 
-### init:         Initialize the runtime environment
+### init:             Initialize the runtime environment
 .PHONY: init
-init:
+init: default
 	./bin/apisix init
 	./bin/apisix init_etcd
 
 
-### run:          Start the apisix server
+### run:              Start the apisix server
 .PHONY: run
-run:
+run: default
 	mkdir -p logs
 	mkdir -p /tmp/apisix_cores/
-ifeq ($(OR_EXEC), )
-	@echo "You have to install OpenResty and add the binary file to PATH first"
-	exit 1
-endif
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 
 
-### stop:         Stop the apisix server
+### stop:             Stop the apisix server
 .PHONY: stop
-stop:
-ifeq ($(OR_EXEC), )
-	@echo "You have to install OpenResty and add the binary file to PATH first"
-	exit 1
-endif
+stop: default
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
-### clean:        Remove generated files
+### clean:            Remove generated files
 .PHONY: clean
 clean:
 	rm -rf logs/
 
 
-### reload:       Reload the apisix server
+### reload:           Reload the apisix server
 .PHONY: reload
-reload:
-ifeq ($(OR_EXEC), )
-	@echo "You have to install OpenResty and add the binary file to PATH first"
-	exit 1
-endif
+reload: default
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
-### install:      Install the apisix
+### install:          Install the apisix
 .PHONY: install
 install:
 	$(INSTALL) -d /usr/local/apisix/logs/
@@ -174,10 +166,21 @@ install:
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
 
-### test:         Run the test case
+### test:             Run the test case
 test:
 ifeq ($(UNAME),Darwin)
 	prove -I../test-nginx/lib -I./ -r -s t/
 else
 	prove -I../test-nginx/lib -r -s t/
 endif
+
+
+### license-check:    Check Lua source code for Apache License
+.PHONY: license-check
+license-check:
+ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
+	git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
+	cp .travis/ASF* .travis/openwhisk-utilities/scancode/
+endif
+	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
+

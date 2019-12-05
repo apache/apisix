@@ -24,7 +24,6 @@ export_or_prefix() {
 
 create_lua_deps() {
     sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit lua-resty-libr3 --tree=deps --local
     echo "Create lua deps cache"
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -67,6 +66,65 @@ tengine_install() {
     sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-1.15.8.2/configure
 
     cd openresty-1.15.8.2
+
+    # patching start
+    # https://github.com/alibaba/tengine/issues/1381#issuecomment-541493008
+    # other patches for tengine 2.3.2 from upstream openresty
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-always_enable_cc_feature_tests.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-balancer_status_code.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-cache_manager_exit.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-daemon_destroy_pool.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-delayed_posted_events.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-gcc-maybe-uninitialized-warning.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-hash_overflow.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-init_cycle_pool_release.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-larger_max_error_str.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-log_escape_non_ascii.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-no_Werror.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-pcre_conf_opt.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-proxy_host_port_vars.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-resolver_conf_parsing.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-reuseport_close_unused_fds.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-safe_resolver_ipv6_option.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-single_process_graceful_exit.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-ssl_cert_cb_yield.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-ssl_sess_cb_yield.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-stream_balancer_export.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-stream_proxy_get_next_upstream_tries.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-stream_proxy_timeout_fields.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-stream_ssl_preread_no_skip.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_pipelining.patch
+    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_timeout_fields.patch
+
+    cd bundle/tengine-2.3.2
+    patch -p1 < ../../patches/nginx-1.17.4-always_enable_cc_feature_tests.patch
+    patch -p1 < ../../patches/nginx-1.17.4-balancer_status_code.patch
+    patch -p1 < ../../patches/nginx-1.17.4-cache_manager_exit.patch
+    patch -p1 < ../../patches/nginx-1.17.4-daemon_destroy_pool.patch
+    patch -p1 < ../../patches/nginx-1.17.4-delayed_posted_events.patch
+    patch -p1 < ../../patches/nginx-1.17.4-gcc-maybe-uninitialized-warning.patch
+    patch -p1 < ../../patches/nginx-1.17.4-hash_overflow.patch
+    patch -p1 < ../../patches/nginx-1.17.4-init_cycle_pool_release.patch
+    patch -p1 < ../../patches/nginx-1.17.4-larger_max_error_str.patch
+    patch -p1 < ../../patches/nginx-1.17.4-log_escape_non_ascii.patch
+    patch -p1 < ../../patches/nginx-1.17.4-no_Werror.patch
+    patch -p1 < ../../patches/nginx-1.17.4-pcre_conf_opt.patch
+    patch -p1 < ../../patches/nginx-1.17.4-proxy_host_port_vars.patch
+    patch -p1 < ../../patches/nginx-1.17.4-resolver_conf_parsing.patch
+    patch -p1 < ../../patches/nginx-1.17.4-reuseport_close_unused_fds.patch
+    patch -p1 < ../../patches/nginx-1.17.4-safe_resolver_ipv6_option.patch
+    patch -p1 < ../../patches/nginx-1.17.4-single_process_graceful_exit.patch
+    patch -p1 < ../../patches/nginx-1.17.4-ssl_cert_cb_yield.patch
+    patch -p1 < ../../patches/nginx-1.17.4-ssl_sess_cb_yield.patch
+    patch -p1 < ../../patches/nginx-1.17.4-stream_balancer_export.patch
+    patch -p1 < ../../patches/nginx-1.17.4-stream_proxy_get_next_upstream_tries.patch
+    patch -p1 < ../../patches/nginx-1.17.4-stream_proxy_timeout_fields.patch
+    patch -p1 < ../../patches/nginx-1.17.4-stream_ssl_preread_no_skip.patch
+    patch -p1 < ../../patches/nginx-1.17.4-upstream_pipelining.patch
+    patch -p1 < ../../patches/nginx-1.17.4-upstream_timeout_fields.patch
+
+    cd -
+    # patching end
 
     ./configure --prefix=${OPENRESTY_PREFIX} --with-debug \
         --with-compat \
@@ -132,7 +190,6 @@ tengine_install() {
 do_install() {
     export_or_prefix
 
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
     sudo add-apt-repository -y ppa:longsleep/golang-backports
@@ -195,7 +252,7 @@ script() {
     sleep 1
     ./bin/apisix stop
     sleep 1
-    make check || exit 1
+    make lint && make license-check || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 }
 

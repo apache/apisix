@@ -17,7 +17,7 @@
 #
 -->
 
-[中文](zipkin-cn.md)
+[Chinese](zipkin-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -35,9 +35,10 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 
 ## Attributes
 
-* `endpoint`: the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`.
-
-* `sample_ratio`: the ratio of sample, the minimum is 0.00001, the maximum is 1.
+|Name          |Requirement  |Description|
+|---------     |--------|-----------|
+| endpoint     |required|the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`.|
+| sample_ratio |required|the ratio of sample, the minimum is 0.00001, the maximum is 1.|
 
 ## How To Enable
 

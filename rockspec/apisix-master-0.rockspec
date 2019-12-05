@@ -35,7 +35,7 @@ dependencies = {
     "lua-resty-balancer = 0.02rc5",
     "lua-resty-ngxvar = 0.4",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-healthcheck-iresty = 1.0.1",
+    "lua-resty-healthcheck-iresty = 2.0",
     "lua-resty-jwt = 0.2.0",
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
@@ -45,7 +45,7 @@ dependencies = {
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 0.1",
-    "iresty-nginx-lua-prometheus = 0.20190917",
+    "lua-resty-prometheus = 1.0",
     "jsonschema = 0.4",
     "lua-resty-ipmatcher = 0.3",
 }

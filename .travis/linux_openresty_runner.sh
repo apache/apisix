@@ -23,7 +23,7 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    WITHOUT_DASHBOARD=1 sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
     echo "Create lua deps cache"
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -123,7 +123,7 @@ script() {
     ./bin/apisix stop
     sleep 1
 
-    make check || exit 1
+    make lint && make license-check || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 }
 

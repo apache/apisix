@@ -313,3 +313,118 @@ GET /t
 {"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"unhealthy\" validation failed: property \"http_failures\" validation failed: wrong type: expected integer, got number"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: valid req_headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "http_path": "/status",
+                    "host": "foo.com",
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    },
+                    "req_headers": ["User-Agent: curl/7.29.0"]
+                }
+            }]])
+            exp_data.node.value.upstream.checks = req_data.upstream.checks
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: multiple request headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "http_path": "/status",
+                    "host": "foo.com",
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    },
+                    "req_headers": ["User-Agent: curl/7.29.0", "Accept: */*"]
+                }
+            }]])
+            exp_data.node.value.upstream.checks = req_data.upstream.checks
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: invalid req_headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "http_path": "/status",
+                    "host": "foo.com",
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    },
+                    "req_headers": ["User-Agent: curl/7.29.0", 2233]
+                }
+            }]])
+            exp_data.node.value.upstream.checks = req_data.upstream.checks
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"req_headers\" validation failed: failed to validate item 2: wrong type: expected string, got number"}
+--- no_error_log
+[error]
