@@ -25,11 +25,11 @@ Reference document
 * [架构设计](architecture-design-cn.md)
 * [压力测试](benchmark-cn.md)
 * [如何构建 Apache APISIX](how-to-build-cn.md)
-* [健康检查](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
+* [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
 * Router(路由)
     * [radixtree](router-radixtree.md)
     * [r3](router-r3.md)
-* [独立运行模型](stand-alone-cn.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
+* [独立运行模型](stand-alone-cn.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy-cn.md)
 * [管理 API](admin-api-cn.md)
 * [变更日志](../CHANGELOG_CN.md)
