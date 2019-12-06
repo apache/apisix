@@ -117,14 +117,14 @@ local function check_conf(id, conf, need_id)
 end
 
 
-function _M.put(id, conf)
+function _M.put(id, conf, sub_path, args)
     local id, err = check_conf(id, conf, true)
     if not id then
         return 400, err
     end
 
     local key = "/routes/" .. id
-    local res, err = core.etcd.set(key, conf)
+    local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
         core.log.error("failed to put route[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -150,7 +150,7 @@ function _M.get(id)
 end
 
 
-function _M.post(id, conf)
+function _M.post(id, conf, sub_path, args)
     local id, err = check_conf(id, conf, false)
     if not id then
         return 400, err
@@ -158,7 +158,7 @@ function _M.post(id, conf)
 
     local key = "/routes"
     -- core.log.info("key: ", key)
-    local res, err = core.etcd.push("/routes", conf)
+    local res, err = core.etcd.push("/routes", conf, args.ttl)
     if not res then
         core.log.error("failed to post route[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -185,7 +185,7 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf, sub_path)
+function _M.patch(id, conf, sub_path, args)
     if not id then
         return 400, {error_msg = "missing route id"}
     end
@@ -250,7 +250,7 @@ function _M.patch(id, conf, sub_path)
     end
 
     -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, node_value)
+    local res, err = core.etcd.set(key, node_value, args.ttl)
     if not res then
         core.log.error("failed to set new route[", key, "]: ", err)
         return 500, {error_msg = err}

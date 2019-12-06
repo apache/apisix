@@ -25,7 +25,7 @@
 
 ## Route
 
-*地址*：/apisix/admin/routes/{id}
+*地址*：/apisix/admin/routes/{id}?ttl=0
 
 *说明*：Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
 插件，并把请求转发给到指定 Upstream。
@@ -40,7 +40,13 @@
 |DELETE   |/apisix/admin/routes/{id}|无|删除资源|
 |PATCH    |/apisix/admin/routes/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
 
-> 请求参数：
+> uri 请求参数：
+
+|名字      |可选项   |类型 |说明        |示例|
+|---------|---------|----|-----------|----|
+|ttl     |可选 |辅助   |超过这个时间会被自动删除，单位：秒|ttl=1|
+
+> body 请求参数：
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
@@ -64,6 +70,7 @@
 示例：
 
 ```shell
+# 创建一个路由
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 {
     "uri": "/index.html",
@@ -81,6 +88,23 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 HTTP/1.1 201 Created
 Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
+
+# 创建一个有效期为 60 秒的路由，过期后自动删除
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -X PUT -i -d '
+{
+    "uri": "/aa/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+
+HTTP/1.1 201 Created
+Date: Sat, 31 Aug 2019 01:17:15 GMT
+...
+
 ```
 
 > 应答参数
