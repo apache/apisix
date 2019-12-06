@@ -61,11 +61,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > 通过 Luarocks 安装指定的版本:
 
 ```shell
-# 安装 apisix 的 0.8 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+# 安装 apisix 的 0.9 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.9
 
 # 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 0.8
+sudo luarocks install apisix 0.9
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
