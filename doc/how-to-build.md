@@ -62,11 +62,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > Install the specified version via Luarocks:
 
 ```shell
-# Install version 0.8
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.8
+# Install version 0.9
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 0.9
 
 # old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 0.8
+sudo luarocks install apisix 0.9
 ```
 
 ## Manage (start/stop) APISIX Server
