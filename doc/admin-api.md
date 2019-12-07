@@ -49,22 +49,22 @@ Table of contents
 
 |Parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
-|desc     |False |辅助   |标识路由名称、使用场景等。|客户 xxxx|
-|uri      |True |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](architecture-design-cn.md#router) 还允许更高级匹配，更多见 [Router](architecture-design-cn.md#router)。|"/hello"|
-|host     |False |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。|"foo.com"|
-|hosts    |False |匹配规则|列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。|{"foo.com", "*.bar.com"}|
-|remote_addr|False |匹配规则|客户端请求 IP 地址: `192.168.1.101`、`192.168.1.102` 以及 CIDR 格式的支持 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配：`::1`，`fe80::1`, `fe80::1/64` 等。|"192.168.1.0/24"|
-|remote_addrs|False |匹配规则|列表形态的 `remote_addr`，表示允许有多个不同 IP 地址，符合其中任意一个即可。|{"127.0.0.1", "192.0.0.0/8", "::1"}|
-|methods  |False |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个的组合：`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`，`CONNECT`，`TRACE`。|{"GET", "POST"}|
-|vars       |False  |匹配规则(仅支持 `radixtree` 路由)|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
-|filter_func|False|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
-|plugins  |False |Plugin|详见 [Plugin](architecture-design-cn.md#plugin) ||
-|upstream |False |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design-cn.md#upstream)||
-|upstream_id|False |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
-|service_id|False |Service|绑定的 Service 配置，详见 [Service](architecture-design-cn.md#service)||
-|service_protocol|False|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
+|desc     |False |辅助   |Identifies route names, usage scenarios, and more.|customer xxxx|
+|uri      |True |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design-cn.md#router) allows more advanced matching, see [Router](architecture-design-cn.md#router) for more.|"/hello"|
+|host     |False |Match Rules|Currently requesting a domain name, such as `foo.com`; pan-domain names such as `*.foo.com` are also supported.|"foo.com"|
+|hosts    |False |Match Rules|The `host` in the form of a list means that multiple different hosts are allowed, and any one of them can be matched.|{"foo.com", "*.bar.com"}|
+|remote_addr|False |Match Rules|客户端请求 IP 地址: `192.168.1.101`、`192.168.1.102` 以及 CIDR 格式的支持 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配：`::1`，`fe80::1`, `fe80::1/64` 等。|"192.168.1.0/24"|
+|remote_addrs|False |Match Rules|The `remote_addr` in the form of a list indicates that multiple different IP addresses are allowed, and any one of them can be matched.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
+|methods  |False |Match Rules|If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.|{"GET", "POST"}|
+|vars       |False  |Match Rules (only `radixtree` route is supported)|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
+|filter_func|False|Match Rules|User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.|function(vars) return vars["arg_name"] == "json" end|
+|plugins  |False |Plugin|See [Plugin](architecture-design-cn.md#plugin) for more ||
+|upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design-cn.md#upstream) for more||
+|upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design-cn.md#upstream) for more ||
+|service_id|False |Service|Binded Service configuration, see [Service](architecture-design-cn.md#service) for more ||
+|service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
 
-对于同一类参数比如 `host` 与 `hosts`，`remote_addr` 与 `remote_addrs`，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
+For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will response an error.
 
 Example：
 
@@ -108,7 +108,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 
 > Response Parameters
 
-目前是直接返回与 etcd 交互后的结果。
+Return response from etcd currently.
 
 ### Available Operators
 
@@ -120,7 +120,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 |<       |Less Than      |{"arg_age", "<", 24}|
 |~~      |Regex   |{"arg_name", "~~", "[a-z]+"}|
 
-请看下面例子，匹配请求参数 name 等于 json ，age 大于 18 且 address 开头是 China 的请求：
+Consider the following example: matching requests whose `request name` is equal to `json`, `age` is greater than `18`, and `address` begins with `China`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
@@ -141,4 +141,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 ```
 
 [Back to TOC](#table-of-contents)
-
