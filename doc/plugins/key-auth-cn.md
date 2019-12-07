@@ -84,7 +84,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 下面是一个正常通过 `key-auth` 验证的请求:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
+$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
 HTTP/1.1 200 OK
 ...
 ```
