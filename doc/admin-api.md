@@ -43,7 +43,7 @@ Table of contents
 
 |parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
-|ttl     |False |辅助   |expired time at target seconds|ttl=1|
+|ttl     |False |辅助   |Expires after target seconds|ttl=1|
 
 > Request Body Parameters：
 
@@ -88,7 +88,7 @@ HTTP/1.1 201 Created
 Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
-# Create a route expired after 60 seconds, then it's deleted automatically
+# Create a route expires after 60 seconds, then it's deleted automatically
 $ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -X PUT -i -d '
 {
     "uri": "/aa/index.html",
