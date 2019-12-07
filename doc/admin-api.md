@@ -43,18 +43,18 @@ Table of contents
 
 |parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
-|ttl     |False |辅助   |Expires after target seconds|ttl=1|
+|ttl     |False |Auxiliary   |Expires after target seconds|ttl=1|
 
 > Request Body Parameters：
 
 |Parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
-|desc     |False |辅助   |Identifies route names, usage scenarios, and more.|customer xxxx|
+|desc     |False |Auxiliary   |Identifies route names, usage scenarios, and more.|customer xxxx|
 |uri      |True |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design-cn.md#router) allows more advanced matching, see [Router](architecture-design-cn.md#router) for more.|"/hello"|
 |host     |False |Match Rules|Currently requesting a domain name, such as `foo.com`; pan-domain names such as `*.foo.com` are also supported.|"foo.com"|
-|hosts    |False |Match Rules|The `host` in the form of a list means that multiple different hosts are allowed, and any one of them can be matched.|{"foo.com", "*.bar.com"}|
+|hosts    |False |Match Rules|The `host` in the form of a list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
 |remote_addr|False |Match Rules|The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.|"192.168.1.0/24"|
-|remote_addrs|False |Match Rules|The `remote_addr` in the form of a list indicates that multiple different IP addresses are allowed, and any one of them can be matched.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
+|remote_addrs|False |Match Rules|The `remote_addr` in the form of a list indicates that multiple different IP addresses are allowed, and match any one of them.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
 |methods  |False |Match Rules|If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.|{"GET", "POST"}|
 |vars       |False  |Match Rules (only `radixtree` route is supported)|A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For the operator part, the currently supported operators are `==`, `~=`,`>`, `<`, and `~~`. For the `>` and `<` operators, the result is first converted to `number` and then compared. See a list of [supported operators](#available-operators) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|False|Match Rules|User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.|function(vars) return vars["arg_name"] == "json" end|
