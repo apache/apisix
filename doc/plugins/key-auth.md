@@ -89,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 Here is a correct test example:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
+$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
 HTTP/1.1 200 OK
 ...
 ```
