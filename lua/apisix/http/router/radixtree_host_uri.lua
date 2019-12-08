@@ -83,7 +83,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
 end
 
 
-local function empty_fun() end
+local function empty_func() end
 
 
 local function create_radixtree_router(routes)
@@ -105,7 +105,7 @@ local function create_radixtree_router(routes)
             filter_fun = function(vars, opts, ...)
                 return sub_router:dispatch(vars.uri, opts, ...)
             end,
-            handler = empty_fun,
+            handler = empty_func,
         })
     end
     if #host_router_routes > 0 then
