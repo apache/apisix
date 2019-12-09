@@ -17,12 +17,11 @@
 #
 -->
 
-Quick Start Guide 
-==================
+# Quick Start Guide
 
 The goal of this guide is to get started with APISIX and to configure a secured public API with APISIX.
 By the end of this guide, you will have a working APISIX setup and a new service which will route to a public API, which is secured by an API key.
- 
+
 The following GET endpoint will be used for the purpose of this tutorial. This will act as an echo endpoint and will return the parameters which are sent to the API.
 
 ```bash
@@ -44,8 +43,8 @@ Let's deconstruct the above URL.
 
 ## Step 1: Install API SIX
 
-APISIX is available to install in multiple operating environments. The [following document](how-to-build-cn.md#installation-via-source-release) shows the installation steps in multiple platforms. 
-For the quick start let's use the docker based set up. To start the APISIX server, clone the following [repository](https://github.com/apache/incubator-apisix-docker) and navigate to the example folder and execute the following commands.  
+APISIX is available to install in multiple operating environments. The [following document](how-to-build-cn.md#installation-via-source-release) shows the installation steps in multiple platforms.
+For the quick start let's use the docker based set up. To start the APISIX server, clone the following [repository](https://github.com/apache/incubator-apisix-docker) and navigate to the example folder and execute the following commands.
 
 This command will start the APISIX server and the admin API will be available in 9080 port (HTTPS port: 9443).
 
@@ -55,7 +54,7 @@ $ cd example
 $ docker-compose -p docker-apisix up -d
 ```
 
-It will take a while to download the source for the first time. But the consequent loads will be very fast. 
+It will take a while to download the source for the first time. But the consequent loads will be very fast.
 After the docker containers have started visit the following link to check if you are getting a successful response.
 
 ```bash
@@ -78,8 +77,8 @@ The following will be the response from the Admin API.
 
 ## Step 2: Create a Route in APISIX
 
-APISIX provides a powerful Admin API and a [dashboard](https://github.com/apache/incubator-apisix-dashboard) for configuring the routes/services/plugins. 
-The quickstart guide will use the Admin API for configuring the routes. 
+APISIX provides a powerful Admin API and a [dashboard](https://github.com/apache/incubator-apisix-dashboard) for configuring the routes/services/plugins.
+The quickstart guide will use the Admin API for configuring the routes.
 
 A micro-service can be configured via APISIX through the relationship between several entities such as routes, services, upstream, and plugins.
 The route matches the client request and specifies how they are sent to the upstream (backend API/Service) after they reach APISIX.
@@ -88,14 +87,14 @@ Check out the architecture document for more information.
 
 Technically all this information(upstream or service, plugins) can be included inside a route configuration. The route consists of three main parts.
 
-- Matching Rules: 
+- Matching Rules:
 
     Let's take the following scenario.
     http://example.com/services/users
-    
-    The URL above hosts all the micro services related to the users(getUser/ GetAllUsers) in the system. For example the GetAllUsers endpoint can be reached via the following URL (http://example.com/services/users/GetAllUsers) 
+
+    The URL above hosts all the micro services related to the users(getUser/ GetAllUsers) in the system. For example the GetAllUsers endpoint can be reached via the following URL (http://example.com/services/users/GetAllUsers)
     Now you want to expose all the `GET` endpoints(micro-services) under the `users` path. The following will be the route configuration for matching such request.
-    
+
     ```json
     {
         "methods": ["GET"],
@@ -105,25 +104,24 @@ Technically all this information(upstream or service, plugins) can be included i
     }
     ```
     With the above matching rule you can communicate to APISIX via the following command.
-    
+
     ```bash
     curl -i -X GET "http://{apisix_server.com}:{port}/services/users/getAllUsers?limit=10" -H "Host: example.com"
     ```
 
 - Upstream information:
-    
+
     Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to configuration rules.
     Thus a single upstream configuration can comprise of multiple servers which offers the same service. Each node will comprise of a key(address/ip : port) and a value(weight of the node).
-    The service can be load balanced through a round robin or consistent hashing (cHash) mechanism. 
-    
+    The service can be load balanced through a round robin or consistent hashing (cHash) mechanism.
+
     When configuring a route you can either set the upstream information or use service abstraction to refer the upstream information.
 
 
 - Plugins
-    
+
     Plugins allows you to extend the capabilities of APISIX and to implement arbitrary logic which can interface with the HTTP request/response lifecycle.
     Therefore, if you want to authenticate the API then you can include the Key Auth plugin to enforce authentication for each request.
-    
 
 ### Create an Upstream
 
@@ -159,7 +157,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -X PUT -d '
 
 ### Call APISIX
 
-Now lets call APISIX to test the newly configured route. 
+Now lets call APISIX to test the newly configured route.
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
@@ -207,7 +205,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -X PUT -d '
 }'
 ```
 
-As the route is secured by the key-auth plugin the former curl command to access the API will produce an unauthorized access error. 
+As the route is secured by the key-auth plugin the former curl command to access the API will produce an unauthorized access error.
 Use the command below to securely access the endpoint now.
 
 ```bash
@@ -216,13 +214,13 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: supe
 
 ### Troubleshooting
 
-- Make sure the required ports are not being used by other systems/processes (The default ports are: 9080, 9443, 2379). 
+- Make sure the required ports are not being used by other systems/processes (The default ports are: 9080, 9443, 2379).
 The following is the command to kill a process which is listening to a specific port (in unix based systems).
-    
+
     ```bash
     fuser -k 9443/tcp
     ```
-    
+
 - If the docker container is continuously restarting/failing, login to the container and observe the logs to diagnose the issue.
 
     ```bash
