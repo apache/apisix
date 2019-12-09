@@ -57,7 +57,11 @@ function _M.incoming(self, key)
     key = self.plugin_name .. tostring(key)
 
     local ret, err = red:ttl(key)
-    core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
+    if err then
+        return  false, err
+    end
+
+    core.log.debug("ttl key: ", key, " ret: ", ret, " err: ", err)
     if ret < 0 then
         ret, err = red:set(key, limit -1, "EX", window, "NX")
         if not ret then

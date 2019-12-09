@@ -22,6 +22,8 @@ local ipairs = ipairs
 local type = type
 local error = error
 local loadstring = loadstring
+local str_sub = string.sub
+local str_find = string.find
 local user_routes
 local cached_version
 
@@ -50,13 +52,15 @@ local function create_radixtree_router(routes)
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             local filter_fun, err
-            if route.value.filter_func then
+            local route_val= route.value
+
+            if route_val.filter_func then
                 filter_fun, err = loadstring(
-                                        "return " .. route.value.filter_func,
-                                        "router#" .. route.value.id)
+                                        "return " .. route_val.filter_func,
+                                        "router#" .. route_val.id)
                 if not filter_fun then
                     core.log.error("failed to load filter function: ", err,
-                                   " route id: ", route.value.id)
+                                   " route id: ", route_val.id)
                     goto CONTINUE
                 end
 
@@ -64,21 +68,33 @@ local function create_radixtree_router(routes)
             end
 
             core.log.info("insert uri route: ",
-                          core.json.delay_encode(route.value))
-            core.table.insert(uri_routes, {
-                paths = route.value.uris or route.value.uri,
-                methods = route.value.methods,
-                priority = route.value.priority,
-                hosts = route.value.hosts or route.value.host,
-                remote_addrs = route.value.remote_addrs
-                               or route.value.remote_addr,
-                vars = route.value.vars,
-                filter_fun = filter_fun,
-                handler = function (api_ctx)
-                    api_ctx.matched_params = nil
-                    api_ctx.matched_route = route
+                          core.json.delay_encode(route_val))
+
+            local paths = route_val.uris or {route_val.uri}
+            for i, path in ipairs(paths) do
+                local matched_uri = path
+                if str_find(path, "*", #path, true) then
+                    matched_uri = str_sub(path, 1, #path - 1)
                 end
-            })
+
+                core.table.insert(uri_routes, {
+                    paths = path,
+                    methods = route_val.methods,
+                    priority = route_val.priority,
+                    hosts = route_val.hosts or route_val.host,
+                    remote_addrs = route_val.remote_addrs
+                                   or route_val.remote_addr,
+                    vars = route_val.vars,
+                    filter_fun = filter_fun,
+                    handler = function (api_ctx)
+                        api_ctx.matched_uri = matched_uri
+                        core.log.debug("matched_uri: [", api_ctx.matched_uri, "]")
+
+                        api_ctx.matched_params = nil
+                        api_ctx.matched_route = route
+                    end
+                })
+            end
 
             ::CONTINUE::
         end
