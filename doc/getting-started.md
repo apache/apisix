@@ -41,9 +41,9 @@ Let's deconstruct the above URL.
 - The guide uses docker and docker-compose to setup APISIX. But if you have already installed APISIX via other methods, then you can skip to step 2.
 - Curl: The guide uses curl command for API testing, but you can also use any other tool of your choice (Eg- Postman).
 
-## Step 1: Install API SIX
+## Step 1: Install APISIX
 
-APISIX is available to install in multiple operating environments. The [following document](how-to-build-cn.md#installation-via-source-release) shows the installation steps in multiple platforms.
+APISIX is available to install in multiple operating environments. The [following document](how-to-build.md#installation-via-source-release) shows the installation steps in multiple platforms.
 For the quick start let's use the docker based set up. To start the APISIX server, clone the following [repository](https://github.com/apache/incubator-apisix-docker) and navigate to the example folder and execute the following commands.
 
 This command will start the APISIX server and the admin API will be available in 9080 port (HTTPS port: 9443).
@@ -132,7 +132,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -X PUT -d '
 {
     "type": "roundrobin",
     "nodes": {
-            "httpbin.org:443": 1
+        "httpbin.org:443": 1
     }
 }'
 ```
@@ -147,10 +147,10 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -X PUT -d '
     "uri": "/get",
     "host": "httpbin.org",
     "plugins": {
-                "proxy-rewrite": {
-                        "scheme": "https"
-                }
-            },
+        "proxy-rewrite": {
+          "scheme": "https"
+        }
+    },
     "upstream_id": 50
 }'
 ```
@@ -196,11 +196,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -X PUT -d '
     "uri": "/get",
     "host": "httpbin.org",
     "plugins": {
-                "proxy-rewrite": {
-                        "scheme": "https"
-                    },
-                "key-auth": {}
-            },
+        "proxy-rewrite": {
+          "scheme": "https"
+        },
+        "key-auth": {}
+    },
     "upstream_id": 50
 }'
 ```
