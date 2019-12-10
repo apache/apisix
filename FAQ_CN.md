@@ -72,3 +72,42 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
 第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
+
+## 如何通过APISIX支持A/B测试？
+
+比如，根据入参`arg_id`分组：
+
+1. A组：arg_id <= 1000
+2. B组：arg_id > 1000
+
+可以这么做：
+```json
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/index.html",
+    "vars": [
+        {"arg_id", "<=", "1000"}
+    ]
+    "plugins": {
+        "redirect": {
+            "uri": "/test?group_id=1"
+        }
+    }
+}'
+
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -X PUT -d '
+{
+    "uri": "/index.html",
+    "vars": [
+        {"arg_id", ">", "1000"}
+    ]
+    "plugins": {
+        "redirect": {
+            "uri": "/test?group_id=2"
+        }
+    }
+}'
+```
+
+更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
+https://github.com/iresty/lua-resty-radixtree#operator-list
