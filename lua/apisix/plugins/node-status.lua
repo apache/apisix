@@ -20,14 +20,13 @@ local re_gmatch = ngx.re.gmatch
 local plugin_name = "node-status"
 local apisix_id = core.id.get()
 local ipairs = ipairs
-
+local local_conf = core.config.local_conf()
 
 local _M = {
     version = 0.1,
     priority = 1000,
     name = plugin_name,
 }
-
 
 local ngx_status = {}
 local ngx_statu_items = {
@@ -36,16 +35,16 @@ local ngx_statu_items = {
 }
 
 
-local function collect()
+local function collect_node_info()
     local res, err = core.http.request_self("/apisix/nginx_status", {
                                                 keepalive = false,
                                             })
     if not res then
-        return 500, "failed to fetch nginx status: " .. err
+        return nil, "failed to fetch nginx status: " .. err
     end
 
     if res.status ~= 200 then
-        return res.status
+        return nil, "failed to fetch nginx status, got http status: " .. res.status
     end
 
     -- Active connections: 2
@@ -55,7 +54,7 @@ local function collect()
 
     local iterator, err = re_gmatch(res.body, [[(\d+)]], "jmo")
     if not iterator then
-        return 500, "failed to re.gmatch Nginx status: " .. err
+        return nil, "failed to re.gmatch Nginx status: " .. err
     end
 
     core.table.clear(ngx_status)
@@ -68,9 +67,47 @@ local function collect()
         ngx_status[name] = val[0]
     end
 
-    return 200, core.json.encode({id = apisix_id, status = ngx_status})
+    local node_info = {
+        id = apisix_id,
+        apisix_version = core.version.VERSION,
+        nginx_version = ngx.config.nginx_version,
+        plugins = local_conf.plugins,
+        config_center = local_conf.apisix.config_center,
+        status = ngx_status,
+    }
+
+    local data, err = core.json.encode(node_info)
+    if not data then
+        core.log.error("failed to encode node information: ", err)
+        return nil, "failed to encode node information: " .. err
+    end
+
+    return data, nil
 end
 
+local function report()
+    core.log.info("report...........")
+    local data, err = collect_node_info()
+    if not data then
+        core.log.error("failed to report node status:", err)
+    end
+
+    local key = "/cluster/" .. apisix_id
+    local res, err = core.etcd.set(key, data, 10)
+    if not res then
+        core.log.error("failed to report node status[", key, "]: ", err)
+    end
+end
+
+local function collect()
+    local data, err = collect_node_info()
+    if not data then
+        core.log.error("failed to report node status:", err)
+        return 500, err
+    end
+
+    return 200, data
+end
 
 function _M.api()
     return {
@@ -82,5 +119,24 @@ function _M.api()
     }
 end
 
+
+do
+    local timer
+
+function _M.init()
+    if timer or ngx.worker.id() ~= 0 then
+        return
+    end
+
+    local err
+    timer, err = core.timer.new("cluster", report, {check_interval = 5})
+    if not timer then
+        core.log.error("failed to create timer: ", err)
+    else
+        core.log.info("succeed to create timer: cluster")
+    end
+end
+
+end -- do
 
 return _M
