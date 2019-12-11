@@ -70,3 +70,42 @@ For the first problem, you can use https_proxy or use the `--server` option to s
 Run the `luarocks config rocks_servers` command(this command is supported after luarocks 3.0) to see which server are available.
 
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.
+
+## How to support A/B testing via APISIX?
+
+An example, if you want to group by the request param `arg_id`：
+
+1. Group A：arg_id <= 1000
+2. Group B：arg_id > 1000
+
+here is the way：
+```json
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/index.html",
+    "vars": [
+        {"arg_id", "<=", "1000"}
+    ]
+    "plugins": {
+        "redirect": {
+            "uri": "/test?group_id=1"
+        }
+    }
+}'
+
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -X PUT -d '
+{
+    "uri": "/index.html",
+    "vars": [
+        {"arg_id", ">", "1000"}
+    ]
+    "plugins": {
+        "redirect": {
+            "uri": "/test?group_id=2"
+        }
+    }
+}'
+```
+
+Here is the operator list of current `lua-resty-radixtree`：
+https://github.com/iresty/lua-resty-radixtree#operator-list
