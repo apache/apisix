@@ -86,23 +86,22 @@ local function collect_node_info()
 end
 
 local function report()
-    core.log.info("report...........")
     local data, err = collect_node_info()
     if not data then
-        core.log.error("failed to report node status:", err)
+        core.log.error("failed to report node information:", err)
     end
 
     local key = "/cluster/" .. apisix_id
     local res, err = core.etcd.set(key, data, 10)
     if not res then
-        core.log.error("failed to report node status[", key, "]: ", err)
+        core.log.error("failed to report node information[", key, "]: ", err)
     end
 end
 
 local function collect()
     local data, err = collect_node_info()
     if not data then
-        core.log.error("failed to report node status:", err)
+        core.log.error("failed to report node information:", err)
         return 500, err
     end
 
