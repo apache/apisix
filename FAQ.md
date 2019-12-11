@@ -45,7 +45,7 @@ Yes, in version 0.6 we have dashboard built in, you can operate APISIX through t
 
 Of course, APISIX provides flexible custom plugins for developers and businesses to write their own logic.
 
-[How to write plugin](doc/plugins/plugin-develop.md)
+[How to write plugin](doc/plugin-develop.md)
 
 ## Why we choose etcd as the configuration center?
 
