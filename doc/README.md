@@ -24,6 +24,7 @@ Reference Documentation
 * [APISIX Readme](../README.md)
 * [Architecture Design](architecture-design.md)
 * [Benchmark](benchmark.md)
+* [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 * Router
