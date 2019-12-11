@@ -101,7 +101,7 @@ end
 local function collect()
     local data, err = collect_node_info()
     if not data then
-        core.log.error("failed to report node information:", err)
+        core.log.error("failed to collect node information:", err)
         return 500, err
     end
 
