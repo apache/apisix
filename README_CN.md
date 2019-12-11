@@ -25,6 +25,7 @@
 
 - **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
 
 APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
