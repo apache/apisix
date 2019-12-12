@@ -81,13 +81,13 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 2. B组：arg_id > 1000
 
 可以这么做：
-```json
+```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
-        {"arg_id", "<=", "1000"}
-    ]
+        ["arg_id", "<=", "1000"]
+    ],
     "plugins": {
         "redirect": {
             "uri": "/test?group_id=1"
@@ -99,8 +99,8 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
-        {"arg_id", ">", "1000"}
-    ]
+        ["arg_id", ">", "1000"]
+    ],
     "plugins": {
         "redirect": {
             "uri": "/test?group_id=2"

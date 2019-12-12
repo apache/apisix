@@ -79,13 +79,13 @@ An example, if you want to group by the request param `arg_id`：
 2. Group B：arg_id > 1000
 
 here is the way：
-```json
+```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
-        {"arg_id", "<=", "1000"}
-    ]
+        ["arg_id", "<=", "1000"]
+    ],
     "plugins": {
         "redirect": {
             "uri": "/test?group_id=1"
@@ -97,8 +97,8 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
-        {"arg_id", ">", "1000"}
-    ]
+        ["arg_id", ">", "1000"]
+    ],
     "plugins": {
         "redirect": {
             "uri": "/test?group_id=2"
