@@ -25,7 +25,7 @@
 
 - **QQ group**: 552030619
 - Mail list: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mail list.
-- [![Twitter](https://img.shields.io/twitter/follow/apisixfast.svg?style=social&label=Follow)](https://twitter.com/intent/follow?screen_name=apisixfast)
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
 
 APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
 
