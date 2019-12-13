@@ -147,7 +147,19 @@ passed
 
 
 
-=== TEST 5: invalid consumer
+=== TEST 5: valid consumer
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: invalid consumer
 --- request
 GET /hello
 --- more_headers
@@ -160,7 +172,7 @@ apikey: 123
 
 
 
-=== TEST 6: not found apikey header
+=== TEST 7: not found apikey header
 --- request
 GET /hello
 --- error_code: 401
@@ -171,7 +183,7 @@ GET /hello
 
 
 
-=== TEST 7: valid consumer
+=== TEST 8: valid consumer
 --- config
     location /add_more_consumer {
         content_by_lua_block {
