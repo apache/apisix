@@ -96,7 +96,7 @@ local function load()
     local_conf = core.config.local_conf(true)
     local plugin_names = local_conf.plugins
     if not plugin_names then
-        return nil, "failed to read plugin list form local file"
+        return nil, "failed to read plugin list from local file"
     end
 
     if local_conf.apisix and local_conf.apisix.enable_heartbeat then
