@@ -1,3 +1,22 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 # 常见问题
 
 ## 为什么要做 API 网关？不是已经有其他的开源网关了吗？
@@ -26,6 +45,8 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 
 当然可以，APISIX 提供了灵活的自定义插件，方便开发者和企业编写自己的逻辑。
 
+[如何开发插件](doc/plugin-develop-cn.md)
+
 ## 我们为什么选择 etcd 作为配置中心？
 
 对于配置中心，配置存储只是最基本功能，APISIX 还需要下面几个特性：
@@ -37,3 +58,56 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 5. 高性能
 
 APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和KV数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
+
+## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
+
+遇到 luarocks 慢的问题，有以下两种可能：
+
+1. luarocks 安装所使用的服务器不能访问
+2. 你所在的网络到 github 服务器之间有地方对 `git` 协议进行封锁
+
+针对第一个问题，你可以使用 https_proxy 或者使用 `--server` 选项来指定一个你可以访问或者访问更快的
+luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令在 luarocks 3.0 版本后开始支持）
+可以查看有哪些可用服务。
+
+如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
+第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
+
+## 如何通过APISIX支持A/B测试？
+
+比如，根据入参`arg_id`分组：
+
+1. A组：arg_id <= 1000
+2. B组：arg_id > 1000
+
+可以这么做：
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/index.html",
+    "vars": [
+        ["arg_id", "<=", "1000"]
+    ],
+    "plugins": {
+        "redirect": {
+            "uri": "/test?group_id=1"
+        }
+    }
+}'
+
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -X PUT -d '
+{
+    "uri": "/index.html",
+    "vars": [
+        ["arg_id", ">", "1000"]
+    ],
+    "plugins": {
+        "redirect": {
+            "uri": "/test?group_id=2"
+        }
+    }
+}'
+```
+
+更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
+https://github.com/iresty/lua-resty-radixtree#operator-list

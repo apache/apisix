@@ -1,20 +1,46 @@
-[中文](proxy-rewrite-cn.md)
-# proxy-rewrite
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+[Chinese](proxy-rewrite-cn.md)
+
+# Summary
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Test Plugin**](#test-plugin)
+- [**Disable Plugin**](#disable-plugin)
+
+## Name
 
 upstream proxy info rewrite plugin.
 
-### Parameters
-|Name    |Required|Description|
+## Attributes
+|Name    | Requirement |Description|
 |-------         |-----|------|
-|scheme          |No| Upstream new `schema` forwarding protocol,options can be `http` or `https`,default `http`.|
-|uri             |No| Upstream new `uri` forwarding address.|
-|host            |No| Upstream new `host` forwarding address, example `iresty.com`. |
-|enable_websocket|No| enable `websocket`(boolean), default `false`.|
-|headers         |No| Forward to the new `headers` of the upstream, can set up multiple. If it exists, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header.|
+|scheme          |optional| Upstream new `schema` forwarding protocol,options can be `http` or `https`,default `http`.|
+|uri             |optional| Upstream new `uri` forwarding address.|
+|host            |optional| Upstream new `host` forwarding address, example `iresty.com`. |
+|enable_websocket|optional| enable `websocket`(boolean), default `false`.|
+|headers         |optional| Forward to the new `headers` of the upstream, can set up multiple. If it exists, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header.|
 
-### Example
+## How To Enable
 
-#### Enable Plugin
 Here's an example, enable the `proxy rewrite` plugin on the specified route:
 
 ```shell
@@ -44,7 +70,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-#### Test Plugin
+## Test Plugin
 Testing based on the above examples :
 ```shell
 curl -X GET http://127.0.0.1:9080/test/index.html
@@ -57,7 +83,7 @@ Send the request and see upstream `access.log', if the output information is con
 
 This means that the `proxy rewrite` plugin is in effect.
 
-#### Disable Plugin
+## Disable Plugin
 When you want to disable the `proxy rewrite` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately :

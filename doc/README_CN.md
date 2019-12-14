@@ -1,3 +1,21 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
 [English](README.md)
 
 Reference document
@@ -6,13 +24,12 @@ Reference document
 * [APISIX 说明](../README_CN.md)
 * [架构设计](architecture-design-cn.md)
 * [压力测试](benchmark-cn.md)
-* [搭建开发环境](dev-manua-cnl.md)
-* [安装依赖](install-dependencies.md): How to install dependencies for different OS.
-* [健康检查](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
+* [如何构建 Apache APISIX](how-to-build-cn.md)
+* [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
 * Router(路由)
     * [radixtree](router-radixtree.md)
     * [r3](router-r3.md)
-* [独立运行模型](stand-alone-cn.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
+* [独立运行模型](stand-alone-cn.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy-cn.md)
 * [管理 API](admin-api-cn.md)
 * [变更日志](../CHANGELOG_CN.md)
@@ -36,3 +53,5 @@ Reference document
 * [serverless](plugins/serverless-cn.md)：允许在 APISIX 中的不同阶段动态运行 Lua 代码。
 * [ip-restriction](plugins/ip-restriction-cn.md): IP 黑白名单。
 * openid-connect
+* [redirect](plugins/redirect-cn.md): URI 重定向。
+* [response-rewrite](plugins/response-rewrite-cn.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。

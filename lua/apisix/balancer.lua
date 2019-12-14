@@ -1,15 +1,28 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local healthcheck = require("resty.healthcheck")
 local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
 local balancer    = require("ngx.balancer")
 local core        = require("apisix.core")
-local sub_str     = string.sub
-local find_str    = string.find
 local error       = error
 local str_char    = string.char
 local str_gsub    = string.gsub
 local pairs       = pairs
-local tonumber    = tonumber
 local tostring    = tostring
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
@@ -34,18 +47,6 @@ local _M = {
 }
 
 
-local function parse_addr(addr)
-    local pos = find_str(addr, ":", 1, true)
-    if not pos then
-        return addr, 80
-    end
-
-    local host = sub_str(addr, 1, pos - 1)
-    local port = sub_str(addr, pos + 1)
-    return host, tonumber(port)
-end
-
-
 local function fetch_health_nodes(upstream, checker)
     if not checker then
         return upstream.nodes
@@ -55,7 +56,7 @@ local function fetch_health_nodes(upstream, checker)
     local up_nodes = core.table.new(0, #upstream.nodes)
 
     for addr, weight in pairs(upstream.nodes) do
-        local ip, port = parse_addr(addr)
+        local ip, port = core.utils.parse_addr(addr)
         local ok = checker:get_target_status(ip, port, host)
         if ok then
             up_nodes[addr] = weight
@@ -79,7 +80,7 @@ local function create_checker(upstream, healthcheck_parent)
     })
 
     for addr, weight in pairs(upstream.nodes) do
-        local ip, port = parse_addr(addr)
+        local ip, port = core.utils.parse_addr(addr)
         local ok, err = checker:add_target(ip, port, upstream.checks.host)
         if not ok then
             core.log.error("failed to add new health check target: ", addr,
@@ -239,7 +240,8 @@ local function pick_server(route, ctx)
 
     local server, err = server_picker.get(ctx)
     if not server then
-        return nil, nil, "failed to find valid upstream server" .. err
+        err = err or "no valid upstream node"
+        return nil, nil, "failed to find valid upstream server, " .. err
     end
 
     if up_conf.timeout then
@@ -251,7 +253,7 @@ local function pick_server(route, ctx)
         end
     end
 
-    local ip, port, err = parse_addr(server)
+    local ip, port, err = core.utils.parse_addr(server)
     ctx.balancer_ip = ip
     ctx.balancer_port = port
 

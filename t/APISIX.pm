@@ -1,3 +1,19 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 package t::APISIX;
 
 use lib 'lib';
@@ -127,7 +143,7 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
 
-    resolver ipv6=off local=on;
+    resolver 8.8.8.8 114.114.114.114 ipv6=off;
     resolver_timeout 5;
 
     lua_socket_log_errors off;
@@ -154,7 +170,15 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
+_EOC_
 
+    my $ipv6_fake_server = "";
+    if (defined $block->listen_ipv6) {
+        $ipv6_fake_server = "listen \[::1\]:1980;";
+    }
+
+    $http_config .= <<_EOC_;
+        $ipv6_fake_server
         server_tokens off;
 
         location / {

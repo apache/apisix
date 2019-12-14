@@ -1,3 +1,22 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 
 ## Health Checks for Upstream
 
@@ -36,7 +55,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
                 "unhealthy": {
                     "interval": 1,
                     "http_failures": 2
-                }
+                },
+                "req_headers": ["User-Agent: curl/7.29.0"]
             },
             "passive": {
                 "healthy": {
@@ -69,6 +89,7 @@ contains: `active` or `passive`.
     The threshold fields of  `unhealthy` are:
     * `active.unhealthy.interval`: Interval between health checks for unhealthy targets (in seconds), the minimum is 1.
     * `active.unhealthy.http_failures`: The number of http failures times to determine the target is unhealthy, the minimum is 1.
+    * `active.req_headers`: Additional request headers. Array format, so you can fill in multiple headers.
 
 * `passive`: To enable passive health checks, you need to specify the configuration items under `checks.passive` in the Upstream object configuration.
 

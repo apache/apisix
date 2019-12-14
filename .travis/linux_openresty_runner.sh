@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
-
-### BEGIN ###
-# Author: idevz
-# Since: 08:52:47 2019/07/08
-# Description:         travis_runnerz_linux.sh
-# travis_runner_linux  ./travis_runner_linux.sh
 #
-# Environment variables that control this script:
-# OPENRESTY_PREFIX
-### END ###
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 set -ex
 
@@ -17,7 +23,7 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    WITHOUT_DASHBOARD=1 sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
     echo "Create lua deps cache"
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -60,20 +66,40 @@ do_install() {
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
     wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
-	chmod a+x utils/lj-releng
+    chmod a+x utils/lj-releng
+
+    git clone https://github.com/apache/openwhisk-utilities.git .travis/openwhisk-utilities
+    cp .travis/ASF* .travis/openwhisk-utilities/scancode/
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
         sudo apt-get install golang
-
         git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-
         cd grpc_server_example/
         go build -o grpc_server_example main.go
         mv grpc_server_example ../build-cache/
         cd ..
     fi
 
+    if [ ! -f "build-cache/proto/helloworld.proto" ]; then
+
+        if [ ! -f "grpc_server_example/main.go" ]; then
+            git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
+        fi
+
+        cd grpc_server_example/
+        mv proto/ ../build-cache/
+        cd ..
+    fi
+
+    if [ ! -f "build-cache/grpcurl" ]; then
+        sudo apt-get install golang
+        git clone https://github.com/fullstorydev/grpcurl.git grpcurl
+        cd grpcurl
+        go build -o grpcurl  ./cmd/grpcurl
+        mv grpcurl ../build-cache/
+        cd ..
+    fi
 }
 
 script() {
@@ -90,9 +116,14 @@ script() {
     ./bin/apisix start
     mkdir -p logs
     sleep 1
+
+    sudo sh ./t/grpc-proxy-test.sh
+    sleep 1
+
     ./bin/apisix stop
     sleep 1
-    make check || exit 1
+
+    make lint && make license-check || exit 1
     APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 }
 

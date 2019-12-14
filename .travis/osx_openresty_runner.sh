@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
-
-### BEGIN ###
-# Author: idevz
-# Since: 08:52:47 2019/07/08
-# Description:       travis_runner_osx.sh
-# travis_runner_osx  ./travis_runner_osx.sh
 #
-# Environment variables that control this script:
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
 #
-### END ###
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 set -ex
 
@@ -32,7 +38,7 @@ before_install() {
 do_install() {
     export_or_prefix
 
-    make dev
+    make deps
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
     git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
@@ -43,6 +49,8 @@ do_install() {
     cd grpc_server_example/
     go build -o grpc_server_example main.go
     cd ..
+
+    brew install grpcurl
 }
 
 script() {
@@ -51,8 +59,6 @@ script() {
 
     etcd --enable-v2=true &
     sleep 1
-
-    luarocks install luacheck
 
     sudo cpanm Test::Nginx
 
@@ -63,10 +69,28 @@ script() {
     sudo make run
     mkdir -p logs
     sleep 1
+
+    #test grpc proxy
+    curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+    {
+        "methods": ["POST", "GET"],
+        "uri": "/helloworld.Greeter/SayHello",
+        "service_protocol": "grpc",
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:50051": 1
+            }
+        }
+    }'
+
+    grpcurl -insecure -import-path ./grpc_server_example/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
+
+    sleep 1
+
     sudo make stop
 
     sleep 1
-    make check || exit 1
 
     ln -sf $PWD/deps/lib $PWD/deps/lib64
     sudo mkdir -p /usr/local/var/log/nginx/

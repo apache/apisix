@@ -1,3 +1,19 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -68,3 +84,138 @@ GET /hello
 --- error_code: 404
 --- error_log
 failed to fetch service configuration by id: 1111
+
+
+
+=== TEST 3: service upstream priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: route service upstream priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1977": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: route service upstream by upstream_id priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+        upstream_id: 1
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: route service upstream priority
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        service_id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1977": 1
+            type: roundrobin
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1977": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]

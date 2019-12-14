@@ -1,3 +1,19 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -1240,5 +1256,252 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: filter function
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/index.html",
+                    "filter_func": "function(vars) return vars.arg_name == 'json' end",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]=],
+                [=[{
+                    "node": {
+                        "value": {
+                            "filter_func": "function(vars) return vars.arg_name == 'json' end"
+                        }
+                    }
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: filter function (invalid)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/index.html",
+                    "filter_func": "function(vars) ",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to load 'filter_func' string: [string \"return function(vars) \"]:1: 'end' expected near '<eof>'"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: Support for multiple URIs
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uris": ["/index.html","/index2.html"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: set route with ttl
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        -- set
+        local code, body, res = t('/apisix/admin/routes/1?ttl=1',
+            ngx.HTTP_PUT,
+            [[{
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/index.html"
+            }]]
+            )
+
+        if code >= 300 then ngx.print("code: ", code, " ") end
+        ngx.say(body)
+
+        -- get
+        code, body = t('/apisix/admin/routes/1?ttl=1',
+            ngx.HTTP_GET,
+            nil,
+            [[{
+                "node": {
+                    "value": {
+                        "uri": "/index.html"
+                    },
+                    "key": "/apisix/routes/1"
+                }
+            }]]
+        )
+
+        if code >= 300 then ngx.print("code: ", code, " ") end
+        ngx.say(body)
+
+        ngx.sleep(2)
+
+        -- get again
+        code, body, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+
+        if code >= 300 then ngx.print("code: ", code, " ") end
+        ngx.print(body)
+    }
+}
+--- request
+GET /t
+--- response_body_like eval
+qr$passed
+passed
+code: 404 {"cause":"\\/apisix\\/routes\\/1","index":\d+,"errorCode":100,"message":"Key not found"}$
+--- no_error_log
+[error]
+--- timeout: 5
+
+
+
+=== TEST 39: post route with ttl
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body, res = t('/apisix/admin/routes?ttl=1',
+            ngx.HTTP_POST,
+            [[{
+                "methods": ["GET"],
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/index.html"
+            }]],
+            [[{"action": "create"}]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        ngx.say("[push] succ: ", body)
+        ngx.sleep(2)
+
+        local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
+        code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_GET)
+
+        if code >= 300 then ngx.print("code: ", code, " ") end
+        ngx.print(body)
+    }
+}
+--- request
+GET /t
+--- response_body_like eval
+qr$succ: passed
+code: 404 {"cause":"\\/apisix\\/routes\\/\d+","index":\d+,"errorCode":100,"message":"Key not found"}$
+--- no_error_log
+[error]
+--- timeout: 5
+
+
+
+=== TEST 40: invalid argument: ttl
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body, res = t('/apisix/admin/routes?ttl=xxx',
+            ngx.HTTP_PUT,
+            [[{
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/index.html"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.print(body)
+            return
+        end
+
+        ngx.say("[push] succ: ", body)
+    }
+}
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid argument ttl: should be a number"}
 --- no_error_log
 [error]

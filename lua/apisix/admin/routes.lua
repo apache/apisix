@@ -1,7 +1,24 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local type = type
+local loadstring = loadstring
 
 
 local _M = {
@@ -41,10 +58,6 @@ local function check_conf(id, conf, need_id)
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
                                  .. "allowed"}
-    end
-
-    if conf.host and conf.hosts then
-        return nil, {error_msg = "only one of host or hosts is allowed"}
     end
 
     local upstream_id = conf.upstream_id
@@ -88,18 +101,30 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    if conf.filter_func then
+        local func, err = loadstring("return " .. conf.filter_func)
+        if not func then
+            return nil, {error_msg = "failed to load 'filter_func' string: "
+                                     .. err}
+        end
+
+        if type(func()) ~= "function" then
+            return nil, {error_msg = "'filter_func' should be a function"}
+        end
+    end
+
     return need_id and id or true
 end
 
 
-function _M.put(id, conf)
+function _M.put(id, conf, sub_path, args)
     local id, err = check_conf(id, conf, true)
     if not id then
         return 400, err
     end
 
     local key = "/routes/" .. id
-    local res, err = core.etcd.set(key, conf)
+    local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
         core.log.error("failed to put route[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -125,7 +150,7 @@ function _M.get(id)
 end
 
 
-function _M.post(id, conf)
+function _M.post(id, conf, sub_path, args)
     local id, err = check_conf(id, conf, false)
     if not id then
         return 400, err
@@ -133,7 +158,7 @@ function _M.post(id, conf)
 
     local key = "/routes"
     -- core.log.info("key: ", key)
-    local res, err = core.etcd.push("/routes", conf)
+    local res, err = core.etcd.push("/routes", conf, args.ttl)
     if not res then
         core.log.error("failed to post route[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -160,7 +185,7 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf, sub_path)
+function _M.patch(id, conf, sub_path, args)
     if not id then
         return 400, {error_msg = "missing route id"}
     end
@@ -225,7 +250,7 @@ function _M.patch(id, conf, sub_path)
     end
 
     -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, node_value)
+    local res, err = core.etcd.set(key, node_value, args.ttl)
     if not res then
         core.log.error("failed to set new route[", key, "]: ", err)
         return 500, {error_msg = err}

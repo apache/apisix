@@ -1,4 +1,23 @@
-[中文](key-auth-cn.md)
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+[Chinese](key-auth-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -16,7 +35,10 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
-* `key`: different consumer objects should use different values, it should be unique.
+|Name          |Requirement  |Description|
+|---------     |--------|-----------|
+| key         |required|different consumer objects should use different values, it should be unique.|
+
 
 ## How To Enable
 
@@ -67,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 Here is a correct test example:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
+$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
 HTTP/1.1 200 OK
 ...
 ```
