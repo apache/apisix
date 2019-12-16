@@ -31,6 +31,16 @@ local schema = {
             minLength   = 1,
             maxLength   = 4096
         },
+        regex_uri = {
+            description = "new uri for upstream, lower priority than uri property",
+            type        = "array",
+            maxItems    = 2,
+            minItems    = 2,
+            items       = {
+                description = "regex uri",
+                type = "string",
+            }
+        },
         host = {
             description = "new host for upstream",
             type        = "string",
@@ -110,7 +120,15 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    local upstream_uri = conf.uri or ctx.var.uri
+    local upstream_uri
+    if conf.uri ~= nil then
+        upstream_uri = conf.uri
+    elseif conf.regex_uri ~= nil then
+        upstream_uri = ngx.re.sub(ctx.var.uri, conf.regex_uri[1], conf.regex_uri[2], "o")
+    else
+        upstream_uri = ctx.var.uri
+    end
+
     if ctx.var.is_args == "?" then
         ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
     else
