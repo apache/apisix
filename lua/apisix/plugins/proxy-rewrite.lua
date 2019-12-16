@@ -120,13 +120,16 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    local upstream_uri
+    local upstream_uri = ctx.var.uri
     if conf.uri ~= nil then
         upstream_uri = conf.uri
     elseif conf.regex_uri ~= nil then
-        upstream_uri = ngx.re.sub(ctx.var.uri, conf.regex_uri[1], conf.regex_uri[2], "o")
-    else
-        upstream_uri = ctx.var.uri
+        local uri, _, err = ngx.re.sub(ctx.var.uri, conf.regex_uri[1], conf.regex_uri[2], "o")
+        if uri then
+            upstream_uri = uri
+        else
+            core.log.error("failed to substitute the uri[", ctx.var.uri, "]:", err)
+        end
     end
 
     if ctx.var.is_args == "?" then
