@@ -46,6 +46,7 @@ t/servroot
 go
 \.*
 conf/apisix.uid
+conf/nginx.conf
 deps
 scgi_temp
 uwsgi_temp
