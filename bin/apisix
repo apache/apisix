@@ -229,6 +229,22 @@ http {
                 {% end %}
                 deny all;
             {%end%}
+
+            if ($request_method = 'OPTIONS' ) {
+                add_header 'Access-Control-Allow-Origin' '$http_origin';
+                add_header 'Access-Control-Allow-Methods' 'POST, GET, PUT, OPTIONS, DELETE';
+                add_header 'Access-Control-Max-Age' '3600';
+                add_header 'Access-Control-Allow-Headers' '*';
+                add_header 'Access-Control-Allow-Credentials' 'true';
+                add_header 'Content-Length' 0;
+                add_header 'Content-Type' text/plain;
+                return 200;
+            }
+            add_header 'Access-Control-Allow-Origin' '$http_origin';
+            add_header 'Access-Control-Allow-Credentials' 'true';
+            add_header 'Access-Control-Expose-Headers' 'Content-Type,*';
+            add_header 'Access-Control-Max-Age' '3600';
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -287,6 +303,21 @@ http {
                 {% end %}
                 deny all;
             {%end%}
+
+            if ($request_method = 'OPTIONS' ) {
+                add_header 'Access-Control-Allow-Origin' '$http_origin';
+                add_header 'Access-Control-Allow-Methods' 'POST, GET, PUT, OPTIONS, DELETE';
+                add_header 'Access-Control-Max-Age' '3600';
+                add_header 'Access-Control-Allow-Headers' '*';
+                add_header 'Access-Control-Allow-Credentials' 'true';
+                add_header 'Content-Length' 0;
+                add_header 'Content-Type' text/plain;
+                return 200;
+            }
+            add_header 'Access-Control-Allow-Origin' '$http_origin';
+            add_header 'Access-Control-Allow-Credentials' 'true';
+            add_header 'Access-Control-Expose-Headers' 'Content-Type,*';
+            add_header 'Access-Control-Max-Age' '3600';
 
             content_by_lua_block {
                 apisix.http_admin()
