@@ -757,7 +757,7 @@ x-real-ip: 127.0.0.1
                         "methods": ["GET"],
                         "plugins": {
                             "proxy-rewrite": {
-                                "regex_uri": ["^/test/(.*)", "/$1"]
+                                "regex_uri": ["^/test/(.*)/(.*)/(.*)", "/$1_$2_$3"]
                             }
                         },
                         "upstream": {
@@ -785,17 +785,28 @@ passed
 
 
 
-=== TEST 27: rewrite uri using regex_uri
+=== TEST 27: hit route(rewrite uri using regex_uri)
 --- request
-GET /test/hello HTTP/1.1
+GET /test/plugin/proxy/rewrite HTTP/1.1
 --- response_body
-hello world
+uri: /plugin_proxy_rewrite
+host: localhost
+scheme: http
 --- no_error_log
 [error]
 
 
 
-=== TEST 28: set route(Using both uri and regex_uri)
+=== TEST 28: hit route(404 not found)
+--- request
+GET /test/not/found HTTP/1.1
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: set route(Using both uri and regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -807,7 +818,7 @@ hello world
                         "plugins": {
                             "proxy-rewrite": {
                                 "uri": "/hello",
-                                "regex_uri": ["^/test/(.*)", "/$1"]
+                                "regex_uri": ["^/test/(.*)", "/${1}1"]
                             }
                         },
                         "upstream": {
@@ -835,7 +846,7 @@ passed
 
 
 
-=== TEST 29: rewrite uri using uri & regex_uri property
+=== TEST 30: hit route(rewrite uri using uri & regex_uri property)
 --- request
 GET /test/hello HTTP/1.1
 --- response_body
@@ -845,7 +856,7 @@ hello world
 
 
 
-=== TEST 30: set route(invalid regex_uri)
+=== TEST 31: set route(invalid regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -881,3 +892,49 @@ GET /t
 --- no_error_log
 [error]
 
+
+
+=== TEST 32: set route(invalid regex syntax)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "regex_uri": ["^/test/(.*)", "/$`1"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+
+
+
+=== TEST 33: hit route(invalid regex syntax)
+--- request
+GET /test/hello HTTP/1.1
+--- error_code: 404
+--- error_log
+failed to substitute the uri

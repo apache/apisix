@@ -20,6 +20,7 @@ local pairs       = pairs
 local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
+local re_sub      = ngx.re.sub
 
 
 local schema = {
@@ -32,7 +33,7 @@ local schema = {
             maxLength   = 4096
         },
         regex_uri = {
-            description = "new uri for upstream, lower priority than uri property",
+            description = "new uri that substitute from client uri for upstream, lower priority than uri property",
             type        = "array",
             maxItems    = 2,
             minItems    = 2,
@@ -124,11 +125,13 @@ function _M.rewrite(conf, ctx)
     if conf.uri ~= nil then
         upstream_uri = conf.uri
     elseif conf.regex_uri ~= nil then
-        local uri, _, err = ngx.re.sub(ctx.var.uri, conf.regex_uri[1], conf.regex_uri[2], "o")
+        local uri, _, err = re_sub(ctx.var.uri, conf.regex_uri[1], conf.regex_uri[2], "jo")
         if uri then
             upstream_uri = uri
         else
-            core.log.error("failed to substitute the uri[", ctx.var.uri, "]:", err)
+            core.log.error("failed to substitute the uri ", ctx.var.uri,
+                           " (", conf.regex_uri[1], ") with ",
+                           conf.regex_uri[2], " :", err)
         end
     end
 
