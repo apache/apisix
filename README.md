@@ -120,18 +120,18 @@ APISIX has built-in support for dashboards, as follows:
 git clone https://github.com/apache/incubator-apisix-dashboard.git
 ```
 
-- Install dependencies and compile
+- Install dependencies and build
 ```
-yarn install
-yarn run build: prod
+yarn
+yarn run build:prod
 ```
 
 - Integration with APISIX
-Copy the compiled files to the apisix / dashboard directory,
-open `http://127.0.0.1:9080/apisix/dashboard/` with a browser and try it.
+Copy the compiled files under `/dist` directory to the `apisix/dashboard` directory,
+open `http://127.0.0.1:9080/apisix/dashboard/` in the browser.
 Do not need to fill the user name and password, log in directly.
 
-Dashboard allow any remote IP by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
+The dashboard allows any remote IP by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
 
 We provide an online dashboard [demo version](http://apisix.iresty.com), make it easier for you to understand APISIX.
 
