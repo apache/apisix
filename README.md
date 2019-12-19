@@ -127,7 +127,7 @@ yarn run build:prod
 ```
 
 - Integration with APISIX
-Copy the compiled files under `/dist` directory to the apisix `/dashboard` directory,
+Copy the compiled files under `/dist` directory to the `apisix/dashboard` directory,
 open `http://127.0.0.1:9080/apisix/dashboard/` in the browser.
 Do not need to fill the user name and password, log in directly.
 
