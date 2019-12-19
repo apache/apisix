@@ -342,6 +342,7 @@ _M.route = {
         {required = {"upstream", "uri"}},
         {required = {"upstream_id", "uri"}},
         {required = {"service_id", "uri"}},
+        {required = {"plugins", "uris"}},
         {required = {"upstream", "uris"}},
         {required = {"upstream_id", "uris"}},
         {required = {"service_id", "uris"}},
