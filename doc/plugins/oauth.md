@@ -51,7 +51,7 @@ The following image shows an example(successful) flow of the token introspection
 
 ![token introspection](../images/plugin/oauth-1.png)
 
-The following is the curl command to enable the plugin to an external service. 
+The following is the curl command to enable the plugin to an external service.
 This route will protect `https://httpbin.org/get`(echo service) by introspecting the token provided in the header of the request.
 
 ```bash
