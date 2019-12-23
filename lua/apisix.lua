@@ -446,6 +446,29 @@ function _M.http_balancer_phase()
     load_balancer(api_ctx.matched_route, api_ctx)
 end
 
+local function cors_admin()
+    local local_conf = core.config.local_conf()
+    if local_conf.apisix and not local_conf.apisix.enable_admin_cors then
+        return
+    end
+
+    local method = get_method()
+    if method == "OPTIONS" then
+        core.response.set_header("Access-Control-Allow-Origin", "*",
+                                "Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE, PATCH",
+                                "Access-Control-Max-Age", "3600",
+                                "Access-Control-Allow-Headers", "*",
+                                "Access-Control-Allow-Credentials", "true",
+                                "Content-Length", "0",
+                                "Content-Type", "text/plain")
+        ngx_exit(200)
+    end
+
+    core.response.set_header("Access-Control-Allow-Origin", "*",
+                            "Access-Control-Allow-Credentials", "true",
+                            "Access-Control-Expose-Headers", "*",
+                            "Access-Control-Max-Age", "3600")
+end
 
 do
     local router
@@ -454,6 +477,9 @@ function _M.http_admin()
     if not router then
         router = admin_init.get()
     end
+
+    -- add cors rsp header
+    cors_admin()
 
     -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
     local ok = router:dispatch(get_var("uri"), {method = get_method()})
