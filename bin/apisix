@@ -222,13 +222,14 @@ http {
     server {
         listen {* port_admin *};
 
-        location /apisix/admin/ {
+        location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
             {%end%}
+
             content_by_lua_block {
                 apisix.http_admin()
             }
