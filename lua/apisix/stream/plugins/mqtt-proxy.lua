@@ -144,13 +144,13 @@ function _M.preread(conf, ctx)
     end
 
     if res.protocol and res.protocol ~= conf.protocol_name then
-        core.log.error("expect protocol name: ", conf.protocol_name
+        core.log.error("expect protocol name: ", conf.protocol_name,
                        ", but got ", res.protocol)
         return ngx_exit(1)
     end
 
     if res.protocol_ver and res.protocol_ver ~= conf.protocol_level then
-        core.log.error("expect protocol level: ", conf.protocol_level
+        core.log.error("expect protocol level: ", conf.protocol_level,
                        ", but got ", res.protocol_ver)
         return ngx_exit(1)
     end
