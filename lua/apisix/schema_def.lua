@@ -283,6 +283,7 @@ _M.route = {
             uniqueItems = true,
         },
         desc = {type = "string", maxLength = 256},
+        priority = {type = "integer", minimum = 1},
 
         methods = {
             type = "array",
