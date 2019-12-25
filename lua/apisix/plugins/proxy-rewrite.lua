@@ -82,6 +82,16 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if conf.regex_uri and #conf.regex_uri > 0 then
+        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
+                                   conf.regex_uri[2], "jo")
+        if err then
+            return false, "invalid regex_uri(" .. conf.regex_uri[1] ..
+                            ", " .. conf.regex_uri[2] .. "): " .. err
+        end
+    end
+
+
     --reform header from object into array, so can avoid use pairs, which is NYI
     if conf.headers then
         conf.headers_arr = {}
@@ -131,9 +141,11 @@ function _M.rewrite(conf, ctx)
         if uri then
             upstream_uri = uri
         else
-            core.log.error("failed to substitute the uri ", ctx.var.uri,
-                           " (", conf.regex_uri[1], ") with ",
-                           conf.regex_uri[2], " :", err)
+            local msg = "failed to substitute the uri " .. ctx.var.uri ..
+                        " (" .. conf.regex_uri[1] .. ") with " ..
+                        conf.regex_uri[2] .. " : " .. err
+            core.log.error(msg)
+            return 500, {message = msg}
         end
     end
 

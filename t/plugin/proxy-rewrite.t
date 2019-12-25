@@ -754,7 +754,6 @@ x-real-ip: 127.0.0.1
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
                         "plugins": {
                             "proxy-rewrite": {
                                 "regex_uri": ["^/test/(.*)/(.*)/(.*)", "/$1_$2_$3"]
@@ -814,7 +813,6 @@ GET /test/not/found HTTP/1.1
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
                         "plugins": {
                             "proxy-rewrite": {
                                 "uri": "/hello",
@@ -926,15 +924,6 @@ GET /t
     }
 --- request
 GET /t
---- response_body
-passed
---- no_error_log
-
-
-
-=== TEST 33: hit route(invalid regex syntax)
---- request
-GET /test/hello HTTP/1.1
---- error_code: 404
+--- error_code: 400
 --- error_log
-failed to substitute the uri
+invalid capturing variable name found
