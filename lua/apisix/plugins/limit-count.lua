@@ -18,6 +18,13 @@ local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local plugin_name = "limit-count"
 local limit_redis_new
+local str_find  = string.find
+local str_sub   = string.sub
+local ipmatcher = require("resty.ipmatcher")
+local lrucache  = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
 do
     local redis_src = "apisix.plugins.limit-count.limit-count-redis"
     limit_redis_new = require(redis_src).new
@@ -47,6 +54,11 @@ local schema = {
         },
         redis_timeout = {
             type = "integer", minimum = 1
+        },
+        whitelist = {
+            type = "array",
+            items = {type = "string", anyOf = core.schema.ip_def},
+            minItems = 1
         },
     },
     additionalProperties = false,
@@ -102,6 +114,17 @@ local function create_limit_obj(conf)
 end
 
 
+local function create_ip_mather(ip_list)
+    local ip, err = ipmatcher.new(ip_list)
+    if not ip then
+        core.log.error("failed to create ip matcher: ", err,
+                       " ip list: ", core.json.delay_encode(ip_list))
+        return nil
+    end
+
+    return ip
+end
+
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
@@ -114,19 +137,36 @@ function _M.access(conf, ctx)
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     core.log.info("limit key: ", key)
 
-    local delay, remaining = lim:incoming(key, true)
-    if not delay then
-        local err = remaining
-        if err == "rejected" then
-            return conf.rejected_code
-        end
+    -- ip whitelist
+    local is_in_whitelist = false
 
-        core.log.error("failed to limit req: ", err)
-        return 500
+    if conf.whitelist and #conf.whitelist > 0 then
+        
+        local matcher = lrucache(conf.whitelist, nil,
+                                 create_ip_mather, conf.whitelist)
+        if matcher then
+            core.log.info("ctx.var[conf.key]: ", ctx.var[conf.key])
+            is_in_whitelist = matcher:match(ctx.var[conf.key])
+        end
     end
 
-    core.response.set_header("X-RateLimit-Limit", conf.count,
-                             "X-RateLimit-Remaining", remaining)
+    core.log.info("is_in_whitelist: ", is_in_whitelist)
+
+    if is_in_whitelist == false then
+        local delay, remaining = lim:incoming(key, true)
+        if not delay then
+            local err = remaining
+            if err == "rejected" then
+                return conf.rejected_code
+            end
+
+            core.log.error("failed to limit req: ", err)
+            return 500
+        end
+
+        core.response.set_header("X-RateLimit-Limit", conf.count,
+                                 "X-RateLimit-Remaining", remaining)
+    end
 end
 
 
