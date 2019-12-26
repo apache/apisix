@@ -21,7 +21,13 @@
 目录
 ===
 
-* [Route](#route)
+- [目录](#%e7%9b%ae%e5%bd%95)
+  - [Route](#route)
+    - [运算符列表](#%e8%bf%90%e7%ae%97%e7%ac%a6%e5%88%97%e8%a1%a8)
+  - [Service](#service)
+  - [Upstream](#upstream)
+  - [Consumer](#consumer)
+  - [SSL](#ssl)
 
 ## Route
 
@@ -142,4 +148,220 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 ```
 
 [Back to TOC](#目录)
+
+## Service
+
+*地址*：/apisix/admin/services/{id}
+
+*说明*：`Service` 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route`
+与 `Service` 之间，通常是 N:1 的关系。
+
+> 请求方法：
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/services/{id}|无|获取资源|
+|PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
+|POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
+|DELETE   |/apisix/admin/services/{id}|无|删除资源|
+|PATCH    |/apisix/admin/services/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
+
+> body 请求参数：
+
+|名字      |可选项   |类型 |说明        |示例|
+|---------|---------|----|-----------|----|
+|plugins  |可选 |Plugin|详见 [Plugin](architecture-design-cn.md#plugin) ||
+|upstream |upstream或upstream_id两个选一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design-cn.md#upstream)||
+|upstream_id|upstream或upstream_id两个选一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
+|desc     |可选 |辅助   |标识服务名称、使用场景等。||
+
+待补充，一些配置上的限制
+
+示例：
+
+```shell
+# 创建一个Service
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -X PUT -i -d '
+{
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+
+# 返回结果
+
+HTTP/1.1 201 Created
+Date: Thu, 26 Dec 2019 03:48:47 GMT
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 3600
+Server: APISIX web server
+
+{"node":{"value":{"upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"},"plugins":{"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":60,"key":"\/apisix\/services\/201","modifiedIndex":60},"action":"set"}
+
+
+```
+
+> 应答参数
+
+目前是直接返回与 etcd 交互后的结果。
+
+[Back to TOC](#目录)
+
+## Upstream
+
+*地址*：/apisix/admin/upstreams/{id}
+
+*说明*：Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，就需要用“引用”方式避免重复了。
+
+> 请求方法：
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/upstreams/{id}|无|获取资源|
+|PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
+|POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
+|DELETE   |/apisix/admin/upstreams/{id}|无|删除资源|
+|PATCH    |/apisix/admin/upstreams/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
+
+> body 请求参数：
+
+APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面表格。
+
+|名字      |可选项   |类型 |说明        |示例|
+|---------|---------|----|-----------|----|
+|nodes           |必需|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|`192.168.1.100:80`|
+|type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
+|key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
+|checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](health-check.md)||
+|retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制||
+|timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
+|desc     |可选 |辅助|标识服务名称、使用场景等。||
+
+示例：
+
+```shell
+# 创建一个路由
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -i -X PUT -d '
+> {
+>     "type": "roundrobin",
+>     "nodes": {
+>         "127.0.0.1:80": 1,
+>         "127.0.0.2:80": 2,
+>         "foo.com:80": 3
+>     }
+> }'
+HTTP/1.1 201 Created
+Date: Thu, 26 Dec 2019 04:19:34 GMT
+Content-Type: text/plain
+...
+
+{"node":{"value":{"nodes":{"127.0.0.1:80":1,"foo.com:80":3,"127.0.0.2:80":2},"type":"roundrobin"},"createdIndex":61,"key":"\/apisix\/upstreams\/100","modifiedIndex":61},"action":"set"}
+
+```
+
+> 应答参数
+
+目前是直接返回与 etcd 交互后的结果。
+
+[Back to TOC](#目录)
+
+## Consumer
+
+*地址*：/apisix/admin/consumers/{id}
+
+*说明*：Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
+
+> 请求方法：
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/consumers/{id}|无|获取资源|
+|PUT      |/apisix/admin/consumers/{id}|{...}|根据 id 创建资源|
+|POST     |/apisix/admin/consumers     |{...}|创建资源，id 由后台服务自动生成|
+|DELETE   |/apisix/admin/consumers/{id}|无|删除资源|
+
+> body 请求参数：
+
+|名字      |可选项   |类型 |说明        |示例|
+|---------|---------|----|-----------|----|
+|username|必需|匹配规则|Consumer 名称。||
+|plugins|可选|Plugin|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。||
+|desc     |可选 |辅助|consumer描述||
+
+
+示例：
+
+```shell
+# 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/2 -X PUT -i -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    }
+}'
+HTTP/1.1 200 OK
+Date: Thu, 26 Dec 2019 08:17:49 GMT
+...
+
+{"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63},"action":"set"}
+
+```
+
+> 应答参数
+
+目前是直接返回与 etcd 交互后的结果。
+
+[Back to TOC](#目录)
+
+## SSL
+
+*地址*：/apisix/admin/ssl/{id}
+
+*说明*：SSL.
+
+> 请求方法：
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/ssl/{id}|无|获取资源|
+|PUT      |/apisix/admin/ssl/{id}|{...}|根据 id 创建资源|
+|POST     |/apisix/admin/ssl     |{...}|创建资源，id 由后台服务自动生成|
+|DELETE   |/apisix/admin/ssl/{id}|无|删除资源|
+
+> body 请求参数：
+
+|名字      |可选项   |类型 |说明        |示例|
+|---------|---------|----|-----------|----|
+|cert|必需|公钥|https 证书公钥||
+|key|必需|私钥|https 证书私钥||
+|sni|必需|匹配规则|https 证书SNI||
+
+[Back to TOC](#目录)
+
+> 待补充：Stream_routes、Schema、Proto
 
