@@ -38,7 +38,7 @@ end
 excute_cmd("install -d -m 777 /tmp/apisix_cores/")
 
 local apisix_home = "/usr/local/apisix"
-if script_path:sub(1, 4) == '/usr' or script_path:sub(1, 4) == '/bin' then
+if script_path:sub(1, 17) == '/usr/local/apisix' or script_path:sub(1, 4) == '/bin' then
     package.cpath = "/usr/local/apisix/deps/lib64/lua/5.1/?.so;"
                     .. "/usr/local/apisix/deps/lib/lua/5.1/?.so;"
                     .. package.cpath
