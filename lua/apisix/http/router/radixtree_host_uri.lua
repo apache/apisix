@@ -139,7 +139,7 @@ function _M.match(api_ctx)
     end
 
     core.table.clear(match_opts)
-    match_opts.method = api_ctx.var.method
+    match_opts.method = api_ctx.var.request_method
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
     match_opts.host = api_ctx.var.host
