@@ -89,7 +89,7 @@ function _M.rewrite(conf, ctx)
         tags = {
             component = "apisix",
             ["span.kind"] = "server",
-            ["http.method"] = ctx.var.method,
+            ["http.method"] = ctx.var.request_method,
             ["http.url"] = ctx.var.request_uri,
              -- TODO: support ipv6
             ["peer.ipv4"] = core.request.get_remote_client_ip(ctx),
