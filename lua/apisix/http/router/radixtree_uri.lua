@@ -26,7 +26,7 @@ local user_routes
 local cached_version
 
 
-local _M = {version = 0.1}
+local _M = {version = 0.2}
 
 
     local uri_routes = {}
@@ -63,9 +63,12 @@ local function create_radixtree_router(routes)
                 filter_fun = filter_fun()
             end
 
+            core.log.info("insert uri route: ",
+                          core.json.delay_encode(route.value))
             core.table.insert(uri_routes, {
                 paths = route.value.uris or route.value.uri,
                 methods = route.value.methods,
+                priority = route.value.priority,
                 hosts = route.value.hosts or route.value.host,
                 remote_addrs = route.value.remote_addrs
                                or route.value.remote_addr,
@@ -99,7 +102,7 @@ function _M.match(api_ctx)
     end
 
     core.table.clear(match_opts)
-    match_opts.method = api_ctx.var.method
+    match_opts.method = api_ctx.var.request_method
     match_opts.host = api_ctx.var.host
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
