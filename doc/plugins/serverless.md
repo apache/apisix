@@ -75,7 +75,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     "plugins": {
         "serverless-pre-function": {
             "phase": "rewrite",
-            "functions" : ["return function() ngx.log(ngx.ERR, 'serverless pre function'); end"]
+            "functions" : ["return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"]
         }
     },
     "upstream": {
