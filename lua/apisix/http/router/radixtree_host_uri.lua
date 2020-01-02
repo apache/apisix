@@ -158,7 +158,7 @@ function _M.match(api_ctx)
     end
 
     core.log.info("not find any matched route")
-    return core.response.exit(404)
+    return true
 end
 
 
