@@ -447,7 +447,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"service_id\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"service_id\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -555,7 +555,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -582,7 +582,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -949,7 +949,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"remote_addr\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"remote_addr\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
