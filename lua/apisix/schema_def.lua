@@ -218,6 +218,10 @@ local health_checker = {
         }
     },
     additionalProperties = false,
+    anyOf = {
+        {required = {"active"}},
+        {required = {"active", "passive"}},
+    },
 }
 
 

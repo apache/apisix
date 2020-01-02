@@ -565,6 +565,6 @@ GET /hello
 GET /t
 --- response_body
 invalid ip address: ::1/129
-property "whitelist" validation failed: failed to validate item 1: object matches none of the alternatives
+property "whitelist" validation failed: failed to validate item 1: object matches none of the requireds
 --- no_error_log
 [error]
