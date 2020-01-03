@@ -892,7 +892,47 @@ GET /t
 
 
 
-=== TEST 32: set route(invalid regex syntax)
+=== TEST 32: set route(invalid regex syntax for the first element)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "regex_uri": ["[^/test/(.*)", "/$1"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/invalid regex_uri/
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: set route(invalid regex syntax for the second element)
 --- config
     location /t {
         content_by_lua_block {
