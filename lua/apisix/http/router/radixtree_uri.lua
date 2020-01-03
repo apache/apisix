@@ -41,7 +41,7 @@ local function create_radixtree_router(routes)
 
     for _, route in ipairs(api_routes) do
         if type(route) == "table" then
-            local paths = route.value.uris or {route.value.uri}
+            local paths = route.uris or {route.uri}
             for i, path in ipairs(paths) do
                 core.table.insert(uri_routes, {
                     paths = path,
