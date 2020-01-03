@@ -17,7 +17,7 @@
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('info');
+log_level('debug');
 worker_connections(256);
 no_root_location();
 no_shuffle();
@@ -323,3 +323,6 @@ GET /hello
 Host: www.foo.com
 --- response_body
 hello world
+--- error_log
+matched_host: [.foo.com]
+matched_uri: [/hello]

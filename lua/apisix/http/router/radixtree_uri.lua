@@ -94,7 +94,7 @@ local function create_radixtree_router(routes)
                     filter_fun = filter_fun,
                     handler = function (api_ctx)
                         api_ctx.matched_uri = matched_uri
-                        core.log.debug("matched_uri: [", api_ctx.matched_uri, "]")
+                        core.log.debug("matched_uri: [", matched_uri, "]")
 
                         api_ctx.matched_params = nil
                         api_ctx.matched_route = route
