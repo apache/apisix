@@ -68,8 +68,8 @@ set_real_ip_from unix:;
 --- request
 GET /not_found
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -85,8 +85,6 @@ GET /hello
 --- more_headers
 Host: not_found.com
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
 --- no_error_log
 [error]
 
