@@ -19,11 +19,37 @@
 
 # Table of Contents
 
+- [1.0.0](#100)
 - [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 1.0.0
+
+This release is mainly to strengthen the stability of the code and add more documentation.
+
+### Core
+- :sunrise: Support routing priority. You can match different upstream services based on conditions such as header, args, priority, etc. under the same URI. [#998](https://github.com/apache/incubator-apisix/pull/998)
+- When no route is matched, an error message is returned. To distinguish it from other 404 requests. [#1013](https://github.com/apache/incubator-apisix/pull/1013)
+- The address of the dashboard `/apisix/admin` supports CORS. [#982](https://github.com/apache/incubator-apisix/pull/982)
+- The jsonschema validator returns a clearer error message. [#1011](https://github.com/apache/incubator-apisix/pull/1011)
+- Upgrade the `ngx_var` module to version 0.5. [#1005](https://github.com/apache/incubator-apisix/pull/1005)
+- Upgrade the `lua-resty-etcd` module to version 0.8. [#980](https://github.com/apache/incubator-apisix/pull/980)
+- In development mode, the number of workers is automatically adjusted to 1. [#926](https://github.com/apache/incubator-apisix/pull/926)
+- Remove the nginx.conf file from the code repository. It is automatically generated every time and cannot be modified manually. [#974](https://github.com/apache/incubator-apisix/pull/974)
+
+### Doc
+- Added documentation on how to customize development plugins. [#909](https://github.com/apache/incubator-apisix/pull/909)
+- fixed example's bugs in the serverless plugin documentation. [#1006](https://github.com/apache/incubator-apisix/pull/1006)
+- Added documentation for using the Oauth plugin. [#987](https://github.com/apache/incubator-apisix/pull/987)
+- Added dashboard compiled documentation. [#985](https://github.com/apache/incubator-apisix/pull/985)
+- Added documentation on how to perform a/b testing. [#957](https://github.com/apache/incubator-apisix/pull/957)
+- Added documentation on how to enable the MQTT plugin. [#916](https://github.com/apache/incubator-apisix/pull/916)
+
+### Test case
+- Add test cases for key-auth plugin under normal circumstances. [#964](https://github.com/apache/incubator-apisix/pull/964/)
+- Added tests for gRPC transcode pb options. [#920](https://github.com/apache/incubator-apisix/pull/920)
 
 ## 0.9.0
 
