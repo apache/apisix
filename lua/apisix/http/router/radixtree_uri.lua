@@ -98,7 +98,7 @@ function _M.match(api_ctx)
 
     if not uri_router then
         core.log.error("failed to fetch valid `uri` router: ")
-        return core.response.exit(404)
+        return true
     end
 
     core.table.clear(match_opts)
@@ -110,7 +110,7 @@ function _M.match(api_ctx)
     local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
     if not ok then
         core.log.info("not find any matched route")
-        return core.response.exit(404)
+        return true
     end
 
     return true

@@ -56,8 +56,8 @@ qr/"value":"mexxxxxxxxxxxxxxx"/
 --- request
 GET /not_found
 --- error_code: 404
---- response_body_like eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
