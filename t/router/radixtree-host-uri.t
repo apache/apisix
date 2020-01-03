@@ -123,21 +123,13 @@ Host: foo.com
 hello world
 --- no_error_log
 [error]
+--- error_log
+matched_host: [foo.com]
+matched_uri: [/hello]
 
 
 
-=== TEST 6: hit routes
---- request
-GET /hello
---- yaml_config eval: $::yaml_config
---- more_headers
-Host: foo.com
---- response_body
-hello world
-
-
-
-=== TEST 7: set route(only uri)
+=== TEST 6: set route(only uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -171,7 +163,7 @@ passed
 
 
 
-=== TEST 8: /not_found
+=== TEST 7: /not_found
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
@@ -183,7 +175,7 @@ GET /hello
 
 
 
-=== TEST 9: hit routes
+=== TEST 8: hit routes
 --- request
 GET /server_port
 --- yaml_config eval: $::yaml_config
@@ -193,10 +185,12 @@ Host: anydomain.com
 qr/1981/
 --- no_error_log
 [error]
+--- error_log
+matched_uri: [/server_port]
 
 
 
-=== TEST 10: set route(only uri + id: 2)
+=== TEST 9: set route(only uri + id: 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -230,7 +224,7 @@ passed
 
 
 
-=== TEST 11: /not_found
+=== TEST 10: /not_found
 --- request
 GET /hello2
 --- yaml_config eval: $::yaml_config
@@ -242,7 +236,7 @@ GET /hello2
 
 
 
-=== TEST 12: hit routes
+=== TEST 11: hit routes
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
@@ -255,7 +249,7 @@ hello world
 
 
 
-=== TEST 13: delete route(id: 2)
+=== TEST 12: delete route(id: 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -280,7 +274,7 @@ passed
 
 
 
-=== TEST 14: set route(wildcard host + uri)
+=== TEST 13: set route(wildcard host + uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -315,7 +309,7 @@ passed
 
 
 
-=== TEST 15: hit routes
+=== TEST 14: hit routes
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
