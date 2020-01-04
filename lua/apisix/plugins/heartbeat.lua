@@ -75,7 +75,7 @@ local function report()
         end
     end
 
-    core.log.warn(core.json.encode(etcd_version))
+    core.log.info(core.json.encode(etcd_version))
 
     local info = {
         version = core.version,
@@ -92,7 +92,7 @@ local function report()
         core.log.error("failed to encode hearbeat information: ", err)
         return
     end
-    core.log.warn("heartbeat body: ", args)
+    core.log.info("heartbeat body: ", args)
 
     local res
     res, err = request_apisix_svr(args)

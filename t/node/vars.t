@@ -63,8 +63,8 @@ passed
 --- request
 GET /not_found
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -74,8 +74,8 @@ qr/404 Not Found/
 --- request
 GET /hello?k=not-hit
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -129,8 +129,8 @@ passed
 --- request
 GET /hello
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -142,8 +142,8 @@ Cookie: k=not-hit; kkk=vvv;
 --- request
 GET /hello
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -199,8 +199,8 @@ passed
 --- request
 GET /hello
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -212,8 +212,8 @@ k: not-hit
 --- request
 GET /hello
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -269,8 +269,8 @@ passed
 --- request
 GET /hello
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -282,8 +282,8 @@ k: header
 --- request
 GET /hello
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 

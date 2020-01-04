@@ -64,8 +64,8 @@ passed
 --- request
 GET /hello?name=unknown
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 

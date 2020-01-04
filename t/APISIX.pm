@@ -220,7 +220,6 @@ _EOC_
     my $config = $block->config // '';
     $config .= <<_EOC_;
         $ipv6_listen_conf
-        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;

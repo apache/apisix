@@ -317,7 +317,7 @@ qr/\{"result":3\}/
 
 
 
-=== TEST 11: hit route
+=== TEST 10: hit route
 --- request
 GET /grpc_plus?a=1&b=2251799813685260
 --- response_body eval

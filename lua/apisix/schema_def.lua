@@ -218,6 +218,10 @@ local health_checker = {
         }
     },
     additionalProperties = false,
+    anyOf = {
+        {required = {"active"}},
+        {required = {"active", "passive"}},
+    },
 }
 
 
@@ -283,6 +287,7 @@ _M.route = {
             uniqueItems = true,
         },
         desc = {type = "string", maxLength = 256},
+        priority = {type = "integer", default = 0},
 
         methods = {
             type = "array",
@@ -342,6 +347,7 @@ _M.route = {
         {required = {"upstream", "uri"}},
         {required = {"upstream_id", "uri"}},
         {required = {"service_id", "uri"}},
+        {required = {"plugins", "uris"}},
         {required = {"upstream", "uris"}},
         {required = {"upstream_id", "uris"}},
         {required = {"service_id", "uris"}},

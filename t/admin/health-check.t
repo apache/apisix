@@ -106,6 +106,14 @@ passed
             local t = require("lib.test_admin").test
 
             req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "http_path": "/status",
+                    "host": "foo.com",
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    }
+                },
                 "passive": {
                     "healthy": {
                         "http_statuses": [200, 201],
@@ -426,5 +434,45 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: property \"active\" validation failed: property \"req_headers\" validation failed: failed to validate item 2: wrong type: expected string, got number"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: only passive
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "passive": {
+                    "healthy": {
+                        "http_statuses": [200, 201],
+                        "successes": 1
+                    },
+                    "unhealthy": {
+                        "http_statuses": [500],
+                        "http_failures": 2
+                    }
+                }
+            }]])
+            exp_data.node.value.upstream.checks = req_data.upstream.checks
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: object matches none of the requireds: [\"active\"] or [\"active\",\"passive\"]"}
 --- no_error_log
 [error]
