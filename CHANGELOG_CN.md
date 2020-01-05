@@ -19,11 +19,37 @@
 
 # Table of Contents
 
+- [1.0.0](#100)
 - [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 1.0.0
+
+这个版本主要是加强代码的稳定性，以及增加更多的文档。
+
+### Core
+- :sunrise: 支持路由的优先级。可以在 URI 相同的条件下，根据 header、args、优先级等条件，来匹配到不同的上游服务。 [#998](https://github.com/apache/incubator-apisix/pull/998)
+- 在没有匹配到任何路由的时候，返回错误信息。以便和其他的 404 请求区分开。[#1013](https://github.com/apache/incubator-apisix/pull/1013)
+- dashboard 的地址 `/apisix/admin` 支持 CORS。[#982](https://github.com/apache/incubator-apisix/pull/982)
+- jsonschema 校验器返回更清晰的错误提示。[#1011](https://github.com/apache/incubator-apisix/pull/1011)
+- 升级 `ngx_var` 模块到 0.5 版本。[#1005](https://github.com/apache/incubator-apisix/pull/1005)
+- 升级 `lua-resty-etcd` 模块到 0.8 版本。[#980](https://github.com/apache/incubator-apisix/pull/980)
+- 在开发模式下，自动把 worker 数调整为 1。[#926](https://github.com/apache/incubator-apisix/pull/926)
+- 从代码仓库中移除 nginx.conf 文件，它每次都会自动生成，不可手工修改。[#974](https://github.com/apache/incubator-apisix/pull/974)
+
+### Doc
+- 增加如何自定义开发插件的文档。[#909](https://github.com/apache/incubator-apisix/pull/909)
+- 修复 serverless 插件文档中错误的示例。[#1006](https://github.com/apache/incubator-apisix/pull/1006)
+- 增加 Oauth 插件的使用文档。[#987](https://github.com/apache/incubator-apisix/pull/987)
+- 增加 dashboard 编译的文档。[#985](https://github.com/apache/incubator-apisix/pull/985)
+- 增加如何进行 a/b 测试的文档。[#957](https://github.com/apache/incubator-apisix/pull/957)
+- 增加如何开启 MQTT 插件的文档。[#916](https://github.com/apache/incubator-apisix/pull/916)
+
+### Test case
+- 增加 key-auth 插件正常情况下的测试案例。[#964](https://github.com/apache/incubator-apisix/pull/964/)
+- 增加 grpc transcode pb 选项的测试。[#920](https://github.com/apache/incubator-apisix/pull/920)
 
 ## 0.9.0
 

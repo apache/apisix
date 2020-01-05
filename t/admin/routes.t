@@ -447,7 +447,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"service_id\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"service_id\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -555,7 +555,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -582,7 +582,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -949,7 +949,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"remote_addr\" validation failed: object matches none of the alternatives"}
+{"error_msg":"invalid configuration: property \"remote_addr\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -1508,7 +1508,92 @@ GET /t
 
 
 
-=== TEST 41: set route(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
+=== TEST 41: set route(id: 1, check priority)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "priority": 0
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: set route(id: 1 + priority: 0)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html",
+                    "priority": 1
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "priority": 1
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: set route(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -1526,7 +1611,6 @@ GET /t
                     "desc": "new route",
                     "uri": "/index.html"
                 }]])
-
             ngx.status = code
             ngx.print(body)
         }
@@ -1538,4 +1622,3 @@ GET /t
 {"error_msg":"missing key"}
 --- no_error_log
 [error]
-

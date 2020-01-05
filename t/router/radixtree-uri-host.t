@@ -80,8 +80,8 @@ passed
 GET /not_found
 --- yaml_config eval: $::yaml_config
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -92,8 +92,6 @@ qr/404 Not Found/
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
 --- no_error_log
 [error]
 
@@ -106,8 +104,6 @@ GET /hello
 --- more_headers
 Host: not_found.com
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
 --- no_error_log
 [error]
 
@@ -180,8 +176,8 @@ passed
 GET /not_found
 --- yaml_config eval: $::yaml_config
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
@@ -192,8 +188,6 @@ qr/404 Not Found/
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
 --- no_error_log
 [error]
 
@@ -206,8 +200,6 @@ GET /hello
 --- more_headers
 Host: www.foo.com
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
 --- no_error_log
 [error]
 
@@ -264,8 +256,8 @@ passed
 --- request
 GET /hello?name=unknown
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 

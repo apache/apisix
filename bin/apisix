@@ -38,7 +38,7 @@ end
 excute_cmd("install -d -m 777 /tmp/apisix_cores/")
 
 local apisix_home = "/usr/local/apisix"
-if script_path:sub(1, 4) == '/usr' or script_path:sub(1, 4) == '/bin' then
+if script_path:sub(1, 17) == '/usr/local/apisix' or script_path:sub(1, 4) == '/bin' then
     package.cpath = "/usr/local/apisix/deps/lib64/lua/5.1/?.so;"
                     .. "/usr/local/apisix/deps/lib/lua/5.1/?.so;"
                     .. package.cpath
@@ -196,7 +196,7 @@ http {
 
     real_ip_header {* real_ip_header *};
     {% for _, real_ip in ipairs(real_ip_from) do %}
-    set_real_ip_from {{real_ip}};
+    set_real_ip_from {*real_ip*};
     {% end %}
 
     upstream apisix_backend {
@@ -222,13 +222,14 @@ http {
     server {
         listen {* port_admin *};
 
-        location /apisix/admin/ {
+        location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
             {%end%}
+
             content_by_lua_block {
                 apisix.http_admin()
             }
@@ -245,6 +246,10 @@ http {
             alias dashboard/;
 
             try_files $uri $uri/index.html /index.html;
+        }
+
+        location /robots.txt {
+            return 200 'User-agent: *\nDisallow: /';
         }
     }
     {% end %}

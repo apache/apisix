@@ -64,8 +64,6 @@ passed
 --- request
 GET /not_found
 --- error_code: 404
---- response_body eval
-qr/404 Not Found/
 --- no_error_log
 [error]
 

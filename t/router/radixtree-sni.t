@@ -98,6 +98,8 @@ passed
 
 === TEST 3: client request
 --- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
 location /t {
     content_by_lua_block {
         -- etcd sync
@@ -171,6 +173,8 @@ lua ssl server name: "www.test.com"
 
 === TEST 4: client request(no cert domain)
 --- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
 location /t {
     content_by_lua_block {
         -- etcd sync
@@ -247,6 +251,8 @@ passed
 
 === TEST 6: client request
 --- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
 location /t {
     content_by_lua_block {
         -- etcd sync
@@ -358,6 +364,8 @@ passed
 
 === TEST 8: client request
 --- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
 location /t {
     content_by_lua_block {
         -- etcd sync

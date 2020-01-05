@@ -57,7 +57,7 @@ passed
 --- request
 GET /hello
 --- error_code: 404
---- response_body_like eval
+--- response_body eval
 qr/404 Not Found/
 --- wait_etcd_sync: 0.3
 --- grep_error_log eval

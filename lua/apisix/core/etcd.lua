@@ -29,6 +29,8 @@ local function new()
 
     local etcd_conf = clone_tab(local_conf.etcd)
     local prefix = etcd_conf.prefix
+    etcd_conf.http_host = etcd_conf.host
+    etcd_conf.host = nil
     etcd_conf.prefix = nil
 
     local etcd_cli
