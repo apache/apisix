@@ -53,7 +53,7 @@ local function fetch_health_nodes(upstream, checker)
     end
 
     local host = upstream.checks and upstream.checks.host
-    local up_nodes = core.table.new(0, #upstream.nodes)
+    local up_nodes = core.table.new(0, core.table.nkeys(upstream.nodes))
 
     for addr, weight in pairs(upstream.nodes) do
         local ip, port = core.utils.parse_addr(addr)
@@ -203,28 +203,31 @@ local function pick_server(route, ctx)
     end
 
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
-    local retries = up_conf.retries
-    if retries and retries > 0 then
-        ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
-        if checker and ctx.balancer_try_count > 1 then
-            local state, code = get_last_failure()
-            if state == "failed" then
-                if code == 504 then
-                    checker:report_timeout(ctx.balancer_ip, ctx.balancer_port,
-                                           up_conf.checks.host)
-                else
-                    checker:report_tcp_failure(ctx.balancer_ip,
-                        ctx.balancer_port, up_conf.checks.host)
-                end
 
+    ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
+    if checker and ctx.balancer_try_count > 1 then
+        local state, code = get_last_failure()
+        if state == "failed" then
+            if code == 504 then
+                checker:report_timeout(ctx.balancer_ip, ctx.balancer_port,
+                                       up_conf.checks.host)
             else
-                checker:report_http_status(ctx.balancer_ip, ctx.balancer_port,
-                                           up_conf.checks.host, code)
+                checker:report_tcp_failure(ctx.balancer_ip,
+                    ctx.balancer_port, up_conf.checks.host)
             end
-        end
 
-        if ctx.balancer_try_count == 1 then
+        else
+            checker:report_http_status(ctx.balancer_ip, ctx.balancer_port,
+                                       up_conf.checks.host, code)
+        end
+    end
+
+    if ctx.balancer_try_count == 1 then
+        local retries = up_conf.retries
+        if retries and retries > 0 then
             set_more_tries(retries)
+        else
+            set_more_tries(core.table.nkeys(up_conf.nodes))
         end
     end
 
