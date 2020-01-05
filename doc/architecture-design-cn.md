@@ -237,7 +237,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |-------         |-----|------|
 |type            |必需|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
 |nodes           |必需|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|
-|key             |必需|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)|
+|hash_on         |可选|该选项只有类型是 `chash` 才有效。支持的类型有`vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为`vars`|
+|key             |必需|该选项只有类型是 `chash` 才有效，需要配合`hash_on`来使用，通过`hash_on`和`key`来查找对应的 node `id`。`hash_on`设为`vars`时，`key`为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)；`hash_on`设为`header`时, `key`为必传参数， 自定义的`header name`；`hash_on`设为`cookie`时, `key`为必传参数， 自定义的`cookie name`；`hash_on`设为`consumer`时，`key`不需要设置，为空，此时哈希算法采用的`key`为认证通过的`consumer_id`|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制|
 
@@ -334,8 +335,45 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     }
 }'
 ```
-
 更多细节可以参考[健康检查的文档](health-check.md)。
+
+下面是几个使用不同`hash_on`类型的配置示例：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -X PUT -d '
+{
+    "type": "chash",
+    "hash_on":"consumer",
+    "nodes": {
+        "127.0.0.1:80": 1,
+        "127.0.0.2:80": 2,
+        "foo.com:80": 3
+    }
+}'
+
+curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -X PUT -d '
+{
+    "type": "chash",
+    "hash_on":"header",
+    "key": "custom-header-name",
+    "nodes": {
+        "127.0.0.1:80": 1,
+        "127.0.0.2:80": 2,
+        "foo.com:80": 3
+    }
+}'
+
+curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -X PUT -d '
+{
+    "type": "chash",
+    "hash_on":"cookie",
+    "key": "custom-cookie-name",
+    "nodes": {
+        "127.0.0.1:80": 1,
+        "127.0.0.2:80": 2,
+        "foo.com:80": 3
+    }
+}'
+```
 
 [返回目录](#目录)
 
