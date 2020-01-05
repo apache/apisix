@@ -24,6 +24,7 @@ local str_char    = string.char
 local str_gsub    = string.gsub
 local pairs       = pairs
 local tostring    = tostring
+local ngx         = ngx
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
@@ -122,6 +123,38 @@ local function fetch_healthchecker(upstream, healthcheck_parent, version)
 end
 
 
+local function create_chash_hash_key(ctx, upstream)
+    local key = upstream.key
+    local hash_on = upstream.hash_on
+    local chash_key
+
+    -- hash_on is nil, compatible with old version, default vars
+    if not hash_on then
+        hash_on = "vars"
+    end
+
+    if hash_on == "consumer" then
+        chash_key = ctx.consumer_id
+    elseif hash_on == "vars" then
+        chash_key = ctx.var[key]
+    elseif hash_on == "header" then
+        chash_key = ngx.req.get_headers()[key]
+    elseif hash_on == "cookie" then
+        chash_key = ctx.var["cookie_" .. key]
+    end
+
+    if not chash_key then
+        chash_key = ctx.var["remote_addr"]
+        core.log.warn("chash_key fetch is nil, use default chash_key remote_addr: ", chash_key)
+    end
+    core.log.info("upstream key: ", key)
+    core.log.info("hash_on: ", hash_on)
+    core.log.info("chash_key: ", core.json.delay_encode(chash_key))
+
+    return chash_key
+end
+
+
 local function create_server_picker(upstream, checker)
     if upstream.type == "roundrobin" then
         local up_nodes = fetch_health_nodes(upstream, checker)
@@ -151,11 +184,11 @@ local function create_server_picker(upstream, checker)
         end
 
         local picker = resty_chash:new(nodes)
-        local key = upstream.key
         return {
             upstream = upstream,
             get = function (ctx)
-                local id = picker:find(ctx.var[key])
+                local chash_key = create_chash_hash_key(ctx, upstream)
+                local id = picker:find(chash_key)
                 -- core.log.warn("chash id: ", id, " val: ", servers[id])
                 return servers[id]
             end
