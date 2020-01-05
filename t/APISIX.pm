@@ -147,7 +147,6 @@ _EOC_
     resolver_timeout 5;
 
     underscores_in_headers on;
-    
     lua_socket_log_errors off;
 
     upstream apisix_backend {
