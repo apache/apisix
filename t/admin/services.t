@@ -751,3 +751,35 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: set service(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "chash"
+                    },
+                    "desc": "new service"
+                }]])
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"missing key"}
+--- no_error_log
+[error]
+
