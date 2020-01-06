@@ -18,24 +18,12 @@ local get_request      = require("resty.core.base").get_request
 local radixtree_new    = require("resty.radixtree").new
 local core             = require("apisix.core")
 local ngx_ssl          = require("ngx.ssl")
-local ffi              = require("ffi")
-local errmsg           = ffi.new("char *[1]")
-local C                = ffi.C
 local ipairs           = ipairs
 local type             = type
 local error            = error
-local ffi_string       = ffi.string
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
-
-
-ffi.cdef[[
-int ngx_http_lua_ffi_cert_pem_to_der(const unsigned char *pem,
-    size_t pem_len, unsigned char *der, char **err);
-int ngx_http_lua_ffi_ssl_set_der_certificate(void *r,
-    const char *data, size_t len, char **err);
-]]
 
 
 local _M = {
@@ -84,31 +72,24 @@ local function set_pem_ssl_key(cert, pkey)
 
     ngx_ssl.clear_certs()
 
-    local out = ffi.new("char [?]", #cert)
-    local rc = C.ngx_http_lua_ffi_cert_pem_to_der(cert, #cert, out, errmsg)
-    if rc < 1 then
-        return false, "failed to parse PEM cert: " .. ffi_string(errmsg[0])
+    local parse_cert, err = ngx_ssl.parse_pem_cert(cert)
+    if parse_cert then
+        local ok, err = ngx_ssl.set_cert(parse_cert)
+        if not ok then
+            return false, "failed to set PEM cert: " .. err
+        end
+    else
+        return false, "failed to parse PEM cert: " .. err
     end
 
-    local cert_der = ffi_string(out, rc)
-    local rc = C.ngx_http_lua_ffi_ssl_set_der_certificate(r, cert_der,
-                    #cert_der, errmsg)
-    if rc ~= 0 then
-        return false, "failed to set DER cert: " .. ffi_string(errmsg[0])
-    end
-
-    out = ffi.new("char [?]", #pkey)
-    local rc = C.ngx_http_lua_ffi_priv_key_pem_to_der(pkey, #pkey, out, errmsg)
-    if rc < 1 then
-        return false, "failed to parse PEM priv key: " .. ffi_string(errmsg[0])
-    end
-
-    local pkey_der = ffi_string(out, rc)
-
-    local rc = C.ngx_http_lua_ffi_ssl_set_der_private_key(r, pkey_der,
-                    #pkey_der, errmsg)
-    if rc ~= 0 then
-        return false, "failed to set DER priv key: " .. ffi_string(errmsg[0])
+    local parse_pkey, err = ngx_ssl.parse_pem_priv_key(pkey)
+    if parse_pkey then
+        local ok, err = ngx_ssl.set_priv_key(parse_pkey)
+        if not ok then
+            return false, "failed to set PEM priv key: " .. err
+        end
+    else
+        return false, "failed to parse PEM priv key: " .. err
     end
 
     return true
