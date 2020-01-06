@@ -90,18 +90,19 @@ function _M.check_schema(conf)
 end
 
 
-local function fetch_jwt_token()
-    local headers = ngx.req.get_headers()
-    if headers.Authorization then
-        if sub_str(headers.Authorization,1,7) == 'Bearer ' then
-            return sub_str(headers.Authorization,8)
+local function fetch_jwt_token(ctx)
+    local token = core.request.header(ctx, "authorization")
+    if token then
+        local prefix = sub_str(token, 1, 7)
+        if prefix == 'Bearer ' or prefix == 'bearer ' then
+            return sub_str(token, 8)
         end
-        return headers.Authorization
+        return token
     end
 
-    local args = ngx.req.get_uri_args()
-    if args and args.jwt then
-        return args.jwt
+    token = ngx.ctx.api_ctx.var.arg_jwt
+    if token then
+        return token
     end
 
     local cookie, err = ck:new()
@@ -115,7 +116,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local jwt_token, err = fetch_jwt_token()
+    local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
         if err and err:sub(1, #"no cookie") ~= "no cookie" then
             core.log.error("failed to fetch JWT token: ", err)

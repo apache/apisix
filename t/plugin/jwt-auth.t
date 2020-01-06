@@ -237,6 +237,7 @@ hello world
 [error]
 
 
+
 === TEST 13: verify (in header without Bearer)
 --- request
 GET /hello
@@ -244,5 +245,30 @@ GET /hello
 Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: verify (header with bearer)
+--- request
+GET /hello
+--- more_headers
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: verify (invalid bearer token)
+--- request
+GET /hello
+--- more_headers
+Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- error_code: 401
+--- response_body
+{"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
 --- no_error_log
 [error]
