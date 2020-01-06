@@ -71,7 +71,7 @@ local function set_pem_ssl_key(cert, pkey)
     end
 
     ngx_ssl.clear_certs()
-    
+
     local parse_cert, err = ngx_ssl.parse_pem_cert(cert)
     if parse_cert then
         local ok, err = ngx_ssl.set_cert(parse_cert)
@@ -79,7 +79,7 @@ local function set_pem_ssl_key(cert, pkey)
             return false, "failed to set PEM cert: " .. err
         end
     else
-        return false, "failed to parse PEM cert: " .. cert
+        return false, "failed to parse PEM cert: " .. cert .. " err:" .. err
     end
 
     local parse_pkey, err = ngx_ssl.parse_pem_priv_key(pkey)
@@ -89,7 +89,7 @@ local function set_pem_ssl_key(cert, pkey)
             return false, "failed to set PEM priv key: " .. err
         end
     else
-        return false, "failed to parse PEM priv key: " .. pkey
+        return false, "failed to parse PEM priv key: " .. pkey .. " err:" .. err
     end
 
     return true
