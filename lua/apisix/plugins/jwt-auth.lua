@@ -21,6 +21,7 @@ local consumer = require("apisix.consumer")
 local ipairs   = ipairs
 local ngx      = ngx
 local ngx_time = ngx.time
+local sub_str  = string.sub
 local plugin_name = "jwt-auth"
 
 
@@ -90,14 +91,17 @@ end
 
 
 local function fetch_jwt_token()
+    local headers = ngx.req.get_headers()
+    if headers.Authorization then
+        if sub_str(headers.Authorization,1,7) == 'Bearer ' then
+            return sub_str(headers.Authorization,8)
+        end
+        return headers.Authorization
+    end
+
     local args = ngx.req.get_uri_args()
     if args and args.jwt then
         return args.jwt
-    end
-
-    local headers = ngx.req.get_headers()
-    if headers.Authorization then
-        return headers.Authorization
     end
 
     local cookie, err = ck:new()
