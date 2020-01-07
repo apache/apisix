@@ -134,7 +134,7 @@ function _M.collect()
     else
         metrics.etcd_reachable:set(0)
         core.log.error("prometheus: failed to reach config server while ",
-                       "processingmetrics endpoint: ", err)
+                       "processing metrics endpoint: ", err)
     end
 
     core.response.set_header("content_type", "text/plain")
