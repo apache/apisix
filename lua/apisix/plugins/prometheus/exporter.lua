@@ -39,7 +39,7 @@ function _M.init()
     prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
-            {"state"})
+            {"state", "hostname"})
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
@@ -47,7 +47,7 @@ function _M.init()
     -- per service
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "service", "node"})
+            {"code", "route", "service", "node"})
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency per service in APISIX",
@@ -62,24 +62,27 @@ end
 function _M.log(conf, ctx)
     local vars = ctx.var
 
-    local service_name
-    if ctx.matched_route and ctx.matched_route.value then
-        service_name = ctx.matched_route.value.desc or
-                       ctx.matched_route.value.id
+    local route_id = ""
+    local balancer_ip = ctx.balancer_ip
+    local service_id
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        service_id = matched_route.service_id or ""
+        route_id = matched_route.id
     else
-        service_name = vars.host
+        service_id = vars.host
     end
 
-    local balancer_ip = ctx.balancer_ip
-    metrics.status:inc(1, vars.status, service_name, balancer_ip)
+    metrics.status:inc(1, vars.status, route_id, service_id, balancer_ip)
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    metrics.latency:observe(latency, "request", service_name, balancer_ip)
+    metrics.latency:observe(latency, "request", service_id, balancer_ip)
 
-    metrics.bandwidth:inc(vars.request_length, "ingress", service_name,
+    metrics.bandwidth:inc(vars.request_length, "ingress", service_id,
                           balancer_ip)
 
-    metrics.bandwidth:inc(vars.bytes_sent, "egress", service_name,
+    metrics.bandwidth:inc(vars.bytes_sent, "egress", service_id,
                           balancer_ip)
 end
 
@@ -104,13 +107,14 @@ local function nginx_status()
         return
     end
 
+    local lconf = core.config.local_conf()
     for _, name in ipairs(ngx_statu_items) do
         local val = iterator()
         if not val then
             break
         end
 
-        metrics.connections:set(val[0], name)
+        metrics.connections:set(val[0], name, lconf.apisix.name)
     end
 end
 
