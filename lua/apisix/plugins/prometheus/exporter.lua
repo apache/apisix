@@ -39,7 +39,7 @@ function _M.init()
     prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
-            {"state", "hostname"})
+            {"state"})
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
@@ -55,7 +55,7 @@ function _M.init()
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "service", "node"})
+            {"type", "route", "service", "node"})
 end
 
 
@@ -79,10 +79,10 @@ function _M.log(conf, ctx)
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency, "request", service_id, balancer_ip)
 
-    metrics.bandwidth:inc(vars.request_length, "ingress", service_id,
+    metrics.bandwidth:inc(vars.request_length, "ingress", route_id, service_id,
                           balancer_ip)
 
-    metrics.bandwidth:inc(vars.bytes_sent, "egress", service_id,
+    metrics.bandwidth:inc(vars.bytes_sent, "egress", route_id, service_id,
                           balancer_ip)
 end
 
@@ -107,14 +107,13 @@ local function nginx_status()
         return
     end
 
-    local lconf = core.config.local_conf()
     for _, name in ipairs(ngx_statu_items) do
         local val = iterator()
         if not val then
             break
         end
 
-        metrics.connections:set(val[0], name, lconf.apisix.name)
+        metrics.connections:set(val[0], name)
     end
 end
 
