@@ -39,7 +39,7 @@ tar zxvf apache-apisix-1.0-incubating-src.tar.gz
 
 Install the Lua libraries that the runtime depends on:
 ```shell
-cd apache-apisix-1.0-rc1-incubating
+cd apache-apisix-1.0-incubating
 make deps
 ```
 
