@@ -56,7 +56,7 @@ else
 endif
 
 
-### utils:        Installation tools
+### utils:            Installation tools
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")

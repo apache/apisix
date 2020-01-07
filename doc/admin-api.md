@@ -50,7 +50,7 @@ Table of contents
 |Parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
 |desc     |False |Auxiliary   |Identifies route names, usage scenarios, and more.|customer xxxx|
-|uri      |True |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design-cn.md#router) allows more advanced matching, see [Router](architecture-design-cn.md#router) for more.|"/hello"|
+|uri      |True |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design.md#router) allows more advanced matching, see [Router](architecture-design.md#router) for more.|"/hello"|
 |host     |False |Match Rules|Currently requesting a domain name, such as `foo.com`; pan-domain names such as `*.foo.com` are also supported.|"foo.com"|
 |hosts    |False |Match Rules|The `host` in the form of a list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
 |remote_addr|False |Match Rules|The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.|"192.168.1.0/24"|
@@ -59,10 +59,10 @@ Table of contents
 |priority  |False |Match Rules|If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.|priority = 10|
 |vars       |False  |Match Rules (only `radixtree` route is supported)|A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For the operator part, the currently supported operators are `==`, `~=`,`>`, `<`, and `~~`. For the `>` and `<` operators, the result is first converted to `number` and then compared. See a list of [supported operators](#available-operators) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|False|Match Rules|User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.|function(vars) return vars["arg_name"] == "json" end|
-|plugins  |False |Plugin|See [Plugin](architecture-design-cn.md#plugin) for more ||
-|upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design-cn.md#upstream) for more||
-|upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design-cn.md#upstream) for more ||
-|service_id|False |Service|Binded Service configuration, see [Service](architecture-design-cn.md#service) for more ||
+|plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
+|upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
+|upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
+|service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
 |service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
 
 For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will response an error.
