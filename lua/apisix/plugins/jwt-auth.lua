@@ -100,7 +100,7 @@ local function fetch_jwt_token(ctx)
         return token
     end
 
-    token = ngx.ctx.api_ctx.var.arg_jwt
+    token = ctx.var.arg_jwt
     if token then
         return token
     end
