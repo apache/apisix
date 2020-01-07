@@ -38,5 +38,4 @@ return {
     etcd     = require("apisix.core.etcd"),
     http     = require("apisix.core.http"),
     tablepool= require("tablepool"),
-    lconfig  = require("apisix.core.config_local"),
 }

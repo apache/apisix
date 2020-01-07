@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local require       = require
 local core          = require("apisix.core")
 local plugin        = require("apisix.plugin")
@@ -61,7 +60,6 @@ function _M.http_init()
     end
     math.randomseed(seed)
 
-    core.lconfig.init()
     core.id.init()
 end
 

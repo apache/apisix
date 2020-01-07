@@ -14,16 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local log = require("apisix.core.log")
 local yaml = require("tinyyaml")
 local ngx = ngx
 local io_open = io.open
-local io_popen = io.popen
 local type = type
 local local_conf_path = ngx.config.prefix() .. "conf/config.yaml"
 local config_data
-local hostname
 
 
 local _M = {
@@ -48,27 +45,6 @@ function _M.clear_cache()
 end
 
 
-local function shell(cmd)
-    local fd, err = io_popen(cmd, "r")
-    if not fd then
-        return nil, err
-    end
-
-    local output = fd:read("*a")
-    fd:close()
-    return output
-end
-
-
-function _M.init()
-    local err
-    hostname, err = shell("cat /etc/hostname")
-    if not hostname then
-        log.error("failed to fetch hostname by shell: ", err)
-    end
-end
-
-
 function _M.local_conf(force)
     if not force and config_data then
         return config_data
@@ -80,12 +56,6 @@ function _M.local_conf(force)
     end
 
     config_data = yaml.parse(yaml_config)
-    if type(config_data) == "table" then
-        if config_data.apisix and not config_data.apisix.name then
-            config_data.apisix.name = hostname
-        end
-    end
-
     return config_data
 end
 
