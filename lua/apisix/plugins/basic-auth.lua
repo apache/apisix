@@ -112,7 +112,6 @@ function _M.access(conf, ctx)
     end
 
     local value = res.value
-    core.log.info("etcd value: ", core.json.delay_encode(value))
 
     -- 4. check the password is correct
     if value.password ~= password then
