@@ -1170,7 +1170,38 @@ passed
 
 
 
-=== TEST 36: type chash, invalid hash_on type
+=== TEST 36: type chash, hash_on: consumer, set key but invalid
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "consumer",
+                    "key": "invalid-key",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: type chash, invalid hash_on type
 --- config
     location /t {
         content_by_lua_block {
