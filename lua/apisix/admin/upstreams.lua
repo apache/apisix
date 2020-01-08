@@ -52,31 +52,32 @@ end
 local function check_upstream_conf(conf)
     local ok, err = core.schema.check(core.schema.upstream, conf)
     if not ok then
-        return false, {error_msg = "invalid configuration: " .. err}
+        return false, "invalid configuration: " .. err
     end
 
-    if conf.type == "chash" then
-        if not conf.hash_on then
-            conf.hash_on = "vars"
-        end
-
-        if conf.hash_on ~= "consumer" and not conf.key then
-            return false, {error_msg = "missing key"}
-        end
-
-        local key_schema, err = get_chash_key_schema(conf.hash_on)
-        if err then
-            return false, { error_msg = "type is chash, err: " .. err}
-        end
-
-        if key_schema then
-            local ok, err = core.schema.check(key_schema, conf.key)
-            if not ok then
-                return false, {error_msg = "invalid configuration: " .. err}
-            end
-        end
+    if conf.type ~= "chash" then
+        return true
     end
 
+    if not conf.hash_on then
+        conf.hash_on = "vars"
+    end
+
+    if conf.hash_on ~= "consumer" and not conf.key then
+        return false, "missing key"
+    end
+
+    local key_schema, err = get_chash_key_schema(conf.hash_on)
+    if err then
+        return false, "type is chash, err: " .. err
+    end
+
+    if key_schema then
+        local ok, err = core.schema.check(key_schema, conf.key)
+        if not ok then
+            return false, "invalid configuration: " .. err
+        end
+    end
     return true
 end
 
@@ -102,7 +103,7 @@ local function check_conf(id, conf, need_id)
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = check_upstream_conf(conf)
     if not ok then
-        return nil, err
+        return nil, {error_msg = err}
     end
 
     if need_id and not tonumber(id) then

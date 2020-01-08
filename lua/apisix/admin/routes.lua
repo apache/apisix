@@ -65,7 +65,7 @@ local function check_conf(id, conf, need_id)
     if upstream_conf then
         local ok, err = upstreams.check_upstream_conf(upstream_conf)
         if not ok then
-            return nil, err
+            return nil, {error_msg = err}
         end
     end
 

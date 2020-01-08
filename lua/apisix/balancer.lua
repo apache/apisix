@@ -24,7 +24,6 @@ local str_char    = string.char
 local str_gsub    = string.gsub
 local pairs       = pairs
 local tostring    = tostring
-local ngx         = ngx
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
@@ -123,22 +122,17 @@ local function fetch_healthchecker(upstream, healthcheck_parent, version)
 end
 
 
-local function create_chash_hash_key(ctx, upstream)
+local function fetch_chash_hash_key(ctx, upstream)
     local key = upstream.key
-    local hash_on = upstream.hash_on
+    local hash_on = upstream.hash_on or "vars"
     local chash_key
-
-    -- hash_on is nil, compatible with old version, default vars
-    if not hash_on then
-        hash_on = "vars"
-    end
 
     if hash_on == "consumer" then
         chash_key = ctx.consumer_id
     elseif hash_on == "vars" then
         chash_key = ctx.var[key]
     elseif hash_on == "header" then
-        chash_key = ngx.req.get_headers()[key]
+        chash_key = ctx.var["http_" .. key]
     elseif hash_on == "cookie" then
         chash_key = ctx.var["cookie_" .. key]
     end
@@ -187,7 +181,7 @@ local function create_server_picker(upstream, checker)
         return {
             upstream = upstream,
             get = function (ctx)
-                local chash_key = create_chash_hash_key(ctx, upstream)
+                local chash_key = fetch_chash_hash_key(ctx, upstream)
                 local id = picker:find(chash_key)
                 -- core.log.warn("chash id: ", id, " val: ", servers[id])
                 return servers[id]
