@@ -1691,7 +1691,7 @@ GET /t
 
 
 
-=== TEST 45: set route(id: 1) and upstream(type:chash, hash_on: consumer, missing key)
+=== TEST 45: set route(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
 --- config
     location /t {
         content_by_lua_block {
@@ -1720,4 +1720,4 @@ GET /t
 passed
 --- no_error_log
 [error]
---- ONLY
+
