@@ -47,7 +47,7 @@ function _M.init()
     -- per service
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "service", "node"})
+            {"code", "route", "service", "node"})
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency per service in APISIX",
@@ -55,31 +55,34 @@ function _M.init()
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "service", "node"})
+            {"type", "route", "service", "node"})
 end
 
 
 function _M.log(conf, ctx)
     local vars = ctx.var
 
-    local service_name
-    if ctx.matched_route and ctx.matched_route.value then
-        service_name = ctx.matched_route.value.desc or
-                       ctx.matched_route.value.id
+    local route_id = ""
+    local balancer_ip = ctx.balancer_ip
+    local service_id
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        service_id = matched_route.service_id or ""
+        route_id = matched_route.id
     else
-        service_name = vars.host
+        service_id = vars.host
     end
 
-    local balancer_ip = ctx.balancer_ip
-    metrics.status:inc(1, vars.status, service_name, balancer_ip)
+    metrics.status:inc(1, vars.status, route_id, service_id, balancer_ip)
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    metrics.latency:observe(latency, "request", service_name, balancer_ip)
+    metrics.latency:observe(latency, "request", service_id, balancer_ip)
 
-    metrics.bandwidth:inc(vars.request_length, "ingress", service_name,
+    metrics.bandwidth:inc(vars.request_length, "ingress", route_id, service_id,
                           balancer_ip)
 
-    metrics.bandwidth:inc(vars.bytes_sent, "egress", service_name,
+    metrics.bandwidth:inc(vars.bytes_sent, "egress", route_id, service_id,
                           balancer_ip)
 end
 
