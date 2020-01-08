@@ -151,7 +151,7 @@ apisix_etcd_reachable 1
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",service="1",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
 
@@ -293,7 +293,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",service="1",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]
 
@@ -303,6 +303,113 @@ qr/apisix_bandwidth\{type="egress",service="1",node="127.0.0.1"\} \d+/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_count\{type="request",service="1",node="127.0.0.1"\} \d+/
+qr/apisix_http_latency_count\{type="request",service="",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: create service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: use service 1 in route 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "service_id": 1,
+                    "uri": "/hello1"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: pipeline of client request
+--- pipelined_requests eval
+["GET /hello1", "GET /not_found", "GET /hello1", "GET /hello1"]
+--- error_code eval
+[200, 404, 200, 200]
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="egress",route="2",service="1",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: delete route 2
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_DELETE
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
