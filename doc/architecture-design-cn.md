@@ -338,7 +338,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 更多细节可以参考[健康检查的文档](health-check.md)。
 
 下面是几个使用不同`hash_on`类型的配置示例：
-###### Consumer
+##### Consumer
 创建一个consumer对象:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d `
@@ -374,7 +374,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
-###### Cookie
+##### Cookie
 新建路由和`Upstream`，`hash_on`类型为`cookie`：
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -397,7 +397,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
  curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
-###### Header
+##### Header
 新建路由和`Upstream`，`hash_on`类型为`header`， `key`为`content-type`：
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
