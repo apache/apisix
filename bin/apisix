@@ -17,8 +17,6 @@
 -- limitations under the License.
 --
 
-local script_path = arg[0]
-
 local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
@@ -30,35 +28,34 @@ local function excute_cmd(cmd)
     return data
 end
 
-local pwd = trim(excute_cmd("pwd"))
-if not pwd then
-    error("failed to fetch current path")
-end
-
 excute_cmd("install -d -m 777 /tmp/apisix_cores/")
 
-local apisix_home = "/usr/local/apisix"
-package.cpath = "/usr/local/apisix/deps/lib64/lua/5.1/?.so;"
-                .. "/usr/local/apisix/deps/lib/lua/5.1/?.so;"
-                .. package.cpath
+local pkg_cpath_org = package.cpath
+local pkg_path_org = package.path
 
-package.path  = "/usr/local/apisix/deps/share/lua/5.1/apisix/lua/?.lua;"
-                .. "/usr/local/apisix/deps/share/lua/5.1/?.lua;"
-                .. "/usr/share/lua/5.1/apisix/lua/?.lua;"
-                .. "/usr/local/share/lua/5.1/apisix/lua/?.lua;"
-                .. package.path
+local apisix_home = "/usr/local/apisix"
+local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
+                  .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
+local pkg_path  = apisix_home .. "/deps/share/lua/5.1/apisix/lua/?.lua;"
+                  .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 
 -- only for developer, use current folder as working space
+local script_path = arg[0]
 if script_path:sub(1, 2) == './' then
-    apisix_home = pwd
-    package.cpath = pwd .. "/deps/lib64/lua/5.1/?.so;"
-                    .. package.cpath
+    apisix_home = trim(excute_cmd("pwd"))
+    if not apisix_home then
+        error("failed to fetch current path")
+    end
 
-    package.path  = pwd .. "/lua/?.lua;"
-                    .. pwd .. "/deps/share/lua/5.1/?.lua;"
-                    .. package.path
+    pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
+                .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
+    pkg_path  = apisix_home .. "/lua/?.lua;"
+                .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 end
 -- print("apisix_home: ", apisix_home)
+
+package.cpath = pkg_cpath .. pkg_cpath_org
+package.path  = pkg_path .. pkg_path_org
 
 do
     -- skip luajit environment
@@ -494,8 +491,8 @@ local function init()
 
     -- Using template.render
     local sys_conf = {
-        lua_path = package.path,
-        lua_cpath = package.cpath,
+        lua_path = pkg_path_org,
+        lua_cpath = pkg_cpath_org,
         os_name = exec("uname"),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
