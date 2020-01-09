@@ -335,7 +335,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 More details can be found in [Health Checking Documents](health-check.md).
 
 Here are some examples of configurations using different `hash_on` types:
-1 Consumer
+###### Consumer
 Create a consumer object:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d `
@@ -371,7 +371,7 @@ Test request, the `consumer_id` after authentication is passed will be used as t
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
-2 Cookie
+###### Cookie
 Create route and upstream object, `hash_on` is `cookie`:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -393,7 +393,7 @@ The client requests with `Cookie`:
  curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
-3 Header
+###### Header
 Create route and upstream object, `hash_on` is `header`, `key` is `Content-Type`:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
