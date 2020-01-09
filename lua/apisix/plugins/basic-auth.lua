@@ -1,34 +1,43 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
-local json = require("apisix.core.json")
-
-local authorizations_etcd
+local ipairs   = ipairs
+local consumer = require("apisix.consumer")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
 
--- You can follow this document to write schema:
--- https://github.com/Tencent/rapidjson/blob/master/bin/draft-04/schema
--- rapidjson not supported `format` in draft-04 yet
 local schema = {
     type = "object",
     properties = {
-        enable = { type = "boolean", default = true, enum = { true, false } },
+        username = { type = "string" },
+        password = { type = "string" },
     },
 }
 
 local plugin_name = "basic-auth"
 
-local function gen_key(username)
-    local key = "/authorizations/" .. username
-    return key
-end
-
 local _M = {
     version = 0.1,
-    priority = 1802,
+    priority = 2520,
+    type = 'auth',
     name = plugin_name,
     schema = schema,
 }
@@ -77,148 +86,65 @@ local function extract_auth_header(authorization)
         return "", "", err
     end
 
+end
 
+local create_consume_cache
+do
+    local consumer_ids = {}
+
+    function create_consume_cache(consumers)
+        core.table.clear(consumer_ids)
+
+        for _, cur_consumer in ipairs(consumers.nodes) do
+            core.log.info("consumer node: ", core.json.delay_encode(cur_consumer))
+            consumer_ids[cur_consumer.auth_conf.username] = cur_consumer
+        end
+
+        return consumer_ids
+    end
 end
 
 function _M.access(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
 
-    -- 0. check the plugin is enabled
-    if not conf.enable then
-        return
-    end
-
-
     -- 1. extract authorization from header
-    local headers = ngx.req.get_headers()
-    if not headers.Authorization then
-        return 401, { message = "authorization is required" }
+    local auth_header = core.request.header(ctx,"Authorization")
+    if not auth_header then
+        return 401, { message = "Missing authorization in request" }
     end
 
-    local username, password, err = extract_auth_header(headers.Authorization)
+    local username, password, err = extract_auth_header(auth_header)
     if err then
         return 401, { message = err }
     end
 
-    -- 2. get user info from etcd
-    local res = authorizations_etcd:get(username)
-    if res == nil then
-        return 401, { message = "failed to find authorization from etcd" }
+    -- 2. get user info from consumer plugin
+    local consumer_conf = consumer.plugin(plugin_name)
+    if not consumer_conf then
+        return 401, {message = "Missing related consumer"}
     end
+
+    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
+            consumer_conf.conf_version,
+            create_consume_cache, consumer_conf)
 
     -- 3. check user exists
-    if not res.value or not res.value.id then
-        return 401, { message = "user is not found" }
+    local cur_consumer = consumers[username]
+    if not cur_consumer then
+        return 401, {message = "Invalid user key in authorization"}
     end
+    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
 
-    local value = res.value
 
     -- 4. check the password is correct
-    if value.password ~= password then
-        return 401, { message = "password is error" }
+    if cur_consumer.auth_conf.password ~= password then
+        return 401, { message = "Password is error" }
     end
 
+    ctx.consumer = cur_consumer
+    ctx.consumer_id = cur_consumer.consumer_id
 
     core.log.info("hit basic-auth access")
-end
-
-
-local function set_auth()
-    local body_table = {}
-    -- read_body can not use in log_by_lua
-    if ngx.re.find(ngx.req.get_headers()["Content-Type"] or "", "application/json") then
-        ngx.req.read_body()
-
-        local body_data = ngx.req.get_body_data()
-        if body_data ~= nil then
-            body_table = json.decode(body_data)
-        end
-
-    else
-        body_table = ngx.req.get_post_args()
-    end
-
-    local username = body_table["username"]
-    local password = body_table["password"]
-
-    if not username or not password then
-        core.response.exit(200, "username,password is required")
-    end
-
-    local key = gen_key(username)
-
-    local res, err = core.etcd.set(key, { username = username, password = password })
-    if not res then
-        core.response.exit(500, err)
-    end
-
-    core.response.exit(res.status, res.body)
-end
-
-local function get_auth()
-    local request_table = ngx.req.get_uri_args() or {}
-
-    if not request_table["username"] then
-        core.response.exit(200, "username is required")
-    end
-
-    local username = request_table["username"]
-
-    local key = gen_key(username)
-
-    local res, err = core.etcd.get(key)
-    if not res then
-        core.response.exit(500, err)
-    end
-
-    core.response.exit(res.status, res.body)
-end
-
--- curl 'http://127.0.0.1:9080/apisix/plugin/basic-auth/set' -H "Content-Type:application/json" -d '{"username":"foo","password":"bar"}'
-
-function _M.api()
-    return {
-        {
-            methods = { "GET" },
-            uri = "/apisix/plugin/basic-auth/get",
-            handler = get_auth,
-        },
-        {
-            methods = { "POST", "PUT" },
-            uri = "/apisix/plugin/basic-auth/set",
-            handler = set_auth,
-        }
-    }
-end
-
-local appkey_scheme = {
-    type = "object",
-    properties = {
-        username = {
-            description = "username",
-            type = "string",
-        },
-        password = {
-            type = "string",
-        }
-    },
-}
-
-function _M.init()
-
-    authorizations_etcd, err = core.config.new("/authorizations", {
-        automatic = true,
-        item_schema = appkey_scheme
-    })
-
-    if not authorizations_etcd then
-        -- @todo log
-        error("failed to create etcd instance for fetching authorizations: " .. err)
-        return
-    end
-
-    core.log.info("hit authorizations_etcd init")
-
 end
 
 return _M
