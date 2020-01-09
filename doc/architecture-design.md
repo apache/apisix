@@ -338,7 +338,7 @@ Here are some examples of configurations using different `hash_on` types:
 1 Consumer
 Create a consumer object:
 ```shell
-curl  http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d `
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d `
 {
     "username": "jack",
     "plugins": {
