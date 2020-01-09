@@ -17,7 +17,7 @@
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
-local ipairs   = ipairs
+local ipairs = ipairs
 local consumer = require("apisix.consumer")
 
 local lrucache = core.lrucache.new({
@@ -108,8 +108,9 @@ function _M.access(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
 
     -- 1. extract authorization from header
-    local auth_header = core.request.header(ctx,"Authorization")
+    local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
+        core.response.set_header("WWW-Authenticate", "Basic realm='.'")
         return 401, { message = "Missing authorization in request" }
     end
 
@@ -121,7 +122,7 @@ function _M.access(conf, ctx)
     -- 2. get user info from consumer plugin
     local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        return 401, { message = "Missing related consumer" }
     end
 
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
@@ -131,7 +132,7 @@ function _M.access(conf, ctx)
     -- 3. check user exists
     local cur_consumer = consumers[username]
     if not cur_consumer then
-        return 401, {message = "Invalid user key in authorization"}
+        return 401, { message = "Invalid user key in authorization" }
     end
     core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
 
