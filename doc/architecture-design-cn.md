@@ -237,7 +237,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |-------         |-----|------|
 |type            |必需|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
 |nodes           |必需|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|
-|key             |必需|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)|
+|hash_on         |可选|该选项只有 `type` 是 `chash` 才有效。`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
+|key             |必需|该选项只有 `type` 是 `chash` 才有效，需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`。`hash_on` 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)；`hash_on` 设为 `header` 时, `key` 为必传参数，自定义的 `header name`；`hash_on` 设为 `cookie` 时, `key` 为必传参数， 自定义的 `cookie name`；`hash_on` 设为 `consumer` 时，`key` 不需要设置，为空，此时哈希算法采用的 `key` 为认证通过的 `consumer_id`。 如果指定的 `hash_on` 和 `key` 获取不到值时，默认取 `remote_addr`|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
 
@@ -334,8 +335,90 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     }
 }'
 ```
-
 更多细节可以参考[健康检查的文档](health-check.md)。
+
+下面是几个使用不同`hash_on`类型的配置示例：
+##### Consumer
+创建一个consumer对象:
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d `
+{
+    "username": "jack",
+    "plugins": {
+    "key-auth": {
+           "key": "auth-jack"
+        }
+    }
+}`
+```
+新建路由，打开`key-auth`插件认证，`upstream`的`hash_on`类型为`consumer`：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        },
+        "type": "chash",
+        "hash_on": "consumer"
+    },
+    "uri": "/server_port"
+}'
+```
+测试请求，认证通过后的`consumer_id`将作为负载均衡哈希算法的哈希值：
+```shell
+curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
+```
+
+##### Cookie
+新建路由和`Upstream`，`hash_on`类型为`cookie`：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/hash_on_cookie",
+    "upstream": {
+        "key": "sid",
+        "type ": "chash",
+        "hash_on ": "cookie",
+        "nodes ": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        }
+    }
+}'
+```
+
+客户端请求携带`Cookie`：
+```shell
+ curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
+```
+
+##### Header
+新建路由和`Upstream`，`hash_on`类型为`header`， `key`为`content-type`：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/hash_on_header",
+    "upstream": {
+        "key": "content-type",
+        "type ": "chash",
+        "hash_on ": "header",
+        "nodes ": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        }
+    }
+}'
+```
+
+客户端请求携带`content-type`的`header`：
+```shell
+ curl http://127.0.0.1:9080/hash_on_header -H "Content-Type: application/json"
+```
 
 [返回目录](#目录)
 

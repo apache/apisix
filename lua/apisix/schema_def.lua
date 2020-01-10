@@ -259,18 +259,42 @@ local upstream_schema = {
             enum = {"chash", "roundrobin"}
         },
         checks = health_checker,
+        hash_on = {
+            type = "string",
+            default = "vars",
+            enum = {
+              "vars",
+              "header",
+              "cookie",
+              "consumer",
+            },
+        },
         key = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
-            pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
-                      .. [[|remote_addr|query_string|host|hostname)]]
-                      .. [[|arg_[0-9a-zA-z_-]+)$]],
         },
         desc = {type = "string", maxLength = 256},
         id = id_schema
     },
     required = {"nodes", "type"},
     additionalProperties = false,
+}
+
+-- TODO: add more nginx variable support
+_M.upstream_hash_vars_schema = {
+    type = "string",
+    pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
+               .. [[|remote_addr|query_string|host|hostname)]]
+               .. [[|arg_[0-9a-zA-z_-]+)$]],
+}
+
+-- validates header name, cookie name.
+-- a-z, A-Z, 0-9, '_' and '-' are allowed.
+-- when "underscores_in_headers on", header name allow '_'.
+-- http://nginx.org/en/docs/http/ngx_http_core_module.html#underscores_in_headers
+_M.upstream_hash_header_schema = {
+    type = "string",
+    pattern = [[^[a-zA-Z0-9-_]+$]]
 }
 
 

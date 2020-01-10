@@ -28,6 +28,60 @@ local _M = {
 }
 
 
+local function get_chash_key_schema(hash_on)
+    if not hash_on then
+        return nil, "hash_on is nil"
+    end
+
+    if hash_on == "vars" then
+        return core.schema.upstream_hash_vars_schema
+    end
+
+    if hash_on == "header" or hash_on == "cookie" then
+        return core.schema.upstream_hash_header_schema
+    end
+
+    if hash_on == "consumer" then
+        return nil, nil
+    end
+
+    return nil, "invalid hash_on type " .. hash_on
+end
+
+
+local function check_upstream_conf(conf)
+    local ok, err = core.schema.check(core.schema.upstream, conf)
+    if not ok then
+        return false, "invalid configuration: " .. err
+    end
+
+    if conf.type ~= "chash" then
+        return true
+    end
+
+    if not conf.hash_on then
+        conf.hash_on = "vars"
+    end
+
+    if conf.hash_on ~= "consumer" and not conf.key then
+        return false, "missing key"
+    end
+
+    local key_schema, err = get_chash_key_schema(conf.hash_on)
+    if err then
+        return false, "type is chash, err: " .. err
+    end
+
+    if key_schema then
+        local ok, err = core.schema.check(key_schema, conf.key)
+        if not ok then
+            return false, "invalid configuration: " .. err
+        end
+    end
+    return true
+end
+
+
 local function check_conf(id, conf, need_id)
     if not conf then
         return nil, {error_msg = "missing configurations"}
@@ -45,21 +99,15 @@ local function check_conf(id, conf, need_id)
     if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
         return nil, {error_msg = "wrong upstream id"}
     end
-
     core.log.info("schema: ", core.json.delay_encode(core.schema.upstream))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.upstream, conf)
+    local ok, err = check_upstream_conf(conf)
     if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
+        return nil, {error_msg = err}
     end
 
     if need_id and not tonumber(id) then
         return nil, {error_msg = "wrong type of service id"}
-    end
-
-
-    if conf.type == "chash" and not conf.key then
-        return nil, {error_msg = "missing key"}
     end
 
     return need_id and id or true
@@ -232,6 +280,9 @@ function _M.patch(id, conf, sub_path)
 
     return res.status, res.body
 end
+
+-- for routes and services check upstream conf
+_M.check_upstream_conf = check_upstream_conf
 
 
 return _M
