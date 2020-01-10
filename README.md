@@ -149,22 +149,17 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 - 2019.8.31 [APISIX high performance practice 2(Chinese)](https://www.upyun.com/opentalk/437.html)
 - 2019.7.6 [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
 
+## User Stories
+[ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
+[360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
+[HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
+[Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller?(Chinese)](https://www.upyun.com/opentalk/448.html)
+[aispeech: Why we create a new k8s ingress controller?(Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
+
 ## Who Uses APISIX?
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
 
-1. dasouche 大搜车 https://www.dasouche.com/
-1. ehomepay 理房通 https://www.ehomepay.com.cn/
-1. haieruplus.com 海尔优家  http://haieruplus.com/
-1. HelloTalk, Inc.  https://www.hellotalk.com/
-1. ke.com 贝壳找房 https://www.ke.com/
-1. Meizu 魅族 https://www.meizu.com/
-1. NASA JPL 美国国家航空航天局 喷气推进实验室 https://www.jpl.nasa.gov
-1. Netease 网易 http://www.163.com
-1. taikang.com 泰康云   http://taikang.com/
-1. tangdou.com 糖豆网   http://www.tangdou.com/
-1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
-1. Xin 优信二手车 https://www.xin.com/
-1. zuzuche 租租车 https://www.zuzuche.com/
+<img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 

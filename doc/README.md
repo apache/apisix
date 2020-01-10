@@ -52,7 +52,7 @@ Plugins
 * [grpc-transcode](plugins/grpc-transcoding.md): REST <--> gRPC transcoding.
 * [serverless](plugins/serverless.md)：Allows to dynamically run Lua code at *different* phase in APISIX.
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
-* openid-connect
+* [openid-connect](plugins/oauth.md)
 * [redirect](plugins/redirect.md): URI redirect.
 * [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
 
