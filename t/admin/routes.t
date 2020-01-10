@@ -1590,3 +1590,134 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 43: set route(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "chash"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]])
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"missing key"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: set route(id: 1) and upstream(type:chash, hash_on: header, missing key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "chash",
+                        "hash_on":"header"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]])
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"missing key"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: set route(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "chash",
+                        "hash_on":"cookie"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]])
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"missing key"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: set route(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "chash",
+                        "hash_on":"consumer"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]])
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+

@@ -232,7 +232,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |-------         |-----|------|
 |type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
 |nodes           |required|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
-|key             |required|This option is only valid if the type is `chash`. Find the corresponding node `id` according to `key`, the same `key` in the same object, always return the same id. For now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html)|
+|hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
+|key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
 
@@ -332,6 +333,88 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 ```
 
 More details can be found in [Health Checking Documents](health-check.md).
+
+Here are some examples of configurations using different `hash_on` types:
+##### Consumer
+Create a consumer object:
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d `
+{
+    "username": "jack",
+    "plugins": {
+       "key-auth": {
+            "key": "auth-jack"
+        }
+    }
+}`
+```
+Create route object and enable `key-auth` plugin authentication:
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        },
+        "type": "chash",
+        "hash_on": "consumer"
+    },
+    "uri": "/server_port"
+}'
+```
+Test request, the `consumer_id` after authentication is passed will be used as the hash value of the load balancing hash algorithm:
+```shell
+curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
+```
+
+##### Cookie
+Create route and upstream object, `hash_on` is `cookie`:
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/hash_on_cookie",
+    "upstream": {
+        "key": "sid",
+        "type ": "chash",
+        "hash_on ": "cookie",
+        "nodes ": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        }
+    }
+}'
+```
+The client requests with `Cookie`:
+```shell
+ curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
+```
+
+##### Header
+Create route and upstream object, `hash_on` is `header`, `key` is `Content-Type`:
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/hash_on_header",
+    "upstream": {
+        "key": "content-type",
+        "type ": "chash",
+        "hash_on ": "header",
+        "nodes ": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        }
+    }
+}'
+```
+
+The client requests with header `Content-Type`:
+```shell
+ curl http://127.0.0.1:9080/hash_on_header -H "Content-Type: application/json"
+```
 
 [Back to top](#Table-of-contents)
 
