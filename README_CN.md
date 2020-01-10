@@ -35,7 +35,7 @@ APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
 
 如果你正在构建网站、移动设备或 IoT（物联网）的应用，那么你可能需要使用 API 网关来处理接口流量。
 
-APISIX 是基于云原生的微服务 API 网关，可以处理传统的南北向流量，也可以处理服务间的东西向流量，也可以当做 k8s ingress controller 来使用。
+APISIX 是基于云原生的微服务 API 网关，它是所有业务流量的入口，可以处理传统的南北向流量，也可以处理服务间的东西向流量，也可以当做 k8s ingress controller 来使用。
 
 APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限速等功能，并且支持你自己开发的插件。
 
@@ -44,50 +44,74 @@ APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限�
 ![](doc/images/apisix.png)
 
 ## 功能
+你可以把 Apache APISIX 当做流量入口，来处理所有的业务数据，包括动态路由、动态上游、动态证书、
+A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵御恶意攻击、监控报警、服务可观测性、服务治理等。
 
-- **运行环境**: OpenResty 和 Tengine 都支持。
-- **云原生**: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
-- **[热更新和热插件](doc/plugins-cn.md)**: 无需重启服务，就可以持续更新配置和插件。
-- **动态负载均衡**：动态支持有权重的 round-robin 负载平衡。
-- **支持一致性 hash 的负载均衡**：动态支持一致性 hash 的负载均衡。
-- **[SSL](doc/https-cn.md)**：动态加载 SSL 证书。
-- **HTTP(S) 反向代理**
-- **[健康检查](doc/health-check.md)**：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
-- **熔断器**: 智能跟踪不健康上游服务。
-- **身份认证**: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md)。
-- **[限制速率](doc/plugins/limit-req-cn.md)**
-- **[限制请求数](doc/plugins/limit-count-cn.md)**
-- **[限制并发](doc/plugins/limit-conn-cn.md)**
-- **[代理请求重写](doc/plugins/proxy-rewrite.md)**: 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
-- **[输出内容重写](doc/plugins/response-rewrite.md)**: 支持自定义修改返回内容的 `status code`、`body`、`headers`。
-- **OpenTracing: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin.md)**
-- **监控和指标**: [Prometheus](doc/plugins/prometheus-cn.md)
-- **[gRPC 代理](doc/grpc-proxy-cn.md)**：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
-- **[gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)**：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
-- **[Serverless](doc/plugins/serverless-cn.md)**: 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
-- **自定义插件**: 允许挂载常见阶段，例如`rewrite`，`access`，`header filer`，`body filter`和`log`，还允许挂载 `balancer` 阶段。
-- **控制台**: 内置控制台来操作 APISIX 集群。
-- **版本控制**：支持操作的多次回滚。
-- **CLI**: 使用命令行来启动、关闭和重启 APISIX。
-- **REST API**
-- **Websocket 代理**
-- **IPv6**：支持使用 IPv6 格式匹配路由。
-- **集群**：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
-- **可扩展**：简单易用的插件机制方便扩展。
-- **高性能**：在单核上 QPS 可以达到 24k，同时延迟只有 0.2 毫秒。
-- **防御 ReDoS(正则表达式拒绝服务)**
-- **IP 黑名单**
-- **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
-- **[单机模式](doc/stand-alone-cn.md)**: 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
-- **全局规则**：允许对所有请求执行插件，比如黑白名单、限流限速等。
-- **[TCP/UDP 代理](doc/stream-proxy-cn.md)**: 动态 TCP/UDP 代理。
-- **[动态 MQTT 代理](doc/plugins/mqtt-proxy-cn.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
+- **全平台**
+    - 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
+    - 运行环境: OpenResty 和 Tengine 都支持。
+    - 支持 [ARM64](https://zhuanlan.zhihu.com/p/84467919): 不用担心底层技术的锁定。
+
+- **多协议**
+    - [TCP/UDP 代理](doc/stream-proxy-cn.md): 动态 TCP/UDP 代理。
+    - [动态 MQTT 代理](doc/plugins/mqtt-proxy-cn.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
+    - [gRPC 代理](doc/grpc-proxy-cn.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
+    - [gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
+    - Websocket 代理
+    - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
+    - HTTP(S) 反向代理
+    - [SSL](doc/https-cn.md)：动态加载 SSL 证书。
+
+- **全动态能力**
+    - [热更新和热插件](doc/plugins-cn.md): 无需重启服务，就可以持续更新配置和插件。
+    - [代理请求重写](doc/plugins/proxy-rewrite.md): 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
+    - [输出内容重写](doc/plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
+    - [Serverless](doc/plugins/serverless-cn.md): 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
+    - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
+    - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
+    - [健康检查](doc/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
+    - 熔断器: 智能跟踪不健康上游服务。
+
+- **精细化路由**
+    - [支持全路径匹配和前缀匹配](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
+    - [支持使用 Nginx 所有内置变量做为路由的条件](/doc/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，所以你可以使用 `cookie`, `args` 等做为路由的条件，来实现灰度发布、A/B 测试等功能
+    - 支持[各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
+    - 支持[自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
+    - IPv6：支持使用 IPv6 格式匹配路由
+    - 支持路由的[自动过期(TTL)](doc/admin-api-cn.md#route)
+    - [支持路由的优先级](doc/router-radixtree.md#3-match-priority)
+
+- **安全防护**
+    - 多种身份认证方式: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md)。
+    - [IP 黑白名单](doc/plugins/ip-restriction-cn.md)
+    - [IdP 支持](doc/plugins/oauth.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
+    - [限制速率](doc/plugins/limit-req-cn.md)
+    - [限制请求数](doc/plugins/limit-count-cn.md)
+    - [限制并发](doc/plugins/limit-conn-cn.md)
+    - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
+
+- **可运维**
+    - OpenTracing 可观测性: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin.md)**
+    - 监控和指标: [Prometheus](doc/plugins/prometheus-cn.md)
+    - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
+    - 控制台: 内置控制台来操作 APISIX 集群。
+    - 版本控制：支持操作的多次回滚。
+    - CLI: 使用命令行来启动、关闭和重启 APISIX。
+    - [单机模式](doc/stand-alone-cn.md): 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
+    - 全局规则：允许对所有请求执行插件，比如黑白名单、限流限速等。
+    - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
+    - [REST admin API](doc/admin-api-cn.md)
+
+- **高度可扩展**
+    - [自定义插件](doc/plugin-develop-cn.md): 允许挂载常见阶段，例如``init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。
+    - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
+    - 自定义路由: 支持用户自己实现路由算法。
 
 ## 安装
 
 APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注意的是：OpenResty 的版本必须 >= 1.15.8.1：
 
-CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
+CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **[ARM64](https://zhuanlan.zhihu.com/p/84467919)** Ubuntu 18.04
 
 安装 APISIX 的步骤：
 1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/install-dependencies.md)
@@ -143,29 +167,59 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 [文档](doc/README_CN.md)
 
-## 视频和文章
+## Apache APISIX 和 Kong 的比较
 
+#### 核心功能点，两者都已经覆盖
+| **功能**   | **动态上游**   | **健康检查和熔断器**   | **动态SSL证书**   | **七层和四层代理**   | **分布式追踪**   | **自定义插件**   | **REST API**   | **CLI**   |
+|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+| **Apache APISIX**   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   |
+| **Kong**   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   |
+
+#### Apache APISIX 的优势
+| **功能**   | **Apache APISIX**   | **KONG**   |
+|:----|:----|:----|
+| 项目归属   | Apache 基金会   | Kong Inc.   |
+| 技术架构   | Nginx + etcd   | Nginx + postgres   |
+| 交流渠道  | 微信群、QQ群、邮件列表、Github、meetup   | Github、论坛、freenode   |
+| 单核 QPS(开启限流和prometheus插件)   | 18000   | 1700   |
+| 平均延迟  | 0.2 毫秒   | 2 毫秒   |
+| 完整 IPv6 协议支持   | 是   | 否   |
+| 支持 ARM64   | 是   | 否   |
+| 支持 Dubbo 代理   | 是   | 否   |
+| 配置回滚   | 是   | 否   |
+| 支持生命周期的路由   | 是   | 否   |
+| 插件热更新   | 是   | 否   |
+| 用户自定义：负载均衡算法、路由   | 是   | 否   |
+| resty <--> gRPC 转码   | 是   | 否   |
+| 支持 Tengine 作为运行时   | 是   | 否   |
+| MQTT 协议支持   | 是   | 否   |
+| 配置生效时间   | 事件通知，低于1毫秒更新   | 定期轮询，10 秒   |
+| 自带控制台   | 是   | 否   |
+| 对接外部身份认证服务   | 是   | 否   |
+| 配置中心高可用(HA)   | 是   | 否   |
+| 指定时间窗口的限速   | 是   | 否   |
+
+
+## 视频和文章
+- 2019.12.14 [从 0 到 1：Apache APISIX 的 Apache 之路](https://zhuanlan.zhihu.com/p/99620158)
+- 2019.12.14 [基于 Apache APISIX 的下一代微服务架构](https://www.upyun.com/opentalk/445.html)
 - 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html)
+- 2019.9.27 [想把 APISIX 运行在 ARM64 平台上？只要三步](https://zhuanlan.zhihu.com/p/84467919)
 - 2019.8.31 [APISIX 技术选型、测试和持续集成](https://www.upyun.com/opentalk/433.html)
 - 2019.8.31 [APISIX 高性能实战2](https://www.upyun.com/opentalk/437.html)
 - 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
+## 用户实际使用案例
+[贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
+[360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
+[HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
+[腾讯云：为什么选择 Apache APISIX 来实现 k8s ingress controller?](https://www.upyun.com/opentalk/448.html)
+[思必驰：为什么我们重新写了一个 k8s ingress controller?](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
+
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
 
-1. dasouche 大搜车 https://www.dasouche.com/
-1. ehomepay 理房通 https://www.ehomepay.com.cn/
-1. haieruplus.com 海尔优家  http://haieruplus.com/
-1. HelloTalk, Inc.  https://www.hellotalk.com/
-1. ke.com 贝壳找房 https://www.ke.com/
-1. Meizu 魅族 https://www.meizu.com/
-1. NASA JPL 美国国家航空航天局 喷气推进实验室 https://www.jpl.nasa.gov
-1. Netease 网易 http://www.163.com
-1. taikang.com 泰康云   http://taikang.com/
-1. tangdou.com 糖豆网   http://www.tangdou.com/
-1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
-1. Xin 优信二手车 https://www.xin.com/
-1. zuzuche 租租车 https://www.zuzuche.com/
+<img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 
