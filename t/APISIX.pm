@@ -146,6 +146,7 @@ _EOC_
     resolver 8.8.8.8 114.114.114.114 ipv6=off;
     resolver_timeout 5;
 
+    underscores_in_headers on;
     lua_socket_log_errors off;
 
     upstream apisix_backend {

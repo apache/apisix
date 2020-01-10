@@ -830,7 +830,7 @@ passed
 
 
 
-=== TEST 25:  wrong upstream key
+=== TEST 25:  wrong upstream key, hash_on default vars
 --- config
     location /t {
         content_by_lua_block {
@@ -856,7 +856,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"key\" validation failed: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
 --- no_error_log
 [error]
 
@@ -921,7 +921,7 @@ passed
 
 
 
-=== TEST 28:  wrong upstream key
+=== TEST 28:  wrong upstream key, hash_on default vars
 --- config
     location /t {
         content_by_lua_block {
@@ -947,7 +947,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"key\" validation failed: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
 --- no_error_log
 [error]
 
@@ -980,3 +980,254 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 30: type chash, hash_on: vars
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "arg_device_id",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "vars",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: type chash, hash_on: header, header name with '_', underscores_in_headers on
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "custom_header",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "header",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: type chash, hash_on: header, header name with invalid character
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "$#^@",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "header",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: failed to match pattern \"^[a-zA-Z0-9-_]+$\" with \"$#^@\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: type chash, hash_on: cookie
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "custom_cookie",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "cookie",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: type chash, hash_on: cookie, cookie name with invalid character
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "$#^@abc",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "cookie",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: failed to match pattern \"^[a-zA-Z0-9-_]+$\" with \"$#^@abc\""}
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: type chash, hash_on: consumer, don't need upstream key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "consumer",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: type chash, hash_on: consumer, set key but invalid
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "consumer",
+                    "key": "invalid-key",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: type chash, invalid hash_on type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "key": "dsadas",
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "chash",
+                    "hash_on": "aabbcc",
+                    "desc": "new chash upstream"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches non of the enum values"}
+--- no_error_log
+[error]
+

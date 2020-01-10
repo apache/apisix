@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
+local upstreams = require("apisix.admin.upstreams")
 local tostring = tostring
 local type = type
 local loadstring = loadstring
@@ -58,6 +59,14 @@ local function check_conf(id, conf, need_id)
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
                                  .. "allowed"}
+    end
+
+    local upstream_conf = conf.upstream
+    if upstream_conf then
+        local ok, err = upstreams.check_upstream_conf(upstream_conf)
+        if not ok then
+            return nil, {error_msg = err}
+        end
     end
 
     local upstream_id = conf.upstream_id
