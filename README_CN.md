@@ -170,12 +170,14 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 ## Apache APISIX 和 Kong 的比较
 
 #### 核心功能点，两者都已经覆盖
+
 | **功能**   | **动态上游**   | **健康检查和熔断器**   | **动态SSL证书**   | **七层和四层代理**   | **分布式追踪**   | **自定义插件**   | **REST API**   | **CLI**   |
-|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+|:----|:----|:----|:----|:----|:----|:----|:----|:----|
 | **Apache APISIX**   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   |
 | **Kong**   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   | 支持   |
 
 #### Apache APISIX 的优势
+
 | **功能**   | **Apache APISIX**   | **KONG**   |
 |:----|:----|:----|
 | 项目归属   | Apache 基金会   | Kong Inc.   |
@@ -210,11 +212,11 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 - 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
 ## 用户实际使用案例
-[贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
-[360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
-[HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
-[腾讯云：为什么选择 Apache APISIX 来实现 k8s ingress controller?](https://www.upyun.com/opentalk/448.html)
-[思必驰：为什么我们重新写了一个 k8s ingress controller?](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
+- [贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
+- [360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
+- [HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
+- [腾讯云：为什么选择 Apache APISIX 来实现 k8s ingress controller?](https://www.upyun.com/opentalk/448.html)
+- [思必驰：为什么我们重新写了一个 k8s ingress controller?](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
 
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：

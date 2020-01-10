@@ -54,7 +54,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Multi protocols**
     - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
-    - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md)**: Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
+    - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
     - [gRPC proxy](doc/grpc-proxy.md)：Proxying gRPC traffic.
     - [gRPC transcoding](doc/plugins/grpc-transcoding.md)：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
     - Proxy Websocket
@@ -63,7 +63,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [SSL](doc/https.md): Dynamically load an SSL certificate.
 
 - **Full dynamic**
-    - [Hot Updates And Hot Plugins](doc/plugins.md)**: Continuously updates its configurations and plugins without restarts!
+    - [Hot Updates And Hot Plugins](doc/plugins.md): Continuously updates its configurations and plugins without restarts!
     - [Proxy Rewrite](doc/plugins/proxy-rewrite.md): Support for rewriting the `host`, `uri`, `schema`, `enable_websocket`, `headers` information upstream of the request.
     - [Response Rewrite](doc/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
     - [Serverless](doc/plugins/serverless.md): Invoke functions in each phase in APISIX.
@@ -74,7 +74,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Fine-grained routing**
     - [Supports full path matching and prefix matching](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
-    - [Support all Nginx built-in variables as conditions for routing](/doc/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，So you can use `cookie`,` args`, etc. as routing conditions to implement canary release, A/B testing, etc.
+    - [Support all Nginx built-in variables as conditions for routing](/doc/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), so you can use `cookie`,` args`, etc. as routing conditions to implement canary release, A/B testing, etc.
     - Support [various operators as judgment conditions for routing](https://github.com/iresty/lua-resty-radixtree#operator-list), for example `{"arg_age", ">", 24}`
     - Support [custom route matching function](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
     - IPv6: Use IPv6 to match route.
@@ -99,7 +99,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - CLI: start\stop\reload APISIX through the command line.
     - [Stand-alone mode](doc/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
     - Global Rule: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
-    - High performance**: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
+    - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
     - [REST admin API](doc/admin-api.md)
 
 - **Highly scalable**
@@ -169,8 +169,9 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 ## Apache APISIX vs Kong
 
 #### both of them have been covered core features of API gateway
+
 | **feature**   | **Dynamic upstream**   | **Health check**   | **Dynamic SSL**   | **L4 and L7 proxy**   | **opentracing**   | **custom plugin**   | **REST API**   | **CLI**   |
-|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+|:----|:----|:----|:----|:----|:----|:----|:----|:----|
 | **Apache APISIX**   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   |
 | **Kong**   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   |
 
@@ -208,11 +209,11 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 - 2019.7.6 [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
 
 ## User Stories
-[ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
-[360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
-[HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
-[Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller?(Chinese)](https://www.upyun.com/opentalk/448.html)
-[aispeech: Why we create a new k8s ingress controller?(Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
+- [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
+- [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
+- [HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
+- [Tencent Cloud: Why choose Apache APISIX to implement the k8s ingress controller?(Chinese)](https://www.upyun.com/opentalk/448.html)
+- [aispeech: Why we create a new k8s ingress controller?(Chinese)](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
 
 ## Who Uses APISIX?
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
