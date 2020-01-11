@@ -17,32 +17,34 @@
 #
 -->
 
-[English](basic-auth.md)
+[Chinese](basic-auth-cn.md)
 
-# 目录
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
+# Summary
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Test Plugin**](#test-plugin)
+- [**Disable Plugin**](#disable-plugin)
 
 
-## 名字
+## Name
 
-`basic-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+`basic-auth` is an authentication plugin that need to work with `consumer`. Add Basic Authentication to a `service` or `route`.
 
-添加 Basic Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其用户名和密码添加到请求头中以验证其请求。
+The `consumer` then adds its key to the request header to verify its request.
 
-有关 Basic Authentication 的更多信息，可参考 [维基百科](https://en.wikipedia.org/wiki/Basic_access_authentication) 查看更多信息。
+For more information on Basic authentication, refer to [Wiki](https://en.wikipedia.org/wiki/Basic_access_authenticatio) for more information.
 
-## 属性
+## Attributes
 
-* `username`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。
-* `password`: 用户的密码
+|Name          |Requirement  |Description|
+|---------     |--------|-----------|
+| username |required|different `consumer` have different value, it's unique. different `consumer` use the same `username`, and there will be a request matching exception.|
+| password |required|the user's password|
 
-## 如何启用
+## How To Enable
 
-1. 创建一个 consumer 对象，并设置插件 `basic-auth` 的值。
+1. set a consumer and config the value of the `basic-auth` option
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
@@ -56,13 +58,17 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
     }
 }'
 ```
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
+
+you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console:
+
 ![](../images/plugin/basic-auth-1.png)
 
-然后在 consumer 页面中添加 basic-auth 插件：
+
+then add basic-auth plugin in the Consumer page:
+
 ![](../images/plugin/basic-auth-2.png)
 
-2. 创建 Route 或 Service 对象，并开启 `basic-auth` 插件。
+2. add a Route or add a Service , and enable the `basic-auth` plugin
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -75,7 +81,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:8080": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -83,8 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 
 ## Test Plugin
 
-
-* 缺少 Authorization header 
+* missing Authorization header
 
 ```shell
 $ curl http://127.0.0.2:9080/hello -i
@@ -93,7 +98,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing authorization in request"}
 ```
 
-* 用户名不存在：
+* user is not exists:
 
 ```shell
 $ curl -i -ubar:bar http://127.0.0.1:9080/hello
@@ -102,33 +107,32 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid user key in authorization"}
 ```
 
-* 密码错误：
+* password is invalid:
 
 ```shell
 $ curl -i -ufoo:foo http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Password is error"}
-...
 ```
 
-* 成功请求： 
+* success:
 
 ```shell
 $ curl -i -ufoo:bar http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
 ...
-hello, foo!
-...
+hello, world
 ```
 
+## Disable Plugin
 
-## 禁用插件
-
-当你想去掉 `basic-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
+When you want to disable the `basic-auth` plugin, it is very simple,
+ you can delete the corresponding json configuration in the plugin configuration,
+  no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+$ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -136,7 +140,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:8080": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
