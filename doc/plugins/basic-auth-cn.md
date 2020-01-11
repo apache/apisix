@@ -84,7 +84,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 ## Test Plugin
 
 
-* 缺少 Authorization header 
+* 缺少 Authorization header
 
 ```shell
 $ curl http://127.0.0.2:9080/hello -i
@@ -112,7 +112,7 @@ HTTP/1.1 401 Unauthorized
 ...
 ```
 
-* 成功请求： 
+* 成功请求：
 
 ```shell
 $ curl -i -ufoo:bar http://127.0.0.1:9080/hello
