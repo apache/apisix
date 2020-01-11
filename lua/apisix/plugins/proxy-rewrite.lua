@@ -21,6 +21,7 @@ local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
+local str_sub     = string.sub
 
 
 local schema = {
@@ -91,6 +92,11 @@ function _M.check_schema(conf)
         end
     end
 
+    if conf.uri ~= nil then
+        if str_sub(conf.uri, 1, 1) ~= "/" then
+            return false, "invalid uri(" .. conf.uri .. "), must start with /."
+        end
+    end
 
     --reform header from object into array, so can avoid use pairs, which is NYI
     if conf.headers then
