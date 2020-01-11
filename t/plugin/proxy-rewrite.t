@@ -967,3 +967,42 @@ GET /t
 --- error_code: 400
 --- error_log
 invalid capturing variable name found
+
+
+
+=== TEST 34: set route(invalid uri)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "hello"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/invalid uri/
+--- no_error_log
+[error]
