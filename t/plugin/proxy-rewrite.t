@@ -1003,6 +1003,6 @@ invalid capturing variable name found
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/invalid uri/
+qr/failed to match pattern/
 --- no_error_log
 [error]
