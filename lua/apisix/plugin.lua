@@ -138,7 +138,7 @@ local function load_stream()
 
     local plugin_names = local_conf.stream_plugins
     if not plugin_names then
-        core.log.warn("failed to read stream plugin list form local file")
+        core.log.warn("failed to read stream plugin list from local file")
         return true
     end
 

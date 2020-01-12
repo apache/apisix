@@ -21,7 +21,6 @@ local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
-local str_sub     = string.sub
 
 
 local schema = {
@@ -31,7 +30,8 @@ local schema = {
             description = "new uri for upstream",
             type        = "string",
             minLength   = 1,
-            maxLength   = 4096
+            maxLength   = 4096,
+            pattern     = "^/.*",
         },
         regex_uri = {
             description = "new uri that substitute from client uri " ..
@@ -89,12 +89,6 @@ function _M.check_schema(conf)
         if err then
             return false, "invalid regex_uri(" .. conf.regex_uri[1] ..
                             ", " .. conf.regex_uri[2] .. "): " .. err
-        end
-    end
-
-    if conf.uri ~= nil then
-        if str_sub(conf.uri, 1, 1) ~= "/" then
-            return false, "invalid uri(" .. conf.uri .. "), must start with /."
         end
     end
 
