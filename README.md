@@ -178,9 +178,9 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 #### The advantages of Apache APISIX
 | **Features**   | **Apache APISIX**   | **Kong**   |
 |:----|:----|:----|
-| belongs to   | Apache Foundation   | Kong Inc.   |
+| belongs to   | Apache Software Foundation   | Kong Inc.   |
 | Tech Architecture | Nginx + etcd   | Nginx + postgres   |
-| Communication channels  | Mail list, Wechat qroup, QQ group, Github, meetup   | Github,freenode, forum   |
+| Communication channels  | Mail list, Wechat group, QQ group, Github, meetup   | Github,freenode, forum   |
 | Single-core CPU, QPS(enable limit-count and prometheus plugins)   | 18000   | 1700   |
 |  latency | 0.2 ms   | 2 ms   |
 | IPv6    | Yes   | No   |

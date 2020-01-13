@@ -180,7 +180,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 | **功能**   | **Apache APISIX**   | **KONG**   |
 |:----|:----|:----|
-| 项目归属   | Apache 基金会   | Kong Inc.   |
+| 项目归属   | Apache 软件基金会   | Kong Inc.   |
 | 技术架构   | Nginx + etcd   | Nginx + postgres   |
 | 交流渠道  | 微信群、QQ群、邮件列表、Github、meetup   | Github、论坛、freenode   |
 | 单核 QPS(开启限流和prometheus插件)   | 18000   | 1700   |
