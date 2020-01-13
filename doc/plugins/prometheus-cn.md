@@ -82,7 +82,13 @@ scrape_configs:
 
 ### Grafana 面板
 
-.插件导出的指标可以在 Grafana 进行图形化绘制显示。https://grafana.com/dashboards/7424
+插件导出的指标可以在 Grafana 进行图形化绘制显示。
+
+![](../../doc/images/plugin/grafana_1.png)
+
+![](../../doc/images/plugin/grafana_2.png)
+
+![](../../doc/images/plugin/grafana_3.png)
 
 ### 可有的指标
 
