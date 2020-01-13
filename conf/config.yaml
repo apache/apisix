@@ -80,6 +80,7 @@ plugins:                          # plugin list
   - limit-count
   - limit-conn
   - key-auth
+  - basic-auth
   - prometheus
   - node-status
   - jwt-auth
