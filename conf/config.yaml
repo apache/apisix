@@ -93,6 +93,7 @@ plugins:                          # plugin list
   - proxy-rewrite
   - redirect
   - response-rewrite
+  - fault-injection
 
 stream_plugins:
   - mqtt-proxy
