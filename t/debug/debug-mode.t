@@ -58,6 +58,7 @@ qr/loaded plugin and sort by priority: [-\d]+ name: [\w-]+/
 loaded plugin and sort by priority: 10000 name: serverless-pre-function
 loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2599 name: openid-connect
+loaded plugin and sort by priority: 2520 name: basic-auth
 loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth
 loaded plugin and sort by priority: 1008 name: proxy-rewrite
