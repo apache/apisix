@@ -54,12 +54,6 @@ __DATA__
                                    "uri": "/hello"
                                }
                            },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
-                           },
                            "uri": "/hello"
                    }]]
                    )
@@ -97,12 +91,6 @@ qr/validation failed/
                                    "uri": "/hello"
                                }
                            },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
-                           },
                            "uri": "/hello"
                    }]]
                    )
@@ -137,12 +125,6 @@ qr/validation failed/
                                "proxy-rewrite": {
                                    "uri": "/hello"
                                }
-                           },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
                            },
                            "uri": "/hello"
                    }]]
@@ -180,12 +162,6 @@ qr/expect object to have at least 1 properties/
                                "proxy-rewrite": {
                                    "uri": "/hello"
                                }
-                           },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
                            },
                            "uri": "/hello"
                    }]]
@@ -245,7 +221,7 @@ qr/validation failed/
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/validation failed: failed to match pattern/
+qr/wrong type: expected number, got string/
 --- no_error_log
 [error]
 
@@ -262,18 +238,12 @@ qr/validation failed: failed to match pattern/
                            "plugins": {
                                "fault-injection": {
                                    "delay": {
-                                       "duration": "0.1.1"
+                                       "duration": 0.1.1
                                    }
                                },
                                "proxy-rewrite": {
                                    "uri": "/hello"
                                }
-                           },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
                            },
                            "uri": "/hello"
                    }]]
@@ -289,9 +259,9 @@ qr/validation failed: failed to match pattern/
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/validation failed: failed to match pattern/
---- no_error_log
-[error]
+qr/invalid request body/
+--- error_log eval
+qr/invalid request body/
 
 
 
@@ -306,18 +276,12 @@ qr/validation failed: failed to match pattern/
                            "plugins": {
                                "fault-injection": {
                                    "delay": {
-                                       "duration": "0. 1"
+                                       "duration": 0. 1
                                    }
                                },
                                "proxy-rewrite": {
                                    "uri": "/hello"
                                }
-                           },
-                           "upstream": {
-                               "nodes": {
-                                   "127.0.0.1:1980": 1
-                               },
-                               "type": "roundrobin"
                            },
                            "uri": "/hello"
                    }]]
@@ -333,9 +297,9 @@ qr/validation failed: failed to match pattern/
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/validation failed: failed to match pattern/
---- no_error_log
-[error]
+qr/invalid request body/
+--- error_log eval
+qr/invalid request body/
 
 
 
@@ -350,7 +314,7 @@ qr/validation failed: failed to match pattern/
                            "plugins": {
                                "fault-injection": {
                                    "delay": {
-                                       "duration": "1"
+                                       "duration": 1
                                    }
                                },
                                "proxy-rewrite": {

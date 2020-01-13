@@ -33,10 +33,7 @@ local schema = {
         delay = {
             type = "object",
             properties = {
-                duration = {
-                    type = "string",
-                    pattern = "^[0-9]+(?:\\.[0-9]+)?$",
-                }
+                duration = {type = "number", minimum = 0},
             },
             required = {"duration"}
         }
