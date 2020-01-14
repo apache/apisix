@@ -40,7 +40,6 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. sinovatech 炎黄新星 https://www.sinovatech.com
 1. taikang.com 泰康云   http://taikang.com/
 1. tangdou.com 糖豆网   http://www.tangdou.com/
-1. TravelSky 中航信 http://travelskyir.com
 1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
 1. Xin 优信二手车 https://www.xin.com/
 1. zuzuche 租租车 https://www.zuzuche.com/
