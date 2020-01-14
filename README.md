@@ -82,7 +82,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Support priority](doc/router-radixtree.md#3-match-priority)
 
 - **Security**
-    - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md)
+    - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md)
     - [IP Whitelist/Blacklist](doc/plugins/ip-restriction.md)
     - [IdP](doc/plugins/oauth.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to Oauth2.0 and other authentication methods.
     - [Limit-req](doc/plugins/limit-req.md)
@@ -101,6 +101,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Global Rule: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
     - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
     - [REST admin API](doc/admin-api.md)
+    - fault injection
 
 - **Highly scalable**
     - [Custom plugins]((doc/plugin-develop.md)): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
