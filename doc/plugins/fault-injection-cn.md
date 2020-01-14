@@ -120,7 +120,7 @@ hello
 
 real	0m3.034s
 user	0m0.007s
-sys	    0m0.010s
+sys     0m0.010s
 ```
 
 

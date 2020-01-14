@@ -30,7 +30,7 @@ Fault injection plugin, this plugin can be used with other plugins and will be e
 |------- |-----|------|
 |abort|optional|http_status: required, user-specified http code returned to the client|
 |||body: optional, response data returned to the client|
-|delay|optional|duration: required，delay time and can be decimal|
+|delay|optional|duration: required, delay time(can be decimal)|
 
 Note: `abort` and `delay` must have at least one.
 
