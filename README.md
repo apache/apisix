@@ -164,16 +164,23 @@ We provide an online dashboard [demo version](http://apisix.iresty.com), make it
 Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
 
 ## Document
-[Documents of Apache APISIX](doc/README.md)
+[Document Indexing for Apache APISIX](doc/README.md)
 
 ## Apache APISIX vs Kong
 
-#### both of them have been covered core features of API gateway
+#### Both of them have been covered core features of API gateway
 
-| **feature**   | **Dynamic upstream**   | **Health check**   | **Dynamic SSL**   | **L4 and L7 proxy**   | **opentracing**   | **custom plugin**   | **REST API**   | **CLI**   |
-|:----|:----|:----|:----|:----|:----|:----|:----|:----|
-| **Apache APISIX**   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   |
-| **Kong**   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   |
+| **Features**   | **Apache APISIX**   | **KONG**   |
+|:----|:----|:----|
+| **Dynamic upstream**  | Yes   | Yes   |
+| **Dynamic router**  | Yes   | Yes   |
+| **Health check**  | Yes   | Yes   |
+| **Dynamic SSL**  | Yes   | Yes   |
+| **L4 and L7 proxy**  | Yes   | Yes   |
+| **Opentracing**  | Yes   | Yes   |
+| **Custom plugin**  | Yes   | Yes   |
+| **REST API**  | Yes   | Yes   |
+| **CLI**  | Yes   | Yes   |
 
 #### The advantages of Apache APISIX
 | **Features**   | **Apache APISIX**   | **Kong**   |
