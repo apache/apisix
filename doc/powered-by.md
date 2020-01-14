@@ -24,9 +24,11 @@ or providing commercial products including APISIX.
 
 Users are encouraged to add themselves to this page, [issue](https://github.com/apache/incubator-apisix/issues/487) and PR are welcomed.
 
+1. 360 奇虎 https://www.360.cn/
 1. chaolian 超链云商 https://www.chaolian360.com/
 1. cunw 湖南新云网 http://www.cunw.com.cn/
 1. dasouche 大搜车 https://www.dasouche.com/
+1. dataoke 大淘客 https://www.dataoke.com/
 1. ehomepay 理房通 https://www.ehomepay.com.cn/
 1. fansup.mobi https://fansup.mobi/
 1. haieruplus.com 海尔优家  http://haieruplus.com/
@@ -41,7 +43,6 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
 1. Xin 优信二手车 https://www.xin.com/
 1. zuzuche 租租车 https://www.zuzuche.com/
-1. Dataoke 大淘客 https://www.dataoke.com/
 
 
 # User Cases
