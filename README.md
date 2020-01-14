@@ -191,11 +191,12 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | resty <--> gRPC transcoding   | Yes   | No   |
 | Tengine   | Yes   | No   |
 | MQTT    | Yes   | No   |
-| Configuration effective time   | Event driven, < 1ms   | polling, 10 seconds   |
+| Configuration effective time   | Event driven, < 1ms   | polling, 5 seconds   |
 | dashboard   | Yes   | No   |
 | IdP   | Yes   | No   |
 | Configuration Center HA   | Yes   | No   |
 | Speed limit for a specified time window   | Yes   | No   |
+| Support any Nginx variable as routing condition  | Yes   | No   |
 | IPv6    | Yes   | Yes   |
 | ARM64   | Yes   | Yes   |
 
