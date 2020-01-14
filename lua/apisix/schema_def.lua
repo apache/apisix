@@ -275,8 +275,7 @@ local upstream_schema = {
         },
         enable_websocket = {
             description = "enable websocket for request",
-            type        = "boolean",
-            default     = nil
+            type        = "boolean"
         },
         desc = {type = "string", maxLength = 256},
         id = id_schema
