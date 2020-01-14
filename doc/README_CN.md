@@ -44,6 +44,7 @@ Reference document
 * [动态负载均衡](architecture-design-cn.md#upstream)：跨多个上游服务的动态负载均衡，目前已支持 round-robin 和一致性哈希算法。
 * [key-auth](plugins/key-auth-cn.md)：基于 Key Authentication 的用户认证。
 * [JWT-auth](plugins/jwt-auth-cn.md)：基于 [JWT](https://jwt.io/) (JSON Web Tokens) Authentication 的用户认证。
+* [basic-auth](doc/plugins/basic-auth-cn.md)：基于 basic auth 的用户认证。
 * [limit-count](plugins/limit-count-cn.md)：基于“固定窗口”的限速实现。
 * [limit-req](plugins/limit-req-cn.md)：基于漏桶原理的请求限速实现。
 * [limit-conn](plugins/limit-conn-cn.md)：限制并发请求（或并发连接）。
@@ -55,3 +56,5 @@ Reference document
 * [openid-connect](plugins/oauth.md)
 * [redirect](plugins/redirect-cn.md): URI 重定向。
 * [response-rewrite](plugins/response-rewrite-cn.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
+* fault injection：故障注入，可以返回指定的响应体、响应码和响应时间，从而提供了不同的失败场景下处理的能力，例如服务失败、服务过载、服务高延时等。
+
