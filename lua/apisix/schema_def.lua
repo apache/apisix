@@ -273,6 +273,11 @@ local upstream_schema = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
         },
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+            default     = false
+        },
         desc = {type = "string", maxLength = 256},
         id = id_schema
     },

@@ -241,6 +241,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |key             |必需|该选项只有 `type` 是 `chash` 才有效，需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`。`hash_on` 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)；`hash_on` 设为 `header` 时, `key` 为必传参数，自定义的 `header name`；`hash_on` 设为 `cookie` 时, `key` 为必传参数， 自定义的 `cookie name`；`hash_on` 设为 `consumer` 时，`key` 不需要设置，为空，此时哈希算法采用的 `key` 为认证通过的 `consumer_id`。 如果指定的 `hash_on` 和 `key` 获取不到值时，默认取 `remote_addr`|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
+|enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
 
 创建上游对象用例：
 
@@ -259,6 +260,7 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
+    "enable_websocket": true,
     "nodes": {
         "127.0.0.1:80": 1,
         "foo.com:80": 2

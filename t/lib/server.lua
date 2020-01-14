@@ -112,6 +112,15 @@ function _M.mock_zipkin()
     end
 end
 
+function _M.websocket_handshake()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+end
+
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
