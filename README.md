@@ -164,27 +164,32 @@ We provide an online dashboard [demo version](http://apisix.iresty.com), make it
 Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
 
 ## Document
-[Documents of Apache APISIX](doc/README.md)
+[Document Indexing for Apache APISIX](doc/README.md)
 
 ## Apache APISIX vs Kong
 
-#### both of them have been covered core features of API gateway
+#### Both of them have been covered core features of API gateway
 
-| **feature**   | **Dynamic upstream**   | **Health check**   | **Dynamic SSL**   | **L4 and L7 proxy**   | **opentracing**   | **custom plugin**   | **REST API**   | **CLI**   |
-|:----|:----|:----|:----|:----|:----|:----|:----|:----|
-| **Apache APISIX**   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   |
-| **Kong**   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   | Yes   |
+| **Features**   | **Apache APISIX**   | **KONG**   |
+|:----|:----|:----|
+| **Dynamic upstream**  | Yes   | Yes   |
+| **Dynamic router**  | Yes   | Yes   |
+| **Health check**  | Yes   | Yes   |
+| **Dynamic SSL**  | Yes   | Yes   |
+| **L4 and L7 proxy**  | Yes   | Yes   |
+| **Opentracing**  | Yes   | Yes   |
+| **Custom plugin**  | Yes   | Yes   |
+| **REST API**  | Yes   | Yes   |
+| **CLI**  | Yes   | Yes   |
 
 #### The advantages of Apache APISIX
 | **Features**   | **Apache APISIX**   | **Kong**   |
 |:----|:----|:----|
 | belongs to   | Apache Software Foundation   | Kong Inc.   |
 | Tech Architecture | Nginx + etcd   | Nginx + postgres   |
-| Communication channels  | Mail list, Wechat group, QQ group, Github, meetup   | Github,freenode, forum   |
+| Communication channels  | Mail list, Wechat group, QQ group, Github, meetup   | Github, freenode, forum |
 | Single-core CPU, QPS(enable limit-count and prometheus plugins)   | 18000   | 1700   |
 |  latency | 0.2 ms   | 2 ms   |
-| IPv6    | Yes   | No   |
-| ARM64   | Yes   | No   |
 | Dubbo   | Yes   | No   |
 | Configuration rollback   | Yes   | No   |
 | route with TTL   | Yes   | No   |
@@ -193,11 +198,12 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | resty <--> gRPC transcoding   | Yes   | No   |
 | Tengine   | Yes   | No   |
 | MQTT    | Yes   | No   |
-| Configuration effective time   | Event driven, < 1ms   | polling, 10 seconds   |
+| Configuration effective time   | Event driven, < 1ms   | polling, 5 seconds   |
 | dashboard   | Yes   | No   |
 | IdP   | Yes   | No   |
 | Configuration Center HA   | Yes   | No   |
 | Speed limit for a specified time window   | Yes   | No   |
+| Support any Nginx variable as routing condition  | Yes   | No   |
 
 ## Videos And Articles
 - 2019.12.14 [From 0 to 1: APISIX's Apache travel(Chinese)](https://zhuanlan.zhihu.com/p/99620158)
