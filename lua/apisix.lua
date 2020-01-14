@@ -304,6 +304,7 @@ function _M.http_access_phase()
         api_ctx.conf_id = route.value.id
     end
 
+    local enable_websocket
     local up_id = route.value.upstream_id
     if up_id then
         local upstreams_etcd = core.config.fetch_created_obj("/upstreams")
@@ -313,11 +314,26 @@ function _M.http_access_phase()
                 parsed_domain(upstream, api_ctx.conf_version,
                               parse_domain_in_up, upstream)
             end
+
+            if upstream.value.enable_websocket then
+                enable_websocket = true
+            end
         end
 
-    elseif route.has_domain then
-        route = parsed_domain(route, api_ctx.conf_version,
-                              parse_domain_in_route, route)
+    else
+        if route.has_domain then
+            route = parsed_domain(route, api_ctx.conf_version,
+                                  parse_domain_in_route, route)
+        end
+
+        if route.value.upstream and route.value.upstream.enable_websocket then
+            enable_websocket = true
+        end
+    end
+
+    if enable_websocket then
+        api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
+        api_ctx.var.upstream_connection = api_ctx.var.http_connection
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)
