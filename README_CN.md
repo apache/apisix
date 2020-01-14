@@ -143,7 +143,7 @@ APISIX 内置了对 Dashboard 的支持，使用步骤如下：
 ```
 git clone https://github.com/apache/incubator-apisix-dashboard.git
 ```
-
+- 安装yarn: 参考[安装文档](https://yarnpkg.com/zh-Hans/docs/install)
 - 安装依赖并构建
 ```
 yarn

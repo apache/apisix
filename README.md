@@ -143,7 +143,7 @@ APISIX has built-in support for dashboards, as follows:
 ```
 git clone https://github.com/apache/incubator-apisix-dashboard.git
 ```
-
+- install yarn: refer to [documentation](https://yarnpkg.com/en/docs/install)
 - Install dependencies and build
 ```
 yarn
