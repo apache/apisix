@@ -1625,7 +1625,7 @@ GET /t
 
 
 
-=== TEST 43: set route(id: 1) and upstream(type:chash, hash_on: header, missing key)
+=== TEST 44: set route(id: 1) and upstream(type:chash, hash_on: header, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -1658,7 +1658,7 @@ GET /t
 
 
 
-=== TEST 44: set route(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
+=== TEST 45: set route(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -1691,7 +1691,7 @@ GET /t
 
 
 
-=== TEST 45: set route(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
+=== TEST 46: set route(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
 --- config
     location /t {
         content_by_lua_block {
@@ -1720,4 +1720,3 @@ GET /t
 passed
 --- no_error_log
 [error]
-

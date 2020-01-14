@@ -200,7 +200,6 @@ chash_key: "jack"
 
 
 
-
 === TEST 4: hit routes, hash_on two consumer
 --- config
     location /t {
@@ -489,7 +488,6 @@ chash_key: "cuscookie"
 
 
 
-
 === TEST 10: hit routes, hash_on custom cookie miss, use default
 --- config
     location /t {
@@ -537,4 +535,3 @@ chash_key fetch is nil, use default chash_key remote_addr: 127.0.0.1
 chash_key fetch is nil, use default chash_key remote_addr: 127.0.0.1
 chash_key fetch is nil, use default chash_key remote_addr: 127.0.0.1
 chash_key fetch is nil, use default chash_key remote_addr: 127.0.0.1
-
