@@ -183,10 +183,8 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 | 项目归属   | Apache 软件基金会   | Kong Inc.   |
 | 技术架构   | Nginx + etcd   | Nginx + postgres   |
 | 交流渠道  | 微信群、QQ群、邮件列表、Github、meetup   | Github、论坛、freenode   |
-| 单核 QPS(开启限流和prometheus插件)   | 18000   | 1700   |
+| 单核 QPS (开启限流和prometheus插件)   | 18000   | 1700   |
 | 平均延迟  | 0.2 毫秒   | 2 毫秒   |
-| 完整 IPv6 协议支持   | 是   | 否   |
-| 支持 ARM64   | 是   | 否   |
 | 支持 Dubbo 代理   | 是   | 否   |
 | 配置回滚   | 是   | 否   |
 | 支持生命周期的路由   | 是   | 否   |
@@ -200,6 +198,8 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 | 对接外部身份认证服务   | 是   | 否   |
 | 配置中心高可用(HA)   | 是   | 否   |
 | 指定时间窗口的限速   | 是   | 否   |
+| 完整 IPv6 协议支持   | 是   | 是   |
+| 支持 ARM64   | 是   | 是   |
 
 
 ## 视频和文章
