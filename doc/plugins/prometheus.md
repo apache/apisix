@@ -83,8 +83,14 @@ And we can check the status at prometheus console:
 
 ### Grafana dashboard
 
-Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard: https://grafana.com/dashboards/7424 .
+Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard.
 
+
+![](../../doc/images/plugin/grafana_1.png)
+
+![](../../doc/images/plugin/grafana_2.png)
+
+![](../../doc/images/plugin/grafana_3.png)
 
 ### Available metrics
 
