@@ -41,6 +41,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. Tencent Cloud 腾讯云 https://cloud.tencent.com/
 1. Xin 优信二手车 https://www.xin.com/
 1. zuzuche 租租车 https://www.zuzuche.com/
+1. Dataoke 大淘客 https://www.dataoke.com/
 
 
 # User Cases
