@@ -101,7 +101,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Global Rule: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
     - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
     - [REST admin API](doc/admin-api.md)
-    - fault injection
+    - [Fault Injection](doc/plugins/fault-injection.md)
 
 - **Highly scalable**
     - [Custom plugins]((doc/plugin-develop.md)): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
