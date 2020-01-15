@@ -27,9 +27,9 @@
 
 |名称    |必须|描述|
 |------- |-----|------|
-|abort|否|参数 http_status ：必须，返回给客户端的 http 状态码|
-|||参数 body ：可选，返回给客户端的响应数据|
-|delay|否|参数 duration ：必须，延迟时间，可以指定小数|
+|abort.http_status|是|返回给客户端的 http 状态码|
+|abort.body|否|返回给客户端的响应数据|
+|delay.duration|是|延迟时间，可以指定小数|
 
 注：参数 abort 和 delay 至少要存在一个
 
