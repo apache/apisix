@@ -184,23 +184,24 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | **CLI**  | Yes   | Yes   |
 
 #### The advantages of Apache APISIX
+
 | **Features**   | **Apache APISIX**   | **Kong**   |
 |:----|:----|:----|
-| belongs to   | Apache Software Foundation   | Kong Inc.   |
+| Belongs to   | Apache Software Foundation   | Kong Inc.   |
 | Tech Architecture | Nginx + etcd   | Nginx + postgres   |
 | Communication channels  | Mail list, Wechat group, QQ group, Github, meetup   | Github, freenode, forum |
 | Single-core CPU, QPS(enable limit-count and prometheus plugins)   | 18000   | 1700   |
-|  latency | 0.2 ms   | 2 ms   |
+|  Latency | 0.2 ms   | 2 ms   |
 | Dubbo   | Yes   | No   |
 | Configuration rollback   | Yes   | No   |
-| route with TTL   | Yes   | No   |
-| plug-in hot loading   | Yes   | No   |
-| custom LB and route   | Yes   | No   |
-| resty <--> gRPC transcoding   | Yes   | No   |
+| Route with TTL   | Yes   | No   |
+| Plug-in hot loading   | Yes   | No   |
+| Custom LB and route   | Yes   | No   |
+| REST API <--> gRPC transcoding   | Yes   | No   |
 | Tengine   | Yes   | No   |
 | MQTT    | Yes   | No   |
 | Configuration effective time   | Event driven, < 1ms   | polling, 5 seconds   |
-| dashboard   | Yes   | No   |
+| Dashboard   | Yes   | No   |
 | IdP   | Yes   | No   |
 | Configuration Center HA   | Yes   | No   |
 | Speed limit for a specified time window   | Yes   | No   |
