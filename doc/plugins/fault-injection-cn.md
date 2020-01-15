@@ -43,22 +43,19 @@
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "plugins": {
-	   "fault-injection": {
-	       "abort": {
-	          "http_status": 200,
-	          "body": "Fault Injection!"
-	       }
-	   },
-	   "proxy-rewrite": {
-	       "uri": "/hello"
-	   }
-	},
-	"upstream": {
-	   "nodes": {
-	       "127.0.0.1:1980": 1
-	   },
-	   "type": "roundrobin"
-	},
+       "fault-injection": {
+           "abort": {
+              "http_status": 200,
+              "body": "Fault Injection!"
+           }
+       }
+    },
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1980": 1
+       },
+       "type": "roundrobin"
+    },
     "uri": "/hello"
 }'
 ```
@@ -85,21 +82,18 @@ Fault Injection!
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "plugins": {
-	   "fault-injection": {
-	       "delay": {
-	          "duration": 3
-	       }
-	   },
-	   "proxy-rewrite": {
-	       "uri": "/hello"
-	   }
-	},
-	"upstream": {
-	   "nodes": {
-	       "127.0.0.1:1980": 1
-	   },
-	   "type": "roundrobin"
-	},
+       "fault-injection": {
+           "delay": {
+              "duration": 3
+           }
+       }
+    },
+    "upstream": {
+       "nodes": {
+           "127.0.0.1:1980": 1
+       },
+       "type": "roundrobin"
+    },
     "uri": "/hello"
 }'
 ```
@@ -118,8 +112,8 @@ Last-Modified: Sat, 11 Jan 2020 12:46:21 GMT
 
 hello
 
-real	0m3.034s
-user	0m0.007s
+real    0m3.034s
+user    0m0.007s
 sys     0m0.010s
 ```
 
@@ -132,11 +126,7 @@ sys     0m0.010s
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "uri": "/hello",
-    "plugins": {
-       "proxy-rewrite": {
-	       "uri": "/hello"
-	   }
-    },
+    "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
