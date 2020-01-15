@@ -22,9 +22,6 @@ export_or_prefix() {
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
 }
 
-before_install() {
-}
-
 do_install() {
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     sudo apt-get -y update --fix-missing
@@ -53,23 +50,14 @@ script() {
     apisix stop
 }
 
-after_success() {
-}
-
 case_opt=$1
 shift
 
 case ${case_opt} in
-before_install)
-    before_install "$@"
-    ;;
 do_install)
     do_install "$@"
     ;;
 script)
     script "$@"
-    ;;
-after_success)
-    after_success "$@"
     ;;
 esac
