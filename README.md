@@ -197,7 +197,7 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | Route with TTL   | Yes   | No   |
 | Plug-in hot loading   | Yes   | No   |
 | Custom LB and route   | Yes   | No   |
-| Resty <--> gRPC transcoding   | Yes   | No   |
+| REST API <--> gRPC transcoding   | Yes   | No   |
 | Tengine   | Yes   | No   |
 | MQTT    | Yes   | No   |
 | Configuration effective time   | Event driven, < 1ms   | polling, 5 seconds   |
