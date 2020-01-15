@@ -5,6 +5,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - os: osx
+    - env: OSNAME=linux_apisix_luarocks
 
   include:
     - os: linux
@@ -22,6 +23,8 @@ matrix:
       services:
         - redis-server
       env: OSNAME=linux_tengine
+    - os: linux
+      env: OSNAME=linux_apisix_luarocks
 
 language: c
 
