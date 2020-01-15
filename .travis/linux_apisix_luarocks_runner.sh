@@ -32,7 +32,7 @@ do_install() {
     sudo apt-get update
     sudo apt-get install openresty-debug
 
-    luarocks install rockspec/apisix-master-0.rockspec
+    sudo luarocks install rockspec/apisix-master-0.rockspec
 }
 
 script() {
@@ -41,13 +41,13 @@ script() {
     openresty -V
     sudo service etcd start
 
-    apisix help
+    sudo apisix help
 
-    apisix init
+    sudo apisix init
 
-    apisix start
+    sudo apisix start
 
-    apisix stop
+    sudo apisix stop
 }
 
 case_opt=$1
