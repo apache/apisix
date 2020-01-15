@@ -102,7 +102,7 @@ worker_shutdown_timeout 3;
 
 {% if stream_proxy then %}
 stream {
-    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
@@ -148,7 +148,7 @@ stream {
 {% end %}
 
 http {
-    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
