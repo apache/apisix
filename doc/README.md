@@ -56,7 +56,7 @@ Plugins
 * [openid-connect](plugins/oauth.md)
 * [redirect](plugins/redirect.md): URI redirect.
 * [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
-* fault injection：The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
+* [fault-injection](plugins/fault-injection.md): The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
 
 Deploy to the Cloud
 =======
