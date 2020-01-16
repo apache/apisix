@@ -103,6 +103,7 @@ worker_shutdown_timeout 3;
 {% if stream_proxy then %}
 stream {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
+                      .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
@@ -149,6 +150,7 @@ stream {
 
 http {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
+                      .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
@@ -169,7 +171,10 @@ http {
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
+    {% if http.underscores_in_headers then %}
     underscores_in_headers {* http.underscores_in_headers *};
+    {%end%}
+
     lua_socket_log_errors off;
 
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} ipv6=off;
