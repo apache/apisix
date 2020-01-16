@@ -131,7 +131,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
     "vars": [
         ["arg_name", "==", "json"],
         ["arg_age", ">", "18"],
-        ["arg_address", "~~", "China.*"]
+        ["arg_address", "~~", "^China.*"]
     ],
     "upstream": {
         "type": "roundrobin",
