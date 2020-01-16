@@ -41,12 +41,20 @@ local pkg_path  = apisix_home .. "/deps/share/lua/5.1/apisix/lua/?.lua;"
 
 -- only for developer, use current folder as working space
 local script_path = arg[0]
+-- print("script_path: ", script_path)
 if script_path:sub(1, 2) == './' then
-    apisix_home = trim(excute_cmd("pwd"))
-    if not apisix_home then
+    local current_path = trim(excute_cmd("pwd"))
+    if not current_path then
         error("failed to fetch current path")
     end
-
+    -- print("current_path: ", current_path)
+    local tmp_path = string.match(script_path:sub(2, #script_path),"(.+)/.")
+    -- print("tmp_path: ", tmp_path)
+    if tmp_path and tmp_path ~= '.' then
+        apisix_home = string.match(current_path .. tmp_path,"(.+)/.")
+    else
+        apisix_home = string.match(current_path,"(.+)/.")
+    end
     pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                 .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
     pkg_path  = apisix_home .. "/lua/?.lua;"
