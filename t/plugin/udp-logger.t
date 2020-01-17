@@ -82,7 +82,7 @@ done
 --- request
 GET /t
 --- response_body
-property "timeout" validation failed: wrong type: expected number, got string
+property "timeout" validation failed: wrong type: expected integer, got string
 done
 --- no_error_log
 [error]

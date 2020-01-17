@@ -56,21 +56,19 @@ local function log(premature, conf, log_message)
 
     local sock = udp()
     sock:settimeout(conf.timeout)
-    local ok, err = sock:setpeername(conf.host, conf.port)
 
+    local ok, err = sock:setpeername(conf.host, conf.port)
     if not ok then
         core.log.error("Failed to connect to UDP server: host[", conf.host, "] port[", conf.port, "] ", err)
         return
     end
 
     ok, err = sock:send(log_message)
-
     if not ok then
         core.log.error("Failed to send data to UDP server: host[", conf.host, "] port[", conf.port, "] ", err)
     end
 
     ok, err = sock:close()
-
     if not ok then
         core.log.error("Failed to close the UDP connection, host[", conf.host, "] port[", conf.port, "] ", err)
     end
@@ -78,9 +76,7 @@ end
 
 
 function _M.log(conf)
-
     return timer_at(0, log, conf, core.json.encode(log_util.get_full_log(ngx)))
-
 end
 
 return _M
