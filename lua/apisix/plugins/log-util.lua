@@ -19,19 +19,18 @@ local core     = require("apisix.core")
 local _M = {}
 
 local function get_full_log(ngx)
-
     local ctx = ngx.ctx.api_ctx
     local var = ctx.var
-
+    local service_id
+    local route_id
     local url = var.scheme .. "://" .. var.host .. ":" .. var.server_port .. var.request_uri
+    local matched_route = ctx.matched_route and ctx.matched_route.value
 
-    local service_name
-    local vars = var
-    if ctx.matched_route and ctx.matched_route.value then
-        service_name = ctx.matched_route.value.desc or
-                ctx.matched_route.value.id
+    if matched_route then
+        service_id = matched_route.service_id or ""
+        route_id = matched_route.id
     else
-        service_name = vars.host
+        service_id = var.host
     end
 
     return  {
@@ -49,7 +48,8 @@ local function get_full_log(ngx)
             size = var.bytes_sent
         },
         upstream = var.upstream_addr,
-        service = service_name,
+        service_id = service_id,
+        route_id = route_id,
         consumer = ctx.consumer,
         client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
         start_time = ngx.req.start_time() * 1000,
@@ -58,5 +58,4 @@ local function get_full_log(ngx)
 end
 
 _M.get_full_log = get_full_log
-
 return _M
