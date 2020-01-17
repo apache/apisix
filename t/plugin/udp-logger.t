@@ -217,6 +217,6 @@ opentracing
 --- request
 GET /t
 --- error_log
-Failed to connect to UDP server: host[312.0.0.1] port[2000]
+failed to connect to UDP server: host[312.0.0.1] port[2000]
 [error]
 --- wait: 0.2
