@@ -40,17 +40,17 @@ script() {
     sudo service etcd start
 
     # install APISIX by shell
-    sudo ./utils/install-apisix.sh install
+    PATH=$PATH sudo ./utils/install-apisix.sh install
 
     sudo apisix help
     sudo apisix init
     sudo apisix start
     sudo apisix stop
 
-    sudo ./utils/install-apisix.sh remove
+    PATH=$PATH sudo ./utils/install-apisix.sh remove
 
     # install APISIX by luarocks
-    sudo luarocks install rockspec/apisix-master-0.rockspec
+    PATH=$PATH sudo luarocks install rockspec/apisix-master-0.rockspec
 
     sudo apisix help
     sudo apisix init
