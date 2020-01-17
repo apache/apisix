@@ -40,6 +40,7 @@ script() {
     sudo service etcd start
 
     # install APISIX by shell
+    sudo mkdir -p /usr/local/apisix/deps
     sudo PATH=$PATH ./utils/install-apisix.sh install
 
     sudo apisix help
