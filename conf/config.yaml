@@ -94,6 +94,7 @@ plugins:                          # plugin list
   - redirect
   - response-rewrite
   - fault-injection
+  - udp-logger
 
 stream_plugins:
   - mqtt-proxy

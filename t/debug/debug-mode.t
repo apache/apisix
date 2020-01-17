@@ -71,6 +71,7 @@ loaded plugin and sort by priority: 900 name: redirect
 loaded plugin and sort by priority: 899 name: response-rewrite
 loaded plugin and sort by priority: 506 name: grpc-transcode
 loaded plugin and sort by priority: 500 name: prometheus
+loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
 loaded plugin and sort by priority: -1000 name: zipkin
 loaded plugin and sort by priority: -2000 name: serverless-post-function
