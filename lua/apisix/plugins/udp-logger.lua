@@ -26,8 +26,8 @@ local schema = {
     type = "object",
     properties = {
         host = {type = "string"},
-        port = {type = "number"},
-        timeout = {type = "number", minimum = 1} --default is 3 seconds
+        port = {type = "integer", minimum = 0},
+        timeout = {type = "integer", minimum = 1, default= 1000} -- timeout in milliseconds
     },
     required = {"host", "port"}
 }
