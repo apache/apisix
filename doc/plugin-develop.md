@@ -140,7 +140,7 @@ before forwarding the request to any upstream service. Therefore, the plugin can
 In APISIX, the authentication logic is implemented in the rewrite phase . Generally, IP access and interface
 permission are completed in the access phase .
 
-The following code snippet can be used to implement any logic in the Openresty log phase.
+The following code snippet shows how to implement any logic relevant to the plugin in the Openresty log phase.
 
 ```lua
 function _M.log(conf)
