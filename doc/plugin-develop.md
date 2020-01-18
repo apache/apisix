@@ -121,7 +121,7 @@ at its schema description :
    }
 ```
 
-at the same time, we need to implement the __check_schema(conf)__ method to complete the specification verification .
+At the same time, we need to implement the __check_schema(conf)__ method to complete the specification verification .
 
 ```lua
    function _M.check_schema(conf)
@@ -134,11 +134,19 @@ verification .
 
 ## choose phase to run
 
-determine which phase to run , generally access or rewrite . if you don't know the Openresty life cycle , it's
-recommended to know it in advance . key-auth is an authentication plugin , as long as the authentication is completed
-before the business response after the request comes in . The plugin can be executed in the rewrite and access phases ,
-in the project, the authentication logic is implemented in the rewrite phase . Generally, IP access and interface
+Determine which phase to run , generally access or rewrite . If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/) , it's
+recommended to know it in advance . For example key-auth is an authentication plugin , thus the authentication should be completed
+before forwarding the request to any upstream service. Therefore, the plugin can be executed in the rewrite and access phases.
+In APISIX, the authentication logic is implemented in the rewrite phase . Generally, IP access and interface
 permission are completed in the access phase .
+
+The following code snippet shows how to implement any logic relevant to the plugin in the Openresty log phase.
+
+```lua
+function _M.log(conf)
+-- Implement logic here
+end
+```
 
 ## implement the logic
 
@@ -146,9 +154,9 @@ Write the logic of the plugin in the corresponding phase .
 
 ## write test case
 
-for functions , write and improve the test cases of various dimensions , do a comprehensive test for your plugin ! The
-test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out . the test framework
-[****test-nginx****](https://github.com/openresty/test-nginx)  adopted by the project. a test case, .t file is usually
+For functions , write and improve the test cases of various dimensions , do a comprehensive test for your plugin ! The
+test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out. APISIX uses
+[****test-nginx****](https://github.com/openresty/test-nginx) as the test framework. A test case, .t file is usually
 divided into prologue and data parts by \__data\__ . Here we will briefly introduce the data part, that is, the part
 of the real test case . For example, the key-auth plugin :
 
@@ -174,14 +182,17 @@ done
 [error]
 ```
 
-a test case consists of three parts :
+A test case consists of three parts :
 - __Program code__ : configuration content of Nginx location
 - __Input__ : http request information
 - __Output check__ : status, header, body, error log check
 
-when we request __/t__ , which config in the configuration file , the Nginx will call "__content_by_lua_block__" instruction to
+When we request __/t__ , which config in the configuration file , the Nginx will call "__content_by_lua_block__" instruction to
  complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
-"__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record .
+"__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record. The log files for the unit test
+are located in the following folder: 't/servroot/logs'.
+
+Refer the following [document](how-to-build.md#test) to setup the testing framework.
 
 ### Attach the test-nginx execution process:
 
