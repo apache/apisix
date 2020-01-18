@@ -144,7 +144,7 @@ The following code snippet shows how to implement any logic relevant to the plug
 
 ```lua
 function _M.log(conf)
--- Implement logic here    
+-- Implement logic here
 end
 ```
 
@@ -155,7 +155,7 @@ Write the logic of the plugin in the corresponding phase .
 ## write test case
 
 For functions , write and improve the test cases of various dimensions , do a comprehensive test for your plugin ! The
-test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out. APISIX uses 
+test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out. APISIX uses
 [****test-nginx****](https://github.com/openresty/test-nginx) as the test framework. A test case, .t file is usually
 divided into prologue and data parts by \__data\__ . Here we will briefly introduce the data part, that is, the part
 of the real test case . For example, the key-auth plugin :
