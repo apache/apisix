@@ -29,9 +29,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
-            local conf = {
-
-            }
+            local conf = {key = "xxx"}
 
             local ok, err = plugin.check_schema(conf)
             if not ok then
@@ -44,7 +42,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/{"algorithm":"HS256","secret":"\w+-\w+-\w+-\w+-\w+","exp":86400}/
+qr/{"algorithm":"HS256","secret":"\w+-\w+-\w+-\w+-\w+","key":"xxx","exp":86400}/
 --- no_error_log
 [error]
 
@@ -270,5 +268,30 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
 --- error_code: 401
 --- response_body
 {"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: missing key for admin api
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.jwt-auth")
+            local conf = {}
+
+            local ok, err = plugin.check_schema(conf, true)
+            if not ok then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say(require("cjson").encode(conf))
+        }
+    }
+--- request
+GET /t
+--- response_body
+missing key field
 --- no_error_log
 [error]

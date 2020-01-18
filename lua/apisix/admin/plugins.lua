@@ -36,7 +36,7 @@ local disable_schema = {
 }
 
 
-function _M.check_schema(plugins_conf)
+function _M.check_schema(plugins_conf, consumer_role)
     for name, plugin_conf in pairs(plugins_conf) do
         core.log.info("check plugin scheme, name: ", name, ", configurations: ",
                       core.json.delay_encode(plugin_conf, true))
@@ -48,7 +48,8 @@ function _M.check_schema(plugins_conf)
         if plugin_obj.check_schema then
             local ok = core.schema.check(disable_schema, plugin_conf)
             if not ok then
-                local ok, err = plugin_obj.check_schema(plugin_conf)
+                local ok, err = plugin_obj.check_schema(plugin_conf,
+                                    consumer_role)
                 if not ok then
                     return false, "failed to check the configuration of plugin "
                                   .. name .. " err: " .. err

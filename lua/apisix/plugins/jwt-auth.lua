@@ -32,9 +32,10 @@ local schema = {
         secret = {type = "string"},
         algorithm = {
             type = "string",
-            enum = {"HS256", "HS384", "HS512", "RS256", "ES256"}
+            enum = {"HS256", "HS384", "HS512", "RS256", "ES256"},
+            default = "HS256",
         },
-        exp = {type = "integer", minimum = 1},
+        exp = {type = "integer", minimum = 1, default = 60 * 60 * 24},
     }
 }
 
@@ -66,7 +67,7 @@ do
 end -- do
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, consumer_role)
     core.log.info("input conf: ", core.json.delay_encode(conf))
 
     local ok, err = core.schema.check(schema, conf)
@@ -74,16 +75,14 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if consumer_role then
+        if not conf.key then
+            return false, "missing key field"
+        end
+    end
+
     if not conf.secret then
         conf.secret = core.id.gen_uuid_v4()
-    end
-
-    if not conf.algorithm then
-        conf.algorithm = "HS256"
-    end
-
-    if not conf.exp then
-        conf.exp = 60 * 60 * 24
     end
 
     return true
