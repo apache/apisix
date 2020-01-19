@@ -58,13 +58,13 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [gRPC proxy](doc/grpc-proxy.md)：Proxying gRPC traffic.
     - [gRPC transcoding](doc/plugins/grpc-transcoding.md)：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
     - Proxy Websocket
-    - Proxy Dubbo: proxy Dubbo based on Tengine.
+    - Proxy Dubbo: Dubbo Proxy based on Tengine.
     - HTTP(S) Forward Proxy
     - [SSL](doc/https.md): Dynamically load an SSL certificate.
 
 - **Full dynamic**
     - [Hot Updates And Hot Plugins](doc/plugins.md): Continuously updates its configurations and plugins without restarts!
-    - [Proxy Rewrite](doc/plugins/proxy-rewrite.md): Support for rewriting the `host`, `uri`, `schema`, `enable_websocket`, `headers` information upstream of the request.
+    - [Proxy Rewrite](doc/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
     - [Response Rewrite](doc/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
     - [Serverless](doc/plugins/serverless.md): Invoke functions in each phase in APISIX.
     - Dynamic Load Balancing: Round-robin load balancing with weight.
@@ -84,7 +84,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Security**
     - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md)
     - [IP Whitelist/Blacklist](doc/plugins/ip-restriction.md)
-    - [IdP](doc/plugins/oauth.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to Oauth2.0 and other authentication methods.
+    - [IdP](doc/plugins/oauth.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
     - [Limit-req](doc/plugins/limit-req.md)
     - [Limit-count](doc/plugins/limit-count.md)
     - [Limit-concurrency](doc/plugins/limit-conn.md)
@@ -106,7 +106,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Highly scalable**
     - [Custom plugins]((doc/plugin-develop.md)): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
     - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
-    -Custom routing: Support users to implement routing algorithms themselves.
+    - Custom routing: Support users to implement routing algorithms themselves.
 
 ## Installation
 
@@ -244,4 +244,4 @@ See [CONTRIBUTING](Contributing.md) for details on submitting patches and the co
 
 ## Acknowledgments
 
-inspired by Kong and Orange.
+Inspired by Kong and Orange.
