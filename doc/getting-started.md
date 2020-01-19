@@ -38,7 +38,7 @@ Let's deconstruct the above URL.
 
 ## Prerequisites
 
-- This guide use docker and docker-compose to setup APISIX. But if you have already installed APISIX in other ways, you can just skip to step 2.
+- This guide use docker and docker-compose to setup APISIX. But if you have already installed APISIX in other ways, you can just skip to [step 2](getting-started.md#"step-2-create-a-route-in-apisix").
 - Curl: The guide uses curl command for API testing, but you can also use any other tool of your choice (Eg- Postman).
 
 ## Step 1: Install APISIX
