@@ -128,11 +128,24 @@ stream {
     }
 
     server {
+        {% if enable_reuseport then %}
+
+        {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
+        listen {*port*} reuseport;
+        {% end %}
+        {% for _, port in ipairs(stream_proxy.udp or {}) do %}
+        listen {*port*} udp reuseport;
+        {% end %}
+
+        {% else %} {% --if enable_reuseport %}
+
         {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
         listen {*port*};
         {% end %}
         {% for _, port in ipairs(stream_proxy.udp or {}) do %}
         listen {*port*} udp;
+        {% end %}
+
         {% end %}
 
         preread_by_lua_block {
@@ -261,6 +274,22 @@ http {
     {% end %}
 
     server {
+        {% if enable_reuseport then %}
+
+        listen {* node_listen *} reuseport;
+        {% if ssl.enable then %}
+        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} reuseport;
+        {% end %}
+
+        {% if enable_ipv6 then %}
+        listen [::]:{* node_listen *} reuseport;
+        {% if ssl.enable then %}
+        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %} reuseport;
+        {% end %}
+        {% end %} {% -- if enable_ipv6 %}
+
+        {% else %} {% -- if enable_reuseport %}
+
         listen {* node_listen *};
         {% if ssl.enable then %}
         listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
@@ -272,6 +301,8 @@ http {
         listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
+
+        {% end %} {% -- end enable_reuseport %}
 
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
@@ -437,6 +468,28 @@ local function get_openresty_version()
     return nil
 end
 
+local function check_macos_kernel()
+    local str = "Darwin"
+    local ret = excute_cmd("uname")
+    local pos = string.find(ret, str)
+    if pos == nil then
+        return false
+    end
+
+    return true
+end
+
+local function get_linux_kernel_version()
+    local str = "Linux version "
+    local ret = excute_cmd("cat /proc/version")
+    local m = string.match(ret, "[0-9]+\.[0-9]+\.[0-9]+")
+    if m == nil then
+        return nil
+    end
+
+    return m
+end
+
 local function split(self, sep)
     local sep, fields = sep or ":", {}
     local pattern = string.format("([^%s]+)", sep)
@@ -507,6 +560,7 @@ local function init()
         with_module_status = with_module_status,
         node_ssl_listen = 9443,     -- default value
         error_log = {level = "warn"},
+        enable_reuseport = false, -- default value
     }
 
     if not yaml_conf.apisix then
@@ -528,6 +582,27 @@ local function init()
         sys_conf["worker_processes"] = 1
     else
         sys_conf["worker_processes"] = "auto"
+    end
+
+    local check_macos = check_macos_kernel()
+    if check_macos == true then
+        enable_reuseport = false
+        return
+    end
+
+    --linux try to up enable_reuseport
+    local kernel_ver = get_linux_kernel_version()
+    if kernel_ver == nil then
+        io.stderr:write("can not find kernel version\n")
+        return
+    end
+
+    local reuseport_kernel_ver = "3.9.0"
+    if check_or_version(kernel_ver, reuseport_kernel_ver) then
+        io.stderr:write("kernel version >=", reuseport_kernel_ver, " current ", kernel_ver, ", up SO_REUSEPORT.\n")
+        enable_reuseport = true
+    else
+        io.stderr:write("kernel version <", reuseport_kernel_ver, " current ", kernel_ver, ", apisix will not open SO_REUSEPORT\n")
     end
 
     local conf_render = template.compile(ngx_tpl)
