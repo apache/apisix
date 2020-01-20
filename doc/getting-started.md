@@ -33,12 +33,12 @@ Let's deconstruct the above URL.
 - Scheme: HTTPS
 - Host/Address: httpbin.org
 - Port: 443
-- URI: get
+- URI: /get
 - Query Parameters: foo1, foo2
 
 ## Prerequisites
 
-- The guide uses docker and docker-compose to setup APISIX. But if you have already installed APISIX via other methods, then you can skip to step 2.
+- This guide uses docker and docker-compose to setup APISIX. But if you have already installed APISIX in other ways, you can just skip to [step 2](getting-started.md#step-2-create-a-route-in-apisix).
 - Curl: The guide uses curl command for API testing, but you can also use any other tool of your choice (Eg- Postman).
 
 ## Step 1: Install APISIX
