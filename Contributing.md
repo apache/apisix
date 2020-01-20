@@ -54,8 +54,8 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * Active Voice
 
     In general use active voice when formulating the sentence instead of passive voice. A sentence written in the active voice will emphasize
-    the person or thing who is performing an action (eg.The dog chased the ball).  In contrast, the passive voice will highlight 
-    the recipient of the action (The ball was chased by the dog). Therefor use the passive voice, only when it's less important 
+    the person or thing who is performing an action (eg.The dog chased the ball).  In contrast, the passive voice will highlight
+    the recipient of the action (The ball was chased by the dog). Therefor use the passive voice, only when it's less important
     who or what completed the action and more important that the action was completed. For example:
 
     - Recommended: The key-auth plugin authenticates the requests.
