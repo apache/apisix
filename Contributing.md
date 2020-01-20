@@ -63,7 +63,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 * Capitalization:
 
-    * For titles of a section, Capitalize of the first letter of each word except for the [closed-class words](http://babelnet.sbg.ac.at/themepark/grammar/classes.htm)
+    * For titles of a section, capitalize the first letter of each word except for the [closed-class words](http://babelnet.sbg.ac.at/themepark/grammar/classes.htm)
       such as determiners, pronouns, conjunctions, and prepositions. Use the following [link](https://capitalizemytitle.com/#Chicago) for guidance.
       - Recommended: Authentication **with** APISIX
 
