@@ -49,6 +49,43 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * References the original issue in description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
 
+## Contribution Guidelines for Documentation
+
+* Active Voice
+
+    In general use active voice when formulating the sentence instead of passive voice. A sentence written in the active voice will emphasize
+    the person or thing who is performing an action (eg.The dog chased the ball).  In contrast, the passive voice will highlight
+    the recipient of the action (The ball was chased by the dog). Therefor use the passive voice, only when it's less important
+    who or what completed the action and more important that the action was completed. For example:
+
+    - Recommended: The key-auth plugin authenticates the requests.
+    - Not recommended: The requests are authenticated by the key-auth plugin.
+
+* Capitalization:
+
+    * For titles of a section, capitalize the first letter of each word except for the [closed-class words](http://babelnet.sbg.ac.at/themepark/grammar/classes.htm)
+      such as determiners, pronouns, conjunctions, and prepositions. Use the following [link](https://capitalizemytitle.com/#Chicago) for guidance.
+      - Recommended: Authentication **with** APISIX
+
+    * For normal sentences don't [capitalize](https://www.grammarly.com/blog/capitalization-rules/) random words in the middle of the sentences.
+      Use the Chicago manual for capitalization rules for the documentation.
+
+* Second Person
+
+    In general, use second person in your docs rather than first person. For example:
+
+    - Recommended: You are recommended to use the docker based deployment.
+    - Not Recommended: We recommend to use the docker based deployment.
+
+* Spellings
+
+    Use [American spellings](https://www.oxfordinternationalenglish.com/differences-in-british-and-american-spelling/) when
+    contributing to the documentation.
+
+* Voice
+
+    * Use a friendly and conversational tone. Always use simple sentences. If the sentence is lengthy try to break it in to smaller sentences.
+
 ## Do you have questions about the source code?
 
 - **QQ group**: 552030619
