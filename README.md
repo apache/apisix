@@ -138,20 +138,23 @@ you can follow the [documentation of limit count](doc/plugins/limit-count.md).
 Then you can try more [plugins](doc/README.md#plugins).
 
 ## Dashboard
-APISIX has built-in support for dashboards, as follows:
+APISIX has built-in support for Dashboard, as follows:
 
-- Download the source code of [dashboard](https://github.com/apache/incubator-apisix-dashboard):
+1. Please make sure your machine has Node 8.x or higher, or there will occur build issues.
+
+2. Download the source codes of [Dashboard](https://github.com/apache/incubator-apisix-dashboard):
 ```
 git clone https://github.com/apache/incubator-apisix-dashboard.git
 ```
-- install yarn: refer to [documentation](https://yarnpkg.com/en/docs/install)
-- Install dependencies and build
+
+3. Install [yarn](https://yarnpkg.com/en/docs/install)
+
+4. Install dependencies then run build command:
 ```
-yarn
-yarn run build:prod
+yarn && yarn build:prod
 ```
 
-- Integration with APISIX
+5. Integration with APISIX
 Copy the compiled files under `/dist` directory to the `apisix/dashboard` directory,
 open `http://127.0.0.1:9080/apisix/dashboard/` in the browser.
 Do not need to fill the user name and password, log in directly.
