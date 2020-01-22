@@ -128,24 +128,11 @@ stream {
     }
 
     server {
-        {% if enable_reuseport then %}
-
         {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*port*} reuseport;
+        listen {*port*} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% for _, port in ipairs(stream_proxy.udp or {}) do %}
-        listen {*port*} udp reuseport;
-        {% end %}
-
-        {% else %} {% --if enable_reuseport %}
-
-        {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*port*};
-        {% end %}
-        {% for _, port in ipairs(stream_proxy.udp or {}) do %}
-        listen {*port*} udp;
-        {% end %}
-
+        listen {*port*} udp {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         preread_by_lua_block {
@@ -274,35 +261,17 @@ http {
     {% end %}
 
     server {
-        {% if enable_reuseport then %}
-
-        listen {* node_listen *} reuseport;
-        {% if ssl.enable then %}
-        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} reuseport;
-        {% end %}
-
-        {% if enable_ipv6 then %}
-        listen [::]:{* node_listen *} reuseport;
-        {% if ssl.enable then %}
-        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %} reuseport;
-        {% end %}
-        {% end %} {% -- if enable_ipv6 %}
-
-        {% else %} {% -- if enable_reuseport %}
-
         listen {* node_listen *};
         {% if ssl.enable then %}
-        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         {% if enable_ipv6 then %}
         listen [::]:{* node_listen *};
         {% if ssl.enable then %}
-        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
-
-        {% end %} {% -- end enable_reuseport %}
 
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
