@@ -211,13 +211,7 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | Support any Nginx variable as routing condition  | Yes   | No   |
 
 ## Videos And Articles
-- 2019.12.14 [From 0 to 1: APISIX's Apache travel(Chinese)](https://zhuanlan.zhihu.com/p/99620158)
-- 2019.12.14 [Next-generation microservice architecture based on Apache APISIX(Chinese)](https://www.upyun.com/opentalk/445.html)
-- 2019.10.30 [Introduction to Apache APISIX Microservice Gateway Extreme Performance Architecture(Chinese)](https://www.upyun.com/opentalk/440.html)
-- 2019.9.27 [Want to run APISIX on an ARM64 platform? Just three steps(Chinese)](https://zhuanlan.zhihu.com/p/84467919)
-- 2019.8.31 [APISIX technology selection, testing and continuous integration(Chinese)](https://www.upyun.com/opentalk/433.html)
-- 2019.8.31 [APISIX high performance practice 2(Chinese)](https://www.upyun.com/opentalk/437.html)
-- 2019.7.6 [APISIX high performance practice(Chinese)](https://www.upyun.com/opentalk/429.html)
+- 2019.8.31 [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
 
 ## User Stories
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
