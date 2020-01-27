@@ -55,8 +55,8 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Multi protocols**
     - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
     - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
-    - [gRPC proxy](doc/grpc-proxy.md)：Proxying gRPC traffic.
-    - [gRPC transcoding](doc/plugins/grpc-transcoding.md)：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
+    - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
+    - [gRPC transcoding](doc/plugins/grpc-transcoding.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
     - Proxy Websocket
     - Proxy Dubbo: Dubbo Proxy based on Tengine.
     - HTTP(S) Forward Proxy
@@ -69,7 +69,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Serverless](doc/plugins/serverless.md): Invoke functions in each phase in APISIX.
     - Dynamic Load Balancing: Round-robin load balancing with weight.
     - Hash-based Load Balancing: Load balance with consistent hashing sessions.
-    - [Health Checks](doc/health-check.md)：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
+    - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
     - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
 
 - **Fine-grained routing**
