@@ -75,7 +75,6 @@ tengine_install() {
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-cache_manager_exit.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-daemon_destroy_pool.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-delayed_posted_events.patch
-    wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-gcc-maybe-uninitialized-warning.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-hash_overflow.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-init_cycle_pool_release.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-larger_max_error_str.patch
@@ -102,7 +101,6 @@ tengine_install() {
     patch -p1 < ../../patches/nginx-1.17.4-cache_manager_exit.patch
     patch -p1 < ../../patches/nginx-1.17.4-daemon_destroy_pool.patch
     patch -p1 < ../../patches/nginx-1.17.4-delayed_posted_events.patch
-    patch -p1 < ../../patches/nginx-1.17.4-gcc-maybe-uninitialized-warning.patch
     patch -p1 < ../../patches/nginx-1.17.4-hash_overflow.patch
     patch -p1 < ../../patches/nginx-1.17.4-init_cycle_pool_release.patch
     patch -p1 < ../../patches/nginx-1.17.4-larger_max_error_str.patch
