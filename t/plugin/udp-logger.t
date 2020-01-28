@@ -44,6 +44,7 @@ done
 [error]
 
 
+
 === TEST 2: missing host
 --- config
     location /t {
@@ -66,6 +67,7 @@ done
 [error]
 
 
+
 === TEST 3: wrong type of string
 --- config
     location /t {
@@ -86,6 +88,7 @@ property "timeout" validation failed: wrong type: expected integer, got string
 done
 --- no_error_log
 [error]
+
 
 
 === TEST 4: add plugin
@@ -147,6 +150,7 @@ passed
 [error]
 
 
+
 === TEST 5: access
 --- request
 GET /opentracing
@@ -155,6 +159,7 @@ opentracing
 --- no_error_log
 [error]
 --- wait: 0.2
+
 
 
 === TEST 6: error log
