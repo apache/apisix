@@ -173,7 +173,7 @@ _M.websocket_handshake_route = _M.websocket_handshake
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
-    action = string.gsub(action, "/", "_")
+    action = string.gsub(action, "[/\\.]", "_")
     if not action or not _M[action] then
         return ngx.exit(404)
     end

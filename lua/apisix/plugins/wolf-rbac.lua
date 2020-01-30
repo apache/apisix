@@ -332,7 +332,7 @@ local function login()
 
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    local uri = consumer.auth_conf.server .. '/wolf/rbac/login/rest'
+    local uri = consumer.auth_conf.server .. '/wolf/rbac/login.rest'
     local headers = new_headers()
     headers["Content-Type"] = "application/json; charset=utf-8"
     local timeout = 1000 * 5
