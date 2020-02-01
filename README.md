@@ -55,8 +55,8 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Multi protocols**
     - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
     - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
-    - [gRPC proxy](doc/grpc-proxy.md)：Proxying gRPC traffic.
-    - [gRPC transcoding](doc/plugins/grpc-transcoding.md)：Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
+    - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
+    - [gRPC transcoding](doc/plugins/grpc-transcoding.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
     - Proxy Websocket
     - Proxy Dubbo: Dubbo Proxy based on Tengine.
     - HTTP(S) Forward Proxy
@@ -69,7 +69,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Serverless](doc/plugins/serverless.md): Invoke functions in each phase in APISIX.
     - Dynamic Load Balancing: Round-robin load balancing with weight.
     - Hash-based Load Balancing: Load balance with consistent hashing sessions.
-    - [Health Checks](doc/health-check.md)：Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
+    - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
     - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
 
 - **Fine-grained routing**
@@ -211,7 +211,8 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | Support any Nginx variable as routing condition  | Yes   | No   |
 
 ## Videos And Articles
-- 2019.8.31 [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
+- [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
+- [Analysis of Excellent Performance of Apache APISIX Microservices Gateway](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
 
 ## User Stories
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
