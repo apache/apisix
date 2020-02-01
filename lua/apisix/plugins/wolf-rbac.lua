@@ -4,22 +4,25 @@ local ck       = require("resty.cookie")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
 local ngx_re = require("ngx.re")
-local cjson = require("cjson")
 local http     = require("resty.http")
 local ipairs   = ipairs
 local ngx      = ngx
-local ngx_time = ngx.time
 local plugin_name = "wolf-rbac"
 
 
 local schema = {
     type = "object",
     properties = {
-        appid = {type = "string"},
-        server = { type = 'string'},
+        appid = {
+            type = "string",
+            default = "unset"
+        },
+        server = {
+            type = "string",
+            default = "http://127.0.0.1:10080"
+        },
     }
 }
-
 
 local _M = {
     version = 0.1,
@@ -52,14 +55,14 @@ local function create_rbac_token(appid, wolf_token)
     return token_version .. "#" .. appid .. "#" .. wolf_token
 end
 
-local function parse_rbac_token(rbac_token) 
+local function parse_rbac_token(rbac_token)
     local res, err = ngx_re.split(rbac_token, "#", nil, nil, 3)
     if not res then
-        return { err=err}
+        return { err = err}
     end
 
-    if res[1] ~= token_version then
-        return { err='invalid rbac token: version'}
+    if #res ~= 3 or res[1] ~= token_version then
+        return { err = 'invalid rbac token: version'}
     end
     local appid = res[2]
     local wolf_token = res[3]
@@ -91,10 +94,12 @@ local function http_req(method, uri, body, myheaders, timeout)
         httpc:set_timeout(timeout)
     end
 
-    local params = {method = method, headers = myheaders, body=body, ssl_verify=false}
+    local params = {method = method, headers = myheaders, body = body, ssl_verify = false}
     local res, err = httpc:request_uri(uri, params)
     if err then
-        core.log.error("FAIL REQUEST [ ",core.json.delay_encode({method=method, uri=uri, body=body, headers=myheaders}), " ] failed! res is nil, err:", err)
+        core.log.error("FAIL REQUEST [ ",core.json.delay_encode(
+            {method = method, uri = uri, body = body, headers = myheaders}),
+            " ] failed! res is nil, err:", err)
         return nil, err
     end
 
@@ -121,40 +126,28 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if not conf.appid then
-        conf.appid = 'unset'
-    end
-    if not conf.server then
-        conf.server = 'http://127.0.0.1:10080'
-    end
-
     return true
 end
 
 
-local function fetch_rbac_token()
-    local args = ngx.req.get_uri_args()
-    if args and args.rbac_token then
-        return args.rbac_token
+local function fetch_rbac_token(ctx)
+    if ctx.var.arg_rbac_token then
+        return ngx.unescape_uri(ctx.var.arg_rbac_token)
     end
 
-    local headers = ngx.req.get_headers()
-    if headers.Authorization then
-        return headers.Authorization
+    if ctx.var.http_authorization then
+        return ctx.var.http_authorization
     end
-    if headers['x-rbac-token'] then
-        return headers['x-rbac-token']
+
+    if ctx.var.http_x_rbac_token then
+        return ctx.var.http_x_rbac_token
     end
-    local cookie, err = ck:new()
-    if not cookie then
-        return nil, err
-    end
-    local val, err = cookie:get("x-rbac-token")
-    return val, err
+
+    return ctx.var['cookie_x-rbac-token']
 end
 
 local function loadjson(str)
-    local ok, jso = pcall(function() return cjson.decode(str) end)
+    local ok, jso = pcall(function() return json.decode(str) end)
     if ok then
         return jso
     else
@@ -164,7 +157,7 @@ end
 
 local function check_url_permission(server, appid, action, resName, clientIP, wolf_token)
     local retry_max = 3
-    local errmsg = nil;
+    local errmsg = nil
     local userInfo = nil
     local res = nil
     local err = nil
@@ -172,7 +165,7 @@ local function check_url_permission(server, appid, action, resName, clientIP, wo
     local headers = new_headers()
     headers["x-rbac-token"] = wolf_token
     headers["Content-Type"] = "application/json; charset=utf-8"
-    local args = { appID = appid, resName = resName, action = action, clientIP=clientIP}
+    local args = { appID = appid, resName = resName, action = action, clientIP = clientIP}
     local url = access_check_url .. "?" .. ngx.encode_args(args)
     local timeout = 1000 * 10
 
@@ -189,7 +182,7 @@ local function check_url_permission(server, appid, action, resName, clientIP, wo
             else
                 core.log.info("request [curl -v ", url, "] failed! status:", res.status)
                 if i < retry_max then
-                    ngx.sleep(100)
+                    ngx.sleep(0.1)
                 end
             end
         end
@@ -197,22 +190,24 @@ local function check_url_permission(server, appid, action, resName, clientIP, wo
 
     if err then
         core.log.error("fail request: ", url, ", err:", err)
-        return {status=500, err="request to wolf-server failed, err:" .. tostring(err)}
-    elseif res.status == 200 or res.status == 401 then
-        local body, err = loadjson(res.body)
-	    if err then
-            errmsg = 'check permission failed! parse response json failed!'
-            core.log.error( "loadjson(", res.body, ") failed! err:", err)
-            return {status=res.status, err=errmsg}
-        else
-            if body.data then
-                userInfo = body.data.userInfo
-            end
-            errmsg = body.reason
-            return {status=res.status, err=errmsg, userInfo=userInfo}
-        end
+        return {status = 500, err = "request to wolf-server failed, err:" .. tostring(err)}
+    end
+
+    if res.status ~= 200 and res.status ~= 401 then
+        return {status = 500, err = 'request to wolf-server failed, status:' .. tostring(res.status)}
+    end
+
+    local body, err = loadjson(res.body)
+    if err then
+        errmsg = 'check permission failed! parse response json failed!'
+        core.log.error( "loadjson(", res.body, ") failed! err:", err)
+        return {status = res.status, err = errmsg}
     else
-        return {status=500, err='request to wolf-server failed, status:' .. tostring(res.status)}
+        if body.data then
+            userInfo = body.data.userInfo
+        end
+        errmsg = body.reason
+        return {status = res.status, err = errmsg, userInfo = userInfo}
     end
 end
 
@@ -221,15 +216,15 @@ function _M.rewrite(conf, ctx)
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local clientIP = core.request.get_ip(ctx)
-    local permItem = {action=action, url = url, clientIP = clientIP}
+    local permItem = {action = action, url = url, clientIP = clientIP}
 
-	local rbac_token, err = fetch_rbac_token()
-	if rbac_token == nil then
-		core.log.info("no permission to access ", core.json.delay_encode(permItem), ", need login!")
+    local rbac_token = fetch_rbac_token(ctx)
+    if rbac_token == nil then
+        core.log.info("no permission to access ", core.json.delay_encode(permItem), ", need login!")
         return 401, {message = "Missing rbac token in request"}
     end
 
-    local tokenInfo =parse_rbac_token(rbac_token)
+    local tokenInfo = parse_rbac_token(rbac_token)
     core.log.info("token info: ", core.json.delay_encode(tokenInfo))
     if tokenInfo.err then
         return 401, {message = 'invalid rbac token: parse failed'}
@@ -262,12 +257,12 @@ function _M.rewrite(conf, ctx)
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local clientIP = core.request.get_ip(ctx)
-    local permItem = {appid=appid, action=action, url = url, clientIP = clientIP, wolf_token=wolf_token}
+    local permItem = {appid = appid, action = action, url = url, clientIP = clientIP, wolf_token = wolf_token}
 
     local res = check_url_permission(server, appid, action, url, clientIP, wolf_token)
-	core.log.info(" check_url_permission(", core.json.delay_encode(permItem), ") res: ",core.json.delay_encode(res))
+    core.log.info(" check_url_permission(", core.json.delay_encode(permItem), ") res: ",core.json.delay_encode(res))
 
-	local username = nil
+    local username = nil
     local nickname = nil
     if type(res.userInfo) == 'table' then
         local userInfo = res.userInfo
@@ -275,16 +270,16 @@ function _M.rewrite(conf, ctx)
         core.response.set_header("X-Username", userInfo.username)
         core.response.set_header("X-Nickname", ngx.escape_uri(userInfo.nickname) or userInfo.username)
         ctx.userInfo = userInfo
-		username = userInfo.username
+        username = userInfo.username
         nickname = userInfo.nickname
-	end
+    end
 
-	if res.status == 200 then
-		---
-	else
+    if res.status == 200 then
+        ---
+    else
         -- no permission.
         core.log.error(" check_url_permission(", core.json.delay_encode(permItem), ") failed, res: ",core.json.delay_encode(res))
-        return 401, {message = res.err, username=username, nickname=nickname}
+        return 401, {message = res.err, username = username, nickname = nickname}
     end
     core.log.info("hit wolf-rbac rewrite")
 end
@@ -300,7 +295,7 @@ local function get_args()
     else
         args = ngx.req.get_post_args()
     end
-    return args;
+    return args
 end
 
 local function login()
@@ -336,7 +331,8 @@ local function login()
     local headers = new_headers()
     headers["Content-Type"] = "application/json; charset=utf-8"
     local timeout = 1000 * 5
-    local request_debug = core.json.delay_encode({method='POST', uri=uri, body=args, headers=headers,timeout=timeout})
+    local request_debug = core.json.delay_encode(
+        {method = 'POST', uri = uri, body = args, headers = headers,timeout = timeout})
     core.log.info("login request [", request_debug, "] ....")
     local res, err = http_post(uri, core.json.encode(args), headers, timeout)
     if err or not res then
@@ -361,10 +357,10 @@ local function login()
     core.log.info("user login [", request_debug, "] success! response body:", core.json.delay_encode(body))
 
     local userInfo = body.data.userInfo
-    local wolf_token = body.data.token;
+    local wolf_token = body.data.token
 
     local rbac_token = create_rbac_token(appid, wolf_token)
-    core.response.exit(200, {rbac_token=rbac_token, user_info=userInfo})
+    core.response.exit(200, {rbac_token = rbac_token, user_info = userInfo})
 end
 
 function _M.api()

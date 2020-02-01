@@ -36,7 +36,7 @@ The rbac feature is provided by [wolf] (https://github.com/iGeeky/wolf). For mor
 
 ## Attributes
 
-* `server`: Set the service address of` wolf-server`. If not set, the default is: `http: //127.0.0.1: 10080`.
+* `server`: Set the service address of` wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
 * `appid`: Set the app id. The app id must be added in wolf-console.
 
 
@@ -44,7 +44,7 @@ The rbac feature is provided by [wolf] (https://github.com/iGeeky/wolf). For mor
 
 ### Install wolf and start the service
 
-[Wolf quick start](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README-CN.md)
+[Wolf quick start](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README.md)
 
 ### Add `application`,` admin`, `normal user`,` permission`, `resource` and user authorize
 

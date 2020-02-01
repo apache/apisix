@@ -45,7 +45,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/{"server":"http:\\\/\\\/127\.0\.0\.1:10080","appid":"unset"}/
+qr/{"appid":"unset","server":"http:\\\/\\\/127\.0\.0\.1:10080"}/
 --- no_error_log
 [error]
 

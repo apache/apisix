@@ -30,19 +30,19 @@
 
 ## 名字
 
-`wolf-rbac`是一个认证及授权(rbac)插件，它需要与 `consumer` 一起配合才能工作。同时需要添加 `wolf-rbac` 到一个 `service` 或 `route`中。
-rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关wolf的更多信息, 请参考[wolf文档](https://github.com/iGeeky/wolf)。
+`wolf-rbac` 是一个认证及授权(rbac)插件，它需要与 `consumer` 一起配合才能工作。同时需要添加 `wolf-rbac` 到一个 `service` 或 `route` 中。
+rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更多信息, 请参考[wolf文档](https://github.com/iGeeky/wolf)。
 
 
 ## 属性
 
-* `server`: 设置`wolf-server`的访问地址, 如果未设置, 默认为: `http://127.0.0.1:10080`.
-* `appid`: 设置应用id, 该应用id, 需要是在`wolf-console`中已经添加的应用id.
+* `server`: 设置 `wolf-server` 的访问地址, 如果未设置, 默认为: `http://127.0.0.1:10080`.
+* `appid`: 设置应用id, 该应用id, 需要是在 `wolf-console` 中已经添加的应用id.
 
 
 ## 依赖项
 
-### 安装wolf, 并启动服务
+### 安装 wolf, 并启动服务
 
 [Wolf快速起步](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README-CN.md)
 
@@ -75,7 +75,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 然后在 consumer 页面中添加 wolf-rbac 插件：
 ![](../images/plugin/wolf-rbac-2.png)
 
-注意: 上面填写的`appid`需要在wolf控制台中已经存在的.
+注意: 上面填写的 `appid` 需要在wolf控制台中已经存在的.
 
 2. 创建 Route 或 Service 对象，并开启 `wolf-rbac` 插件。
 
@@ -100,7 +100,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 
 #### 首先进行登录获取 `wolf-rbac` token:
 
-下面的`appid`, `username`, `password`必须为wolf系统中真实存在的.
+下面的 `appid`, `username`, `password` 必须为wolf系统中真实存在的.
 
 * 以POST application/json方式登陆.
 
