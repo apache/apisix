@@ -102,7 +102,6 @@ function _M.header_filter(conf, ctx)
             return
         end
     end
-    core.log.error("could not match origin: ", core.json.encode(allow_origin))
     ngx.header[AccessControlAllowOrigin] = allow_origin
     ngx.header[AccessControlMaxAge] = max_age
     -- if set methods .  the default is actual request method
