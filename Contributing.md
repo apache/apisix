@@ -86,6 +86,45 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
     * Use a friendly and conversational tone. Always use simple sentences. If the sentence is lengthy try to break it in to smaller sentences.
 
+## Check code style and test case style
+
+* code style
+    * Please take a look at [OpenResty Lua Coding Style Guide](CODE_STYLE.md).
+    * Use tool to check your code statically by command: `make lint`.
+```shell
+        # install `luacheck` first before run it
+        $ luarocks install luacheck
+        # check source code
+        $ make lint
+        luacheck -q lua
+        Total: 0 warnings / 0 errors in 74 files
+        ./utils/lj-releng lua/*.lua \
+            lua/apisix/*.lua \
+            lua/apisix/admin/*.lua \
+            lua/apisix/core/*.lua \
+            lua/apisix/http/*.lua \
+            lua/apisix/http/router/*.lua \
+            lua/apisix/plugins/*.lua \
+            lua/apisix/plugins/grpc-transcode/*.lua \
+            lua/apisix/plugins/limit-count/*.lua > \
+            /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+```
+* test case style
+    * Use tool to check your test case style statically by command, eg: `reindex t/admin/*.t`.
+```shell
+    # install `reindex` first before run it
+    # wget https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
+    # ./reindex test cases
+    $ reindex t/admin/*.t
+    reindex: t/plugin/example.t:	skipped.        # No changes needed
+    reindex: t/plugin/fault-injection.t:	done.   # updated
+    reindex: t/plugin/grpc-transcode.t:	skipped.
+    ... ...
+    reindex: t/plugin/udp-logger.t:	done.
+    reindex: t/plugin/zipkin.t:	skipped.
+```
+    * By the way, we can download "reindex" to another path and add this path to "PATH" environment.
+
 ## Do you have questions about the source code?
 
 - **QQ group**: 552030619
