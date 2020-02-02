@@ -63,8 +63,6 @@ end
 -----------------
 -- Timer handlers
 -----------------
-
-
 -------------------------------------------------------------------------------
 -- Get the current time.
 -- @return current time in seconds
@@ -126,8 +124,6 @@ end
 ---------
 -- Batch Processor
 ---------
-
-
 -------------------------------------------------------------------------------
 -- Initialize a batch processor with background retryable processing
 -- @param process function, invoked to process every payload generated
@@ -154,15 +150,12 @@ function Batch_Processor:new(process, opts)
 
     local self = {
         process = process,
-
-        -- flush timeout in milliseconds
-        flush_timeout = opts.flush_timeout and opts.flush_timeout * 1000 or 5000,
+        flush_timeout = opts.flush_timeout and opts.flush_timeout * 1000 or 5000, -- flush timeout in milliseconds
         max_retry_count = opts.max_retry_count or 0,
         batch_max_size = opts.batch_max_size or 1000, -- maximum number of entries in a batch before the batch must be transmitted
         process_delay = opts.process_delay or 1,
         retry_delay = opts.retry_delay or 1,
         name = opts.name or "log buffer",
-
         batch_to_process = {},
         current_batch = { entries = {}, count = 0, retry_count = 0 },
         flush_scheduled = false,

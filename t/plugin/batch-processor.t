@@ -57,7 +57,7 @@ GET /t
 done
 --- error_log
 Batch Processor[log buffer] successfully processed the entries
---- wait: 0.5
+--- wait: 1
 
 === TEST 2: batch processor timeout exceeded
 --- config
@@ -93,7 +93,7 @@ done
 --- error_log
 BatchProcessor[log buffer] activating flush due to no activity
 Batch Processor[log buffer] successfully processed the entries
---- wait: 0.10
+--- wait: 1
 
 
 === TEST 3: batch processor batch max size exceeded
@@ -133,7 +133,7 @@ done
 BatchProcessor[log buffer] activating flush due to no activity
 --- error_log
 Batch Processor[log buffer] successfully processed the entries
---- wait: 0.5
+--- wait: 1
 
 === TEST 4: first failed to process and second try success
 --- config
@@ -176,7 +176,7 @@ done
 --- error_log
 Batch Processor[log buffer] failed to process entries
 Batch Processor[log buffer] successfully processed the entries
---- wait: 0.5
+--- wait: 1
 
 === TEST 5: batch processor batch max size exceeded
 --- config
@@ -216,7 +216,7 @@ BatchProcessor[log buffer] activating flush due to no activity
 --- error_log
 Batch Processor[log buffer] failed to process entries
 Batch Processor[log buffer] exceeded the max_retry_count
---- wait: 0.5
+--- wait: 1
 
 
 === TEST 6: two batches
@@ -262,7 +262,7 @@ BatchProcessor[log buffer] activating flush due to no activity
 --- error_log
 batch[1] sent
 batch[2] sent
---- wait: 0.5
+--- wait: 1
 
 === TEST 7: batch processor retry count 0 and fail processing
 --- config
@@ -302,4 +302,4 @@ BatchProcessor[log buffer] activating flush due to no activity
 Batch Processor[log buffer] failed to process entries
 --- error_log
 Batch Processor[log buffer] exceeded the max_retry_count
---- wait: 0.5
+--- wait: 1
