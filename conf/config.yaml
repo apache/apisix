@@ -59,6 +59,7 @@ apisix:
 nginx_config:                     # config for render the template to genarate nginx.conf
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
+  worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   event:
     worker_connections: 10620
   http:
