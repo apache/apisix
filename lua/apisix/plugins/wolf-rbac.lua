@@ -278,9 +278,10 @@ function _M.rewrite(conf, ctx)
 end
 
 local function get_args()
+    local ctx = ngx.ctx.api_ctx
     local args, err
     ngx.req.read_body()
-    if string.find(ngx.req.get_headers()["Content-Type"] or "","application/json", 1, true) then
+    if string.find(ctx.var.http_content_type or "","application/json", 1, true) then
         args, err = json.decode(ngx.req.get_body_data())
         if err then
             core.log.error("json.decode(", ngx.req.get_body_data(), ") failed! ", err)
