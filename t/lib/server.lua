@@ -139,12 +139,13 @@ function _M.wolf_rbac_login_rest()
         ngx.exit(0)
     end
 
-    ngx.say(json_encode({ok=true, data={token="wolf-rbac-token", userInfo={nickname="administrator",username="admin", id="100"}}}))
+    ngx.say(json_encode({ok=true, data={token="wolf-rbac-token",
+        userInfo={nickname="administrator",username="admin", id="100"}}}))
 end
 
 function _M.wolf_rbac_access_check()
     local headers = ngx.req.get_headers()
-    local token = headers['x-rbac-token'] 
+    local token = headers['x-rbac-token']
     if token ~= 'wolf-rbac-token' then
         ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
         ngx.exit(0)

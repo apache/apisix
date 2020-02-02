@@ -1,12 +1,19 @@
 
 local core     = require("apisix.core")
-local ck       = require("resty.cookie")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
 local ipairs   = ipairs
 local ngx      = ngx
+local tostring = tostring
+local rawget   = rawget
+local rawset   = rawset
+local setmetatable = setmetatable
+local pcall    = pcall
+local type     = type
+local string   = string
+
 local plugin_name = "wolf-rbac"
 
 
@@ -114,10 +121,6 @@ local function http_post(uri, body, myheaders, timeout)
     return http_req("POST", uri, body, myheaders, timeout)
 end
 
-local function http_put(uri,  body, myheaders, timeout)
-    return http_req("PUT", uri, body, myheaders, timeout)
-end
-
 function _M.check_schema(conf)
     core.log.info("input conf: ", core.json.delay_encode(conf))
 
@@ -157,7 +160,7 @@ end
 
 local function check_url_permission(server, appid, action, resName, clientIP, wolf_token)
     local retry_max = 3
-    local errmsg = nil
+    local errmsg
     local userInfo = nil
     local res = nil
     local err = nil
@@ -173,10 +176,10 @@ local function check_url_permission(server, appid, action, resName, clientIP, wo
         -- TODO: read apisix info.
         res, err = http_get(url, headers, timeout)
         if err then
-            errmsg = 'check permission failed!' .. tostring(err)
             break
         else
-            core.log.info("check permission request:", url, ", status:", res.status, ",body:", core.json.delay_encode(res.body))
+            core.log.info("check permission request:", url, ", status:", res.status,
+                            ",body:", core.json.delay_encode(res.body))
             if res.status < 500 then
                 break
             else
@@ -274,11 +277,10 @@ function _M.rewrite(conf, ctx)
         nickname = userInfo.nickname
     end
 
-    if res.status == 200 then
-        ---
-    else
+    if res.status ~= 200 then
         -- no permission.
-        core.log.error(" check_url_permission(", core.json.delay_encode(permItem), ") failed, res: ",core.json.delay_encode(res))
+        core.log.error(" check_url_permission(", core.json.delay_encode(permItem),
+            ") failed, res: ",core.json.delay_encode(res))
         return 401, {message = res.err, username = username, nickname = nickname}
     end
     core.log.info("hit wolf-rbac rewrite")
