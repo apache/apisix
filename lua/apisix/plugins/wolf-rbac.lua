@@ -10,7 +10,6 @@ local tostring = tostring
 local rawget   = rawget
 local rawset   = rawset
 local setmetatable = setmetatable
-local pcall    = pcall
 local type     = type
 local string   = string
 
@@ -149,21 +148,13 @@ local function fetch_rbac_token(ctx)
     return ctx.var['cookie_x-rbac-token']
 end
 
-local function loadjson(str)
-    local ok, jso = pcall(function() return json.decode(str) end)
-    if ok then
-        return jso
-    else
-        return nil, jso
-    end
-end
 
 local function check_url_permission(server, appid, action, resName, clientIP, wolf_token)
     local retry_max = 3
     local errmsg
-    local userInfo = nil
-    local res = nil
-    local err = nil
+    local userInfo
+    local res
+    local err
     local access_check_url = server .. "/wolf/rbac/access_check"
     local headers = new_headers()
     headers["x-rbac-token"] = wolf_token
@@ -200,10 +191,10 @@ local function check_url_permission(server, appid, action, resName, clientIP, wo
         return {status = 500, err = 'request to wolf-server failed, status:' .. tostring(res.status)}
     end
 
-    local body, err = loadjson(res.body)
+    local body, err = json.decode(res.body)
     if err then
         errmsg = 'check permission failed! parse response json failed!'
-        core.log.error( "loadjson(", res.body, ") failed! err:", err)
+        core.log.error( "json.decode(", res.body, ") failed! err:", err)
         return {status = res.status, err = errmsg}
     else
         if body.data then
@@ -220,6 +211,7 @@ function _M.rewrite(conf, ctx)
     local action = ctx.var.request_method
     local clientIP = core.request.get_ip(ctx)
     local permItem = {action = action, url = url, clientIP = clientIP}
+    core.log.info("hit wolf-rbac rewrite")
 
     local rbac_token = fetch_rbac_token(ctx)
     if rbac_token == nil then
@@ -232,7 +224,6 @@ function _M.rewrite(conf, ctx)
     if tokenInfo.err then
         return 401, {message = 'invalid rbac token: parse failed'}
     end
-
 
     local appid = tokenInfo.appid
     local wolf_token = tokenInfo.wolf_token
@@ -283,13 +274,13 @@ function _M.rewrite(conf, ctx)
             ") failed, res: ",core.json.delay_encode(res))
         return 401, {message = res.err, username = username, nickname = nickname}
     end
-    core.log.info("hit wolf-rbac rewrite")
+    core.log.info("wolf-rbac check permission passed")
 end
 
 local function get_args()
     local args, err
     ngx.req.read_body()
-    if string.find(ngx.req.get_headers()["Content-Type"] or "","application/json", 0) then
+    if string.find(ngx.req.get_headers()["Content-Type"] or "","application/json", 1, true) then
         args, err = json.decode(ngx.req.get_body_data())
         if err then
             core.log.error("json.decode(", ngx.req.get_body_data(), ") failed! ", err)
@@ -347,9 +338,9 @@ local function login()
         core.log.error("login request [", request_debug, "] failed! status: ", res.status)
         return core.response.exit(500, {message = "request to wolf-server failed! status:" .. tostring(res.status) })
     end
-    local body = json.decode(res.body)
-    if not body then
-        core.log.error("login request [", request_debug, "] failed! response body is nil")
+    local body, err = json.decode(res.body)
+    if err or not body then
+        core.log.error("login request [", request_debug, "] failed! err:", err)
         return core.response.exit(500, {message = "request to wolf-server failed!"})
     end
     if not body.ok then
