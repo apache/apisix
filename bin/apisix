@@ -88,7 +88,7 @@ worker_cpu_affinity auto;
 error_log {* error_log *} {* error_log_level or "error" *};
 pid logs/nginx.pid;
 
-worker_rlimit_nofile 20480;
+worker_rlimit_nofile {* worker_rlimit_nofile *};
 
 events {
     accept_mutex off;
@@ -522,6 +522,13 @@ local function init()
     end
     for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
+    end
+
+    local wrn = sys_conf["worker_rlimit_nofile"]
+    local wc = sys_conf["event"]["worker_connections"]
+    if not wrn or wrn <= wc then
+        -- ensure the number of fds is slightly larger than the number of conn
+        sys_conf["worker_rlimit_nofile"] = wc + 128
     end
 
     if(sys_conf["enable_dev_mode"] == true) then
