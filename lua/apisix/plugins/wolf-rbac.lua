@@ -80,11 +80,11 @@ end
 local function parse_rbac_token(rbac_token)
     local res, err = ngx_re.split(rbac_token, "#", nil, nil, 3)
     if not res then
-        return { err = err}
+        return nil, err
     end
 
     if #res ~= 3 or res[1] ~= token_version then
-        return { err = 'invalid rbac token: version'}
+        return nil, 'invalid rbac token: version'
     end
     local appid = res[2]
     local wolf_token = res[3]
@@ -235,9 +235,9 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing rbac token in request"}
     end
 
-    local tokenInfo = parse_rbac_token(rbac_token)
-    core.log.info("token info: ", core.json.delay_encode(tokenInfo))
-    if tokenInfo.err then
+    local tokenInfo, err = parse_rbac_token(rbac_token)
+    core.log.info("token info: ", core.json.delay_encode(tokenInfo), ", err: ", err)
+    if err then
         return 401, {message = 'invalid rbac token: parse failed'}
     end
 
