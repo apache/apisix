@@ -95,7 +95,7 @@ events {
     worker_connections {* event.worker_connections *};
 }
 
-worker_rlimit_core  500M;
+worker_rlimit_core  {* worker_rlimit_core *};
 working_directory   /tmp/apisix_cores/;
 
 worker_shutdown_timeout 3;
@@ -437,6 +437,17 @@ local function get_openresty_version()
     return nil
 end
 
+local function is_32bit_arch()
+    local ok, ffi = pcall(require, "ffi")
+    if ok then
+        -- LuaJIT
+        return ffi.abi("32bit")
+    end
+    local ret = excute_cmd("getconf LONG_BIT")
+    local bits = tonumber(ret)
+    return bits <= 32
+end
+
 local function split(self, sep)
     local sep, fields = sep or ":", {}
     local pattern = string.format("([^%s]+)", sep)
@@ -515,6 +526,12 @@ local function init()
 
     if not yaml_conf.nginx_config then
         error("failed to read `nginx_config` field from yaml file")
+    end
+
+    if is_32bit_arch() then
+        sys_conf["worker_rlimit_core"] = "4G"
+    else
+        sys_conf["worker_rlimit_core"] = "16G"
     end
 
     for k,v in pairs(yaml_conf.apisix) do
