@@ -46,7 +46,7 @@ make deps
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v1.0/apisix-1.0-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.0/apisix-1.0-0.el7.noarch.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)

@@ -45,7 +45,7 @@ make deps
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/v1.0/apisix-1.0-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.0/apisix-1.0-0.el7.noarch.rpm
 ```
 
 ### 通过 Luarocks 安装 （不支持 macOS）
