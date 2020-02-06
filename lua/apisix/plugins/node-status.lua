@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local ngx = ngx
 local re_gmatch = ngx.re.gmatch
+local ngx_capture = ngx.location.capture
 local plugin_name = "node-status"
 local apisix_id = core.id.get()
 local ipairs = ipairs
@@ -37,13 +38,7 @@ local ngx_statu_items = {
 
 
 local function collect()
-    local res, err = core.http.request_self("/apisix/nginx_status", {
-                                                keepalive = false,
-                                            })
-    if not res then
-        return 500, "failed to fetch nginx status: " .. err
-    end
-
+    local res = ngx_capture("/apisix/nginx_status")
     if res.status ~= 200 then
         return res.status
     end
