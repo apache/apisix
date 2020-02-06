@@ -168,12 +168,7 @@ install:
 
 ### test:             Run the test case
 test:
-ifeq ($(UNAME),Darwin)
 	prove -I../test-nginx/lib -I./ -r -s t/
-else
-	prove -I../test-nginx/lib -r -s t/
-endif
-
 
 ### license-check:    Check Lua source code for Apache License
 .PHONY: license-check
