@@ -261,13 +261,13 @@ http {
     {% end %}
 
     server {
-        listen {* node_listen *};
+        listen {* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
         listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         {% if enable_ipv6 then %}
-        listen [::]:{* node_listen *};
+        listen [::]:{* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
         listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
@@ -507,7 +507,6 @@ local function init()
         with_module_status = with_module_status,
         node_ssl_listen = 9443,     -- default value
         error_log = {level = "warn"},
-        enable_reuseport = true, -- default true
     }
 
     if not yaml_conf.apisix then
@@ -529,10 +528,6 @@ local function init()
         sys_conf["worker_processes"] = 1
     else
         sys_conf["worker_processes"] = "auto"
-    end
-
-    if sys_conf["enable_reuseport"] == false then
-        enable_reuseport = false
     end
 
     local conf_render = template.compile(ngx_tpl)
