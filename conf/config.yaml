@@ -96,6 +96,7 @@ plugins:                          # plugin list
   - response-rewrite
   - fault-injection
   - udp-logger
+  - wolf-rbac
 
 stream_plugins:
   - mqtt-proxy

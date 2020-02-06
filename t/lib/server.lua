@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local json_decode = require("cjson").decode
+local json_encode = require("cjson").encode
 
 local _M = {}
 
@@ -31,6 +32,9 @@ end
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
+_M.server_port_route2 = _M.server_port
+_M.server_port_hello = _M.server_port
+_M.server_port_aa = _M.server_port
 
 
 function _M.limit_conn()
@@ -69,6 +73,8 @@ function _M.uri()
         ngx.say(k, ": ", v)
     end
 end
+_M.uri_plugin_proxy_rewrite = _M.uri
+_M.uri_plugin_proxy_rewrite_args = _M.uri
 
 function _M.old_uri()
     -- ngx.sleep(1)
@@ -112,6 +118,50 @@ function _M.mock_zipkin()
     end
 end
 
+function _M.wolf_rbac_login_rest()
+    ngx.req.read_body()
+    local data = ngx.req.get_body_data()
+    local args = json_decode(data)
+    if not args.username then
+        ngx.say(json_encode({ok=false, reason="ERR_USERNAME_MISSING"}))
+        ngx.exit(0)
+    end
+    if not args.password then
+        ngx.say(json_encode({ok=false, reason="ERR_PASSWORD_MISSING"}))
+        ngx.exit(0)
+    end
+    if args.username ~= "admin" then
+        ngx.say(json_encode({ok=false, reason="ERR_USER_NOT_FOUND"}))
+        ngx.exit(0)
+    end
+    if args.password ~= "123456" then
+        ngx.say(json_encode({ok=false, reason="ERR_PASSWORD_ERROR"}))
+        ngx.exit(0)
+    end
+
+    ngx.say(json_encode({ok=true, data={token="wolf-rbac-token",
+        userInfo={nickname="administrator",username="admin", id="100"}}}))
+end
+
+function _M.wolf_rbac_access_check()
+    local headers = ngx.req.get_headers()
+    local token = headers['x-rbac-token']
+    if token ~= 'wolf-rbac-token' then
+        ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
+        ngx.exit(0)
+    end
+
+    local args = ngx.req.get_uri_args()
+    local resName = args.resName
+    if resName == '/hello' then
+        ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator",username="admin", id="100"} }}))
+    else
+        ngx.status = 401
+        ngx.say(json_encode({ok=false, reason="no permission to access"}))
+    end
+end
+
+
 function _M.websocket_handshake()
     local websocket = require "resty.websocket.server"
     local wb, err = websocket:new()
@@ -120,15 +170,11 @@ function _M.websocket_handshake()
         return ngx.exit(400)
     end
 end
-
+_M.websocket_handshake_route = _M.websocket_handshake
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
-    local find = string.find(action, "/", 1, true)
-    if find then
-        action = string.sub(action, 1, find - 1)
-    end
-
+    action = string.gsub(action, "[/\\.]", "_")
     if not action or not _M[action] then
         return ngx.exit(404)
     end
