@@ -42,7 +42,7 @@ function _M.check_schema(plugins_conf)
                       core.json.delay_encode(plugin_conf, true))
         local plugin_obj = local_plugins[name]
         if not plugin_obj then
-            return false, "unknow plugin [" .. name .. "]"
+            return false, "unknown plugin [" .. name .. "]"
         end
 
         if plugin_obj.check_schema then
@@ -67,7 +67,7 @@ function _M.stream_check_schema(plugins_conf)
                       ": ", core.json.delay_encode(plugin_conf, true))
         local plugin_obj = stream_local_plugins[name]
         if not plugin_obj then
-            return false, "unknow plugin [" .. name .. "]"
+            return false, "unknown plugin [" .. name .. "]"
         end
 
         if plugin_obj.check_schema then
