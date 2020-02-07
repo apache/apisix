@@ -60,6 +60,7 @@ function _M.incoming(self, key)
     local ret = red:ttl(key)
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
     if ret < 0 then
+        -- todo: test case
         local lock, err = resty_lock:new("plugin-limit-count")
         if not lock then
             return false, "failed to create lock: " .. err
