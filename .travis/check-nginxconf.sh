@@ -18,7 +18,7 @@
 #
 
 #check whether the 'reuseport' is in nginx.conf .
-matched=`grep -E "listen.*reuseport" -r conf/ | wc -l`
+matched=`grep -E "listen.*reuseport" conf/nginx.conf | wc -l`
 if [ $matched -eq 0 ]; then
     echo "failed: nginx.conf file is missing reuseport configuration"
     exit 1
