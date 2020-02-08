@@ -102,6 +102,12 @@ stop: default
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -s stop
 
 
+### verify:           Verify the configuration of apisix server
+.PHONY: verify
+verify: default
+	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf -t
+
+
 ### clean:            Remove generated files
 .PHONY: clean
 clean:

@@ -245,6 +245,7 @@ script() {
     ./bin/apisix help
     ./bin/apisix init
     ./bin/apisix init_etcd
+    ./bin/apisix verify
     ./bin/apisix start
     mkdir -p logs
     sleep 1
