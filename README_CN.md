@@ -58,6 +58,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [gRPC 代理](doc/grpc-proxy-cn.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
     - [gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
     - Websocket 代理
+    - Proxy Protocol
     - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
     - HTTP(S) 反向代理
     - [SSL](doc/https-cn.md)：动态加载 SSL 证书。
