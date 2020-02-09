@@ -129,10 +129,10 @@ stream {
 
     server {
         {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*port*};
+        listen {*port*} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% for _, port in ipairs(stream_proxy.udp or {}) do %}
-        listen {*port*} udp;
+        listen {*port*} udp {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         preread_by_lua_block {
@@ -261,15 +261,15 @@ http {
     {% end %}
 
     server {
-        listen {* node_listen *};
+        listen {* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
-        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         {% if enable_ipv6 then %}
-        listen [::]:{* node_listen *};
+        listen [::]:{* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
-        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
