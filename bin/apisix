@@ -103,6 +103,7 @@ worker_shutdown_timeout 3;
 {% if stream_proxy then %}
 stream {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
+                      .. [=[/usr/local/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
@@ -129,10 +130,10 @@ stream {
 
     server {
         {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*port*} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
+        listen {*port*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
         {% end %}
         {% for _, port in ipairs(stream_proxy.udp or {}) do %}
-        listen {*port*} udp;
+        listen {*port*} udp {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
@@ -154,6 +155,7 @@ stream {
 
 http {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
+                      .. [=[/usr/local/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
                       .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
@@ -278,9 +280,9 @@ http {
     {% end %}
 
     server {
-        listen {* node_listen *};
+        listen {* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
-        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
@@ -291,9 +293,9 @@ http {
         {% end %}
 
         {% if enable_ipv6 then %}
-        listen [::]:{* node_listen *};
+        listen [::]:{* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
-        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %};
+        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 

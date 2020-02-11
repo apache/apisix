@@ -43,20 +43,27 @@ script() {
     sudo mkdir -p /usr/local/apisix/deps
     sudo PATH=$PATH ./utils/install-apisix.sh install
 
-    sudo apisix help
-    sudo apisix init
-    sudo apisix start
-    sudo apisix stop
+    sudo PATH=$PATH apisix help
+    sudo PATH=$PATH apisix init
+    sudo PATH=$PATH apisix start
+    sudo PATH=$PATH apisix stop
 
     sudo PATH=$PATH ./utils/install-apisix.sh remove
 
     # install APISIX by luarocks
     sudo luarocks install rockspec/apisix-master-0.rockspec
 
-    sudo apisix help
-    sudo apisix init
-    sudo apisix start
-    sudo apisix stop
+    sudo PATH=$PATH apisix help
+    sudo PATH=$PATH apisix init
+    sudo PATH=$PATH apisix start
+    sudo PATH=$PATH apisix stop
+
+    # make init
+    # 'make init' operates scripts and related configuration files in the current directory
+    # The 'apisix' command is a command in the /usr/local/apisix,
+    # and the configuration file for the operation is in the /usr/local/apisix/conf
+    sudo PATH=$PATH make init
+    sudo PATH=$PATH bash .travis/check-nginxconf.sh
 
     sudo luarocks remove rockspec/apisix-master-0.rockspec
 }

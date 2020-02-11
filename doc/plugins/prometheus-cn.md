@@ -84,6 +84,8 @@ scrape_configs:
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
+你可以到 [Grafana meta](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
+
 ![](../../doc/images/plugin/grafana_1.png)
 
 ![](../../doc/images/plugin/grafana_2.png)
