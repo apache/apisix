@@ -58,6 +58,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
     - [gRPC transcoding](doc/plugins/grpc-transcoding.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
     - Proxy Websocket
+    - Proxy Protocol
     - Proxy Dubbo: Dubbo Proxy based on Tengine.
     - HTTP(S) Forward Proxy
     - [SSL](doc/https.md): Dynamically load an SSL certificate.
