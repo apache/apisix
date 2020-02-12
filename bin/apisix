@@ -130,10 +130,14 @@ stream {
 
     server {
         {% for _, port in ipairs(stream_proxy.tcp or {}) do %}
-        listen {*port*} {% if enable_reuseport then %} reuseport {% end %};
+        listen {*port*} {% if enable_reuseport then %} reuseport {% end %} {% if proxy_protocol and proxy_protocol.enable_tcp_pp then %} proxy_protocol {% end %};
         {% end %}
         {% for _, port in ipairs(stream_proxy.udp or {}) do %}
         listen {*port*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+
+        {% if proxy_protocol and proxy_protocol.enable_tcp_pp_to_upstream then %}
+        proxy_protocol on;
         {% end %}
 
         preread_by_lua_block {
@@ -202,9 +206,22 @@ http {
 
     include mime.types;
 
+    {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};
+    {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
+    {% elseif http.real_ip_header then %}
+    real_ip_header {* http.real_ip_header *};
+    {% end %}
+
+    {% if real_ip_from then %}
+    {% print("\nDeprecated: apisix.real_ip_from has been moved to nginx_config.http.real_ip_from. apisix.real_ip_from will be removed in the future version. Please use nginx_config.http.real_ip_from first.\n\n") %}
     {% for _, real_ip in ipairs(real_ip_from) do %}
     set_real_ip_from {*real_ip*};
+    {% end %}
+    {% elseif http.real_ip_from then %}
+    {% for _, real_ip in ipairs(http.real_ip_from) do %}
+    set_real_ip_from {*real_ip*};
+    {% end %}
     {% end %}
 
     upstream apisix_backend {
@@ -266,6 +283,13 @@ http {
         listen {* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
         listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+
+        {% if proxy_protocol and proxy_protocol.listen_http_port then %}
+        listen {* proxy_protocol.listen_http_port *} proxy_protocol;
+        {% end %}
+        {% if proxy_protocol and proxy_protocol.listen_https_port then %}
+        listen {* proxy_protocol.listen_https_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
         {% end %}
 
         {% if enable_ipv6 then %}
@@ -342,6 +366,30 @@ http {
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Server;
             proxy_pass_header  Date;
+
+            set $var_x_forwarded_for        $remote_addr;
+            set $var_x_forwarded_proto      $scheme;
+            set $var_x_forwarded_host       $host;
+            set $var_x_forwarded_port       $server_port;
+
+            if ($http_x_forwarded_for != "") {
+                set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
+            }
+            if ($http_x_forwarded_proto != "") {
+                set $var_x_forwarded_proto $http_x_forwarded_proto;
+            }
+            if ($http_x_forwarded_host != "") {
+                set $var_x_forwarded_host $http_x_forwarded_host;
+            }
+            if ($http_x_forwarded_port != "") {
+                set $var_x_forwarded_port $http_x_forwarded_port;
+            }
+
+            proxy_set_header   X-Forwarded-For      $var_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
+
             proxy_pass         $upstream_scheme://apisix_backend$upstream_uri;
 
             header_filter_by_lua_block {
