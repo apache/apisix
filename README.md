@@ -83,7 +83,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Support priority](doc/router-radixtree.md#3-match-priority)
 
 - **Security**
-    - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md)
+    - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md), [wolf-rbac](doc/plugins/wolf-rbac.md)
     - [IP Whitelist/Blacklist](doc/plugins/ip-restriction.md)
     - [IdP](doc/plugins/oauth.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
     - [Limit-req](doc/plugins/limit-req.md)
