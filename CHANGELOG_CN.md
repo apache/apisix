@@ -19,11 +19,48 @@
 
 # Table of Contents
 
+- [1.1.0](#110)
 - [1.0.0](#100)
 - [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+
+## 1.1.0
+
+这个版本主要是加强代码的稳定性，以及增加更多的文档。
+
+### Core
+- 每次跑测试用例都指定 perl 包含路径。 [#1097](https://github.com/apache/incubator-apisix/pull/1097)
+- 增加对代理协议的支持。 [#1113](https://github.com/apache/incubator-apisix/pull/1113)
+- 增加用于校验 nginx.conf 的命令。 [#1112](https://github.com/apache/incubator-apisix/pull/1112)
+- 支持「nginx 最多可以打开文件数」可配置，并增大其默认配置。[#1105](https://github.com/apache/incubator-apisix/pull/1105) [#1098](https://github.com/apache/incubator-apisix/pull/1098)
+- 优化日志模块。 [#1093](https://github.com/apache/incubator-apisix/pull/1093)
+- 支持 SO_REUSEPORT 。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
+
+### Doc
+- 增加 Grafana 元数据下载链接. [#1119](https://github.com/apache/incubator-apisix/pull/1119)
+- 更新 README.md。 [#1118](https://github.com/apache/incubator-apisix/pull/1118)
+- 增加 wolf-rbac 插件说明文档 [#1116](https://github.com/apache/incubator-apisix/pull/1116)
+- 更新 rpm 下载链接。 [#1108](https://github.com/apache/incubator-apisix/pull/1108)
+- 增加更多英文文章链接。 [#1092](https://github.com/apache/incubator-apisix/pull/1092)
+- 增加文档贡献指引。 [#1086](https://github.com/apache/incubator-apisix/pull/1086)
+- 检查更新「快速上手」文档。 [#1084](https://github.com/apache/incubator-apisix/pull/1084)
+- 检查更新「插件开发指南」。 [#1078](https://github.com/apache/incubator-apisix/pull/1078)
+- 更新 admin-api-cn.md 。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
+- 更新 architecture-design-cn.md 。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
+
+### CI
+- 移除不再必须的补丁。 [#1090](https://github.com/apache/incubator-apisix/pull/1090)
+- 修复使用 luarocks 安装时路径错误问题。[#1068](https://github.com/apache/incubator-apisix/pull/1068)
+- 为 luarocks 安装专门配置一个 travis 进行回归测试。 [#1063](https://github.com/apache/incubator-apisix/pull/1063)
+
+### Plugins
+- 「节点状态」插件使用 nginx 内部请求替换原来的外部请求。 [#1109](https://github.com/apache/incubator-apisix/pull/1109)
+- 增加 wolf-rbac 插件。 [#1095](https://github.com/apache/incubator-apisix/pull/1095)
+- 增加 udp-logger 插件。 [#1070](https://github.com/apache/incubator-apisix/pull/1070)
+
 
 ## 1.0.0
 
