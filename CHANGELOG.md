@@ -19,11 +19,49 @@
 
 # Table of Contents
 
+- [1.1.0](#110)
 - [1.0.0](#100)
 - [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+
+## 1.1.0
+
+This release is mainly to strengthen the stability of the code and add more documentation.
+
+### Core
+- always specify perl include path when runing test cases. [#1097](https://github.com/apache/incubator-apisix/pull/1097)
+- Feature: Add support for PROXY Protocol. [#1113](https://github.com/apache/incubator-apisix/pull/1113)
+- enhancement: add verify command to verify apisix configuration(nginx.conf). [#1112](https://github.com/apache/incubator-apisix/pull/1112)
+- feature: increase the default size of the core file. [#1105](https://github.com/apache/incubator-apisix/pull/1105)
+- feature: make the number of file is as configurable as the connections. [#1098](https://github.com/apache/incubator-apisix/pull/1098)
+- core: improve the core.log module. [#1093](https://github.com/apache/incubator-apisix/pull/1093)
+- Modify bin/apisix to support the SO_REUSEPORT. [#1085](https://github.com/apache/incubator-apisix/pull/1085)
+
+### Doc
+- doc: add link to download grafana meta data. [#1119](https://github.com/apache/incubator-apisix/pull/1119)
+- doc: Update README.md. [#1118](https://github.com/apache/incubator-apisix/pull/1118)
+- doc: doc: add wolf-rbac plugin. [#1116](https://github.com/apache/incubator-apisix/pull/1116)
+- doc: update the download link of rpm. [#1108](https://github.com/apache/incubator-apisix/pull/1108)
+- doc: add more english article. [#1092](https://github.com/apache/incubator-apisix/pull/1092)
+- Adding contribution guidelines for the documentation. [#1086](https://github.com/apache/incubator-apisix/pull/1086)
+- doc: getting-started.md check. [#1084](https://github.com/apache/incubator-apisix/pull/1084)
+- Added additional information and refactoring sentences. [#1078](https://github.com/apache/incubator-apisix/pull/1078)
+- Update admin-api-cn.md. [#1067](https://github.com/apache/incubator-apisix/pull/1067)
+- Update architecture-design-cn.md. [#1065](https://github.com/apache/incubator-apisix/pull/1065)
+
+### CI
+- ci: remove patch which is no longer necessary and removed in the upst. [#1090](https://github.com/apache/incubator-apisix/pull/1090)
+- fix path error when install with luarocks. [#1068](https://github.com/apache/incubator-apisix/pull/1068)
+- travis: run a apisix instance which intalled by luarocks. [#1063](https://github.com/apache/incubator-apisix/pull/1063)
+
+### Plugins
+- feature: Add wolf rbac plugin. [#1095](https://github.com/apache/incubator-apisix/pull/1095)
+- Adding UDP logger plugin. [#1070](https://github.com/apache/incubator-apisix/pull/1070)
+- enhancement: using internal request instead of external request in node-status plugin. [#1109](https://github.com/apache/incubator-apisix/pull/1109)
+
 
 ## 1.0.0
 
@@ -50,6 +88,7 @@ This release is mainly to strengthen the stability of the code and add more docu
 ### Test case
 - Add test cases for key-auth plugin under normal circumstances. [#964](https://github.com/apache/incubator-apisix/pull/964/)
 - Added tests for gRPC transcode pb options. [#920](https://github.com/apache/incubator-apisix/pull/920)
+
 
 ## 0.9.0
 
@@ -123,6 +162,7 @@ and support for ARM platform, and proxy rewrite plugin.
 
 ### Dependencies
 - removed `lua-tinyyaml` from source code base, and install through Luarocks.
+
 
 ## 0.7.0
 
