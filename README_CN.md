@@ -83,7 +83,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [支持路由的优先级](doc/router-radixtree.md#3-match-priority)
 
 - **安全防护**
-    - 多种身份认证方式: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md), [basic-auth](doc/plugins/basic-auth-cn.md)。
+    - 多种身份认证方式: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md), [basic-auth](doc/plugins/basic-auth-cn.md), [wolf-rbac](doc/plugins/wolf-rbac-cn.md)。
     - [IP 黑白名单](doc/plugins/ip-restriction-cn.md)
     - [IdP 支持](doc/plugins/oauth.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
     - [限制速率](doc/plugins/limit-req-cn.md)
