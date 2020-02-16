@@ -16,8 +16,6 @@
 --
 local ngx = ngx
 local ngx_log  = ngx.log
-local ngx_DEBUG= ngx.DEBUG
-local DEBUG    = ngx.config.debug
 local require  = require
 
 
@@ -44,8 +42,7 @@ setmetatable(_M, {__index = function(self, cmd)
     local log_level = log_levels[cmd]
 
     local method
-    if cur_level and (log_level > cur_level or
-        (log_level == ngx_DEBUG and not DEBUG))
+    if cur_level and (log_level > cur_level)
     then
         method = do_nothing
     else

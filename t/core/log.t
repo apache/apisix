@@ -57,6 +57,7 @@ info log
             core.log.warn("warn log")
             core.log.notice("notice log")
             core.log.info("info log")
+            core.log.debug("debug log")
             ngx.say("done")
         }
     }
@@ -69,6 +70,7 @@ warn log
 --- no_error_log
 notice log
 info log
+debug log
 
 
 
@@ -81,6 +83,7 @@ info log
             core.log.warn("warn log")
             core.log.notice("notice log")
             core.log.info("info log")
+            core.log.debug("debug log")
             ngx.say("done")
         }
     }
@@ -93,6 +96,7 @@ warn log
 notice log
 --- no_error_log
 info log
+debug log
 
 
 
