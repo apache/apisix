@@ -76,14 +76,13 @@ end
 
 
 local function flush_buffer(premature, batch_processor)
-
     if premature then
         return
     end
 
     if now() - batch_processor.last_entry_t >= batch_processor.inactive_timeout or
             now() - batch_processor.first_entry_t >= batch_processor.buffer_duration then
-        ngx_log(DEBUG, fmt("BatchProcessor[%s] buffer duration exceeded, activating buffer flush", batch_processor.name))
+        core.log.debug(fmt("BatchProcessor[%s] buffer duration exceeded, activating buffer flush", batch_processor.name))
         batch_processor:process_buffer()
         batch_processor.isTimerRunning = false
         return
@@ -151,18 +150,20 @@ function Batch_Processor:push(entry)
     self.last_entry_t = now()
 
     if self.batch_max_size <= #entries then
-        ngx_log(DEBUG, fmt("batch processor[%s] batch max size has exceeded", self.name))
+        core.log.debug(fmt("batch processor[%s] batch max size has exceeded", self.name))
         self:process_buffer()
-    elseif not self.isTimerRunning then
-        create_buffer_timer(self)
     end
 
+    if not self.isTimerRunning then
+        create_buffer_timer(self)
+    end
 end
 
 
 function Batch_Processor:process_buffer()
+    -- If entries are present in the buffer move the entries to processing
     if #self.entry_buffer.entries > 0 then
-        ngx_log(DEBUG, fmt("tranferring buffer entries to processing pipe line, buffercount[%d]", #self.entry_buffer.entries))
+        core.log.debug(fmt("tranferring buffer entries to processing pipe line, buffercount[%d]", #self.entry_buffer.entries))
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = { entries = {}, retry_count = 0 }
     end

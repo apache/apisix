@@ -24,22 +24,20 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: wrong configuration parameters
+=== TEST 1: send invalid arguments for constructor
 --- config
     location /t {
         content_by_lua_block {
             local Batch = require("apisix.plugins.batch-processor")
-            local func_to_send = function(elements)
-                return true
-            end
-
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 1,
                 process_delay  = 0,
                 retry_delay  = 0,
             }
-
+            local func_to_send = function(elements)
+                return true
+            end
             local log_buffer, err = Batch:new("", config)
 
             if log_buffer then
@@ -58,6 +56,7 @@ GET /t
 --- response_body
 failed
 --- wait: 0.5
+
 
 
 === TEST 2: sanity
@@ -94,6 +93,8 @@ done
 Batch Processor[log buffer] successfully processed the entries
 --- wait: 0.5
 
+
+
 === TEST 3: batch processor timeout exceeded
 --- config
     location /t {
@@ -106,11 +107,9 @@ Batch Processor[log buffer] successfully processed the entries
                 retry_delay  = 0,
                 inactive_timeout = 1
             }
-
             local func_to_send = function(elements)
                 return true
             end
-
             local log_buffer, err = Batch:new(func_to_send, config)
 
             if not log_buffer then
@@ -130,23 +129,22 @@ BatchProcessor[log buffer] buffer duration exceeded, activating buffer flush
 Batch Processor[log buffer] successfully processed the entries
 --- wait: 3
 
+
+
 === TEST 4: batch processor batch max size exceeded
 --- config
     location /t {
         content_by_lua_block {
             local Batch = require("apisix.plugins.batch-processor")
-
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
                 process_delay  = 0,
                 retry_delay  = 0,
             }
-
             local func_to_send = function(elements)
                 return true
             end
-
             local log_buffer, err = Batch:new(func_to_send, config)
 
             if not log_buffer then
@@ -169,6 +167,8 @@ batch processor[log buffer] batch max size has exceeded
 Batch Processor[log buffer] successfully processed the entries
 --- wait: 0.5
 
+
+
 === TEST 5: first failed to process and second try success
 --- config
     location /t {
@@ -182,7 +182,6 @@ Batch Processor[log buffer] successfully processed the entries
                 process_delay  = 0,
                 retry_delay  = 0,
             }
-
             local func_to_send = function(elements)
                 if not retry then
                     retry = true
@@ -190,7 +189,6 @@ Batch Processor[log buffer] successfully processed the entries
                 end
                 return true
             end
-
             local log_buffer, err = Batch:new(func_to_send, config)
 
             if not log_buffer then
@@ -212,23 +210,21 @@ Batch Processor[log buffer] successfully processed the entries
 --- wait: 0.5
 
 
+
 === TEST 6: Exceeding max retry count
 --- config
     location /t {
         content_by_lua_block {
             local Batch = require("apisix.plugins.batch-processor")
-
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
                 process_delay  = 0,
                 retry_delay  = 0,
             }
-
             local func_to_send = function(elements)
                 return false
             end
-
             local log_buffer, err = Batch:new(func_to_send, config)
 
             if not log_buffer then
@@ -252,6 +248,7 @@ Batch Processor[log buffer] exceeded the max_retry_count
 --- wait: 0.5
 
 
+
 === TEST 7: two batches
 --- config
     location /t {
@@ -265,13 +262,11 @@ Batch Processor[log buffer] exceeded the max_retry_count
                 process_delay  = 0,
                 retry_delay  = 0,
             }
-
             local func_to_send = function(elements)
                 count = count + 1
                 core.log.info("batch[", count , "] sent")
                 return true
             end
-
             local log_buffer, err = Batch:new(func_to_send, config)
 
             if not log_buffer then
@@ -297,23 +292,21 @@ batch[2] sent
 --- wait: 0.5
 
 
+
 === TEST 8: batch processor retry count 0 and fail processing
 --- config
     location /t {
         content_by_lua_block {
             local Batch = require("apisix.plugins.batch-processor")
-
             local config = {
                 max_retry_count  = 0,
                 batch_max_size = 2,
                 process_delay  = 0,
                 retry_delay  = 0,
             }
-
             local func_to_send = function(elements)
                 return false
             end
-
             local log_buffer, err = Batch:new(func_to_send, config)
 
             if not log_buffer then
@@ -336,6 +329,8 @@ Batch Processor[log buffer] failed to process entries
 Batch Processor[log buffer] exceeded the max_retry_count
 --- wait: 0.5
 
+
+
 === TEST 9: batch processor timeout exceeded
 --- config
     location /t {
@@ -349,11 +344,9 @@ Batch Processor[log buffer] exceeded the max_retry_count
                 buffer_duration = 60,
                 inactive_timeout = 1,
             }
-
             local func_to_send = function(elements)
                 return true
             end
-
             local log_buffer, err = Batch:new(func_to_send, config)
 
             if not log_buffer then
