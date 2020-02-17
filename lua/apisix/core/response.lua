@@ -16,7 +16,7 @@
 --
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
-local ngx_say = ngx.say
+local ngx_print = ngx.print
 local ngx_header = ngx.header
 local error = error
 local select = select
@@ -55,7 +55,7 @@ function resp_exit(code, ...)
                 error("failed to encode data: " .. err, -2)
             else
                 idx = idx + 1
-                insert_tab(t, idx, body)
+                insert_tab(t, idx, body .. "\n")
             end
 
         elseif v ~= nil then
@@ -65,7 +65,7 @@ function resp_exit(code, ...)
     end
 
     if idx > 0 then
-        ngx_say(concat_tab(t, "", 1, idx))
+        ngx_print(concat_tab(t, "", 1, idx))
     end
 
     if code then
@@ -87,7 +87,21 @@ function _M.set_header(...)
       error("headers have already been sent", 2)
     end
 
-    for i = 1, select('#', ...), 2 do
+    local count = select('#', ...)
+    if count == 1 then
+        local headers = select(1, ...)
+        if type(headers) ~= "table" then
+            error("should be a table if only one argument", 2)
+        end
+
+        for k, v in pairs(headers) do
+            ngx_header[k] = v
+        end
+
+        return
+    end
+
+    for i = 1, count, 2 do
         ngx_header[select(i, ...)] = select(i + 1, ...)
     end
 end
