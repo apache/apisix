@@ -17,7 +17,6 @@
 local core = require("apisix.core")
 local setmetatable = setmetatable
 local timer_at = ngx.timer.at
-local remove = table.remove
 local fmt = string.format
 local ngx_log = ngx.log
 local DEBUG = ngx.DEBUG
