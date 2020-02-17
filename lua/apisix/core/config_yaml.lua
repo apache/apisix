@@ -21,6 +21,7 @@ local json         = require("apisix.core.json")
 local process      = require("ngx.process")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
+local profile      = require("apisix.core.profile").profile
 local lfs          = require("lfs")
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -36,7 +37,12 @@ local pcall        = pcall
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
-local apisix_yaml_path  = ngx.config.prefix() .. "conf/apisix.yaml"
+local apisix_yaml_path
+if profile then
+    apisix_yaml_path = ngx.config.prefix() .. "conf/apisix-" .. profile .. ".yaml"
+else
+    apisix_yaml_path = ngx.config.prefix() .. "conf/apisix.yaml"
+end
 local created_obj  = {}
 
 
