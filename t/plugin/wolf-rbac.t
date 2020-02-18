@@ -49,6 +49,8 @@ qr/{"appid":"unset","server":"http:\\\/\\\/127\.0\.0\.1:10080"}/
 --- no_error_log
 [error]
 
+
+
 === TEST 2: wrong type of string
 --- config
     location /t {
@@ -69,6 +71,7 @@ property "appid" validation failed: wrong type: expected string, got number
 done
 --- no_error_log
 [error]
+
 
 
 === TEST 3: add consumer with username and plugins
@@ -115,6 +118,7 @@ passed
 [error]
 
 
+
 === TEST 4: enable wolf rbac plugin using admin api
 --- config
     location /t {
@@ -150,6 +154,7 @@ passed
 [error]
 
 
+
 === TEST 5: login failed, appid is missing
 --- request
 POST /apisix/plugin/wolf-rbac/login
@@ -161,6 +166,7 @@ Content-Type: application/x-www-form-urlencoded
 qr/appid is missing/
 --- no_error_log
 [error]
+
 
 
 === TEST 6: login failed, appid not found
@@ -176,6 +182,7 @@ qr/appid \[not-found\] not found/
 [error]
 
 
+
 === TEST 7: login failed, username missing
 --- request
 POST /apisix/plugin/wolf-rbac/login
@@ -185,6 +192,7 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
 --- response_body_like eval
 qr/ERR_USERNAME_MISSING/
+
 
 
 === TEST 8: login failed, password missing
@@ -198,6 +206,7 @@ Content-Type: application/x-www-form-urlencoded
 qr/ERR_PASSWORD_MISSING/
 
 
+
 === TEST 9: login failed, username not found
 --- request
 POST /apisix/plugin/wolf-rbac/login
@@ -209,6 +218,7 @@ Content-Type: application/x-www-form-urlencoded
 qr/ERR_USER_NOT_FOUND/
 
 
+
 === TEST 10: login failed, wrong password
 --- request
 POST /apisix/plugin/wolf-rbac/login
@@ -218,6 +228,7 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
 --- response_body_like eval
 qr/ERR_PASSWORD_ERROR/
+
 
 
 === TEST 11: login successfully
@@ -234,7 +245,7 @@ qr/{"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":{"nickname":"adm
 
 
 
-=== TEST 21: verify, missing token
+=== TEST 12: verify, missing token
 --- request
 GET /hello
 --- error_code: 401
@@ -244,7 +255,8 @@ GET /hello
 [error]
 
 
-=== TEST 22: verify: invalid rbac token
+
+=== TEST 13: verify: invalid rbac token
 --- request
 GET /hello
 --- error_code: 401
@@ -256,7 +268,8 @@ x-rbac-token: invalid-rbac-token
 [error]
 
 
-=== TEST 23: verify: invalid appid in rbac token
+
+=== TEST 14: verify: invalid appid in rbac token
 --- request
 GET /hello
 --- error_code: 401
@@ -266,7 +279,8 @@ x-rbac-token: V1#invalid-appid#rbac-token
 {"message":"Invalid appid in rbac token"}
 
 
-=== TEST 24: verify: failed
+
+=== TEST 15: verify: failed
 --- request
 GET /hello1
 --- error_code: 401
@@ -276,7 +290,8 @@ x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
 {"message":"no permission to access"}
 
 
-=== TEST 25: verify (in argument)
+
+=== TEST 16: verify (in argument)
 --- request
 GET /hello?rbac_token=V1%23wolf-rbac-app%23wolf-rbac-token
 --- response_headers
@@ -289,7 +304,8 @@ hello world
 [error]
 
 
-=== TEST 26: verify (in header Authorization)
+
+=== TEST 17: verify (in header Authorization)
 --- request
 GET /hello
 --- more_headers
@@ -304,7 +320,8 @@ hello world
 [error]
 
 
-=== TEST 27: verify (in header x-rbac-token)
+
+=== TEST 18: verify (in header x-rbac-token)
 --- request
 GET /hello
 --- more_headers
@@ -319,7 +336,8 @@ hello world
 [error]
 
 
-=== TEST 28: verify (in cookie)
+
+=== TEST 19: verify (in cookie)
 --- request
 GET /hello
 --- more_headers
