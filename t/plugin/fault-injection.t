@@ -47,7 +47,7 @@ __DATA__
                                "fault-injection": {
                                    "abort": {
                                        "http_status": 100,
-                                       "body": "Fault Injection!"
+                                       "body": "Fault Injection!\n"
                                    }
                                },
                                "proxy-rewrite": {
@@ -357,7 +357,7 @@ hello world
 
 
 
-=== TEST 10: set route(abort with http status 200 and return "Fault Injection!")
+=== TEST 10: set route(abort with http status 200 and return "Fault Injection!\n")
 --- config
        location /t {
            content_by_lua_block {
@@ -369,7 +369,7 @@ hello world
                                "fault-injection": {
                                    "abort": {
                                       "http_status": 200,
-                                      "body": "Fault Injection!"
+                                      "body": "Fault Injection!\n"
                                    }
                                },
                                "proxy-rewrite": {
@@ -402,7 +402,7 @@ passed
 
 
 
-=== TEST 11: hit route(abort with http code 200 and return "Fault Injection!")
+=== TEST 11: hit route(abort with http code 200 and return "Fault Injection!\n")
 --- request
 GET /hello HTTP/1.1
 --- error_code: 200
@@ -413,7 +413,7 @@ Fault Injection!
 
 
 
-=== TEST 12: set route(abort with http status 405 and return "Fault Injection!")
+=== TEST 12: set route(abort with http status 405 and return "Fault Injection!\n")
 --- config
        location /t {
            content_by_lua_block {
@@ -425,7 +425,7 @@ Fault Injection!
                                "fault-injection": {
                                    "abort": {
                                       "http_status": 405,
-                                      "body": "Fault Injection!"
+                                      "body": "Fault Injection!\n"
                                    }
                                },
                                "proxy-rewrite": {
@@ -458,7 +458,7 @@ passed
 
 
 
-=== TEST 13: hit route(abort with http status 405 and return "Fault Injection!")
+=== TEST 13: hit route(abort with http status 405 and return "Fault Injection!\n")
 --- request
 GET /hello HTTP/1.1
 --- error_code: 405
@@ -481,7 +481,7 @@ Fault Injection!
                                "fault-injection": {
                                    "abort": {
                                       "http_status": 200,
-                                      "body": "Fault Injection!"
+                                      "body": "Fault Injection!\n"
                                    }
                                },
                                "redirect": {
@@ -515,7 +515,7 @@ passed
 
 
 
-=== TEST 15: hit route(abort with http status 200 and return "Fault Injection!")
+=== TEST 15: hit route(abort with http status 200 and return "Fault Injection!\n")
 --- request
 GET /hello HTTP/1.1
 --- error_code: 200
