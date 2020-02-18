@@ -295,7 +295,7 @@ http {
         {% if enable_ipv6 then %}
         listen [::]:{* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
         {% if ssl.enable then %}
-        listen [::]:{* node_ssl_listen *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        listen [::]:{* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
@@ -566,7 +566,6 @@ local function init()
         os_name = exec("uname"),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
-        node_ssl_listen = 9443,     -- default value
         error_log = {level = "warn"},
     }
 
