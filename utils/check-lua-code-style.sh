@@ -33,10 +33,10 @@ luacheck -q lua
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 sed -i 's/.*newproxy.*//g' /tmp/check.log
-grep -E ".lua:[0-9]+:" /tmp/check.log > /tmp/check2.log
+count=`grep -E ".lua:[0-9]+:" /tmp/check.log -c || true`
 
-if [ $? -eq 0 ]
+if [ $count -ne 0 ]
 then
-    cat /tmp/check2.log
-    # exit 1
+    cat /tmp/check.log
+    exit 1
 fi
