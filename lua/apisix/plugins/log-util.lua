@@ -23,7 +23,8 @@ local function get_full_log(ngx)
     local var = ctx.var
     local service_id
     local route_id
-    local url = var.scheme .. "://" .. var.host .. ":" .. var.server_port .. var.request_uri
+    local url = var.scheme .. "://" .. var.host .. ":" .. var.server_port
+                .. var.request_uri
     local matched_route = ctx.matched_route and ctx.matched_route.value
 
     if matched_route then
