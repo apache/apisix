@@ -1369,6 +1369,7 @@ passed
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local core = require("apisix.core")
         -- set
         local code, body, res = t('/apisix/admin/routes/1?ttl=1',
             ngx.HTTP_PUT,
@@ -1383,7 +1384,7 @@ location /t {
             }]]
             )
 
-        if code >= 300 then ngx.print("code: ", code, " ") end
+        ngx.say("code: ", code)
         ngx.say(body)
 
         -- get
@@ -1400,7 +1401,7 @@ location /t {
             }]]
         )
 
-        if code >= 300 then ngx.print("code: ", code, " ") end
+        ngx.say("code: ", code)
         ngx.say(body)
 
         ngx.sleep(2)
@@ -1408,16 +1409,19 @@ location /t {
         -- get again
         code, body, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
 
-        if code >= 300 then ngx.print("code: ", code, " ") end
-        ngx.print(body)
+        ngx.say("code: ", code)
+        ngx.say("message: ", core.json.decode(body).message)
     }
 }
 --- request
 GET /t
---- response_body_like eval
-qr$passed
+--- response_body
+code: 200
 passed
-code: 404 {"cause":"\\/apisix\\/routes\\/1","index":\d+,"errorCode":100,"message":"Key not found"}$
+code: 200
+passed
+code: 404
+message: Key not found
 --- no_error_log
 [error]
 --- timeout: 5
@@ -1429,6 +1433,8 @@ code: 404 {"cause":"\\/apisix\\/routes\\/1","index":\d+,"errorCode":100,"message
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
+        local core = require("apisix.core")
+
         local code, body, res = t('/apisix/admin/routes?ttl=1',
             ngx.HTTP_POST,
             [[{
@@ -1456,15 +1462,16 @@ location /t {
         local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
         code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_GET)
 
-        if code >= 300 then ngx.print("code: ", code, " ") end
-        ngx.print(body)
+        ngx.say("code: ", code)
+        ngx.say("message: ", core.json.decode(body).message)
     }
 }
 --- request
 GET /t
---- response_body_like eval
-qr$succ: passed
-code: 404 {"cause":"\\/apisix\\/routes\\/\d+","index":\d+,"errorCode":100,"message":"Key not found"}$
+--- response_body
+[push] succ: passed
+code: 404
+message: Key not found
 --- no_error_log
 [error]
 --- timeout: 5
