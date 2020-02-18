@@ -365,3 +365,45 @@ done
 BatchProcessor[log buffer] buffer duration exceeded, activating buffer flush
 Batch Processor[log buffer] successfully processed the entries
 --- wait: 3
+
+
+
+=== TEST 10: json encode and log elements
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.plugins.batch-processor")
+            local core = require("apisix.core")
+            local config = {
+                max_retry_count  = 2,
+                batch_max_size = 2,
+                process_delay  = 0,
+                retry_delay  = 0,
+            }
+            local func_to_send = function(elements)
+                core.log.info(core.json.encode(elements))
+                return true
+            end
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+            end
+
+            log_buffer:push({msg='1'})
+            log_buffer:push({msg='2'})
+            log_buffer:push({msg='3'})
+            log_buffer:push({msg='4'})
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+BatchProcessor[log buffer] activating flush due to no activity
+--- error_log
+[{"msg":"1"},{"msg":"2"}]
+[{"msg":"3"},{"msg":"4"}]
+--- wait: 0.5

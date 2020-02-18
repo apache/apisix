@@ -18,8 +18,6 @@ local core = require("apisix.core")
 local setmetatable = setmetatable
 local timer_at = ngx.timer.at
 local fmt = string.format
-local ngx_log = ngx.log
-local DEBUG = ngx.DEBUG
 local ipairs = ipairs
 local table = table
 local now = ngx.now
@@ -86,12 +84,12 @@ local function flush_buffer(premature, batch_processor)
         core.log.debug(fmt("BatchProcessor[%s] buffer duration exceeded, activating buffer flush",
             batch_processor.name))
         batch_processor:process_buffer()
-        batch_processor.isTimerRunning = false
+        batch_processor.is_timer_running = false
         return
     end
 
     -- buffer duration did not exceed or the buffer is active, extending the timer
-    ngx_log(DEBUG, fmt("BatchProcessor[%s] extending buffer timer", batch_processor.name))
+    core.log.debug(fmt("BatchProcessor[%s] extending buffer timer", batch_processor.name))
     create_buffer_timer(batch_processor)
 end
 
@@ -102,13 +100,12 @@ function create_buffer_timer(batch_processor)
         core.log.error("failed to create buffer timer: ", err)
         return
     end
-    batch_processor.isTimerRunning = true
+    batch_processor.is_timer_running = true
 end
 
 
 function Batch_Processor:new(func, config)
     local ok, err = core.schema.check(schema, config)
-
     if not ok then
         return err
     end
@@ -127,7 +124,7 @@ function Batch_Processor:new(func, config)
         name = config.name,
         batch_to_process = {},
         entry_buffer = { entries = {}, retry_count = 0},
-        isTimerRunning = false,
+        is_timer_running = false,
         first_entry_t = 0,
         last_entry_t = 0
     }
@@ -156,7 +153,7 @@ function Batch_Processor:push(entry)
         self:process_buffer()
     end
 
-    if not self.isTimerRunning then
+    if not self.is_timer_running then
         create_buffer_timer(self)
     end
 end

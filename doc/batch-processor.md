@@ -54,7 +54,7 @@ local func_to_execute = function(entries)
 local config = {
     max_retry_count  = 2,
     buffer_duration  = 60,
-    inactive_timeout  = 60,
+    inactive_timeout  = 5,
     batch_max_size = 1,
     retry_delay  = 0
 }
@@ -68,3 +68,5 @@ end
 ```
 
 Note: Please make sure the batch max size (entry count) is within the limits of the function execution.
+The timer to flush the batch runs based on the `inactive_timeout` configuration. Thus, for optimal usage,
+keep the `inactive_timeout` smaller than the `buffer_duration`.
