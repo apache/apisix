@@ -73,7 +73,8 @@ local function extract_auth_header(authorization)
 
         obj.username = ngx.re.gsub(res[1], "\\s+", "")
         obj.password = ngx.re.gsub(res[2], "\\s+", "")
-        core.log.info("plugin access phase, authorization: ", obj.username, ": ", obj.password)
+        core.log.info("plugin access phase, authorization: ",
+                      obj.username, ": ", obj.password)
 
         return obj, nil
     end
@@ -96,7 +97,8 @@ do
         core.table.clear(consumer_ids)
 
         for _, cur_consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(cur_consumer))
+            core.log.info("consumer node: ",
+                          core.json.delay_encode(cur_consumer))
             consumer_ids[cur_consumer.auth_conf.username] = cur_consumer
         end
 

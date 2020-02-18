@@ -139,7 +139,8 @@ local function fetch_chash_hash_key(ctx, upstream)
 
     if not chash_key then
         chash_key = ctx.var["remote_addr"]
-        core.log.warn("chash_key fetch is nil, use default chash_key remote_addr: ", chash_key)
+        core.log.warn("chash_key fetch is nil, use default chash_key ",
+                      "remote_addr: ", chash_key)
     end
     core.log.info("upstream key: ", key)
     core.log.info("hash_on: ", hash_on)
