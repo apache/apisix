@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local profile = os.getenv("APISIX_PROFILE")
 
-return {profile = profile}
+return {
+    profile = os.getenv("APISIX_PROFILE")
+}
