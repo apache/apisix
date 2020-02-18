@@ -15,24 +15,20 @@
 -- limitations under the License.
 --
 local log = require("apisix.core.log")
-local profile = require("apisix.core.profile").profile
+local profile = require("apisix.core.profile")
 local yaml = require("tinyyaml")
 local ngx = ngx
 local io_open = io.open
 local type = type
 
-local local_conf_path
-if profile then
-    local_conf_path = ngx.config.prefix() .. "conf/config-" .. profile .. ".yaml"
-else
-    local_conf_path = ngx.config.prefix() .. "conf/config.yaml"
-end
+local local_conf_path = profile:build_yaml_config_file(ngx.config.prefix() .. "conf/config")
 local config_data
 
 
 local _M = {
     version = 0.2,
 }
+
 
 
 local function read_file(path)

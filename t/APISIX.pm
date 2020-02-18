@@ -51,6 +51,7 @@ add_block_preprocessor(sub {
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
 working_directory   $pwd;
+env APISIX_PROFILE;
 _EOC_
 
     $block->set_value("main_config", $main_config);

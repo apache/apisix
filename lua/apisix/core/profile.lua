@@ -14,6 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-return {
+
+local _M = {
+    version = 0.2,
     profile = os.getenv("APISIX_PROFILE")
 }
+
+
+function _M.build_yaml_config_file(self, file_path)
+    if self.profile then
+        return file_path .. "-" .. self.profile .. ".yaml"
+    else
+        return file_path .. ".yaml"
+    end
+end
+
+
+return _M
