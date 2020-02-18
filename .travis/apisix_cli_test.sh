@@ -17,13 +17,38 @@
 # limitations under the License.
 #
 
-#check whether the 'reuseport' is in nginx.conf .
-matched=`grep -E "listen.*reuseport" conf/nginx.conf | wc -l`
-if [ $matched -eq 0 ]; then
+# 'make init' operates scripts and related configuration files in the current directory
+# The 'apisix' command is a command in the /usr/local/apisix,
+# and the configuration file for the operation is in the /usr/local/apisix/conf
+
+set -ex
+
+# check whether the 'reuseport' is in nginx.conf .
+make init
+
+grep -E "listen 9080.*reuseport" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
     echo "failed: nginx.conf file is missing reuseport configuration"
     exit 1
-else
-    echo "passed: nginx.conf file contains reuseport configuration"
 fi
 
-exit 0
+echo "passed: nginx.conf file contains reuseport configuration"
+
+# check default ssl port
+sed  -i 's/listen_port: 9443/listen_port: 8443/g'  conf/config.yaml
+
+make init
+
+grep "listen 8443 ssl" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to update ssl port"
+    exit 1
+fi
+
+grep "listen \[::\]:8443 ssl" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to update ssl port"
+    exit 1
+fi
+
+echo "passed: change default ssl port"

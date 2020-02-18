@@ -44,7 +44,6 @@ luac.out
 *.pid
 t/servroot
 go
-\.*
 conf/apisix.uid
 conf/nginx.conf
 deps
