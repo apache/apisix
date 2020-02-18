@@ -26,6 +26,7 @@ local insert_tab = table.insert
 local concat_tab = table.concat
 local str_sub = string.sub
 local tonumber = tonumber
+local pairs = pairs
 
 local _M = {version = 0.1}
 
