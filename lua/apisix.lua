@@ -268,7 +268,8 @@ function _M.http_access_phase()
 
     local route = api_ctx.matched_route
     if not route then
-        return core.response.exit(404, {error_msg = "failed to match any routes"})
+        return core.response.exit(404,
+                    {error_msg = "failed to match any routes"})
     end
 
     if route.value.service_protocol == "grpc" then
@@ -471,12 +472,13 @@ local function cors_admin()
     local method = get_method()
     if method == "OPTIONS" then
         core.response.set_header("Access-Control-Allow-Origin", "*",
-                                "Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE, PATCH",
-                                "Access-Control-Max-Age", "3600",
-                                "Access-Control-Allow-Headers", "*",
-                                "Access-Control-Allow-Credentials", "true",
-                                "Content-Length", "0",
-                                "Content-Type", "text/plain")
+            "Access-Control-Allow-Methods",
+            "POST, GET, PUT, OPTIONS, DELETE, PATCH",
+            "Access-Control-Max-Age", "3600",
+            "Access-Control-Allow-Headers", "*",
+            "Access-Control-Allow-Credentials", "true",
+            "Content-Length", "0",
+            "Content-Type", "text/plain")
         ngx_exit(200)
     end
 
