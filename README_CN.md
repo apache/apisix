@@ -152,6 +152,7 @@ git clone https://github.com/apache/incubator-apisix-dashboard.git
 
 4. 安装依赖并构建
 ```
+git checkout <v1.0>  #这里的tag版本和你使用的apisix版本一致
 yarn && yarn build:prod
 ```
 

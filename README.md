@@ -152,6 +152,7 @@ git clone https://github.com/apache/incubator-apisix-dashboard.git
 
 4. Install dependencies then run build command:
 ```
+git checkout <v1.0> #The tag version same to apisix.
 yarn && yarn build:prod
 ```
 
