@@ -27,7 +27,9 @@ local schema = {
     properties = {
         host = {type = "string"},
         port = {type = "integer", minimum = 0},
-        timeout = {type = "integer", minimum = 1, default= 1000} -- timeout in milliseconds
+        timeout = {   -- timeout in milliseconds
+            type = "integer", minimum = 1, default= 1000
+        }
     },
     required = {"host", "port"}
 }
@@ -54,18 +56,21 @@ local function log(premature, conf, log_message)
 
     local ok, err = sock:setpeername(conf.host, conf.port)
     if not ok then
-        core.log.error("failed to connect to UDP server: host[", conf.host, "] port[", conf.port, "] ", err)
+        core.log.error("failed to connect to UDP server: host[",
+                       conf.host, "] port[", conf.port, "] ", err)
         return
     end
 
     ok, err = sock:send(log_message)
     if not ok then
-        core.log.error("failed to send data to UDP server: host[", conf.host, "] port[", conf.port, "] ", err)
+        core.log.error("failed to send data to UDP server: host[",
+                       conf.host, "] port[", conf.port, "] ", err)
     end
 
     ok, err = sock:close()
     if not ok then
-        core.log.error("failed to close the UDP connection, host[", conf.host, "] port[", conf.port, "] ", err)
+        core.log.error("failed to close the UDP connection, host[",
+                       conf.host, "] port[", conf.port, "] ", err)
     end
 end
 

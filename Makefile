@@ -60,7 +60,7 @@ endif
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")
-	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/iresty/lj-releng
+	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
 
@@ -68,17 +68,7 @@ endif
 ### lint:             Lint Lua source code
 .PHONY: lint
 lint: utils
-	luacheck -q lua
-	./utils/lj-releng lua/*.lua \
-		lua/apisix/*.lua \
-		lua/apisix/admin/*.lua \
-		lua/apisix/core/*.lua \
-		lua/apisix/http/*.lua \
-		lua/apisix/http/router/*.lua \
-		lua/apisix/plugins/*.lua \
-		lua/apisix/plugins/grpc-transcode/*.lua \
-		lua/apisix/plugins/limit-count/*.lua > \
-		/tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+	./utils/check-lua-code-style.sh
 
 
 ### init:             Initialize the runtime environment
