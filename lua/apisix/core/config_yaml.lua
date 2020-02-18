@@ -37,7 +37,7 @@ local pcall        = pcall
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
-local apisix_yaml_path = profile:build_yaml_config_file(ngx.config.prefix() .. "conf/apisix")
+local apisix_yaml_path = profile:yaml_path("apisix")
 local created_obj  = {}
 
 

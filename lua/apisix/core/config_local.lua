@@ -21,14 +21,13 @@ local ngx = ngx
 local io_open = io.open
 local type = type
 
-local local_conf_path = profile:build_yaml_config_file(ngx.config.prefix() .. "conf/config")
+local local_conf_path = profile:yaml_path("config")
 local config_data
 
 
 local _M = {
     version = 0.2,
 }
-
 
 
 local function read_file(path)

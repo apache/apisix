@@ -464,7 +464,8 @@ end
 
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
-    local local_conf_path = profile:build_yaml_config_file(apisix_home .. "/conf/config")
+    profile.apisix_home = apisix_home .. "/"
+    local local_conf_path = profile:yaml_path("config")
     local ymal_conf, err = read_file(local_conf_path)
     if not ymal_conf then
         return nil, err

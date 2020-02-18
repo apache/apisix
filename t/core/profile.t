@@ -14,9 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{APISIX_PROFILE} = "dev";
+}
+
 use t::APISIX 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 no_long_string();
 no_root_location();
 
@@ -24,31 +28,17 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: not set env "APISIX_PROFILE"
+=== TEST 1: set env "APISIX_PROFILE"
 --- config
     location /t {
         content_by_lua_block {
             local profile = require("apisix.core.profile")
-            ngx.say(profile:build_yaml_config_file("./test/config"))
+            profile.apisix_home = "./test/"
+            local local_conf_path = profile:yaml_path("config")
+            ngx.say(local_conf_path)
         }
     }
 --- request
 GET /t
 --- response_body
-./test/config.yaml
-
-=== TEST 2: set env "APISIX_PROFILE"
---- config
-    location /t {
-        content_by_lua_block {
-            local profile = require("apisix.core.profile")
-            profile.profile = "dev"
-            ngx.say(profile:build_yaml_config_file("./test/config"))
-        }
-    }
-
---- request
-GET /t
---- response_body
-./test/config-dev.yaml
-
+./test/conf/config-dev.yaml
