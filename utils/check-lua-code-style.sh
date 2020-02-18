@@ -32,7 +32,6 @@ luacheck -q lua
     lua/apisix/plugins/limit-count/*.lua > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
-sed -i 's/.*newproxy.*//g' /tmp/check.log
 count=`grep -E ".lua:[0-9]+:" /tmp/check.log -c || true`
 
 if [ $count -ne 0 ]
