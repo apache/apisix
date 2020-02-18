@@ -26,7 +26,7 @@ local insert_tab = table.insert
 local concat_tab = table.concat
 local str_sub = string.sub
 local tonumber = tonumber
-local pairs = pairs
+local clear_tab = require("table.clear")
 
 local _M = {version = 0.1}
 
@@ -37,10 +37,12 @@ do
     local idx = 1
 
 function resp_exit(code, ...)
+    clear_tab(t)
     idx = 0
 
     if code and type(code) ~= "number" then
-        insert_tab(t, code)
+        idx = idx + 1
+        t[idx] = code
         code = nil
     end
 
@@ -56,12 +58,12 @@ function resp_exit(code, ...)
                 error("failed to encode data: " .. err, -2)
             else
                 idx = idx + 1
-                insert_tab(t, idx, body .. "\n")
+                t[idx] = body .. "\n"
             end
 
         elseif v ~= nil then
             idx = idx + 1
-            insert_tab(t, idx, v)
+            t[idx] = v
         end
     end
 
