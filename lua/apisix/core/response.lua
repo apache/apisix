@@ -26,6 +26,7 @@ local concat_tab = table.concat
 local str_sub = string.sub
 local tonumber = tonumber
 local clear_tab = require("table.clear")
+local pairs = pairs
 
 local _M = {version = 0.1}
 
