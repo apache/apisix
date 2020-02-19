@@ -36,9 +36,9 @@ local schema = {
         name = {type = "string", default = "log buffer"},
         max_retry_count = {type = "integer", minimum = 0, default= 0},
         retry_delay = {type = "integer", minimum = 0, default= 1},
-        buffer_duration = {type = "integer", minimum = 1, default= 60}, -- maximum age in seconds of the oldest log item in a batch before the batch must be transmitted
-        inactive_timeout = {type = "integer", minimum = 1, default= 5}, -- maximum age in seconds when the buffer will be flushed if inactive
-        batch_max_size = {type = "integer", minimum = 1, default= 1000}, -- maximum number of entries in a batch before the batch must be transmitted
+        buffer_duration = {type = "integer", minimum = 1, default= 60},
+        inactive_timeout = {type = "integer", minimum = 1, default= 5},
+        batch_max_size = {type = "integer", minimum = 1, default= 1000},
     }
 }
 
