@@ -69,8 +69,13 @@ local function read_debug_yaml()
     end
 
     if not found_end_flag then
+        f:seek("set")
+        local size = f:seek("end")
         f:close()
-        log.notice("missing valid end flag in file ", debug_yaml_path)
+
+        if size > 8 then
+            log.warn("missing valid end flag in file ", debug_yaml_path)
+        end
         return
     end
 
