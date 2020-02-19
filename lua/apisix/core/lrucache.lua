@@ -32,6 +32,7 @@ local function new_lru_fun(opts)
     local item_count = opts and opts.count or GLOBAL_ITEMS_COUNT
     local item_ttl = opts and opts.ttl or GLOBAL_TTL
     local item_release = opts and opts.release
+    local invalid_stale = opts and opts.invalid_stale
     local lru_obj = lru_new(item_count)
 
     return function (key, version, create_obj_fun, ...)
@@ -45,7 +46,8 @@ local function new_lru_fun(opts)
             return obj.val
         end
 
-        if stale_obj and stale_obj._cache_ver == version then
+        if not invalid_stale and stale_obj and
+           stale_obj._cache_ver == version then
             lru_obj:set(key, stale_obj, item_ttl)
 
             local met_tab = getmetatable(stale_obj)
