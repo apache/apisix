@@ -17,7 +17,6 @@
 local log = require("apisix.core.log")
 local profile = require("apisix.core.profile")
 local yaml = require("tinyyaml")
-local ngx = ngx
 local io_open = io.open
 local type = type
 
