@@ -33,9 +33,7 @@ local tostring      = tostring
 local load_balancer
 
 
-local parsed_domain = core.lrucache.new({
-    ttl = 300, count = 512
-})
+local parsed_domain
 
 
 local _M = {version = 0.3}
@@ -85,6 +83,14 @@ function _M.http_init_worker()
     end
 
     require("apisix.debug").init_worker()
+
+    local local_conf = core.config.local_conf()
+    local dns_resolver_valid = local_conf and local_conf.apisix and
+                        local_conf.apisix.dns_resolver_valid
+
+    parsed_domain = core.lrucache.new({
+        ttl = dns_resolver_valid, count = 512, invalid_stale = true,
+    })
 end
 
 
@@ -174,14 +180,20 @@ local function parse_domain_in_up(up, ver)
         local host, port = core.utils.parse_addr(addr)
         if not ipmatcher.parse_ipv4(host) and
            not ipmatcher.parse_ipv6(host) then
-            local ip_info = core.utils.dns_parse(dns_resolver, host)
-            core.log.info("parse addr: ", core.json.delay_encode(ip_info),
-                          " resolver: ", core.json.delay_encode(dns_resolver),
-                          " addr: ", addr)
-            if ip_info and ip_info.address then
+            local ip_info, err = core.utils.dns_parse(dns_resolver, host)
+            if not ip_info then
+                return nil, err
+            end
+
+            core.log.info("parse addr: ", core.json.delay_encode(ip_info))
+            core.log.info("resolver: ", core.json.delay_encode(dns_resolver))
+            core.log.info("host: ", host)
+            if ip_info.address then
                 new_nodes[ip_info.address .. ":" .. port] = weight
                 core.log.info("dns resolver domain: ", host, " to ",
                               ip_info.address)
+            else
+                return nil, "failed to parse domain in route"
             end
         else
             new_nodes[addr] = weight
@@ -206,15 +218,22 @@ local function parse_domain_in_route(route, ver)
         local host, port = core.utils.parse_addr(addr)
         if not ipmatcher.parse_ipv4(host) and
            not ipmatcher.parse_ipv6(host) then
-            local ip_info = core.utils.dns_parse(dns_resolver, host)
-            core.log.info("parse addr: ", core.json.delay_encode(ip_info),
-                          " resolver: ", core.json.delay_encode(dns_resolver),
-                          " addr: ", addr)
+            local ip_info, err = core.utils.dns_parse(dns_resolver, host)
+            if not ip_info then
+                return nil, err
+            end
+
+            core.log.info("parse addr: ", core.json.delay_encode(ip_info))
+            core.log.info("resolver: ", core.json.delay_encode(dns_resolver))
+            core.log.info("host: ", host)
             if ip_info and ip_info.address then
                 new_nodes[ip_info.address .. ":" .. port] = weight
                 core.log.info("dns resolver domain: ", host, " to ",
                               ip_info.address)
+            else
+                return nil, "failed to parse domain in route"
             end
+
         else
             new_nodes[addr] = weight
         end
@@ -312,8 +331,12 @@ function _M.http_access_phase()
         if upstreams_etcd then
             local upstream = upstreams_etcd:get(tostring(up_id))
             if upstream.has_domain then
-                parsed_domain(upstream, api_ctx.conf_version,
-                              parse_domain_in_up, upstream)
+                local _, err = parsed_domain(upstream, api_ctx.conf_version,
+                                             parse_domain_in_up, upstream)
+                if err then
+                    core.log.error("failed to parse domain in upstream: ", err)
+                    return core.response.exit(500)
+                end
             end
 
             if upstream.value.enable_websocket then
@@ -520,6 +543,14 @@ function _M.stream_init_worker()
     plugin.init_worker()
 
     load_balancer = require("apisix.balancer").run
+
+    local local_conf = core.config.local_conf()
+    local dns_resolver_valid = local_conf and local_conf.apisix and
+                        local_conf.apisix.dns_resolver_valid
+
+    parsed_domain = core.lrucache.new({
+        ttl = dns_resolver_valid, count = 512, invalid_stale = true,
+    })
 end
 
 

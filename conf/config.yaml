@@ -55,6 +55,7 @@ apisix:
     - 223.5.5.5
     - 1.1.1.1
     - 8.8.8.8
+  dns_resolver_valid: 30          # valid time for dns result 30 seconds
 
   ssl:
     enable: true

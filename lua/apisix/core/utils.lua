@@ -57,7 +57,7 @@ function _M.split_uri(uri)
 end
 
 
-function _M.dns_parse(resolvers, domain)
+local function dns_parse(resolvers, domain)
     local r, err = resolver:new{
         nameservers = table.clone(resolvers),
         retrans = 5,  -- 5 retransmissions on receive timeout
@@ -79,8 +79,18 @@ function _M.dns_parse(resolvers, domain)
     end
 
     local idx = math.random(1, #answers)
-    return answers[idx]
+    local answer = answers[idx]
+    if answer.type == 1 then
+        return answer
+    end
+
+    if answer.type ~= 5 then
+        return nil, "unsupport DNS answer"
+    end
+
+    return dns_parse(resolvers, answer.cname)
 end
+_M.dns_parse = dns_parse
 
 
 local function rfind_char(s, ch, idx)
