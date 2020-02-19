@@ -37,7 +37,7 @@ location /t {
                                     ngx.HTTP_PUT)
 
         ngx.status = code
-        ngx.print(org_body)
+        ngx.say(org_body)
         ngx.sleep(0.2)
     }
 }

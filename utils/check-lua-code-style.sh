@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,13 +17,25 @@
 # limitations under the License.
 #
 
-#check whether the 'reuseport' is in nginx.conf .
-matched=`grep -E "listen.*reuseport" conf/nginx.conf | wc -l`
-if [ $matched -eq 0 ]; then
-    echo "failed: nginx.conf file is missing reuseport configuration"
-    exit 1
-else
-    echo "passed: nginx.conf file contains reuseport configuration"
-fi
+set -ex
 
-exit 0
+luacheck -q lua
+
+./utils/lj-releng lua/*.lua \
+    lua/apisix/*.lua \
+    lua/apisix/admin/*.lua \
+    lua/apisix/core/*.lua \
+    lua/apisix/http/*.lua \
+    lua/apisix/http/router/*.lua \
+    lua/apisix/plugins/*.lua \
+    lua/apisix/plugins/grpc-transcode/*.lua \
+    lua/apisix/plugins/limit-count/*.lua > \
+    /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+
+count=`grep -E ".lua:[0-9]+:" /tmp/check.log -c || true`
+
+if [ $count -ne 0 ]
+then
+    cat /tmp/check.log
+    exit 1
+fi
