@@ -19,6 +19,7 @@ local plugin   = require("apisix.plugin")
 local error    = error
 local ipairs   = ipairs
 local pairs    = pairs
+local type     = type
 local consumers
 
 
@@ -35,6 +36,10 @@ local function plugin_consumer()
     end
 
     for _, consumer in ipairs(consumers.values) do
+        if type(consumer) ~= "table" then
+            goto CONTINUE
+        end
+
         for name, config in pairs(consumer.value.plugins or {}) do
             local plugin_obj = plugin.get(name)
             if plugin_obj and plugin_obj.type == "auth" then
@@ -54,6 +59,8 @@ local function plugin_consumer()
                 break
             end
         end
+
+        ::CONTINUE::
     end
 
     return plugins
