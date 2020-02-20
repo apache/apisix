@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local log = require("apisix.core.log")
+local table = require("apisix.core.table")
 local yaml = require("tinyyaml")
 local ngx = ngx
 local io_open = io.open
@@ -56,6 +57,7 @@ function _M.local_conf(force)
     end
 
     config_data = yaml.parse(yaml_config)
+    config_data = table.readonly(config_data)
     return config_data
 end
 

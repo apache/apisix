@@ -299,3 +299,23 @@ GET /t
 etcd host: http://127.0.0.1:2379
 first plugin: "example-plugin"
 seq: {"Flow style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"],"Block style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"]}
+
+
+
+=== TEST 3: not allow to change local conf value
+--- config
+    location /t {
+        content_by_lua_block {
+            local encode_json = require "cjson.safe" .encode
+            local config = require("apisix.core").config.local_conf()
+
+            local ok, err = pcall(function() config["new_val"] = "val" end)
+            ngx.say("res: ", ok)
+            ngx.say("err: ", err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+res: false
+err: content_by_lua(nginx.conf:125):5: attempt to update a read-only table
