@@ -22,6 +22,7 @@ local new_tab      = require("table.new")
 local nkeys        = require("table.nkeys")
 local pairs        = pairs
 local type         = type
+local error        = error
 
 
 local _M = {
