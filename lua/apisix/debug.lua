@@ -81,7 +81,7 @@ local function read_debug_yaml()
 
     local debug_yaml_new = yaml.parse(yaml_config)
     if not debug_yaml_new then
-        log.error("failed to parse the content of file conf/debug.yaml")
+        log.error("failed to parse the content of file " .. debug_yaml_path)
         return
     end
 

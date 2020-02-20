@@ -101,7 +101,7 @@ local function read_apisix_yaml(pre_mtime)
 
     local apisix_yaml_new = yaml.parse(yaml_config)
     if not apisix_yaml_new then
-        log.error("failed to parse the content of file conf/apisix.yaml")
+        log.error("failed to parse the content of file " .. apisix_yaml_path)
         return
     end
 
@@ -117,7 +117,7 @@ local function sync_data(self)
 
     if not apisix_yaml_ctime then
         log.warn("wait for more time")
-        return nil, "failed to read local file conf/apisix.yaml"
+        return nil, "failed to read local file " .. apisix_yaml_path
     end
 
     if self.conf_version == apisix_yaml_ctime then
@@ -213,7 +213,7 @@ local function _automatic_fetch(premature, self)
         local ok, ok2, err = pcall(sync_data, self)
         if not ok then
             err = ok2
-            log.error("failed to fetch data from local file apisix.yaml: ",
+            log.error("failed to fetch data from local file " .. apisix_yaml_path .. ": ",
                       err, ", ", tostring(self))
             ngx_sleep(3)
             break
@@ -221,7 +221,7 @@ local function _automatic_fetch(premature, self)
         elseif not ok2 and err then
             if err ~= "timeout" and err ~= "Key not found"
                and self.last_err ~= err then
-                log.error("failed to fetch data from local file apisix.yaml: ",
+                log.error("failed to fetch data from local file " .. apisix_yaml_path .. ": ",
                           err, ", ", tostring(self))
             end
 
