@@ -104,7 +104,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Fault Injection](doc/plugins/fault-injection.md)
 
 - **Highly scalable**
-    - [Custom plugins]((doc/plugin-develop.md)): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
+    - [Custom plugins](doc/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
     - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
     - Custom routing: Support users to implement routing algorithms themselves.
 
