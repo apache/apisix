@@ -102,7 +102,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
     - [Fault Injection](doc/plugins/fault-injection.md)
     - [REST admin API](doc/admin-api.md)
-    - [Python SDK](https://github.com/iresty/apache-apisix-python-sdk)
+    - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
 
 - **Highly scalable**
     - [Custom plugins](doc/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.

@@ -102,7 +102,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](doc/plugins/fault-injection-cn.md)
     - [REST admin API](doc/admin-api-cn.md)
-    - [Python SDK](https://github.com/iresty/apache-apisix-python-sdk)
+    - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
 
 - **高度可扩展**
     - [自定义插件](doc/plugin-develop-cn.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。
