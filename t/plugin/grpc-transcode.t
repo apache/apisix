@@ -232,8 +232,8 @@ Connection refused) while connecting to upstream
                       service Greeter {
                           rpc SayHello (HelloRequest) returns (HelloReply) {}
                           rpc Plus (PlusRequest) returns (PlusReply) {}
+                          rpc SayHelloAfterDelay (HelloRequest) returns (HelloReply) {}
                       }
-                      rpc SayHelloAfterDelay (HelloRequest) returns (HelloReply) {}
 
                       message HelloRequest {
                           string name = 1;
