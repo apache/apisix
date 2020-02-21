@@ -19,7 +19,6 @@ local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd         = require("resty.etcd")
 local new_tab      = require("table.new")
-local clone_tab    = require("table.clone")
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert

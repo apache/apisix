@@ -17,6 +17,7 @@
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local etcd = require("resty.etcd")
 local json = require("apisix.core.json")
+local tostring = tostring
 
 local _M = {version = 0.1}
 
