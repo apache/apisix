@@ -65,7 +65,7 @@ local schema = {
             description = "deadline for grpc, millisecond",
             type        = "number",
             default     = 0
-        },        
+        },
         pb_option = { type = "array",
                       items = { type="string", anyOf = pb_option_def },
                       minItems = 1,
@@ -148,7 +148,7 @@ function _M.header_filter(conf, ctx)
         if http_status ~= nil then
             ngx.status = http_status
         else
-            ngx.status = 599  --未知错误
+            ngx.status = 599
         end
         return
     end

@@ -66,10 +66,8 @@ return function(proto, service, method, pb_option)
             core.log.error("failed to call json_encode data: ", err)
             response = "failed to json_encode response body"
         end
-        
+
         ngx.arg[1] = response
     end
 
 end
-
-
