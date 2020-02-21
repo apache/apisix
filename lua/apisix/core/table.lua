@@ -20,7 +20,9 @@ local setmetatable = setmetatable
 local select       = select
 local new_tab      = require("table.new")
 local nkeys        = require("table.nkeys")
+local json         = require("cjson.safe")
 local pairs        = pairs
+local ipairs        = ipairs
 local type         = type
 local error        = error
 
@@ -82,18 +84,35 @@ end
 _M.deepcopy = deepcopy
 
 
-function _M.readonly(t)
+local function read_only(t)
+    if type(t) ~= "table" then
+        return t
+    end
+
+    local str_v = json.encode(t)
     local proxy = {}
+
     local mt = {
         __index = t,
-        __newindex = function(t, k, v)
+        __newindex = function(self, k, v)
             error("attempt to update a read-only table", 2)
         end,
+        __tostring = function(self) return str_v end,
+        __pairs = function (self) return pairs(t) end,
+        __ipairs = function (self) return ipairs(t) end,
+        __len = function (self) return #t end,
     }
 
-    setmetatable(proxy, mt)
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            t[k] = _M.read_only(v)
+        end
+    end
+
+    proxy = setmetatable(proxy, mt)
     return proxy
 end
+_M.read_only = read_only
 
 
 return _M

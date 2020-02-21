@@ -57,7 +57,7 @@ function _M.local_conf(force)
     end
 
     config_data = yaml.parse(yaml_config)
-    config_data = table.readonly(config_data)
+    config_data = table.read_only(config_data)
     return config_data
 end
 

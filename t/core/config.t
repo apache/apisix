@@ -51,7 +51,7 @@ first plugin: "example-plugin"
 
             ngx.say("etcd host: ", config.etcd.host)
             ngx.say("first plugin: ", encode_json(config.plugins[1]))
-            ngx.say("seq: ", encode_json(config.seq))
+            ngx.say("seq: ", tostring(config.seq))
         }
     }
 --- yaml_config

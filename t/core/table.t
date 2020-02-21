@@ -16,7 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 no_long_string();
 no_root_location();
 
@@ -43,5 +43,50 @@ GET /t
 --- response_body
 encode: ["first","a",1,true]
 encode: ["a",1,true,true]
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: readonly
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local core = require("apisix.core")
+            local t = {
+                a ="a",
+                b = {
+                    c = "c"
+                }
+            }
+
+            t.b.d = "d"
+            t = core.table.read_only(t)
+
+            local ok, err = pcall(function() t.a = "new_val" end)
+            ngx.say("ok: ", ok, " err: ", err)
+            local ok, err = pcall(function() t.a_new = "new_val" end)
+            ngx.say("ok: ", ok, " err: ", err)
+            local ok, err = pcall(function() t.b.c = "new_val" end)
+            ngx.say("ok: ", ok, " err: ", err)
+            local ok, err = pcall(function() t.b.c_new = "new_val" end)
+            ngx.say("ok: ", ok, " err: ", err)
+
+            ngx.say("t.a: ", t.a)
+            ngx.say("t.b.c: ", t.b.c)
+            ngx.say("json: ", tostring(t))
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok: false err: content_by_lua(nginx.conf:143):14: attempt to update a read-only table
+ok: false err: content_by_lua(nginx.conf:143):16: attempt to update a read-only table
+ok: false err: content_by_lua(nginx.conf:143):18: attempt to update a read-only table
+ok: false err: content_by_lua(nginx.conf:143):20: attempt to update a read-only table
+t.a: a
+t.b.c: c
+json: {"a":"a","b":{"c":"c","d":"d"}}
 --- no_error_log
 [error]
