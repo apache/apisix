@@ -42,6 +42,21 @@ my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
+my $profile = $ENV{"APISIX_PROFILE"};
+
+
+my $apisix_file;
+my $debug_file;
+my $config_file;
+if ($profile) {
+    $apisix_file = "apisix-$profile.yaml";
+    $debug_file = "debug-$profile.yaml";
+    $config_file = "config-$profile.yaml";
+} else {
+    $apisix_file = "apisix.yaml";
+    $debug_file = "debug.yaml";
+    $config_file = "config.yaml";
+}
 
 
 add_block_preprocessor(sub {
@@ -51,6 +66,7 @@ add_block_preprocessor(sub {
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
 working_directory   $apisix_home;
+env APISIX_PROFILE;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -305,7 +321,7 @@ _EOC_
     my $user_apisix_yaml = $block->apisix_yaml // "";
     if ($user_apisix_yaml) {
         $user_apisix_yaml = <<_EOC_;
->>> ../conf/apisix.yaml
+>>> ../conf/$apisix_file
 $user_apisix_yaml
 _EOC_
     }
@@ -315,9 +331,9 @@ _EOC_
 
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;
->>> ../conf/debug.yaml
+>>> ../conf/$debug_file
 $user_debug_config
->>> ../conf/config.yaml
+>>> ../conf/$config_file
 $user_yaml_config
 >>> ../conf/cert/apisix.crt
 $ssl_crt

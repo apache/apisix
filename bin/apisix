@@ -100,6 +100,8 @@ working_directory   /tmp/apisix_cores/;
 
 worker_shutdown_timeout 3;
 
+env APISIX_PROFILE;
+
 {% if stream_proxy then %}
 stream {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
@@ -461,7 +463,10 @@ local function exec(command)
 end
 
 local function read_yaml_conf()
-    local ymal_conf, err = read_file(apisix_home .. "/conf/config.yaml")
+    local profile = require("apisix.core.profile")
+    profile.apisix_home = apisix_home .. "/"
+    local local_conf_path = profile:yaml_path("config")
+    local ymal_conf, err = read_file(local_conf_path)
     if not ymal_conf then
         return nil, err
     end
