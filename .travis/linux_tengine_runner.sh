@@ -94,6 +94,7 @@ tengine_install() {
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-stream_ssl_preread_no_skip.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_pipelining.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_timeout_fields.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/openresty/master/patches/tengine-2.3.2-privileged_agent_process.patch
 
     cd bundle/tengine-2.3.2
     patch -p1 < ../../patches/nginx-1.17.4-always_enable_cc_feature_tests.patch
@@ -120,6 +121,7 @@ tengine_install() {
     patch -p1 < ../../patches/nginx-1.17.4-stream_ssl_preread_no_skip.patch
     patch -p1 < ../../patches/nginx-1.17.4-upstream_pipelining.patch
     patch -p1 < ../../patches/nginx-1.17.4-upstream_timeout_fields.patch
+    patch -p1 < ../../patches/tengine-2.3.2-privileged_agent_process.patch
 
     cd -
     # patching end
