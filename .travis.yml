@@ -1,0 +1,66 @@
+dist: xenial
+sudo: required
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - os: osx
+    - env: OSNAME=linux_apisix_luarocks
+
+  include:
+    - os: linux
+      services:
+        - docker
+      env: OSNAME=linux_openresty
+    - os: osx
+      env: OSNAME=osx_openresty
+      if: type IN (push)
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /usr/local/Homebrew
+    - os: linux
+      services:
+        - docker
+      env: OSNAME=linux_tengine
+    - os: linux
+      env: OSNAME=linux_apisix_luarocks
+
+language: c
+
+addons:
+  apt:
+    packages:
+      - cpanminus
+      - build-essential
+      - libncurses5-dev
+      - libreadline-dev
+      - libssl-dev
+      - perl
+      - etcd
+      - luarocks
+      - lua-check
+  homebrew:
+    update: true
+
+cache:
+  directories:
+    - build-cache
+
+before_cache:
+  - brew cleanup
+
+before_install:
+  - docker pull redis:3.0-alpine
+  - docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
+  - echo $OSNAME
+  - $PWD/.travis/${OSNAME}_runner.sh before_install
+
+install:
+  - $PWD/.travis/${OSNAME}_runner.sh do_install
+
+script:
+  - $PWD/.travis/${OSNAME}_runner.sh script
+
+after_success:
+  - $PWD/.travis/${OSNAME}_runner.sh after_success
