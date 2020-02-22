@@ -62,7 +62,7 @@ function _M.incoming(self, key)
         end
     elseif err then
         -- core.log.info(" err: ", err)
-        return
+        return nil, err
     end
 
     local limit = self.limit
