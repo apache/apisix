@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local tab_insert = table.insert
 local tab_concat = table.concat
 local re_gmatch = ngx.re.gmatch
+local ngx = ngx
 local ipairs = ipairs
 local tostring = tostring
 
@@ -160,7 +161,6 @@ local function generate_complex_value(data, ctx)
         return nil, err
     end
 
-    local segs_value, err = parse_complex_value(data)
     core.table.clear(tmp)
 
     for i, value in ipairs(segs_value) do
