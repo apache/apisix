@@ -91,7 +91,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [限制并发](doc/plugins/limit-conn-cn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
 
-- **可运维**
+- **运维友好**
     - OpenTracing 可观测性: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin-cn.md)。
     - 监控和指标: [Prometheus](doc/plugins/prometheus-cn.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
@@ -101,8 +101,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [单机模式](doc/stand-alone-cn.md): 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
     - 全局规则：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
-    - [REST admin API](doc/admin-api-cn.md)
     - [故障注入](doc/plugins/fault-injection-cn.md)
+    - [REST Admin API](doc/admin-api-cn.md)
+    - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
 
 - **高度可扩展**
     - [自定义插件](doc/plugin-develop-cn.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。

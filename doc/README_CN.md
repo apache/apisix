@@ -49,6 +49,7 @@ Reference document
 * [limit-count](plugins/limit-count-cn.md)：基于“固定窗口”的限速实现。
 * [limit-req](plugins/limit-req-cn.md)：基于漏桶原理的请求限速实现。
 * [limit-conn](plugins/limit-conn-cn.md)：限制并发请求（或并发连接）。
+* [proxy-rewrite](plugins/proxy-rewrite-cn.md): 支持自定义修改 proxy 到上游的信息。
 * [prometheus](plugins/prometheus-cn.md)：以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
 * [OpenTracing](plugins/zipkin-cn.md)：支持 Zikpin 和 Apache SkyWalking。
 * [grpc-transcode](plugins/grpc-transcoding-cn.md)：REST <--> gRPC 转码。

@@ -101,11 +101,12 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Stand-alone mode](doc/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
     - Global Rule: Allows to run any plugin for all request, eg: limit rate, IP filter etc.
     - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
-    - [REST admin API](doc/admin-api.md)
     - [Fault Injection](doc/plugins/fault-injection.md)
+    - [REST Admin API](doc/admin-api.md)
+    - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
 
 - **Highly scalable**
-    - [Custom plugins]((doc/plugin-develop.md)): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
+    - [Custom plugins](doc/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
     - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
     - Custom routing: Support users to implement routing algorithms themselves.
 
