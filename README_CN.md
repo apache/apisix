@@ -101,7 +101,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - 全局规则：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](doc/plugins/fault-injection-cn.md)
-    - [REST admin API](doc/admin-api-cn.md)
+    - [REST Admin API](doc/admin-api-cn.md)
     - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
 
 - **高度可扩展**
