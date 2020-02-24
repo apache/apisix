@@ -198,7 +198,8 @@ function _M.rewrite(conf, ctx)
 
     local value, err = generate_complex_value(conf.cache_bypass, ctx)
     if not value then
-        core.log.error("failed to generate the complex value by: ", conf.cache_bypass, " error: ", err)
+        core.log.error("failed to generate the complex value by: ",
+                       conf.cache_bypass, " error: ", err)
         core.response.exit(500)
     end
 
