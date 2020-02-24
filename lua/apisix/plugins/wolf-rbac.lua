@@ -43,6 +43,10 @@ local schema = {
             type = "string",
             default = "http://127.0.0.1:10080"
         },
+        header_prefix = {
+            type = "string",
+            default = "X-"
+        },
     }
 }
 
@@ -75,6 +79,18 @@ end -- do
 local token_version = 'V1'
 local function create_rbac_token(appid, wolf_token)
     return token_version .. "#" .. appid .. "#" .. wolf_token
+end
+
+local function fail_response(message, init_values)
+    local response = init_values or {}
+    response.message = message
+    return response
+end
+
+local function success_response(message, init_values)
+    local response = init_values or {}
+    response.message = message
+    return response
 end
 
 local function parse_rbac_token(rbac_token)
@@ -133,9 +149,6 @@ local function http_get(uri, myheaders, timeout)
     return http_req("GET", uri, nil, myheaders, timeout)
 end
 
-local function http_post(uri, body, myheaders, timeout)
-    return http_req("POST", uri, body, myheaders, timeout)
-end
 
 function _M.check_schema(conf)
     core.log.info("input conf: ", core.json.delay_encode(conf))
@@ -240,14 +253,14 @@ function _M.rewrite(conf, ctx)
     if rbac_token == nil then
         core.log.info("no permission to access ",
                       core.json.delay_encode(permItem), ", need login!")
-        return 401, {message = "Missing rbac token in request"}
+        return 401, fail_response("Missing rbac token in request")
     end
 
     local tokenInfo, err = parse_rbac_token(rbac_token)
     core.log.info("token info: ", core.json.delay_encode(tokenInfo),
                   ", err: ", err)
     if err then
-        return 401, {message = 'invalid rbac token: parse failed'}
+        return 401, fail_response('invalid rbac token: parse failed')
     end
 
     local appid = tokenInfo.appid
@@ -257,7 +270,7 @@ function _M.rewrite(conf, ctx)
 
     local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        return 401, fail_response("Missing related consumer")
     end
 
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
@@ -268,7 +281,7 @@ function _M.rewrite(conf, ctx)
     local consumer = consumers[appid]
     if not consumer then
         core.log.error("consumer [", appid, "] not found")
-        return 401, {message = "Invalid appid in rbac token"}
+        return 401, fail_response("Invalid appid in rbac token")
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
     local server = consumer.auth_conf.server
@@ -290,13 +303,17 @@ function _M.rewrite(conf, ctx)
     local nickname = nil
     if type(res.userInfo) == 'table' then
         local userInfo = res.userInfo
-        core.response.set_header("X-UserId", userInfo.id)
-        core.response.set_header("X-Username", userInfo.username)
-        core.response.set_header("X-Nickname",
-            ngx.escape_uri(userInfo.nickname) or userInfo.username)
         ctx.userInfo = userInfo
+        local userId = userInfo.id
         username = userInfo.username
-        nickname = userInfo.nickname
+        nickname = userInfo.nickname or userInfo.username
+        local prefix = consumer.auth_conf.header_prefix or ''
+        core.response.set_header(prefix .. "UserId", userId)
+        core.response.set_header(prefix .. "Username", username)
+        core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(prefix .. "UserId", userId)
+        core.request.set_header(prefix .. "Username", username)
+        core.request.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then
@@ -304,8 +321,9 @@ function _M.rewrite(conf, ctx)
         core.log.error(" check_url_permission(",
             core.json.delay_encode(permItem),
             ") failed, res: ",core.json.delay_encode(res))
-        return 401, {message = res.err, username = username,
-                     nickname = nickname}
+        return 401, fail_response(res.err,
+            { username = username, nickname = nickname }
+        )
     end
     core.log.info("wolf-rbac check permission passed")
 end
@@ -327,20 +345,10 @@ local function get_args()
     return args
 end
 
-local function login()
-    local args = get_args()
-    if not args then
-        return core.response.exit(400, {message = "invalid request"})
-    end
-    if not args.appid then
-        return core.response.exit(400, {message = "appid is missing"})
-    end
-
-    local appid = args.appid
-
+local function get_consumer(appid)
     local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
-        return core.response.exit(500)
+        core.response.exit(500)
     end
 
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
@@ -351,62 +359,135 @@ local function login()
     local consumer = consumers[appid]
     if not consumer then
         core.log.info("request appid [", appid, "] not found")
-        return core.response.exit(400,
-                {message = "appid [" .. tostring(appid) .. "] not found"}
-               )
+        core.response.exit(400,
+                fail_response("appid [" .. tostring(appid) .. "] not found")
+            )
     end
+    return consumer
+end
 
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
-
-    local uri = consumer.auth_conf.server .. '/wolf/rbac/login.rest'
-    local headers = new_headers()
+local function request_to_wolf_server(method, uri, headers, body)
     headers["Content-Type"] = "application/json; charset=utf-8"
     local timeout = 1000 * 5
     local request_debug = core.json.delay_encode(
         {
-            method = 'POST', uri = uri, body = args,
+            method = method, uri = uri, body = body,
             headers = headers,timeout = timeout
         }
     )
 
-    core.log.info("login request [", request_debug, "] ....")
-    local res, err = http_post(uri, core.json.encode(args), headers, timeout)
+    core.log.info("request [", request_debug, "] ....")
+    local res, err = http_req(method, uri, core.json.encode(body), headers, timeout)
     if err or not res then
-        core.log.error("login request [", request_debug, "] failed! err: ", err)
+        core.log.error("request [", request_debug, "] failed! err: ", err)
         return core.response.exit(500,
-                {message = "request to wolf-server failed! " .. tostring(err)})
+            fail_response("request to wolf-server failed! " .. tostring(err))
+        )
     end
-    core.log.info("login request [", request_debug, "] status: ", res.status,
+    core.log.info("request [", request_debug, "] status: ", res.status,
                   ", body: ", res.body)
 
     if res.status ~= 200 then
-        core.log.error("login request [", request_debug, "] failed! status: ",
-                       res.status)
+        core.log.error("request [", request_debug, "] failed! status: ",
+                        res.status)
         return core.response.exit(500,
-            {
-                message = "request to wolf-server failed! status:"
-                          .. tostring(res.status)
-            }
+        fail_response("request to wolf-server failed! status:"
+                          .. tostring(res.status))
         )
     end
     local body, err = json.decode(res.body)
     if err or not body then
-        core.log.error("login request [", request_debug, "] failed! err:", err)
-        return core.response.exit(500, {message = "request to wolf-server failed!"})
+        core.log.error("request [", request_debug, "] failed! err:", err)
+        return core.response.exit(500, fail_response("request to wolf-server failed!"))
     end
     if not body.ok then
-        core.log.error("user login [", request_debug, "] failed! response body:",
+        core.log.error("request [", request_debug, "] failed! response body:",
                        core.json.delay_encode(body))
-        return core.response.exit(200, {message = body.reason})
+        return core.response.exit(200, fail_response(body.reason))
     end
-    core.log.info("user login [", request_debug, "] success! response body:",
+
+    core.log.info("request [", request_debug, "] success! response body:",
                   core.json.delay_encode(body))
+    return body
+end
+
+local function wolf_rbac_login()
+    local args = get_args()
+    if not args then
+        return core.response.exit(400, fail_response("invalid request"))
+    end
+    if not args.appid then
+        return core.response.exit(400, fail_response("appid is missing"))
+    end
+
+    local appid = args.appid
+    local consumer = get_consumer(appid)
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
+
+    local uri = consumer.auth_conf.server .. '/wolf/rbac/login.rest'
+    local headers = new_headers()
+    local body = request_to_wolf_server('POST', uri, headers, args)
 
     local userInfo = body.data.userInfo
     local wolf_token = body.data.token
 
     local rbac_token = create_rbac_token(appid, wolf_token)
-    core.response.exit(200, {rbac_token = rbac_token, user_info = userInfo})
+    core.response.exit(200, success_response(nil, {rbac_token = rbac_token, user_info = userInfo}))
+end
+
+local function get_wolf_token(ctx)
+    local url = ctx.var.uri
+    local action = ctx.var.request_method
+    local clientIP = core.request.get_ip(ctx)
+    local permItem = {action = action, url = url, clientIP = clientIP}
+    core.log.info("hit wolf-rbac change_password api")
+    local rbac_token = fetch_rbac_token(ctx)
+    if rbac_token == nil then
+        core.log.info("no permission to access ",
+                      core.json.delay_encode(permItem), ", need login!")
+        return core.response.exit(401, fail_response("Missing rbac token in request"))
+    end
+
+    local tokenInfo, err = parse_rbac_token(rbac_token)
+    core.log.info("token info: ", core.json.delay_encode(tokenInfo),
+                  ", err: ", err)
+    if err then
+        return core.response.exit(401, fail_response('invalid rbac token: parse failed'))
+    end
+    return tokenInfo
+end
+
+local function wolf_rbac_change_pwd()
+    local args = get_args()
+
+    local ctx = ngx.ctx.api_ctx
+    local tokenInfo = get_wolf_token(ctx)
+    local appid = tokenInfo.appid
+    local wolf_token = tokenInfo.wolf_token
+    local consumer = get_consumer(appid)
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
+
+    local uri = consumer.auth_conf.server .. '/wolf/rbac/change_pwd'
+    local headers = new_headers()
+    headers['x-rbac-token'] = wolf_token
+    request_to_wolf_server('POST', uri, headers, args)
+    core.response.exit(200, success_response('success to change password', { }))
+end
+
+local function wolf_rbac_user_info()
+    local ctx = ngx.ctx.api_ctx
+    local tokenInfo = get_wolf_token(ctx)
+    local appid = tokenInfo.appid
+    local wolf_token = tokenInfo.wolf_token
+    local consumer = get_consumer(appid)
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
+
+    local uri = consumer.auth_conf.server .. '/wolf/rbac/user_info'
+    local headers = new_headers()
+    headers['x-rbac-token'] = wolf_token
+    local body = request_to_wolf_server('GET', uri, headers, {})
+    local userInfo = body.data.userInfo
+    core.response.exit(200, success_response(nil, {user_info = userInfo}))
 end
 
 function _M.api()
@@ -414,8 +495,18 @@ function _M.api()
         {
             methods = {"POST"},
             uri = "/apisix/plugin/wolf-rbac/login",
-            handler = login,
-        }
+            handler = wolf_rbac_login,
+        },
+        {
+            methods = {"PUT"},
+            uri = "/apisix/plugin/wolf-rbac/change_pwd",
+            handler = wolf_rbac_change_pwd,
+        },
+        {
+            methods = {"GET"},
+            uri = "/apisix/plugin/wolf-rbac/user_info",
+            handler = wolf_rbac_user_info,
+        },
     }
 end
 

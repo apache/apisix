@@ -38,7 +38,7 @@ rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更�
 
 * `server`: 设置 `wolf-server` 的访问地址, 如果未设置, 默认为: `http://127.0.0.1:10080`.
 * `appid`: 设置应用id, 该应用id, 需要是在 `wolf-console` 中已经添加的应用id.
-
+* `header_prefix`: 自定义http头的前缀, 默认为: `X-`. `wolf-rbac`在鉴权成功后, 会在请求头(用于传给后端)及响应头(用于传给前端)中添加3个头: `X-UserId`, `X-Username`, `X-Nickname`.
 
 ## 依赖项
 
@@ -184,6 +184,45 @@ HTTP/1.1 200 OK
 
 <!DOCTYPE html>
 ```
+
+#### 获取 `RBAC` 用户信息
+
+```shell
+curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/user_info \
+--cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i
+
+
+HTTP/1.1 200 OK
+{
+    "user_info":{
+        "nickname":"test",
+        "lastLogin":1582816780,
+        "id":749,
+        "username":"test",
+        "appIDs":["restful"],
+        "manager":"none",
+        "permissions":{"USER_LIST":true},
+        "profile":null,
+        "roles":{},
+        "createTime":1578820506,
+        "email":""
+    }
+}
+```
+
+#### 修改 `RBAC` 用户密码
+
+```shell
+curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/change_pwd \
+-H "Content-Type: application/json" \
+--cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i \
+-X PUT -d '{"oldPassword": "old password", "newPassword": "new password"}'
+
+
+HTTP/1.1 200 OK
+{"message":"success to change password"}
+```
+
 
 ## 禁用插件
 

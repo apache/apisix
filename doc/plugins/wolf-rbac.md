@@ -38,6 +38,7 @@ The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more
 
 * `server`: Set the service address of` wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
 * `appid`: Set the app id. The app id must be added in wolf-console.
+* `header_prefix`: prefix of custom HTTP header. The default value is `X-`. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`.
 
 
 ## Dependencies
@@ -183,6 +184,45 @@ curl http://127.0.0.1:9080 -H"Host: www.baidu.com" \
 HTTP/1.1 200 OK
 
 <!DOCTYPE html>
+```
+
+
+#### Get `RBAC` user information
+
+```shell
+curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/user_info \
+--cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i
+
+
+HTTP/1.1 200 OK
+{
+    "user_info":{
+        "nickname":"test",
+        "lastLogin":1582816780,
+        "id":749,
+        "username":"test",
+        "appIDs":["restful"],
+        "manager":"none",
+        "permissions":{"USER_LIST":true},
+        "profile":null,
+        "roles":{},
+        "createTime":1578820506,
+        "email":""
+    }
+}
+```
+
+#### Change 'RBAC' user password
+
+```shell
+curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/change_pwd \
+-H "Content-Type: application/json" \
+--cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i \
+-X PUT -d '{"oldPassword": "old password", "newPassword": "new password"}'
+
+
+HTTP/1.1 200 OK
+{"message":"success to change password"}
 ```
 
 ## Disable Plugin

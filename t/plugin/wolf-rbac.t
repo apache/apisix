@@ -45,7 +45,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/{"appid":"unset","server":"http:\\\/\\\/127\.0\.0\.1:10080"}/
+qr/\{"appid":"unset","header_prefix":"X-","server":"http:\\\/\\\/127\.0\.0\.1:10080"\}/
 --- no_error_log
 [error]
 
@@ -136,7 +136,7 @@ passed
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello*"
+                    "uris": ["/hello*","/wolf/rbac/*"]
                 }]]
                 )
 
@@ -348,5 +348,80 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: get userinfo failed, missing token
+--- request
+GET /apisix/plugin/wolf-rbac/user_info
+--- error_code: 401
+--- response_body
+{"message":"Missing rbac token in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: get userinfo failed, invalid rbac token
+--- request
+GET /apisix/plugin/wolf-rbac/user_info
+--- error_code: 401
+--- more_headers
+x-rbac-token: invalid-rbac-token
+--- response_body
+{"message":"invalid rbac token: parse failed"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: get userinfo
+--- request
+GET /apisix/plugin/wolf-rbac/user_info
+--- more_headers
+Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
+--- error_code: 200
+--- response_body_like eval
+qr/\{"user_info":\{"nickname":"administrator","username":"admin","id":"100"/
+
+
+
+=== TEST 23: change password failed, old password incorrect
+--- request
+PUT /apisix/plugin/wolf-rbac/change_pwd
+{"oldPassword": "error", "newPassword": "abcdef"}
+--- more_headers
+Content-Type: application/json
+Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
+--- error_code: 200
+--- response_body_like eval
+qr/ERR_OLD_PASSWORD_INCORRECT/
+
+
+
+=== TEST 24: change password
+--- request
+PUT /apisix/plugin/wolf-rbac/change_pwd
+{"oldPassword":"123456", "newPassword": "abcdef"}
+--- more_headers
+Content-Type: application/json
+Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
+--- error_code: 200
+--- response_body_like eval
+qr/success to change password/
+
+
+
+=== TEST 25: custom headers in request headers
+--- request
+GET /wolf/rbac/custom/headers?rbac_token=V1%23wolf-rbac-app%23wolf-rbac-token
+--- response_headers
+X-UserId: 100
+X-Username: admin
+X-Nickname: administrator
+--- response_body
+id:100,username:admin,nickname:administrator
 --- no_error_log
 [error]
