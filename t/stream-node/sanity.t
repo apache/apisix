@@ -129,3 +129,37 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: set stream route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "server_port": 1995,
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

@@ -29,7 +29,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: set route
 --- config
     location /t {
         content_by_lua_block {
@@ -38,6 +38,7 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
+                    "server_port": 1985,
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
@@ -83,3 +84,54 @@ Received unexpected MQTT packet type+flags
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: set route (wrong server port)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "server_port": 2000,
+                    "plugins": {
+                        "mqtt-proxy": {
+                            "protocol_name": "MQTT",
+                            "protocol_level": 4,
+                            "upstream": {
+                                "ip": "127.0.0.1",
+                                "port": 1995
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: failed to match route
+--- stream_enable
+--- stream_request eval
+"\x10\x0f"
+--- stream_response
+receive stream response error: connection reset by peer
+--- error_log
+receive stream response error: connection reset by peer
+--- error_log
+match(): not hit any route
