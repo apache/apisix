@@ -21,7 +21,6 @@ local tab_concat = table.concat
 local re_gmatch = ngx.re.gmatch
 local ngx = ngx
 local ipairs = ipairs
-local tostring = tostring
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -105,20 +104,6 @@ function _M.check_schema(conf)
     if conf.cache_strategy == "memory" then
         return false, "memory cache is not yet supported."
     end
-
-    local t = {}
-    for _, method in ipairs(conf.cache_method) do
-        t[method] = "true"
-    end
-
-    conf.cache_method = t
-
-    local t = {}
-    for _, status in ipairs(conf.cache_http_status) do
-        t[tostring(status)] = "true"
-    end
-
-    conf.cache_http_status = t
 
     return true
 end
@@ -213,12 +198,17 @@ function _M.header_filter(conf, ctx)
 
     local no_cache = "1"
 
-    if conf.cache_method[ctx.var.request_method] then
-        no_cache = "0"
+    -- Maybe there is no need for optimization here.
+    for _, method in ipairs(conf.cache_method) do
+        if method == ctx.var.request_method then
+            no_cache = "0"
+        end
     end
 
-    if conf.cache_http_status[tostring(ngx.status)] then
-        no_cache = "0"
+    for _, status in ipairs(conf.cache_http_status) do
+        if status == ngx.status then
+            no_cache = "0"
+        end
     end
 
     local value, err = generate_complex_value(conf.no_cache, ctx)
