@@ -158,4 +158,32 @@ function _M.read_file(path)
 end
 
 
+function _M.req_self_with_http(uri, method, body, headers)
+    if type(body) == "table" then
+        body = json.encode(body)
+    end
+
+    if type(method) == "number" then
+        method = methods[method]
+    end
+    headers = headers or {}
+
+    local httpc = http.new()
+    -- https://github.com/ledgetech/lua-resty-http
+    uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
+          .. ":" .. ngx.var.server_port .. uri
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
+    local res, err = httpc:request_uri(uri,
+        {
+            method = method,
+            body = body,
+            keepalive = false,
+            headers = headers,
+        }
+    )
+
+    return res, err
+end
+
+
 return _M
