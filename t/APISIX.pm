@@ -26,11 +26,12 @@ no_long_string();
 no_shuffle();
 worker_connections(128);
 
-my $pwd = cwd();
+my $apisix_home = $ENV{APISIX_HOME} || cwd();
+my $plugin_home = $ENV{APISIX_PLUGIN_HOME} || ".";
 
 sub read_file($) {
     my $infile = shift;
-    open my $in, $infile
+    open my $in, $apisix_home . "/" . $infile
         or die "cannot open $infile for reading: $!";
     my $cert = do { local $/; <$in> };
     close $in;
@@ -50,15 +51,15 @@ add_block_preprocessor(sub {
 
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
-working_directory   $pwd;
+working_directory   $apisix_home;
 _EOC_
 
     $block->set_value("main_config", $main_config);
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "$pwd/deps/share/lua/5.1/?.lua;$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
-    lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;$plugin_home/?.lua;;";
+    lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;$plugin_home/?.so;;";
 
     lua_socket_log_errors off;
 
@@ -133,8 +134,8 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$pwd/deps/share/lua/5.1/?.lua;$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
-    lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;$plugin_home/?.lua;;";
+    lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;$plugin_home/?.so;;";
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
