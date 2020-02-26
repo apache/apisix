@@ -41,6 +41,7 @@ apisix:
   # port_admin: 9180              # use a separate port
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
+                                  # radixtree_uri_case_insensitive: match route by uri case insensitive(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
     ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
   # stream_proxy:                 # TCP/UDP proxy
