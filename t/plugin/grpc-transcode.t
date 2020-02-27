@@ -427,5 +427,3 @@ passed
 --- request
 GET /grpc_delay?name=apisix
 --- error_code: 504
-
-
