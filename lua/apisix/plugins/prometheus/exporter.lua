@@ -63,7 +63,7 @@ function _M.log(conf, ctx)
     local vars = ctx.var
 
     local route_id = ""
-    local balancer_ip = ctx.balancer_ip
+    local balancer_ip = ctx.balancer_ip or ""
     local service_id
 
     local matched_route = ctx.matched_route and ctx.matched_route.value

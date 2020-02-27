@@ -26,7 +26,7 @@ local schema = {
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     priority = 500,
     name = plugin_name,
     init = exporter.init,
