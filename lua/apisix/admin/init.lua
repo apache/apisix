@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
@@ -40,11 +41,36 @@ local resources = {
 }
 
 
-local _M = {version = 0.3}
+local _M = {version = 0.4}
 local router
 
 
+local function check_token()
+    local local_conf = core.config.local_conf()
+    if not local_conf or not local_conf.apisix
+       or not local_conf.apisix.token_admin then
+        return true
+    end
+
+    local req_token = ngx.var.http_apikey
+    if not req_token then
+        return false, "missing apikey"
+    end
+
+    if req_token ~= local_conf.apisix.token_admin then
+        return false, "wrong apikey"
+    end
+
+    return true
+end
+
+
 local function run()
+    local ok, err = check_token()
+    if not ok then
+        core.response.exit(400, {error_msg = err})
+    end
+
     local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
 
