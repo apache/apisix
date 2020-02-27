@@ -34,7 +34,7 @@ ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
 endif
 endif
 
-LUTJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
+LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
 
 ### help:             Show Makefile rules.
 .PHONY: help
@@ -48,11 +48,11 @@ help: default
 .PHONY: deps
 deps: default
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUTJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
-else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+else ifeq ($(LUAROCKS_VER),luarocks 3.)
+	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
-	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 endif
 
 
