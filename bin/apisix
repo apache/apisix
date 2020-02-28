@@ -176,7 +176,7 @@ http {
 
     {% if proxy_cache then %}
     # for proxy cache
-    {% for _, cache in ipairs(proxy_cache.zone) do %}
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
     proxy_cache_path {* cache.disk_path *} levels=1:2 keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *};
     {% end %}
     {% end %}

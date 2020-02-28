@@ -59,7 +59,6 @@ local schema = {
                 type = "string",
                 enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
                     "OPTIONS", "CONNECT", "TRACE"},
-                default = {"GET", "HEAD"},
             },
             uniqueItems = true,
             default = {"GET", "HEAD"},
@@ -67,12 +66,6 @@ local schema = {
         hide_cache_headers = {
             type = "boolean",
             default = false,
-        },
-        cache_strategy = {
-            type = "string",
-            default = "disk",
-            enum = {"disk", "memory"},
-            minLength = 0
         },
         cache_bypass = {
             type = "string",
@@ -99,10 +92,6 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
-    end
-
-    if conf.cache_strategy == "memory" then
-        return false, "memory cache is not yet supported."
     end
 
     return true
@@ -202,12 +191,14 @@ function _M.header_filter(conf, ctx)
     for _, method in ipairs(conf.cache_method) do
         if method == ctx.var.request_method then
             no_cache = "0"
+            break
         end
     end
 
     for _, status in ipairs(conf.cache_http_status) do
         if status == ngx.status then
             no_cache = "0"
+            break
         end
     end
 
