@@ -61,7 +61,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 
 我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
 ```
-curl -i http://127.0.0.1:8001/apisix/prometheus/metrics
+curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
 把改uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
@@ -73,7 +73,7 @@ scrape_configs:
   - job_name: 'apisix'
     metrics_path: '/apisix/prometheus/metrics'
     static_configs:
-    - targets: ['127.0.0.1:8001']
+    - targets: ['127.0.0.1:9080']
 ```
 
 我们也可以在 prometheus 控制台中去检查状态:
