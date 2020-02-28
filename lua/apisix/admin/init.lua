@@ -68,7 +68,8 @@ end
 local function run()
     local ok, err = check_token()
     if not ok then
-        core.response.exit(400, {error_msg = err})
+        core.log.warn("failed to check token: ", err)
+        core.response.exit(401)
     end
 
     local uri_segs = core.utils.split_uri(ngx.var.uri)
@@ -124,12 +125,24 @@ end
 
 
 local function get_plugins_list()
+    local ok, err = check_token()
+    if not ok then
+        core.log.warn("failed to check token: ", err)
+        core.response.exit(401)
+    end
+
     local plugins = resources.plugins.get_plugins_list()
     core.response.exit(200, plugins)
 end
 
 
 local function post_reload_plugins()
+    local ok, err = check_token()
+    if not ok then
+        core.log.warn("failed to check token: ", err)
+        core.response.exit(401)
+    end
+
     local success, err = events.post(reload_event, get_method(), ngx.time())
     if not success then
         core.response.exit(500, err)

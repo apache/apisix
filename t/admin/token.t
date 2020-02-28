@@ -77,9 +77,7 @@ __DATA__
     }
 --- request
 GET /t
---- error_code: 400
---- response_body
-{"error_msg":"missing apikey"}
+--- error_code: 401
 --- no_error_log
 [error]
 
@@ -111,9 +109,7 @@ GET /t
     }
 --- request
 GET /t
---- error_code: 400
---- response_body
-{"error_msg":"wrong apikey"}
+--- error_code: 401
 --- no_error_log
 [error]
 
@@ -149,5 +145,23 @@ GET /t
 GET /t
 --- response_body
 done
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: get plugins name
+--- request
+GET /apisix/admin/plugins/list
+--- error_code: 401
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: reload plugins
+--- request
+GET /apisix/admin/plugins/reload
+--- error_code: 401
 --- no_error_log
 [error]
