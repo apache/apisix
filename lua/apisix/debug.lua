@@ -17,6 +17,7 @@
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
+local profile      = require("apisix.core.profile")
 local process      = require("ngx.process")
 local lfs          = require("lfs")
 local io           = io
@@ -29,7 +30,7 @@ local setmetatable = setmetatable
 local pcall        = pcall
 local ipairs       = ipairs
 local unpack       = unpack
-local debug_yaml_path = ngx.config.prefix() .. "conf/debug.yaml"
+local debug_yaml_path = profile:yaml_path("debug")
 local debug_yaml
 local debug_yaml_ctime
 
@@ -85,7 +86,7 @@ local function read_debug_yaml()
 
     local debug_yaml_new = yaml.parse(yaml_config)
     if not debug_yaml_new then
-        log.error("failed to parse the content of file conf/debug.yaml")
+        log.error("failed to parse the content of file " .. debug_yaml_path)
         return
     end
 

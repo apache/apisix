@@ -89,4 +89,4 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorizatio
 
 ## Troubleshooting
 
-Check/modify the DNS settings (`conf/config.yml) if APISIX cannot resolve/connect to the identity provider.
+Check/modify the DNS settings (`conf/config.yaml) if APISIX cannot resolve/connect to the identity provider.
