@@ -37,6 +37,7 @@ $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/config_center: etcd/config_center: yaml/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/http: 'radixtree_uri'/http: 'radixtree_host_uri'/;
+$yaml_config =~ s/token_admin:/# token_admin:/;
 
 run_tests();
 
