@@ -33,7 +33,7 @@ SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允�
 * `sni`: SSL 证书所指定的域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "cert": "...",
     "key": "....",
@@ -70,7 +70,7 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 看下面这个例子，请注意 `sni` 这个属性:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "cert": "...",
     "key": "....",

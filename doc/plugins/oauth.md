@@ -55,7 +55,7 @@ The following is the curl command to enable the plugin to an external service.
 This route will protect `https://httpbin.org/get`(echo service) by introspecting the token provided in the header of the request.
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
   "plugins": {

@@ -71,7 +71,7 @@ Example：
 
 ```shell
 # Create a route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "hosts": ["foo.com", "*.bar.com"],
@@ -90,7 +90,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # Create a route expires after 60 seconds, then it's deleted automatically
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {
@@ -124,7 +124,7 @@ Return response from etcd currently.
 Consider the following example: matching requests whose `request name` is equal to `json`, `age` is greater than `18`, and `address` begins with `China`:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "vars": [

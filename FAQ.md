@@ -80,7 +80,7 @@ An example, if you want to group by the request param `arg_id`：
 
 here is the way：
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -93,7 +93,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [

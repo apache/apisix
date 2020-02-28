@@ -132,7 +132,7 @@ GET /t
                     },
                     "uri": "/index.html"
                 }]],
-                {x_api_key = "33926bc55db5e2c3"}
+                {x_api_key = "edd1c9f034335f136f87ad84b625c8f1"}
                 )
 
             if res.status > 299 then
@@ -170,7 +170,7 @@ PUT /apisix/admin/plugins/reload
 
 === TEST 6: reload plugins with api key(arguments)
 --- request
-PUT /apisix/admin/plugins/reload?api_key=33926bc55db5e2c3
+PUT /apisix/admin/plugins/reload?api_key=edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 200
 --- no_error_log
 [error]
@@ -181,7 +181,7 @@ PUT /apisix/admin/plugins/reload?api_key=33926bc55db5e2c3
 --- request
 PUT /apisix/admin/plugins/reload
 --- more_headers
-X-API-KEY: 33926bc55db5e2c3
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 200
 --- no_error_log
 [error]
