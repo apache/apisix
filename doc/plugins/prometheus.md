@@ -60,6 +60,9 @@ Then add prometheus plugin:
 ## How to fetch the metric data
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
+```
+curl -i http://127.0.0.1:8001/apisix/prometheus/metrics
+```
 
 Puts this uri address into prometheus, and it will automatically fetch
 these metric data.
@@ -71,7 +74,7 @@ scrape_configs:
   - job_name: 'apisix'
     metrics_path: '/apisix/prometheus/metrics'
     static_configs:
-    - targets: ['127.0.0.1:9080']
+    - targets: ['127.0.0.1:8001']
 ```
 
 And we can check the status at prometheus console:
