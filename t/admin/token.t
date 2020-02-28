@@ -185,3 +185,21 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 200
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: reload plugins with api key(viewer role)
+--- request
+PUT /apisix/admin/plugins/reload?api_key=4054f7cf07e344346cd3f287985e76a2
+--- error_code: 401
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: fetch with api key(viewer role)
+--- request
+GET /apisix/admin/routes??api_key=4054f7cf07e344346cd3f287985e76a2
+--- error_code: 401
+--- no_error_log
+[error]

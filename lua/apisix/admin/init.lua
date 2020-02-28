@@ -27,6 +27,11 @@ local reload_event = "/apisix/admin/plugins/reload"
 local events
 
 
+local viewer_methods = {
+    get = true,
+}
+
+
 local resources = {
     routes          = require("apisix.admin.routes"),
     services        = require("apisix.admin.services"),
@@ -48,7 +53,7 @@ local router
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
     if not local_conf or not local_conf.apisix
-       or not local_conf.apisix.token_admin then
+       or not local_conf.apisix.admin_key then
         return true
     end
 
@@ -58,8 +63,21 @@ local function check_token(ctx)
         return false, "missing apikey"
     end
 
-    if req_token ~= local_conf.apisix.token_admin then
+    local admin
+    for i, row in ipairs(local_conf.apisix.admin_key) do
+        if req_token == row.key then
+            admin = row
+            break
+        end
+    end
+
+    if not admin then
         return false, "wrong apikey"
+    end
+
+    if admin.role == "viewer" and
+       not viewer_methods[str_lower(get_method())] then
+        return false, "invalid method for role viewer"
     end
 
     return true
