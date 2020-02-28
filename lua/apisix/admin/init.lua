@@ -24,6 +24,7 @@ local tonumber = tonumber
 local str_lower = string.lower
 local require = require
 local reload_event = "/apisix/admin/plugins/reload"
+local ipairs = ipairs
 local events
 
 
