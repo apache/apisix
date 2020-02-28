@@ -45,14 +45,15 @@ local _M = {version = 0.4}
 local router
 
 
-local function check_token()
+local function check_token(ctx)
     local local_conf = core.config.local_conf()
     if not local_conf or not local_conf.apisix
        or not local_conf.apisix.token_admin then
         return true
     end
 
-    local req_token = ngx.var.http_apikey
+    local req_token = ctx.var.arg_api_key or ctx.var.http_x_api_key
+                      or ctx.var.cookie_x_api_key
     if not req_token then
         return false, "missing apikey"
     end
@@ -66,7 +67,10 @@ end
 
 
 local function run()
-    local ok, err = check_token()
+    local api_ctx = {}
+    core.ctx.set_vars_meta(api_ctx)
+
+    local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
         core.response.exit(401)
@@ -125,7 +129,10 @@ end
 
 
 local function get_plugins_list()
-    local ok, err = check_token()
+    local api_ctx = {}
+    core.ctx.set_vars_meta(api_ctx)
+
+    local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
         core.response.exit(401)
@@ -137,7 +144,10 @@ end
 
 
 local function post_reload_plugins()
-    local ok, err = check_token()
+    local api_ctx = {}
+    core.ctx.set_vars_meta(api_ctx)
+
+    local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
         core.response.exit(401)

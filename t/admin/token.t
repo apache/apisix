@@ -132,7 +132,7 @@ GET /t
                     },
                     "uri": "/index.html"
                 }]],
-                {apikey = "33926bc55db5e2c3"}
+                {x_api_key = "33926bc55db5e2c3"}
                 )
 
             if res.status > 299 then
@@ -161,7 +161,27 @@ GET /apisix/admin/plugins/list
 
 === TEST 5: reload plugins
 --- request
-GET /apisix/admin/plugins/reload
+PUT /apisix/admin/plugins/reload
 --- error_code: 401
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: reload plugins with api key(arguments)
+--- request
+PUT /apisix/admin/plugins/reload?api_key=33926bc55db5e2c3
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: reload plugins with api key(cookie)
+--- request
+PUT /apisix/admin/plugins/reload
+--- more_headers
+X-API-KEY: 33926bc55db5e2c3
+--- error_code: 200
 --- no_error_log
 [error]
