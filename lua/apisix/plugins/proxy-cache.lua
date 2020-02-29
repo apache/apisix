@@ -186,20 +186,25 @@ function _M.header_filter(conf, ctx)
     core.log.info("proxy-cache plugin header filter phase, conf: ", core.json.delay_encode(conf))
 
     local no_cache = "1"
+    local match_method, match_status = false, false
 
     -- Maybe there is no need for optimization here.
     for _, method in ipairs(conf.cache_method) do
         if method == ctx.var.request_method then
-            no_cache = "0"
+            match_method = true
             break
         end
     end
 
     for _, status in ipairs(conf.cache_http_status) do
         if status == ngx.status then
-            no_cache = "0"
+            match_status = true
             break
         end
+    end
+
+    if match_method and match_status then
+        no_cache = "0"
     end
 
     local value, err = generate_complex_value(conf.no_cache, ctx)
