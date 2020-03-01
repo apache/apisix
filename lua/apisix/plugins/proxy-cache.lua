@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local tab_insert = table.insert
 local tab_concat = table.concat
 local re_gmatch = ngx.re.gmatch
+local sub_str = string.sub
 local ngx = ngx
 local ipairs = ipairs
 
@@ -36,8 +37,13 @@ local schema = {
             minLength = 1
         },
         cache_key = {
-            type = "string",
-            minLength = 1
+            type = "array",
+            minItems = 1,
+            items = {
+                description = "a key for caching",
+                type = "string",
+                pattern = [[(^[^\$].+$|^\$[0-9a-zA-Z_]+$)]]
+            },
         },
         cache_http_status = {
             type = "array",
@@ -68,14 +74,20 @@ local schema = {
             default = false,
         },
         cache_bypass = {
-            type = "string",
-            default = "1",
-            minLength = 0
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                pattern = [[(^[^\$].+$|^\$[0-9a-zA-Z_]+$)]]
+            },
         },
         no_cache = {
-            type = "string",
-            default = "0",
-            minLength = 0
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                pattern = [[(^[^\$].+$|^\$[0-9a-zA-Z_]+$)]]
+            },
         },
     },
     required = {"cache_zone", "cache_key"},
@@ -88,6 +100,7 @@ local _M = {
     schema = schema,
 }
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -97,58 +110,19 @@ function _M.check_schema(conf)
     return true
 end
 
--- Copy from redirect plugin, this function is useful.
--- It can be extracted as a public function.
-local function parse_complex_value(complex_value)
-
-    local reg = [[ (\\\$[0-9a-zA-Z_]+) | ]]     -- \$host
-            .. [[ \$\{([0-9a-zA-Z_]+)\} | ]]    -- ${host}
-            .. [[ \$([0-9a-zA-Z_]+) | ]]        -- $host
-            .. [[ (\$|[^$\\]+) ]]               -- $ or others
-    local iterator, err = re_gmatch(complex_value, reg, "jiox")
-    if not iterator then
-        return nil, err
-    end
-
-    local t = {}
-    while true do
-        local m, err = iterator()
-        if err then
-            return nil, err
-        end
-
-        if not m then
-            break
-        end
-
-        tab_insert(t, m)
-    end
-
-    return t
-end
-
 
 local tmp = {}
 local function generate_complex_value(data, ctx)
-    local segs_value, err = lrucache(data, nil, parse_complex_value, data)
-    if not segs_value then
-        return nil, err
-    end
-
     core.table.clear(tmp)
 
-    for i, value in ipairs(segs_value) do
-        core.log.info("complex value(", data, ") seg-", i, ": ", core.json.delay_encode(value))
+    core.log.info("proxy-cache complex value: ", core.json.delay_encode(data))
+    for i, value in ipairs(data) do
+        core.log.info("proxy-cache complex value index-", i, ": ", value)
 
-        local pat1 = value[1]    -- \$host
-        local pat2 = value[2]    -- ${host}
-        local pat3 = value[3]    -- $host
-        local pat4 = value[4]    -- $ or others
-
-        if pat2 or pat3 then
-            tab_insert(tmp, ctx.var[pat2 or pat3])
+        if sub_str(value, 1, 1) == "$" then
+            tab_insert(tmp, ctx.var[sub_str(value, 2)])
         else
-            tab_insert(tmp, pat1 or pat4)
+            tab_insert(tmp, value)
         end
     end
 
@@ -182,10 +156,9 @@ function _M.rewrite(conf, ctx)
 end
 
 
-function _M.header_filter(conf, ctx)
-    core.log.info("proxy-cache plugin header filter phase, conf: ", core.json.delay_encode(conf))
-
-    local no_cache = "1"
+-- check whether the request method and response status
+-- match the user defined.
+function match_method_and_status(conf, ctx)
     local match_method, match_status = false, false
 
     -- Maybe there is no need for optimization here.
@@ -204,6 +177,19 @@ function _M.header_filter(conf, ctx)
     end
 
     if match_method and match_status then
+        return true
+    end
+
+    return false
+end
+
+
+function _M.header_filter(conf, ctx)
+    core.log.info("proxy-cache plugin header filter phase, conf: ", core.json.delay_encode(conf))
+
+    local no_cache = "1"
+
+    if match_method_and_status(conf, ctx) then
         no_cache = "0"
     end
 
@@ -230,5 +216,6 @@ function _M.header_filter(conf, ctx)
     ctx.var.upstream_no_cache = no_cache
     core.log.info("proxy-cache no cache:", no_cache)
 end
+
 
 return _M
