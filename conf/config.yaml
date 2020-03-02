@@ -43,10 +43,12 @@ apisix:
       memory_size: 50m             # The size of shared memory, it's used to store the cache index
       disk_size: 1G                # The size of disk, it's used to store the cache data
       disk_path: "/tmp/disk_cache_one" # The path to store the cache data
+      cache_levels: "1:2"           # The hierarchy levels of a cache
   #  - name: disk_cache_two
   #    memory_size: 50m
   #    disk_size: 1G
   #    disk_path: "/tmp/disk_cache_two"
+  #    cache_levels: "1:2"
 
   # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
   #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
