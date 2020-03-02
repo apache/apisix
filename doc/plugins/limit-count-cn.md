@@ -34,6 +34,7 @@
 |policy        |可选     |用于检索和增加限制的速率限制策略。可选的值有：`local`(计数器被以内存方式保存在节点本地，默认选项) 和 `redis`(计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速).|
 |redis_host    |可选     |当使用 `redis` 限速策略时，该属性是 Redis 服务节点的地址。|
 |redis_port    |可选     |当使用 `redis` 限速策略时，该属性是 Redis 服务节点的端口，默认端口 6379。|
+|redis_password|可选     |当使用 `redis` 限速策略时，该属性是 Redis 服务节点的密码。|
 |redis_timeout |可选     |当使用 `redis` 限速策略时，该属性是 Redis 服务节点以毫秒为单位的超时时间，默认是 1000 ms（1 秒）。|
 
 ### 示例
@@ -85,6 +86,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "policy": "redis",
             "redis_host": "127.0.0.1",
             "redis_port": 6379,
+            "redis_password": "password",
             "redis_timeout": 1001
         }
     },
