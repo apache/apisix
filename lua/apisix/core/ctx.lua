@@ -49,6 +49,7 @@ do
         upstream_uri               = true,
 
         upstream_cache_zone        = true,
+        upstream_cache_zone_info   = true,
         upstream_no_cache          = true,
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,

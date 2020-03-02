@@ -16,11 +16,17 @@
 --
 
 local core = require("apisix.core")
+local ngx_re = require("ngx.re")
 local tab_insert = table.insert
 local tab_concat = table.concat
-local sub_str = string.sub
+local string = string
+local io_open = io.open
+local io_close = io.close
 local ngx = ngx
+local os = os
 local ipairs = ipairs
+local pairs = pairs
+local tonumber = tonumber
 
 local plugin_name = "proxy-cache"
 
@@ -114,40 +120,14 @@ local function generate_complex_value(data, ctx)
     for i, value in ipairs(data) do
         core.log.info("proxy-cache complex value index-", i, ": ", value)
 
-        if sub_str(value, 1, 1) == "$" then
-            tab_insert(tmp, ctx.var[sub_str(value, 2)])
+        if string.sub(value, 1, 1) == "$" then
+            tab_insert(tmp, ctx.var[string.sub(value, 2)])
         else
             tab_insert(tmp, value)
         end
     end
 
     return tab_concat(tmp, "")
-end
-
-
-function _M.rewrite(conf, ctx)
-    core.log.info("proxy-cache plugin rewrite phase, conf: ", core.json.delay_encode(conf))
-
-    ctx.var.upstream_cache_zone = conf.cache_zone
-
-    local value, err = generate_complex_value(conf.cache_key, ctx)
-    if not value then
-        core.log.error("failed to generate the complex value by: ", conf.cache_key, " error: ", err)
-        core.response.exit(500)
-    end
-
-    ctx.var.upstream_cache_key = value
-    core.log.info("proxy-cache cache key value:", value)
-
-    local value, err = generate_complex_value(conf.cache_bypass, ctx)
-    if not value then
-        core.log.error("failed to generate the complex value by: ",
-                       conf.cache_bypass, " error: ", err)
-        core.response.exit(500)
-    end
-
-    ctx.var.upstream_cache_bypass = value
-    core.log.info("proxy-cache cache bypass value:", value)
 end
 
 
@@ -178,6 +158,91 @@ local function match_method_and_status(conf, ctx)
     return false
 end
 
+-- refer to https://gist.github.com/titpetric/ed6ec548af160e82c650cf39074878fb
+local function file_exists(name)
+    local f = io_open(name, "r")
+    if f~=nil then io_close(f) return true else return false end
+end
+
+
+local function explode(d, p)
+    local t, ll
+    t={}
+    ll=0
+    if(#p == 1) then return {p} end
+    while true do
+        local l=string.find(p, d, ll, true) -- find the next d in the string
+        if l~=nil then -- if "not not" found then..
+                tab_insert(t, string.sub(p, ll, l-1)) -- Save it in our array.
+                ll=l+1 -- save just after where we found it for searching next time.
+        else
+                tab_insert(t, string.sub(p, ll)) -- Save what's left in our array.
+                break -- Break at end, as it should be, according to the lua manual.
+        end
+    end
+    return t
+end
+
+
+local function generate_cache_filename(cache_path, cache_levels, cache_key)
+    local md5sum = ngx.md5(cache_key)
+    local levels = explode(":", cache_levels)
+    local filename = ""
+
+    local index = string.len(md5sum)
+    for k, v in pairs(levels) do
+            local length = tonumber(v)
+            -- add trailing [length] chars to index
+            index = index - length;
+            filename = filename .. md5sum:sub(index+1, index+length) .. "/";
+    end
+    if cache_path:sub(-1) ~= "/" then
+            cache_path = cache_path .. "/";
+    end
+    filename = cache_path .. filename .. md5sum
+    return filename
+end
+
+
+local function cache_purge(conf, ctx)
+    local cache_zone_info = ngx_re.split(ctx.var.upstream_cache_zone_info, ",")
+
+    local filename = generate_cache_filename(cache_zone_info[1], cache_zone_info[2],
+                                             ctx.var.upstream_cache_key)
+    if file_exists(filename) then
+        os.remove(filename)
+        return nil
+    end
+
+    return "Not found"
+end
+
+
+function _M.rewrite(conf, ctx)
+    core.log.info("proxy-cache plugin rewrite phase, conf: ", core.json.delay_encode(conf))
+
+    ctx.var.upstream_cache_zone = conf.cache_zone
+
+    local value = generate_complex_value(conf.cache_key, ctx)
+    ctx.var.upstream_cache_key = value
+    core.log.info("proxy-cache cache key value:", value)
+
+    if ctx.var.request_method == "PURGE" then
+        local err = cache_purge(conf, ctx)
+        if err ~= nil then
+            return 404
+        end
+
+        return 200
+    end
+
+    if conf.cache_bypass ~= nil then
+        local value = generate_complex_value(conf.cache_bypass, ctx)
+        ctx.var.upstream_cache_bypass = value
+        core.log.info("proxy-cache cache bypass value:", value)
+    end
+end
+
 
 function _M.header_filter(conf, ctx)
     core.log.info("proxy-cache plugin header filter phase, conf: ", core.json.delay_encode(conf))
@@ -188,16 +253,13 @@ function _M.header_filter(conf, ctx)
         no_cache = "0"
     end
 
-    local value, err = generate_complex_value(conf.no_cache, ctx)
-    if not value then
-        core.log.error("failed to generate the complex value by: ", conf.no_cache, " error: ", err)
-        core.response.exit(500)
-    end
+    if conf.no_cache ~= nil then
+        local value = generate_complex_value(conf.no_cache, ctx)
+        core.log.info("proxy-cache no-cache value:", value)
 
-    core.log.info("proxy-cache no-cache value:", value)
-
-    if value ~= nil and value ~= "" and value ~= "0" then
-        no_cache = "1"
+        if value ~= nil and value ~= "" and value ~= "0" then
+            no_cache = "1"
+        end
     end
 
     if conf.hide_cache_headers == true then
