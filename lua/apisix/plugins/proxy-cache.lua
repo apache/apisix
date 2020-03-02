@@ -18,14 +18,9 @@
 local core = require("apisix.core")
 local tab_insert = table.insert
 local tab_concat = table.concat
-local re_gmatch = ngx.re.gmatch
 local sub_str = string.sub
 local ngx = ngx
 local ipairs = ipairs
-
-local lrucache = core.lrucache.new({
-    ttl = 300, count = 100
-})
 
 local plugin_name = "proxy-cache"
 
@@ -158,7 +153,7 @@ end
 
 -- check whether the request method and response status
 -- match the user defined.
-function match_method_and_status(conf, ctx)
+local function match_method_and_status(conf, ctx)
     local match_method, match_status = false, false
 
     -- Maybe there is no need for optimization here.
