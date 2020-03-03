@@ -140,6 +140,7 @@ function Batch_Processor:push(entry)
     if self.batch_max_size == 1 then
         local batch = { entries = { entry }, retry_count = 0 }
         schedule_func_exec(self, 0, batch)
+        return
     end
 
     local entries = self.entry_buffer.entries
