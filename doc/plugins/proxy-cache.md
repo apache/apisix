@@ -39,9 +39,9 @@ The proxy-cache plugin, which provides the ability to cache upstream response da
 |hide_cache_headers|optional|boolean|Whether to return the Expires and Cache-Control response headers to the client, the default is false|
 |no_cache|optional|array[string]|Whether to cache data, it can use variables, and note that the data will not be cached when the value of this attribute is not empty or not '0'.|
 
-Note:  
-1. The variable starts with $. 
-2. The attribute can use a combination of the variable and the string, but it needs to be written separately as an array, and the final values are stitched together after the variable is parsed. 
+Note:
+1. The variable starts with $.
+2. The attribute can use a combination of the variable and the string, but it needs to be written separately as an array, and the final values are stitched together after the variable is parsed.
 
 ### Examples
 
