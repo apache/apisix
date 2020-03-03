@@ -264,7 +264,7 @@ http {
     {% if enable_admin and port_admin then %}
     server {
         listen {* port_admin *};
-
+        log_not_found off;
         location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
