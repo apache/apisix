@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 #### 首先进行登录获取 `jwt-auth` token:
 
 ```shell
-$ curl http://127.0.0.2:9080/apisix/plugin/jwt/sign?key=user-key -i
+$ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
 Content-Type: text/plain
@@ -104,7 +104,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDg
 * 缺少 token
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -i
+$ curl http://127.0.0.1:9080/index.html -i
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing JWT token in request"}
@@ -113,7 +113,7 @@ HTTP/1.1 401 Unauthorized
 * token 放到请求头中：
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
+$ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -128,7 +128,7 @@ Accept-Ranges: bytes
 * token 放到请求参数中：
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
+$ curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -143,7 +143,7 @@ Accept-Ranges: bytes
 * token 放到 cookie 中：
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
+$ curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175

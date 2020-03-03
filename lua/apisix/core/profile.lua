@@ -14,6 +14,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-return {
-    VERSION = "1.1"
+
+local _M = {
+    version = 0.1,
+    profile = os.getenv("APISIX_PROFILE"),
+    apisix_home = (ngx and ngx.config.prefix()) or ""
 }
+
+
+function _M.yaml_path(self, file_name)
+    local file_path = self.apisix_home  .. "conf/" .. file_name
+    if self.profile then
+        file_path = file_path .. "-" .. self.profile
+    end
+    return file_path .. ".yaml"
+end
+
+
+return _M

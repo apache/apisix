@@ -33,3 +33,24 @@ GET /apisix/admin/plugins/list
 qr/\["limit-req","limit-count","limit-conn","key-auth","basic-auth","prometheus","node-status","jwt-auth","zipkin","ip-restriction","grpc-transcode","serverless-pre-function","serverless-post-function","openid-connect","proxy-rewrite","redirect","response-rewrite","fault-injection","udp-logger","wolf-rbac"\]/
 --- no_error_log
 [error]
+
+
+
+=== TEST 2: wrong path
+--- request
+GET /apisix/admin/plugins
+--- error_code: 400
+--- response_body
+{"error_msg":"not found plugin name"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: get plugin schema
+--- request
+GET /apisix/admin/plugins/limit-req
+--- response_body
+{"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for"],"type":"string"},"rejected_code":{"minimum":200,"type":"integer"}},"required":["rate","burst","key","rejected_code"],"type":"object"}
+--- no_error_log
+[error]

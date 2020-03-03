@@ -10,7 +10,7 @@ matrix:
   include:
     - os: linux
       services:
-        - redis-server
+        - docker
       env: OSNAME=linux_openresty
     - os: osx
       env: OSNAME=osx_openresty
@@ -21,7 +21,7 @@ matrix:
           - /usr/local/Homebrew
     - os: linux
       services:
-        - redis-server
+        - docker
       env: OSNAME=linux_tengine
     - os: linux
       env: OSNAME=linux_apisix_luarocks
@@ -51,6 +51,8 @@ before_cache:
   - brew cleanup
 
 before_install:
+  - docker pull redis:3.0-alpine
+  - docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
   - echo $OSNAME
   - $PWD/.travis/${OSNAME}_runner.sh before_install
 

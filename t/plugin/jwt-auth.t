@@ -29,9 +29,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
-            local conf = {
-
-            }
+            local conf = {}
 
             local ok, err = plugin.check_schema(conf)
             if not ok then
@@ -270,5 +268,62 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
 --- error_code: 401
 --- response_body
 {"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: delete a exist consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]]
+            )
+            ngx.say("code: ", code < 300, " body: ", body)
+
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "chen",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "chen-key",
+                            "secret": "chen-key"
+                        }
+                    }
+                }]]
+            )
+            ngx.say("code: ", code < 300, " body: ", body)
+
+            code, body = t('/apisix/admin/consumers/jack',
+                ngx.HTTP_DELETE)
+            ngx.say("code: ", code < 300, " body: ", body)
+
+            ngx.sleep(1)
+            code, body = t('/apisix/plugin/jwt/sign?key=chen-key',
+                ngx.HTTP_GET)
+            ngx.say("code: ", code < 300, " body: ", body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+code: true body: passed
+code: true body: passed
+code: true body: passed
+code: true body: passed
 --- no_error_log
 [error]

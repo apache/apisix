@@ -239,7 +239,7 @@ POST /apisix/plugin/wolf-rbac/login
 Content-Type: application/json
 --- error_code: 200
 --- response_body_like eval
-qr/{"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":{"nickname":"administrator","username":"admin","id":"100"}}/
+qr/\{"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":\{"nickname":"administrator","username":"admin","id":"100"/
 --- no_error_log
 [error]
 

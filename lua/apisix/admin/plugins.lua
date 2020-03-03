@@ -87,6 +87,10 @@ end
 
 
 function _M.get(name)
+    if not name then
+        return 400, {error_msg = "not found plugin name"}
+    end
+
     local plugin_name = "apisix.plugins." .. name
 
     local ok, plugin = pcall(require, plugin_name)

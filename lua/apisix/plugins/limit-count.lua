@@ -45,6 +45,9 @@ local schema = {
         redis_port = {
             type = "integer", minimum = 1
         },
+        redis_password = {
+            type = "string", minLength = 0
+        },
         redis_timeout = {
             type = "integer", minimum = 1
         },
@@ -122,7 +125,7 @@ function _M.access(conf, ctx)
         end
 
         core.log.error("failed to limit req: ", err)
-        return 500
+        return 500, {error_msg = "failed to limit count: ", err}
     end
 
     core.response.set_header("X-RateLimit-Limit", conf.count,

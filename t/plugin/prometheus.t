@@ -413,3 +413,49 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 20: set it in route with plugin `fault-injection`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "prometheus": {},
+                        "fault-injection": {
+                            "abort": {
+                               "http_status": 200,
+                               "body": "Fault Injection!"
+                            }
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: pipeline of client request
+--- pipelined_requests eval
+["GET /hello", "GET /not_found", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 404, 200, 200]
+--- no_error_log
+[error]

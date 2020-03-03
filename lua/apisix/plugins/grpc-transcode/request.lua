@@ -23,8 +23,9 @@ local ngx    = ngx
 local string = string
 local table  = table
 local ipairs = ipairs
+local tonumber = tonumber
 
-return function (proto, service, method, pb_option, default_values)
+return function (proto, service, method, pb_option, deadline, default_values)
     core.log.info("proto: ", core.json.delay_encode(proto, true))
     local m = util.find_method(proto, service, method)
     if not m then
@@ -62,5 +63,11 @@ return function (proto, service, method, pb_option, default_values)
     ngx.req.set_uri("/" .. service .. "/" .. method, false)
     ngx.req.set_uri_args({})
     ngx.req.set_body_data(message)
+
+    local dl = tonumber(deadline)
+    if dl~= nil and dl > 0 then
+        ngx.req.set_header("grpc-timeout",  dl .. "m")
+    end
+
     return true
 end

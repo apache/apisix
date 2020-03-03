@@ -41,6 +41,7 @@ Limit request rate by a fixed number of requests in a given time window.
 |policy        |optional|The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node, default value) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually used it to do the global speed limit).|
 |redis_host    |optional|When using the `redis` policy, this property specifies the address of the Redis server.|
 |redis_port    |optional|When using the `redis` policy, this property specifies the port of the Redis server. The default port is 6379.|
+|redis_password|optional|When using the `redis` policy, this property specifies the password of the Redis server.|
 |redis_timeout |optional|When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server. The default timeout is 1000 ms(1 second).|
 
 ## How To Enable
@@ -91,6 +92,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
             "policy": "redis",
             "redis_host": "127.0.0.1",
             "redis_port": 6379,
+            "redis_password": "password",
             "redis_timeout": 1001
         }
     },

@@ -51,6 +51,20 @@ function _M.incoming(self, key)
         return false, err
     end
 
+    local count
+    count, err = red:get_reused_times()
+    if 0 == count then
+        if conf.redis_password and conf.redis_password ~= '' then
+            local ok, err = red:auth(conf.redis_password)
+            if not ok then
+                return nil, err
+            end
+        end
+    elseif err then
+        -- core.log.info(" err: ", err)
+        return nil, err
+    end
+
     local limit = self.limit
     local window = self.window
     local remaining

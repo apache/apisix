@@ -41,33 +41,33 @@ return function(proto, service, method, pb_option)
         ngx.arg[1] = nil
     end
 
-    if not eof then
-        return
-    end
 
-    ngx.ctx.buffered = nil
-    local buffer = table.concat(buffered)
-    if not ngx.req.get_headers()["X-Grpc-Web"] then
-        buffer = string.sub(buffer, 6)
-    end
-
-    if pb_option then
-        for _, opt in ipairs(pb_option) do
-            pb.option(opt)
+    if eof then
+        ngx.ctx.buffered = nil
+        local buffer = table.concat(buffered)
+        if not ngx.req.get_headers()["X-Grpc-Web"] then
+            buffer = string.sub(buffer, 6)
         end
+
+        if pb_option then
+            for _, opt in ipairs(pb_option) do
+                pb.option(opt)
+            end
+        end
+
+        local decoded = pb.decode(m.output_type, buffer)
+        if not decoded then
+            ngx.arg[1] = "failed to decode response data by protobuf"
+            return "failed to decode response data by protobuf"
+        end
+
+        local response, err = core.json.encode(decoded)
+        if not response then
+            core.log.error("failed to call json_encode data: ", err)
+            response = "failed to json_encode response body"
+        end
+
+        ngx.arg[1] = response
     end
 
-    local decoded = pb.decode(m.output_type, buffer)
-    if not decoded then
-        ngx.arg[1] = "failed to decode response data by protobuf"
-        return
-    end
-
-    local response, err = core.json.encode(decoded)
-    if not response then
-        core.log.error("failed to call json_encode data: ", err)
-        response = "failed to json_encode response body"
-    end
-
-    ngx.arg[1] = response
 end

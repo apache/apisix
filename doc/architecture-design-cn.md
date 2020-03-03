@@ -235,13 +235,20 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 |名字    |可选|说明|
 |-------         |-----|------|
-|type            |必需|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
-|nodes           |必需|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|
-|hash_on         |可选|该选项只有 `type` 是 `chash` 才有效。`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
-|key             |必需|该选项只有 `type` 是 `chash` 才有效，需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`。`hash_on` 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)；`hash_on` 设为 `header` 时, `key` 为必传参数，自定义的 `header name`；`hash_on` 设为 `cookie` 时, `key` 为必传参数， 自定义的 `cookie name`；`hash_on` 设为 `consumer` 时，`key` 不需要设置，为空，此时哈希算法采用的 `key` 为认证通过的 `consumer_id`。 如果指定的 `hash_on` 和 `key` 获取不到值时，默认取 `remote_addr`|
+|type            |必填|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
+|nodes           |必填|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80` 等。value 则是节点的权重。当权重值为 `0` 代表该上游节点失效，不会被选中，可以用于暂时摘除节点的情况。|
+|key             |可选|在 `type` 等于 `chash` 是必选项。 `key` 需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`|
+|hash_on         |可选|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
 |enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
+
+`hash_on` 比较复杂，这里专门说明下：
+1. 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)
+1. 设为 `header` 时, `key` 为必传参数，其值为自定义的 header name, 即 "http_`key`"
+1. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie_`key`"
+1. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_id`。
+1. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
 创建上游对象用例：
 
