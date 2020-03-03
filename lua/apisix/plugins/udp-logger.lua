@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core     = require("apisix.core")
-local log_util = require("apisix.plugins.log-util")
+local log_util = require("apisix.utils.log-util")
 local plugin_name = "udp-logger"
 local ngx = ngx
 
