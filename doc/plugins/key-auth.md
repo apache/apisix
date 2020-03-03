@@ -1,4 +1,23 @@
-[中文](key-auth-cn.md) [英文](key-auth.md)
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+[Chinese](key-auth-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -16,7 +35,10 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
-* `key`: different consumer objects should use different values, it should be unique.
+|Name          |Requirement  |Description|
+|---------     |--------|-----------|
+| key         |required|different consumer objects should use different values, it should be unique.|
+
 
 ## How To Enable
 
@@ -25,34 +47,40 @@ Two steps are required:
 1. creates a consumer object, and set the attributes of plugin `key-auth`.
 
 ```shell
-    curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 {
     "username": "jack",
-	"plugins": {
-		"key-auth": {
-			"key": "keykey"
-		}
-	}
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
+        }
+    }
 }'
 ```
+
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+![](../images/plugin/key-auth-1.png)
+
+Then add key-auth plugin:
+![](../images/plugin/key-auth-2.png)
 
 2. creates a route or service object, and enable plugin `key-auth`.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-		"key-auth": {}
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
@@ -61,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 Here is a correct test example:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: keykey' -i
+$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
 HTTP/1.1 200 OK
 ...
 ```
@@ -82,25 +110,22 @@ HTTP/1.1 401 Unauthorized
 
 ## Disable Plugin
 
-When you want to disable the limit req plugin, it is very simple,
+When you want to disable the `key-auth` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
-	"methods": ["GET"],
-	"uri": "/index.html",
-	"id": 1,
-	"plugins": {
-	},
-	"upstream": {
-		"type": "roundrobin",
-		"nodes": {
-			"39.97.63.215:80": 1
-		}
-	}
+    "uri": "/index.html",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
 }'
 ```
 
-The limit req plugin has been disabled now. It works for other plugins.
+The `key-auth` plugin has been disabled now. It works for other plugins.

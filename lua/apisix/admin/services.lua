@@ -1,13 +1,31 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local core = require("apisix.core")
-local routes = require("apisix.route").routes
+local get_routes = require("apisix.router").http_routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
+local upstreams = require("apisix.admin.upstreams")
 local tostring = tostring
 local ipairs = ipairs
 local tonumber = tonumber
+local type = type
 
 
 local _M = {
-    version = 0.1,
+    version = 0.3,
 }
 
 
@@ -39,6 +57,14 @@ local function check_conf(id, conf, need_id)
 
     if need_id and not tonumber(id) then
         return nil, {error_msg = "wrong type of service id"}
+    end
+
+    local upstream_conf = conf.upstream
+    if upstream_conf then
+        local ok, err = upstreams.check_upstream_conf(upstream_conf)
+        if not ok then
+            return nil, {error_msg = err}
+        end
     end
 
     local upstream_id = conf.upstream_id
@@ -121,17 +147,17 @@ end
 
 
 function _M.delete(id)
-    -- todo: need to check if any route is still using this service now.
     if not id then
         return 400, {error_msg = "missing service id"}
     end
 
-    local routes, routes_ver = routes()
+    local routes, routes_ver = get_routes()
     core.log.info("routes: ", core.json.delay_encode(routes, true))
     core.log.info("routes_ver: ", routes_ver)
     if routes_ver and routes then
         for _, route in ipairs(routes) do
-            if route.value and route.value.service_id
+            if type(route) == "table" and route.value
+               and route.value.service_id
                and tostring(route.value.service_id) == id then
                 return 400, {error_msg = "can not delete this service directly,"
                                          .. " route [" .. route.value.id
@@ -144,6 +170,77 @@ function _M.delete(id)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete service[", key, "]: ", err)
+        return 500, {error_msg = err}
+    end
+
+    return res.status, res.body
+end
+
+
+function _M.patch(id, conf, sub_path)
+    if not id then
+        return 400, {error_msg = "missing service id"}
+    end
+
+    if not sub_path then
+        return 400, {error_msg = "missing sub-path"}
+    end
+
+    if not conf then
+        return 400, {error_msg = "missing new configuration"}
+    end
+
+    local key = "/services" .. "/" .. id
+    local res_old, err = core.etcd.get(key)
+    if not res_old then
+        core.log.error("failed to get service[", key, "]: ", err)
+        return 500, {error_msg = err}
+    end
+
+    if res_old.status ~= 200 then
+        return res_old.status, res_old.body
+    end
+    core.log.info("key: ", key, " old value: ",
+                  core.json.delay_encode(res_old, true))
+
+    local new_value = res_old.body.node.value
+    local sub_value = new_value
+    local sub_paths = core.utils.split_uri(sub_path)
+    for i = 1, #sub_paths - 1 do
+        local sub_name = sub_paths[i]
+        if sub_value[sub_name] == nil then
+            sub_value[sub_name] = {}
+        end
+
+        sub_value = sub_value[sub_name]
+
+        if type(sub_value) ~= "table" then
+            return 400, "invalid sub-path: /"
+                        .. core.table.concat(sub_paths, 1, i)
+        end
+    end
+
+    if type(sub_value) ~= "table" then
+        return 400, "invalid sub-path: /" .. sub_path
+    end
+
+    local sub_name = sub_paths[#sub_paths]
+    if sub_name and sub_name ~= "" then
+        sub_value[sub_name] = conf
+    else
+        new_value = conf
+    end
+    core.log.info("new value ", core.json.delay_encode(new_value, true))
+
+    local id, err = check_conf(id, new_value, true)
+    if not id then
+        return 400, err
+    end
+
+    -- TODO: this is not safe, we need to use compare-set
+    local res, err = core.etcd.set(key, new_value)
+    if not res then
+        core.log.error("failed to set new service[", key, "]: ", err)
         return 500, {error_msg = err}
     end
 

@@ -1,8 +1,26 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+[Chinese](prometheus-cn.md)
 # prometheus
 
 This plugin exposes metrics in Prometheus Exposition format.
-
-<!-- [中文](prometheus-cn.md) [英文](prometheus.md) -->
 
 ## Attributes
 
@@ -31,9 +49,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
+You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
+
+![](../images/plugin/prometheus-1.png)
+
+Then add prometheus plugin:
+
+![](../images/plugin/prometheus-2.png)
+
 ## How to fetch the metric data
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
+```
+curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+```
 
 Puts this uri address into prometheus, and it will automatically fetch
 these metric data.
@@ -50,15 +79,22 @@ scrape_configs:
 
 And we can check the status at prometheus console:
 
-![](../../../doc/images/plugin/prometheus01.png)
+![](../../doc/images/plugin/prometheus01.png)
 
-![](../../../doc/images/plugin/prometheus02.png)
+![](../../doc/images/plugin/prometheus02.png)
 
 
 ### Grafana dashboard
 
-Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard: https://grafana.com/dashboards/7424 .
+Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard.
 
+You can goto [Grafana meta](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
+
+![](../../doc/images/plugin/grafana_1.png)
+
+![](../../doc/images/plugin/grafana_2.png)
+
+![](../../doc/images/plugin/grafana_3.png)
 
 ### Available metrics
 

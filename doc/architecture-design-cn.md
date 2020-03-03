@@ -1,13 +1,34 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
 ## 目录
-- [**apisix**](#apisix)
-- [**apisix Config**](#apisix-config)
+- [**APISIX**](#apisix)
+- [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
 - [**Service**](#service)
-- [**Consumer**](#consumer)
 - [**Plugin**](#plugin)
 - [**Upstream**](#upstream)
+- [**Router**](#router)
+- [**Consumer**](#consumer)
+- [**Debug mode**](#Debug-mode)
 
-## apisix
+## APISIX
 
 ### 插件加载流程
 
@@ -17,13 +38,13 @@
 
 <img src="./images/flow-plugin-internal.png" width="50%" height="50%">
 
-## apisix Config
+## APISIX Config
 
-通过修改本地 `conf/config.yaml` 文件完成对 apisix 服务本身的基本配置。
+通过修改本地 `conf/config.yaml` 文件完成对 APISIX 服务本身的基本配置。
 
 ```yaml
 apisix:
-  node_listen: 9080             # apisix listening port
+  node_listen: 9080             # APISIX listening port
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
@@ -37,29 +58,31 @@ plugins:                        # plugin name list
   - ...
 ```
 
-*注意* 不要手工修改 apisix 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
+*注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
-
-目前读写 `etcd` 操作使用的是 v2 协议，所有配置均存储在 `/v2/keys` 目录下。
 
 [返回目录](#目录)
 
 ## Route
 
-默认路径：`/apisix/routes/`
+Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的
+插件，并把请求转发给到指定 Upstream。
 
-`Route` 是如何匹配用户请求的具体描述。目前 apisix 支持 `URI` 和 `Method` 两种方式匹配
-用户请求。其他比如 `Host` 方式，将会持续增加。
+Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
+请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
 
-路径中的 `key` 会被用作路由 `id` 做唯一标识，比如下面示例的路由 `id` 是 `100`。
+<img src="./images/routes-example.png" width="50%" height="50%">
+
+我们直接在 Route 中完成所有参数的配置，优点是容易设置，每个 Route 都相对独立自由度比较高。但当我们的 Route 有比较多的重复配置（比如启用相同的插件配置或上游信息），一旦我们要更新这些相同属性时，就需要遍历所有 Route 并进行修改，给后期管理维护增加不少复杂度。
+
+上面提及重复的缺点在 APISIX 中独立抽象了 [Service](#service) 和 [Upstream](#upstream) 两个概念来解决。
+
+下面创建的 Route 示例，是把 uri 为 "/index.html" 的请求代理到地址为 "39.97.63.215:80" 的 Upstream 服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
 {
     "uri": "/index.html",
-    "id": "100",
-    "plugins": {
-    },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -67,37 +90,37 @@ curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
         }
     }
 }'
+
+HTTP/1.1 201 Created
+Date: Sat, 31 Aug 2019 01:17:15 GMT
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX web server
+
+{"node":{"value":{"uri":"\/index.html","upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
-#### Route option
+当我们接收到成功应答，表示该 Route 已成功创建。
 
-|name     |option   |description|
-|---------|---------|-----------|
-|uri      |required |除了静态常量匹配，这里还支持正则 `/foo/{:\w+}/{:\w+}`，更多见 [lua-resty-libr3](https://github.com/iresty/lua-resty-libr3)|
-|id       |optional |如果有，必须与路径中的 `key` 保持一致|
-|host     |optional |当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`|
-|remote_addr|optional |客户端请求 IP 地址，比如 `192.168.1.101`；也支持 CIDR 格式，比如 `192.168.1.0/24`|
-|methods  |optional |如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个组合：GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS。|
-|plugins|required |启用的插件配置，详见 [Plugin](#plugin) |
-|upstream|optional |启用的 upstream 配置，详见 [Upstream](#upstream)|
-|upstream_id|optional |启用的 upstream id，详见 [Upstream](#upstream)|
-|service_id|optional |绑定的 Service 配置，详见 [Service](#service)|
-
+有关 Route 的具体选项，可具体查阅 [Admin API 之 Route](admin-api-cn.md#route)。
 
 [返回目录](#目录)
 
 ## Service
 
-`Service` 是某类功能的提供者，比如订单、账户服务。它通常与上游服务抽象是一对一的，`Route`
-与 `Service` 之间，通常是 N:1 的关系，既多个 `Route` 规则可以对应同一个 `Service`。
+`Service` 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route`
+与 `Service` 之间，通常是 N:1 的关系，参看下图。
 
-多个 route 规则同时绑定到一个 service 上，这些路由将具有相同的上游和插件配置，减少冗余配置。
+<img src="./images/service-example.png" width="50%" height="50%">
 
-比如下面的例子，先创建了一个 service，并开启了限流插件，
-然后把 id 为 `100`、`101` 的 route 都绑定在这个 service 上。
+不同 Route 规则同时绑定到一个 Service 上，这些 Route 将具有相同的上游和插件配置，减少冗余配置。
+
+比如下面的例子，创建了一个启用限流插件的 Service，然后把 id 为 `100`、`101` 的 Route 都绑定在这个 Service 上。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/services/200 -X PUT -d '
+# create new Service
+$ curl http://127.0.0.1:9080/apisix/admin/services/200 -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -115,6 +138,7 @@ curl http://127.0.0.1:9080/apisix/admin/services/200 -X PUT -d '
     }
 }'
 
+# create new Route and reference the service by id `200`
 curl http://127.0.0.1:9080/apisix/admin/routes/100 -X PUT -d '
 {
     "methods": ["GET"],
@@ -130,7 +154,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/101 -X PUT -d '
 }'
 ```
 
-你也可以为 route 单独制定不同的插件和参数，比如下面这个示例设置了不同的限流参数：
+当然我们也可以为 Route 指定不同的插件参数或上游，比如下面这个 Route 设置了不同的限流参数，其他部分（比如上游）则继续使用 Service 中的配置参数。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
@@ -149,14 +173,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 }'
 ```
 
-当 route 和 service 都开启同一个插件时，route 的优先级高于 service。
-
-[返回目录](#目录)
-
-## Consumer
-
-`Consumer` 是某类具体服务的消费者，主要用来表述不同用户的概念。比如不同的客户请求同一个 API，
-经过用户认证体系，网关服务需知道当前请求用户身份信息，针对不同的消费用户，会有不同的限制处理逻辑。
+注意：当 Route 和 Service 都开启同一个插件时，Route 参数的优先级是高于 Service 的。
 
 [返回目录](#目录)
 
@@ -167,16 +184,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 `Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service` 或 `Consumer`上。而对于同一
 个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Service`。
 
-在 `conf/config.yaml` 中，可以声明本地 apisix 节点都支持哪些插件。这是个白名单机制，不在该
+在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该
 白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
 
-插件的配置可以被直接绑定在指定 route 中，也可以被绑定在 service 中，不过 route 中的插件配置
+插件的配置可以被直接绑定在指定 Route 中，也可以被绑定在 Service 中，不过 Route 中的插件配置
 优先级更高。
 
-一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 route 或 service）。
-插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../doc/plugins/example-plugin.lua#L16)。
+一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
+插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../lua/apisix/plugins/example-plugin.lua#L37)。
 
-插件配置作为 route 或 service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
+插件配置作为 Route 或 Service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
 名字作为哈希的 key 来保存不同插件的配置项。
 
 ```json
@@ -197,30 +214,41 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -X PUT -d '
 并不是所有插件都有具体配置项，比如 `prometheus` 下是没有任何具体配置项，这时候用一个空的对象
 标识即可。
 
-目前 apisix 已支持插件：
-
-* [key-auth](../doc/plugins/key-auth-cn.md)
-* [limit-count](../doc/plugins/limit-count-cn.md)
-* [limit-req](../doc/plugins/limit-req-cn.md)
-* [prometheus](../doc/plugins/prometheus.md)
+[查看 APISIX 已支持插件列表](plugins-cn.md)
 
 [返回目录](#目录)
 
 ## Upstream
 
-上游对象表示虚拟主机名，可用于通过多个服务（目标）对传入请求进行负载均衡。
+Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，就需要用“引用”方式避免重复了。
 
-上游的配置使用方法，与 `plugin` 非常相似，也可以同时被绑定到 `route` 或 `service` 上，并根据优先级决
-定执行顺序。
+<img src="./images/upstream-example.png" width="50%" height="50%">
+
+如上图所示，通过创建 Upstream 对象，在 `Route` 用 ID 方式引用，就可以确保只维护一个对象的值了。
+
+Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑定在 `Service` 中，不过 `Route` 中的配置
+优先级更高。这里的优先级行为与 `Plugin` 非常相似
 
 #### 配置参数
 
-* type：`roundrobin` 或 `chash`
-    * roundrobin：支持权重的负载
-    * chash：一致性 hash (TODO)
-* nodes: 上游机器地址列表（目前仅支持 IP+Port 方式）
-* key: 该选项只有类型是 `roundrobin` 才有效。根据 `key` 来查找对应的 node `id`，相同的
-`key` 在同一个对象中，永远返回相同 id 。
+APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面表格。
+
+|名字    |可选|说明|
+|-------         |-----|------|
+|type            |必填|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
+|nodes           |必填|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80` 等。value 则是节点的权重。当权重值为 `0` 代表该上游节点失效，不会被选中，可以用于暂时摘除节点的情况。|
+|key             |可选|在 `type` 等于 `chash` 是必选项。 `key` 需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`|
+|hash_on         |可选|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
+|checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
+|retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
+|enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
+
+`hash_on` 比较复杂，这里专门说明下：
+1. 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)
+1. 设为 `header` 时, `key` 为必传参数，其值为自定义的 header name, 即 "http_`key`"
+1. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie_`key`"
+1. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_id`。
+1. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
 创建上游对象用例：
 
@@ -230,8 +258,8 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -X PUT -d '
     "type": "roundrobin",
     "nodes": {
         "127.0.0.1:80": 1,
-        "127.0.0.2:80": 1,
-        "127.0.0.3:80": 1
+        "127.0.0.2:80": 2,
+        "foo.com:80": 3
     }
 }'
 
@@ -239,14 +267,15 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
+    "enable_websocket": true,
     "nodes": {
         "127.0.0.1:80": 1,
-        "127.0.0.2:80": 1
+        "foo.com:80": 2
     }
 }'
 ```
 
-上游对象创建后，均可以被具体 `route` 或 `service` 引用，例如：
+上游对象创建后，均可以被具体 `Route` 或 `Service` 引用，例如：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -256,7 +285,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 }'
 ```
 
-为了方便使用，也可以直接把上游地址直接绑到某个 `route` 或 `service` ，例如：
+为了方便使用，也可以直接把上游地址直接绑到某个 `Route` 或 `Service` ，例如：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -277,6 +306,285 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
         }
     }
 }'
+```
+
+下面是一个配置了健康检查的示例：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+         "nodes": {
+            "39.97.63.215:80": 1
+        }
+        "type": "roundrobin",
+        "retries": 2,
+        "checks": {
+            "active": {
+                "http_path": "/status",
+                "host": "foo.com",
+                "healthy": {
+                    "interval": 2,
+                    "successes": 1
+                },
+                "unhealthy": {
+                    "interval": 1,
+                    "http_failures": 2
+                }
+            }
+        }
+    }
+}'
+```
+更多细节可以参考[健康检查的文档](health-check.md)。
+
+下面是几个使用不同`hash_on`类型的配置示例：
+##### Consumer
+创建一个consumer对象:
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d `
+{
+    "username": "jack",
+    "plugins": {
+    "key-auth": {
+           "key": "auth-jack"
+        }
+    }
+}`
+```
+新建路由，打开`key-auth`插件认证，`upstream`的`hash_on`类型为`consumer`：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        },
+        "type": "chash",
+        "hash_on": "consumer"
+    },
+    "uri": "/server_port"
+}'
+```
+测试请求，认证通过后的`consumer_id`将作为负载均衡哈希算法的哈希值：
+```shell
+curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
+```
+
+##### Cookie
+新建路由和`Upstream`，`hash_on`类型为`cookie`：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/hash_on_cookie",
+    "upstream": {
+        "key": "sid",
+        "type ": "chash",
+        "hash_on ": "cookie",
+        "nodes ": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        }
+    }
+}'
+```
+
+客户端请求携带`Cookie`：
+```shell
+ curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
+```
+
+##### Header
+新建路由和`Upstream`，`hash_on`类型为`header`， `key`为`content-type`：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "uri": "/hash_on_header",
+    "upstream": {
+        "key": "content-type",
+        "type ": "chash",
+        "hash_on ": "header",
+        "nodes ": {
+            "127.0.0.1:1980": 1,
+            "127.0.0.1:1981": 1
+        }
+    }
+}'
+```
+
+客户端请求携带`content-type`的`header`：
+```shell
+ curl http://127.0.0.1:9080/hash_on_header -H "Content-Type: application/json"
+```
+
+[返回目录](#目录)
+
+
+## Router
+
+APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Router 来更好匹配自由业务，在性能、自由之间做最适合选择。
+
+在本地配置 `conf/config.yaml` 中设置最符合自身业务需求的路由。
+
+* `apisix.router.http`: HTTP 请求路由。
+    * `radixtree_uri`: （默认）只使用 `uri` 作为主索引。基于 `radixtree` 引擎，支持全量和深前缀匹配，更多见 [如何使用 router-radixtree](router-radixtree.md)。
+        * `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
+        * `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
+        * `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。
+        * `任意过滤属性`：允许指定任何 Ningx 内置变量作为过滤条件，比如 uri 请求参数、请求头、cookie 等。
+    * `radixtree_host_uri`: 使用 `host + uri` 作为主索引（基于 `radixtree` 引擎），对当前请求会同时匹配 host 和 uri，支持的匹配条件与 `radixtree_uri` 基本一致。
+
+* `apisix.router.ssl`: SSL 加载匹配路由。
+    * `radixtree_sni`: （默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
+
+[返回目录](#目录)
+
+## Consumer
+
+对于 API 网关通常可以用请求域名、客户端 IP 地址等字段识别到某类请求方，
+然后进行插件过滤并转发请求到指定上游，但有时候这个深度不够。
+
+<img src="./images/consumer-who.png" width="50%" height="50%">
+
+如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
+
+|字段|必选|说明|
+|---|----|----|
+|username|是|Consumer 名称。|
+|plugins|否|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。|
+
+在 APISIX 中，识别 Consumer 的过程如下图：
+
+<img src="./images/consumer-internal.png" width="50%" height="50%">
+
+1. 授权认证：比如有 [key-auth](./plugins/key-auth.md)、[JWT](./plugins/jwt-auth-cn.md) 等。
+2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
+3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
+
+概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
+比如不同的 Consumer 请求同一个 API，网关服务根据当前请求用户信息，对应不同的 Plugin 或 Upstream 配置。
+
+此外，大家也可以参考 [key-auth](./plugins/key-auth.md) 认证授权插件的调用逻辑，辅助大家来进一步理解 Consumer 概念和使用。
+
+如何对某个 Consumer 开启指定插件，可以看下面例子：
+
+```shell
+# 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
+        },
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        }
+    }
+}'
+
+# 创建 Router，设置路由规则和启用插件配置
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+{
+    "plugins": {
+        "key-auth": {}
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/hello"
+}'
+
+# 发测试请求，前两次返回正常，没达到限速阈值
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+...
+
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+...
+
+# 第三次测试返回 503，请求被限制
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+HTTP/1.1 503 Service Temporarily Unavailable
+...
+
+```
+
+[返回目录](#目录)
+
+## Debug mode
+
+### 基本调试模式
+
+设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`，即可开启基本调试模式。
+
+比如对 `/hello` 开启了 `limit-conn`和`limit-count`插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
+
+```shell
+$ curl http://127.0.0.1:1984/hello -i
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Apisix-Plugins: limit-conn, limit-count
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 1
+Server: openresty
+
+hello world
+```
+
+### 高级调试模式
+
+设置 `conf/debug.yaml` 中的选项，开启高级调试模式。由于 APISIX 服务启动后是每秒定期检查该文件，
+当可以正常读取到 `#END` 结尾时，才认为文件处于写完关闭状态。
+
+根据文件最后修改时间判断文件内容是否有变化，如有变化则重新加载，如没变化则跳过本次检查。
+所以高级调试模式的开启、关闭都是热更新方式完成。
+
+|名字|可选项|说明|默认值|
+|----|-----|---------|---|
+|hook_conf.enable|必选项|是否开启 hook 追踪调试。开启后将打印指定模块方法的请求参数或返回值|false|
+|hook_conf.name|必选项|开启 hook 追踪调试的模块列表名称||
+|hook_conf.log_level|必选项|打印请求参数和返回值的日志级别|warn|
+|hook_conf.is_print_input_args|必选项|是否打印输入参数|true|
+|hook_conf.is_print_return_value|必选项|是否打印返回值|true|
+
+请看下面示例：
+
+```yaml
+hook_conf:
+  enable: false                 # 是否开启 hook 追踪调试
+  name: hook_phase              # 开启 hook 追踪调试的模块列表名称
+  log_level: warn               # 日志级别
+  is_print_input_args: true     # 是否打印输入参数
+  is_print_return_value: true   # 是否打印返回值
+
+hook_phase:                     # 模块函数列表，名字：hook_phase
+  apisix:                       # 引用的模块名称
+    - http_access_phase         # 函数名：数组
+    - http_header_filter_phase
+    - http_body_filter_phase
+    - http_log_phase
+
+#END
 ```
 
 [返回目录](#目录)

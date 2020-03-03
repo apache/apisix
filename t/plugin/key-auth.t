@@ -1,4 +1,20 @@
-use t::APISix 'no_plan';
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+use t::APISIX 'no_plan';
 
 repeat_each(2);
 no_long_string();
@@ -45,7 +61,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/key"
+property "key" validation failed: wrong type: expected string, got number
 done
 --- no_error_log
 [error]
@@ -58,14 +74,14 @@ done
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "username": "jack",
                     "plugins": {
-                            "key-auth": {
-                                "key": "auth-one"
-                            }
+                        "key-auth": {
+                            "key": "auth-one"
                         }
+                    }
                 }]],
                 [[{
                     "node": {
@@ -101,18 +117,18 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "key-auth": {}
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -131,7 +147,19 @@ passed
 
 
 
-=== TEST 5: invalid consumer
+=== TEST 5: valid consumer
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: invalid consumer
 --- request
 GET /hello
 --- more_headers
@@ -144,7 +172,7 @@ apikey: 123
 
 
 
-=== TEST 6: not found apikey header
+=== TEST 7: not found apikey header
 --- request
 GET /hello
 --- error_code: 401
@@ -155,12 +183,35 @@ GET /hello
 
 
 
-=== TEST 7: valid consumer
+=== TEST 8: valid consumer
+--- config
+    location /add_more_consumer {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local username = ""
+            local key = ""
+            local code, body
+            for i = 1, 20 do
+                username = "user_" .. tostring(i)
+                key = "auth-" .. tostring(i)
+                code, body = t('/apisix/admin/consumers',
+                    ngx.HTTP_PUT,
+                    string.format('{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}', username, key),
+                    string.format('{"node":{"value":{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}},"action":"set"}', username, key)
+                    )
+            end
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
 --- request
-GET /hello
+GET /add_more_consumer
+--- pipelined_requests eval
+["GET /add_more_consumer", "GET /hello"]
 --- more_headers
-apikey: auth-one
---- response_body
-hello world
+apikey: auth-13
+--- response_body eval
+["passed\n", "hello world\n"]
 --- no_error_log
 [error]

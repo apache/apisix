@@ -1,5 +1,19 @@
--- Copyright (C) Yuansheng Wang
-
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local lru_new = require("resty.lrucache").new
 local setmetatable = setmetatable
 local getmetatable = getmetatable
@@ -17,6 +31,8 @@ local lua_metatab = {}
 local function new_lru_fun(opts)
     local item_count = opts and opts.count or GLOBAL_ITEMS_COUNT
     local item_ttl = opts and opts.ttl or GLOBAL_TTL
+    local item_release = opts and opts.release
+    local invalid_stale = opts and opts.invalid_stale
     local lru_obj = lru_new(item_count)
 
     return function (key, version, create_obj_fun, ...)
@@ -30,9 +46,20 @@ local function new_lru_fun(opts)
             return obj.val
         end
 
-        if stale_obj and stale_obj._cache_ver == version then
-            lru_obj:set(key, obj, item_ttl)
-            return stale_obj
+        if not invalid_stale and stale_obj and
+           stale_obj._cache_ver == version then
+            lru_obj:set(key, stale_obj, item_ttl)
+
+            local met_tab = getmetatable(stale_obj)
+            if met_tab ~= lua_metatab then
+                return stale_obj
+            end
+
+            return stale_obj.val
+        end
+
+        if item_release and obj then
+            item_release(obj)
         end
 
         local err

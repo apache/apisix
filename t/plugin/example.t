@@ -1,9 +1,26 @@
-use t::APISix 'no_plan';
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+use t::APISIX 'no_plan';
 
 repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
+
 run_tests;
 
 __DATA__
@@ -47,7 +64,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "required" in docuement at pointer "#"
+property "i" is required
 done
 --- no_error_log
 [error]
@@ -70,7 +87,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "minimum" in docuement at pointer "#/i"
+property "i" validation failed: expected -1 to be greater than 0
 done
 --- no_error_log
 [error]
@@ -93,7 +110,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/s"
+property "s" validation failed: wrong type: expected string, got number
 done
 --- no_error_log
 [error]
@@ -116,7 +133,7 @@ done
 --- request
 GET /t
 --- response_body
-invalid "type" in docuement at pointer "#/t"
+property "t" validation failed: expect array to have at least 1 items
 done
 --- no_error_log
 [error]
@@ -144,7 +161,7 @@ done
 --- request
 GET /t
 --- response_body
-plugin name: example-plugin priority: 1000
+plugin name: example-plugin priority: 0
 --- yaml_config
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
@@ -195,5 +212,49 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
 GET /t
 --- response_body
 plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "example-plugin": {
+                                "i": 11,
+                                "ip": "127.0.0.1",
+                                "port": 1981
+                            }
+                        },
+                        "uri": "/server_port"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: hit route
+--- request
+GET /server_port
+--- response_body_like eval
+qr/1981/
 --- no_error_log
 [error]

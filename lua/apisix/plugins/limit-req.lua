@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
 local plugin_name = "limit-req"
@@ -9,7 +25,10 @@ local schema = {
     properties = {
         rate = {type = "number", minimum = 0},
         burst = {type = "number",  minimum = 0},
-        key = {type = "string", enum = {"remote_addr"}},
+        key = {type = "string",
+            enum = {"remote_addr", "server_addr", "http_x_real_ip",
+                    "http_x_forwarded_for"},
+        },
         rejected_code = {type = "integer", minimum = 200},
     },
     required = {"rate", "burst", "key", "rejected_code"}
@@ -48,7 +67,9 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_version
+    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    core.log.info("limit key: ", key)
+
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
