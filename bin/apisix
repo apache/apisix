@@ -553,6 +553,8 @@ local function system_dns_resolver(file_path)
             table.insert(dns_addrs, addr)
         end
     end
+
+    file:close()
     return dns_addrs
 end
 
