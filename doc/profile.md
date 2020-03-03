@@ -19,12 +19,12 @@
 
 # Configuration file switching based on environment variables
 
-The reason the configuration is extracted from the code is to better adapt to changes. Usually our applications have different 
-operating environments such as development environment and production environment. Certain configurations of these applications 
+The reason the configuration is extracted from the code is to better adapt to changes. Usually our applications have different
+operating environments such as development environment and production environment. Certain configurations of these applications
 will definitely be different, such as the address of the configuration center.
 
-If the configuration of all environments is placed in the same file, it is very difficult to manage. After receiving new 
-requirements, we need to change the parameters in the configuration file to the development environment when developing the 
+If the configuration of all environments is placed in the same file, it is very difficult to manage. After receiving new
+requirements, we need to change the parameters in the configuration file to the development environment when developing the
 development environment. You have to change it back. It's very easy to make mistakes.
 
 The solution to the above problem is to distinguish the current running environment through environment variables, and switch
