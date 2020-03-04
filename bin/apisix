@@ -50,6 +50,12 @@ if script_path:sub(1, 2) == './' then
         error("failed to fetch current path")
     end
 
+    is_root_path = string.match(apisix_home, "^\/[root][^\/]+")
+    if is_root_path then
+        print('Warning! Running apisix under /root is only suitable for development environments'
+            .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
+    end
+
     pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                 .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
     pkg_path  = apisix_home .. "/lua/?.lua;"
