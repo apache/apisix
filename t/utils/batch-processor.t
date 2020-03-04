@@ -28,7 +28,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 1,
@@ -63,7 +63,7 @@ failed
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local func_to_send = function(elements)
                 return true
             end
@@ -99,7 +99,7 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
@@ -135,7 +135,7 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
@@ -173,7 +173,7 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local core = require("apisix.core")
             local retry = false
             local config = {
@@ -215,7 +215,7 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
@@ -253,7 +253,7 @@ Batch Processor[log buffer] exceeded the max_retry_count
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local core = require("apisix.core")
             local count = 0
             local config = {
@@ -297,7 +297,7 @@ batch[2] sent
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 0,
                 batch_max_size = 2,
@@ -335,7 +335,7 @@ Batch Processor[log buffer] exceeded the max_retry_count
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
@@ -372,7 +372,7 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local core = require("apisix.core")
             local config = {
                 max_retry_count  = 2,
