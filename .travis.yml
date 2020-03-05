@@ -3,9 +3,9 @@ sudo: required
 
 matrix:
   fast_finish: true
-  allow_failures:
-    - os: osx
-    - env: OSNAME=linux_apisix_luarocks
+  # allow_failures:
+    # - os: osx
+    # - env: OSNAME=linux_apisix_luarocks
 
   include:
     - os: linux
