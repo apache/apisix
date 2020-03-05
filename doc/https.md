@@ -31,7 +31,7 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 * `sni`: Hostname to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "cert": "...",
     "key": "....",
@@ -69,7 +69,7 @@ Here is an example, please pay attention on the field `sni`.
 
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "cert": "...",
     "key": "....",

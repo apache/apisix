@@ -45,7 +45,7 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 Here's an example, enable the zipkin plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

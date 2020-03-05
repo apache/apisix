@@ -39,6 +39,21 @@ apisix:
   #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
   # port_admin: 9180              # use a separate port
+
+  # Default token when use API to call for Admin API.
+  # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
+  # Disabling this configuration item means that the Admin API does not
+  # require any authentication.
+  admin_key:
+    -
+      name: "admin"
+      key: edd1c9f034335f136f87ad84b625c8f1
+      role: admin                 # admin: manage all configuration data
+                                  # viewer: only can view configuration data
+    -
+      name: "viewer"
+      key: 4054f7cf07e344346cd3f287985e76a2
+      role: viewer
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
