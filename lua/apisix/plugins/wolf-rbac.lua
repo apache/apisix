@@ -245,7 +245,7 @@ end
 function _M.rewrite(conf, ctx)
     local url = ctx.var.uri
     local action = ctx.var.request_method
-    local client_ip = core.request.get_ip(ctx)
+    local client_ip = ctx.var.http_x_real_ip or core.request.get_ip(ctx)
     local perm_item = {action = action, url = url, clientIP = client_ip}
     core.log.info("hit wolf-rbac rewrite")
 
@@ -285,14 +285,6 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
     local server = consumer.auth_conf.server
-
-    local url = ctx.var.uri
-    local action = ctx.var.request_method
-    local client_ip = core.request.get_ip(ctx)
-    local perm_item = {
-        appid = appid, action = action, url = url,
-        clientIP = client_ip, wolf_token = wolf_token
-    }
 
     local res = check_url_permission(server, appid, action, url,
                     client_ip, wolf_token)
