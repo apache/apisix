@@ -69,7 +69,7 @@ sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.1
 sudo luarocks install apisix 1.1
 ```
 
-## Manage (start/stop) APISIX Server
+## 3. Manage (start/stop) APISIX Server
 
 We can start the APISIX server by command `make run` in APISIX home folder,
 or we can stop APISIX server by command `make stop`.
@@ -102,7 +102,7 @@ Makefile rules:
     license-check: Check lua souce code for Apache License
 ```
 
-## Test
+## 4. Test
 
 1. Install perl's package manager `cpanminus` first
 2. Then install `test-gninx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
@@ -110,3 +110,36 @@ Makefile rules:
 4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
     * Run the test cases: `prove -Itest-nginx/lib -r t`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+
+## 5. Update Admin API token to protect Apache APISIX
+
+Changes the `apisix.admin_key` in the file `conf/config.yaml` and restart the service.
+Here is an example:
+
+```yaml
+apisix:
+  # ... ...
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+When calling the Admin API, `key` can be used as a token.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
+HTTP/1.1 200 OK
+Date: Fri, 28 Feb 2020 07:48:04 GMT
+Content-Type: text/plain
+... ...
+{"node":{...},"action":"get"}
+
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
+HTTP/1.1 401 Unauthorized
+Date: Fri, 28 Feb 2020 08:17:58 GMT
+Content-Type: text/html
+... ...
+{"node":{...},"action":"get"}
+```

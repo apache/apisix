@@ -75,7 +75,7 @@
 
 ```shell
 # 创建一个路由
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "hosts": ["foo.com", "*.bar.com"],
@@ -94,7 +94,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # 创建一个有效期为 60 秒的路由，过期后自动删除
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {
@@ -128,7 +128,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 请看下面例子，匹配请求参数 name 等于 json ，age 大于 18 且 address 开头是 China 的请求：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "vars": [

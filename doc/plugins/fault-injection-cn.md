@@ -40,7 +40,7 @@
 示例1：为特定路由启用 `fault-injection` 插件，并指定 `abort` 参数：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "fault-injection": {
@@ -79,7 +79,7 @@ Fault Injection!
 示例2：为特定路由启用 `fault-injection` 插件，并指定 `delay` 参数：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "fault-injection": {
@@ -123,7 +123,7 @@ sys     0m0.010s
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

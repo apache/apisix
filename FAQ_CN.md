@@ -82,7 +82,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 
 可以这么做：
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -95,7 +95,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [

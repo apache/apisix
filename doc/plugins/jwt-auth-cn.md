@@ -47,7 +47,7 @@
 1. 创建一个 consumer 对象，并设置插件 `jwt-auth` 的值。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 2. 创建 Route 或 Service 对象，并开启 `jwt-auth` 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

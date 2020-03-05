@@ -108,3 +108,35 @@ Makefile rules:
 4. 通过 perl 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集：
     * 直接运行：`prove -Itest-nginx/lib -r t`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+
+## 5. 更新 Admin API 的 token ，保护 Apache APISIX
+
+修改 `conf/config.yaml` 中的 `apisix.admin_key` 并重启服务。例如下面例子：
+
+```yaml
+apisix:
+  # ... ...
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+当我们需要访问 Admin API 时，就可以使用上面记录的 key 作为 token 了。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
+HTTP/1.1 200 OK
+Date: Fri, 28 Feb 2020 07:48:04 GMT
+Content-Type: text/plain
+... ...
+{"node":{...},"action":"get"}
+
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
+HTTP/1.1 401 Unauthorized
+Date: Fri, 28 Feb 2020 08:17:58 GMT
+Content-Type: text/html
+... ...
+{"node":{...},"action":"get"}
+```
