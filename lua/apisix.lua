@@ -32,21 +32,14 @@ local pairs         = pairs
 local tostring      = tostring
 local load_balancer
 
-local dns_resolver
+
 local parsed_domain
-
-
-local function parse_args(args)
-    if args and args["dns_resolver"] then
-        dns_resolver = args["dns_resolver"]
-    end
-end
 
 
 local _M = {version = 0.3}
 
 
-function _M.http_init(args)
+function _M.http_init()
     require("resty.core")
 
     if require("ffi").os == "Linux" then
@@ -64,7 +57,7 @@ function _M.http_init(args)
         seed = ngx.now() * 1000 + ngx.worker.pid()
     end
     math.randomseed(seed)
-    parse_args(args)
+
     core.id.init()
 end
 
@@ -178,12 +171,11 @@ end
 
 
 local function parse_domain_in_up(up, ver)
-    if not dns_resolver then
-        local local_conf = core.config.local_conf()
-        dns_resolver = local_conf and local_conf.apisix and
-                local_conf.apisix.dns_resolver
-    end
+    local local_conf = core.config.local_conf()
+    local dns_resolver = local_conf and local_conf.apisix and
+                         local_conf.apisix.dns_resolver
     local new_nodes = core.table.new(0, 8)
+
     for addr, weight in pairs(up.value.nodes) do
         local host, port = core.utils.parse_addr(addr)
         if not ipmatcher.parse_ipv4(host) and
@@ -217,12 +209,11 @@ end
 
 
 local function parse_domain_in_route(route, ver)
-    if not dns_resolver then
-        local local_conf = core.config.local_conf()
-        dns_resolver = local_conf and local_conf.apisix and
-                local_conf.apisix.dns_resolver
-    end
+    local local_conf = core.config.local_conf()
+    local dns_resolver = local_conf and local_conf.apisix and
+                         local_conf.apisix.dns_resolver
     local new_nodes = core.table.new(0, 8)
+
     for addr, weight in pairs(route.value.upstream.nodes) do
         local host, port = core.utils.parse_addr(addr)
         if not ipmatcher.parse_ipv4(host) and
@@ -541,9 +532,8 @@ end
 end -- do
 
 
-function _M.stream_init(args)
+function _M.stream_init()
     core.log.info("enter stream_init")
-    parse_args(args)
 end
 
 
