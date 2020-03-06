@@ -52,17 +52,3 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "passed: change default ssl port"
-
-# check nameserver imported
-i=`grep  -E '^nameserver[[:space:]]+(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4]0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])[[:space:]]?$' /etc/resolv.conf | awk '{print $2}'`
-for ip in $i
-do
-  echo $ip
-  grep $ip conf/nginx.conf > /dev/null
-  if [ ! $? -eq 0 ]; then
-    echo "failed: system DNS "$ip "unimported"
-    exit 1
-  fi
-done
-
-echo "passed: system nameserver imported"
