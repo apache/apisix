@@ -138,7 +138,7 @@ passed
                             }
                         }
                         ],
-                        "key": "/apisix/global_rules",
+                        "key": "/apisix/global_rules"
                     },
                     "action": "get"
                 }]]
