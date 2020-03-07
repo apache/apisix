@@ -111,9 +111,51 @@ passed
 --- no_error_log
 [error]
 
+=== TEST 3: list global rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules',
+                ngx.HTTP_GET,
+                nil,
+                [[{
+                    "node": {
+                        "dir": true,
+                        "nodes": [
+                        {
+                            "key": "/apisix/global_rules/1",
+                            "value": {
+                            "plugins": {
+                                "limit-count": {
+                                "time_window": 60,
+                                "policy": "local",
+                                "count": 2,
+                                "key": "remote_addr",
+                                "rejected_code": 503
+                                }
+                            }
+                            }
+                        }
+                        ],
+                        "key": "/apisix/global_rules"
+                    },
+                    "action": "get"
+                }]]
+                )
 
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
 
-=== TEST 3: PATCH global rules
+=== TEST 4: PATCH global rules
 --- config
     location /t {
         content_by_lua_block {
@@ -159,7 +201,7 @@ passed
 
 
 
-=== TEST 4: delete global rules
+=== TEST 5: delete global rules
 --- config
     location /t {
         content_by_lua_block {
@@ -183,7 +225,7 @@ GET /t
 
 
 
-=== TEST 5: delete global rules(not_found)
+=== TEST 6: delete global rules(not_found)
 --- config
     location /t {
         content_by_lua_block {
@@ -207,7 +249,7 @@ GET /t
 
 
 
-=== TEST 6: set global rules(invalid host option)
+=== TEST 7: set global rules(invalid host option)
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +283,7 @@ GET /t
 
 
 
-=== TEST 7: set global rules(missing plugins)
+=== TEST 8: set global rules(missing plugins)
 --- config
     location /t {
         content_by_lua_block {
