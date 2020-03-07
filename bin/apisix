@@ -81,6 +81,7 @@ end
 
 local yaml = require("tinyyaml")
 local template = require("resty.template")
+
 local ngx_tpl = [=[
 # Configuration File - Nginx Server Configs
 # This is a read-only file, do not try to modify it.
