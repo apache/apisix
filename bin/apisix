@@ -43,6 +43,7 @@ local pkg_path  = apisix_home .. "/deps/share/lua/5.1/apisix/lua/?.lua;"
                   .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 
 -- only for developer, use current folder as working space
+local is_root_path
 local script_path = arg[0]
 if script_path:sub(1, 2) == './' then
     apisix_home = trim(excute_cmd("pwd"))
@@ -50,7 +51,7 @@ if script_path:sub(1, 2) == './' then
         error("failed to fetch current path")
     end
 
-    is_root_path = string.match(apisix_home, "^\/[root][^\/]+")
+    is_root_path = string.match(apisix_home, '^/[root][^/]+')
     if is_root_path then
         print('Warning! Running apisix under /root is only suitable for development environments'
             .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
@@ -88,7 +89,9 @@ local ngx_tpl = [=[
 # This is a read-only file, do not try to modify it.
 
 master_process on;
-
+{% if is_root_path then %}
+user root;
+{% end %}
 worker_processes {* worker_processes *};
 {% if os_name == "Linux" then %}
 worker_cpu_affinity auto;
