@@ -40,7 +40,11 @@ script() {
     sudo service etcd start
 
     # install APISIX by luarocks
-    sudo luarocks install rockspec/apisix-master-0.rockspec
+    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps
+    sudo luarocks make rockspec/apisix-master-0.rockspec
+
+    # show install file
+    luarocks show apisix
 
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
