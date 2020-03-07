@@ -39,19 +39,12 @@ script() {
     openresty -V
     sudo service etcd start
 
-    # install APISIX by shell
-    sudo mkdir -p /usr/local/apisix/deps
-    sudo PATH=$PATH ./utils/install-apisix.sh install
+    # install APISIX with local version
+    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps
+    sudo luarocks make rockspec/apisix-master-0.rockspec
 
-    sudo PATH=$PATH apisix help
-    sudo PATH=$PATH apisix init
-    sudo PATH=$PATH apisix start
-    sudo PATH=$PATH apisix stop
-
-    sudo PATH=$PATH ./utils/install-apisix.sh remove
-
-    # install APISIX by luarocks
-    sudo luarocks install rockspec/apisix-master-0.rockspec
+    # show install file
+    luarocks show apisix
 
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
