@@ -28,6 +28,7 @@
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer)
+- [**Global Rule**](#Global-Rule)
 - [**Debug mode**](#Debug-mode)
 
 ## APISIX
@@ -514,6 +515,34 @@ $ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
 HTTP/1.1 503 Service Temporarily Unavailable
 ...
 
+```
+
+[Back to top](#Table-of-contents)
+
+## Global Rule
+[Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
+We can register a global [Plugin](#Plugin) with `GlobalRule`:
+```shell
+curl -X PUT \
+  https://{apisix_listen_address}/apisix/admin/global_rules/1 \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "plugins": {
+            "limit-count": {
+                "time_window": 60,
+                "policy": "local",
+                "count": 2,
+                "key": "remote_addr",
+                "rejected_code": 503
+            }
+        }
+    }'
+```
+Now, the `limit-count` plugin will work on all requets
+
+we can list all `GlobalRule` via admin api as below:
+```shell
+curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
 
 [Back to top](#Table-of-contents)

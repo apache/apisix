@@ -26,6 +26,7 @@
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer)
+- [**Global Rule**](#Global-Rule)
 - [**Debug mode**](#Debug-mode)
 
 ## APISIX
@@ -525,6 +526,34 @@ $ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
 HTTP/1.1 503 Service Temporarily Unavailable
 ...
 
+```
+
+[返回目录](#目录)
+
+## Global Rule
+[Plugin](#Plugin) 只能绑定在 [Service](#Service) 或者 [Route](#Route) 上，如果我们需要一个能作用于所有请求的 [Plugin](#Plugin) 该怎么办呢？
+这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
+```shell
+curl -X PUT \
+  https://{apisix_listen_address}/apisix/admin/global_rules/1 \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "plugins": {
+            "limit-count": {
+                "time_window": 60,
+                "policy": "local",
+                "count": 2,
+                "key": "remote_addr",
+                "rejected_code": 503
+            }
+        }
+    }'
+```
+如上所注册的 `limit-count` 插件将会作用于所有的请求。
+
+我们可以通过以下接口查看所有的 `GlobalRule`:
+```shell
+curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
 
 [返回目录](#目录)
