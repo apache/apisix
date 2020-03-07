@@ -39,7 +39,7 @@ script() {
     openresty -V
     sudo service etcd start
 
-    # install APISIX by luarocks
+    # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps
     sudo luarocks make rockspec/apisix-master-0.rockspec
 

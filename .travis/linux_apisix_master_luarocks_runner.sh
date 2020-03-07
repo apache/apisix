@@ -49,6 +49,22 @@ script() {
     sudo PATH=$PATH apisix stop
 
     sudo PATH=$PATH ./utils/install-apisix.sh remove
+
+    # install APISIX by luarocks
+    sudo luarocks install rockspec/apisix-master-0.rockspec
+
+    # show install files
+    luarocks show apisix
+
+    sudo PATH=$PATH apisix help
+    sudo PATH=$PATH apisix init
+    sudo PATH=$PATH apisix start
+    sudo PATH=$PATH apisix stop
+
+    # apisix cli test
+    sudo PATH=$PATH .travis/apisix_cli_test.sh
+
+    sudo luarocks remove rockspec/apisix-master-0.rockspec
 }
 
 case_opt=$1
