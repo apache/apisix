@@ -51,10 +51,8 @@ if script_path:sub(1, 2) == './' then
         error("failed to fetch current path")
     end
 
-    is_root_path = string.match(apisix_home, '^/[root][^/]+')
-    if is_root_path then
-        print('Warning! Running apisix under /root is only suitable for development environments'
-            .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
+    if string.match(apisix_home, '^/[root][^/]+') then
+        is_root_path = true
     end
 
     pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
@@ -83,7 +81,6 @@ end
 
 local yaml = require("tinyyaml")
 local template = require("resty.template")
-
 local ngx_tpl = [=[
 # Configuration File - Nginx Server Configs
 # This is a read-only file, do not try to modify it.
@@ -585,6 +582,12 @@ version:    print the version of apisix
 end
 
 local function init()
+
+    if is_root_path then
+        print('Warning! Running apisix under /root is only suitable for development environments'
+            .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
+    end
+
     -- read_yaml_conf
     local yaml_conf, err = read_yaml_conf()
     if not yaml_conf then
@@ -609,6 +612,7 @@ local function init()
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
+        is_root_path = is_root_path
     }
 
     if not yaml_conf.apisix then
