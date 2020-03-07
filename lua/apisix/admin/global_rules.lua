@@ -77,7 +77,10 @@ end
 
 
 function _M.get(id)
-    local key = "/global_rules/" .. id
+    local key = "/global_rules"
+    if id then
+        key = key .. "/" .. id
+    end
     local res, err = core.etcd.get(key)
     if not res then
         core.log.error("failed to get global rule[", key, "]: ", err)
