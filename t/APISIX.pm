@@ -54,7 +54,7 @@ sub local_dns_resolver() {
 
 my $dns_addrs_str = "8.8.8.8 114.114.114.114 ";
 my $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\", ";
-my $enable_local_dns = false;
+my $enable_local_dns = 0;
 if ($enable_local_dns) {
     my @dns_addrs = local_dns_resolver();
     foreach my $addr (@dns_addrs){
