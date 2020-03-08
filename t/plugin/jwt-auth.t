@@ -319,11 +319,162 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
         }
     }
 --- request
-GET /t
+GET /t=== TEST 18: sign
+      --- request
+      GET /apisix/plugin/jwt/sign?key=user-key
+      --- response_body_like eval
+      qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
+      --- no_error_log
+      [error]
+
+      === TEST 19: verify: invalid JWT token
+      --- request
+      GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+      --- error_code: 401
+      --- response_body
+      {"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
+      --- no_error_log
+      [error]
+
+      === TEST 20: verify: invalid signature
+      --- request
+      GET /hello
+      --- more_headers
+      Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+      --- error_code: 401
+      --- response_body
+      {"message":"signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs"}
+      --- no_error_log
+      [error]
+
+      === TEST 21: verify: happy path
+      --- request
+      GET /hello
+      --- more_headers
+      Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0._kNmXeH1uYVAvApFTONk2Z3Gh-a4XfGrjmqd_ahoOI0
+      --- response_body
+      hello world
+      --- no_error_log
+      [error]
 --- response_body
 code: true body: passed
 code: true body: passed
 code: true body: passed
 code: true body: passed
+--- no_error_log
+[error]
+
+=== TEST 16: add consumer with username and plugins with base64 secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=",
+                            "base64_secret": true
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "jwt-auth": {
+                                    "key": "user-key",
+                                    "secret": "fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=",
+                                    "base64_secret": true
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+=== TEST 17: enable jwt auth plugin with base64 secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+=== TEST 18: sign
+--- request
+GET /apisix/plugin/jwt/sign?key=user-key
+--- response_body_like eval
+qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
+--- no_error_log
+[error]
+
+=== TEST 19: verify: invalid JWT token
+--- request
+GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+--- error_code: 401
+--- response_body
+{"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
+--- no_error_log
+[error]
+
+=== TEST 20: verify: invalid signature
+--- request
+GET /hello
+--- more_headers
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- error_code: 401
+--- response_body
+{"message":"signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs"}
+--- no_error_log
+[error]
+
+=== TEST 21: verify: happy path
+--- request
+GET /hello
+--- more_headers
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0._kNmXeH1uYVAvApFTONk2Z3Gh-a4XfGrjmqd_ahoOI0
+--- response_body
+hello world
 --- no_error_log
 [error]
