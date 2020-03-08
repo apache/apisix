@@ -178,11 +178,6 @@ end
 
 
 local function parse_domain_in_up(up, ver)
-    if not dns_resolver then
-        local local_conf = core.config.local_conf()
-        dns_resolver = local_conf and local_conf.apisix and
-                local_conf.apisix.dns_resolver
-    end
     local new_nodes = core.table.new(0, 8)
     for addr, weight in pairs(up.value.nodes) do
         local host, port = core.utils.parse_addr(addr)
@@ -217,11 +212,6 @@ end
 
 
 local function parse_domain_in_route(route, ver)
-    if not dns_resolver then
-        local local_conf = core.config.local_conf()
-        dns_resolver = local_conf and local_conf.apisix and
-                local_conf.apisix.dns_resolver
-    end
     local new_nodes = core.table.new(0, 8)
     for addr, weight in pairs(route.value.upstream.nodes) do
         local host, port = core.utils.parse_addr(addr)

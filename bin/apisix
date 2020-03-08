@@ -604,20 +604,20 @@ local function check_or_version(cur_ver_s, need_ver_s)
 end
 
 
-local function system_dns_resolver()
-    local file, err = io.open("/etc/resolv.conf")
-    if err then
-        return nil, err
-    else
-        local dns_addrs = {}
-        for line in file:lines() do
-            local addr, n = line:gsub("^nameserver%s+(%d+%.%d+%.%d+%.%d+)%s*$", "%1")
-            if n == 1 then
-                table.insert(dns_addrs, addr)
-            end
-        end
-        return dns_addrs
+local function local_dns_resolver(file_path)
+    local file, err = io.open(file_path, "rb")
+    if not file then
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
     end
+    local dns_addrs = {}
+    for line in file:lines() do
+        local addr, n = line:gsub("^nameserver%s+(%d+%.%d+%.%d+%.%d+)%s*$", "%1")
+        if n == 1 then
+            table.insert(dns_addrs, addr)
+        end
+    end
+    file:close()
+    return dns_addrs
 end
 
 
@@ -704,12 +704,16 @@ local function init()
         sys_conf["worker_processes"] = "auto"
     end
 
-    local dns_addrs = system_dns_resolver()
-    if dns_addrs then
+    if sys_conf["enable_local_dns"] then
+        local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
+        if not dns_addrs then
+            error("failed to import local DNS: " .. err)
+        end
+
         local dns_resolver = sys_conf["dns_resolver"]
         if dns_resolver then
             for _, addr  in ipairs(dns_addrs) do
-                table.insert(dns_resolver, 1, addr)
+                table.insert(dns_resolver, addr)
             end
         else
             sys_conf["dns_resolver"] = dns_addrs
