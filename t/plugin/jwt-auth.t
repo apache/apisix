@@ -42,7 +42,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/{"algorithm":"HS256","secret":"\w+-\w+-\w+-\w+-\w+","exp":86400}/
+qr/{"algorithm":"HS256","secret":".+","exp":86400}/
 --- no_error_log
 [error]
 
