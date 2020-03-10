@@ -47,9 +47,7 @@ help: default
 ### deps:             Installation dependencies
 .PHONY: deps
 deps: default
-ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
-else ifeq ($(LUAROCKS_VER),luarocks 3.)
+ifeq ($(LUAROCKS_VER),luarocks 3.)
 	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
 else
 	luarocks install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
