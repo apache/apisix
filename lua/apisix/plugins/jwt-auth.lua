@@ -82,11 +82,7 @@ function _M.check_schema(conf)
     end
 
     if not conf.secret then
-        if conf.base64_secret then
-            conf.secret = ngx_encode_base64(resty_random.bytes(32))
-        else
-            conf.secret = resty_random.token(32)
-        end
+        conf.secret = ngx_encode_base64(resty_random.bytes(32))
     end
 
     if not conf.algorithm then
