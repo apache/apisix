@@ -212,13 +212,39 @@ Use the command below to securely access the endpoint now.
 curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
 ```
 
+## Add a prefix to the route (Optional)
+
+Now lets say you want to add a prefix (eg: samplePrefix) to the route and do not want to use the `host` header then you can use
+the proxy rewrite plugin to do it.
+
+```bash
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/samplePrefix/get",
+    "plugins": {
+        "proxy-rewrite": {
+          "scheme": "https",
+          "regex_uri": ["^/samplePrefix/get(.*)", "/get$1"]
+        },
+        "key-auth": {}
+    },
+    "upstream_id": 50
+}'
+```
+
+Now you can invoke the route with the following command:
+
+```bash
+curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H 'apikey: superSecretAPIKey'
+```
+
 ### Troubleshooting
 
 - Make sure the required ports are not being used by other systems/processes (The default ports are: 9080, 9443, 2379).
 The following is the command to kill a process which is listening to a specific port (in unix based systems).
 
     ```bash
-    fuser -k 9443/tcp
+    sudo fuser -k 9443/tcp
     ```
 
 - If the docker container is continuously restarting/failing, login to the container and observe the logs to diagnose the issue.
