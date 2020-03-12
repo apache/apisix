@@ -135,12 +135,7 @@ stream {
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
-
-        local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
-        local args = {
-            dns_resolver = dns_resolver,
-        }
-        apisix.stream_init(args)
+        apisix.stream_init()
     }
 
     init_worker_by_lua_block {
@@ -704,7 +699,7 @@ local function init()
         sys_conf["worker_processes"] = "auto"
     end
 
-    if sys_conf["enable_local_dns"] then
+    if sys_conf["enable_local_dns"] == true then
         local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
         if not dns_addrs then
             error("failed to import local DNS: " .. err)

@@ -533,7 +533,6 @@ end -- do
 
 function _M.stream_init(args)
     core.log.info("enter stream_init")
-    parse_args(args)
 end
 
 
