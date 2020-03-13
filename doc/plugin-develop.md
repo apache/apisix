@@ -19,12 +19,14 @@
 [中文](plugin-develop-cn.md)
 
 # table of contents
-- [**check dependencies**](#check-dependencies)
-- [**name and config**](#name-and-config)
-- [**schema and check**](#schema-and-check)
-- [**choose phase to run**](#choose-phase-to-run)
-- [**implement the logic**](#implement-the-logic)
-- [**write test case**](#write-test-case)
+- [table of contents](#table-of-contents)
+  - [check dependencies](#check-dependencies)
+  - [name and config](#name-and-config)
+  - [schema and check](#schema-and-check)
+  - [choose phase to run](#choose-phase-to-run)
+  - [implement the logic](#implement-the-logic)
+  - [write test case](#write-test-case)
+    - [Attach the test-nginx execution process:](#attach-the-test-nginx-execution-process)
 
 
 ## check dependencies
@@ -72,7 +74,7 @@ determine the name and priority of the plugin, and add to conf/config.yaml. For 
    }
 ```
 
-Note : The priority of the new plugin cannot be the same as the priority of any existing plugin.
+Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first. For example, the priority of basic-auth is 2520 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the basic-auth plugin.
 
 in the "__conf/config.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
