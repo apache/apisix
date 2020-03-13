@@ -48,6 +48,8 @@ dependencies = {
     "lua-resty-prometheus = 1.0",
     "jsonschema = 0.7",
     "lua-resty-ipmatcher = 0.6",
+    "lua-resty-kafka = 0.07",
+
 }
 
 build = {
