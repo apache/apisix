@@ -188,7 +188,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/services/{id}|无|删除资源|
-|PATCH    |/apisix/admin/services/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
+|PATCH    |/apisix/admin/services/{id}/{path}|{...}|修改已有 Service 的部分内容，其他不涉及部分会原样保留。|
 
 > body 请求参数：
 
@@ -274,7 +274,7 @@ Server: APISIX web server
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
-|username|必需|匹配规则|Consumer 名称。||
+|username|必需|辅助|Consumer 名称。||
 |plugins|可选|Plugin|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。||
 |desc     |可选 |辅助|consumer描述||
 
@@ -379,7 +379,7 @@ upstream 对象 json 配置内容：
 具体示例：
 
 ```shell
-# 创建一个路由
+# 创建一个upstream
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -i -X PUT -d '
 > {
 >     "type": "roundrobin",
