@@ -41,11 +41,16 @@ local pkg_path  = apisix_home .. "/deps/share/lua/5.1/apisix/lua/?.lua;"
                   .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 
 -- only for developer, use current folder as working space
+local is_root_path = false
 local script_path = arg[0]
 if script_path:sub(1, 2) == './' then
     apisix_home = trim(excute_cmd("pwd"))
     if not apisix_home then
         error("failed to fetch current path")
+    end
+
+    if string.match(apisix_home, '^/[root][^/]+') then
+            is_root_path = true
     end
 
     pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
@@ -549,6 +554,11 @@ version:    print the version of apisix
 end
 
 local function init()
+    if is_root_path then
+        print('Warning! Running apisix under /root is only suitable for development environments'
+            .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
+    end
+
     -- read_yaml_conf
     local yaml_conf, err = read_yaml_conf()
     if not yaml_conf then
