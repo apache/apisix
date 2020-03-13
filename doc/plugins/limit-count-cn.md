@@ -51,11 +51,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
             "count": 2,
             "time_window": 60,
             "rejected_code": 503,
-            "key": "remote_addr",
-            "disable": true
-        },
-        "prometheus": {
-            "disable": false
+            "key": "remote_addr"
         }
     },
     "upstream": {
