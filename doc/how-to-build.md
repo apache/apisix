@@ -110,7 +110,7 @@ Makefile rules:
 4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
     * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
     * Run the test cases: `make test`
-    * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t` 
+    * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
 
 ##### Troubleshoot
 
