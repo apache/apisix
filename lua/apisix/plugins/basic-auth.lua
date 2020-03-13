@@ -30,6 +30,10 @@ local schema = {
         username = { type = "string" },
         password = { type = "string" },
     },
+    oneOf = {
+        {required = {"username", "password"}},
+        {required = {}}
+    }
 }
 
 local plugin_name = "basic-auth"
