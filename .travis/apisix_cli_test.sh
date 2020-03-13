@@ -55,7 +55,7 @@ echo "passed: change default ssl port"
 
 # check nameserver imported
 
-sed  -i 's/enable_local_dns: false/enable_local_dns: true/g'  conf/config.yaml
+sed -i '/dns_resolver:/,+4s/^/#/'  conf/config.yaml
 
 make init
 
@@ -70,4 +70,5 @@ do
   fi
 done
 
+sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"

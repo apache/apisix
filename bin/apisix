@@ -699,20 +699,13 @@ local function init()
         sys_conf["worker_processes"] = "auto"
     end
 
-    if sys_conf["enable_local_dns"] == true then
+    local dns_resolver = sys_conf["dns_resolver"]
+    if not dns_resolver or #dns_resolver == 0 then
         local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
         if not dns_addrs then
             error("failed to import local DNS: " .. err)
         end
-
-        local dns_resolver = sys_conf["dns_resolver"]
-        if dns_resolver then
-            for _, addr  in ipairs(dns_addrs) do
-                table.insert(dns_resolver, addr)
-            end
-        else
-            sys_conf["dns_resolver"] = dns_addrs
-        end
+        sys_conf["dns_resolver"] = dns_addrs
     end
 
     local conf_render = template.compile(ngx_tpl)

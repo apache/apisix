@@ -52,17 +52,22 @@ sub local_dns_resolver() {
 }
 
 
-my $dns_addrs_str = "8.8.8.8 114.114.114.114 ";
-my $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\", ";
+my $dns_addrs_str = "";
+my $dns_addrs_tbl_str = "";
 my $enable_local_dns = 0;
 if ($enable_local_dns) {
     my @dns_addrs = local_dns_resolver();
+    $dns_addrs_tbl_str = "{";
     foreach my $addr (@dns_addrs){
         $dns_addrs_str = "$dns_addrs_str $addr";
         $dns_addrs_tbl_str = "$dns_addrs_tbl_str\"$addr\", ";
     }
+    $dns_addrs_tbl_str = "$dns_addrs_tbl_str}";
+} else {
+    $dns_addrs_str = "8.8.8.8 114.114.114.114";
+    $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
 }
-$dns_addrs_tbl_str = "$dns_addrs_tbl_str}";
+
 
 my $yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
