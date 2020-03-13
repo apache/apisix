@@ -30,6 +30,7 @@ local schema = {
         username = { type = "string" },
         password = { type = "string" },
     },
+    required = {"username", "password"}
 }
 
 local plugin_name = "basic-auth"

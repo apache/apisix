@@ -123,7 +123,10 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "basic-auth": {}
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "bar"
+                         }
                     },
                     "upstream": {
                         "nodes": {
