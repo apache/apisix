@@ -106,6 +106,7 @@ Makefile rules:
 2. 然后通过 cpanm 来安装 test-gninx：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
 3. 然后 clone 最新的源码：`git clone https://github.com/openresty/test-nginx.git`
 4. 通过 perl 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集：
+    * 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`
     * 直接运行：`prove -Itest-nginx/lib -r t`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
 
