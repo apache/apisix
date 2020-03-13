@@ -209,3 +209,13 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: get plugin udp-logger schema
+--- request
+GET /apisix/admin/schema/plugins/udp-logger
+--- response_body  eval
+qr/{"properties":/
+--- no_error_log
+[error]
