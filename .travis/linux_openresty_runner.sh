@@ -74,7 +74,7 @@ do_install() {
     if [ ! -f "build-cache/grpc_server_example" ]; then
         wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
-        mv grpc_server_example ../build-cache/
+        mv grpc_server_example build-cache/
     fi
 
     if [ ! -f "build-cache/proto/helloworld.proto" ]; then
@@ -90,7 +90,7 @@ do_install() {
     if [ ! -f "build-cache/grpcurl" ]; then
         wget https://github.com/api7/grpcurl/releases/download/20200314/grpcurl-amd64.tar.gz
         tar -xvf grpcurl-amd64.tar.gz
-        mv grpcurl ../build-cache/
+        mv grpcurl build-cache/
     fi
 }
 
