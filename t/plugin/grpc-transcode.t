@@ -427,3 +427,37 @@ passed
 --- request
 GET /grpc_delay?name=apisix
 --- error_code: 504
+
+
+
+=== TEST 15: set routes: missing method
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/grpctest",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin grpc-transcode err: property \"method\" is required"}
+--- no_error_log
+[error]
