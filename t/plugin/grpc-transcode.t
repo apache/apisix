@@ -438,19 +438,11 @@ GET /grpc_delay?name=apisix
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "methods": ["GET"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
                             "service": "helloworld.Greeter"
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:50051": 1
                         }
                     }
                 }]]
