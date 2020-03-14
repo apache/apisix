@@ -24,11 +24,28 @@ local ngx = ngx
 local apisix_heartbeat_addr = "https://www.iresty.com/apisix/heartbeat?"
 
 
+local schema = {
+    type = "object",
+    additionalProperties = false,
+}
+
+
 local _M = {
     version = 0.1,
     priority = 100,
     name = plugin_name,
+    schema = schema,
 }
+
+
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    return true
+end
 
 
 local function request_apisix_svr(args)
