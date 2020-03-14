@@ -481,6 +481,9 @@ _M.stream_route = {
 }
 
 
+_M.id_schema = id_schema
+
+
 setmetatable(_M, {
     __index = schema,
     __newindex = function() error("no modification allowed") end,
