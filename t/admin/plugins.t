@@ -54,3 +54,23 @@ GET /apisix/admin/plugins/limit-req
 {"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for"],"type":"string"},"rejected_code":{"minimum":200,"type":"integer"}},"required":["rate","burst","key","rejected_code"],"type":"object"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: get plugin node-status schema
+--- request
+GET /apisix/admin/plugins/node-status
+--- response_body
+{"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: get plugin heartbeat schema
+--- request
+GET /apisix/admin/plugins/heartbeat
+--- response_body
+{"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
