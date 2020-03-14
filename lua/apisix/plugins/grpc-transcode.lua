@@ -66,8 +66,8 @@ local schema = {
             items = { type="string", anyOf = pb_option_def },
             minItems = 1,
         },
-        additionalProperties = true,
     },
+    additionalProperties = true,
     required = { "proto_id", "service", "method" },
 }
 
