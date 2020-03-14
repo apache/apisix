@@ -1006,3 +1006,28 @@ GET /t
 qr/failed to match pattern/
 --- no_error_log
 [error]
+
+
+
+=== TEST 35: wrong value of uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.proxy-rewrite")
+            local ok, err = plugin.check_schema({
+                uri = 'home'
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "uri" validation failed: failed to match pattern "^\\/.*" with "home"
+--- no_error_log
+[error]
