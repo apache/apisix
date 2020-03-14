@@ -110,9 +110,7 @@ local function introspect(ctx, conf)
         local res, err
 
         if conf.public_key then
-            core.log.error('came to public key verification')
             res, err = openidc.bearer_jwt_verify(conf)
-            core.log.error('executed succesfully')
             if res then
                 return res
             end
