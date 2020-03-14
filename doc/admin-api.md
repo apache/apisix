@@ -75,21 +75,21 @@ Config Example:
 
 ```json
 {
-    "id": "1", # id, unnecessary.
-    "uri": "/release/a", # uri
-    "uris": ["/a","/b"],  # A set of uri, uri and uris need only have a non-empty one.
-    "methods": ["GET","POST"], # Can fill multiple methods
-    "host": "aa.com", # host
+    "id": "1",                  # id, unnecessary.
+    "uri": "/release/a",        # uri
+    "uris": ["/a","/b"],        # A set of uri, uri and uris need only have a non-empty one.
+    "methods": ["GET","POST"],  # Can fill multiple methods
+    "host": "aa.com",           # host
     "hosts": ["a.com","b.com"], # A set of host. Host and hosts only need to be non-empty one.
-    "plugins": {}, # Bound plugin
-    "priority": 0, # If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.
+    "plugins": {},              # Bound plugin
+    "priority": 0,              # If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.
     "desc": "hello world",
     "remote_addr": "127.0.0.1", # Client IP
     "remote_addrs": ["127.0.0.1"], # A set of Client IP. Remote_addr and remo-te_addrs only need to be non-empty one.
-    "vars": [],  # A list of one or more `{var, operator, val}` elements
-    "upstream_id": "1", # upstream id, recommended
-    "upstream": {}, # upstream, not recommended
-    "filter_func": "", # User-defined filtering function
+    "vars": [],                 # A list of one or more `{var, operator, val}` elements
+    "upstream_id": "1",         # upstream id, recommended
+    "upstream": {},             # upstream, not recommended
+    "filter_func": "",          # User-defined filtering function
 }
 ```
 
@@ -198,10 +198,10 @@ Config Example:
 
 ```json
 {
-    "id": "1", #id
-    "plugins": {}, # Bound plugin
+    "id": "1",          # id
+    "plugins": {},      # Bound plugin
     "upstream_id": "1", # upstream id, recommended
-    "upstream": {}, # upstream, not recommended
+    "upstream": {},     # upstream, not recommended
     "desc": "hello world",
 }
 ```
@@ -274,10 +274,10 @@ Config Example:
 
 ```json
 {
-    "id": "1", # id
-    "plugins": {}, # Bound plugin
-    "username": "name", # Consumer name
-    "desc": "hello world", # Consumer desc
+    "id": "1",              # id
+    "plugins": {},          # Bound plugin
+    "username": "name",     # Consumer name
+    "desc": "hello world",  # Consumer desc
 }
 ```
 
@@ -350,17 +350,17 @@ Config Example:
 
 ```json
 {
-    "id": "1", # id
-    "retries": 0, # retry time
-    "timeout": { # Set the timeout for connection, sending and receiving messages.
+    "id": "1",                  # id
+    "retries": 0,               # retry time
+    "timeout": {                # Set the timeout for connection, sending and receiving messages.
         "connect":15,
         "send":15,
         "read":15,
     },
     "enable_websocket": true,
-    "nodes": {"host:80": 100}, # Upstream machine address list, the format is `Address + Port`
-    "type":"roundrobin", #chash or roundrobin
-    "checks": {}, # Health check parameters
+    "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
+    "type":"roundrobin",        # chash or roundrobin
+    "checks": {},               # Health check parameters
     "hash_on": "",
     "key": "",
     "desc": "hello world",
@@ -421,10 +421,10 @@ Config Example:
 
 ```json
 {
-    "id": "1", # id
+    "id": "1",      # id
     "cert": "cert", # Public key
-    "key": "key", # Private key
-    "sni": "sni" # https SNI
+    "key": "key",   # Private key
+    "sni": "sni"    # https SNI
 }
 ```
 

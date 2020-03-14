@@ -79,21 +79,21 @@ route 对象 json 配置内容：
 
 ```json
 {
-    "id": "1", # id，非必填
-    "uri": "/release/a", # uri 路径
-    "uris": ["/a","/b"],  #一组 uri 路径， uri 与 uris 只需要有一个非空即可
-    "methods": ["GET","POST"], #可以填多个方法
-    "host": "aa.com", # host 域名
-    "hosts": ["a.com","b.com"], #一组 host 域名， host 与 hosts 只需要有一个非空即可
-    "plugins": {}, #指定 route 绑定的插件
-    "priority": 0, # apisix 支持多种匹配方式，可能会在一次匹配中同时匹配到多条路由，此时优先级高的优先匹配中
+    "id": "1",                  # id，非必填
+    "uri": "/release/a",        # uri 路径
+    "uris": ["/a","/b"],        # 一组 uri 路径， uri 与 uris 只需要有一个非空即可
+    "methods": ["GET","POST"],  # 可以填多个方法
+    "host": "aa.com",           # host 域名
+    "hosts": ["a.com","b.com"], # 一组 host 域名， host 与 hosts 只需要有一个非空即可
+    "plugins": {},              # 指定 route 绑定的插件
+    "priority": 0,              # apisix 支持多种匹配方式，可能会在一次匹配中同时匹配到多条路由，此时优先级高的优先匹配中
     "desc": "hello world",
-    "remote_addr": "127.0.0.1", #客户端请求 IP 地址
-    "remote_addrs": ["127.0.0.1"], #一组客户端请求 IP 地址， remote_addr 与 remote_addrs 只需要有一个非空即可
-    "vars": [],  #由一个或多个 {var, operator, val} 元素组成的列表
-    "upstream_id": "1", # upstream 对象在 etcd 中的 id ，建议使用此值
-    "upstream": {}, # upstream 信息对象，建议尽量不要使用
-    "filter_func": "", #用户自定义的过滤函数，非必填
+    "remote_addr": "127.0.0.1", # 客户端请求 IP 地址
+    "remote_addrs": ["127.0.0.1"],  # 一组客户端请求 IP 地址， remote_addr 与 remote_addrs 只需要有一个非空即可
+    "vars": [],                 # 由一个或多个 {var, operator, val} 元素组成的列表
+    "upstream_id": "1",         # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream": {},             # upstream 信息对象，建议尽量不要使用
+    "filter_func": "",          # 用户自定义的过滤函数，非必填
 }
 ```
 
@@ -203,11 +203,11 @@ serivce 对象 json 配置内容：
 
 ```json
 {
-    "id": "1", #id
-    "plugins": {}, #指定 service 绑定的插件
-    "upstream_id": "1", # upstream 对象在 etcd 中的 id ，建议使用此值
-    "upstream": {}, # upstream 信息对象，不建议使用
-    "desc": "hello world", # service 描述
+    "id": "1",              # id
+    "plugins": {},          # 指定 service 绑定的插件
+    "upstream_id": "1",     # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream": {},         # upstream 信息对象，不建议使用
+    "desc": "hello world",  # service 描述
 }
 ```
 
@@ -282,10 +282,10 @@ consumer 对象 json 配置内容：
 
 ```json
 {
-    "id": "1", # id
-    "plugins": {}, #指定 consumer 绑定的插件
-    "username": "name", #必填
-    "desc": "hello world", # consumer 描述
+    "id": "1",              # id
+    "plugins": {},          # 指定 consumer 绑定的插件
+    "username": "name",     # 必填
+    "desc": "hello world",  # consumer 描述
 }
 ```
 
@@ -359,20 +359,20 @@ upstream 对象 json 配置内容：
 
 ```json
 {
-    "id": "1", # id
-    "retries": 0, # 请求重试次数
-    "timeout": { # 设置连接、发送消息、接收消息的超时时间
+    "id": "1",                  # id
+    "retries": 0,               # 请求重试次数
+    "timeout": {                # 设置连接、发送消息、接收消息的超时时间
         "connect":15,
         "send":15,
         "read":15,
     },
     "enable_websocket": true,
-    "nodes": {"host:80": 100}, # 上游机器地址列表，格式为`地址 + Port`
-    "type":"roundrobin", #chash or roundrobin
-    "checks": {}, # 配置健康检查的参数
+    "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + Port`
+    "type":"roundrobin",        # chash or roundrobin
+    "checks": {},               # 配置健康检查的参数
     "hash_on": "",
     "key": "",
-    "desc": "hello world", # upstream 描述
+    "desc": "hello world",      # upstream 描述
 }
 ```
 
@@ -431,10 +431,10 @@ ssl 对象 json 配置内容：
 
 ```json
 {
-    "id": "1", # id
-    "cert": "cert", # 公钥
-    "key": "key", # 私钥
-    "sni": "sni" # host 域名
+    "id": "1",          # id
+    "cert": "cert",     # 公钥
+    "key": "key",       # 私钥
+    "sni": "sni"        # host 域名
 }
 ```
 
