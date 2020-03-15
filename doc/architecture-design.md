@@ -238,6 +238,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
 |enable_websocket|optional| enable `websocket`(boolean), default `false`.|
+|timeout|optional| Set the timeout for connection, sending and receiving messages. |
+|desc     |optional|Identifies route names, usage scenarios, and more.|
 
 Create an upstream object use case:
 
