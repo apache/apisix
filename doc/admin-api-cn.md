@@ -77,7 +77,7 @@
 
 route 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",                  # id，非必填
     "uri": "/release/a",        # uri 路径
@@ -201,7 +201,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 serivce 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",              # id
     "plugins": {},          # 指定 service 绑定的插件
@@ -280,7 +280,7 @@ Server: APISIX web server
 
 consumer 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",              # id
     "plugins": {},          # 指定 consumer 绑定的插件
@@ -357,7 +357,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 upstream 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",                  # id
     "retries": 0,               # 请求重试次数
@@ -429,7 +429,7 @@ Content-Type: text/plain
 
 ssl 对象 json 配置内容：
 
-```json
+```shell
 {
     "id": "1",          # id
     "cert": "cert",     # 公钥

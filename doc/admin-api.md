@@ -73,7 +73,7 @@ For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",                  # id, unnecessary.
     "uri": "/release/a",        # uri
@@ -196,7 +196,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",          # id
     "plugins": {},      # Bound plugin
@@ -272,7 +272,7 @@ Return response from etcd currently.
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",              # id
     "plugins": {},          # Bound plugin
@@ -348,7 +348,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",                  # id
     "retries": 0,               # retry time
@@ -419,7 +419,7 @@ Return response from etcd currently.
 
 Config Example:
 
-```json
+```shell
 {
     "id": "1",      # id
     "cert": "cert", # Public key
