@@ -45,7 +45,7 @@ local schema = {
                 type = "string",
                 pattern = [[(^[^\$].+$|^\$[0-9a-zA-Z_]+$)]],
             },
-            default = {"$host", "$uri"}
+            default = {"$host", "$request_uri"}
         },
         cache_http_status = {
             type = "array",
