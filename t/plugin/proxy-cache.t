@@ -613,18 +613,9 @@ PURGE /hello-world
        }
 --- request
 GET /t
---- error_code: 200
---- response_body
-passed
+--- error_code: 400
+--- response_body eval
+qr/cache_zone invalid_disk_cache not found/
 --- no_error_log
 [error]
-
-
-
-=== TEST 24: hit route (invalid cache zone)
---- request
-GET /hello
---- error_code: 500
---- error_log
-cache "invalid_disk_cache" not found
 

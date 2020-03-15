@@ -109,6 +109,19 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    local found = false
+    local local_conf = core.config.local_conf()
+    if local_conf.apisix.proxy_cache then
+        for _, cache in ipairs(local_conf.apisix.proxy_cache.zones) do
+            if cache.name == conf.cache_zone then
+                found = true
+            end
+        end
+
+        if found == false then
+            return false, "cache_zone " .. conf.cache_zone .. " not found"
+        end
+    end
     return true
 end
 
