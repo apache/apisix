@@ -23,10 +23,17 @@ local apisix_id = core.id.get()
 local ipairs = ipairs
 
 
+local schema = {
+    type = "object",
+    additionalProperties = false,
+}
+
+
 local _M = {
     version = 0.1,
     priority = 1000,
     name = plugin_name,
+    schema = schema,
 }
 
 
@@ -64,6 +71,16 @@ local function collect()
     end
 
     return 200, core.json.encode({id = apisix_id, status = ngx_status})
+end
+
+
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    return true
 end
 
 

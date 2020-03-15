@@ -40,14 +40,14 @@ dependencies = {
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 1.7",
+    "lua-resty-radixtree = 1.8",
     "lua-protobuf = 0.3.1",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 0.1",
     "lua-resty-prometheus = 1.0",
-    "jsonschema = 0.6",
-    "lua-resty-ipmatcher = 0.4",
+    "jsonschema = 0.7",
+    "lua-resty-ipmatcher = 0.6",
 }
 
 build = {

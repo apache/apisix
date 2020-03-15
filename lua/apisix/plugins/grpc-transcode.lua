@@ -17,35 +17,30 @@
 local ngx         = ngx
 local core        = require("apisix.core")
 local schema_def  = require("apisix.schema_def")
-local plugin_name = "grpc-transcode"
 local proto       = require("apisix.plugins.grpc-transcode.proto")
 local request     = require("apisix.plugins.grpc-transcode.request")
 local response    = require("apisix.plugins.grpc-transcode.response")
 
 
+local plugin_name = "grpc-transcode"
+
 local pb_option_def = {
     {   description = "enum as result",
         type = "string",
-        enum = {"int64_as_number",
-              "int64_as_string",
-              "int64_as_hexstring"},
+        enum = {"int64_as_number", "int64_as_string", "int64_as_hexstring"},
     },
     {   description = "int64 as result",
         type = "string",
-        enum = {"ienum_as_name",
-                "enum_as_value"},
+        enum = {"ienum_as_name", "enum_as_value"},
     },
     {   description ="default values option",
         type = "string",
-        enum = {"auto_default_values",
-                "no_default_values",
-                "use_default_values",
-                "use_default_metatable"},
+        enum = {"auto_default_values", "no_default_values",
+                "use_default_values", "use_default_metatable"},
     },
     {   description = "hooks option",
         type = "string",
-        enum = {"enable_hooks",
-                "disable_hooks" },
+        enum = {"enable_hooks", "disable_hooks" },
     },
 }
 
@@ -53,14 +48,38 @@ local schema = {
     type = "object",
     properties = {
         proto_id  = schema_def.id_schema,
-        service   = { type = "string" },
-        method    = { type = "string" },
-        pb_option = { type = "array",
-                      items = { type="string", anyOf = pb_option_def },
-                      minItems = 1,
-                    },
-    requried = { "proto_id", "service", "method" },
-    additionalProperties = true }
+        service = {
+            description = "the grpc service name",
+            type        = "string"
+        },
+        method = {
+            description = "the method name in the grpc service.",
+            type    = "string"
+        },
+        deadline = {
+            description = "deadline for grpc, millisecond",
+            type        = "number",
+            default     = 0
+        },
+        pb_option = {
+            type = "array",
+            items = { type="string", anyOf = pb_option_def },
+            minItems = 1,
+        },
+    },
+    additionalProperties = true,
+    required = { "proto_id", "service", "method" },
+}
+
+local status_rel = {
+    ["3"] = 400,
+    ["4"] = 504,
+    ["5"] = 404,
+    ["7"] = 403,
+    ["11"] = 416,
+    ["12"] = 501,
+    ["13"] = 500,
+    ["14"] = 503,
 }
 
 local _M = {
@@ -102,7 +121,7 @@ function _M.access(conf, ctx)
     end
 
     local ok, err = request(proto_obj, conf.service,
-                            conf.method, conf.pb_option)
+                            conf.method, conf.pb_option, conf.deadline)
     if not ok then
         core.log.error("transform request error: ", err)
         return
@@ -119,6 +138,18 @@ function _M.header_filter(conf, ctx)
 
     ngx.header["Content-Type"] = "application/json"
     ngx.header["Trailer"] = {"grpc-status", "grpc-message"}
+
+    local headers = ngx.resp.get_headers()
+    if headers["grpc-status"] ~= nil and headers["grpc-status"] ~= "0" then
+        local http_status = status_rel[headers["grpc-status"]]
+        if http_status ~= nil then
+            ngx.status = http_status
+        else
+            ngx.status = 599
+        end
+        return
+    end
+
 end
 
 

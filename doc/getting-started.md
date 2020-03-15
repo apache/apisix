@@ -58,7 +58,7 @@ It will take a while to download the source for the first time. But the conseque
 After the docker containers have started visit the following link to check if you are getting a successful response.
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/services/"
+$ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 The following will be the response from the Admin API.
@@ -128,7 +128,7 @@ Technically all this information(upstream or service, plugins) can be included i
 Execute the following command to create an upstream with the id of '50' in APISIX. Let's use the round-robin mechanism for load balancing.
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "roundrobin",
     "nodes": {
@@ -142,7 +142,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -X PUT -d '
 By default APISIX proxies the request via the HTTP protocol. As our backend is hosted in a HTTPS environment, let's use the proxy-rewrite plugin to change the scheme to HTTPS.
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/5" -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "host": "httpbin.org",
@@ -177,7 +177,7 @@ Execute the following command to create a user called John with a dedicated api-
 Note: APISIX supports multiple authentication mechanism, view the plugin docs to learn more.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "john",
     "plugins": {
@@ -191,7 +191,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -X PUT -d '
 Now, let's configure our endpoint to include the key-auth plugin.
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "host": "httpbin.org",
@@ -212,13 +212,39 @@ Use the command below to securely access the endpoint now.
 curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
 ```
 
+## Add a prefix to the route (Optional)
+
+Now lets say you want to add a prefix (eg: samplePrefix) to the route and do not want to use the `host` header then you can use
+the proxy rewrite plugin to do it.
+
+```bash
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/samplePrefix/get",
+    "plugins": {
+        "proxy-rewrite": {
+          "scheme": "https",
+          "regex_uri": ["^/samplePrefix/get(.*)", "/get$1"]
+        },
+        "key-auth": {}
+    },
+    "upstream_id": 50
+}'
+```
+
+Now you can invoke the route with the following command:
+
+```bash
+curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H 'apikey: superSecretAPIKey'
+```
+
 ### Troubleshooting
 
 - Make sure the required ports are not being used by other systems/processes (The default ports are: 9080, 9443, 2379).
 The following is the command to kill a process which is listening to a specific port (in unix based systems).
 
     ```bash
-    fuser -k 9443/tcp
+    sudo fuser -k 9443/tcp
     ```
 
 - If the docker container is continuously restarting/failing, login to the container and observe the logs to diagnose the issue.

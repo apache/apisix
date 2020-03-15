@@ -29,7 +29,7 @@ Most of the contributions that we receive are code contributions, but you can
 also contribute to the documentation or simply report solid bugs
 for us to fix.
 
- For new contributors, please take a look at issues with tag called [Good first issue](https://github.com/apache/incubator-apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or [Help wanted](https://github.com/apache/incubator-apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
+ For new contributors, please take a look at issues with a tag called [Good first issue](https://github.com/apache/incubator-apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or [Help wanted](https://github.com/apache/incubator-apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 
 ## How to report a bug?
 
@@ -46,16 +46,16 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 * Update the README.md with details of changes to the interface.
 * Includes tests for new functionality.
-* References the original issue in description, e.g. "Resolves #123".
+* References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
 
 ## Contribution Guidelines for Documentation
 
 * Active Voice
 
-    In general use active voice when formulating the sentence instead of passive voice. A sentence written in the active voice will emphasize
+    In general, use active voice when formulating the sentence instead of passive voice. A sentence written in the active voice will emphasize
     the person or thing who is performing an action (eg.The dog chased the ball).  In contrast, the passive voice will highlight
-    the recipient of the action (The ball was chased by the dog). Therefor use the passive voice, only when it's less important
+    the recipient of the action (The ball was chased by the dog). Therefore use the passive voice, only when it's less important
     who or what completed the action and more important that the action was completed. For example:
 
     - Recommended: The key-auth plugin authenticates the requests.
@@ -67,7 +67,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
       such as determiners, pronouns, conjunctions, and prepositions. Use the following [link](https://capitalizemytitle.com/#Chicago) for guidance.
       - Recommended: Authentication **with** APISIX
 
-    * For normal sentences don't [capitalize](https://www.grammarly.com/blog/capitalization-rules/) random words in the middle of the sentences.
+    * For normal sentences, don't [capitalize](https://www.grammarly.com/blog/capitalization-rules/) random words in the middle of the sentences.
       Use the Chicago manual for capitalization rules for the documentation.
 
 * Second Person

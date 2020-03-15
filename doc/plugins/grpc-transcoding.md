@@ -33,7 +33,7 @@ HTTP(s) -> APISIX -> gRPC server
 Here's an example, adding a proto which `id` is `1`:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/proto/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -65,7 +65,7 @@ Here's an example, to enable the grpc-transcode plugin to specified route:
 * the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/111 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",

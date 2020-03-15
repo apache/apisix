@@ -28,11 +28,10 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 1,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
@@ -63,7 +62,7 @@ failed
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local func_to_send = function(elements)
                 return true
             end
@@ -71,7 +70,6 @@ failed
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 1,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
 
@@ -99,11 +97,10 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
                 inactive_timeout = 1
             }
@@ -135,11 +132,10 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
@@ -173,13 +169,12 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local core = require("apisix.core")
             local retry = false
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
@@ -215,11 +210,10 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
@@ -253,13 +247,12 @@ Batch Processor[log buffer] exceeded the max_retry_count
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local core = require("apisix.core")
             local count = 0
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
@@ -297,11 +290,10 @@ batch[2] sent
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 0,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
@@ -335,11 +327,10 @@ Batch Processor[log buffer] exceeded the max_retry_count
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
                 buffer_duration = 60,
                 inactive_timeout = 1,
@@ -372,12 +363,11 @@ Batch Processor[log buffer] successfully processed the entries
 --- config
     location /t {
         content_by_lua_block {
-            local Batch = require("apisix.plugins.batch-processor")
+            local Batch = require("apisix.utils.batch-processor")
             local core = require("apisix.core")
             local config = {
                 max_retry_count  = 2,
                 batch_max_size = 2,
-                process_delay  = 0,
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
@@ -407,3 +397,45 @@ BatchProcessor[log buffer] activating flush due to no activity
 [{"msg":"1"},{"msg":"2"}]
 [{"msg":"3"},{"msg":"4"}]
 --- wait: 0.5
+
+
+
+=== TEST 11: extend timer
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local core = require("apisix.core")
+            local config = {
+                max_retry_count  = 1,
+                batch_max_size = 3,
+                retry_delay  = 0,
+                inactive_timeout = 1
+            }
+            local func_to_send = function(elements)
+                core.log.info(core.json.encode(elements))
+                return true
+            end
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+            end
+
+            log_buffer:push({msg='1'})
+            ngx.sleep(0.3)
+            log_buffer:push({msg='2'})
+            log_buffer:push({msg='3'})
+            log_buffer:push({msg='4'})
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+BatchProcessor[log buffer] activating flush due to no activity
+--- error_log
+BatchProcessor[log buffer] extending buffer timer
+--- wait: 3

@@ -33,20 +33,20 @@ You can install Apache APISIX in a variety of ways, including source code packag
 You need to download the Apache source release first:
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.0/apache-apisix-1.0-incubating-src.tar.gz
-tar zxvf apache-apisix-1.0-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/1.1/apache-apisix-1.1-incubating-src.tar.gz
+tar zxvf apache-apisix-1.1-incubating-src.tar.gz
 ```
 
 Install the Lua libraries that the runtime depends on:
 ```shell
-cd apache-apisix-1.0-incubating
+cd apache-apisix-1.1-incubating
 make deps
 ```
 
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.0/apisix-1.0-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.1/apisix-1.1-0.el7.noarch.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)
@@ -62,14 +62,14 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > Install the specified version via Luarocks:
 
 ```shell
-# Install version 1.0
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.0
+# Install version 1.1
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.1
 
 # old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 1.0
+sudo luarocks install apisix 1.1
 ```
 
-## Manage (start/stop) APISIX Server
+## 3. Manage (start/stop) APISIX Server
 
 We can start the APISIX server by command `make run` in APISIX home folder,
 or we can stop APISIX server by command `make stop`.
@@ -102,11 +102,52 @@ Makefile rules:
     license-check: Check lua souce code for Apache License
 ```
 
-## Test
+## 4. Test
 
 1. Install perl's package manager `cpanminus` first
 2. Then install `test-gninx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
 3. Clone source code：`git clone https://github.com/openresty/test-nginx.git`;
 4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
-    * Run the test cases: `prove -Itest-nginx/lib -r t`
+    * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
+    * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+
+##### Troubleshoot
+
+If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+make sure to set openresty as default nginx. And export the path as below.
+
+ * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+
+## 5. Update Admin API token to protect Apache APISIX
+
+Changes the `apisix.admin_key` in the file `conf/config.yaml` and restart the service.
+Here is an example:
+
+```yaml
+apisix:
+  # ... ...
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+When calling the Admin API, `key` can be used as a token.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
+HTTP/1.1 200 OK
+Date: Fri, 28 Feb 2020 07:48:04 GMT
+Content-Type: text/plain
+... ...
+{"node":{...},"action":"get"}
+
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
+HTTP/1.1 401 Unauthorized
+Date: Fri, 28 Feb 2020 08:17:58 GMT
+Content-Type: text/html
+... ...
+{"node":{...},"action":"get"}
+```

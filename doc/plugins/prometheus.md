@@ -34,7 +34,7 @@ any options yet.
 For example:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -60,6 +60,9 @@ Then add prometheus plugin:
 ## How to fetch the metric data
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
+```
+curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+```
 
 Puts this uri address into prometheus, and it will automatically fetch
 these metric data.

@@ -34,7 +34,7 @@
 例子如下:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -59,7 +59,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 
 ## 如何提取指标数据
 
-我们可以从指定的url中提取指标数据 `/apisix/prometheus/metrics`.
+我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
+```
+curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
+```
 
 把改uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
 

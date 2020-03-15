@@ -71,8 +71,10 @@ passed
                 [[{
                     "node": {
                         "value": {
-                            "sni": "test.com"
+                            "sni": "test.com",
+                            "key": null
                         },
+
                         "key": "/apisix/ssl/1"
                     },
                     "action": "get"

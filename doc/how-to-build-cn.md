@@ -32,20 +32,20 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 你需要先下载 Apache Release 源码包：
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.0/apache-apisix-1.0-incubating-src.tar.gz
-tar zxvf apache-apisix-1.0-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/1.1/apache-apisix-1.1-incubating-src.tar.gz
+tar zxvf apache-apisix-1.1-incubating-src.tar.gz
 ```
 
 安装运行时依赖的 Lua 库：
 ```
-cd apache-apisix-1.0-incubating
+cd apache-apisix-1.1-incubating
 make deps
 ```
 
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.0/apisix-1.0-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.1/apisix-1.1-0.el7.noarch.rpm
 ```
 
 ### 通过 Luarocks 安装 （不支持 macOS）
@@ -61,11 +61,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > 通过 Luarocks 安装指定的版本:
 
 ```shell
-# 安装 apisix 的 1.0 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.0
+# 安装 apisix 的 1.1 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.1
 
 # 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 1.0
+sudo luarocks install apisix 1.1
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
@@ -106,5 +106,45 @@ Makefile rules:
 2. 然后通过 cpanm 来安装 test-gninx：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
 3. 然后 clone 最新的源码：`git clone https://github.com/openresty/test-nginx.git`
 4. 通过 perl 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集：
-    * 直接运行：`prove -Itest-nginx/lib -r t`
+    * 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`
+    * 直接运行：`make test`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+
+##### 疑难排解
+
+如果遇到问题 `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+确保将openresty设置为默认的nginx并按如下所示导出路径。
+
+ * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+
+## 5. 更新 Admin API 的 token ，保护 Apache APISIX
+
+修改 `conf/config.yaml` 中的 `apisix.admin_key` 并重启服务。例如下面例子：
+
+```yaml
+apisix:
+  # ... ...
+  admin_key
+    -
+      name: "admin"
+      key: abcdefghabcdefgh
+      role: admin
+```
+
+当我们需要访问 Admin API 时，就可以使用上面记录的 key 作为 token 了。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
+HTTP/1.1 200 OK
+Date: Fri, 28 Feb 2020 07:48:04 GMT
+Content-Type: text/plain
+... ...
+{"node":{...},"action":"get"}
+
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
+HTTP/1.1 401 Unauthorized
+Date: Fri, 28 Feb 2020 08:17:58 GMT
+Content-Type: text/html
+... ...
+{"node":{...},"action":"get"}
+```

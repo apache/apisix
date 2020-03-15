@@ -28,6 +28,10 @@ local function com_tab(pattern, data, deep)
     for k, v in pairs(pattern) do
         dir_names[deep] = k
 
+        if v == ngx.null then
+            v = nil
+        end
+
         if type(v) == "table" then
             local ok, err = com_tab(v, data[k], deep + 1)
             if not ok then
@@ -135,12 +139,10 @@ function _M.test(uri, method, body, pattern)
     if pattern == nil then
         return res.status, "passed", res.body
     end
-
     local res_data = json.decode(res.body)
     if type(pattern) == "string" then
         pattern = json.decode(pattern)
     end
-
     local ok, err = com_tab(pattern, res_data)
     if not ok then
         return 500, "failed, " .. err, res_data
@@ -155,6 +157,34 @@ function _M.read_file(path)
     local cert = f:read("*all")
     f:close()
     return cert
+end
+
+
+function _M.req_self_with_http(uri, method, body, headers)
+    if type(body) == "table" then
+        body = json.encode(body)
+    end
+
+    if type(method) == "number" then
+        method = methods[method]
+    end
+    headers = headers or {}
+
+    local httpc = http.new()
+    -- https://github.com/ledgetech/lua-resty-http
+    uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
+          .. ":" .. ngx.var.server_port .. uri
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
+    local res, err = httpc:request_uri(uri,
+        {
+            method = method,
+            body = body,
+            keepalive = false,
+            headers = headers,
+        }
+    )
+
+    return res, err
 end
 
 

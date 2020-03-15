@@ -26,15 +26,15 @@ no_long_string();
 no_shuffle();
 worker_connections(128);
 
-my $pwd = cwd();
+my $apisix_home = $ENV{APISIX_HOME} || cwd();
 
 sub read_file($) {
     my $infile = shift;
-    open my $in, $infile
+    open my $in, "$apisix_home/$infile"
         or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
+    my $data = do { local $/; <$in> };
     close $in;
-    $cert;
+    $data;
 }
 
 my $yaml_config = read_file("conf/config.yaml");
@@ -42,6 +42,23 @@ my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
+$yaml_config =~ s/admin_key:/admin_key_useless:/;
+
+my $profile = $ENV{"APISIX_PROFILE"};
+
+
+my $apisix_file;
+my $debug_file;
+my $config_file;
+if ($profile) {
+    $apisix_file = "apisix-$profile.yaml";
+    $debug_file = "debug-$profile.yaml";
+    $config_file = "config-$profile.yaml";
+} else {
+    $apisix_file = "apisix.yaml";
+    $debug_file = "debug.yaml";
+    $config_file = "config.yaml";
+}
 
 
 add_block_preprocessor(sub {
@@ -50,15 +67,16 @@ add_block_preprocessor(sub {
 
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
-working_directory   $pwd;
+working_directory   $apisix_home;
+env APISIX_PROFILE;
 _EOC_
 
     $block->set_value("main_config", $main_config);
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "$pwd/deps/share/lua/5.1/?.lua;$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
-    lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;./?.lua;;";
+    lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;./?.so;;";
 
     lua_socket_log_errors off;
 
@@ -70,10 +88,10 @@ _EOC_
     }
 
     init_by_lua_block {
-        -- if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
-        --     require("luacov.runner")("t/apisix.luacov")
-        --     jit.off()
-        -- end
+        if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
+            require("luacov.runner")("t/apisix.luacov")
+            jit.off()
+        end
 
         require "resty.core"
 
@@ -133,8 +151,8 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$pwd/deps/share/lua/5.1/?.lua;$pwd/lua/?.lua;$pwd/t/?.lua;/usr/share/lua/5.1/?.lua;;";
-    lua_package_cpath "$pwd/deps/lib/lua/5.1/?.so;$pwd/deps/lib64/lua/5.1/?.so;/usr/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;./?.lua;;";
+    lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;./?.so;;";
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
@@ -171,6 +189,8 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
+        listen 5044;
+
 _EOC_
 
     my $ipv6_fake_server = "";
@@ -328,7 +348,7 @@ _EOC_
     my $user_apisix_yaml = $block->apisix_yaml // "";
     if ($user_apisix_yaml) {
         $user_apisix_yaml = <<_EOC_;
->>> ../conf/apisix.yaml
+>>> ../conf/$apisix_file
 $user_apisix_yaml
 _EOC_
     }
@@ -338,9 +358,9 @@ _EOC_
 
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;
->>> ../conf/debug.yaml
+>>> ../conf/$debug_file
 $user_debug_config
->>> ../conf/config.yaml
+>>> ../conf/$config_file
 $user_yaml_config
 >>> ../conf/cert/apisix.crt
 $ssl_crt

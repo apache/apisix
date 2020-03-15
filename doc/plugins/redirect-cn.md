@@ -37,7 +37,7 @@ URI 重定向插件。
 下面是一个基本实例，为特定路由启用 `redirect` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {
@@ -58,7 +58,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 我们可以在新的 URI 中使用 Nginx 内置的任意变量：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test",
     "plugins": {
@@ -99,7 +99,7 @@ Location: /test/default.html
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {},
