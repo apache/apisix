@@ -45,6 +45,9 @@ do_install() {
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 
+    wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
+    tar -xvf grpc_server_example-amd64.tar.gz
+
     brew install grpcurl
 }
 
@@ -54,6 +57,8 @@ script() {
 
     etcd --enable-v2=true &
     sleep 1
+
+    ./grpc_server_example &
 
     sudo cpanm Test::Nginx
 
