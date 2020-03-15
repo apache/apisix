@@ -23,8 +23,12 @@ matrix:
         - docker
       env: OSNAME=linux_tengine
     - os: linux
+      services:
+        - docker
       env: OSNAME=linux_apisix_master_luarocks
     - os: linux
+      services:
+        - docker
       env: OSNAME=linux_apisix_current_luarocks
 
 language: c
@@ -52,8 +56,6 @@ before_cache:
   - brew cleanup
 
 before_install:
-  - docker pull redis:3.0-alpine
-  - docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
   - echo $OSNAME
   - $PWD/.travis/${OSNAME}_runner.sh before_install
 
