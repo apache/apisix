@@ -48,9 +48,6 @@ do_install() {
     wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-darwin-amd64.tar.gz
     tar -xvf grpc_server_example-darwin-amd64.tar.gz
 
-    pwd
-    ls
-
     brew install grpcurl
 }
 
@@ -61,11 +58,7 @@ script() {
     etcd --enable-v2=true &
     sleep 1
 
-    pwd
-    ls
     ./grpc_server_example &
-
-    sudo cpanm Test::Nginx
 
     make help
     make init

@@ -13,6 +13,7 @@ matrix:
       env: OSNAME=linux_openresty
     - os: osx
       env: OSNAME=osx_openresty
+      if: type IN (push)
       cache:
         directories:
           - $HOME/Library/Caches/Homebrew
