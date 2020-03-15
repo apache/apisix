@@ -189,6 +189,8 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
+        listen 5044;
+
 _EOC_
 
     my $ipv6_fake_server = "";
