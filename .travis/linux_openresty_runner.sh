@@ -32,6 +32,8 @@ create_lua_deps() {
 
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
+    docker pull redis:3.0-alpine
+    docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
 }
 
 do_install() {
