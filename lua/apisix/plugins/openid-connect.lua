@@ -39,6 +39,8 @@ local schema = {
         realm = {type = "string"}, -- default is apisix
         logout_path = {type = "string"}, -- default is /logout
         redirect_uri = {type = "string"}, -- default is ngx.var.request_uri
+        public_key = {type = "string"},
+        token_signing_alg_values_expected = {type = "string"}
     },
     required = {"client_id", "client_secret", "discovery"}
 }
@@ -105,10 +107,20 @@ end
 
 local function introspect(ctx, conf)
     if has_bearer_access_token(ctx) or conf.bearer_only then
-        local res, err = openidc.introspect(conf)
-        if res then
-            return res
+        local res, err
+
+        if conf.public_key then
+            res, err = openidc.bearer_jwt_verify(conf)
+            if res then
+                return res
+            end
+        else
+            res, err = openidc.introspect(conf)
+            if res then
+                return res
+            end
         end
+
         if conf.bearer_only then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm
                                              .. '",error="' .. err .. '"'
@@ -132,7 +144,7 @@ function _M.access(conf, ctx)
     end
 
     local response, err
-    if conf.introspection_endpoint then
+    if conf.introspection_endpoint or conf.public_key then
         response, err = introspect(ctx, conf)
         if err then
             core.log.error("failed to introspect in openidc: ", err)
