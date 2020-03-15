@@ -35,6 +35,21 @@ apisix:
   #  enable_tcp_pp: true           # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
   #  enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
 
+  proxy_cache:                     # Proxy Caching configuration
+    cache_ttl: 10s                 # The default caching time if the upstream does not specify the cache time
+    zones:                         # The parameters of a cache
+    - name: disk_cache_one         # The name of the cache, administrator can be specify
+                                   # which cache to use by name in the admin api
+      memory_size: 50m             # The size of shared memory, it's used to store the cache index
+      disk_size: 1G                # The size of disk, it's used to store the cache data
+      disk_path: "/tmp/disk_cache_one" # The path to store the cache data
+      cache_levels: "1:2"           # The hierarchy levels of a cache
+  #  - name: disk_cache_two
+  #    memory_size: 50m
+  #    disk_size: 1G
+  #    disk_path: "/tmp/disk_cache_two"
+  #    cache_levels: "1:2"
+
   # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
   #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
@@ -124,6 +139,7 @@ plugins:                          # plugin list
   - fault-injection
   - udp-logger
   - wolf-rbac
+  - proxy-cache
   - tcp-logger
 
 stream_plugins:
