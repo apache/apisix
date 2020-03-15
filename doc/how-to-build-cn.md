@@ -107,8 +107,15 @@ Makefile rules:
 3. 然后 clone 最新的源码：`git clone https://github.com/openresty/test-nginx.git`
 4. 通过 perl 的 `prove` 命令来加载 test-nginx 的库，并运行 `/t` 目录下的测试案例集：
     * 追加当前目录到perl模块目录： `export PERL5LIB=.:$PERL5LIB`
-    * 直接运行：`prove -Itest-nginx/lib -r t`
+    * 直接运行：`make test`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+
+##### 疑难排解
+
+如果遇到问题 `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+确保将openresty设置为默认的nginx并按如下所示导出路径。
+
+ * export PATH=/usr/local/openresty/nginx/sbin:$PATH
 
 ## 5. 更新 Admin API 的 token ，保护 Apache APISIX
 
