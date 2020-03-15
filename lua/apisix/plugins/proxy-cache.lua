@@ -43,8 +43,9 @@ local schema = {
             items = {
                 description = "a key for caching",
                 type = "string",
-                pattern = [[(^[^\$].+$|^\$[0-9a-zA-Z_]+$)]]
+                pattern = [[(^[^\$].+$|^\$[0-9a-zA-Z_]+$)]],
             },
+            default = {"$host", "$uri"}
         },
         cache_http_status = {
             type = "array",
@@ -91,7 +92,7 @@ local schema = {
             },
         },
     },
-    required = {"cache_zone", "cache_key"},
+    required = {"cache_zone"},
 }
 
 local _M = {

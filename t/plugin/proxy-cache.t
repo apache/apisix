@@ -14,16 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
-
-    } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
-    }
-}
-
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -123,7 +113,6 @@ qr/failed to check the configuration of plugin proxy-cache/
                         "plugins": {
                             "proxy-cache": {
                                "cache_zone": "disk_cache_one",
-                               "cache_key": ["$uri"],
                                "cache_bypass": ["$arg_bypass"],
                                "cache_method": "GET",
                                "cache_http_status": [200],
@@ -213,7 +202,6 @@ qr/failed to check the configuration of plugin proxy-cache/
                         "plugins": {
                             "proxy-cache": {
                                "cache_zone": "disk_cache_one",
-                               "cache_key": ["$uri", "-cache-id"],
                                "cache_bypass": "$arg_bypass",
                                "cache_method": ["GET"],
                                "cache_http_status": [200],
@@ -258,7 +246,6 @@ qr/failed to check the configuration of plugin proxy-cache/
                         "plugins": {
                             "proxy-cache": {
                                "cache_zone": "disk_cache_one",
-                               "cache_key": ["$uri", "-cache-id"],
                                "cache_bypass": ["$arg_bypass"],
                                "cache_method": ["GET"],
                                "cache_http_status": [200],
@@ -348,7 +335,6 @@ qr/failed to check the configuration of plugin proxy-cache/
                         "plugins": {
                             "proxy-cache": {
                                "cache_zone": "disk_cache_one",
-                               "cache_key": ["$uri", "-cache-id"],
                                "cache_bypass": ["$arg_bypass"],
                                "cache_method": ["GET"],
                                "cache_http_status": [200],
@@ -526,7 +512,6 @@ Apisix-Cache-Status: MISS
                         "plugins": {
                             "proxy-cache": {
                                "cache_zone": "disk_cache_one",
-                               "cache_key": ["$uri", "-cache-id"],
                                "cache_bypass": ["$arg_bypass"],
                                "cache_method": ["GET"],
                                "cache_http_status": [200],
@@ -589,3 +574,57 @@ PURGE /hello-world
 --- error_code: 404
 --- no_error_log
 [error]
+
+
+
+=== TEST 23:  invalid cache zone
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_zone": "invalid_disk_cache",
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_method": ["GET"],
+                               "cache_http_status": [200],
+                               "hide_cache_headers": false,
+                               "no_cache": ["$arg_no_cache"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: hit route (invalid cache zone)
+--- request
+GET /hello
+--- error_code: 500
+--- error_log
+cache "invalid_disk_cache" not found
+
