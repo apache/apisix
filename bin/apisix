@@ -661,28 +661,32 @@ local function init_etcd(show_output)
     end
 
     local etcd_conf = yaml_conf.etcd
-    local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
-
     local timeout = etcd_conf.timeout or 3
+    local uri
 
-    for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
-                               "/plugins", "/consumers", "/node_status",
-                               "/ssl", "/global_rules", "/stream_routes",
-                               "/proto"}) do
-        local cmd = "curl " .. uri .. dir_name
+    for _, host in ipairs(yaml_conf.etcd.host) do
+
+        uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
+
+        for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
+                                   "/plugins", "/consumers", "/node_status",
+                                   "/ssl", "/global_rules", "/stream_routes",
+                                   "/proto"}) do
+            local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true "
                     .. "--connect-timeout " .. timeout
                     .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
-        local res = exec(cmd)
-        if not res:find("index", 1, true)
-           and not res:find("createdIndex", 1, true) then
-            error(cmd .. "\n" .. res)
-        end
+            local res = exec(cmd)
+            if not res:find("index", 1, true)
+                    and not res:find("createdIndex", 1, true) then
+                error(cmd .. "\n" .. res)
+            end
 
-        if show_output then
-            print(cmd)
-            print(res)
+            if show_output then
+                print(cmd)
+                print(res)
+            end
         end
     end
 end
