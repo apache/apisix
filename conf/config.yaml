@@ -124,6 +124,7 @@ plugins:                          # plugin list
   - fault-injection
   - udp-logger
   - wolf-rbac
+  - tcp-logger
 
 stream_plugins:
   - mqtt-proxy

@@ -58,6 +58,7 @@ Plugins
 * [redirect](plugins/redirect.md): URI redirect.
 * [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
 * [fault-injection](plugins/fault-injection.md): The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
+* [tcp-logger](plugins/tcp-logger.md): Log requests to TCP servers
 
 Deploy to the Cloud
 =======
