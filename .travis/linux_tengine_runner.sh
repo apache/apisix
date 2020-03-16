@@ -260,6 +260,12 @@ do_install() {
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
     fi
+
+    if [ ! -f "build-cache/eureka" ]; then
+        wget https://github.com/api7/eureka-for-test/releases/download/v1.9.8/eureka.tar.gz
+        tar -xvf eureka.tar.gz
+        mv eureka.jar build-cache/
+    fi
 }
 
 script() {
@@ -269,6 +275,7 @@ script() {
     sudo service etcd start
 
     ./build-cache/grpc_server_example &
+    java -jar ./build-cache/eureka.jar > ./build-cache/eureka.log 2>&1 &
 
     ./bin/apisix help
     ./bin/apisix init

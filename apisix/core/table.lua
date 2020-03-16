@@ -32,6 +32,7 @@ local _M = {
     insert  = table.insert,
     concat  = table.concat,
     clone   = require("table.clone"),
+    isarray = require("table.isarray"),
 }
 
 

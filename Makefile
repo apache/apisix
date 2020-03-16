@@ -133,6 +133,9 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/http/router
 	$(INSTALL) apisix/http/router/*.lua $(INST_LUADIR)/apisix/http/router/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
+	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins
 	$(INSTALL) apisix/plugins/*.lua $(INST_LUADIR)/apisix/plugins/
 
