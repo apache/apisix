@@ -194,6 +194,28 @@ local function create_server_picker(upstream, checker)
 end
 
 
+local function get_upstream_from_discovery(upstream_id)
+    local discovery = core.discovery()
+    if not discovery then
+        return nil
+    end
+
+    return discovery.get_instances(upstream_id)
+end
+
+
+local function get_upstream_from_config(upstream_id)
+    if not upstreams_etcd then
+        return nil, "need to create a etcd instance for fetching upstream information"
+    end
+
+    local up_obj = upstreams_etcd:get(tostring(up_id))
+    if not up_obj then
+        return nil, "failed to find upstream by id: " .. up_id
+    end
+    return up_obj
+end
+
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
@@ -209,14 +231,9 @@ local function pick_server(route, ctx)
     local key
 
     if up_id then
-        if not upstreams_etcd then
-            return nil, nil, "need to create a etcd instance for fetching "
-                             .. "upstream information"
-        end
-
-        local up_obj = upstreams_etcd:get(tostring(up_id))
+        local up_obj = get_upstream_from_config(up_id)
         if not up_obj then
-            return nil, nil, "failed to find upstream by id: " .. up_id
+            up_obj = get_upstream_from_discovery(up_id)
         end
         core.log.info("upstream: ", core.json.delay_encode(up_obj))
 
@@ -224,7 +241,6 @@ local function pick_server(route, ctx)
         up_conf = up_obj.dns_value or up_obj.value
         version = up_obj.modifiedIndex
         key = up_conf.type .. "#upstream_" .. up_id
-
     else
         version = ctx.conf_version
         key = up_conf.type .. "#route_" .. route.value.id

@@ -97,6 +97,10 @@ function _M.http_init_worker()
     parsed_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
+    local discovery = core.discovery()
+    if discovery and discovery.init_worker then
+        discovery.init_worker()
+    end
 end
 
 

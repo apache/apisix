@@ -30,7 +30,7 @@ local id_schema = {
     anyOf = {
         {
             type = "string", minLength = 1, maxLength = 32,
-            pattern = [[^[0-9]+$]]
+            pattern = [[^[0-9a-zA-Z-_]+$]]
         },
         {type = "integer", minimum = 1}
     }
