@@ -483,7 +483,6 @@ http {
             }
         }
 
-
         location = /proxy_mirror {
             internal;
 

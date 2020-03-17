@@ -33,7 +33,7 @@ add_block_preprocessor(sub {
 
         location / {
             content_by_lua_block {
-                ngx.log(ngx.ERR, "receive mirror request.")
+                ngx.log(ngx.ERR, "uri: ", ngx.var.uri)
                 ngx.say("hello world")
             }
         }
@@ -287,5 +287,5 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-receive mirror request.
+uri: /hello
 
