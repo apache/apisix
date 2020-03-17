@@ -20,12 +20,8 @@ local local_conf = require("apisix.core.config_local").local_conf()
 local config_center = local_conf.apisix and local_conf.apisix.config_center
                       or "etcd"
 log.info("use config_center: ", config_center)
-local discovery_type = local_conf.apisix and local_conf.apisix.discovery
-        and local_conf.apisix.discovery.type
-local discovery
 
-
-local _M = {
+return {
     version  = require("apisix.core.version"),
     log      = log,
     config   = require("apisix.core.config_" .. config_center),
@@ -43,15 +39,3 @@ local _M = {
     http     = require("apisix.core.http"),
     tablepool= require("tablepool"),
 }
-
-
-function _M.discovery ()
-    if discovery then
-        return discovery
-    end
-    if discovery_type then
-        discovery = require("apisix.discovery." .. discovery_type)
-    end
-    return discovery
-end
-return _M

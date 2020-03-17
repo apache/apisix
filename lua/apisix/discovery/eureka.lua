@@ -15,19 +15,18 @@
 -- limitations under the License.
 --
 
-local http                  = require("resty.http")
-local core                  = require("apisix.core")
-local service              = require("apisix.discovery.service")
-local ipairs                = ipairs
-local ngx_timer_at          = ngx.timer.at
-local ngx_timer_every       = ngx.timer.every
-local string_sub            = string.sub
-local string_find           = string.find
-local log                   = core.log
+local http = require("resty.http")
+local core = require("apisix.core")
+local service = require("apisix.discovery.service")
+local ipairs = ipairs
+local ngx_timer_at = ngx.timer.at
+local ngx_timer_every = ngx.timer.every
+local string_sub = string.sub
+local string_find = string.find
+local log = core.log
 
 local applications
 local useragent = 'ngx_lua-apisix/v' .. core.version.VERSION
-
 
 local _M = {
     version = 1.0,
@@ -37,7 +36,9 @@ local _M = {
 local function split(self, sep)
     local sep, fields = sep or ":", {}
     local pattern = string.format("([^%s]+)", sep)
-    self:gsub(pattern, function(c) fields[#fields + 1] = c end)
+    self:gsub(pattern, function(c)
+        fields[#fields + 1] = c
+    end)
     return fields
 end
 
@@ -58,7 +59,7 @@ local function service_info()
     local zone_name = "default_zone"
     local service_url = config_data.eureka.client.service_url[zone_name]
     if not service_url then
-        log.info("do not set eureka.client.service_url.".. zone_name)
+        log.info("do not set eureka.client.service_url." .. zone_name)
         return nil
     end
     local urls = split(service_url, [[,]])
@@ -78,6 +79,7 @@ local function service_info()
     end
     return url, basic_auth
 end
+
 
 local function request(request_uri, basic_auth, method, path, query, body)
     local url = request_uri .. path
@@ -133,7 +135,10 @@ local function get_and_store_full_registry(premature)
     end
 
     local json_str = res.body
-    local response = core.json.decode(json_str)
+    local response, err = core.json.decode(json_str)
+    if not data then
+        core.log.error("invalid response body: ", json_str, " err: ", err)
+    end
     local apps = response.applications.application
     local up_applications = core.table.new(0, #apps)
     for _, app in ipairs(apps) do

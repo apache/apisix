@@ -25,6 +25,7 @@ local _M = {
 
 local mt = { __index = _M }
 
+
 function _M.new (self, nodes_len)
     local instance = core.table.new(0, 4)
     instance.nodes = core.table.new(nodes_len, 0)

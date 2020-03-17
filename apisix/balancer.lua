@@ -19,6 +19,7 @@ local roundrobin  = require("resty.roundrobin")
 local resty_chash = require("resty.chash")
 local balancer    = require("ngx.balancer")
 local core        = require("apisix.core")
+local discovery   = require("apisix.discovery.init").discovery
 local error       = error
 local str_char    = string.char
 local str_gsub    = string.gsub
@@ -195,7 +196,6 @@ end
 
 
 local function get_upstream_from_discovery(upstream_id)
-    local discovery = core.discovery()
     if not discovery then
         return nil
     end
