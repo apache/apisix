@@ -182,6 +182,22 @@ http {
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
 
+    {% if proxy_cache then %}
+    # for proxy cache
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *};
+    {% end %}
+    {% end %}
+
+    {% if proxy_cache then %}
+    # for proxy cache
+    map $upstream_cache_zone $upstream_cache_zone_info {
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+        {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
+    }
+    {% end %}
+
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
@@ -375,6 +391,8 @@ http {
             proxy_pass_header  Server;
             proxy_pass_header  Date;
 
+            ### the following x-forwarded-* headers is to send to upstream server
+
             set $var_x_forwarded_for        $remote_addr;
             set $var_x_forwarded_proto      $scheme;
             set $var_x_forwarded_host       $host;
@@ -398,7 +416,34 @@ http {
             proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
 
-            proxy_pass         $upstream_scheme://apisix_backend$upstream_uri;
+            {% if proxy_cache then %}
+            ###  the following configuration is to cache response content from upstream server
+
+            set $upstream_cache_zone            off;
+            set $upstream_cache_key             '';
+            set $upstream_cache_bypass          '';
+            set $upstream_no_cache              '';
+            set $upstream_hdr_expires           '';
+            set $upstream_hdr_cache_control     '';
+
+            proxy_cache                         $upstream_cache_zone;
+            proxy_cache_valid                   any {% if proxy_cache and proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 5s {% end %};
+            proxy_cache_min_uses                1;
+            proxy_cache_methods                 GET HEAD;
+            proxy_cache_lock_timeout            5s;
+            proxy_cache_use_stale               off;
+            proxy_cache_key                     $upstream_cache_key;
+            proxy_no_cache                      $upstream_no_cache;
+            proxy_cache_bypass                  $upstream_cache_bypass;
+
+            proxy_hide_header                   Cache-Control;
+            proxy_hide_header                   Expires;
+            add_header      Cache-Control       $upstream_hdr_cache_control;
+            add_header      Expires             $upstream_hdr_expires;
+            add_header      Apisix-Cache-Status $upstream_cache_status always;
+            {% end %}
+
+            proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()

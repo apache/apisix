@@ -42,11 +42,19 @@ do
     }
 
     local ngx_var_names = {
-        upstream_scheme     = true,
-        upstream_host       = true,
-        upstream_upgrade    = true,
-        upstream_connection = true,
-        upstream_uri        = true,
+        upstream_scheme            = true,
+        upstream_host              = true,
+        upstream_upgrade           = true,
+        upstream_connection        = true,
+        upstream_uri               = true,
+
+        upstream_cache_zone        = true,
+        upstream_cache_zone_info   = true,
+        upstream_no_cache          = true,
+        upstream_cache_key         = true,
+        upstream_cache_bypass      = true,
+        upstream_hdr_expires       = true,
+        upstream_hdr_cache_control = true,
     }
 
     local mt = {
