@@ -21,7 +21,7 @@ local require  = require
 local clone_tab = require("table.clone")
 
 
-local _M = {version = 0.3}
+local _M = {version = 0.4}
 
 
 local log_levels = {
@@ -40,28 +40,10 @@ local log_levels = {
 local cur_level = ngx.config.subsystem == "http" and
                   require "ngx.errlog" .get_sys_filter_level()
 local do_nothing = function() end
-setmetatable(_M, {__index = function(self, cmd)
-    local log_level = log_levels[cmd]
-
-    local method
-    if cur_level and (log_level > cur_level)
-    then
-        method = do_nothing
-    else
-        method = function(...)
-            return ngx_log(log_level, ...)
-        end
-    end
-
-    -- cache the lazily generated method in our
-    -- module table
-    _M[cmd] = method
-    return method
-end})
 
 
 function _M.new(prefix)
-    local m = clone_tab(_M)
+    local m = {version = _M.version}
     return setmetatable(m, {__index = function(self, cmd)
         local log_level = log_levels[cmd]
 
@@ -81,6 +63,26 @@ function _M.new(prefix)
         return method
     end})
 end
+
+
+setmetatable(_M, {__index = function(self, cmd)
+    local log_level = log_levels[cmd]
+
+    local method
+    if cur_level and (log_level > cur_level)
+    then
+        method = do_nothing
+    else
+        method = function(...)
+            return ngx_log(log_level, ...)
+        end
+    end
+
+    -- cache the lazily generated method in our
+    -- module table
+    _M[cmd] = method
+    return method
+end})
 
 
 return _M
