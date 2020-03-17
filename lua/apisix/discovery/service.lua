@@ -19,15 +19,15 @@ local core                  = require("apisix.core")
 
 local _M = {
     version         = 0.1,
-    nodes           = nil,
     type            = "roundrobin",
     retries         = 1,
 }
 
 local mt = { __index = _M }
 
-function _M.new (self)
+function _M.new (self, nodes_len)
     local instance = core.table.new(0, 4)
+    instance.nodes = core.table.new(nodes_len, 0)
     return setmetatable(instance, mt)
 end
 return _M

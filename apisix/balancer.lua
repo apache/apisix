@@ -200,11 +200,11 @@ local function get_upstream_from_discovery(upstream_id)
         return nil
     end
 
-    return discovery.get_instances(upstream_id)
+    return discovery.get_service(upstream_id)
 end
 
 
-local function get_upstream_from_config(upstream_id)
+local function get_upstream_from_config(up_id)
     if not upstreams_etcd then
         return nil, "need to create a etcd instance for fetching upstream information"
     end

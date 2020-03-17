@@ -139,8 +139,7 @@ local function get_and_store_full_registry(premature)
     for _, app in ipairs(apps) do
         local _service = up_applications[app.name]
         if not _service then
-            _service = service:new()
-            _service.nodes = core.table.new(0, #app.instance)
+            _service = service:new(#app.instance)
             up_applications[app.name] = _service
         end
         for _, app_instance in ipairs(app.instance) do
@@ -167,7 +166,7 @@ local function get_and_store_full_registry(premature)
 end
 
 
-function _M.get_instances(up_id)
+function _M.get_service(up_id)
     if not applications then
         log.error("failed to fetch instances for : ", up_id)
         return nil
