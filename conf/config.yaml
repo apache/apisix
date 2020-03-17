@@ -80,7 +80,7 @@ apisix:
   #   udp:                        # UDP proxy port list
   #     - 9200
   #     - 9211
-  dns_resolver:                   # default DNS resolver, with disable IPv6 and enable local DNS
+  dns_resolver:                   # default DNS resolver, with disable IPv6 and enable local DNS, remove this will enable local DNS
     - 114.114.114.114
     - 223.5.5.5
     - 1.1.1.1

@@ -54,7 +54,7 @@ sub local_dns_resolver() {
 
 my $dns_addrs_str = "";
 my $dns_addrs_tbl_str = "";
-my $enable_local_dns = 0;
+my $enable_local_dns = $ENV{"ENABLE_LOCAL_DNS"};
 if ($enable_local_dns) {
     my @dns_addrs = local_dns_resolver();
     $dns_addrs_tbl_str = "{";

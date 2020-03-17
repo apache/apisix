@@ -531,7 +531,7 @@ end
 end -- do
 
 
-function _M.stream_init(args)
+function _M.stream_init()
     core.log.info("enter stream_init")
 end
 
