@@ -710,7 +710,6 @@ local function init_etcd(show_output)
     local uri
 
     for _, host in ipairs(yaml_conf.etcd.host) do
-
         uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
@@ -726,11 +725,12 @@ local function init_etcd(show_output)
             if not res:find("index", 1, true)
                     and not res:find("createdIndex", 1, true) then
                 error(cmd .. "\n" .. res)
-            end
-
-            if show_output then
-                print(cmd)
-                print(res)
+            else
+                if show_output then
+                    print(cmd)
+                    print(res)
+                end
+                break
             end
         end
     end
