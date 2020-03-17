@@ -134,8 +134,9 @@ sudo apisix start
 
 2. Try the getting started guide
 
-The getting-started guide is a good way to learn the basics of APISIX. Follow the [getting started guide](doc/getting-started.md), 
-and then you can try more [plugins](doc/README.md#plugins).
+The getting-started guide is a good way to learn the basics of APISIX. Follow the [getting started guide](doc/getting-started.md).
+
+Then you can try more [plugins](doc/README.md#plugins).
 
 ## Dashboard
 APISIX has built-in support for Dashboard, as follows:
