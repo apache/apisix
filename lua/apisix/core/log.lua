@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local ngx = ngx
 local ngx_log  = ngx.log
 local require  = require
+local clone_tab = require("table.clone")
 
 
 local _M = {version = 0.3}
@@ -56,6 +58,29 @@ setmetatable(_M, {__index = function(self, cmd)
     _M[cmd] = method
     return method
 end})
+
+
+function _M.new(prefix)
+    local m = clone_tab(_M)
+    return setmetatable(m, {__index = function(self, cmd)
+        local log_level = log_levels[cmd]
+
+        local method
+        if cur_level and (log_level > cur_level)
+        then
+            method = do_nothing
+        else
+            method = function(...)
+                return ngx_log(log_level, prefix, ...)
+            end
+        end
+
+        -- cache the lazily generated method in our
+        -- module table
+        _M[cmd] = method
+        return method
+    end})
+end
 
 
 return _M
