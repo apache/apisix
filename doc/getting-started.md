@@ -241,8 +241,8 @@ curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H '
 ## APISIX Dashboard
 
 As of now the API calls to the APISIX has been orchestrated by using the Admin API. However, APISIX also provides
-a web application to perform the similar. The dashboard is available in the following 
-[repository](https://github.com/apache/incubator-apisix). The dashboard is intuitive and you can orchestrate the 
+a web application to perform the similar. The dashboard is available in the following
+[repository](https://github.com/apache/incubator-apisix). The dashboard is intuitive and you can orchestrate the
 same route configurations via the dashboard as well.
 
 ![Dashboard](images/dashboard.png)
