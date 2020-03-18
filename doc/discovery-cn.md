@@ -40,3 +40,25 @@ eureka:
       default_zone: "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/,http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}/eureka/"
 ```
 
+## 路由配置
+
+如果希望uri为"/a/*"的请求路由到注册中心名为"a_service"的服务上时：
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/a/*",
+    "upstream_id": "a_service"
+}'
+
+HTTP/1.1 201 Created
+Date: Sat, 31 Aug 2019 01:17:15 GMT
+Content-Type: text/plain
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX web server
+
+{"node":{"value":{"uri":"\/a\/*","upstream_id": "a_service"},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
+```
+
+同理，将Service中的`upstream_id` 指向服务名，也是可以达到相同的效果。
