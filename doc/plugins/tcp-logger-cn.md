@@ -83,7 +83,7 @@ hello, world
 ## 禁用插件
 
 
-想要禁用“tcp-logger”插件，是非常简单的，将对应的插件配置从json配置删除就可以，不需要重新启动服务，就会立即生效：
+想要禁用“tcp-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
 $ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
