@@ -709,7 +709,7 @@ local function init_etcd(show_output)
 
     local timeout = etcd_conf.timeout or 3
     local uri
-    local hostCount = table.getn(yaml_conf.etcd.host)
+    local host_count = #(yaml_conf.etcd.host)
 
     for index, host in ipairs(yaml_conf.etcd.host) do
 
@@ -728,7 +728,7 @@ local function init_etcd(show_output)
             local res = exec(cmd)
             if not res:find("index", 1, true)
                     and not res:find("createdIndex", 1, true) then
-                is_success = false;
+                is_success = false
                 if (index == hostCount) then
                     error(cmd .. "\n" .. res)
                 end
