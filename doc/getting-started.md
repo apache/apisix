@@ -212,7 +212,7 @@ Use the command below to securely access the endpoint now.
 curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: superSecretAPIKey'
 ```
 
-## Add a prefix to the route (Optional)
+## Add a prefix to the route
 
 Now lets say you want to add a prefix (eg: samplePrefix) to the route and do not want to use the `host` header then you can use
 the proxy rewrite plugin to do it.
@@ -237,6 +237,15 @@ Now you can invoke the route with the following command:
 ```bash
 curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H 'apikey: superSecretAPIKey'
 ```
+
+## APISIX Dashboard
+
+As of now the API calls to the APISIX has been orchestrated by using the Admin API. However, APISIX also provides
+a web application to perform the similar. The dashboard is available in the following
+[repository](https://github.com/apache/incubator-apisix). The dashboard is intuitive and you can orchestrate the
+same route configurations via the dashboard as well.
+
+![Dashboard](images/dashboard.png)
 
 ### Troubleshooting
 

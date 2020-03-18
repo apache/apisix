@@ -32,6 +32,8 @@ create_lua_deps() {
 
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
+    docker pull redis:3.0-alpine
+    docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
 }
 
 do_install() {
@@ -72,16 +74,12 @@ do_install() {
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
-        sudo apt-get install golang
-        git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-        cd grpc_server_example/
-        go build -o grpc_server_example main.go
-        mv grpc_server_example ../build-cache/
-        cd ..
+        wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
+        tar -xvf grpc_server_example-amd64.tar.gz
+        mv grpc_server_example build-cache/
     fi
 
     if [ ! -f "build-cache/proto/helloworld.proto" ]; then
-
         if [ ! -f "grpc_server_example/main.go" ]; then
             git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
         fi
@@ -92,12 +90,9 @@ do_install() {
     fi
 
     if [ ! -f "build-cache/grpcurl" ]; then
-        sudo apt-get install golang
-        git clone https://github.com/fullstorydev/grpcurl.git grpcurl
-        cd grpcurl
-        go build -o grpcurl  ./cmd/grpcurl
-        mv grpcurl ../build-cache/
-        cd ..
+        wget https://github.com/api7/grpcurl/releases/download/20200314/grpcurl-amd64.tar.gz
+        tar -xvf grpcurl-amd64.tar.gz
+        mv grpcurl build-cache/
     fi
 }
 

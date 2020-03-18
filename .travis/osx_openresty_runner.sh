@@ -23,11 +23,11 @@ export_or_prefix() {
 }
 
 before_install() {
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis@3.2
     brew upgrade go
 
     sudo sed -i "" "s/requirepass/#requirepass/g" /usr/local/etc/redis.conf
-    brew services start redis
+    brew services start redis@3.2
 
     export GO111MOUDULE=on
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
@@ -41,14 +41,12 @@ do_install() {
     make deps
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
-    git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
 
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 
-    cd grpc_server_example/
-    go build -o grpc_server_example main.go
-    cd ..
+    wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-darwin-amd64.tar.gz
+    tar -xvf grpc_server_example-darwin-amd64.tar.gz
 
     brew install grpcurl
 }
@@ -60,32 +58,12 @@ script() {
     etcd --enable-v2=true &
     sleep 1
 
-    sudo cpanm Test::Nginx
-
-    ./grpc_server_example/grpc_server_example &
+    ./grpc_server_example &
 
     make help
     make init
     sudo make run
     mkdir -p logs
-    sleep 1
-
-    #test grpc proxy
-    curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
-    {
-        "methods": ["POST", "GET"],
-        "uri": "/helloworld.Greeter/SayHello",
-        "service_protocol": "grpc",
-        "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:50051": 1
-            }
-        }
-    }'
-
-    grpcurl -insecure -import-path ./grpc_server_example/proto -proto helloworld.proto -d '{"name":"apisix"}' 127.0.0.1:9443 helloworld.Greeter.SayHello
-
     sleep 1
 
     sudo make stop

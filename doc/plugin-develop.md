@@ -50,7 +50,7 @@ The plugin itself provides the init method. It is convenient for plugins to perf
  the plugin is loaded.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-       method "http_init" in the file __Lua/apifix.lua__, And you may need to add some processing on generated part of Nginx
+       method "http_init" in the file __lua/apisix.lua__, And you may need to add some processing on generated part of Nginx
        configuration file in __bin/apisix__ file. but it is easy to have an impact on the overall situation according to the
        existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
 
@@ -72,7 +72,7 @@ determine the name and priority of the plugin, and add to conf/config.yaml. For 
    }
 ```
 
-Note : The priority of the new plugin cannot be the same as the priority of any existing plugin.
+Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first. For example, the priority of basic-auth is 2520 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the basic-auth plugin.
 
 in the "__conf/config.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 

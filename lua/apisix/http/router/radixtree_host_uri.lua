@@ -113,10 +113,10 @@ local function create_radixtree_router(routes)
     end
 
     -- create router: only_uri_router
-    local routes = plugin.api_routes()
-    core.log.info("routes", core.json.delay_encode(routes, true))
+    local api_routes = plugin.api_routes()
+    core.log.info("api_routes", core.json.delay_encode(api_routes, true))
 
-    for _, route in ipairs(routes) do
+    for _, route in ipairs(api_routes) do
         if type(route) == "table" then
             core.table.insert(only_uri_routes, {
                 paths = route.uris or route.uri,

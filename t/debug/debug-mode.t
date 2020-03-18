@@ -63,6 +63,7 @@ loaded plugin and sort by priority: 2555 name: wolf-rbac
 loaded plugin and sort by priority: 2520 name: basic-auth
 loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth
+loaded plugin and sort by priority: 1009 name: proxy-cache
 loaded plugin and sort by priority: 1008 name: proxy-rewrite
 loaded plugin and sort by priority: 1003 name: limit-conn
 loaded plugin and sort by priority: 1002 name: limit-count
@@ -72,11 +73,13 @@ loaded plugin and sort by priority: 900 name: redirect
 loaded plugin and sort by priority: 899 name: response-rewrite
 loaded plugin and sort by priority: 506 name: grpc-transcode
 loaded plugin and sort by priority: 500 name: prometheus
+loaded plugin and sort by priority: 405 name: tcp-logger
 loaded plugin and sort by priority: 403 name: kafka-logger
 loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
 loaded plugin and sort by priority: -1000 name: zipkin
 loaded plugin and sort by priority: -2000 name: serverless-post-function
+
 
 
 

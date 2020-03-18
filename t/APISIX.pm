@@ -189,6 +189,8 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
+        listen 5044;
+
 _EOC_
 
     my $ipv6_fake_server = "";
@@ -266,6 +268,29 @@ _EOC_
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
             set \$upstream_uri                '';
+
+            set \$upstream_cache_zone            off;
+            set \$upstream_cache_key             '';
+            set \$upstream_cache_bypass          '';
+            set \$upstream_no_cache              '';
+            set \$upstream_hdr_expires           '';
+            set \$upstream_hdr_cache_control     '';
+
+            proxy_cache                         \$upstream_cache_zone;
+            proxy_cache_valid                   any 10s;
+            proxy_cache_min_uses                1;
+            proxy_cache_methods                 GET HEAD;
+            proxy_cache_lock_timeout            5s;
+            proxy_cache_use_stale               off;
+            proxy_cache_key                     \$upstream_cache_key;
+            proxy_no_cache                      \$upstream_no_cache;
+            proxy_cache_bypass                  \$upstream_cache_bypass;
+
+            proxy_hide_header                   Cache-Control;
+            proxy_hide_header                   Expires;
+            add_header      Cache-Control       \$upstream_hdr_cache_control;
+            add_header      Expires             \$upstream_hdr_expires;
+            add_header      Apisix-Cache-Status \$upstream_cache_status always;
 
             access_by_lua_block {
                 -- wait for etcd sync
