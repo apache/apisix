@@ -711,6 +711,11 @@ local function init_etcd(show_output)
     local uri
     local host_count = #(yaml_conf.etcd.host)
 
+    --convert old single etcd config to multiple etcd config
+    if type(yaml_conf.etcd.host) == "string" then
+        yaml_conf.etcd.host = {yaml_conf.etcd.host}
+    end
+
     for index, host in ipairs(yaml_conf.etcd.host) do
 
         local is_success = true
