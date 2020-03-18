@@ -709,12 +709,12 @@ local function init_etcd(show_output)
 
     local timeout = etcd_conf.timeout or 3
     local uri
-    local host_count = #(yaml_conf.etcd.host)
-
     --convert old single etcd config to multiple etcd config
     if type(yaml_conf.etcd.host) == "string" then
         yaml_conf.etcd.host = {yaml_conf.etcd.host}
     end
+
+    local host_count = #(yaml_conf.etcd.host)
 
     for index, host in ipairs(yaml_conf.etcd.host) do
 
