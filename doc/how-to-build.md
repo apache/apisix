@@ -108,8 +108,16 @@ Makefile rules:
 2. Then install `test-gninx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
 3. Clone source code：`git clone https://github.com/openresty/test-nginx.git`;
 4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
-    * Run the test cases: `prove -Itest-nginx/lib -r t`
+    * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
+    * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
+
+##### Troubleshoot
+
+If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+make sure to set openresty as default nginx. And export the path as below.
+
+ * export PATH=/usr/local/openresty/nginx/sbin:$PATH
 
 ## 5. Update Admin API token to protect Apache APISIX
 

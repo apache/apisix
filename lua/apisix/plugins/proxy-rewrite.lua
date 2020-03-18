@@ -31,7 +31,7 @@ local schema = {
             type        = "string",
             minLength   = 1,
             maxLength   = 4096,
-            pattern     = "^/.*",
+            pattern     = [[^\/.*]],
         },
         regex_uri = {
             description = "new uri that substitute from client uri " ..

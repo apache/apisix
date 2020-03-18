@@ -42,6 +42,8 @@ The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspec
 |ssl_verify     |optional       |default is `false`|
 |introspection_endpoint                 |optional       |URL of the token verification endpoint of the identity server|
 |introspection_endpoint_auth_method     |optional       |Authentication method name for token introspection |
+|public_key     |optional       |The public key to verify the token |
+|token_signing_alg_values_expected     |optional       |Algorithm used to sign the token |
 
 ### Token Introspection
 
@@ -85,6 +87,43 @@ The following command can be used to access the new route.
 
 ```bash
 curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorization: Bearer {replace_jwt_token}"
+```
+
+#### Introspecting with public key
+
+You can also provide the public key of the JWT token to verify the token. In case if you have provided a public key and
+a token introspection endpoint, the public key workflow will be executed instead of verifying with the identity server.
+This method can be used if you want to reduce additional network calls and to speedup the process.
+
+The following configurations shows how to add a public key introspection to a route.
+
+```bash
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "uri": "/get",
+  "plugins": {
+    "proxy-rewrite": {
+      "scheme": "https"
+    },
+    "openid-connect": {
+      "client_id": "api_six_client_id",
+      "client_secret": "client_secret_code",
+      "discovery": "full_URL_of_the_discovery_endpoint",
+      "bearer_only": true,
+      "realm": "master",
+      "token_signing_alg_values_expected": "RS256",
+      "public_key" : "-----BEGIN CERTIFICATE-----
+        {public_key}
+        -----END CERTIFICATE-----"
+}
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:443": 1
+    }
+  }
+}'
 ```
 
 ## Troubleshooting

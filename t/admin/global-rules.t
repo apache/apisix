@@ -111,6 +111,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 3: list global rules
 --- config
     location /t {
@@ -154,6 +156,8 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 4: PATCH global rules
 --- config

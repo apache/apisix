@@ -34,7 +34,7 @@ ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
 endif
 endif
 
-LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')luajit
+LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit
 
 ### help:             Show Makefile rules.
 .PHONY: help

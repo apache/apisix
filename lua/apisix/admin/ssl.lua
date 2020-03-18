@@ -123,6 +123,11 @@ function _M.get(id)
         return 500, {error_msg = err}
     end
 
+    -- not return private key for security
+    if res.body and res.body.node and res.body.node.value then
+        res.body.node.value.key = nil
+    end
+
     return res.status, res.body
 end
 

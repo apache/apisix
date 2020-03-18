@@ -28,6 +28,10 @@ local function com_tab(pattern, data, deep)
     for k, v in pairs(pattern) do
         dir_names[deep] = k
 
+        if v == ngx.null then
+            v = nil
+        end
+
         if type(v) == "table" then
             local ok, err = com_tab(v, data[k], deep + 1)
             if not ok then
@@ -135,12 +139,10 @@ function _M.test(uri, method, body, pattern)
     if pattern == nil then
         return res.status, "passed", res.body
     end
-
     local res_data = json.decode(res.body)
     if type(pattern) == "string" then
         pattern = json.decode(pattern)
     end
-
     local ok, err = com_tab(pattern, res_data)
     if not ok then
         return 500, "failed, " .. err, res_data
