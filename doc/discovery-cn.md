@@ -37,6 +37,6 @@ apisix:
 eureka:
   client:
     service_url:
-      default_zone: "https://${usename}:${passowrd}@${eureka_host1}/eureka/,https://${usename}:${passowrd}@${eureka_host2}/eureka/"
+      default_zone: "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/,http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}/eureka/"
 ```
 
