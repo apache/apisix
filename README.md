@@ -132,10 +132,9 @@ Steps to install APISIX:
 sudo apisix start
 ```
 
-2. try limit count plugin
+2. Try the getting started guide
 
-Limit count plugin is a good start to try APISIX,
-you can follow the [documentation of limit count](doc/plugins/limit-count.md).
+The getting-started guide is a good way to learn the basics of APISIX. Follow the [getting started guide](doc/getting-started.md).
 
 Then you can try more [plugins](doc/README.md#plugins).
 
