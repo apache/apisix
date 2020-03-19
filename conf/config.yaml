@@ -113,7 +113,8 @@ nginx_config:                     # config for render the template to genarate n
       - 'unix:'
 
 etcd:
-  host: "http://127.0.0.1:2379"   # etcd address
+  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+    - "http://127.0.0.1:2379"     # multiple etcd address
   prefix: "/apisix"               # apisix configurations prefix
   timeout: 3                      # 3 seconds
 
