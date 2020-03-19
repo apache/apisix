@@ -263,6 +263,7 @@ _EOC_
         }
 
         location / {
+            set \$upstream_mirror_host        '';
             set \$upstream_scheme             'http';
             set \$upstream_host               \$host;
             set \$upstream_upgrade            '';
@@ -306,6 +307,7 @@ _EOC_
             proxy_pass_header  Server;
             proxy_pass_header  Date;
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
+            mirror             /proxy_mirror;
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -340,6 +342,16 @@ _EOC_
             log_by_lua_block {
                 apisix.http_log_phase()
             }
+        }
+
+        location = /proxy_mirror {
+            internal;
+
+            if (\$upstream_mirror_host = "") {
+                return 200;
+            }
+
+            proxy_pass \$upstream_mirror_host\$request_uri;
         }
 _EOC_
 
