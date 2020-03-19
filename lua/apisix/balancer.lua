@@ -230,7 +230,7 @@ local function pick_server(route, ctx)
         key = up_conf.type .. "#route_" .. route.value.id
     end
 
-    if #up_conf.nodes == 0 then
+    if core.table.nkeys(up_conf.nodes) == 0 then
         return nil, nil, "no valid upstream node"
     end
 
