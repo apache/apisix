@@ -27,7 +27,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_host = "127.0.0.1", port = 3000, kafka_topic = "test", key = "key1"})
+            local ok, err = plugin.check_schema({broker_list = {"127.0.0.1" : 3000} , kafka_topic = "test", key = "key1"})
             if not ok then
                 ngx.say(err)
             end
@@ -41,12 +41,12 @@ done
 --- no_error_log
 [error]
 
-=== TEST 2: missing broker host
+=== TEST 2: missing broker list
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({port = 3000, kafka_topic = "test", key= "key1"})
+            local ok, err = plugin.check_schema({kafka_topic = "test", key= "key1"})
             if not ok then
                 ngx.say(err)
             end
@@ -56,7 +56,7 @@ done
 --- request
 GET /t
 --- response_body
-property "broker_host" is required
+property "broker_list" is required
 done
 --- no_error_log
 [error]
@@ -66,7 +66,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_host= "127.0.0.1", port = 2000, timeout = "10",
+            local ok, err = plugin.check_schema({broker_list = {"127.0.0.1" : 3000 }, timeout = "10",
             kafka_topic = "test", key= "key1"})
             if not ok then
                 ngx.say(err)
@@ -92,8 +92,7 @@ done
                  [[{
                         "plugins": {
                             "kafka-logger": {
-                                "broker_host": "127.0.0.1",
-                                "port": 9092,
+                                "broker_list" : {"127.0.0.1" : 9092 },
                                 "kafka_topic" : "test2",
                                 "key" : "key1"
                             }
@@ -111,8 +110,7 @@ done
                         "value": {
                             "plugins": {
                                  "kafka-logger": {
-                                    "broker_host": "127.0.0.1",
-                                    "port": 9092,
+                                    "broker_list" : {"127.0.0.1" : 9092 },
                                     "kafka_topic" : "test2",
                                     "key" : "key1"
                                 }
@@ -162,8 +160,10 @@ hello world
                  [[{
                         "plugins": {
                              "kafka-logger": {
-                                    "broker_host": "312.0.0.1",
-                                    "port": 2000,
+                                    "broker_list" : {
+                                        "127.0.0.1" : 9092,
+                                        "127.0.0.1" : 9095
+                                     },
                                     "kafka_topic" : "test2",
                                     "key" : "key1"
                              }
@@ -181,8 +181,10 @@ hello world
                         "value": {
                             "plugins": {
                                 "kafka-logger": {
-                                    "broker_host": "312.0.0.1",
-                                    "port": 2000,
+                                      "broker_list" : {
+                                        "127.0.0.1" : 9092,
+                                        "127.0.0.1" : 9095
+                                     },
                                     "kafka_topic" : "test2",
                                     "key" : "key1"
                                 }
@@ -213,6 +215,6 @@ hello world
 --- request
 GET /t
 --- error_log
-failed to identify the broker specified
+failed to send data to Kafka topic
 [error]
 --- wait: 0.2

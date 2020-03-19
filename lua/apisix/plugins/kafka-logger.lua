@@ -26,19 +26,18 @@ local timer_at = ngx.timer.at
 local schema = {
     type = "object",
     properties = {
+        broker_list = {type = "object"},
         broker_host = {type = "string"},
-        port = {type = "integer", minimum = 0},
         timeout = {   -- timeout in milliseconds
             type = "integer", minimum = 1, default= 2000
         },
         kafka_topic = {type = "string"},
-        async =  { type = "boolean", default = false },
+        async =  {type = "boolean", default = false},
         key = {type = "string"},
         max_retry = {type = "integer", minimum = 0 , default = 3},
     },
-    required = {"broker_host", "port", "kafka_topic", "key"}
+    required = {"broker_list", "kafka_topic", "key"}
 }
-
 
 local _M = {
     version = 0.1,
@@ -56,9 +55,12 @@ local function log(premature, conf, log_message)
         return
     end
 
-    local broker_list = {
-        { host = conf.broker_host, port = conf.port }
-    }
+    if #conf.broker_list == 0 then
+        core.log.error("failed, specify atleast one broker", err)
+    end
+
+    local broker_list = conf.broker_list
+
     local broker_config = {}
     broker_config["request_timeout"] = conf.timeout
     broker_config["max_retry"] = conf.max_retry
@@ -77,8 +79,7 @@ local function log(premature, conf, log_message)
 
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     if not ok then
-        core.log.error("failed to send data to Kafka topic: broker host[",
-                conf.host, "] broker port[", conf.port, "] ", err)
+        core.log.error("failed to send data to Kafka topic", err)
     end
 
 end
