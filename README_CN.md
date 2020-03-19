@@ -132,9 +132,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **[ARM64](http
 sudo apisix start
 ```
 
-2. 测试限流插件
+2. 入门指南
 
-你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可。
+入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/getting-started.md)的步骤即可。
 
 更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
