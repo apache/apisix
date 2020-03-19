@@ -95,6 +95,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)
     - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
     - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
+    - High availability: support to configure multiple etcd addresses in the same cluster.
     - Dashboard: Built-in dashboard to control APISIX.
     - Version Control: Supports rollbacks of operations.
     - CLI: start\stop\reload APISIX through the command line.
