@@ -16,12 +16,13 @@
 --
 local redis_new = require("resty.redis").new
 local core = require("apisix.core")
+local resty_lock = require("resty.lock")
 local assert = assert
 local setmetatable = setmetatable
 local tostring = tostring
 
 
-local _M = {version = 0.2}
+local _M = {version = 0.3}
 
 
 local mt = {
@@ -70,15 +71,39 @@ function _M.incoming(self, key)
     local remaining
     key = self.plugin_name .. tostring(key)
 
-    local ret, err = red:ttl(key)
+    local ret = red:ttl(key)
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
     if ret < 0 then
-        ret, err = red:set(key, limit -1, "EX", window, "NX")
-        if not ret then
-            return nil, err
+        -- todo: test case
+        local lock, err = resty_lock:new("plugin-limit-count")
+        if not lock then
+            return false, "failed to create lock: " .. err
         end
 
-        return 0, limit -1
+        local elapsed, err = lock:lock(key)
+        if not elapsed then
+            return false, "failed to acquire the lock: " .. err
+        end
+
+        ret = red:ttl(key)
+        if ret < 0 then
+            ok, err = lock:unlock()
+            if not ok then
+                return false, "failed to unlock: " .. err
+            end
+
+            ret, err = red:set(key, limit -1, "EX", window)
+            if not ret then
+                return nil, err
+            end
+
+            return 0, limit -1
+        end
+
+        ok, err = lock:unlock()
+        if not ok then
+            return false, "failed to unlock: " .. err
+        end
     end
 
     remaining, err = red:incrby(key, -1)
