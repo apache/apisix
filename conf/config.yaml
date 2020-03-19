@@ -142,6 +142,7 @@ plugins:                          # plugin list
   - wolf-rbac
   - proxy-cache
   - tcp-logger
+  - proxy-mirror
 
 stream_plugins:
   - mqtt-proxy
