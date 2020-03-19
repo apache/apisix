@@ -18,7 +18,7 @@
 local ngx = ngx
 local ngx_log  = ngx.log
 local require  = require
-local clone_tab = require("table.clone")
+local setmetatable = setmetatable
 
 
 local _M = {version = 0.4}
@@ -44,7 +44,7 @@ local do_nothing = function() end
 
 function _M.new(prefix)
     local m = {version = _M.version}
-    return setmetatable(m, {__index = function(self, cmd)
+    setmetatable(m, {__index = function(self, cmd)
         local log_level = log_levels[cmd]
 
         local method
@@ -59,9 +59,11 @@ function _M.new(prefix)
 
         -- cache the lazily generated method in our
         -- module table
-        _M[cmd] = method
+        m[cmd] = method
         return method
     end})
+
+    return m
 end
 
 
