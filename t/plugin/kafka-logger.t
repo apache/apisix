@@ -27,7 +27,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_list = {"127.0.0.1" : 3000} , kafka_topic = "test", key = "key1"})
+            local ok, err = plugin.check_schema({broker_list = { ["127.0.0.1"] = 3000} , kafka_topic = "test", key = "key1"})
             if not ok then
                 ngx.say(err)
             end
@@ -66,7 +66,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_list = {"127.0.0.1" : 3000 }, timeout = "10",
+            local ok, err = plugin.check_schema({broker_list = { ["127.0.0.1"] = 3000} , timeout = "10",
             kafka_topic = "test", key= "key1"})
             if not ok then
                 ngx.say(err)
