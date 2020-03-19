@@ -71,7 +71,11 @@ local function deepcopy(orig)
         return orig
     end
 
-    local copy = new_tab(0, nkeys(orig))
+    -- If the array-like table contains nil in the middle,
+    -- the len might be smaller than the expected.
+    -- But it doesn't affect the correctness.
+    local len = #orig
+    local copy = new_tab(len, nkeys(orig) - len)
     for orig_key, orig_value in pairs(orig) do
         copy[orig_key] = deepcopy(orig_value)
     end
