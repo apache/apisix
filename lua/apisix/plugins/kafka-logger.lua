@@ -55,10 +55,6 @@ local function log(premature, conf, log_message)
         return
     end
 
-    if #conf.broker_list == 0 then
-        core.log.error("failed, specify atleast one broker")
-    end
-
     local broker_list = conf.broker_list
 
     local broker_config = {}
