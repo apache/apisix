@@ -109,7 +109,63 @@ qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
 
 
 
-=== TEST 5: delete route
+=== TEST 5: set upstream(invalid node host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "httpbin.orgx:80": 0
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6:
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local function test()
+                local code, body = t('/hello', ngx.HTTP_GET)
+
+                ngx.say("status: ", code)
+            end
+            test()
+            test()
+        }
+    }
+--- request
+GET /t
+--- response_body
+status: 500
+status: 500
+--- error_log
+failed to parse domain in upstream: server returned error code
+failed to parse domain in upstream: server returned error code
+
+
+
+=== TEST 7: delete route
 --- config
     location /t {
         content_by_lua_block {
@@ -137,7 +193,7 @@ passed
 
 
 
-=== TEST 6: delete upstream
+=== TEST 8: delete upstream
 --- config
     location /t {
         content_by_lua_block {
