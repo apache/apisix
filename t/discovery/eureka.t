@@ -43,7 +43,7 @@ run_tests();
 __DATA__
 
 
-=== TEST 1: APOLLO
+=== TEST 1: get APISIX-EUREKA info from EUREKA
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:

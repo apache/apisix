@@ -247,7 +247,7 @@ do_install() {
         mv grpc_server_example build-cache/
     fi
 
-    if [ ! -f "build-cache/eureka.jar" ]; then
+    if [ ! -f "build-cache/eureka" ]; then
         wget https://github.com/qiujiayu/apisix-eureka/releases/download/v1.9.8/eureka.tar.gz
         tar -xvf eureka.tar.gz
         mv eureka.jar build-cache/
