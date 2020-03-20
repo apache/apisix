@@ -60,7 +60,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 ```
 
 下面是 Admin API 的接口响应 ：
- 
+
 ```json
 {
     "node": {
@@ -119,7 +119,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
     插件允许您扩展 APISIX 的功能，并实现可以与 HTTP request / response 生命周期接口的任意逻辑 。
     因此，如果您想对 API 进行身份验证，那么您可以使用密钥验证插件来对每个请求强制进行身份验证 。
-    
+
 ### 设置 Upstream
 
 执行以下命令以在 APISIX 中创建id为 50 的上游信息 。 让我们使用 round-robin 机制进行负载平衡 。
