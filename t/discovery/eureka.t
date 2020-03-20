@@ -36,7 +36,8 @@ $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/config_center: etcd/config_center: yaml/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
-$yaml_config =~ s/#  discovery_type:/  discovery_type: eureka #/;
+$yaml_config =~ s/  discovery:/  discovery: eureka #/;
+$yaml_config =~ s/#  discovery:/  discovery: eureka #/;
 run_tests();
 
 __DATA__
@@ -47,14 +48,14 @@ __DATA__
 --- apisix_yaml
 routes:
   -
-    uri: /hello
-    upstream_id: APOLLO
+    uri: /eureka/*
+    upstream_id: APISIX-EUREKA
 
 #END
 --- request
-GET /hello
---- response_body
-hello world
+GET /eureka/apps/APISIX-EUREKA
+--- response_body_like
+.*<name>APISIX-EUREKA</name>.*
 --- error_log
 use config_center: yaml
 --- no_error_log

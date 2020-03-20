@@ -15,15 +15,16 @@
 -- limitations under the License.
 --
 
-local http = require("resty.http")
-local core = require("apisix.core")
-local service = require("apisix.discovery.service")
-local ipairs = ipairs
-local ngx_timer_at = ngx.timer.at
-local ngx_timer_every = ngx.timer.every
-local string_sub = string.sub
-local string_find = string.find
-local log = core.log
+local local_conf         = require("apisix.core.config_local").local_conf()
+local service            = require("apisix.discovery.service")
+local http               = require("resty.http")
+local core               = require("apisix.core")
+local ipairs             = ipairs
+local ngx_timer_at       = ngx.timer.at
+local ngx_timer_every    = ngx.timer.every
+local string_sub         = string.sub
+local string_find        = string.find
+local log                = core.log
 
 local applications
 local useragent = 'ngx_lua-apisix/v' .. core.version.VERSION
@@ -44,25 +45,11 @@ end
 
 
 local function service_info()
-    ---- TODO read config
-    --local config_data, _version = core.config.read_source()
-    --if not config_data then
-    --    log.info("waiting for config")
-    --    return nil
-    --end
-    --
-    --if not config_data.eureka or not config_data.eureka.client or not config_data.eureka.client.service_url then
-    --    log.info("do not set eureka.client.service_url")
-    --    return nil
-    --end
-    ---- TODO support region and zones
-    --local zone_name = "default_zone"
-    --local service_url = config_data.eureka.client.service_url[zone_name]
-    --if not service_url then
-    --    log.info("do not set eureka.client.service_url." .. zone_name)
-    --    return nil
-    --end
-    local service_url = "http://eureka.springcloud.cn/eureka/"
+    if not local_conf.eureka or not local_conf.eureka.urls then
+        log.error("do not set eureka.url")
+        return
+    end
+    local service_url = local_conf.eureka.urls
     local urls = split(service_url, [[,]])
     local basic_auth
     local url = urls[math.random(#urls)]
@@ -183,7 +170,10 @@ end
 
 
 function _M.init_worker()
-    log.info("init_worker eureka")
+    if not local_conf.eureka or not local_conf.eureka.urls then
+        error("do not set eureka.url")
+        return
+    end
     ngx_timer_at(0, get_and_store_full_registry)
     ngx_timer_every(30, get_and_store_full_registry)
 end
