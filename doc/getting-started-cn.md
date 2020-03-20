@@ -37,15 +37,15 @@ $ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ## 前提
 
-- 本指南使用 docker 和 docker compose 来安装 APISIX。 但是， 如果您已经以其他方式安装了 APISIX ，您只需跳到 [第二步](getting-started-cn.md#第二步:-在-APISIX-中设置路由) 。
+- 本指南使用 docker 和 docker compose 来安装 Apache APISIX。 但是， 如果您已经以其他方式安装了 Apache APISIX ，您只需跳到 [第二步](getting-started-cn.md#第二步:-在-APISIX-中设置路由) 。
 - Curl：指南使用 Curl 命令进行 API 测试，但是您也可以使用您选择的任何其他工具（ 例如 Postman ）。
 
 ## 第一步: 安装 APISIX
 
-APISIX 可以多种操作环境中安装。[如何安装文档](how-to-build-cn.md#installation-via-source-release) 显示了多个平台中的安装步骤。
-为了快速入门，让我们基于 docker 容器的安装方式进行安装。启动 APISIX 服务，我们可以参照这个镜像文件[repository](https://github.com/apache/incubator-apisix-docker) 并切换到 example 文件夹下执行如下命令。
+Apache APISIX 可以多种操作环境中安装。[如何安装文档](how-to-build-cn.md#installation-via-source-release) 显示了多个平台中的安装步骤。
+为了快速入门，让我们基于 docker 容器的安装方式进行安装。启动 Apache APISIX 服务，我们可以参照这个镜像文件[repository](https://github.com/apache/incubator-apisix-docker) 并切换到 example 文件夹下执行如下命令。
 
-如下命令会启动 APISIX 服务并默认在 9080 端口（ https 请求是 9443 端口） 提供 admin API 接口服务
+如下命令会启动 Apache APISIX 服务并默认在 9080 端口（ https 请求是 9443 端口） 提供 admin API 接口服务
 
 ```bash
 $ git clone https://github.com/apache/incubator-apisix-docker.git
@@ -73,7 +73,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 }
 ```
 
-## 第二步: 在 APISIX 中创建 Route
+## 第二步: 在 Apache APISIX 中创建 Route
 
 为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个[ web控制台 ](https://github.com/apache/incubator-apisix-dashboard)。
 本指南将会使用到 Admin API 接口。
@@ -136,7 +136,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034
 
 ### 为转发 Upstream  添加 Route 信息
 
-默认情况下，APISIX 通过 HTTP 协议代理请求。如果我们的后端托管在 HTTPS 环境中，让我们使用 proxy-rewrite 插件将方案更改为 HTTPS 。
+默认情况下，Apache APISIX 通过 HTTP 协议代理请求。如果我们的后端托管在 HTTPS 环境中，让我们使用 proxy-rewrite 插件将方案更改为 HTTPS 。
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -154,7 +154,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
 
 ### 访问 Apache APISIX 进行测试
 
-现在让我们调用 APISIX 来测试新配置的路由。
+现在让我们调用 Apache APISIX 来测试新配置的路由。
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
@@ -168,9 +168,9 @@ curl -i -k -X GET "https://127.0.0.1:9443/get?foo1=bar1&foo2=bar2" -H "Host: htt
 
 ## 第三步: 为服务增加鉴权
 
-由于服务对公众开放，我们需要为新创建的 APISIX 服务接口提供适当的保护。执行以下命令来创建一个名为 John 需要 api-key 的用户。
+由于服务对公众开放，我们需要为新创建的 Apache APISIX 服务接口提供适当的保护。执行以下命令来创建一个名为 John 需要 api-key 的用户。
 
-注：APISIX 支持多种认证机制，查看插件文档了解更多。
+注：Apache APISIX 支持多种认证机制，查看插件文档了解更多。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -235,7 +235,7 @@ curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H '
 
 ## Apache APISIX 控制台
 
-到目前为止，已经通过使用 admin API 接口编排对 APISIX 的 API 的调用。然而，APISIX 还提供执行类似操作的一个 web 应用，就是web控制台。
+到目前为止，已经通过使用 admin API 接口编排对 Apache APISIX 的 API 的调用。然而，Apache APISIX 还提供执行类似操作的一个 web 应用，就是web控制台。
 可以在[repository](https://github.com/apache/incubator-apisix)中使用。控制台是直观的，您可以通过它编排同样的路由配置。
 
 ![Dashboard](images/dashboard.png)

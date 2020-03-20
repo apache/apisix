@@ -135,7 +135,7 @@ sudo apisix start
 
 2. 入门指南
 
-入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/getting-started.md)的步骤即可。
+入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/getting-started-cn.md)的步骤即可。
 
 更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
