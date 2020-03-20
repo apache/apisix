@@ -17,9 +17,10 @@
 #
 -->
 
-[Chinese](limit-req-cn.md)
+# [Chinese](limit-req-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -27,6 +28,7 @@
 - [**Disable Plugin**](#disable-plugin)
 
 ## Name
+
 limit request rate using the "leaky bucket" method.
 
 ## Attributes
@@ -66,20 +68,23 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
 
-![](../images/plugin/limit-req-1.png)
+![add route](../images/plugin/limit-req-1.png)
 
 Then add limit-req plugin:
 
-![](../images/plugin/limit-req-2.png)
+![add plugin](../images/plugin/limit-req-2.png)
 
 ## Test Plugin
+
 The above configuration limits the request rate to 1 per second. If it is greater than 1 and less than 3, the delay will be added. If the rate exceeds 3, it will be rejected:
+
 ```shell
 curl -i http://127.0.0.1:9080/index.html
 ```
 
 When you exceed, you will receive a response header with a 503 return code:
-```
+
+```html
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
@@ -98,9 +103,11 @@ Server: APISIX web server
 This means that the limit req plugin is in effect.
 
 ## Disable Plugin
+
 When you want to disable the limit req plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
