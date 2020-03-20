@@ -25,8 +25,7 @@
 
 ```yaml
 apisix:
-  discovery:
-    type: eureka
+  discovery: eureka
 ```
 
 ## Eureka 的配置

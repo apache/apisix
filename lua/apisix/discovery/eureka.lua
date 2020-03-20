@@ -44,27 +44,28 @@ end
 
 
 local function service_info()
-    -- TODO read config
-    local config_data, _version = core.config.read_source()
-    if not config_data then
-        log.info("waiting for config")
-        return nil
-    end
-
-    if not config_data.eureka or not config_data.eureka.client or not config_data.eureka.client.service_url then
-        log.info("do not set eureka.client.service_url")
-        return nil
-    end
-    -- TODO support region and zones
-    local zone_name = "default_zone"
-    local service_url = config_data.eureka.client.service_url[zone_name]
-    if not service_url then
-        log.info("do not set eureka.client.service_url." .. zone_name)
-        return nil
-    end
+    ---- TODO read config
+    --local config_data, _version = core.config.read_source()
+    --if not config_data then
+    --    log.info("waiting for config")
+    --    return nil
+    --end
+    --
+    --if not config_data.eureka or not config_data.eureka.client or not config_data.eureka.client.service_url then
+    --    log.info("do not set eureka.client.service_url")
+    --    return nil
+    --end
+    ---- TODO support region and zones
+    --local zone_name = "default_zone"
+    --local service_url = config_data.eureka.client.service_url[zone_name]
+    --if not service_url then
+    --    log.info("do not set eureka.client.service_url." .. zone_name)
+    --    return nil
+    --end
+    local service_url = "http://eureka.springcloud.cn/eureka/"
     local urls = split(service_url, [[,]])
     local basic_auth
-    local url = math.random(#urls)
+    local url = urls[math.random(#urls)]
     local user_and_password_idx = string_find(url, "@")
     if user_and_password_idx then
         local protocol_header_idx = string_find(url, "://")
@@ -135,11 +136,11 @@ local function get_and_store_full_registry(premature)
     end
 
     local json_str = res.body
-    local response, err = core.json.decode(json_str)
+    local data, err = core.json.decode(json_str)
     if not data then
-        core.log.error("invalid response body: ", json_str, " err: ", err)
+        log.error("invalid response body: ", json_str, " err: ", err)
     end
-    local apps = response.applications.application
+    local apps = data.applications.application
     local up_applications = core.table.new(0, #apps)
     for _, app in ipairs(apps) do
         local _service = up_applications[app.name]
@@ -163,7 +164,7 @@ local function get_and_store_full_registry(premature)
                     port = app_instance.securePort["$"]
                     -- secure = true
                 end
-                _service.nodes[app_instance.ipAddr .. ":" .. port] = 1
+                _service.value.nodes[app_instance.ipAddr .. ":" .. port] = 1
             end
         end
     end
@@ -182,6 +183,7 @@ end
 
 
 function _M.init_worker()
+    log.info("init_worker eureka")
     ngx_timer_at(0, get_and_store_full_registry)
     ngx_timer_every(30, get_and_store_full_registry)
 end

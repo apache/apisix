@@ -235,6 +235,9 @@ local function pick_server(route, ctx)
         if not up_obj then
             up_obj = get_upstream_from_discovery(up_id)
         end
+        if not up_obj then
+            return nil, nil, "failed to find upstream by id: " .. up_id
+        end
         core.log.info("upstream: ", core.json.delay_encode(up_obj))
 
         healthcheck_parent = up_obj
@@ -307,7 +310,7 @@ local function pick_server(route, ctx)
     local ip, port, err = core.utils.parse_addr(server)
     ctx.balancer_ip = ip
     ctx.balancer_port = port
-
+    core.log.info("proxy to ", ip, ":", port)
     return ip, port, err
 end
 -- for test
