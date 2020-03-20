@@ -43,9 +43,9 @@ $ curl --location --request GET "https://httpbin.org/get?foo1=bar1&foo2=bar2"
 ## 第一步: 安装 APISIX
 
 APISIX 可以多种操作环境中安装。[如何安装文档](how-to-build-cn.md#installation-via-source-release) 显示了多个平台中的安装步骤。
-为了快速入门，让我们基于 docker 容器的安装方式进行安装。为了启动 APISIX 服务，我们可以参照这个镜像文件[repository](https://github.com/apache/incubator-apisix-docker) 并切换到 example 文件夹下执行如下命令。
+为了快速入门，让我们基于 docker 容器的安装方式进行安装。启动 APISIX 服务，我们可以参照这个镜像文件[repository](https://github.com/apache/incubator-apisix-docker) 并切换到 example 文件夹下执行如下命令。
 
-如下命令会启动 APISIX 服务并默认在 9080端口 （https请求是 9443 端口） 提供 admin API 接口服务
+如下命令会启动 APISIX 服务并默认在 9080 端口（ https 请求是 9443 端口） 提供 admin API 接口服务
 
 ```bash
 $ git clone https://github.com/apache/incubator-apisix-docker.git
@@ -79,11 +79,11 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 本指南将会使用到 Admin API 接口。
 
 一个微服务可以通过 APISIX 的路由、服务、上游和插件等多个实体之间的关系进行配置。
-路由与客户端请求匹配，并指定它们到达 APISIX 后如何发送到上游（后端 API 服务）。
-服务为上游服务提供了抽象。因此，您可以创建单个服务并在多个路由中引用它。
-查看架构文档以获取更多信息。
+Route（路由）与客户端请求匹配，并指定它们到达 APISIX 后如何发送到 Upstream（上游，后端 API 服务）。
+Service（服务）为上游服务提供了抽象。因此，您可以创建单个 Service 并在多个 Route 中引用它。
+查看架构文档可以获取更多信息。
 
-从技术上讲，所有这些信息（upstream、service、plugins）都可以包含在路由配置中。路由是由三个主要部分组成的。
+从技术上讲，所有这些信息（upstream、service、plugins）都可以包含在路由配置中。 Route 路由是由这三个主要部分组成的。
 
 - 路由匹配规则：
 
@@ -111,7 +111,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
     Upstream 是一个虚拟主机抽象，它根据配置规则在给定的一组服务节点上执行负载平衡。
     因此，单个上游配置可以由提供相同服务的多个服务器组成。每个节点将包括一个 key（地址/ip:port）和一个 value （节点的权重）。
-    服务可以通过循环或一致哈希（cHash）机制进行负载平衡。
+    服务可以通过轮询或一致哈希（cHash）机制进行负载平衡。
 
     配置路由时，可以直接设置 Upstream 信息，也可以使用服务抽象来引用 Upstream 信息。
 
@@ -122,7 +122,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 ### 设置 Upstream
 
-执行以下命令在 APISIX 中创建id为 50 的上游信息，并使用 round-robin 机制进行负载平衡。
+执行以下命令在 APISIX 中创建 id 为 50 的上游信息，并使用 round-robin 机制进行负载平衡。
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -134,7 +134,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034
 }'
 ```
 
-### 为转发Upstream 添加Route信息
+### 为转发 Upstream  添加 Route 信息
 
 默认情况下，APISIX 通过 HTTP 协议代理请求。如果我们的后端托管在 HTTPS 环境中，让我们使用 proxy-rewrite 插件将方案更改为 HTTPS 。
 
@@ -152,7 +152,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-### 访问 APISIX 进行测试
+### 访问 Apache APISIX 进行测试
 
 现在让我们调用 APISIX 来测试新配置的路由。
 
@@ -184,7 +184,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-现在，让我们将服务配置为包含密钥验证插件。
+现在，让我们将服务配置为包含 KEY 验证插件。
 
 ```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -210,7 +210,6 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: supe
 
 ## 为 route 添加前缀
 
-
 现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用代理来完成。
 
 ```bash
@@ -234,7 +233,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H 'apikey: superSecretAPIKey'
 ```
 
-## APISIX 控制台
+## Apache APISIX 控制台
 
 到目前为止，已经通过使用 admin API 接口编排对 APISIX 的 API 的调用。然而，APISIX 还提供执行类似操作的一个 web 应用，就是web控制台。
 可以在[repository](https://github.com/apache/incubator-apisix)中使用。控制台是直观的，您可以通过它编排同样的路由配置。
