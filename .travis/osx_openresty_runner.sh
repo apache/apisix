@@ -43,10 +43,13 @@ do_install() {
     git clone https://github.com/iresty/test-nginx.git test-nginx
 
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
-	chmod a+x utils/lj-releng
+    chmod a+x utils/lj-releng
 
     wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-darwin-amd64.tar.gz
     tar -xvf grpc_server_example-darwin-amd64.tar.gz
+
+    wget https://github.com/qiujiayu/apisix-eureka/releases/download/v1.9.8/eureka.tar.gz
+    tar -xvf eureka.tar.gz
 
     brew install grpcurl
 }
@@ -59,6 +62,7 @@ script() {
     sleep 1
 
     ./grpc_server_example &
+    java -jar ./eureka.jar &
 
     make help
     make init
