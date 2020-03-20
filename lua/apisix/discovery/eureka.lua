@@ -128,34 +128,34 @@ local function get_and_store_full_registry(premature)
         log.error("invalid response body: ", json_str, " err: ", err)
     end
     local apps = data.applications.application
-    local up_applications = core.table.new(0, #apps)
+    local up_apps = core.table.new(0, #apps)
     for _, app in ipairs(apps) do
-        local _service = up_applications[app.name]
-        if not _service then
-            _service = service:new(#app.instance)
-            up_applications[app.name] = _service
+        local app_service = up_apps[app.name]
+        if not app_service then
+            app_service = service:new(#app.instance)
+            up_apps[app.name] = app_service
         end
-        for _, app_instance in ipairs(app.instance) do
-            local status = app_instance.status
-            local overridden_status = app_instance.overriddenstatus
+        for _, instance in ipairs(app.instance) do
+            local status = instance.status
+            local overridden_status = instance.overriddenstatus
             if overridden_status and "UNKNOWN" ~= overridden_status then
                 status = overridden_status
             end
             if status == "UP" then
                 local port
-                if tostring(app_instance.port["@enabled"]) == "true" and app_instance.port["$"] then
-                    port = app_instance.port["$"]
+                if tostring(instance.port["@enabled"]) == "true" and instance.port["$"] then
+                    port = instance.port["$"]
                     -- secure = false
                 end
-                if tostring(app_instance.securePort["@enabled"]) == "true" and app_instance.securePort["$"] then
-                    port = app_instance.securePort["$"]
+                if tostring(instance.securePort["@enabled"]) == "true" and instance.securePort["$"] then
+                    port = instance.securePort["$"]
                     -- secure = true
                 end
-                _service.value.nodes[app_instance.ipAddr .. ":" .. port] = 1
+                app_service.value.nodes[instance.ipAddr .. ":" .. port] = 1
             end
         end
     end
-    applications = up_applications
+    applications = up_apps
 end
 
 
