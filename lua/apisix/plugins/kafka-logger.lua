@@ -30,7 +30,7 @@ local schema = {
     type = "object",
     properties = {
         broker_list = {
-            type = "object",
+            type = "object"
         },
         timeout = {   -- timeout in milliseconds
             type = "integer", minimum = 1, default= 2000
