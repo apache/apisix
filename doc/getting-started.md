@@ -17,6 +17,7 @@
 #
 -->
 
+[Chinese](getting-started-cn.md)
 # Quick Start Guide
 
 The goal of this guide is to get started with APISIX and to configure a secured public API with APISIX.
