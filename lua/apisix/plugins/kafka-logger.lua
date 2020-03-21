@@ -17,6 +17,9 @@
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
+local pairs    = pairs
+local type     = type
+local table    = table
 
 local plugin_name = "kafka-logger"
 local ngx = ngx
@@ -26,8 +29,9 @@ local timer_at = ngx.timer.at
 local schema = {
     type = "object",
     properties = {
-        broker_list = {type = "object"},
-        broker_host = {type = "string"},
+        broker_list = {
+            type = "object",
+        },
         timeout = {   -- timeout in milliseconds
             type = "integer", minimum = 1, default= 2000
         },
@@ -55,9 +59,24 @@ local function log(premature, conf, log_message)
         return
     end
 
-    local broker_list = conf.broker_list
+    if core.table.nkeys(conf.broker_list) == 0 then
+        core.log.error("failed to identify the broker specified")
+    end
 
+    local broker_list = {}
     local broker_config = {}
+
+    for host, port  in pairs(conf.broker_list) do
+        if type(host) == 'string'
+                and type(port) == 'number' then
+
+            local broker = {
+                host = host, port = port
+            }
+            table.insert(broker_list,broker)
+        end
+    end
+
     broker_config["request_timeout"] = conf.timeout
     broker_config["max_retry"] = conf.max_retry
 

@@ -22,15 +22,23 @@ no_root_location();
 run_tests;
 
 __DATA__
+
 === TEST 1: sanity
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_list = { ["127.0.0.1"] = 3000} , kafka_topic = "test", key = "key1"})
+            local ok, err = plugin.check_schema({
+                 kafka_topic = "test",
+                 key = "key1",
+                 broker_list = {
+                    ["127.0.0.1"] = 3
+                 }
+            })
             if not ok then
                 ngx.say(err)
             end
+
             ngx.say("done")
         }
     }
@@ -40,6 +48,7 @@ GET /t
 done
 --- no_error_log
 [error]
+
 
 === TEST 2: missing broker list
 --- config
@@ -66,8 +75,14 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.kafka-logger")
-            local ok, err = plugin.check_schema({broker_list = { ["127.0.0.1"] = 3000} , timeout = "10",
-            kafka_topic = "test", key= "key1"})
+            local ok, err = plugin.check_schema({
+                broker_list = {
+                    ["127.0.0.1"] = 3000
+                },
+                timeout = "10",
+                kafka_topic ="test",
+                key= "key1"
+            })
             if not ok then
                 ngx.say(err)
             end
@@ -92,7 +107,10 @@ done
                  [[{
                         "plugins": {
                             "kafka-logger": {
-                                "broker_list" : {"127.0.0.1" : 9092 },
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
                                 "kafka_topic" : "test2",
                                 "key" : "key1"
                             }
@@ -110,7 +128,10 @@ done
                         "value": {
                             "plugins": {
                                  "kafka-logger": {
-                                    "broker_list" : {"127.0.0.1" : 9092 },
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.1":9092
+                                      },
                                     "kafka_topic" : "test2",
                                     "key" : "key1"
                                 }
@@ -160,10 +181,11 @@ hello world
                  [[{
                         "plugins": {
                              "kafka-logger": {
-                                    "broker_list" : {
-                                        "127.0.0.1" : 9092,
-                                        "127.0.0.1" : 9095
-                                     },
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.1":9092,
+                                        "127.0.0.1":9093
+                                      },
                                     "kafka_topic" : "test2",
                                     "key" : "key1"
                              }
@@ -181,10 +203,11 @@ hello world
                         "value": {
                             "plugins": {
                                 "kafka-logger": {
-                                      "broker_list" : {
-                                        "127.0.0.1" : 9092,
-                                        "127.0.0.1" : 9095
-                                     },
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.1":9092,
+                                        "127.0.0.1":9093
+                                      },
                                     "kafka_topic" : "test2",
                                     "key" : "key1"
                                 }
