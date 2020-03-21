@@ -2,10 +2,6 @@ dist: xenial
 sudo: required
 
 matrix:
-  fast_finish: true
-  allow_failures:
-    - os: osx
-
   include:
     - os: linux
       services:
@@ -13,7 +9,6 @@ matrix:
       env: OSNAME=linux_openresty
     - os: osx
       env: OSNAME=osx_openresty
-      if: type IN (push)
       cache:
         directories:
           - $HOME/Library/Caches/Homebrew
