@@ -17,12 +17,11 @@
 #
 -->
 
-[Chinese](fault-injection-cn.md)
+# [Chinese](fault-injection-cn.md)
 
 ## Name
 
 Fault injection plugin, this plugin can be used with other plugins and will be executed before other plugins.  The `abort` attribute will directly return the user-specified http code to the client and terminate the subsequent plugins. The `delay` attribute will delay a request and execute subsequent plugins.
-
 
 ## Attributes
 
@@ -36,7 +35,7 @@ Note: `abort` and `delay` must have at least one.
 
 ## How To Enable
 
-#### Enable the plugin
+### Enable the plugin
 
 1: enable the fault-injection plugin for a specific route and specify the abort attribute：
 
@@ -117,7 +116,6 @@ real    0m3.034s
 user    0m0.007s
 sys     0m0.010s
 ```
-
 
 ## Disable Plugin
 
