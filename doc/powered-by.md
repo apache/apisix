@@ -28,7 +28,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.chaolian360.com/" rel="nofollow">chaolian 超链云商</a>
 1. <a href="http://www.cunw.com.cn/" rel="nofollow">cunw 湖南新云网</a>
 1. <a href="https://www.dasouche.com/" rel="nofollow">dasouche 大搜车</a>
-1. <a href="https://www.dataoke.com/" rel="nofollow">. dataoke 大淘客</a>
+1. <a href="https://www.dataoke.com/" rel="nofollow">dataoke 大淘客</a>
 1. <a href="https://www.ehomepay.com.cn/" rel="nofollow">ehomepay 理房通</a>
 1. <a href="https://fansup.mobi/" rel="nofollow">fansup</a>
 1. <a href="http://haieruplus.com/" rel="nofollow">haieruplus 海尔优家</a>
