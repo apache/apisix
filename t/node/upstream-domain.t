@@ -162,6 +162,7 @@ status: 500
 --- error_log
 failed to parse domain in upstream: server returned error code
 failed to parse domain in upstream: server returned error code
+--- timeout: 10
 
 
 
