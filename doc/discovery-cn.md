@@ -28,15 +28,18 @@ apisix:
   discovery: eureka
 ```
 
-## Eureka 的配置
+## 注册中心配置
+
+### Eureka 的配置
 
 在 `conf/config.yaml` 增加如下配置：
 
 ```yaml
 eureka:
   urls: 
-    - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/"
+    - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/" 
     - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}/eureka/"
+
 ```
 
 通过 `eureka.urls` 配置 eureka 的服务器地址。
