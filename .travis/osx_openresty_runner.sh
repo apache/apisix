@@ -62,7 +62,7 @@ script() {
     sleep 1
 
     ./grpc_server_example &
-    java -jar ./eureka.jar &
+    java --add-modules java.xml.bind -jar ./eureka.jar &
 
     make help
     make init
