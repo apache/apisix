@@ -213,8 +213,10 @@ local function get_upstream_from_config(up_id)
     if not up_obj then
         return nil, "failed to find upstream by id: " .. up_id
     end
+
     return up_obj
 end
+
 
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))

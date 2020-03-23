@@ -34,37 +34,29 @@ local _M = {
 }
 
 
-local function split(self, sep)
-    local sep, fields = sep or ":", {}
-    local pattern = string.format("([^%s]+)", sep)
-    self:gsub(pattern, function(c)
-        fields[#fields + 1] = c
-    end)
-    return fields
-end
-
-
 local function service_info()
     if not local_conf.eureka or not local_conf.eureka.urls then
-        log.error("do not set eureka.url")
+        log.error("do not set eureka.urls")
         return
     end
-    local service_url = local_conf.eureka.urls
-    local urls = split(service_url, [[,]])
+
+    local urls = local_conf.eureka.urls
     local basic_auth
     local url = urls[math.random(#urls)]
-    local user_and_password_idx = string_find(url, "@")
+    local user_and_password_idx = string_find(url, "@", 1, true)
     if user_and_password_idx then
-        local protocol_header_idx = string_find(url, "://")
+        local protocol_header_idx = string_find(url, "://", 1, true)
         local protocol_header = string_sub(url, 1, protocol_header_idx + 2)
         local user_and_password = string_sub(url, protocol_header_idx + 3, user_and_password_idx - 1)
         local other = string_sub(url, user_and_password_idx + 1)
         url = protocol_header .. other
         basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
     end
+
     if string_sub(url, #url) ~= "/" then
         url = url .. "/"
     end
+
     return url, basic_auth
 end
 
@@ -91,7 +83,10 @@ local function request(request_uri, basic_auth, method, path, query, body)
     end
 
     local httpc = http.new()
-    httpc:set_timeouts(2000, 2000, 5000)
+    local connect_timeout = 2000
+    local send_timeout = 2000
+    local read_timeout = 5000
+    httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
     return httpc:request_uri(url, {
         version = 1.1,
         method = method,
@@ -103,14 +98,16 @@ local function request(request_uri, basic_auth, method, path, query, body)
 end
 
 
-local function get_and_store_full_registry(premature)
+local function fetch_full_registry(premature)
     if premature then
         return
     end
+
     local request_uri, basic_auth = service_info()
     if not request_uri then
         return
     end
+
     local res, err = request(request_uri, basic_auth, "GET", "apps", nil, nil)
     if not res then
         log.error("failed to fetch registry", err)
@@ -151,6 +148,7 @@ local function get_and_store_full_registry(premature)
                     port = instance.securePort["$"]
                     -- secure = true
                 end
+                -- TODO use metadata
                 app_service.value.nodes[instance.ipAddr .. ":" .. port] = 1
             end
         end
@@ -171,11 +169,11 @@ end
 
 function _M.init_worker()
     if not local_conf.eureka or not local_conf.eureka.urls then
-        error("do not set eureka.url")
+        error("do not set eureka.urls")
         return
     end
-    ngx_timer_at(0, get_and_store_full_registry)
-    ngx_timer_every(30, get_and_store_full_registry)
+    ngx_timer_at(0, fetch_full_registry)
+    ngx_timer_every(30, fetch_full_registry)
 end
 
 return _M

@@ -34,16 +34,19 @@ apisix:
 
 ```yaml
 eureka:
-  urls: http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/,http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}/eureka/
+  urls: 
+  - http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/
+  - http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}/eureka/
 ```
 
-`eureka.urls` 是 eureka 的服务器地址，如果是多个服务器的话，使用逗号隔开。
+通过 `eureka.urls` 配置 eureka 的服务器地址。
 
 如果 eureka 的地址是 `http://127.0.0.1:8761/` ，并且不需要用户名和密码验证的话，配置如下：
 
 ```yaml
 eureka:
-  urls: http://127.0.0.1:8761/eureka/
+  urls: 
+  - http://127.0.0.1:8761/eureka/
 ```
 
 ## 路由配置

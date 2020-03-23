@@ -149,4 +149,5 @@ stream_plugins:
   - mqtt-proxy
 
 eureka:
-  urls: http://127.0.0.1:8761/eureka/
+  urls:
+  - http://127.0.0.1:8761/eureka/
