@@ -60,6 +60,7 @@ Plugins
 * [fault-injection](plugins/fault-injection.md): The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
 * [proxy-cache](plugins/proxy-cache.md): Provides the ability to cache upstream response data.
 * [tcp-logger](plugins/tcp-logger.md): Log requests to TCP servers
+* [udp-logger](plugins/udp-logger.md): Log requests to UDP servers
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 
 Deploy to the Cloud
