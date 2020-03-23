@@ -58,9 +58,8 @@ local schema = {
 }
 
 local _M = {
-    version = 1.0,
-    -- we should set cors plugin at first to handle preflight request
-    priority = 20000,
+    version = 0.1,
+    priority = 4000,
     type = 'auth',
     name = plugin_name,
     schema = schema,
