@@ -49,7 +49,9 @@ __DATA__
 routes:
   -
     uri: /eureka/*
-    upstream_id: APISIX-EUREKA
+    upstream:
+      service_name: APISIX-EUREKA
+      type: roundrobin
 
 #END
 --- request

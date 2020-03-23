@@ -434,7 +434,7 @@ GET /t
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "service_id": "invalid_id@123",
+                        "service_id": "invalid_id",
                         "uri": "/index.html"
                 }]]
                 )
@@ -569,7 +569,7 @@ GET /t
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "upstream_id": "invalid@123",
+                    "upstream_id": "invalid",
                     "uri": "/index.html"
                 }]]
                 )

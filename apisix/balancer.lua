@@ -16,10 +16,10 @@
 --
 local healthcheck = require("resty.healthcheck")
 local roundrobin  = require("resty.roundrobin")
+local discovery   = require("apisix.discovery.init").discovery
 local resty_chash = require("resty.chash")
 local balancer    = require("ngx.balancer")
 local core        = require("apisix.core")
-local discovery   = require("apisix.discovery.init").discovery
 local error       = error
 local str_char    = string.char
 local str_gsub    = string.gsub
@@ -195,29 +195,6 @@ local function create_server_picker(upstream, checker)
 end
 
 
-local function get_upstream_from_discovery(upstream_id)
-    if not discovery then
-        return nil
-    end
-
-    return discovery.get_service(upstream_id)
-end
-
-
-local function get_upstream_from_config(up_id)
-    if not upstreams_etcd then
-        return nil, "need to create a etcd instance for fetching upstream information"
-    end
-
-    local up_obj = upstreams_etcd:get(tostring(up_id))
-    if not up_obj then
-        return nil, "failed to find upstream by id: " .. up_id
-    end
-
-    return up_obj
-end
-
-
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
@@ -233,10 +210,12 @@ local function pick_server(route, ctx)
     local key
 
     if up_id then
-        local up_obj = get_upstream_from_config(up_id)
-        if not up_obj then
-            up_obj = get_upstream_from_discovery(up_id)
+        if not upstreams_etcd then
+            return nil, nil, "need to create a etcd instance for fetching "
+                             .. "upstream information"
         end
+
+        local up_obj = upstreams_etcd:get(tostring(up_id))
         if not up_obj then
             return nil, nil, "failed to find upstream by id: " .. up_id
         end
@@ -246,9 +225,17 @@ local function pick_server(route, ctx)
         up_conf = up_obj.dns_value or up_obj.value
         version = up_obj.modifiedIndex
         key = up_conf.type .. "#upstream_" .. up_id
+
     else
         version = ctx.conf_version
         key = up_conf.type .. "#route_" .. route.value.id
+    end
+
+    if up_conf.service_name then
+        if not discovery then
+            return nil, nil, "discovery is uninitialized"
+        end
+        up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
 
     if core.table.nkeys(up_conf.nodes) == 0 then

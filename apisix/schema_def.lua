@@ -30,7 +30,7 @@ local id_schema = {
     anyOf = {
         {
             type = "string", minLength = 1, maxLength = 32,
-            pattern = [[^[0-9a-zA-Z-_]+$]]
+            pattern = [[^[0-9]+$]]
         },
         {type = "integer", minimum = 1}
     }
@@ -278,9 +278,13 @@ local upstream_schema = {
             type        = "boolean"
         },
         desc = {type = "string", maxLength = 256},
+        service_name = {type = "string", maxLength = 50},
         id = id_schema
     },
-    required = {"nodes", "type"},
+    anyOf = {
+        {required = {"nodes", "type"}},
+        {required = {"service_name", "type"}},
+    },
     additionalProperties = false,
 }
 

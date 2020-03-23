@@ -53,13 +53,15 @@ eureka:
 
 ## 路由配置
 
-如果希望 uri 为 "/a/*" 的请求路由到注册中心名为 "a_service" 的服务上时：
+如果希望 uri 为 "/a/*" 的请求路由到注册中心名为 "a_service" 的服务上时，通过 `upstream.service_name` 与之关联：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/a/*",
-    "upstream_id": "a_service"
+    "upstream": 
+        "service_name": "a_service",
+        "type": "roundrobin"
 }'
 
 HTTP/1.1 201 Created
@@ -69,7 +71,5 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 Server: APISIX web server
 
-{"node":{"value":{"uri":"\/a\/*","upstream_id": "a_service"},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
+{"node":{"value":{"uri":"\/a\/*","upstream": {"service_name": "a_service", "type": "roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
-
-同理，将 Service 中的 `upstream_id` 指向服务名，也是可以达到相同的效果。

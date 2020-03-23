@@ -16,7 +16,6 @@
 --
 
 local local_conf         = require("apisix.core.config_local").local_conf()
-local service            = require("apisix.discovery.service")
 local http               = require("resty.http")
 local core               = require("apisix.core")
 local ipairs             = ipairs
@@ -127,10 +126,10 @@ local function fetch_full_registry(premature)
     local apps = data.applications.application
     local up_apps = core.table.new(0, #apps)
     for _, app in ipairs(apps) do
-        local app_service = up_apps[app.name]
-        if not app_service then
-            app_service = service:new(#app.instance)
-            up_apps[app.name] = app_service
+        local nodes = up_apps[app.name]
+        if not nodes then
+            nodes = core.table.new(#app.instance, 0)
+            up_apps[app.name] = nodes
         end
         for _, instance in ipairs(app.instance) do
             local status = instance.status
@@ -149,7 +148,7 @@ local function fetch_full_registry(premature)
                     -- secure = true
                 end
                 -- TODO use metadata
-                app_service.value.nodes[instance.ipAddr .. ":" .. port] = 1
+                nodes[instance.ipAddr .. ":" .. port] = 1
             end
         end
     end
@@ -157,13 +156,13 @@ local function fetch_full_registry(premature)
 end
 
 
-function _M.get_service(up_id)
+function _M.nodes(service_name)
     if not applications then
-        log.error("failed to fetch instances for : ", up_id)
+        log.error("failed to fetch instances for : ", service_name)
         return nil
     end
 
-    return applications[up_id]
+    return applications[service_name]
 end
 
 
