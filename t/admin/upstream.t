@@ -374,7 +374,7 @@ GET /t
             local code, body = t('/apisix/admin/upstreams',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": "invalid_id",
+                    "id": "invalid_id@123",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
