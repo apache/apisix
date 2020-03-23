@@ -57,7 +57,6 @@ local schema = {
     }
 }
 
-
 local _M = {
     version = 1.0,
     -- we should set cors plugin at first to handle preflight request
@@ -66,7 +65,6 @@ local _M = {
     name = plugin_name,
     schema = schema,
 }
-
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -86,7 +84,6 @@ function _M.check_schema(conf)
         conf.allow_headers = "*"
     end
 
-
     if not conf.expose_headers then
         conf.expose_headers = "*"
     end
@@ -97,7 +94,7 @@ function _M.check_schema(conf)
 
     if not conf.allow_credential then
         conf.allow_credential = false
-    end 
+    end
 
     return true
 end
@@ -123,7 +120,7 @@ function _M.header_filter(conf, ctx)
     if conf.allow_methods == "**" then
         conf.allow_methods = "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE"
     end
-    
+
     ngx.header["Access-Control-Allow-Origin"] = conf.allow_origins
     ngx.header["Access-Control-Allow-Methods"] = conf.allow_methods
     ngx.header["Access-Control-Allow-Headers"] = conf.allow_headers
