@@ -14,10 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core     = require("apisix.core")
-local ngx      = ngx
+local core        = require("apisix.core")
+local ngx         = ngx
 local plugin_name = "cors"
-
+local str_find    = string.find
+local str_gmatch  = string.gmatch
 
 local schema = {
     type = "object",
@@ -97,9 +98,9 @@ function _M.header_filter(conf, ctx)
     if conf.allow_origins == "**" then
         conf.allow_origins = ngx.var.http_origin or '*'
     end
-    if string.find(conf.allow_origins, ",") then
+    if str_find(conf.allow_origins, ",") then
         local finded = false
-        for origin in string.gmatch(conf.allow_origins, "([^,]+)") do
+        for origin in str_gmatch(conf.allow_origins, "([^,]+)") do
             if origin == ngx.var.http_origin then
                 conf.allow_origins = origin
                 finded = true
