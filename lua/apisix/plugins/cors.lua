@@ -24,31 +24,36 @@ local schema = {
     type = "object",
     properties = {
         allow_origins = {
-            description = "you can use '*' to allow all origins when no credentials and '**', "..
-                        "to allow forcefully(it will bring some security risks, be carefully), "..
-                        "multiple origin use ',' to split. default: *.",
+            description =
+                "you can use '*' to allow all origins when no credentials,"..
+                "'**' to allow forcefully(it will bring some security risks, be carefully),"..
+                "multiple origin use ',' to split. default: *.",
             type = "string"
         },
         allow_methods = {
-            description = "you can use '*' to allow all methods when no credentials and '**', "..
-            "to allow forcefully(it will bring some security risks, be carefully), "..
-            "multiple method use ',' to split. default: *.",
+            description =
+                "you can use '*' to allow all methods when no credentials and '**',"..
+                "'**' to allow forcefully(it will bring some security risks, be carefully),"..
+                "multiple method use ',' to split. default: *.",
             type = "string"
         },
         allow_headers = {
-            description = "you can use '*' to allow all header when no credentials, "..
-                        "multiple header use ',' to split. default: *.",
+            description =
+                "you can use '*' to allow all header when no credentials,"..
+                "multiple header use ',' to split. default: *.",
             type = "string"
         },
         expose_headers = {
-            description = "you can use '*' to expose all header when no credentials, "..
-                        "multiple header use ',' to split. default: *.",
+            description =
+                "you can use '*' to expose all header when no credentials,"..
+                "multiple header use ',' to split. default: *.",
             type = "string"
         },
         max_age = {
-            description = "maximum number of seconds the results can be cached."..
-                        "-1 mean no cached,the max value is depend on browser,"..
-                        "more detail plz check MDN. default: 5.",
+            description =
+                "maximum number of seconds the results can be cached."..
+                "-1 mean no cached,the max value is depend on browser,"..
+                "more detail plz check MDN. default: 5.",
             type = "integer"
         },
         allow_credential = {
