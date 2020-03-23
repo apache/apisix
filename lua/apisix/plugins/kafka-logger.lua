@@ -88,7 +88,6 @@ local function log(premature, conf, log_message)
     local prod, err = producer:new(broker_list,broker_config)
     if err then
         core.log.error("failed to identify the broker specified", err)
-
         return
     end
 
@@ -96,7 +95,6 @@ local function log(premature, conf, log_message)
     if not ok then
         core.log.error("failed to send data to Kafka topic", err)
     end
-
 end
 
 function _M.log(conf)

@@ -22,6 +22,7 @@ no_root_location();
 run_tests;
 
 __DATA__
+
 === TEST 1: sanity
 --- config
     location /t {
@@ -47,6 +48,8 @@ done
 --- no_error_log
 [error]
 
+
+
 === TEST 2: missing broker list
 --- config
     location /t {
@@ -66,6 +69,8 @@ property "broker_list" is required
 done
 --- no_error_log
 [error]
+
+
 
 === TEST 3: wrong type of string
 --- config
@@ -93,6 +98,8 @@ property "timeout" validation failed: wrong type: expected integer, got string
 done
 --- no_error_log
 [error]
+
+
 
 === TEST 4: add plugin
 --- config
@@ -159,6 +166,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 5: access
 --- request
 GET /hello
@@ -167,6 +176,8 @@ hello world
 --- no_error_log
 [error]
 --- wait: 0.2
+
+
 
 === TEST 6: error log
 --- config
