@@ -61,4 +61,6 @@ Reference document
 * [fault-injection](plugins/fault-injection-cn.md)：故障注入，可以返回指定的响应体、响应码和响应时间，从而提供了不同的失败场景下处理的能力，例如服务失败、服务过载、服务高延时等。
 * [proxy-cache](plugins/proxy-cache-cn.md)：代理缓存插件提供缓存后端响应数据的能力。
 * [proxy-mirror](plugins/proxy-mirror-cn.md)：代理镜像插件提供镜像客户端请求的能力。
+* [udp-logger](plugins/udp-logger.md): 将请求记录到UDP服务器
+* [tcp-logger](plugins/tcp-logger.md): 将请求记录到TCP服务器
 
