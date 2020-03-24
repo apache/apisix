@@ -196,7 +196,7 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
 
-    resolver $dns_addrs_str ipv6=off;
+    resolver $dns_addrs_str;
     resolver_timeout 5;
 
     underscores_in_headers on;
