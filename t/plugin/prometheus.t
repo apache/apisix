@@ -491,7 +491,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/not_found"
+                        "uri": "/hello3"
                 }]]
             )
             ngx.say(body)
@@ -509,7 +509,7 @@ passed
 
 === TEST 23: request from client
 --- pipelined_requests eval
-["GET /not_found", "GET /not_found"]
+["GET /hello3", "GET /hello3"]
 --- error_code eval
 [404, 404]
 --- no_error_log
