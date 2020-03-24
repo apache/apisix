@@ -28,11 +28,13 @@ apisix:
   discovery: eureka
 ```
 
+现已经支持 `Eureka` 等注册中心。
+
 ## 注册中心配置
 
 ### Eureka 的配置
 
-在 `conf/config.yaml` 增加如下配置：
+在 `conf/config.yaml` 增加如下格式的配置：
 
 ```yaml
 eureka:
@@ -53,7 +55,7 @@ eureka:
 
 ## 路由配置
 
-如果希望 uri 为 "/a/*" 的请求路由到注册中心名为 "a_service" 的服务上时，通过 `upstream.service_name` 与之关联：
+APISIX是通过 `upstream.service_name` 与注册中心的服务名进行关联。下面是 uri 为 "/a/*" 的请求路由到注册中心名为 "a_service" 的服务上例子：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -73,3 +75,5 @@ Server: APISIX web server
 
 {"node":{"value":{"uri":"\/a\/*","upstream": {"service_name": "a_service", "type": "roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
+
+注意：配置 `upstream.service_name` 后 `upstream.nodes` 将不再生效，会使用从注册中心获取到的 `nodes` 替换。
