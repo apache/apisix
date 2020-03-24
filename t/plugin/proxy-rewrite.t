@@ -99,7 +99,7 @@ done
                         "proxy-rewrite": {
                             "uri": "/test/add",
                             "scheme": "https",
-                            "host": "apisix.iresty.com",
+                            "host": "apisix.iresty.com"
                         }
                     },
                     "upstream": {
@@ -139,7 +139,7 @@ passed
                         "proxy-rewrite": {
                             "uri": "/test/update",
                             "scheme": "http",
-                            "host": "apisix.iresty.com",
+                            "host": "apisix.iresty.com"
                         }
                     },
                     "upstream": {
@@ -484,7 +484,7 @@ x-real-ip: 127.0.0.1
                  [[{
                         "plugins": {
                             "proxy-rewrite": {
-                                "uri": "/plugin_proxy_rewrite_args",
+                                "uri": "/plugin_proxy_rewrite_args"
                             }
                         },
                         "upstream": {
@@ -534,7 +534,7 @@ a: iresty
                  [[{
                         "plugins": {
                             "proxy-rewrite": {
-                                "uri": "/plugin_proxy_rewrite_args",
+                                "uri": "/plugin_proxy_rewrite_args"
                             }
                         },
                         "upstream": {
