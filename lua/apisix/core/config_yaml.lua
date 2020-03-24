@@ -159,7 +159,9 @@ local function sync_data(self)
                         ", it shoud be a object")
         end
 
-        local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime}
+        local key = item.id or "arr_" .. i
+        local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
+                           key = "/" .. self.key .. "/" .. key}
 
         if data_valid and self.item_schema then
             data_valid, err = check_schema(self.item_schema, item)
