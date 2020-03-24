@@ -447,19 +447,37 @@ end
 
 
 function _M.http_log_phase()
-    local api_ctx = run_plugin("log")
-    if api_ctx then
-        if api_ctx.uri_parse_param then
-            core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
-        end
-
-        core.ctx.release_vars(api_ctx)
-        if api_ctx.plugins then
-            core.tablepool.release("plugins", api_ctx.plugins)
-        end
-
-        core.tablepool.release("api_ctx", api_ctx)
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
     end
+
+    if router.global_rules and router.global_rules.values
+       and #router.global_rules.values > 0 then
+        local local_plugins = api_ctx.plugins
+        api_ctx.plugins = nil
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        for _, global_rule in ipairs(router.global_rules.values) do
+            core.table.clear(plugins)
+            api_ctx.plugins = plugin.filter(global_rule, plugins)
+            run_plugin("log")
+        end
+
+        api_ctx.plugins = local_plugins
+        core.tablepool.release("plugins", plugins)
+    end
+
+    run_plugin("log")
+    if api_ctx.uri_parse_param then
+        core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
+    end
+
+    core.ctx.release_vars(api_ctx)
+    if api_ctx.plugins then
+        core.tablepool.release("plugins", api_ctx.plugins)
+    end
+
+    core.tablepool.release("api_ctx", api_ctx)
 end
 
 
