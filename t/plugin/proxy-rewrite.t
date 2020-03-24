@@ -42,7 +42,6 @@ __DATA__
             local ok, err = plugin.check_schema({
                 uri = '/apisix/home',
                 host = 'apisix.iresty.com',
-                enable_websocket = true,
                 scheme = 'http'
             })
             if not ok then
@@ -69,7 +68,6 @@ done
             local ok, err = plugin.check_schema({
                 uri = '/apisix/home',
                 host = 'apisix.iresty.com',
-                enable_websocket = true,
                 scheme = 'tcp'
             })
             if not ok then
@@ -101,8 +99,7 @@ done
                         "proxy-rewrite": {
                             "uri": "/test/add",
                             "scheme": "https",
-                            "host": "apisix.iresty.com",
-                            "enable_websocket": true
+                            "host": "apisix.iresty.com"
                         }
                     },
                     "upstream": {
@@ -142,8 +139,7 @@ passed
                         "proxy-rewrite": {
                             "uri": "/test/update",
                             "scheme": "http",
-                            "host": "apisix.iresty.com",
-                            "enable_websocket": false
+                            "host": "apisix.iresty.com"
                         }
                     },
                     "upstream": {
@@ -312,117 +308,7 @@ scheme: https
 
 
 
-=== TEST 10: set route(enable websocket)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "proxy-rewrite": {
-                                "uri": "/uri/plugin_proxy_rewrite",
-                                "enable_websocket": true
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 11: enable websocket
---- request
-GET /hello HTTP/1.1
---- more_headers
-upgrade: default
-connection: close
---- response_body
-uri: /uri/plugin_proxy_rewrite
-host: localhost
-upgrade: default
-connection: close
-x-real-ip: 127.0.0.1
---- no_error_log
-[error]
-
-
-
-=== TEST 12: set route(disable websocket)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "proxy-rewrite": {
-                                "uri": "/uri/plugin_proxy_rewrite",
-                                "enable_websocket": false
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 13: disable websocket
---- request
-GET /hello HTTP/1.1
---- more_headers
-upgrade: default
-connection: close
---- response_body
-uri: /uri/plugin_proxy_rewrite
-host: localhost
-x-real-ip: 127.0.0.1
---- no_error_log
-[error]
-
-
-
-=== TEST 14: set route(rewrite headers)
+=== TEST 10: set route(rewrite headers)
 --- config
     location /t {
         content_by_lua_block {
@@ -463,7 +349,7 @@ passed
 
 
 
-=== TEST 15: rewrite headers
+=== TEST 11: rewrite headers
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -478,7 +364,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 16: set route(add headers)
+=== TEST 12: set route(add headers)
 --- config
     location /t {
         content_by_lua_block {
@@ -519,7 +405,7 @@ passed
 
 
 
-=== TEST 17: add headers
+=== TEST 13: add headers
 --- request
 GET /hello HTTP/1.1
 --- response_body
@@ -532,7 +418,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 18: set route(rewrite empty headers)
+=== TEST 14: set route(rewrite empty headers)
 --- config
     location /t {
         content_by_lua_block {
@@ -573,7 +459,7 @@ passed
 
 
 
-=== TEST 19: rewrite empty headers
+=== TEST 15: rewrite empty headers
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -588,7 +474,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 20: set route(rewrite uri args)
+=== TEST 16: set route(rewrite uri args)
 --- config
     location /t {
         content_by_lua_block {
@@ -598,8 +484,7 @@ x-real-ip: 127.0.0.1
                  [[{
                         "plugins": {
                             "proxy-rewrite": {
-                                "uri": "/plugin_proxy_rewrite_args",
-                                "enable_websocket": false
+                                "uri": "/plugin_proxy_rewrite_args"
                             }
                         },
                         "upstream": {
@@ -627,7 +512,7 @@ passed
 
 
 
-=== TEST 21: rewrite uri args
+=== TEST 17: rewrite uri args
 --- request
 GET /hello?q=apisix&a=iresty HTTP/1.1
 --- response_body
@@ -639,7 +524,7 @@ a: iresty
 
 
 
-=== TEST 22: set route(rewrite uri empty args)
+=== TEST 18: set route(rewrite uri empty args)
 --- config
     location /t {
         content_by_lua_block {
@@ -649,8 +534,7 @@ a: iresty
                  [[{
                         "plugins": {
                             "proxy-rewrite": {
-                                "uri": "/plugin_proxy_rewrite_args",
-                                "enable_websocket": false
+                                "uri": "/plugin_proxy_rewrite_args"
                             }
                         },
                         "upstream": {
@@ -678,7 +562,7 @@ passed
 
 
 
-=== TEST 23: rewrite uri empty args
+=== TEST 19: rewrite uri empty args
 --- request
 GET /hello HTTP/1.1
 --- response_body
@@ -688,7 +572,7 @@ uri: /plugin_proxy_rewrite_args
 
 
 
-=== TEST 24: remove header
+=== TEST 20: remove header
 --- config
     location /t {
         content_by_lua_block {
@@ -730,7 +614,7 @@ passed
 
 
 
-=== TEST 25: remove header
+=== TEST 21: remove header
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -746,7 +630,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 26: set route(only using regex_uri)
+=== TEST 22: set route(only using regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -784,7 +668,7 @@ passed
 
 
 
-=== TEST 27: hit route(rewrite uri using regex_uri)
+=== TEST 23: hit route(rewrite uri using regex_uri)
 --- request
 GET /test/plugin/proxy/rewrite HTTP/1.1
 --- response_body
@@ -796,7 +680,7 @@ scheme: http
 
 
 
-=== TEST 28: hit route(404 not found)
+=== TEST 24: hit route(404 not found)
 --- request
 GET /test/not/found HTTP/1.1
 --- error_code: 404
@@ -805,7 +689,7 @@ GET /test/not/found HTTP/1.1
 
 
 
-=== TEST 29: set route(Using both uri and regex_uri)
+=== TEST 25: set route(Using both uri and regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -844,7 +728,7 @@ passed
 
 
 
-=== TEST 30: hit route(rewrite uri using uri & regex_uri property)
+=== TEST 26: hit route(rewrite uri using uri & regex_uri property)
 --- request
 GET /test/hello HTTP/1.1
 --- response_body
@@ -854,7 +738,7 @@ hello world
 
 
 
-=== TEST 31: set route(invalid regex_uri)
+=== TEST 27: set route(invalid regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -892,7 +776,7 @@ GET /t
 
 
 
-=== TEST 32: set route(invalid regex syntax for the first element)
+=== TEST 28: set route(invalid regex syntax for the first element)
 --- config
     location /t {
         content_by_lua_block {
@@ -932,7 +816,7 @@ qr/invalid regex_uri/
 
 
 
-=== TEST 33: set route(invalid regex syntax for the second element)
+=== TEST 29: set route(invalid regex syntax for the second element)
 --- config
     location /t {
         content_by_lua_block {
@@ -970,7 +854,7 @@ invalid capturing variable name found
 
 
 
-=== TEST 34: set route(invalid uri)
+=== TEST 30: set route(invalid uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -1009,7 +893,7 @@ qr/failed to match pattern/
 
 
 
-=== TEST 35: wrong value of uri
+=== TEST 31: wrong value of uri
 --- config
     location /t {
         content_by_lua_block {
