@@ -37,9 +37,8 @@ local parsed_domain
 
 
 local function parse_args(args)
-    if args and args["dns_resolver"] then
-        dns_resolver = args["dns_resolver"]
-    end
+    dns_resolver = args and args["dns_resolver"]
+    core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
 end
 
 
