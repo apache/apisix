@@ -29,7 +29,6 @@
 |uri             |可选| 转发到上游的新 `uri` 地址|
 |regex_uri       |可选| 转发到上游的新 `uri` 地址, 使用正则表达式匹配来自客户端的uri，当匹配成功后使用模板替换转发到上游的uri, 未匹配成功时将客户端请求的uri转发至上游。当`uri`和`regex_uri`同时存在时，`uri`优先被使用。例如：["^/iresty/(.*)/(.*)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的uri正则表达式，第二个元素代表匹配成功后转发到上游的uri模板|
 |host            |可选| 转发到上游的新 `host` 地址，例如：`iresty.com` |
-|enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
 |headers         |可选| 转发到上游的新`headers`，可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可|
 
 ### 示例
@@ -47,7 +46,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
             "uri": "/test/home.html",
             "scheme": "http",
             "host": "iresty.com",
-            "enable_websocket": true,
             "headers": {
                 "X-Api-Version": "v1",
                 "X-Api-Engine": "apisix",
