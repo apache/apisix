@@ -63,4 +63,4 @@ Reference document
 * [proxy-mirror](plugins/proxy-mirror-cn.md)：代理镜像插件提供镜像客户端请求的能力。
 * [udp-logger](plugins/udp-logger.md): 将请求记录到UDP服务器
 * [tcp-logger](plugins/tcp-logger.md): 将请求记录到TCP服务器
-
+* [kafka-logger](plugins/kafka-logger-cn.md): 将请求记录到外部Kafka服务器。
