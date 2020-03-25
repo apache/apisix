@@ -104,7 +104,7 @@ do_install() {
     fi
 
     if [ ! -f "build-cache/eureka" ]; then
-        wget https://github.com/qiujiayu/apisix-eureka/releases/download/v1.9.8/eureka.tar.gz
+        wget https://github.com/api7/eureka-for-test/releases/download/v1.9.8/eureka.tar.gz
         tar -xvf eureka.tar.gz
         mv eureka.jar build-cache/
     fi
