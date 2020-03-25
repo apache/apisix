@@ -230,6 +230,10 @@ local function pick_server(route, ctx)
         key = up_conf.type .. "#route_" .. route.value.id
     end
 
+    if core.table.nkeys(up_conf.nodes) == 0 then
+        return nil, nil, "no valid upstream node"
+    end
+
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1

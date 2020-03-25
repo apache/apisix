@@ -17,7 +17,6 @@
 
 local core = require("apisix.core")
 local ngx_re = require("ngx.re")
-local tab_insert = table.insert
 local tab_concat = table.concat
 local string = string
 local io_open = io.open
@@ -134,10 +133,10 @@ local function generate_complex_value(data, ctx)
     for i, value in ipairs(data) do
         core.log.info("proxy-cache complex value index-", i, ": ", value)
 
-        if string.sub(value, 1, 1) == "$" then
-            tab_insert(tmp, ctx.var[string.sub(value, 2)])
+        if string.byte(value, 1, 1) == string.byte('$') then
+            tmp[i] = ctx.var[string.sub(value, 2)]
         else
-            tab_insert(tmp, value)
+            tmp[i] = value
         end
     end
 
@@ -175,7 +174,11 @@ end
 
 local function file_exists(name)
     local f = io_open(name, "r")
-    if f~=nil then io_close(f) return true else return false end
+    if f ~= nil then
+        io_close(f)
+        return true
+    end
+    return false
 end
 
 
@@ -186,12 +189,12 @@ local function generate_cache_filename(cache_path, cache_levels, cache_key)
 
     local index = string.len(md5sum)
     for k, v in pairs(levels) do
-            local length = tonumber(v)
-            index = index - length
-            filename = filename .. md5sum:sub(index+1, index+length) .. "/"
+        local length = tonumber(v)
+        index = index - length
+        filename = filename .. md5sum:sub(index+1, index+length) .. "/"
     end
     if cache_path:sub(-1) ~= "/" then
-            cache_path = cache_path .. "/"
+        cache_path = cache_path .. "/"
     end
     filename = cache_path .. filename .. md5sum
     return filename

@@ -17,15 +17,15 @@
 #
 -->
 
-[Chinese](basic-auth-cn.md)
+# [Chinese](basic-auth-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -44,7 +44,7 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 
 ## How To Enable
 
-1. set a consumer and config the value of the `basic-auth` option
+### 1. set a consumer and config the value of the `basic-auth` option
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -61,14 +61,13 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console:
 
-![](../images/plugin/basic-auth-1.png)
-
+![auth-1](../images/plugin/basic-auth-1.png)
 
 then add basic-auth plugin in the Consumer page:
 
-![](../images/plugin/basic-auth-2.png)
+![auth-2](../images/plugin/basic-auth-2.png)
 
-2. add a Route or add a Service , and enable the `basic-auth` plugin
+### 2. add a Route or add a Service , and enable the `basic-auth` plugin
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -89,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-* missing Authorization header
+- missing Authorization header
 
 ```shell
 $ curl http://127.0.0.2:9080/hello -i
@@ -98,7 +97,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing authorization in request"}
 ```
 
-* user is not exists:
+- user is not exists:
 
 ```shell
 $ curl -i -ubar:bar http://127.0.0.1:9080/hello
@@ -107,7 +106,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid user key in authorization"}
 ```
 
-* password is invalid:
+- password is invalid:
 
 ```shell
 $ curl -i -ufoo:foo http://127.0.0.1:9080/hello
@@ -116,7 +115,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Password is error"}
 ```
 
-* success:
+- success:
 
 ```shell
 $ curl -i -ufoo:bar http://127.0.0.1:9080/hello
