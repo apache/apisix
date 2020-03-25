@@ -453,21 +453,19 @@ function _M.http_log_phase()
     end
 
     if router.global_rules and router.global_rules.values
-       and #router.global_rules.values > 0 then
-        local local_plugins = api_ctx.plugins
-        api_ctx.plugins = nil
+       and #router.global_rules.values > 0
+    then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         for _, global_rule in ipairs(router.global_rules.values) do
             core.table.clear(plugins)
-            api_ctx.plugins = plugin.filter(global_rule, plugins)
-            run_plugin("log")
+            plugins = plugin.filter(global_rule, plugins)
+            run_plugin("log", plugins, api_ctx)
         end
-
-        api_ctx.plugins = local_plugins
         core.tablepool.release("plugins", plugins)
     end
 
-    run_plugin("log")
+    run_plugin("log", nil, api_ctx)
+
     if api_ctx.uri_parse_param then
         core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
     end
