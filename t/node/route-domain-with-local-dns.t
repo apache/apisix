@@ -61,8 +61,11 @@ __DATA__
 GET /t
 --- response_body
 passed
+--- error_log eval
+/.*parse_args(): dns resolver\[.+\]/
 --- no_error_log
 [error]
+
 
 
 
@@ -72,6 +75,8 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"failed to match any routes"}
+--- error_log eval
+/.*parse_args(): dns resolver\[.+\]/
 --- no_error_log
 [error]
 
