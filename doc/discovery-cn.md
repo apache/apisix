@@ -59,7 +59,7 @@ eureka:
   prefix: "/eureka/"
 ```
 
-## 路由配置
+## upstream 配置
 
 APISIX是通过 `upstream.service_name` 与注册中心的服务名进行关联。下面是 uri 为 "/a/*" 的请求路由到注册中心名为 "a_service" 的服务上例子：
 
