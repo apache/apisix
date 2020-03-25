@@ -38,9 +38,10 @@ apisix:
 
 ```yaml
 eureka:
-  urls:
-    - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/"
-    - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}/eureka/"
+  host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+    - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
+    - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+  prefix: "/eureka/"
   timeout:
     connect: 2000
     send: 2000
@@ -53,8 +54,9 @@ eureka:
 
 ```yaml
 eureka:
-  urls:
-    - "http://127.0.0.1:8761/eureka/"
+  host:
+    - "http://127.0.0.1:8761"
+  prefix: "/eureka/"
 ```
 
 ## 路由配置

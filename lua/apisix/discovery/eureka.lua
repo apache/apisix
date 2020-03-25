@@ -34,15 +34,15 @@ local _M = {
 
 
 local function service_info()
-    if not local_conf.eureka or not local_conf.eureka.urls then
-        log.error("do not set eureka.urls")
+    local host = local_conf.eureka and local_conf.eureka.host
+    if not host then
+        log.error("do not set eureka.host")
         return
     end
 
-    local urls = local_conf.eureka.urls
     local basic_auth
     -- TODO Add health check to get healthy nodes.
-    local url = urls[math.random(#urls)]
+    local url = host[math.random(#host)]
     local user_and_password_idx = string_find(url, "@", 1, true)
     if user_and_password_idx then
         local protocol_header_idx = string_find(url, "://", 1, true)
@@ -52,7 +52,9 @@ local function service_info()
         url = protocol_header .. other
         basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
     end
-
+    if local_conf.eureka.prefix then
+        url = url .. local_conf.eureka.prefix
+    end
     if string_sub(url, #url) ~= "/" then
         url = url .. "/"
     end
@@ -170,8 +172,8 @@ end
 
 
 function _M.init_worker()
-    if not local_conf.eureka or not local_conf.eureka.urls then
-        error("do not set eureka.urls")
+    if not local_conf.eureka or not local_conf.eureka.host or local_conf.eureka.host == 0 then
+        error("do not set eureka.host")
         return
     end
     ngx_timer_at(0, fetch_full_registry)

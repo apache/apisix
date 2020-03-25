@@ -62,7 +62,7 @@ script() {
     sleep 1
 
     ./grpc_server_example &
-    java -jar ./eureka.jar &
+    java -jar ./eureka.jar > ./eureka.log 2>&1 &
 
     make help
     make init

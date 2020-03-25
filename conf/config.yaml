@@ -118,6 +118,15 @@ etcd:
   prefix: "/apisix"               # apisix configurations prefix
   timeout: 3                      # 3 seconds
 
+eureka:
+  host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+    - "http://127.0.0.1:8761"
+  prefix: "/eureka/"
+  timeout:
+    connect: 2000
+    send: 2000
+    read: 5000
+
 plugins:                          # plugin list
   - example-plugin
   - limit-req
@@ -147,11 +156,3 @@ plugins:                          # plugin list
   - cors
 stream_plugins:
   - mqtt-proxy
-
-eureka:
-  urls:
-    - "http://127.0.0.1:8761/eureka/"
-  timeout:
-    connect: 2000
-    send: 2000
-    read: 5000

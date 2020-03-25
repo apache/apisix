@@ -261,7 +261,7 @@ script() {
     sudo service etcd start
 
     ./build-cache/grpc_server_example &
-    java -jar ./build-cache/eureka.jar &
+    java -jar ./build-cache/eureka.jar > ./build-cache/eureka.log 2>&1 &
 
     ./bin/apisix help
     ./bin/apisix init
