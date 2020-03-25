@@ -41,6 +41,7 @@ local function service_info()
 
     local urls = local_conf.eureka.urls
     local basic_auth
+    -- TODO Add health check to get healthy nodes.
     local url = urls[math.random(#urls)]
     local user_and_password_idx = string_find(url, "@", 1, true)
     if user_and_password_idx then
@@ -82,9 +83,10 @@ local function request(request_uri, basic_auth, method, path, query, body)
     end
 
     local httpc = http.new()
-    local connect_timeout = 2000
-    local send_timeout = 2000
-    local read_timeout = 5000
+    local timeout = local_conf.eureka.timeout
+    local connect_timeout = timeout and timeout.connect or 2000
+    local send_timeout = timeout and timeout.send or 2000
+    local read_timeout = timeout and timeout.read or 5000
     httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
     return httpc:request_uri(url, {
         version = 1.1,
@@ -107,7 +109,7 @@ local function fetch_full_registry(premature)
         return
     end
 
-    local res, err = request(request_uri, basic_auth, "GET", "apps", nil, nil)
+    local res, err = request(request_uri, basic_auth, "GET", "apps")
     if not res then
         log.error("failed to fetch registry", err)
         return
@@ -122,6 +124,7 @@ local function fetch_full_registry(premature)
     local data, err = core.json.decode(json_str)
     if not data then
         log.error("invalid response body: ", json_str, " err: ", err)
+        return
     end
     local apps = data.applications.application
     local up_apps = core.table.new(0, #apps)

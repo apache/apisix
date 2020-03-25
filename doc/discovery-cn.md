@@ -28,7 +28,7 @@ apisix:
   discovery: eureka
 ```
 
-现已经支持 `Eureka` 等注册中心。
+现已经支持 `Eureka` 注册中心。
 
 ## 注册中心配置
 
@@ -41,6 +41,10 @@ eureka:
   urls:
     - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}/eureka/"
     - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}/eureka/"
+  timeout:
+    connect: 2000
+    send: 2000
+    read: 5000
 ```
 
 通过 `eureka.urls` 配置 eureka 的服务器地址。
