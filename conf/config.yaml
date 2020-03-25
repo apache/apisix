@@ -143,6 +143,7 @@ plugins:                          # plugin list
   - proxy-cache
   - tcp-logger
   - proxy-mirror
+  - kafka-logger
 
 stream_plugins:
   - mqtt-proxy
