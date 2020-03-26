@@ -156,6 +156,9 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/stream/router
 	$(INSTALL) lua/apisix/stream/router/*.lua $(INST_LUADIR)/apisix/lua/apisix/stream/router/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/lua/apisix/utils
+	$(INSTALL) lua/apisix/utils/*.lua $(INST_LUADIR)/apisix/lua/apisix/utils/
+
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
 
