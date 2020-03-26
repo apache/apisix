@@ -18,6 +18,7 @@
 local local_conf         = require("apisix.core.config_local").local_conf()
 local http               = require("resty.http")
 local core               = require("apisix.core")
+local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
@@ -101,6 +102,34 @@ local function request(request_uri, basic_auth, method, path, query, body)
 end
 
 
+local function parse_instance(instance)
+    local status = instance.status
+    local overridden_status = instance.overriddenstatus
+    if overridden_status and "UNKNOWN" ~= overridden_status then
+        status = overridden_status
+    end
+    if status ~= "UP" then
+        return
+    end
+    local port
+    if tostring(instance.port["@enabled"]) == "true" and instance.port["$"] then
+        port = instance.port["$"]
+        -- secure = false
+    end
+    if tostring(instance.securePort["@enabled"]) == "true" and instance.securePort["$"] then
+        port = instance.securePort["$"]
+        -- secure = true
+    end
+    local ip = instance.ipAddr
+    if not ipmatcher.parse_ipv4(ip) and
+            not ipmatcher.parse_ipv6(ip) then
+        log.error("invalid ip:", ip)
+        return
+    end
+    return ip, port
+end
+
+
 local function fetch_full_registry(premature)
     if premature then
         return
@@ -131,29 +160,15 @@ local function fetch_full_registry(premature)
     local apps = data.applications.application
     local up_apps = core.table.new(0, #apps)
     for _, app in ipairs(apps) do
-        local nodes = up_apps[app.name]
-        if not nodes then
-            nodes = core.table.new(#app.instance, 0)
-            up_apps[app.name] = nodes
-        end
         for _, instance in ipairs(app.instance) do
-            local status = instance.status
-            local overridden_status = instance.overriddenstatus
-            if overridden_status and "UNKNOWN" ~= overridden_status then
-                status = overridden_status
-            end
-            if status == "UP" then
-                local port
-                if tostring(instance.port["@enabled"]) == "true" and instance.port["$"] then
-                    port = instance.port["$"]
-                    -- secure = false
+            local ip, port = parse_instance(instance)
+            if ip and port then
+                local nodes = up_apps[app.name]
+                if not nodes then
+                    nodes = core.table.new(#app.instance, 0)
+                    up_apps[app.name] = nodes
                 end
-                if tostring(instance.securePort["@enabled"]) == "true" and instance.securePort["$"] then
-                    port = instance.securePort["$"]
-                    -- secure = true
-                end
-                -- TODO use metadata
-                nodes[instance.ipAddr .. ":" .. port] = 1
+                nodes[ip .. ":" .. port] = 1
             end
         end
     end
@@ -163,8 +178,8 @@ end
 
 function _M.nodes(service_name)
     if not applications then
-        log.error("failed to fetch instances for : ", service_name)
-        return nil
+        log.error("failed to fetch nodes for : ", service_name)
+        return
     end
 
     return applications[service_name]

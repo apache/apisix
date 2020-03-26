@@ -25,9 +25,9 @@
 
 ![](./images/discovery-cn.png)
 
-1. 服务启动时将自身的一些信息，比如服务名、IP、端口等信息注册到注册中心，并通过心跳等机制告诉注册中心，可以正常提供服务；当服务下线时，会修改注册中心的状态或删除数据；
+1. 服务启动时将自身的一些信息，比如服务名、IP、端口等信息上报到注册中心，并通过心跳等机制告诉注册中心，可以正常提供服务；当服务下线时，会修改注册中心的状态或删除实例信息；
 2. 网关会准实时地从注册中心获取服务实例信息；
-3. 当用户通过网关请求服务时，网关将请求代理到从注册中心获取的实例列表中的一台服务器；
+3. 当用户通过网关请求服务时，网关从注册中心获取的实例列表中选择一台进行代理；
 
 常见的注册中心：Eureka, Etcd, Consul, Zookeeper, Nacos等
 
@@ -79,9 +79,10 @@ APISIX是通过 `upstream.service_name` 与注册中心的服务名进行关联�
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/a/*",
-    "upstream":
+    "upstream": {
         "service_name": "a_service",
         "type": "roundrobin"
+    }
 }'
 
 HTTP/1.1 201 Created
