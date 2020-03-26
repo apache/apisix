@@ -108,16 +108,17 @@ APISIX 要扩展注册中心其实是件非常容易的事情，假如要集成 
   local _M = {
       version = 1.0,
   }
-  
-  
+
+
   function _M.nodes(service_name)
       ... ...
   end
-  
-  
+
+
   function _M.init_worker()
       ... ...
   end
+
 
   return _M
   ```
