@@ -64,6 +64,12 @@ script() {
     # apisix cli test
     sudo PATH=$PATH .travis/apisix_cli_test.sh
 
+    `cat /usr/local/apisix/logs/error.log | grep "\[error\]" > /tmp/error.log`
+    if [ -s /tmp/error.log ]; then
+        echo "=====found error log=====\n"
+        cat /usr/local/apisix/logs/error.log && exit 1
+    fi
+
     sudo luarocks remove rockspec/apisix-master-0.rockspec
 }
 
