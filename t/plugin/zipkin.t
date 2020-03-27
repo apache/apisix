@@ -126,7 +126,8 @@ done
                         "plugins": {
                             "zipkin": {
                                 "endpoint": "http://127.0.0.1:1982/mock_zipkin",
-                                "sample_ratio": 1
+                                "sample_ratio": 1,
+                                "service_name":"APISIX"
                             }
                         },
                         "upstream": {
@@ -143,7 +144,8 @@ done
                             "plugins": {
                                 "zipkin": {
                                     "endpoint": "http://127.0.0.1:1982/mock_zipkin",
-                                    "sample_ratio": 1
+                                    "sample_ratio": 1,
+                                    "service_name":"APISIX"
                                 }
                             },
                             "upstream": {

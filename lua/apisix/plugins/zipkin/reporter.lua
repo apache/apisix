@@ -57,12 +57,17 @@ function _M.report(self, span)
 
     local localEndpoint do
         local serviceName = zipkin_tags["peer.service"]
-        if serviceName then
+        local localIp = zipkin_tags["local.ip"]
+        if serviceName or localIp then
             zipkin_tags["peer.service"] = nil
+            zipkin_tags["local.ip"] = nil
             localEndpoint = {
                 serviceName = serviceName,
+                ipv4 = localIp,
+                port = tonumber(ngx.var.server_port),
                 -- TODO: ip/port from ngx.var.server_name/ngx.var.server_port?
             }
+
         else
             -- needs to be null, not the empty object
             localEndpoint = cjson.null
