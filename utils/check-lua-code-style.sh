@@ -32,10 +32,9 @@ luacheck -q lua
     lua/apisix/plugins/limit-count/*.lua > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
-count=`grep -E ".lua:[0-9]+:" /tmp/check.log -c | true`
-
-if [ $count -ne 0 ]
-then
+grep -E "ERROR.*.lua:" /tmp/check.log > /tmp/error.log | true
+if [ -s /tmp/error.log ]; then
+    echo "=====bad style====="
     cat /tmp/check.log
     exit 1
 fi
