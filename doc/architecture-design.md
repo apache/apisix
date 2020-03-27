@@ -22,6 +22,7 @@
 ## Table of Contents
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
+- [**APISIX Object Relationship**](#APISIX-Object-Relationship)
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Plugin**](#plugin)
@@ -62,6 +63,20 @@ plugins:                        # plugin name list
 ```
 
 *Note* `apisix` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* that file.
+
+[Back to top](#Table-of-contents)
+
+## APISIX Object Relationship
+
+![](./images/object-relation.png)
+
+1. Route is a API. By defining some rules to match the client's request, it loads the corresponding plugin and forwards it to the specified backend Upstream. Route can be considered equivalently as an API or a matching rule.
+2. Service is a group of APIs, and multiple Routes correspond to one Service. Correspondence to Route: n to 1
+3. Upstream is a upstream node or a group of upstream nodes, which may contain one or more access addresses. It can be bound to Route or Service.
+4. Consumer refers to the user, which can also be abstracted as an application APP or anonymous user (you do not need to distinguish users, but you need to use their binding relationship).
+5. Plugin is a plugin. In API processing, except for the most basic request matching and forwarding capabilities to the specified address, the capabilities are abstracted as plug-ins. It can be bound to Route, Service, and Consumer. Multiple plugins with different names can be bound to the same object. Relationship: n to 1
+6. The binding of Consumer to Route or Service is not directly bound. The use of Consumer requires binding the authentication plug-in first, and then binding the corresponding empty authentication plug-in to the Route or Service to be bound to complete Binding. Conusmer and Route / Service binding relationship: n to n
+7. SSL stands for domain name and certificate related information. It is independent.
 
 [Back to top](#Table-of-contents)
 

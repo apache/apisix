@@ -20,6 +20,7 @@
 ## 目录
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
+- [**APISIX对象纵览**](#APISIX对象纵览)
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Plugin**](#plugin)
@@ -61,6 +62,20 @@ plugins:                        # plugin name list
 
 *注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
+
+[返回目录](#目录)
+
+## APISIX对象纵览
+
+![](./images/object-relation.png)
+
+1. Route 是路由，通过定义一些规则来匹配客户端的请求，并加载相应插件以及转发到指定后端 Upstream 。Route 可以等价认为是一个 API 或者匹配规则。
+2. Service 是 API 的组，多个 Route 对应一个 Service 。与 Route 对应关系：n 对 1
+3. Upstream 是一个后端节点或者一组后端节点，里面可能会包含一个或者多个访问地址。它可以与 Route 或者 Service 进行绑定。
+4. Consumer 是指用户，也可以将其抽象为应用 APP 或者匿名用户（不需要区分用户，但需要利用其绑定关系）。
+5. Plugin 是插件。在API处理中，除了最基本的请求匹配和转发到指定地址以外的能力，都将能力抽象为了插件。它可以与 Route 、 Service 、 Consumer 进行绑定。多个不同名插件可以绑定到同一个对象上。关系：n 对 1
+6. Consumer 与 Route 或者 Service 的绑定并不是直接绑定， Consumer 的使用需要先绑定鉴权插件，再通过将相应的空鉴权插件绑定到所需要绑定的 Route 或者 Service 上，完成绑定。Conusmer 与 Route / Service 绑定关系：n 对 n
+7. SSL 即域名和证书相关信息，它是独立的。
 
 [返回目录](#目录)
 
