@@ -113,3 +113,45 @@ cookie_c: ccc
 cookie_d: nil
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: key is nil
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {}
+            core.ctx.set_vars_meta(ctx)
+
+            ngx.say("cookie_a: ", ctx.var[nil])
+        }
+    }
+--- more_headers
+Cookie: a=a; b=bb; c=ccc
+--- request
+GET /t?a=aaa
+--- error_code: 500
+--- error_log
+invalid argument, expect string value
+
+
+
+=== TEST 6: key is number
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {}
+            core.ctx.set_vars_meta(ctx)
+
+            ngx.say("cookie_a: ", ctx.var[2222])
+        }
+    }
+--- more_headers
+Cookie: a=a; b=bb; c=ccc
+--- request
+GET /t?a=aaa
+--- error_code: 500
+--- error_log
+invalid argument, expect string value

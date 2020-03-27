@@ -25,6 +25,9 @@ local C            = ffi.C
 local sub_str      = string.sub
 local rawset       = rawset
 local ngx_var      = ngx.var
+local re_gsub      = ngx.re.gsub
+local type         = type
+local error        = error
 
 
 ffi.cdef[[
@@ -61,6 +64,10 @@ do
 
     local mt = {
         __index = function(t, key)
+            if type(key) ~= "string" then
+                error("invalid argument, expect string value", 2)
+            end
+
             local val
             local method = var_methods[key]
             if method then
@@ -76,6 +83,11 @@ do
                                  key, " error: ", err)
                     end
                 end
+
+            elseif C.memcmp(key, "http_", 5) == 0 then
+                key = key:lower()
+                key = re_gsub(key, "-", "_", "jo")
+                val = get_var(key, t._request)
 
             else
                 val = get_var(key, t._request)
