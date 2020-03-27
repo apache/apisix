@@ -59,10 +59,10 @@ function execute_func(premature, batch_processor, batch)
 
     local ok, err = batch_processor.func(batch.entries)
     if not ok then
+        core.log.error(fmt("Batch Processor[%s] failed to process entries: ",
+            batch_processor.name), err)
         batch.retry_count = batch.retry_count + 1
         if batch.retry_count < batch_processor.max_retry_count then
-            core.log.warn(fmt("Batch Processor[%s] failed to process entries: ",
-                batch_processor.name), err)
             schedule_func_exec(batch_processor, batch_processor.retry_delay, batch)
         else
             core.log.error(fmt(("Batch Processor[%s] exceeded the max_retry_count[%d] "

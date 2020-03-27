@@ -316,7 +316,6 @@ GET /t
 done
 --- no_error_log
 BatchProcessor[log buffer] activating flush due to no activity
-Batch Processor[log buffer] failed to process entries
 --- error_log
 Batch Processor[log buffer] exceeded the max_retry_count
 --- wait: 0.5
