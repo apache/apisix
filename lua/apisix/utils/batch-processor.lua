@@ -57,7 +57,7 @@ function execute_func(premature, batch_processor, batch)
         return
     end
 
-    local ok, err = batch_processor.func(batch.entries)
+    local ok, err = batch_processor.func(batch.entries, batch_processor.batch_max_size)
     if not ok then
         core.log.error(fmt("Batch Processor[%s] failed to process entries: ",
             batch_processor.name), err)
