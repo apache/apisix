@@ -25,6 +25,7 @@ local C            = ffi.C
 local sub_str      = string.sub
 local rawset       = rawset
 local ngx_var      = ngx.var
+local re_gsub      = ngx.re.gsub
 
 
 ffi.cdef[[
@@ -76,6 +77,11 @@ do
                                  key, " error: ", err)
                     end
                 end
+
+            elseif C.memcmp(key, "http_", 5) == 0 then
+                key = key:lower()
+                key = re_gsub(key, "-", "_", "jo")
+                val = get_var(key, t._request)
 
             else
                 val = get_var(key, t._request)
