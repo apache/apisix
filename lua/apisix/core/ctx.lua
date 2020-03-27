@@ -26,6 +26,8 @@ local sub_str      = string.sub
 local rawset       = rawset
 local ngx_var      = ngx.var
 local re_gsub      = ngx.re.gsub
+local type         = type
+local error        = error
 
 
 ffi.cdef[[
@@ -62,6 +64,10 @@ do
 
     local mt = {
         __index = function(t, key)
+            if type(key) ~= "string" then
+                error("invalid argument, expect string value", 2)
+            end
+
             local val
             local method = var_methods[key]
             if method then
