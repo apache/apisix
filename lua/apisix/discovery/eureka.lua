@@ -26,6 +26,7 @@ local string_sub         = string.sub
 local string_find        = string.find
 local log                = core.log
 
+local default_weight
 local applications
 local useragent = 'ngx_lua-apisix/v' .. core.version.VERSION
 
@@ -104,7 +105,7 @@ end
 
 local function parse_instance(instance)
     local status = instance.status
-    local overridden_status = instance.overriddenstatus
+    local overridden_status = instance.overriddenStatus
     if overridden_status and "UNKNOWN" ~= overridden_status then
         status = overridden_status
     end
@@ -126,7 +127,7 @@ local function parse_instance(instance)
         log.error("invalid ip:", ip)
         return
     end
-    return ip, port
+    return ip, port, instance.metadata
 end
 
 
@@ -161,14 +162,14 @@ local function fetch_full_registry(premature)
     local up_apps = core.table.new(0, #apps)
     for _, app in ipairs(apps) do
         for _, instance in ipairs(app.instance) do
-            local ip, port = parse_instance(instance)
+            local ip, port, metadata = parse_instance(instance)
             if ip and port then
                 local nodes = up_apps[app.name]
                 if not nodes then
                     nodes = core.table.new(#app.instance, 0)
                     up_apps[app.name] = nodes
                 end
-                nodes[ip .. ":" .. port] = 1
+                nodes[ip .. ":" .. port] = metadata and metadata.weight or default_weight
             end
         end
     end
@@ -187,10 +188,11 @@ end
 
 
 function _M.init_worker()
-    if not local_conf.eureka or not local_conf.eureka.host or local_conf.eureka.host == 0 then
+    if not local_conf.eureka or not local_conf.eureka.host or #local_conf.eureka.host == 0 then
         error("do not set eureka.host")
         return
     end
+    default_weight = local_conf.eureka.weight or 100
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(30, fetch_full_registry)
 end
