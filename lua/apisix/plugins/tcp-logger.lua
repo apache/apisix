@@ -16,10 +16,11 @@
 --
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
+local batch_processor = require("apisix.utils.batch-processor")
 local plugin_name = "tcp-logger"
+local tostring = tostring
+local buffers = {}
 local ngx = ngx
-
-local timer_at = ngx.timer.at
 local tcp = ngx.socket.tcp
 
 local schema = {
@@ -27,11 +28,15 @@ local schema = {
     properties = {
         host = {type = "string"},
         port = {type = "integer", minimum = 0},
-        timeout = {   -- timeout in milliseconds
-            type = "integer", minimum = 1, default= 1000
-        },
-        tls = { type = "boolean", default = false },
-        tls_options = { type = "string" }
+        tls = {type = "boolean", default = false},
+        tls_options = {type = "string"},
+        timeout = {type = "integer", minimum = 1, default = 3},
+        name = {type = "string", default = "tcp logger"},
+        max_retry_count = {type = "integer", minimum = 0, default = 0},
+        retry_delay = {type = "integer", minimum = 0, default = 1},
+        buffer_duration = {type = "integer", minimum = 1, default = 60},
+        inactive_timeout = {type = "integer", minimum = 1, default = 5},
+        batch_max_size = {type = "integer", minimum = 1, default = 1000},
     },
     required = {"host", "port"}
 }
@@ -48,51 +53,92 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-local function log(premature, conf, log_message)
-    if premature then
-        return
-    end
+local function send_tcp_data(conf, log_message)
+    local err_msg
+    local res = true
+    local sock, soc_err = tcp()
 
-    local sock,err = tcp()
     if not sock then
-        core.log.error("failed to init the socket", err)
-        return
+        return nil, "failed to init the socket" .. soc_err
     end
 
-    sock:settimeout(conf.timeout)
+    sock:settimeout(conf.timeout * 1000)
 
     local ok, err = sock:connect(conf.host, conf.port)
     if not ok then
-        core.log.error("failed to connect to TCP server: host[",
-                conf.host, "] port[", conf.port, "] ", err)
-        return
+        return nil, "failed to connect to TCP server: host[" ..
+            conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 
     if conf.tls then
         ok, err = sock:sslhandshake(true, conf.tls_options, false)
         if not ok then
-            core.log.error("failed to to perform TLS handshake to TCP server: host[",
-                    conf.host, "] port[", conf.port, "] ", err)
-            return
+            return nil, "failed to to perform TLS handshake to TCP server: host[" ..
+                conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
         end
     end
 
     ok, err = sock:send(log_message)
     if not ok then
-        core.log.error("failed to send data to TCP server: host[",
-                conf.host, "] port[", conf.port, "] ", err)
+        res = false
+        err_msg = "failed to send data to TCP server: host[" ..
+            conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 
     ok, err = sock:close()
     if not ok then
         core.log.error("failed to close the TCP connection, host[",
-                conf.host, "] port[", conf.port, "] ", err)
+            conf.host, "] port[", conf.port, "] ", err)
     end
+
+    return res, err_msg
 end
 
 
 function _M.log(conf)
-    return timer_at(0, log, conf, core.json.encode(log_util.get_full_log(ngx)))
+    local entry = log_util.get_full_log(ngx)
+
+    if not entry.route_id then
+        core.log.error("failed to obtain the route id for udp logger")
+        return
+    end
+
+    local log_buffer = buffers[entry.route_id]
+
+    -- If a logger is not present for the route, create one
+    if not log_buffer then
+        -- Generate a function to be executed by the batch processor
+        local func = function(entries, batch_max_size)
+            local data
+            if batch_max_size == 1 then
+                data = core.json.encode(entries[1]) -- encode as single {}
+            else
+                data = core.json.encode(entries) -- encode as array [{}]
+            end
+            return send_tcp_data(conf, data)
+        end
+
+        local config = {
+            name = conf.name,
+            retry_delay = conf.retry_delay,
+            batch_max_size = conf.batch_max_size,
+            max_retry_count = conf.max_retry_count,
+            buffer_duration = conf.buffer_duration,
+            inactive_timeout = conf.inactive_timeout,
+        }
+
+        local err
+        log_buffer, err = batch_processor:new(func, config)
+
+        if not log_buffer then
+            core.log.err("error when creating the batch processor: " .. err)
+            return
+        end
+
+        buffers[entry.route_id] = log_buffer
+    end
+
+    log_buffer:push(entry)
 end
 
 return _M
