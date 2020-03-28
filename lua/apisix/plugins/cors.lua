@@ -18,46 +18,52 @@ local core        = require("apisix.core")
 local ngx         = ngx
 local plugin_name = "cors"
 local str_find    = string.find
-local str_gmatch  = string.gmatch
+local re_gmatch   = ngx.re.gmatch
 
 local schema = {
     type = "object",
     properties = {
         allow_origins = {
             description =
-                "you can use '*' to allow all origins when no credentials,"..
-                "'**' to allow forcefully(it will bring some security risks, be carefully),"..
+                "you can use '*' to allow all origins when no credentials," ..
+                "'**' to allow forcefully(it will bring some security risks, be carefully)," ..
                 "multiple origin use ',' to split. default: *.",
-            type = "string"
+            type = "string",
+            default = "*"
         },
         allow_methods = {
             description =
-                "you can use '*' to allow all methods when no credentials and '**',"..
-                "'**' to allow forcefully(it will bring some security risks, be carefully),"..
+                "you can use '*' to allow all methods when no credentials and '**'," ..
+                "'**' to allow forcefully(it will bring some security risks, be carefully)," ..
                 "multiple method use ',' to split. default: *.",
-            type = "string"
+            type = "string",
+            default = "*"
         },
         allow_headers = {
             description =
-                "you can use '*' to allow all header when no credentials,"..
+                "you can use '*' to allow all header when no credentials," ..
                 "multiple header use ',' to split. default: *.",
-            type = "string"
+            type = "string",
+            default = "*"
         },
         expose_headers = {
             description =
-                "you can use '*' to expose all header when no credentials,"..
+                "you can use '*' to expose all header when no credentials," ..
                 "multiple header use ',' to split. default: *.",
-            type = "string"
+            type = "string",
+            default = "*"
         },
         max_age = {
             description =
-                "maximum number of seconds the results can be cached."..
-                "-1 mean no cached,the max value is depend on browser,"..
+                "maximum number of seconds the results can be cached." ..
+                "-1 mean no cached,the max value is depend on browser," ..
                 "more detail plz check MDN. default: 5.",
-            type = "integer"
+            type = "integer",
+            default = 5
         },
         allow_credential = {
-            type = "boolean"
+            type = "boolean",
+            default = false
         },
     }
 }
@@ -76,30 +82,6 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if not conf.allow_origins then
-        conf.allow_origins = "*"
-    end
-
-    if not conf.allow_methods then
-        conf.allow_methods = "*"
-    end
-
-    if not conf.allow_headers then
-        conf.allow_headers = "*"
-    end
-
-    if not conf.expose_headers then
-        conf.expose_headers = "*"
-    end
-
-    if not conf.max_age then
-        conf.max_age = 5
-    end
-
-    if not conf.allow_credential then
-        conf.allow_credential = false
-    end
-
     return true
 end
 
@@ -107,11 +89,23 @@ function _M.header_filter(conf, ctx)
     if conf.allow_origins == "**" then
         conf.allow_origins = ngx.var.http_origin or '*'
     end
-    if str_find(conf.allow_origins, ",") then
+    if str_find(conf.allow_origins, ",", 1, true) then
         local finded = false
-        for origin in str_gmatch(conf.allow_origins, "([^,]+)") do
-            if origin == ngx.var.http_origin then
-                conf.allow_origins = origin
+        local iterator, err = re_gmatch(conf.allow_origins, "([^,]+)", "jiox")
+        if not iterator then
+            return 500, {message = "match origins failed", error = err}
+        end
+        while true do
+            local origin, err = iterator()
+            if err then
+                return 500, {message = "iterate origins failed", error = err}
+            end
+            if not origin then
+                break
+            end
+
+            if origin[0] == ngx.var.http_origin then
+                conf.allow_origins = origin[0]
                 finded = true
                 break
             end

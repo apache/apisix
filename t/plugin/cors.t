@@ -252,6 +252,8 @@ Access-Control-Allow-Credentials:
 --- no_error_log
 [error]
 
+
+
 === TEST 8: set route(spcific)
 --- config
     location /t {
@@ -293,6 +295,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 9: cors spcific
 --- request
 GET /hello HTTP/1.1
@@ -310,6 +314,8 @@ Access-Control-Allow-Credentials: true
 --- no_error_log
 [error]
 
+
+
 === TEST 10: cors spcific no match orgin
 --- request
 GET /hello HTTP/1.1
@@ -326,6 +332,8 @@ Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
 --- no_error_log
 [error]
+
+
 
 === TEST 11: set route(force wildcard)
 --- config
@@ -366,6 +374,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 12: cors force wildcard
 --- request
 GET /hello HTTP/1.1
@@ -386,6 +396,8 @@ Access-Control-Allow-Credentials:
 --- no_error_log
 [error]
 
+
+
 === TEST 13: cors force wildcard no origin
 --- request
 GET /hello HTTP/1.1
@@ -404,6 +416,8 @@ Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 --- no_error_log
 [error]
+
+
 
 === TEST 14: options return directly
 --- request
