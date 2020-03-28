@@ -54,11 +54,6 @@ local schema = {
             type    = "string",
             enum    = {"http", "https"}
         },
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean",
-            default     = false
-        },
         headers = {
             description = "new headers for request",
             type = "object",
@@ -153,11 +148,6 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
     else
         ctx.var.upstream_uri = upstream_uri
-    end
-
-    if conf.enable_websocket then
-        ctx.var.upstream_upgrade    = ctx.var.http_upgrade
-        ctx.var.upstream_connection = ctx.var.http_connection
     end
 
     if conf.headers_arr then

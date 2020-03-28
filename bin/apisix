@@ -22,7 +22,10 @@ local function trim(s)
 end
 
 local function excute_cmd(cmd)
-    local t = io.popen(cmd)
+    local t, err = io.popen(cmd)
+    if not t then
+        return nil, "failed to execute command: " .. cmd .. ", error info:" .. err
+    end
     local data = t:read("*all")
     t:close()
     return data
@@ -119,6 +122,9 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
+    resolver_timeout {*resolver_timeout*};
+
     upstream apisix_backend {
         server 127.0.0.1:80;
         balancer_by_lua_block {
@@ -207,8 +213,8 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*} ipv6=off;
-    resolver_timeout 5;
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
+    resolver_timeout {*resolver_timeout*};
 
     lua_http10_buffering off;
 
@@ -260,7 +266,12 @@ http {
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
-        apisix.http_init()
+
+        local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
+        local args = {
+            dns_resolver = dns_resolver,
+        }
+        apisix.http_init(args)
     }
 
     init_worker_by_lua_block {
@@ -497,9 +508,9 @@ http {
 ]=]
 
 local function write_file(file_path, data)
-    local file = io.open(file_path, "w+")
+    local file, err = io.open(file_path, "w+")
     if not file then
-        return false, "failed to open file: " .. file_path
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
     end
 
     file:write(data)
@@ -508,9 +519,9 @@ local function write_file(file_path, data)
 end
 
 local function read_file(file_path)
-    local file = io.open(file_path, "rb")
+    local file, err = io.open(file_path, "rb")
     if not file then
-        return false, "failed to open file: " .. file_path
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
     end
 
     local data = file:read("*all")
@@ -518,12 +529,6 @@ local function read_file(file_path)
     return data
 end
 
-local function exec(command)
-    local t= io.popen(command)
-    local res = t:read("*all")
-    t:close()
-    return trim(res)
-end
 
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
@@ -593,6 +598,24 @@ local function check_or_version(cur_ver_s, need_ver_s)
     return true
 end
 
+
+local function local_dns_resolver(file_path)
+    local file, err = io.open(file_path, "rb")
+    if not file then
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
+    end
+    local dns_addrs = {}
+    for line in file:lines() do
+        local addr, n = line:gsub("^nameserver%s+(%d+%.%d+%.%d+%.%d+)%s*$", "%1")
+        if n == 1 then
+            table.insert(dns_addrs, addr)
+        end
+    end
+    file:close()
+    return dns_addrs
+end
+
+
 local _M = {version = 0.1}
 
 function _M.help()
@@ -636,7 +659,7 @@ local function init()
     local sys_conf = {
         lua_path = pkg_path_org,
         lua_cpath = pkg_cpath_org,
-        os_name = exec("uname"),
+        os_name = excute_cmd("uname"),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
@@ -674,6 +697,15 @@ local function init()
         sys_conf["worker_processes"] = 1
     else
         sys_conf["worker_processes"] = "auto"
+    end
+
+    local dns_resolver = sys_conf["dns_resolver"]
+    if not dns_resolver or #dns_resolver == 0 then
+        local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
+        if not dns_addrs then
+            error("failed to import local DNS: " .. err)
+        end
+        sys_conf["dns_resolver"] = dns_addrs
     end
 
     local conf_render = template.compile(ngx_tpl)
@@ -742,7 +774,7 @@ local function init_etcd(show_output)
                     .. "--connect-timeout " .. timeout
                     .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
-            local res = exec(cmd)
+            local res = excute_cmd(cmd)
             if not res:find("index", 1, true)
                     and not res:find("createdIndex", 1, true) then
                 is_success = false

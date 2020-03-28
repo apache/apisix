@@ -109,3 +109,33 @@ GET /hello
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: enable healthcheck
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+        retries: 2
+        checks:
+            active:
+                http_path: "/status"
+                healthy:
+                    interval: 2
+                    successes: 1
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]

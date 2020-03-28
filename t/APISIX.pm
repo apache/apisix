@@ -37,6 +37,38 @@ sub read_file($) {
     $data;
 }
 
+sub local_dns_resolver() {
+    open my $in, "/etc/resolv.conf" or die "cannot open /etc/resolv.conf";
+    my @lines =  <$in>;
+    my @dns_addrs = ();
+    foreach my $line (@lines){
+        $line =~ m/^nameserver\s+(\d+[.]\d+[.]\d+[.]\d+)\s*$/;
+        if ($1) {
+            push(@dns_addrs, $1);
+        }
+    }
+    close($in);
+    return @dns_addrs
+}
+
+
+my $dns_addrs_str = "";
+my $dns_addrs_tbl_str = "";
+my $enable_local_dns = $ENV{"ENABLE_LOCAL_DNS"};
+if ($enable_local_dns) {
+    my @dns_addrs = local_dns_resolver();
+    $dns_addrs_tbl_str = "{";
+    foreach my $addr (@dns_addrs){
+        $dns_addrs_str = "$dns_addrs_str $addr";
+        $dns_addrs_tbl_str = "$dns_addrs_tbl_str\"$addr\", ";
+    }
+    $dns_addrs_tbl_str = "$dns_addrs_tbl_str}";
+} else {
+    $dns_addrs_str = "8.8.8.8 114.114.114.114";
+    $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
+}
+
+
 my $yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
@@ -146,7 +178,10 @@ _EOC_
     require "resty.core"
 
     apisix = require("apisix")
-    apisix.http_init()
+    local args = {
+        dns_resolver = $dns_addrs_tbl_str,
+    }
+    apisix.http_init(args)
 _EOC_
 
     my $http_config = $block->http_config // '';
@@ -161,7 +196,7 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
 
-    resolver 8.8.8.8 114.114.114.114 ipv6=off;
+    resolver $dns_addrs_str;
     resolver_timeout 5;
 
     underscores_in_headers on;

@@ -203,7 +203,7 @@ passed
 
 
 
-=== TEST 4: sanity check (include uri)
+=== TEST 5: sanity check (include uri)
 --- config
        location /t {
            content_by_lua_block {
@@ -242,7 +242,7 @@ qr/failed to check the configuration of plugin proxy-mirror/
 
 
 
-=== TEST 5: sanity check (normal case)
+=== TEST 6: sanity check (normal case)
 --- config
        location /t {
            content_by_lua_block {
@@ -280,7 +280,8 @@ passed
 [error]
 
 
-=== TEST 6: hit route
+
+=== TEST 7: hit route
 --- request
 GET /hello
 --- error_code: 200
@@ -288,4 +289,3 @@ GET /hello
 hello world
 --- error_log
 uri: /hello
-
