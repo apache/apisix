@@ -90,6 +90,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [限制请求数](doc/plugins/limit-count-cn.md)
     - [限制并发](doc/plugins/limit-conn-cn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
+    - [CORS](doc/plugins/cors-cn.md)
 
 - **运维友好**
     - OpenTracing 可观测性: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin-cn.md)。
