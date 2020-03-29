@@ -54,8 +54,8 @@ tengine_install() {
         return
     fi
 
-    wget https://openresty.org/download/openresty-1.15.8.2.tar.gz
-    tar zxf openresty-1.15.8.2.tar.gz
+    wget https://openresty.org/download/openresty-1.15.8.3.tar.gz
+    tar zxf openresty-1.15.8.3.tar.gz
     wget https://codeload.github.com/alibaba/tengine/tar.gz/2.3.2
     tar zxf 2.3.2
     wget https://codeload.github.com/openresty/luajit2/tar.gz/v2.1-20190912
