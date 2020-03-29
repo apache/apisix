@@ -119,9 +119,11 @@ etcd:
   timeout: 3                      # 3 seconds
 
 eureka:
-  host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+  host:                           # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
     - "http://127.0.0.1:8761"
   prefix: "/eureka/"
+  weight: 100                     # default weight for node
+  enable_metadata: false
   timeout:
     connect: 2000
     send: 2000

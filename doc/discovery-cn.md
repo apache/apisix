@@ -25,7 +25,7 @@
 
 ![](./images/discovery-cn.png)
 
-1. 服务启动时将自身的一些信息，比如服务名、IP、端口等信息上报到注册中心，并通过心跳等机制告诉注册中心，可以正常提供服务；当服务下线时，会修改注册中心的状态或删除实例信息；
+1. 服务启动时将自身的一些信息，比如服务名、IP、端口等信息上报到注册中心；各个服务与注册中心使用一定机制（例如心跳）通信，如果注册中心与服务长时间无法通信，就会注销该实例；当服务下线时，会删除注册中心的实例信息；
 2. 网关会准实时地从注册中心获取服务实例信息；
 3. 当用户通过网关请求服务时，网关从注册中心获取的实例列表中选择一台进行代理；
 
@@ -40,7 +40,7 @@ apisix:
   discovery: eureka
 ```
 
-现已经支持 `Eureka` 注册中心。
+现已支持注册中心有：Eureka 。
 
 ## 注册中心配置
 
@@ -54,6 +54,8 @@ eureka:
     - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
     - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
   prefix: "/eureka/"
+  weight: 100                      # default weight for node
+  enable_metadata: false
   timeout:
     connect: 2000
     send: 2000
@@ -71,7 +73,7 @@ eureka:
   prefix: "/eureka/"
 ```
 
-**Notice**： 如果能把这些配置移到配置中心管理，那就更好了。
+**Memo**： 如果能把这些配置移到配置中心管理，那就更好了。
 
 ## upstream 配置
 
@@ -101,7 +103,7 @@ Server: APISIX web server
 
 ## 如何扩展注册中心？
 
-APISIX 要扩展注册中心其实是件非常容易的事情，我们还是以 eureka 为例：
+APISIX 要扩展注册中心其实是件非常容易的事情，我们还是以 Eureka 为例。
 
 ### 1. 实现 eureka.lua
 
@@ -127,7 +129,7 @@ APISIX 要扩展注册中心其实是件非常容易的事情，我们还是以 
 
   return _M
   ```
-  
+
 ### 2. Eureka 与 APISIX 之间数据转换逻辑
 
 APISIX是通过 `upstream.nodes` 来配置下游服务的，所以使用注册中心后，通过注册中心获取服务的所有 node 后，赋值给 `upstream.nodes` 来达到相同的效果。那么 APISIX 是怎么将 Eureka 的数据转成 node 的呢？ 假如从 Eureka 获取如下数据：
@@ -156,7 +158,7 @@ APISIX是通过 `upstream.nodes` 来配置下游服务的，所以使用注册�
                       },
                       "metadata": {
                           "management.port": "8761",
-                          "weight": 100               # 权重，需要在 spring boot 应用中通过 eureka.instance.metadata-map.weight 进行配置
+                          "weight": 100               # 权重，需要通过 spring boot 应用的 eureka.instance.metadata-map.weight 进行配置
                       },
                       "homePageUrl": "http://192.168.1.100:8761/",
                       "statusPageUrl": "http://192.168.1.100:8761/actuator/info",
@@ -172,18 +174,34 @@ APISIX是通过 `upstream.nodes` 来配置下游服务的，所以使用注册�
 
 解析 instance 数据步骤：
 
-1. 首先要选择状态为 “UP” 的实例。 overriddenStatus 值不为 "UNKNOWN" 以 overriddenStatus 为准，否则以 status 的值为准；
-2. 以 ipAddr 的值为 IP; 并且是 IPv4 或 IPv6 格式的；
-3. 端口取值规则是，如果 port["@enabled"] == "true" 那么使用 port["\$"] 的值；如果 securePort["@enabled"] == "true" 那么使用 securePort["$"] 的值；
-4. 权重取值顺序是，先判断 metadata.weight 是否有值，如果没有，则取配置中的 eureka.weight 的值, 如果还没有，则取默认值100；
+1. 首先要选择状态为 “UP” 的实例： overriddenStatus 值不为 "UNKNOWN" 以 overriddenStatus 为准，否则以 status 的值为准；
+2. IP 地址：以 ipAddr 的值为 IP; 并且是 IPv4 或 IPv6 格式的；
+3. 端口：端口取值规则是，如果 port["@enabled"] == "true" 那么使用 port["\$"] 的值；如果 securePort["@enabled"] == "true" 那么使用 securePort["$"] 的值；
+4. 权重：权重取值顺序是，先判断 metadata.weight 是否有值，如果没有，则取配置中的 eureka.weight 的值, 如果还没有，则取默认值100；
 
-这个例子转成 APISIX nodes 的结果如下：
+默认情况下，这个例子转成 APISIX nodes 的结果如下：
 
-```
+```json
 {
-    "192.168.1.100:8761" = 100
+  "192.168.1.100:8761" : 100
 }
+    
 ```
 
-**Notice**： 由于 APISIX 的 `upstream.nodes` 现在这种设计，对于静态配置来说非常简洁，但对于复杂场景就会有扩展性差的问题，比如想通过注册中心服务实例的 metadata (比如：分组等)信息进行特殊处理时，就需要用户自行定制。
+这种格式的配置，对于静态配置来说非常简洁，但缺点也很明显，对于复杂场景就会有扩展性差的问题，比如想通过实例的 metadata (比如：分组等)信息进行定制路由规则时，就无法实现了。为了解决这个问题，我们在这里预留了一个开关，方便用户使用，即当 `eureka.enable_metadata` 设置为 `true` 时，转成如下格式的数据：
 
+```json
+[
+  {
+    "ip" : "192.168.1.100",
+    "port" : 8761,
+    "weight" : 100,
+    "metadata" : {
+      "management.port": "8761",
+      "weight": 100
+    }
+  }
+]
+```
+
+但是，APISIX 默认的 balancer 还不支持此格式。此外，不同用户的 metadata 和 处理逻辑也不一定相同，因此用户需要定制 balancer 。

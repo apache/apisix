@@ -166,10 +166,20 @@ local function fetch_full_registry(premature)
             if ip and port then
                 local nodes = up_apps[app.name]
                 if not nodes then
-                    nodes = core.table.new(#app.instance, 0)
+                    nodes = local_conf.eureka.enable_metadata and core.table.new(#app.instance, 0)
+                           or core.table.new(0, #app.instance)
                     up_apps[app.name] = nodes
                 end
-                nodes[ip .. ":" .. port] = metadata and metadata.weight or default_weight
+                if local_conf.eureka.enable_metadata then
+                    core.table.insert(nodes, {
+                        ip = ip,
+                        port = port,
+                        weight = weight,
+                        metadata = metadata,
+                    })
+                else
+                    nodes[ip .. ":" .. port] = metadata and metadata.weight or default_weight
+                end
             end
         end
     end
