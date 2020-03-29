@@ -30,7 +30,7 @@ local schema = {
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
         tls_options = {type = "string"},
-        timeout = {type = "integer", minimum = 1, default = 3},
+        timeout = {type = "integer", minimum = 1, default= 1000},
         name = {type = "string", default = "tcp logger"},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
         retry_delay = {type = "integer", minimum = 0, default = 1},
@@ -59,21 +59,21 @@ local function send_tcp_data(conf, log_message)
     local sock, soc_err = tcp()
 
     if not sock then
-        return nil, "failed to init the socket" .. soc_err
+        return false, "failed to init the socket" .. soc_err
     end
 
-    sock:settimeout(conf.timeout * 1000)
+    sock:settimeout(conf.timeout)
 
     local ok, err = sock:connect(conf.host, conf.port)
     if not ok then
-        return nil, "failed to connect to TCP server: host[" ..
+        return false, "failed to connect to TCP server: host[" ..
             conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 
     if conf.tls then
         ok, err = sock:sslhandshake(true, conf.tls_options, false)
         if not ok then
-            return nil, "failed to to perform TLS handshake to TCP server: host[" ..
+            return false, "failed to to perform TLS handshake to TCP server: host[" ..
                 conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
         end
     end
@@ -99,45 +99,51 @@ function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
 
     if not entry.route_id then
-        core.log.error("failed to obtain the route id for udp logger")
+        core.log.error("failed to obtain the route id for tcp logger")
         return
     end
 
     local log_buffer = buffers[entry.route_id]
 
-    -- If a logger is not present for the route, create one
-    if not log_buffer then
-        -- Generate a function to be executed by the batch processor
-        local func = function(entries, batch_max_size)
-            local data
-            if batch_max_size == 1 then
-                data = core.json.encode(entries[1]) -- encode as single {}
-            else
-                data = core.json.encode(entries) -- encode as array [{}]
-            end
-            return send_tcp_data(conf, data)
-        end
-
-        local config = {
-            name = conf.name,
-            retry_delay = conf.retry_delay,
-            batch_max_size = conf.batch_max_size,
-            max_retry_count = conf.max_retry_count,
-            buffer_duration = conf.buffer_duration,
-            inactive_timeout = conf.inactive_timeout,
-        }
-
-        local err
-        log_buffer, err = batch_processor:new(func, config)
-
-        if not log_buffer then
-            core.log.err("error when creating the batch processor: " .. err)
-            return
-        end
-
-        buffers[entry.route_id] = log_buffer
+    if log_buffer then
+        log_buffer:push(entry)
+        return
     end
 
+    -- Generate a function to be executed by the batch processor
+    local func = function(entries, batch_max_size)
+        local data, err
+        if batch_max_size == 1 then
+            data, err = core.json.encode(entries[1]) -- encode as single {}
+        else
+            data, err = core.json.encode(entries) -- encode as array [{}]
+        end
+
+        if not data then
+            core.log.error('error occurred while encoding the token: ', err)
+        end
+
+        return send_tcp_data(conf, data)
+    end
+
+    local config = {
+        name = conf.name,
+        retry_delay = conf.retry_delay,
+        batch_max_size = conf.batch_max_size,
+        max_retry_count = conf.max_retry_count,
+        buffer_duration = conf.buffer_duration,
+        inactive_timeout = conf.inactive_timeout,
+    }
+
+    local err
+    log_buffer, err = batch_processor:new(func, config)
+
+    if not log_buffer then
+        core.log.error("error when creating the batch processor: ", err)
+        return
+    end
+
+    buffers[entry.route_id] = log_buffer
     log_buffer:push(entry)
 end
 
