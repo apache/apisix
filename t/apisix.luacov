@@ -24,8 +24,10 @@ return {
         ["lua/apisix/http/router/*"] = "http/router",
         ["lua/apisix/plugins/*"] = "plugins",
         ["lua/apisix/plugins/grpc-transcode/*"] = "plugins/grpc-transcode",
+        ["lua/apisix/plugins/limit-count/*"] = "plugins/limit-count",
         ["lua/apisix/plugins/prometheus/*"] = "plugins/prometheus",
         ["lua/apisix/plugins/zipkin/*"] = "plugins/zipkin",
+        ["lua/apisix/utils/*"] = "utils",
 
         -- can not enable both at http and stream, will fix it later.
         --  ["lua/apisix/stream/*"] = "stream",
