@@ -63,6 +63,7 @@ Plugins
 * [udp-logger](plugins/udp-logger.md): Log requests to UDP servers.
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
+* [cors](plugins/cors.md): Enbale cors for you api.
 
 Deploy to the Cloud
 =======

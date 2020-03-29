@@ -90,6 +90,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Limit-count](doc/plugins/limit-count.md)
     - [Limit-concurrency](doc/plugins/limit-conn.md)
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
+    - [CORS](doc/plugins/cors.md)
 
 - **OPS friendly**
     - OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)
