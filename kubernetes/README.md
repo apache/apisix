@@ -23,6 +23,18 @@
 
 ```
 $ kubectl apply -f apisix-gw-config-cm.yaml
+
+or
+
+$ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
+```
+
+##### Note: you should modify etcd addr in config file `apisix-gw-config-cm.yaml` or `../conf/config.yaml` first
+
+```
+etcd:
+  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+    - "http://127.0.0.1:2379"     # multiple etcd address
 ```
 
 #### Create deployment for apache incubator-apisix

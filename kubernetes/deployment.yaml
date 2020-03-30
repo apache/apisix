@@ -85,7 +85,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
-          image: 'YOUR_APISIX_IMAGE_URL:latest'
+          image: 'apache/apisix:latest'
           imagePullPolicy: IfNotPresent
           name: apisix-gw-deployment
           ports:
