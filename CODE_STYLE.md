@@ -155,6 +155,12 @@ return limit_conn_new("plugin-limit-conn" .. "plugin-limit-conn"
                       .. "plugin-limit-conn")
 ```
 
+```
+--Yes
+return "param1", "plugin-limit-conn"
+                 .. "plugin-limit-conn")
+```
+
 ## Variable
 Local variables should always be used, not global variables:
 ```
