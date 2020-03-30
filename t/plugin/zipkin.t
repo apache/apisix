@@ -127,7 +127,7 @@ done
                             "zipkin": {
                                 "endpoint": "http://127.0.0.1:1982/mock_zipkin",
                                 "sample_ratio": 1,
-                                "service_name":"APISIX"
+                                "service_name": "APISIX"
                             }
                         },
                         "upstream": {

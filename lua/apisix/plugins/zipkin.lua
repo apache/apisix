@@ -47,20 +47,6 @@ local _M = {
     schema = schema,
 }
 
-local function excute_cmd(cmd)
-    local t, err = io.popen(cmd)
-    if not t then
-        return nil, "failed to execute command: " .. cmd .. ", error info:" .. err
-    end
-    local data = t:read("*all")
-    t:close()
-    return data
-end
-
-local LOCAL_SERVER_IP,_ = excute_cmd("hostname -I | awk '{print $1}'")
-if LOCAL_SERVER_IP then
-    LOCAL_SERVER_IP = LOCAL_SERVER_IP:gsub("^%s*(.-)%s*$", "%1")
-end
 
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
@@ -114,7 +100,7 @@ function _M.rewrite(conf, ctx)
             ["peer.ipv4"] = core.request.get_remote_client_ip(ctx),
             ["peer.port"] = core.request.get_remote_client_port(ctx),
             ["peer.service"] = conf.service_name,
-            ["local.ip"] = LOCAL_SERVER_IP,
+            ["local.ip"] = ctx.server_addr,
         }
     })
 
@@ -131,8 +117,8 @@ function _M.rewrite(conf, ctx)
     ctx.opentracing.rewrite_span = request_span:start_child_span(
                                             "apisix.rewrite", start_timestamp)
 
-    ctx.opentracing.rewrite_span:set_tag("peer.service",conf.service_name)
-    ctx.opentracing.rewrite_span:set_tag("local.ip",LOCAL_SERVER_IP)
+    ctx.opentracing.rewrite_span:set_tag("peer.service", conf.service_name)
+    ctx.opentracing.rewrite_span:set_tag("local.ip", ctx.server_addr)
 
     ctx.REWRITE_END_TIME = tracer:time()
     ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
@@ -147,7 +133,7 @@ function _M.access(conf, ctx)
 
     opentracing.access_span = opentracing.request_span:start_child_span(
             "apisix.access", ctx.REWRITE_END_TIME)
-    opentracing.access_span:set_tag("peer.service",conf.service_name)
+    opentracing.access_span:set_tag("peer.service", conf.service_name)
 
     local tracer = opentracing.tracer
 
@@ -157,8 +143,8 @@ function _M.access(conf, ctx)
     opentracing.proxy_span = opentracing.request_span:start_child_span(
             "apisix.proxy", ctx.ACCESS_END_TIME)
 
-    opentracing.proxy_span:set_tag("peer.service",conf.service_name)
-    opentracing.proxy_span:set_tag("local.ip",LOCAL_SERVER_IP)
+    opentracing.proxy_span:set_tag("peer.service", conf.service_name)
+    opentracing.proxy_span:set_tag("local.ip", ctx.server_addr)
 
     -- send headers to upstream
     local outgoing_headers = {}
@@ -179,7 +165,7 @@ function _M.header_filter(conf, ctx)
     ctx.HEADER_FILTER_END_TIME = opentracing.tracer:time()
     opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
             "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
-    opentracing.body_filter_span:set_tag("peer.service",conf.service_name)
+    opentracing.body_filter_span:set_tag("peer.service", conf.service_name)
 end
 
 
