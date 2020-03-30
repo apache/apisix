@@ -126,8 +126,8 @@ spec:
               exec:
                 command:
                 - /bin/sh
-                - c
-                - sleep 30
+                - -c
+                - "sleep 30"
           # cpu core(s), 1 == 1000m
           resources:
             limits:
