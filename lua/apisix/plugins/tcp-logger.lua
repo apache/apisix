@@ -66,29 +66,29 @@ local function send_tcp_data(conf, log_message)
 
     local ok, err = sock:connect(conf.host, conf.port)
     if not ok then
-        return false, "failed to connect to TCP server: host[" ..
-            conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
+        return false, "failed to connect to TCP server: host[" .. conf.host
+                      .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 
     if conf.tls then
         ok, err = sock:sslhandshake(true, conf.tls_options, false)
         if not ok then
-            return false, "failed to to perform TLS handshake to TCP server: host[" ..
-                conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
+            return false, "failed to to perform TLS handshake to TCP server: host["
+                          .. conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
         end
     end
 
     ok, err = sock:send(log_message)
     if not ok then
         res = false
-        err_msg = "failed to send data to TCP server: host[" ..
-            conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
+        err_msg = "failed to send data to TCP server: host[" .. conf.host
+                  .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 
     ok, err = sock:close()
     if not ok then
         core.log.error("failed to close the TCP connection, host[",
-            conf.host, "] port[", conf.port, "] ", err)
+                        conf.host, "] port[", conf.port, "] ", err)
     end
 
     return res, err_msg
