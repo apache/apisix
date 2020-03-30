@@ -57,6 +57,7 @@ qr/loaded plugin and sort by priority: [-\d]+ name: [\w-]+/
 --- grep_error_log_out
 loaded plugin and sort by priority: 11000 name: fault-injection
 loaded plugin and sort by priority: 10000 name: serverless-pre-function
+loaded plugin and sort by priority: 4000 name: cors
 loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2555 name: wolf-rbac

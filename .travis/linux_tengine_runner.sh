@@ -39,7 +39,7 @@ before_install() {
     docker pull bitnami/kafka:latest
     docker network create kafka-net --driver bridge
     docker run --name zookeeper-server -d -p 2181:2181 --network kafka-net -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:3.6.0
-    docker run --name kafka-server1 -d --network kafka-net -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 -p 9092:9092 -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true bitnami/kafka:latest
+    docker run --name kafka-server1 -d --network kafka-net -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092 -p 9092:9092 -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true bitnami/kafka:latest
     sleep 5
     docker exec -it kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
 }
@@ -54,8 +54,9 @@ tengine_install() {
         return
     fi
 
-    wget https://openresty.org/download/openresty-1.15.8.2.tar.gz
-    tar zxf openresty-1.15.8.2.tar.gz
+    export OPENRESTY_VERSION=1.15.8.3
+    wget https://openresty.org/download/openresty-$OPENRESTY_VERSION.tar.gz
+    tar zxf openresty-$OPENRESTY_VERSION.tar.gz
     wget https://codeload.github.com/alibaba/tengine/tar.gz/2.3.2
     tar zxf 2.3.2
     wget https://codeload.github.com/openresty/luajit2/tar.gz/v2.1-20190912
@@ -63,19 +64,19 @@ tengine_install() {
     wget https://codeload.github.com/simplresty/ngx_devel_kit/tar.gz/v0.3.1
     tar zxf v0.3.1
 
-    rm -rf openresty-1.15.8.2/bundle/nginx-1.15.8
-    mv tengine-2.3.2 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/nginx-1.15.8
+    mv tengine-2.3.2 openresty-$OPENRESTY_VERSION/bundle/
 
-    rm -rf openresty-1.15.8.2/bundle/LuaJIT-2.1-20190507
-    mv luajit2-2.1-20190912 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/LuaJIT-2.1-20190507
+    mv luajit2-2.1-20190912 openresty-$OPENRESTY_VERSION/bundle/
 
-    rm -rf openresty-1.15.8.2/bundle/ngx_devel_kit-0.3.1rc1
-    mv ngx_devel_kit-0.3.1 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/ngx_devel_kit-0.3.1rc1
+    mv ngx_devel_kit-0.3.1 openresty-$OPENRESTY_VERSION/bundle/
 
-    sed -i "s/= auto_complete 'LuaJIT';/= auto_complete 'luajit2';/g" openresty-1.15.8.2/configure
-    sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-1.15.8.2/configure
+    sed -i "s/= auto_complete 'LuaJIT';/= auto_complete 'luajit2';/g" openresty-$OPENRESTY_VERSION/configure
+    sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-$OPENRESTY_VERSION/configure
 
-    cd openresty-1.15.8.2
+    cd openresty-$OPENRESTY_VERSION
 
     # patching start
     # https://github.com/alibaba/tengine/issues/1381#issuecomment-541493008
@@ -194,7 +195,7 @@ tengine_install() {
     mkdir -p build-cache${OPENRESTY_PREFIX}
     cp -r ${OPENRESTY_PREFIX}/* build-cache${OPENRESTY_PREFIX}
     ls build-cache${OPENRESTY_PREFIX}
-    rm -rf openresty-1.15.8.2
+    rm -rf openresty-${OPENRESTY_VERSION}
 }
 
 do_install() {
