@@ -273,3 +273,148 @@ WWW-Authenticate: Bearer realm=apisix
 --- no_error_log
 [error]
 --- SKIP
+
+
+
+=== TEST 8: update plugin public key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "bearer_only": true,
+                                "scope": "apisix",
+                                "public_key": "-----BEGIN PUBLIC KEY-----
+MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ
+hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
+-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "openid-connect": {
+                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                    "redirect_uri": "https://iresty.com",
+                                    "ssl_verify": "no",
+                                    "timeout": 10000,
+                                    "bearer_only": true,
+                                    "scope": "apisix",
+                                    "public_key": "-----BEGIN PUBLIC KEY-----
+MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ
+hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
+-----END PUBLIC KEY-----",
+                                    "token_signing_alg_values_expected": "RS256"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: access introspection with correct token
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                        ".eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk" ..
+                        "4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCB" ..
+                        "jb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqX" ..
+                        "RyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w",
+                    }
+                })
+            ngx.status = res.status
+            if res.status == 200 then
+                ngx.say(true)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: access introspection with wrong token
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                        ".eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk" ..
+                        "4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCB" ..
+                        "jb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqX" ..
+                        "RyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7",
+                    }
+                })
+            ngx.status = res.status
+            if res.status == 200 then
+                ngx.say(true)
+            end
+        }
+    }
+--- request
+GET /t
+--- error_code: 401
+--- error_log
+jwt signature verification failed
