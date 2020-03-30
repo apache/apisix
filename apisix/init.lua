@@ -447,10 +447,10 @@ function _M.http_header_filter_phase()
         for _, global_rule in ipairs(router.global_rules.values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
-            run_plugin("header_filter")
+            run_plugin("header_filter",plugins,api_ctx)
         end
     end
-    run_plugin("header_filter")
+    run_plugin("header_filter",nil,api_ctx)
 end
 
 
@@ -467,10 +467,10 @@ function _M.http_body_filter_phase()
         for _, global_rule in ipairs(router.global_rules.values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
-            run_plugin("body_filter")
+            run_plugin("body_filter",plugins,api_ctx)
         end
     end
-    run_plugin("body_filter")
+    run_plugin("body_filter",nil,api_ctx)
 end
 
 
