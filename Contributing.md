@@ -51,6 +51,11 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## Contribution Guidelines for Documentation
 
+* Linting/Style
+
+    Use a markdown linting tool to lint the content. The following is a [plugin](https://github.com/apache/incubator-apisix/issues/1273)
+    used by our community to lint the docs.
+
 * Active Voice
 
     In general, use active voice when formulating the sentence instead of passive voice. A sentence written in the active voice will emphasize
