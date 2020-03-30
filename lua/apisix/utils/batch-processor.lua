@@ -17,7 +17,6 @@
 local core = require("apisix.core")
 local setmetatable = setmetatable
 local timer_at = ngx.timer.at
-local fmt = string.format
 local ipairs = ipairs
 local table = table
 local now = ngx.now
@@ -57,22 +56,20 @@ function execute_func(premature, batch_processor, batch)
         return
     end
 
-    local ok, err = batch_processor.func(batch.entries)
+    local ok, err = batch_processor.func(batch.entries, batch_processor.batch_max_size)
     if not ok then
+        core.log.error("Batch Processor[", batch_processor.name, "] failed to process entries: ", err)
         batch.retry_count = batch.retry_count + 1
-        if batch.retry_count < batch_processor.max_retry_count then
-            core.log.warn(fmt("Batch Processor[%s] failed to process entries: ",
-                batch_processor.name), err)
+        if batch.retry_count <= batch_processor.max_retry_count then
             schedule_func_exec(batch_processor, batch_processor.retry_delay, batch)
         else
-            core.log.error(fmt(("Batch Processor[%s] exceeded the max_retry_count[%d] "
-                    .. "dropping the entries"), batch_processor.name, batch.retry_count))
+            core.log.error("Batch Processor[", batch_processor.name,"] exceeded ",
+                "the max_retry_count[", batch.retry_count,"] dropping the entries")
         end
         return
     end
 
-    core.log.debug(fmt("Batch Processor[%s] successfully processed the entries",
-        batch_processor.name))
+    core.log.debug("Batch Processor[", batch_processor.name ,"] successfully processed the entries")
 end
 
 
@@ -83,15 +80,15 @@ local function flush_buffer(premature, batch_processor)
 
     if now() - batch_processor.last_entry_t >= batch_processor.inactive_timeout or
             now() - batch_processor.first_entry_t >= batch_processor.buffer_duration then
-        core.log.debug(fmt("BatchProcessor[%s] buffer duration exceeded, activating buffer flush",
-            batch_processor.name))
+        core.log.debug("Batch Processor[", batch_processor.name ,"] buffer ",
+            "duration exceeded, activating buffer flush")
         batch_processor:process_buffer()
         batch_processor.is_timer_running = false
         return
     end
 
     -- buffer duration did not exceed or the buffer is active, extending the timer
-    core.log.debug(fmt("BatchProcessor[%s] extending buffer timer", batch_processor.name))
+    core.log.debug("Batch Processor[", batch_processor.name ,"] extending buffer timer")
     create_buffer_timer(batch_processor)
 end
 
@@ -152,7 +149,7 @@ function Batch_Processor:push(entry)
     self.last_entry_t = now()
 
     if self.batch_max_size <= #entries then
-        core.log.debug(fmt("batch processor[%s] batch max size has exceeded", self.name))
+        core.log.debug("Batch Processor[", self.name ,"] batch max size has exceeded")
         self:process_buffer()
     end
 
@@ -165,8 +162,8 @@ end
 function Batch_Processor:process_buffer()
     -- If entries are present in the buffer move the entries to processing
     if #self.entry_buffer.entries > 0 then
-        core.log.debug(fmt("tranferring buffer entries to processing pipe line, buffercount[%d]",
-            #self.entry_buffer.entries))
+        core.log.debug("tranferring buffer entries to processing pipe line, ",
+            "buffercount[", #self.entry_buffer.entries ,"]")
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = { entries = {}, retry_count = 0 }
     end
