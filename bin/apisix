@@ -111,9 +111,8 @@ env APISIX_PROFILE;
 
 {% if stream_proxy then %}
 stream {
-    lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
-                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                       .. [=[{*lua_cpath*};";
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
+                      .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
@@ -166,7 +165,7 @@ stream {
 
 http {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
-                      .. [=[{*apisix_lua_home*}/?.lua;;{*lua_path*};";
+                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
