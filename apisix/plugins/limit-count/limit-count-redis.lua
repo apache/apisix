@@ -47,7 +47,8 @@ function _M.incoming(self, key)
 
     red:set_timeouts(timeout, timeout, timeout)
 
-    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379)
+    local options = {pool_size = 1000, backlog = 1000}
+    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, options)
     if not ok then
         return false, err
     end
