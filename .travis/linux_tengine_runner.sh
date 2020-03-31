@@ -176,19 +176,19 @@ tengine_install() {
         --add-module=bundle/tengine-2.3.2/modules/mod_dubbo \
         --add-module=bundle/tengine-2.3.2/modules/ngx_multi_upstream_module \
         --add-module=bundle/tengine-2.3.2/modules/mod_config \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_concat_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_footer_filter_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_proxy_connect_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_reqstat_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_concat_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_footer_filter_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_proxy_connect_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_reqstat_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_slice_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_sysguard_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_trim_filter_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_trim_filter_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_check_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_consistent_hash_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dynamic_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dyups_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dynamic_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dyups_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_session_sticky_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_user_agent_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_user_agent_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_slab_stat \
         > build.log 2>&1 || (cat build.log && exit 1)
 
