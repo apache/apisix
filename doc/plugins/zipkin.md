@@ -39,7 +39,7 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 |---------     |--------|-----------|
 | endpoint     |required|the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`.|
 | sample_ratio |required|the ratio of sample, the minimum is 0.00001, the maximum is 1.|
-| service_name |optional|service name for zipkin reporter.|
+| service_name |optional|service name for zipkin reporter, the default values is `APISIX`.|
 
 ## How To Enable
 

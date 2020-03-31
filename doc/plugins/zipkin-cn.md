@@ -36,7 +36,7 @@
 
 * `endpoint`: Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
 * `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
-* `service_name`: 可选参数，标记当前服务的名称，默认是APISIX。
+* `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
 
 ## 如何启用
 
