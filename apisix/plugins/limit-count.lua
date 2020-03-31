@@ -55,7 +55,7 @@ local schema = {
             type = "integer", minimum = 100
         },
         redis_backlog = {
-            type = "integer", minimum = 100
+            type = "integer"
         }
     },
     additionalProperties = false,
@@ -89,7 +89,7 @@ function _M.check_schema(conf)
         conf.redis_port = conf.redis_port or 6379
         conf.redis_timeout = conf.redis_timeout or 1000
         conf.redis_pool_size = conf.redis_pool_size or 1000
-        conf.redis_backlog = conf.redis_backlog or 1000
+        conf.redis_backlog = conf.redis_backlog or nil
     end
 
     return true
