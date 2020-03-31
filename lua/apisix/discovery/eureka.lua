@@ -105,10 +105,11 @@ end
 
 local function parse_instance(instance)
     local status = instance.status
-    local overridden_status = instance.overriddenStatus
+    local overridden_status = instance.overriddenstatus or instance.overriddenStatus
     if overridden_status and "UNKNOWN" ~= overridden_status then
         status = overridden_status
     end
+
     if status ~= "UP" then
         return
     end

@@ -168,7 +168,7 @@ Deal with the Eureka's instance data need the following steps :
 1. select the UP instance. When the value of `overriddenStatus` is "UP" or the value of `overriddenStatus` is "UNKNOWN" and the value of `status` is "UP".
 2. Host. The `ipAddr` is the IP address of instance; and must be IPv4 or IPv6.
 3. Port. If the value of `port["@enabled"]` is equal to "true", using the value of `port["\$"]`, If the value of `securePort["@enabled"]` is equal to "true", using the value of `securePort["\$"]`.
-4. Weight. `local weight =  metadata.weight or local_conf.eureka.weight or 100`
+4. Weight. `local weight = metadata.weight or local_conf.eureka.weight or 100`
 
 The result of this example is as follows:
 
