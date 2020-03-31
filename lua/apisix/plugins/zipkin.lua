@@ -33,7 +33,7 @@ local schema = {
         service_name = {
             type = "string",
             description = "service name for zipkin reporter",
-            default = {"APISIX"},
+            default = "APISIX",
         },
     },
     required = {"endpoint", "sample_ratio"}

@@ -129,11 +129,10 @@ The zipkin plugin has been disabled now. It works for other plugins.
 ## example code for upstream ( golang with Gin )
 
 ```golang
-
 func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {
     // create a reporter to be used by the tracer
     reporter := httpreporter.NewReporter(enpoitUrl)
-    // set-up the local endpoint for our service host is  ip:host
+    // set-up the local endpoint for our service host is ip:host
 
     thisip, _ := GetLocalIP()
 

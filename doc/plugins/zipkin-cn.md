@@ -125,7 +125,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 ## 上游服务是Golang的示例代码
 
 ```golang
-
 func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {
     // create a reporter to be used by the tracer
     reporter := httpreporter.NewReporter(enpoitUrl)
