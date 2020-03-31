@@ -23,6 +23,7 @@ log.info("use config_center: ", config_center)
 
 return {
     version  = require("apisix.core.version"),
+    name     = local_conf.apisix.name or "APISIX",
     log      = log,
     config   = require("apisix.core.config_" .. config_center),
     json     = require("apisix.core.json"),
