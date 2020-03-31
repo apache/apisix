@@ -51,6 +51,12 @@ local schema = {
         redis_timeout = {
             type = "integer", minimum = 1
         },
+        redis_pool_size = {
+            type = "ingeger", minimum = 100
+        },
+        redis_backlog = {
+            type = "ingeger", minimum = 100
+        }
     },
     additionalProperties = false,
     required = {"count", "time_window", "key", "rejected_code"},
@@ -82,6 +88,8 @@ function _M.check_schema(conf)
 
         conf.redis_port = conf.redis_port or 6379
         conf.redis_timeout = conf.redis_timeout or 1000
+        conf.redis_pool_size = conf.redis_pool_size or 1000
+        conf.redis_backlog = conf.redis_backlog or 1000
     end
 
     return true
