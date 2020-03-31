@@ -702,8 +702,12 @@ local function init()
     local dns_resolver = sys_conf["dns_resolver"]
     if not dns_resolver or #dns_resolver == 0 then
         local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
-        if not dns_addrs and #dns_addrs == 0 then
+        if not dns_addrs then
             error("failed to import local DNS: " .. err)
+        end
+
+        if #dns_addrs == 0 then
+            error("local DNS is empty")
         end
         sys_conf["dns_resolver"] = dns_addrs
     end
