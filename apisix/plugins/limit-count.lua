@@ -52,10 +52,10 @@ local schema = {
             type = "integer", minimum = 1
         },
         redis_pool_size = {
-            type = "ingeger", minimum = 100
+            type = "integer", minimum = 100
         },
         redis_backlog = {
-            type = "ingeger", minimum = 100
+            type = "integer", minimum = 100
         }
     },
     additionalProperties = false,
