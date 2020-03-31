@@ -74,7 +74,10 @@ function _M.http_init_worker()
     if not ok then
         error("failed to init worker event: " .. err)
     end
-
+    local discovery = require("apisix.discovery.init").discovery
+    if discovery and discovery.init_worker then
+        discovery.init_worker()
+    end
     require("apisix.balancer").init_worker()
     load_balancer = require("apisix.balancer").run
     require("apisix.admin.init").init_worker()
@@ -97,10 +100,6 @@ function _M.http_init_worker()
     parsed_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
-    local discovery = require("apisix.discovery.init").discovery
-    if discovery and discovery.init_worker then
-        discovery.init_worker()
-    end
 end
 
 
