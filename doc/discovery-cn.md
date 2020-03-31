@@ -55,7 +55,6 @@ eureka:
     - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
   prefix: "/eureka/"
   weight: 100                      # default weight for node
-  enable_metadata: false
   timeout:
     connect: 2000
     send: 2000
@@ -179,21 +178,12 @@ APISIX是通过 `upstream.nodes` 来配置下游服务的，所以使用注册�
 3. 端口：端口取值规则是，如果 port["@enabled"] == "true" 那么使用 port["\$"] 的值；如果 securePort["@enabled"] == "true" 那么使用 securePort["$"] 的值；
 4. 权重：权重取值顺序是，先判断 metadata.weight 是否有值，如果没有，则取配置中的 eureka.weight 的值, 如果还没有，则取默认值100；
 
-默认情况下，这个例子转成 APISIX nodes 的结果如下：
-
-```json
-{
-  "192.168.1.100:8761" : 100
-}
-    
-```
-
-这种格式的配置，对于静态配置来说非常简洁，但缺点也很明显，对于复杂场景就会有扩展性差的问题，比如想通过实例的 metadata (比如：分组等)信息进行定制路由规则时，就无法实现了。为了解决这个问题，我们在这里预留了一个开关，方便用户使用，即当 `eureka.enable_metadata` 设置为 `true` 时，转成如下格式的数据：
+这个例子转成 APISIX nodes 的结果如下：
 
 ```json
 [
   {
-    "ip" : "192.168.1.100",
+    "host" : "192.168.1.100",
     "port" : 8761,
     "weight" : 100,
     "metadata" : {
@@ -203,5 +193,3 @@ APISIX是通过 `upstream.nodes` 来配置下游服务的，所以使用注册�
   }
 ]
 ```
-
-但是，APISIX 默认的 balancer 还不支持此格式。此外，不同用户的 metadata 和 处理逻辑也不一定相同，因此用户需要定制 balancer 。

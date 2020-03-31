@@ -15,9 +15,10 @@
 -- limitations under the License.
 --
 local require = require
-local core  = require("apisix.core")
-local error = error
-local pairs = pairs
+local core    = require("apisix.core")
+local error   = error
+local pairs   = pairs
+local ipairs  = ipairs
 
 
 local _M = {version = 0.2}
@@ -29,16 +30,27 @@ local function filter(route)
         return
     end
 
-    if not route.value.upstream then
+    if not route.value.upstream or not route.value.upstream.nodes then
         return
     end
 
-    for addr, _ in pairs(route.value.upstream.nodes or {}) do
-        local host = core.utils.parse_addr(addr)
-        if not core.utils.parse_ipv4(host) and
-           not core.utils.parse_ipv6(host) then
-            route.has_domain = true
-            break
+    if core.table.isarray(route.value.upstream.nodes) then
+        for _, node in ipairs(route.value.upstream.nodes) do
+            local host = node.host
+            if not core.utils.parse_ipv4(host) and
+                    not core.utils.parse_ipv6(host) then
+                route.has_domain = true
+                break
+            end
+        end
+    else
+        for addr, _ in pairs(route.value.upstream.nodes) do
+            local host = core.utils.parse_addr(addr)
+            if not core.utils.parse_ipv4(host) and
+                    not core.utils.parse_ipv6(host) then
+                route.has_domain = true
+                break
+            end
         end
     end
 

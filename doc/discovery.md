@@ -57,7 +57,6 @@ eureka:
     - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
   prefix: "/eureka/"
   weight: 100                      # default weight for node
-  enable_metadata: false
   timeout:
     connect: 2000
     send: 2000
@@ -167,24 +166,16 @@ Here's an example of Eureka's data：
 Deal with the Eureka's instance data need the following steps :
 
 1. select the UP instance. When the value of `overriddenStatus` is "UP" or the value of `overriddenStatus` is "UNKNOWN" and the value of `status` is "UP".
-2. IP address. The `ipAddr` is the IP address of instance; and must be IPv4 or IPv6.
+2. Host. The `ipAddr` is the IP address of instance; and must be IPv4 or IPv6.
 3. Port. If the value of `port["@enabled"]` is equal to "true", using the value of `port["\$"]`, If the value of `securePort["@enabled"]` is equal to "true", using the value of `securePort["\$"]`.
 4. Weight. `local weight =  metadata.weight or local_conf.eureka.weight or 100`
 
-By default, the result of this example is as follows:
-
-```json
-{
-  "192.168.1.100:8761":100
-}
-```
-
-The configuration of this format, which is very easy and clear for static configuration, has obvious disadvantages, such as poor extendibility for complex scenarios, such as when you want to customize the routing rules by the metadata (e.g., grouping, etc.) information of the instance. To solve this problem, we have reserved a switch for users to use, that is, when 'eureka-enable_metadata' is set to 'true', the result of this example is as follows:
+The result of this example is as follows:
 
 ```json
 [
   {
-    "ip" : "192.168.1.100",
+    "host" : "192.168.1.100",
     "port" : 8761,
     "weight" : 100,
     "metadata" : {
@@ -194,5 +185,3 @@ The configuration of this format, which is very easy and clear for static config
   }
 ]
 ```
-
-However, the default balancer of APISIX does not support this format yet. In addition, the metadata and processing logic may not be the same for different users, so users need to customize balancer.

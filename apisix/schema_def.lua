@@ -230,15 +230,47 @@ local upstream_schema = {
     properties = {
         nodes = {
             description = "nodes of upstream",
-            type = "object",
-            patternProperties = {
-                [".*"] = {
-                    description = "weight of node",
-                    type = "integer",
-                    minimum = 0,
+            anyOf = {
+                {
+                    type = "object",
+                    patternProperties = {
+                        [".*"] = {
+                            description = "weight of node",
+                            type = "integer",
+                            minimum = 0,
+                        }
+                    },
+                    minProperties = 1,
+                },
+                {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "object",
+                        properties = {
+                            host = {
+                                description = "host of node",
+                                type = host_def,
+                            },
+                            port = {
+                                description = "port of node",
+                                type = "integer",
+                                minimum = 1,
+                            },
+                            weight = {
+                                description = "weight of node",
+                                type = "integer",
+                                minimum = 0,
+                                maximum = 100,
+                            },
+                            metadata = {
+                                description = "metadata of node",
+                                type = "object",
+                            }
+                        }
+                    },
                 }
-            },
-            minProperties = 1,
+            }
         },
         retries = {
             type = "integer",

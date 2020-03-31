@@ -20,6 +20,7 @@ local http               = require("resty.http")
 local core               = require("apisix.core")
 local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
+local tostring           = tostring
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local string_sub         = string.sub
@@ -166,20 +167,15 @@ local function fetch_full_registry(premature)
             if ip and port then
                 local nodes = up_apps[app.name]
                 if not nodes then
-                    nodes = local_conf.eureka.enable_metadata and core.table.new(#app.instance, 0)
-                           or core.table.new(0, #app.instance)
+                    nodes = core.table.new(#app.instance, 0)
                     up_apps[app.name] = nodes
                 end
-                if local_conf.eureka.enable_metadata then
-                    core.table.insert(nodes, {
-                        ip = ip,
-                        port = port,
-                        weight = weight,
-                        metadata = metadata,
-                    })
-                else
-                    nodes[ip .. ":" .. port] = metadata and metadata.weight or default_weight
-                end
+                core.table.insert(nodes, {
+                    host = ip,
+                    port = port,
+                    weight = metadata and metadata.weight or default_weight,
+                    metadata = metadata,
+                })
             end
         end
     end
