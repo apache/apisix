@@ -449,6 +449,7 @@ function _M.http_header_filter_phase()
             plugins = plugin.filter(global_rule, plugins)
             run_plugin("header_filter", plugins, api_ctx)
         end
+        core.tablepool.release("plugins", plugins)
     end
     run_plugin("header_filter", nil, api_ctx)
 end
@@ -469,6 +470,7 @@ function _M.http_body_filter_phase()
             plugins = plugin.filter(global_rule, plugins)
             run_plugin("body_filter", plugins, api_ctx)
         end
+        core.tablepool.release("plugins", plugins)
     end
     run_plugin("body_filter", nil, api_ctx)
 end
