@@ -28,7 +28,7 @@ local function new()
     end
 
     local etcd_conf = clone_tab(local_conf.etcd)
-    local prefix = etcd_conf.prefix
+    local prefix = etcd_conf.prefix or (local_conf.apisix.name and '/' .. local_conf.apisix.name) or "/apisix"
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil

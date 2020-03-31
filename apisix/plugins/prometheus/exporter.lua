@@ -23,6 +23,8 @@ local re_gmatch = ngx.re.gmatch
 local tonumber = tonumber
 local select = select
 local prometheus
+local app_name_label_name = "application_name"
+
 
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
@@ -62,19 +64,20 @@ function _M.init()
     prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
-            {"state"})
+            {"state", app_name_label_name})
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
-            "Config server etcd reachable from APISIX, 0 is unreachable")
+            "Config server etcd reachable from APISIX, 0 is unreachable",
+            {app_name_label_name})
 
     -- per service
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "route", "service", "node"})
+            {"code", "route", "service", "node", app_name_label_name})
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency per service in APISIX",
-        {"type", "service", "node"}, DEFAULT_BUCKETS)
+        {"type", "service", "node", app_name_label_name}, DEFAULT_BUCKETS)
 
     metrics.overhead = prometheus:histogram("http_overhead",
         "HTTP request overhead per service in APISIX",
@@ -82,7 +85,7 @@ function _M.init()
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "route", "service", "node"})
+            {"type", "route", "service", "node", app_name_label_name})
 end
 
 
@@ -102,24 +105,24 @@ function _M.log(conf, ctx)
     end
 
     metrics.status:inc(1,
-        gen_arr(vars.status, route_id, service_id, balancer_ip))
+        gen_arr(vars.status, route_id, service_id, balancer_ip, core.name))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
-        gen_arr("request", service_id, balancer_ip))
+        gen_arr("request", service_id, balancer_ip, core.name))
 
     local overhead = latency
     if ctx.var.upstream_response_time then
         overhead =  overhead - tonumber(ctx.var.upstream_response_time) * 1000
     end
     metrics.overhead:observe(overhead,
-        gen_arr("request", service_id, balancer_ip))
+        gen_arr("request", service_id, balancer_ip, core.name))
 
     metrics.bandwidth:inc(vars.request_length,
-        gen_arr("ingress", route_id, service_id, balancer_ip))
+        gen_arr("ingress", route_id, service_id, balancer_ip, core.name))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-        gen_arr("egress", route_id, service_id, balancer_ip))
+        gen_arr("egress", route_id, service_id, balancer_ip, core.name))
 end
 
 
@@ -151,6 +154,7 @@ local function nginx_status()
         end
 
         label_values[1] = name
+        label_values[2] = core.name
         metrics.connections:set(val[0], label_values)
     end
 end
@@ -170,10 +174,10 @@ function _M.collect()
     local config = core.config.new()
     local version, err = config:server_version()
     if version then
-        metrics.etcd_reachable:set(1)
+        metrics.etcd_reachable:set(1, app_name_label_name)
 
     else
-        metrics.etcd_reachable:set(0)
+        metrics.etcd_reachable:set(0, app_name_label_name)
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
     end

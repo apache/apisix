@@ -34,6 +34,7 @@ local function get_full_log(ngx, conf)
         service_id = var.host
     end
 
+
     local log =  {
         request = {
             url = url,
@@ -48,6 +49,7 @@ local function get_full_log(ngx, conf)
             headers = ngx.resp.get_headers(),
             size = var.bytes_sent
         },
+        application_name = core.name,
         upstream = var.upstream_addr,
         service_id = service_id,
         route_id = route_id,

@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require "apisix.core"
 local resty_http = require "resty.http"
 local to_hex = require "resty.string".to_hex
 local cjson = require "cjson".new()
@@ -39,7 +40,7 @@ local span_kind_map = {
 
 function _M.new(conf)
     local endpoint = conf.endpoint
-    local service_name = conf.service_name
+    local service_name = conf.service_name or core.name
     local server_port = conf.server_port
     local server_addr = conf.server_addr
     assert(type(endpoint) == "string", "invalid http endpoint")
