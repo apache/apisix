@@ -27,7 +27,7 @@ add_block_preprocessor(sub {
 
     my $init_by_lua_block = <<_EOC_;
     require "resty.core"
-    apisix = require("init")
+    apisix = require("apisix")
     apisix.http_init()
 
     json = require("cjson.safe")
