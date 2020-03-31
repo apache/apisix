@@ -111,6 +111,8 @@ nginx_config:                     # config for render the template to genarate n
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - 'unix:'
+    #lua_shared_dicts:              # add custom shared cache to nginx.conf
+    #  ipc_shared_dict: 100m        # custom shared cache, format: `cache-key: cache-size`
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
