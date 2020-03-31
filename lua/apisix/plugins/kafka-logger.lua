@@ -32,7 +32,6 @@ local schema = {
             type = "object"
         },
         kafka_topic = {type = "string"},
-        async =  {type = "boolean", default = false},
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "kafka logger"},
@@ -79,11 +78,6 @@ local function send_kafka_data(conf, log_message)
 
     broker_config["request_timeout"] = conf.timeout * 1000
     broker_config["max_retry"] = conf.max_retry_count
-
-    --Async producers will queue logs and push them when the buffer exceeds.
-    if conf.async then
-        broker_config["producer_type"] = "async"
-    end
 
     local prod, err = producer:new(broker_list,broker_config)
     if err then
