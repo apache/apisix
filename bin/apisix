@@ -712,6 +712,10 @@ local function init()
         if not dns_addrs then
             error("failed to import local DNS: " .. err)
         end
+
+        if #dns_addrs == 0 then
+            error("local DNS is empty")
+        end
         sys_conf["dns_resolver"] = dns_addrs
     end
 
