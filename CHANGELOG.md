@@ -19,12 +19,54 @@
 
 # Table of Contents
 
+- [1.2.0](#120)
 - [1.1.0](#110)
 - [1.0.0](#100)
 - [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 1.2.0
+
+The 1.2 version has huge changes. It includes a lot of new features, and it is also the first release version that integrates the dashboard. On the other hand, this release also has many changes that are incompatible with the forward direction and require your attention.
+
+### Core
+- support to set response headers by table. [#1129](https://github.com/apache/incubator-apisix/pull/1129)
+- add profile. [#1147](https://github.com/apache/incubator-apisix/pull/1147/files)
+- support for proxy caching plugin based on disk. [#1153](https://github.com/apache/incubator-apisix/pull/1153/files)
+- auto import nameservers into APISIX from system resolv file. [#1167](https://github.com/apache/incubator-apisix/pull/1167)
+- supported key-based authentication to the dashboard. [#1169](https://github.com/apache/incubator-apisix/pull/1169/files)
+
+### Doc
+- Update README.md [#1136](https://github.com/apache/incubator-apisix/pull/1136/files)
+- Add an installation issue on the FAQ page. [#1142](https://github.com/apache/incubator-apisix/pull/1142)
+- make admin API doc friendly. [#1145](https://github.com/apache/incubator-apisix/pull/1145)
+- fixed wrong port of prometheus API. [#1172](https://github.com/apache/incubator-apisix/pull/1172)
+- fix typo in jwt plugin doc. [#1176](https://github.com/apache/incubator-apisix/pull/1176)
+
+### CI
+- use new `lj-releng` to catch all exceptions. [#1135](https://github.com/apache/incubator-apisix/pull/1135/files)
+- Added and patch tengine with privileged_agent_process.patch. [#1151](https://github.com/apache/incubator-apisix/pull/1151/files)
+
+### Plugin
+- plugin `grpc-transcode` supports grpc deadline. [#1149](https://github.com/apache/incubator-apisix/pull/1149)
+- Support password auth for plugin limit-count-redis. [#1150](https://github.com/apache/incubator-apisix/pull/1150)
+- return 400 when not pass plugin name to admin API. [#1174](https://github.com/apache/incubator-apisix/pull/1174)
+
+### Bugfix
+- use `ss.listen_port` to generate https listening port. [#1133](https://github.com/apache/incubator-apisix/pull/1133)
+- missing `clear` table before to reuse table. [#1134](https://github.com/apache/incubator-apisix/pull/1134)
+- checked `consumer` first, it maybe a boolean value when it was beed deleted. [#1139](https://github.com/apache/incubator-apisix/pull/1139)
+- print warning error message if the yaml route file is invalid. [#1141](https://github.com/apache/incubator-apisix/pull/1141/files)
+- compare server_port with number data type. [#1154](https://github.com/apache/incubator-apisix/pull/1154/files)
+- removed unwanted quotes. [#1158](https://github.com/apache/incubator-apisix/pull/1158)
+- the balancer IP may be nil, use an empty string instead. [#1166](https://github.com/apache/incubator-apisix/pull/1166)
+-
+
+### Test case
+- need to escape the character `{`. [#1148](https://github.com/apache/incubator-apisix/pull/1148/files)
+- exported ENV{APISIX_HOME}, allow user to define the working path by himself. [#1160](https://github.com/apache/incubator-apisix/pull/1160/files)
 
 
 ## 1.1.0
