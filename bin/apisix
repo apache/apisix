@@ -39,9 +39,7 @@ local pkg_path_org = package.path
 local apisix_home = "/usr/local/apisix"
 local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                   .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
-local pkg_path  = apisix_home .. "/deps/share/lua/5.1/apisix/lua/?.lua;"
-                  .. "/usr/local/share/lua/5.1/apisix/lua/?.lua;"
-                  .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
+local pkg_path  = apisix_home ..    "/deps/share/lua/5.1/?.lua;;"
 
 -- only for developer, use current folder as working space
 local is_root_path = false
@@ -58,7 +56,7 @@ if script_path:sub(1, 2) == './' then
 
     pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                 .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
-    pkg_path  = apisix_home .. "/lua/?.lua;"
+    pkg_path  = apisix_home .. "/?/init.lua;"
                 .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 end
 -- print("apisix_home: ", apisix_home)
@@ -113,10 +111,8 @@ env APISIX_PROFILE;
 
 {% if stream_proxy then %}
 stream {
-    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[/usr/local/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
+                      .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
@@ -168,10 +164,8 @@ stream {
 {% end %}
 
 http {
-    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[/usr/local/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;]=]
+                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
