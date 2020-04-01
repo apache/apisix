@@ -35,9 +35,9 @@ __DATA__
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": [{
-                        "host"   : "127.0.0.1",
-                        "port"   : 1980,
-                        "weight" : 1,
+                        "host": "127.0.0.1",
+                        "port": 1980,
+                        "weight": 1
                     }],
                     "type": "roundrobin",
                     "desc": "new upstream"
