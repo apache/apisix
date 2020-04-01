@@ -31,6 +31,7 @@ local default_weight
 local applications
 local useragent = 'ngx_lua-apisix/v' .. core.version.VERSION
 
+
 local _M = {
     version = 1.0,
 }
@@ -203,5 +204,6 @@ function _M.init_worker()
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(30, fetch_full_registry)
 end
+
 
 return _M

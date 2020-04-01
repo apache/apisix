@@ -36,8 +36,9 @@ local function filter(service)
         return
     end
 
-    if core.table.isarray() then
-        for _, node in ipairs(service.value.upstream.nodes) do
+    local nodes = service.value.upstream.nodes
+    if core.table.isarray(nodes) then
+        for _, node in ipairs(nodes) do
             local host = node.host
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
@@ -46,7 +47,7 @@ local function filter(service)
             end
         end
     else
-        for addr, _ in pairs(service.value.upstream.nodes) do
+        for addr, _ in pairs(nodes) do
             local host = core.utils.parse_addr(addr)
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then

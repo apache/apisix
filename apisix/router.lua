@@ -34,8 +34,9 @@ local function filter(route)
         return
     end
 
-    if core.table.isarray(route.value.upstream.nodes) then
-        for _, node in ipairs(route.value.upstream.nodes) do
+    local nodes = route.value.upstream.nodes
+    if core.table.isarray(nodes) then
+        for _, node in ipairs(nodes) do
             local host = node.host
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
@@ -44,7 +45,7 @@ local function filter(route)
             end
         end
     else
-        for addr, _ in pairs(route.value.upstream.nodes) do
+        for addr, _ in pairs(nodes) do
             local host = core.utils.parse_addr(addr)
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then

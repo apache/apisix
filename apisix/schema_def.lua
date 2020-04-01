@@ -267,7 +267,8 @@ local upstream_schema = {
                                 description = "metadata of node",
                                 type = "object",
                             }
-                        }
+                        },
+                        required = {"host", "port", "weight"},
                     },
                 }
             }
