@@ -34,9 +34,15 @@ local span_kind_map = {
 
 function _M.new(conf)
     local endpoint = conf.endpoint
+    local service_name = conf.service_name
+    local server_port = conf.server_port
+    local server_addr = conf.server_addr
     assert(type(endpoint) == "string", "invalid http endpoint")
     return setmetatable({
         endpoint = endpoint,
+        service_name = service_name,
+        server_addr = server_addr,
+        server_port = server_port,
         pending_spans = {},
         pending_spans_n = 0,
     }, mt)
@@ -55,24 +61,12 @@ function _M.report(self, span)
     local span_kind = zipkin_tags["span.kind"]
     zipkin_tags["span.kind"] = nil
 
-    local localEndpoint do
-        local serviceName = zipkin_tags["peer.service"]
-        local localIp = zipkin_tags["local.ip"]
-        if serviceName or localIp then
-            zipkin_tags["peer.service"] = nil
-            zipkin_tags["local.ip"] = nil
-            localEndpoint = {
-                serviceName = serviceName,
-                ipv4 = localIp,
-                port = tonumber(ngx.var.server_port),
-                -- TODO: ip/port from ngx.var.server_name/ngx.var.server_port?
-            }
-
-        else
-            -- needs to be null, not the empty object
-            localEndpoint = cjson.null
-        end
-    end
+    local localEndpoint = {
+        serviceName = self.service_name,
+        ipv4 = self.server_addr,
+        port = self.server_port,
+        -- TODO: ip/port from ngx.var.server_name/ngx.var.server_port?
+    }
 
     local remoteEndpoint do
         local peer_port = span:get_tag "peer.port" -- get as number
@@ -130,6 +124,7 @@ function _M.flush(self)
         body = pending_spans,
     })
 
+    -- ngx.log(ngx.INFO,res.status ,'ok=',pending_spans)
     -- TODO: on failure, retry?
     if not res then
         return nil, "failed to request: " .. err
@@ -137,7 +132,7 @@ function _M.flush(self)
         return nil, "failed: " .. res.status .. " " .. res.reason
     end
 
-    return true
+    return true,pending_spans
 end
 
 

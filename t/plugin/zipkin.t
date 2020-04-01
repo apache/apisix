@@ -318,3 +318,56 @@ GET /opentracing
 opentracing
 --- no_error_log
 report2endpoint ok
+
+
+
+=== TEST 11: set plugin with external ip address
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:1982/mock_zipkin",
+                                "sample_ratio": 1,
+                                "service_name": "apisix",
+                                "server_addr": "8.8.8.8"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: tiger zipkin
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- grep_error_log eval
+qr/\[info\].*/
+--- grep_error_log_out eval
+qr{report2endpoint ok}

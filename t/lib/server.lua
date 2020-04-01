@@ -115,6 +115,23 @@ function _M.mock_zipkin()
         if not span.traceId then
             ngx.exit(400)
         end
+
+        if not span.localEndpoint then
+            ngx.exit(403)
+        end
+
+        if span.localEndpoint.serviceName ~= 'APISIX' and span.localEndpoint.serviceName ~= 'apisix' then
+            ngx.exit(404)
+        end
+
+        if span.localEndpoint.port ~= 1984 then
+            ngx.exit(404)
+        end
+
+        if span.localEndpoint.ipv4 ~= '127.0.0.1' and span.localEndpoint.ipv4 ~='8.8.8.8'then
+            ngx.exit(404)
+        end
+
     end
 end
 
