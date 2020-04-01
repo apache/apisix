@@ -229,7 +229,6 @@ local upstream_schema = {
     type = "object",
     properties = {
         nodes = {
-            description = "nodes of upstream",
             anyOf = {
                 {
                     type = "object",
