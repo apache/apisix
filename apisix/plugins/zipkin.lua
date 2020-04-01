@@ -29,7 +29,17 @@ local schema = {
     type = "object",
     properties = {
         endpoint = {type = "string"},
-        sample_ratio = {type = "number", minimum = 0.00001, maximum = 1}
+        sample_ratio = {type = "number", minimum = 0.00001, maximum = 1},
+        service_name = {
+            type = "string",
+            description = "service name for zipkin reporter",
+            default = "APISIX",
+        },
+        server_addr = {
+            type = "string",
+            description = "default is $server_addr, you can speific your external ip address",
+            pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
+        },
     },
     required = {"endpoint", "sample_ratio"}
 }
@@ -44,6 +54,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
+
+    if not conf.server_addr or conf.server_addr == '' then
+        conf.server_addr = ngx.var.server_addr
+    end
+
     return core.schema.check(schema, conf)
 end
 
@@ -65,12 +80,16 @@ local function report2endpoint(premature, reporter)
         core.log.error("reporter flush ", err)
         return
     end
-
+    
     core.log.info("report2endpoint ok")
 end
 
 
 function _M.rewrite(conf, ctx)
+
+    -- once the server started, server_addr and server_port won't change, so we can cache it.
+    conf.server_port = tonumber(ctx.var['server_port'])
+
     local tracer = core.lrucache.plugin_ctx(plugin_name, ctx,
                                             create_tracer, conf)
 
@@ -109,6 +128,7 @@ function _M.rewrite(conf, ctx)
     local request_span = ctx.opentracing.request_span
     ctx.opentracing.rewrite_span = request_span:start_child_span(
                                             "apisix.rewrite", start_timestamp)
+
     ctx.REWRITE_END_TIME = tracer:time()
     ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
 end
