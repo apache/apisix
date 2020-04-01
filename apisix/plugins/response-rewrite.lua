@@ -36,6 +36,7 @@ local schema = {
         body_base64 = {
             description = "whether new body for repsonse need base64 decode before return",
             type = "boolean",
+            default = false,
         },
         status_code = {
             description = "new status code for repsonse",

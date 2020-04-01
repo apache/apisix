@@ -368,7 +368,7 @@ invalid type as header value
                     "plugins": {
                         "response-rewrite": {
                             "body": "SGVsbG8K",
-                            "body_base64": true,
+                            "body_base64": true
                         }
                     },
                     "upstream": {
@@ -377,7 +377,7 @@ invalid type as header value
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/with_header"
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -389,6 +389,16 @@ invalid type as header value
     }
 --- request
 GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: check base64 content
+--- request
+GET /hello
 --- response_body
 Hello
 --- no_error_log
