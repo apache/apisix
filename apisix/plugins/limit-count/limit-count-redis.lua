@@ -51,7 +51,7 @@ function _M.incoming(self, key)
 
     options.pool_size = conf.redis_pool_size
     options.backlog = conf.redis_backlog
-    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, options)
+    local ok, err = red:connect(conf.redis_host, conf.redis_port, options)
     if not ok then
         return false, err
     end
