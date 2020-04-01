@@ -37,6 +37,7 @@
 * `endpoint`: Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
 * `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
 * `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
+* `server_addr`: 可选参数，标记当前 APISIX 实例的IP地址，默认值是 nginx 内置变量`server_addr`。|
 
 ## 如何启用
 
@@ -51,7 +52,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
         "zipkin": {
             "endpoint": "http://127.0.0.1:9411/api/v2/spans",
             "sample_ratio": 1,
-            "service_name": "APISIX-IN-SG"
+            "service_name": "APISIX-IN-SG",
+            "server_addr": "8.8.8.8"
         }
     },
     "upstream": {
