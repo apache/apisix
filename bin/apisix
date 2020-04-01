@@ -380,6 +380,12 @@ http {
         }
         {% end %}
 
+        location /apisix/aggregate {
+            content_by_lua_block {
+                apisix.http_api_aggregate()
+            }
+        }
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }

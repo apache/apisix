@@ -17,6 +17,7 @@
 local require       = require
 local core          = require("apisix.core")
 local plugin        = require("apisix.plugin")
+local aggregate     = require("apisix.http.aggregate").aggregate
 local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
@@ -630,5 +631,9 @@ function _M.stream_log_phase()
     run_plugin("log")
 end
 
+function _M.http_api_aggregate()
+    local code, body = aggregate()
+    core.response.exit(code, body)
+end
 
 return _M
