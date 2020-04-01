@@ -39,8 +39,8 @@ local schema = {
         },
         exp = {type = "integer", minimum = 1},
         base64_secret = {
-                    type = "boolean",
-                    default = false
+            type = "boolean",
+            default = false
         }
     }
 }
@@ -128,9 +128,8 @@ end
 local function get_secret(conf)
     if conf.base64_secret then
         return ngx_decode_base64(conf.secret)
-    else
-        return conf.secret
     end
+        return conf.secret
 end
 
 function _M.rewrite(conf, ctx)

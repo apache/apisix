@@ -42,7 +42,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/{"algorithm":"HS256","secret":"\w+-\w+-\w+-\w+-\w+","exp":86400}/
+qr/{"algorithm":"HS256","secret":"^[a-zA-Z0-9+/]+={0,2}$","exp":86400}/
 --- no_error_log
 [error]
 
@@ -328,7 +328,9 @@ code: true body: passed
 --- no_error_log
 [error]
 
-=== TEST 16: add consumer with username and plugins with base64 secret
+
+
+=== TEST 17: add consumer with username and plugins with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -372,7 +374,9 @@ passed
 --- no_error_log
 [error]
 
-=== TEST 17: enable jwt auth plugin with base64 secret
+
+
+=== TEST 18: enable jwt auth plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -405,7 +409,9 @@ passed
 --- no_error_log
 [error]
 
-=== TEST 18: sign
+
+
+=== TEST 19: sign
 --- request
 GET /apisix/plugin/jwt/sign?key=user-key
 --- response_body_like eval
@@ -413,7 +419,9 @@ qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
 --- no_error_log
 [error]
 
-=== TEST 19: verify: invalid JWT token
+
+
+=== TEST 20: verify: invalid JWT token
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -422,7 +430,9 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 --- no_error_log
 [error]
 
-=== TEST 20: verify: invalid signature
+
+
+=== TEST 21: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
@@ -433,7 +443,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 --- no_error_log
 [error]
 
-=== TEST 21: verify: happy path
+
+
+=== TEST 22: verify: happy path
 --- request
 GET /hello
 --- more_headers
