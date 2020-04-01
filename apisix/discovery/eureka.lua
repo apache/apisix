@@ -21,6 +21,9 @@ local core               = require("apisix.core")
 local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local tostring           = tostring
+local type               = type
+local math_random        = math.random
+local error              = error
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local string_sub         = string.sub
@@ -46,7 +49,7 @@ local function service_info()
 
     local basic_auth
     -- TODO Add health check to get healthy nodes.
-    local url = host[math.random(#host)]
+    local url = host[math_random(#host)]
     local user_and_password_idx = string_find(url, "@", 1, true)
     if user_and_password_idx then
         local protocol_header_idx = string_find(url, "://", 1, true)
