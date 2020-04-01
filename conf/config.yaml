@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 apisix:
-  name: APISIX                   # application name
+  name: APISIX                   # APISIX gateway name
   node_listen: 9080              # APISIX listening port
   enable_heartbeat: true
   enable_admin: true
