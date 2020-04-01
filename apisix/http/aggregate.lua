@@ -63,7 +63,7 @@ function _M.aggregate(service_id)
     for i,r in ipairs(responses) do
         if not r.status then
             core.table.insert(aggregated_resp, {
-                status = 500,
+                status = 504,
                 reason = "target timeout"
             })
         end

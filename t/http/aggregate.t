@@ -294,7 +294,7 @@ passed
                     "status": 201
                 },
                 {
-                    "status": 500,
+                    "status": 504,
                     "reason": "target timeout"
                 }
                 ]]=]
@@ -356,7 +356,7 @@ timeout
                 }]=],
                 [=[[
                 {
-                    "status": 500,
+                    "status": 504,
                     "reason": "target timeout"
                 }
                 ]]=]
