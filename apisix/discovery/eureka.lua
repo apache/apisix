@@ -24,6 +24,7 @@ local tostring           = tostring
 local type               = type
 local math_random        = math.random
 local error              = error
+local ngx                = ngx
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local string_sub         = string.sub
