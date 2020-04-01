@@ -124,7 +124,7 @@ property "body" validation failed: wrong type: expected string, got number
                     "plugins": {
                         "response-rewrite": {
                             "headers" : {
-                                "X-Server-id": 3,                
+                                "X-Server-id": 3,
                                 "X-Server-status": "on",
                                 "Content-Type": ""
                             },
@@ -352,5 +352,44 @@ invalid field length in header
 GET /t
 --- response_body
 invalid type as header value
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: set body in base64
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "body": "SGVsbG8K",
+                            "body_base64": true,
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/with_header"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+Hello
 --- no_error_log
 [error]
