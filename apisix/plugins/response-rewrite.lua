@@ -82,6 +82,13 @@ function _M.check_schema(conf)
         end
     end
 
+    if conf.body_base64 then
+        local body = ngx.decode_base64(conf.body)
+        if not body then
+            return  false, 'invalid base64 content'
+        end
+    end
+
     return true
 end
 

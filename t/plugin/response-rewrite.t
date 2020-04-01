@@ -169,7 +169,7 @@ passed
             if not res then
                 ngx.say(err)
                 return
-            end 
+            end
 
             if res.headers['Content-Type'] then
                 ngx.say('fail content-type should not be exist, now is'..res.headers['Content-Type'])
@@ -401,5 +401,29 @@ passed
 GET /hello
 --- response_body
 Hello
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: set body with not well formed base64
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                            body = "1",
+                            body_base64 =  true
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid base64 content
 --- no_error_log
 [error]
