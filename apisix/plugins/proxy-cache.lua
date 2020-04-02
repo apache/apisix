@@ -108,6 +108,12 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    for _, key in ipairs(conf.cache_key) do
+        if key == "$request_method" then
+            return false, "cache_key variable " .. key .. " unsupported"
+        end
+    end
+
     local found = false
     local local_conf = core.config.local_conf()
     if local_conf.apisix.proxy_cache then
