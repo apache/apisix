@@ -14,10 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local http = require("resty.http")
-local ngx  = ngx
-
+local core   = require("apisix.core")
+local http   = require("resty.http")
+local ngx    = ngx
+local ipairs = ipairs
+local pairs  = pairs
+local type   = type
 
 local _M = {
     version = 0.1,
@@ -33,6 +35,38 @@ local function check_input(data)
     end
     if not data.timeout or data.timeout == 0 then
         data.timeout = 30000
+    end
+end
+
+local function set_base_header(data)
+    if not data.headers then
+        return
+    end
+
+    for i,req in ipairs(data.pipeline) do
+        if not req.headers then
+            req.headers = data.headers
+        else
+            for k, v in pairs(data.headers) do
+                req.headers[k] = v
+            end
+        end
+    end
+end
+
+local function set_base_query(data)
+    if not data.query then
+        return
+    end
+
+    for i,req in ipairs(data.pipeline) do
+        if not req.query then
+            req.query = data.query
+        else
+            for k, v in pairs(data.query) do
+                req.query[k] = v
+            end
+        end
     end
 end
 
@@ -54,6 +88,8 @@ function _M.aggregate(service_id)
     core.log.info(data.timeout)
     httpc:set_timeout(data.timeout)
     httpc:connect("127.0.0.1", ngx.var.server_port)
+    set_base_header(data)
+    set_base_query(data)
     local responses, err = httpc:request_pipeline(data.pipeline)
     if not responses then
         return 400, {message = "request failed", err = err}

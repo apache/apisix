@@ -34,6 +34,12 @@ __DATA__
             local code, body = t('/apisix/aggregate',
                  ngx.HTTP_POST,
                  [=[{
+                    "query": {
+                        "base": "base_query"
+                    },
+                    "headers": {
+                        "Base-Header": "base"
+                    },
                     "pipeline":[
                     {
                         "path": "/b",
@@ -45,7 +51,10 @@ __DATA__
                         "path": "/c",
                         "method": "PUT"
                     },{
-                        "path": "/d"
+                        "path": "/d",
+                        "query": {
+                            "one": "thing"
+                        }
                     }]
                 }]=],
                 [=[[
@@ -53,6 +62,8 @@ __DATA__
                     "status": 200,
                     "body":"B",
                     "headers": {
+                        "Base-Header": "base",
+                        "Base-Query": "base_query",
                         "X-Res": "B",
                         "X-Header1": "hello",
                         "X-Header2": "world"
@@ -62,6 +73,8 @@ __DATA__
                     "status": 201,
                     "body":"C",
                     "headers": {
+                        "Base-Header": "base",
+                        "Base-Query": "base_query",
                         "X-Res": "C",
                         "X-Method": "PUT"
                     }
@@ -70,7 +83,10 @@ __DATA__
                     "status": 202,
                     "body":"D",
                     "headers": {
-                        "X-Res": "D"
+                        "Base-Header": "base",
+                        "Base-Query": "base_query",
+                        "X-Res": "D",
+                        "X-Query-One": "thing"
                     }
                 }
                 ]]=]
@@ -84,6 +100,8 @@ __DATA__
     location = /b {
         content_by_lua_block {
             ngx.status = 200
+            ngx.header["Base-Header"] = ngx.req.get_headers()["Base-Header"]
+            ngx.header["Base-Query"] = ngx.var.arg_base
             ngx.header["X-Header1"] = ngx.req.get_headers()["Header1"]
             ngx.header["X-Header2"] = ngx.req.get_headers()["Header2"]
             ngx.header["X-Res"] = "B"
@@ -93,6 +111,8 @@ __DATA__
     location = /c {
         content_by_lua_block {
             ngx.status = 201
+            ngx.header["Base-Header"] = ngx.req.get_headers()["Base-Header"]
+            ngx.header["Base-Query"] = ngx.var.arg_base
             ngx.header["X-Res"] = "C"
             ngx.header["X-Method"] = ngx.req.get_method()
             ngx.print("C")
@@ -101,6 +121,9 @@ __DATA__
     location = /d {
         content_by_lua_block {
             ngx.status = 202
+            ngx.header["Base-Header"] = ngx.req.get_headers()["Base-Header"]
+            ngx.header["Base-Query"] = ngx.var.arg_base
+            ngx.header["X-Query-One"] = ngx.var.arg_one
             ngx.header["X-Res"] = "D"
             ngx.print("D")
         }
