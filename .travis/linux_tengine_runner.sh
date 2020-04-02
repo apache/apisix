@@ -54,8 +54,9 @@ tengine_install() {
         return
     fi
 
-    wget https://openresty.org/download/openresty-1.15.8.2.tar.gz
-    tar zxf openresty-1.15.8.2.tar.gz
+    export OPENRESTY_VERSION=1.15.8.3
+    wget https://openresty.org/download/openresty-$OPENRESTY_VERSION.tar.gz
+    tar zxf openresty-$OPENRESTY_VERSION.tar.gz
     wget https://codeload.github.com/alibaba/tengine/tar.gz/2.3.2
     tar zxf 2.3.2
     wget https://codeload.github.com/openresty/luajit2/tar.gz/v2.1-20190912
@@ -63,19 +64,19 @@ tengine_install() {
     wget https://codeload.github.com/simplresty/ngx_devel_kit/tar.gz/v0.3.1
     tar zxf v0.3.1
 
-    rm -rf openresty-1.15.8.2/bundle/nginx-1.15.8
-    mv tengine-2.3.2 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/nginx-1.15.8
+    mv tengine-2.3.2 openresty-$OPENRESTY_VERSION/bundle/
 
-    rm -rf openresty-1.15.8.2/bundle/LuaJIT-2.1-20190507
-    mv luajit2-2.1-20190912 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/LuaJIT-2.1-20190507
+    mv luajit2-2.1-20190912 openresty-$OPENRESTY_VERSION/bundle/
 
-    rm -rf openresty-1.15.8.2/bundle/ngx_devel_kit-0.3.1rc1
-    mv ngx_devel_kit-0.3.1 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/ngx_devel_kit-0.3.1rc1
+    mv ngx_devel_kit-0.3.1 openresty-$OPENRESTY_VERSION/bundle/
 
-    sed -i "s/= auto_complete 'LuaJIT';/= auto_complete 'luajit2';/g" openresty-1.15.8.2/configure
-    sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-1.15.8.2/configure
+    sed -i "s/= auto_complete 'LuaJIT';/= auto_complete 'luajit2';/g" openresty-$OPENRESTY_VERSION/configure
+    sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-$OPENRESTY_VERSION/configure
 
-    cd openresty-1.15.8.2
+    cd openresty-$OPENRESTY_VERSION
 
     # patching start
     # https://github.com/alibaba/tengine/issues/1381#issuecomment-541493008
@@ -105,6 +106,9 @@ tengine_install() {
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_pipelining.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_timeout_fields.patch
     wget -P patches https://raw.githubusercontent.com/totemofwolf/openresty/master/patches/tengine-2.3.2-privileged_agent_process.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-delete_unused_variable.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-keepalive_post_request_status.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-tolerate_backslash_zero_in_uri.patch
 
     cd bundle/tengine-2.3.2
     patch -p1 < ../../patches/nginx-1.17.4-always_enable_cc_feature_tests.patch
@@ -132,6 +136,9 @@ tengine_install() {
     patch -p1 < ../../patches/nginx-1.17.4-upstream_pipelining.patch
     patch -p1 < ../../patches/nginx-1.17.4-upstream_timeout_fields.patch
     patch -p1 < ../../patches/tengine-2.3.2-privileged_agent_process.patch
+    patch -p1 < ../../patches/tengine-2.3.2-delete_unused_variable.patch
+    patch -p1 < ../../patches/tengine-2.3.2-keepalive_post_request_status.patch
+    patch -p1 < ../../patches/tengine-2.3.2-tolerate_backslash_zero_in_uri.patch
 
     cd -
     # patching end
@@ -169,19 +176,19 @@ tengine_install() {
         --add-module=bundle/tengine-2.3.2/modules/mod_dubbo \
         --add-module=bundle/tengine-2.3.2/modules/ngx_multi_upstream_module \
         --add-module=bundle/tengine-2.3.2/modules/mod_config \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_concat_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_footer_filter_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_proxy_connect_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_reqstat_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_concat_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_footer_filter_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_proxy_connect_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_reqstat_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_slice_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_sysguard_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_trim_filter_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_trim_filter_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_check_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_consistent_hash_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dynamic_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dyups_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dynamic_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dyups_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_session_sticky_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_user_agent_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_user_agent_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_slab_stat \
         > build.log 2>&1 || (cat build.log && exit 1)
 
@@ -194,7 +201,7 @@ tengine_install() {
     mkdir -p build-cache${OPENRESTY_PREFIX}
     cp -r ${OPENRESTY_PREFIX}/* build-cache${OPENRESTY_PREFIX}
     ls build-cache${OPENRESTY_PREFIX}
-    rm -rf openresty-1.15.8.2
+    rm -rf openresty-${OPENRESTY_VERSION}
 }
 
 do_install() {
