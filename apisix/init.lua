@@ -436,30 +436,6 @@ function _M.grpc_access_phase()
     run_plugin("access", plugins, api_ctx)
 end
 
-function _M.http_header_filter_phase()
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-    common_phase("header_filter", api_ctx)
-end
-
-function _M.http_body_filter_phase()
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-    common_phase("body_filter", api_ctx)
-end
-
-function _M.http_log_phase()
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-    common_phase("log", api_ctx)
-end
-
 local function common_phase(plugin_name,api_ctx)
     if router.global_rules and router.global_rules.values
             and #router.global_rules.values > 0
@@ -484,6 +460,30 @@ local function common_phase(plugin_name,api_ctx)
     end
 
     core.tablepool.release("api_ctx", api_ctx)
+end
+
+function _M.http_header_filter_phase()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+    common_phase("header_filter", api_ctx)
+end
+
+function _M.http_body_filter_phase()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+    common_phase("body_filter", api_ctx)
+end
+
+function _M.http_log_phase()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+    common_phase("log", api_ctx)
 end
 
 function _M.http_balancer_phase()
