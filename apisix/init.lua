@@ -134,7 +134,10 @@ local function run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
-    if phase ~= "log" then
+    if phase ~= "log"
+        and phase ~= "header_filter"
+        and phase ~= "body_filter"
+    then
         for i = 1, #plugins, 2 do
             local phase_fun = plugins[i][phase]
             if phase_fun then
