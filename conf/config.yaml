@@ -35,6 +35,21 @@ apisix:
   #  enable_tcp_pp: true           # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
   #  enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
 
+  proxy_cache:                     # Proxy Caching configuration
+    cache_ttl: 10s                 # The default caching time if the upstream does not specify the cache time
+    zones:                         # The parameters of a cache
+    - name: disk_cache_one         # The name of the cache, administrator can be specify
+                                   # which cache to use by name in the admin api
+      memory_size: 50m             # The size of shared memory, it's used to store the cache index
+      disk_size: 1G                # The size of disk, it's used to store the cache data
+      disk_path: "/tmp/disk_cache_one" # The path to store the cache data
+      cache_levels: "1:2"           # The hierarchy levels of a cache
+  #  - name: disk_cache_two
+  #    memory_size: 50m
+  #    disk_size: 1G
+  #    disk_path: "/tmp/disk_cache_two"
+  #    cache_levels: "1:2"
+
   # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
   #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
@@ -65,13 +80,11 @@ apisix:
   #   udp:                        # UDP proxy port list
   #     - 9200
   #     - 9211
-  dns_resolver:                   # default DNS resolver, with disable IPv6 and enable local DNS
-    - 114.114.114.114
-    - 223.5.5.5
-    - 1.1.1.1
-    - 8.8.8.8
+  # dns_resolver:                   # If not set, read from `/etc/resolv.conf`
+  #  - 1.1.1.1
+  #  - 8.8.8.8
   dns_resolver_valid: 30          # valid time for dns result 30 seconds
-
+  resolver_timeout: 5             # resolver timeout
   ssl:
     enable: true
     enable_http2: true
@@ -96,9 +109,12 @@ nginx_config:                     # config for render the template to genarate n
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - 'unix:'
+    #lua_shared_dicts:              # add custom shared cache to nginx.conf
+    #  ipc_shared_dict: 100m        # custom shared cache, format: `cache-key: cache-size`
 
 etcd:
-  host: "http://127.0.0.1:2379"   # etcd address
+  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+    - "http://127.0.0.1:2379"     # multiple etcd address
   prefix: "/apisix"               # apisix configurations prefix
   timeout: 3                      # 3 seconds
 
@@ -124,6 +140,10 @@ plugins:                          # plugin list
   - fault-injection
   - udp-logger
   - wolf-rbac
-
+  - proxy-cache
+  - tcp-logger
+  - proxy-mirror
+  - kafka-logger
+  - cors
 stream_plugins:
   - mqtt-proxy

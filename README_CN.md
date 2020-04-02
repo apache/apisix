@@ -90,11 +90,13 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [限制请求数](doc/plugins/limit-count-cn.md)
     - [限制并发](doc/plugins/limit-conn-cn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
+    - [CORS](doc/plugins/cors-cn.md)
 
 - **运维友好**
     - OpenTracing 可观测性: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin-cn.md)。
     - 监控和指标: [Prometheus](doc/plugins/prometheus-cn.md)
-    - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/v2/clustering.md)。
+    - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
+    - 高可用：支持配置同一个集群内的多个 etcd 地址。
     - 控制台: 内置控制台来操作 APISIX 集群。
     - 版本控制：支持操作的多次回滚。
     - CLI: 使用命令行来启动、关闭和重启 APISIX。
@@ -132,9 +134,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **[ARM64](http
 sudo apisix start
 ```
 
-2. 测试限流插件
+2. 入门指南
 
-你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可。
+入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/getting-started-cn.md)的步骤即可。
 
 更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
@@ -216,6 +218,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 
 ## 视频和文章
+- 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
 - 2019.12.14 [从 0 到 1：Apache APISIX 的 Apache 之路](https://zhuanlan.zhihu.com/p/99620158)
 - 2019.12.14 [基于 Apache APISIX 的下一代微服务架构](https://www.upyun.com/opentalk/445.html)
 - 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html)

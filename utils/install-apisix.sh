@@ -42,10 +42,7 @@ echo $UNAME
 
 
 do_install() {
-    if [ "$UNAME" = "Darwin" ]; then
-        sudo luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
-
-    elif [ "$LUAROCKS_VER" = 'luarocks 3.' ]; then
+    if [ "$LUAROCKS_VER" = 'luarocks 3.' ]; then
         sudo luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
 
     else

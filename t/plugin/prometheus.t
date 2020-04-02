@@ -459,3 +459,68 @@ passed
 [200, 404, 200, 200]
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: set it in global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "prometheus": {}
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            local code, body = t('/apisix/admin/routes/3',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello3"
+                }]]
+            )
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: request from client
+--- pipelined_requests eval
+["GET /hello3", "GET /hello3"]
+--- error_code eval
+[404, 404]
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: fetch the prometheus metric data
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_status\{code="404",route="3",service="",node="127.0.0.1"\} 2/
+--- no_error_log
+[error]

@@ -37,6 +37,38 @@ sub read_file($) {
     $data;
 }
 
+sub local_dns_resolver() {
+    open my $in, "/etc/resolv.conf" or die "cannot open /etc/resolv.conf";
+    my @lines =  <$in>;
+    my @dns_addrs = ();
+    foreach my $line (@lines){
+        $line =~ m/^nameserver\s+(\d+[.]\d+[.]\d+[.]\d+)\s*$/;
+        if ($1) {
+            push(@dns_addrs, $1);
+        }
+    }
+    close($in);
+    return @dns_addrs
+}
+
+
+my $dns_addrs_str = "";
+my $dns_addrs_tbl_str = "";
+my $enable_local_dns = $ENV{"ENABLE_LOCAL_DNS"};
+if ($enable_local_dns) {
+    my @dns_addrs = local_dns_resolver();
+    $dns_addrs_tbl_str = "{";
+    foreach my $addr (@dns_addrs){
+        $dns_addrs_str = "$dns_addrs_str $addr";
+        $dns_addrs_tbl_str = "$dns_addrs_tbl_str\"$addr\", ";
+    }
+    $dns_addrs_tbl_str = "$dns_addrs_tbl_str}";
+} else {
+    $dns_addrs_str = "8.8.8.8 114.114.114.114";
+    $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
+}
+
+
 my $yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
@@ -75,7 +107,7 @@ _EOC_
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;./?.lua;;";
+    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;./?.lua;./?/init.lua;;";
     lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;./?.so;;";
 
     lua_socket_log_errors off;
@@ -146,12 +178,15 @@ _EOC_
     require "resty.core"
 
     apisix = require("apisix")
-    apisix.http_init()
+    local args = {
+        dns_resolver = $dns_addrs_tbl_str,
+    }
+    apisix.http_init(args)
 _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;./?.lua;;";
+    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;./?.lua;./?/init.lua;;";
     lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;./?.so;;";
 
     lua_shared_dict plugin-limit-req     10m;
@@ -161,7 +196,7 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
 
-    resolver 8.8.8.8 114.114.114.114 ipv6=off;
+    resolver $dns_addrs_str;
     resolver_timeout 5;
 
     underscores_in_headers on;
@@ -189,6 +224,8 @@ _EOC_
         listen 1980;
         listen 1981;
         listen 1982;
+        listen 5044;
+
 _EOC_
 
     my $ipv6_fake_server = "";
@@ -261,11 +298,35 @@ _EOC_
         }
 
         location / {
+            set \$upstream_mirror_host        '';
             set \$upstream_scheme             'http';
             set \$upstream_host               \$host;
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
             set \$upstream_uri                '';
+
+            set \$upstream_cache_zone            off;
+            set \$upstream_cache_key             '';
+            set \$upstream_cache_bypass          '';
+            set \$upstream_no_cache              '';
+            set \$upstream_hdr_expires           '';
+            set \$upstream_hdr_cache_control     '';
+
+            proxy_cache                         \$upstream_cache_zone;
+            proxy_cache_valid                   any 10s;
+            proxy_cache_min_uses                1;
+            proxy_cache_methods                 GET HEAD;
+            proxy_cache_lock_timeout            5s;
+            proxy_cache_use_stale               off;
+            proxy_cache_key                     \$upstream_cache_key;
+            proxy_no_cache                      \$upstream_no_cache;
+            proxy_cache_bypass                  \$upstream_cache_bypass;
+
+            proxy_hide_header                   Cache-Control;
+            proxy_hide_header                   Expires;
+            add_header      Cache-Control       \$upstream_hdr_cache_control;
+            add_header      Expires             \$upstream_hdr_expires;
+            add_header      Apisix-Cache-Status \$upstream_cache_status always;
 
             access_by_lua_block {
                 -- wait for etcd sync
@@ -281,6 +342,7 @@ _EOC_
             proxy_pass_header  Server;
             proxy_pass_header  Date;
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
+            mirror             /proxy_mirror;
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -315,6 +377,16 @@ _EOC_
             log_by_lua_block {
                 apisix.http_log_phase()
             }
+        }
+
+        location = /proxy_mirror {
+            internal;
+
+            if (\$upstream_mirror_host = "") {
+                return 200;
+            }
+
+            proxy_pass \$upstream_mirror_host\$request_uri;
         }
 _EOC_
 

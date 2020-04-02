@@ -190,7 +190,7 @@ The configuration of the plugin can be directly bound to the specified Route, or
 
 A plugin will only be executed once in a single request, even if it is bound to multiple different objects (such as Route or Service).
 
-The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../lua/apisix/plugins/example-plugin.lua#L37).
+The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../apisix/plugins/example-plugin.lua#L37).
 
 The plugin configuration is submitted as part of Route or Service and placed under `plugins`. It internally uses the plugin name as the hash's key to hold configuration items for different plugins.
 
@@ -238,6 +238,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
 |enable_websocket|optional| enable `websocket`(boolean), default `false`.|
+|timeout|optional| Set the timeout for connection, sending and receiving messages. |
+|desc     |optional|Identifies route names, usage scenarios, and more.|
 
 Create an upstream object use case:
 

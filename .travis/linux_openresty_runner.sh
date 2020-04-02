@@ -32,6 +32,16 @@ create_lua_deps() {
 
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
+    docker pull redis:3.0-alpine
+    docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
+    # spin up kafka cluster for tests (1 zookeper and 1 kafka instance)
+    docker pull bitnami/zookeeper:3.6.0
+    docker pull bitnami/kafka:latest
+    docker network create kafka-net --driver bridge
+    docker run --name zookeeper-server -d -p 2181:2181 --network kafka-net -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:3.6.0
+    docker run --name kafka-server1 -d --network kafka-net -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092 -p 9092:9092 -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true bitnami/kafka:latest
+    sleep 5
+    docker exec -it kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
 }
 
 do_install() {
@@ -72,16 +82,12 @@ do_install() {
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
-        sudo apt-get install golang
-        git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
-        cd grpc_server_example/
-        go build -o grpc_server_example main.go
-        mv grpc_server_example ../build-cache/
-        cd ..
+        wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
+        tar -xvf grpc_server_example-amd64.tar.gz
+        mv grpc_server_example build-cache/
     fi
 
     if [ ! -f "build-cache/proto/helloworld.proto" ]; then
-
         if [ ! -f "grpc_server_example/main.go" ]; then
             git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
         fi
@@ -92,12 +98,9 @@ do_install() {
     fi
 
     if [ ! -f "build-cache/grpcurl" ]; then
-        sudo apt-get install golang
-        git clone https://github.com/fullstorydev/grpcurl.git grpcurl
-        cd grpcurl
-        go build -o grpcurl  ./cmd/grpcurl
-        mv grpcurl ../build-cache/
-        cd ..
+        wget https://github.com/api7/grpcurl/releases/download/20200314/grpcurl-amd64.tar.gz
+        tar -xvf grpcurl-amd64.tar.gz
+        mv grpcurl build-cache/
     fi
 }
 

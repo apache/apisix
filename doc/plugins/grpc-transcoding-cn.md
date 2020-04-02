@@ -17,17 +17,19 @@
 #
 -->
 
-[English](grpc-transcoding.md)
+# [English](grpc-transcoding.md)
+
 # grpc-transcoding
 
 HTTP(s) -> APISIX -> gRPC server
 
-### Proto
+## Proto
 
-#### 参数
+### 参数
+
 * `content`: `.proto` 文件的内容
 
-#### 添加proto
+### 添加proto
 
 路径中最后的数字，会被用作 proto 的 id 做唯一标识，比如下面示例的 proto `id` 是 `1` ：
 
@@ -48,17 +50,16 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 }'
 ```
 
-### 参数
+## 参数列表
 
 * `proto_id`: `.proto`内容的id.
 * `service`:  grpc服务名.
 * `method`:   grpc服务中要调用的方法名.
 * `pb_option`:   proto 编码过程中的转换选项. [ "int64_as_string" / "enum_as_value" / "auto_default_values" / "enable_hooks" ]
 
+## 示例
 
-### 示例
-
-#### 使用 grpc-transcode 插件
+### 使用 grpc-transcode 插件
 
 在指定 route 中，代理 grpc 服务接口:
 
@@ -87,8 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-
-#### 测试
+### 测试
 
 访问上面配置的 route：
 
@@ -107,28 +107,28 @@ Proxy-Connection: keep-alive
 
 这表示已成功代理。
 
-
 #### 使用 grpc-transcode 插件的 pb_option 选项
 
 在指定 route 中，代理 grpc 服务接口:
 
-**选项清单**
- * 枚举类型
+##### 选项清单
+
+* 枚举类型
     > enum_as_name
     > enum_as_value
 
- * 64位整型
+* 64位整型
     > int64_as_number
     > int64_as_string
     > int64_as_hexstring
 
- * 使用默认值
+* 使用默认值
     > auto_default_values
     > no_default_values
     > use_default_values
     > use_default_metatable
 
-  * Hooks开关
+* Hooks开关
     > enable_hooks
     > disable_hooks
 
@@ -155,11 +155,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-#### 测试
+#### 测试 pb_option 参数
 
 访问上面配置的 route：
 
-```
+```shell
 $ curl -i "http://127.0.0.1:9080/zeebe/WorkflowInstanceCreate?bpmnProcessId=order-process&version=1&variables=\{\"orderId\":\"7\",\"ordervalue\":99\}"
 HTTP/1.1 200 OK
 Date: Wed, 13 Nov 2019 03:38:27 GMT

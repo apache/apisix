@@ -19,23 +19,22 @@
 
 set -ex
 
-luacheck -q lua
+luacheck -q apisix
 
-./utils/lj-releng lua/*.lua \
-    lua/apisix/*.lua \
-    lua/apisix/admin/*.lua \
-    lua/apisix/core/*.lua \
-    lua/apisix/http/*.lua \
-    lua/apisix/http/router/*.lua \
-    lua/apisix/plugins/*.lua \
-    lua/apisix/plugins/grpc-transcode/*.lua \
-    lua/apisix/plugins/limit-count/*.lua > \
+./utils/lj-releng \
+    apisix/*.lua \
+    apisix/admin/*.lua \
+    apisix/core/*.lua \
+    apisix/http/*.lua \
+    apisix/http/router/*.lua \
+    apisix/plugins/*.lua \
+    apisix/plugins/grpc-transcode/*.lua \
+    apisix/plugins/limit-count/*.lua > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
-count=`grep -E ".lua:[0-9]+:" /tmp/check.log -c || true`
-
-if [ $count -ne 0 ]
-then
+grep -E "ERROR.*.lua:" /tmp/check.log > /tmp/error.log | true
+if [ -s /tmp/error.log ]; then
+    echo "=====bad style====="
     cat /tmp/check.log
     exit 1
 fi
