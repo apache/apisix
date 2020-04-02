@@ -109,5 +109,22 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
+## 如何通过APISIX支持http自动跳转到https？
+
+比如，将 `http://iresty.com` 重定向到 `https://iresty.com`
+
+可以这么做：
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/global_rules/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "serverless-pre-function": {
+          "phase": "rewrite",
+          "functions": ["return function() if ngx.var.scheme == 'http' and ngx.var.host == 'iresty.com' then ngx.header['Location'] = 'https://iresty.com' .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
+        }
+    }
+}'
+```
+
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
 https://github.com/iresty/lua-resty-radixtree#operator-list
