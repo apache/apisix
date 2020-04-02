@@ -436,30 +436,20 @@ function _M.grpc_access_phase()
     run_plugin("access", plugins, api_ctx)
 end
 
-local function common_phase(plugin_name,api_ctx)
+local function common_phase(plugin_name, api_ctx)
     if router.global_rules and router.global_rules.values
             and #router.global_rules.values > 0
     then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         for _, global_rule in ipairs(router.global_rules.values) do
             core.table.clear(plugins)
-            plugins = plugin.filter(global_rule, plugins)
             run_plugin(plugin_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
     end
     run_plugin(plugin_name, nil, api_ctx)
 
-    if api_ctx.uri_parse_param then
-        core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
-    end
-
-    core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins then
-        core.tablepool.release("plugins", api_ctx.plugins)
-    end
-
-    core.tablepool.release("api_ctx", api_ctx)
+    return api_ctx
 end
 
 function _M.http_header_filter_phase()
@@ -484,6 +474,17 @@ function _M.http_log_phase()
         return
     end
     common_phase("log", api_ctx)
+
+    if api_ctx.uri_parse_param then
+        core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
+    end
+
+    core.ctx.release_vars(api_ctx)
+    if api_ctx.plugins then
+        core.tablepool.release("plugins", api_ctx.plugins)
+    end
+
+    core.tablepool.release("api_ctx", api_ctx)
 end
 
 function _M.http_balancer_phase()
