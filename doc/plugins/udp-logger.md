@@ -42,8 +42,6 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 |batch_max_size |optional       |Max size of each batch, default is 1000|
 |inactive_timeout|optional      |Maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
 |buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 60|
-|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
-|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
 
 ## How To Enable
 

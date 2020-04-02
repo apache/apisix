@@ -176,9 +176,7 @@ opentracing
                             "udp-logger": {
                                 "host": "312.0.0.1",
                                 "port": 2000,
-                                "batch_max_size": 1,
-                                "max_retry_count": 2,
-                                "retry_delay": 0
+                                "batch_max_size": 1
                             }
                         },
                         "upstream": {
@@ -196,9 +194,7 @@ opentracing
                                 "udp-logger": {
                                     "host": "312.0.0.1",
                                     "port": 2000,
-                                    "batch_max_size": 1,
-                                    "max_retry_count": 2,
-                                    "retry_delay": 0
+                                    "batch_max_size": 1
                                 }
                             },
                             "upstream": {
