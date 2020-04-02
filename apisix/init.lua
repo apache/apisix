@@ -448,7 +448,6 @@ local function common_phase(plugin_name, api_ctx)
         core.tablepool.release("plugins", plugins)
     end
     run_plugin(plugin_name, nil, api_ctx)
-
     return api_ctx
 end
 
