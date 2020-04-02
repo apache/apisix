@@ -297,12 +297,6 @@ _EOC_
             }
         }
 
-        location /apisix/aggregate {
-            content_by_lua_block {
-                apisix.http_api_aggregate()
-            }
-        }
-
         location / {
             set \$upstream_mirror_host        '';
             set \$upstream_scheme             'http';

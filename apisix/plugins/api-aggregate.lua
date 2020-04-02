@@ -21,8 +21,19 @@ local ipairs = ipairs
 local pairs  = pairs
 local type   = type
 
+local plugin_name = "api-aggregate"
+
+local schema = {
+    type = "object",
+    properties = {
+    }
+}
+
 local _M = {
     version = 0.1,
+    priority = 4010,
+    name = plugin_name,
+    schema = schema
 }
 
 local function check_input(data)
@@ -74,18 +85,18 @@ local function set_base_query(data)
     end
 end
 
-function _M.aggregate(service_id)
+local function aggregate(service_id)
     ngx.req.read_body()
     local req_body = ngx.req.get_body_data()
     local data, err = core.json.decode(req_body)
-    local code, body = check_input(data)
     if not data then
         core.log.error("invalid request body: ", req_body, " err: ", err)
-        return 400, {message = "invalid request body", req_body = req_body}
+        core.response.exit(400, {message = "invalid request body", req_body = req_body})
     end
 
+    local code, body = check_input(data)
     if code then
-        return code, body
+        core.response.exit(code, body)
     end
 
     local httpc = http.new()
@@ -96,7 +107,7 @@ function _M.aggregate(service_id)
     set_base_query(data)
     local responses, err = httpc:request_pipeline(data.pipeline)
     if not responses then
-        return 400, {message = "request failed", err = err}
+        core.response.exit(400, {message = "request failed", err = err})
     end
 
     local aggregated_resp = {}
@@ -117,7 +128,17 @@ function _M.aggregate(service_id)
         end
         core.table.insert(aggregated_resp, sub_resp)
     end
-    return 200, aggregated_resp
+    core.response.exit(200, aggregated_resp)
+end
+
+function _M.api()
+    return {
+        {
+            methods = {"POST"},
+            uri = "/apisix/aggregate",
+            handler = aggregate,
+        }
+    }
 end
 
 return _M
