@@ -435,12 +435,44 @@ end
 
 
 function _M.http_header_filter_phase()
-    run_plugin("header_filter")
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    if router.global_rules and router.global_rules.values
+            and #router.global_rules.values > 0
+    then
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        for _, global_rule in ipairs(router.global_rules.values) do
+            core.table.clear(plugins)
+            plugins = plugin.filter(global_rule, plugins)
+            run_plugin("header_filter", plugins, api_ctx)
+        end
+        core.tablepool.release("plugins", plugins)
+    end
+    run_plugin("header_filter", nil, api_ctx)
 end
 
 
 function _M.http_body_filter_phase()
-    run_plugin("body_filter")
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    if router.global_rules and router.global_rules.values
+            and #router.global_rules.values > 0
+    then
+        local plugins = core.tablepool.fetch("plugins", 32, 0)
+        for _, global_rule in ipairs(router.global_rules.values) do
+            core.table.clear(plugins)
+            plugins = plugin.filter(global_rule, plugins)
+            run_plugin("body_filter", plugins, api_ctx)
+        end
+        core.tablepool.release("plugins", plugins)
+    end
+    run_plugin("body_filter", nil, api_ctx)
 end
 
 
@@ -451,7 +483,7 @@ function _M.http_log_phase()
     end
 
     if router.global_rules and router.global_rules.values
-       and #router.global_rules.values > 0
+            and #router.global_rules.values > 0
     then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         for _, global_rule in ipairs(router.global_rules.values) do
