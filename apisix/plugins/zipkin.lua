@@ -65,6 +65,11 @@ end
 
 
 local function create_tracer(conf)
+
+    if not conf.server_addr or conf.server_addr == '' then
+        conf.server_addr = ngx.var.server_addr
+    end
+
     local tracer = new_tracer(new_reporter(conf), new_random_sampler(conf))
     tracer:register_injector("http_headers", zipkin_codec.new_injector())
     tracer:register_extractor("http_headers", zipkin_codec.new_extractor())
