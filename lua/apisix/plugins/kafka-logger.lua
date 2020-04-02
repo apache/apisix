@@ -77,7 +77,6 @@ local function send_kafka_data(conf, log_message)
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
-    broker_config["max_retry"] = conf.max_retry_count
 
     local prod, err = producer:new(broker_list,broker_config)
     if err then
@@ -95,45 +94,51 @@ function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
 
     if not entry.route_id then
-        core.log.error("failed to obtain the route id for udp logger")
+        core.log.error("failed to obtain the route id for kafka logger")
         return
     end
 
     local log_buffer = buffers[entry.route_id]
 
-    -- If a logger is not present for the route, create one
-    if not log_buffer then
-        -- Generate a function to be executed by the batch processor
-        local func = function(entries, batch_max_size)
-            local data
-            if batch_max_size == 1 then
-                data = core.json.encode(entries[1]) -- encode as single {}
-            else
-                data = core.json.encode(entries) -- encode as array [{}]
-            end
-            return send_kafka_data(conf, data)
-        end
-
-        local config = {
-            name = conf.name,
-            retry_delay = conf.retry_delay,
-            batch_max_size = conf.batch_max_size,
-            max_retry_count = conf.max_retry_count,
-            buffer_duration = conf.buffer_duration,
-            inactive_timeout = conf.inactive_timeout,
-        }
-
-        local err
-        log_buffer, err = batch_processor:new(func, config)
-
-        if not log_buffer then
-            core.log.err("error when creating the batch processor: " .. err)
-            return
-        end
-
-        buffers[entry.route_id] = log_buffer
+    if log_buffer then
+        log_buffer:push(entry)
+        return
     end
 
+    -- Generate a function to be executed by the batch processor
+    local func = function(entries, batch_max_size)
+        local data, err
+        if batch_max_size == 1 then
+            data, err = core.json.encode(entries[1]) -- encode as single {}
+        else
+            data, err = core.json.encode(entries) -- encode as array [{}]
+        end
+
+        if not data then
+            return false, 'error occurred while encoding the data: ' .. err
+        end
+
+        return send_kafka_data(conf, data)
+    end
+
+    local config = {
+        name = conf.name,
+        retry_delay = conf.retry_delay,
+        batch_max_size = conf.batch_max_size,
+        max_retry_count = conf.max_retry_count,
+        buffer_duration = conf.buffer_duration,
+        inactive_timeout = conf.inactive_timeout,
+    }
+
+    local err
+    log_buffer, err = batch_processor:new(func, config)
+
+    if not log_buffer then
+        core.log.error("error when creating the batch processor: ", err)
+        return
+    end
+
+    buffers[entry.route_id] = log_buffer
     log_buffer:push(entry)
 end
 
