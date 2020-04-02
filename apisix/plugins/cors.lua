@@ -85,13 +85,14 @@ function _M.check_schema(conf)
     return true
 end
 
-function _M.header_filter(conf, ctx)
-    if conf.allow_origins == "**" then
-        conf.allow_origins = ngx.var.http_origin or '*'
+function _M.access(conf, ctx)
+    local allow_origins = conf.allow_origins
+    if allow_origins == "**" then
+        allow_origins = ngx.var.http_origin or '*'
     end
-    if str_find(conf.allow_origins, ",", 1, true) then
+    if str_find(allow_origins, ",", 1, true) then
         local finded = false
-        local iterator, err = re_gmatch(conf.allow_origins, "([^,]+)", "jiox")
+        local iterator, err = re_gmatch(allow_origins, "([^,]+)", "jiox")
         if not iterator then
             return 500, {message = "match origins failed", error = err}
         end
@@ -105,7 +106,7 @@ function _M.header_filter(conf, ctx)
             end
 
             if origin[0] == ngx.var.http_origin then
-                conf.allow_origins = origin[0]
+                allow_origins = origin[0]
                 finded = true
                 break
             end
@@ -115,21 +116,31 @@ function _M.header_filter(conf, ctx)
         end
     end
 
-    if conf.allow_methods == "**" then
-        conf.allow_methods = "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE"
+    ctx.cors_allow_origins = allow_origins
+
+    if ctx.var.request_method == "OPTIONS" then
+        return 200
+    end
+end
+
+function _M.header_filter(conf, ctx)
+    if not ctx.cors_allow_origins then
+        -- no origin matched, don't add headers
+        return
     end
 
-    ngx.header["Access-Control-Allow-Origin"] = conf.allow_origins
-    ngx.header["Access-Control-Allow-Methods"] = conf.allow_methods
+    local allow_methods = conf.allow_methods
+    if allow_methods == "**" then
+        allow_methods = "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE"
+    end
+
+    ngx.header["Access-Control-Allow-Origin"] = ctx.cors_allow_origins
+    ngx.header["Access-Control-Allow-Methods"] = allow_methods
     ngx.header["Access-Control-Allow-Headers"] = conf.allow_headers
     ngx.header["Access-Control-Expose-Headers"] = conf.expose_headers
     ngx.header["Access-Control-Max-Age"] = conf.max_age
     if conf.allow_credential then
         ngx.header["Access-Control-Allow-Credentials"] = true
-    end
-
-    if ctx.var.request_method == "OPTIONS" then
-        return 200
     end
 end
 

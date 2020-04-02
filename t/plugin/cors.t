@@ -254,7 +254,7 @@ Access-Control-Allow-Credentials:
 
 
 
-=== TEST 8: set route(spcific)
+=== TEST 8: set route (cors specified)
 --- config
     location /t {
         content_by_lua_block {
@@ -297,7 +297,7 @@ passed
 
 
 
-=== TEST 9: cors spcific
+=== TEST 9: cors specified
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -316,7 +316,7 @@ Access-Control-Allow-Credentials: true
 
 
 
-=== TEST 10: cors spcific no match orgin
+=== TEST 10: cors specified no match origin
 --- request
 GET /hello HTTP/1.1
 --- more_headers
