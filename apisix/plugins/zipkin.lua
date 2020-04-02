@@ -21,6 +21,7 @@ local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
 local new_reporter = require("apisix.plugins.zipkin.reporter").new
 local ngx = ngx
 local pairs = pairs
+local tonumber = tonumber
 
 local plugin_name = "zipkin"
 
@@ -80,7 +81,7 @@ local function report2endpoint(premature, reporter)
         core.log.error("reporter flush ", err)
         return
     end
-    
+
     core.log.info("report2endpoint ok")
 end
 

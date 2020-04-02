@@ -371,3 +371,29 @@ opentracing
 qr/\[info\].*/
 --- grep_error_log_out eval
 qr{report2endpoint ok}
+
+
+
+=== TEST 13: sanity server_addr
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.zipkin")
+            local ok, err = plugin.check_schema({
+                endpoint = 'http://127.0.0.1',
+                sample_ratio = 0.001,
+                server_addr = 'badip'
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$" with "badip"
+--- no_error_log
+[error]
