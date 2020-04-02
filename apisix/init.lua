@@ -461,7 +461,6 @@ function _M.http_log_phase()
 end
 
 local function common_phase(plugin_name,api_ctx)
-
     if router.global_rules and router.global_rules.values
             and #router.global_rules.values > 0
     then
