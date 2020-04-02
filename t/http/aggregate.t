@@ -35,17 +35,20 @@ __DATA__
                  ngx.HTTP_POST,
                  [=[{
                     "query": {
-                        "base": "base_query"
+                        "base": "base_query",
+                        "conflict": "query_value"
                     },
                     "headers": {
-                        "Base-Header": "base"
+                        "Base-Header": "base",
+                        "Conflict-Header": "header_value"
                     },
                     "pipeline":[
                     {
                         "path": "/b",
                         "headers": {
                             "Header1": "hello",
-                            "Header2": "world"
+                            "Header2": "world",
+                            "Conflict-Header": "b-header-value"
                         }
                     },{
                         "path": "/c",
@@ -53,7 +56,8 @@ __DATA__
                     },{
                         "path": "/d",
                         "query": {
-                            "one": "thing"
+                            "one": "thing",
+                            "conflict": "d_value"
                         }
                     }]
                 }]=],
@@ -66,7 +70,8 @@ __DATA__
                         "Base-Query": "base_query",
                         "X-Res": "B",
                         "X-Header1": "hello",
-                        "X-Header2": "world"
+                        "X-Header2": "world",
+                        "X-Conflict-Header": "b-header-value"
                     }
                 },
                 {
@@ -86,7 +91,8 @@ __DATA__
                         "Base-Header": "base",
                         "Base-Query": "base_query",
                         "X-Res": "D",
-                        "X-Query-One": "thing"
+                        "X-Query-One": "thing",
+                        "X-Query-Conflict": "d_value"
                     }
                 }
                 ]]=]
@@ -104,6 +110,7 @@ __DATA__
             ngx.header["Base-Query"] = ngx.var.arg_base
             ngx.header["X-Header1"] = ngx.req.get_headers()["Header1"]
             ngx.header["X-Header2"] = ngx.req.get_headers()["Header2"]
+            ngx.header["X-Conflict-Header"] = ngx.req.get_headers()["Conflict-Header"]
             ngx.header["X-Res"] = "B"
             ngx.print("B")
         }
@@ -124,6 +131,7 @@ __DATA__
             ngx.header["Base-Header"] = ngx.req.get_headers()["Base-Header"]
             ngx.header["Base-Query"] = ngx.var.arg_base
             ngx.header["X-Query-One"] = ngx.var.arg_one
+            ngx.header["X-Query-Conflict"] = ngx.var.arg_conflict
             ngx.header["X-Res"] = "D"
             ngx.print("D")
         }

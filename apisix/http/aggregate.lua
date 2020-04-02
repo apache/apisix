@@ -48,7 +48,9 @@ local function set_base_header(data)
             req.headers = data.headers
         else
             for k, v in pairs(data.headers) do
-                req.headers[k] = v
+                if not req.headers[k] then
+                    req.headers[k] = v
+                end
             end
         end
     end
@@ -64,7 +66,9 @@ local function set_base_query(data)
             req.query = data.query
         else
             for k, v in pairs(data.query) do
-                req.query[k] = v
+                if not req.query[k] then
+                    req.query[k] = v
+                end
             end
         end
     end
