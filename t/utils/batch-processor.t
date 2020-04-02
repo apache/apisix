@@ -122,7 +122,7 @@ GET /t
 --- response_body
 done
 --- error_log
-BatchProcessor[log buffer] buffer duration exceeded, activating buffer flush
+Batch Processor[log buffer] buffer duration exceeded, activating buffer flush
 Batch Processor[log buffer] successfully processed the entries
 --- wait: 3
 
@@ -134,9 +134,9 @@ Batch Processor[log buffer] successfully processed the entries
         content_by_lua_block {
             local Batch = require("apisix.utils.batch-processor")
             local config = {
-                max_retry_count  = 2,
+                max_retry_count = 2,
                 batch_max_size = 2,
-                retry_delay  = 0,
+                retry_delay = 0,
             }
             local func_to_send = function(elements)
                 return true
@@ -157,11 +157,11 @@ GET /t
 --- response_body
 done
 --- no_error_log
-BatchProcessor[log buffer] activating flush due to no activity
+Batch Processor[log buffer] buffer duration exceeded, activating buffer flush
 --- error_log
-batch processor[log buffer] batch max size has exceeded
+Batch Processor[log buffer] batch max size has exceeded
 Batch Processor[log buffer] successfully processed the entries
---- wait: 0.5
+--- wait: 1
 
 
 
@@ -235,7 +235,7 @@ GET /t
 --- response_body
 done
 --- no_error_log
-BatchProcessor[log buffer] buffer duration exceeded, activating buffer flush
+Batch Processor[log buffer] buffer duration exceeded, activating buffer flush
 --- error_log
 Batch Processor[log buffer] failed to process entries
 Batch Processor[log buffer] exceeded the max_retry_count
@@ -278,7 +278,7 @@ GET /t
 --- response_body
 done
 --- no_error_log
-BatchProcessor[log buffer] activating flush due to no activity
+Batch Processor[log buffer] activating flush due to no activity
 --- error_log
 batch[1] sent
 batch[2] sent
@@ -315,8 +315,7 @@ GET /t
 --- response_body
 done
 --- no_error_log
-BatchProcessor[log buffer] activating flush due to no activity
-Batch Processor[log buffer] failed to process entries
+Batch Processor[log buffer] activating flush due to no activity
 --- error_log
 Batch Processor[log buffer] exceeded the max_retry_count
 --- wait: 0.5
@@ -353,7 +352,7 @@ GET /t
 --- response_body
 done
 --- error_log
-BatchProcessor[log buffer] buffer duration exceeded, activating buffer flush
+Batch Processor[log buffer] buffer duration exceeded, activating buffer flush
 Batch Processor[log buffer] successfully processed the entries
 --- wait: 3
 
@@ -392,7 +391,7 @@ GET /t
 --- response_body
 done
 --- no_error_log
-BatchProcessor[log buffer] activating flush due to no activity
+Batch Processor[log buffer] activating flush due to no activity
 --- error_log
 [{"msg":"1"},{"msg":"2"}]
 [{"msg":"3"},{"msg":"4"}]
@@ -435,7 +434,7 @@ GET /t
 --- response_body
 done
 --- no_error_log
-BatchProcessor[log buffer] activating flush due to no activity
+Batch Processor[log buffer] activating flush due to no activity
 --- error_log
-BatchProcessor[log buffer] extending buffer timer
+Batch Processor[log buffer] extending buffer timer
 --- wait: 3
