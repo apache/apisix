@@ -115,7 +115,7 @@ local function aggregate(service_id)
         if not r.status then
             core.table.insert(aggregated_resp, {
                 status = 504,
-                reason = "target timeout"
+                reason = "upstream timeout"
             })
         end
         local sub_resp = {
