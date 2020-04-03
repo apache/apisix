@@ -32,7 +32,7 @@ local _M = {
 local function read_file(path)
     local file, err = io_open(path, "rb")   -- read as binary mode
     if not file then
-        log.error("faild to read config file:" .. path, ", error info:", err)
+        log.error("failed to read config file:" .. path, ", error info:", err)
         return nil, err
     end
 
