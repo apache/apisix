@@ -1,0 +1,154 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: v1
+data:
+  config.yaml: |
+    #
+    # Licensed to the Apache Software Foundation (ASF) under one or more
+    # contributor license agreements.  See the NOTICE file distributed with
+    # this work for additional information regarding copyright ownership.
+    # The ASF licenses this file to You under the Apache License, Version 2.0
+    # (the "License"); you may not use this file except in compliance with
+    # the License.  You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    #
+    apisix:
+      node_listen: 9080              # APISIX listening port
+      enable_heartbeat: true
+      enable_admin: true
+      enable_admin_cors: true         # Admin API support CORS response headers.
+      enable_debug: false
+      enable_dev_mode: false          # Sets nginx worker_processes to 1 if set to true
+      enable_reuseport: true          # Enable nginx SO_REUSEPORT switch if set to true.
+      enable_ipv6: true
+      config_center: etcd             # etcd: use etcd to store the config value
+                                      # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
+
+      #proxy_protocol:                 # Proxy Protocol configuration
+      #  listen_http_port: 9181        # The port with proxy protocol for http, it differs from node_listen and port_admin.
+                                      # This port can only receive http request with proxy protocol, but node_listen & port_admin
+                                      # can only receive http request. If you enable proxy protocol, you must use this port to
+                                      # receive http request with proxy protocol
+      #  listen_https_port: 9182       # The port with proxy protocol for https
+      #  enable_tcp_pp: true           # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
+      #  enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
+
+      # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+      #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
+      #   - "::/64"
+      # port_admin: 9180              # use a separate port
+
+      # Default token when use API to call for Admin API.
+      # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
+      # Disabling this configuration item means that the Admin API does not
+      # require any authentication.
+      admin_key:
+        -
+          name: "admin"
+          key: edd1c9f034335f136f87ad84b625c8f1
+          role: admin                 # admin: manage all configuration data
+                                      # viewer: only can view configuration data
+        -
+          name: "viewer"
+          key: 4054f7cf07e344346cd3f287985e76a2
+          role: viewer
+      router:
+        http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
+                                      # radixtree_host_uri: match route by host + uri(base on radixtree)
+        ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
+      # stream_proxy:                 # TCP/UDP proxy
+      #   tcp:                        # TCP proxy port list
+      #     - 9100
+      #     - 9101
+      #   udp:                        # UDP proxy port list
+      #     - 9200
+      #     - 9211
+      dns_resolver:                   # default DNS resolver, with disable IPv6 and enable local DNS
+        - 114.114.114.114
+        - 223.5.5.5
+        - 1.1.1.1
+        - 8.8.8.8
+      dns_resolver_valid: 30          # valid time for dns result 30 seconds
+
+      ssl:
+        enable: true
+        enable_http2: true
+        listen_port: 9443
+        ssl_protocols: "TLSv1 TLSv1.1 TLSv1.2 TLSv1.3"
+        ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA"
+
+    nginx_config:                     # config for render the template to genarate nginx.conf
+      error_log: "logs/error.log"
+      error_log_level: "warn"         # warn,error
+      worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
+      event:
+        worker_connections: 10620
+      http:
+        access_log: "logs/access.log"
+        keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
+        client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
+        client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
+        send_timeout: 10s              # timeout for transmitting a response to the client.then the connection is closed
+        underscores_in_headers: "on"   # default enables the use of underscores in client request header fields
+        real_ip_header: "X-Real-IP"    # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
+        real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
+          - 127.0.0.1
+          - 'unix:'
+
+    etcd:
+      host: "http://127.0.0.1:2379"   # etcd address
+      prefix: "/apisix"               # apisix configurations prefix
+      timeout: 3                      # 3 seconds
+
+    plugins:                          # plugin list
+      - example-plugin
+      - limit-req
+      - limit-count
+      - limit-conn
+      - key-auth
+      - basic-auth
+      - prometheus
+      - node-status
+      - jwt-auth
+      - zipkin
+      - ip-restriction
+      - grpc-transcode
+      - serverless-pre-function
+      - serverless-post-function
+      - openid-connect
+      - proxy-rewrite
+      - redirect
+      - response-rewrite
+      - fault-injection
+      - udp-logger
+      - wolf-rbac
+
+    stream_plugins:
+      - mqtt-proxy
+
+kind: ConfigMap
+metadata:
+  name: apisix-gw-config.yaml
+  # namespace: default
