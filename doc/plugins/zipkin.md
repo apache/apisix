@@ -56,7 +56,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
             "endpoint": "http://127.0.0.1:9411/api/v2/spans",
             "sample_ratio": 1,
             "service_name": "APISIX-IN-SG",
-            "server_addr": "8.8.8.8"
+            "server_addr": "1.2.3.4"
         }
     },
     "upstream": {

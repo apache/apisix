@@ -117,19 +117,19 @@ function _M.mock_zipkin()
         end
 
         if not span.localEndpoint then
-            ngx.exit(403)
+            ngx.exit(400)
         end
 
         if span.localEndpoint.serviceName ~= 'APISIX' and span.localEndpoint.serviceName ~= 'apisix' then
-            ngx.exit(404)
+            ngx.exit(400)
         end
 
         if span.localEndpoint.port ~= 1984 then
-            ngx.exit(404)
+            ngx.exit(400)
         end
 
         if span.localEndpoint.ipv4 ~= ngx.req.get_uri_args()['server_addr'] then
-            ngx.exit(404)
+            ngx.exit(400)
         end
 
     end

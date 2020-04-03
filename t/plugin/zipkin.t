@@ -331,10 +331,10 @@ report2endpoint ok
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=8.8.8.8",
+                                "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=1.2.3.4",
                                 "sample_ratio": 1,
                                 "service_name": "apisix",
-                                "server_addr": "8.8.8.8"
+                                "server_addr": "1.2.3.4"
                             }
                         },
                         "upstream": {
