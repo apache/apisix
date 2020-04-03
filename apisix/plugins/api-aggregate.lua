@@ -25,8 +25,7 @@ local plugin_name = "api-aggregate"
 
 local schema = {
     type = "object",
-    properties = {
-    }
+    additionalProperties = false,
 }
 
 local _M = {
@@ -85,13 +84,15 @@ local function set_base_query(data)
     end
 end
 
-local function aggregate(service_id)
+local function aggregate()
     ngx.req.read_body()
     local req_body = ngx.req.get_body_data()
+    if not req_body then
+        core.response.exit(400, {message = "no request body, you should give at least one pipeline setting"})
+    end
     local data, err = core.json.decode(req_body)
     if not data then
-        core.log.error("invalid request body: ", req_body, " err: ", err)
-        core.response.exit(400, {message = "invalid request body", req_body = req_body})
+        core.response.exit(400, {message = "invalid request body", req_body = req_body, err = err})
     end
 
     local code, body = check_input(data)

@@ -326,7 +326,7 @@ passed
                 },
                 {
                     "status": 504,
-                    "reason": "target timeout"
+                    "reason": "upstream timeout"
                 }
                 ]]=]
                 )
@@ -388,7 +388,7 @@ timeout
                 [=[[
                 {
                     "status": 504,
-                    "reason": "target timeout"
+                    "reason": "upstream timeout"
                 }
                 ]]=]
                 )
@@ -420,3 +420,54 @@ GET /aggregate
 passed
 --- error_log
 timeout
+
+
+
+=== TEST 7: no body in request
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                nil,
+                nil
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /aggregate
+--- error_code: 400
+--- response_body
+{"message":"no request body, you should give at least one pipeline setting"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: invalid body
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                "invaild json string"
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /aggregate
+--- error_code: 400
+--- response_body
+{"err":"Expected value but found invalid token at character 1","req_body":"invaild json string","message":"invalid request body"}
+--- no_error_log
+[error]
