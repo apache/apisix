@@ -131,7 +131,7 @@ function _M.flush(self)
         return nil, "failed: " .. res.status .. " " .. res.reason
     end
 
-    return true,pending_spans
+    return true
 end
 
 
