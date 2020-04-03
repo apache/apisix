@@ -128,7 +128,7 @@ function _M.mock_zipkin()
             ngx.exit(404)
         end
 
-        if span.localEndpoint.ipv4 ~= '127.0.0.1' and span.localEndpoint.ipv4 ~='8.8.8.8'then
+        if span.localEndpoint.ipv4 ~= ngx.req.get_uri_args()['server_addr'] then
             ngx.exit(404)
         end
 

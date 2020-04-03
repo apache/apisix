@@ -124,7 +124,6 @@ function _M.flush(self)
         body = pending_spans,
     })
 
-    -- ngx.log(ngx.INFO,res.status ,'ok=',pending_spans)
     -- TODO: on failure, retry?
     if not res then
         return nil, "failed to request: " .. err

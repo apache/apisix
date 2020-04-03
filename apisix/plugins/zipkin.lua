@@ -55,21 +55,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
-
-    if not conf.server_addr or conf.server_addr == '' then
-        conf.server_addr = ngx.var.server_addr
-    end
-
     return core.schema.check(schema, conf)
 end
 
 
 local function create_tracer(conf)
-
-    if not conf.server_addr or conf.server_addr == '' then
-        conf.server_addr = ngx.var.server_addr
-    end
-
     local tracer = new_tracer(new_reporter(conf), new_random_sampler(conf))
     tracer:register_injector("http_headers", zipkin_codec.new_injector())
     tracer:register_extractor("http_headers", zipkin_codec.new_extractor())
@@ -96,7 +86,11 @@ function _M.rewrite(conf, ctx)
     -- once the server started, server_addr and server_port won't change, so we can cache it.
     conf.server_port = tonumber(ctx.var['server_port'])
 
-    local tracer = core.lrucache.plugin_ctx(plugin_name, ctx,
+    if not conf.server_addr or conf.server_addr == '' then
+        conf.server_addr = ctx.var["server_addr"]
+    end
+
+    local tracer = core.lrucache.plugin_ctx(plugin_name .. '#' .. conf.server_addr, ctx,
                                             create_tracer, conf)
 
     ctx.opentracing_sample = tracer.sampler:sample()
