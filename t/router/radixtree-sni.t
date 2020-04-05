@@ -497,51 +497,22 @@ location /t {
 
             ngx.say("connected: ", ok)
 
-            local sess, err = sock:sslhandshake(nil, "www.test2.com", false)
+            local sess, err = sock:sslhandshake(nil, "www.test2.com", true)
             if not sess then
                 ngx.say("failed to do SSL handshake: ", err)
                 return
             end
 
             ngx.say("ssl handshake: ", type(sess))
-
-            local req = "GET /hello HTTP/1.0\r\nHost: www.test2.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
 }
 --- request
 GET /t
---- response_body eval
-qr{connected: 1
-ssl handshake: userdata
-sent http request: \d+ bytes.
-received: HTTP/1.1 200 OK
-received: Content-Type: text/plain
-received: Connection: close
-received: Server: \w+
-received: \s+received: hello world
-close: 1 nil}
+--- response_body
+connected: 1
+failed to do SSL handshake: 18: self signed certificate
 --- error_log
 lua ssl server name: "www.test2.com"
 --- no_error_log
@@ -550,7 +521,7 @@ lua ssl server name: "www.test2.com"
 
 
 
-=== TEST 11: client request: aa.bb.test.com
+=== TEST 11: client request: aa.bb.test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -572,51 +543,22 @@ location /t {
 
             ngx.say("connected: ", ok)
 
-            local sess, err = sock:sslhandshake(nil, "aa.bb.test2.com", false)
+            local sess, err = sock:sslhandshake(nil, "aa.bb.test2.com", true)
             if not sess then
                 ngx.say("failed to do SSL handshake: ", err)
                 return
             end
 
             ngx.say("ssl handshake: ", type(sess))
-
-            local req = "GET /hello HTTP/1.0\r\nHost: aa.bb.test2.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
 }
 --- request
 GET /t
---- response_body eval
-qr{connected: 1
-ssl handshake: userdata
-sent http request: \d+ bytes.
-received: HTTP/1.1 200 OK
-received: Content-Type: text/plain
-received: Connection: close
-received: Server: \w+
-received: \s+received: hello world
-close: 1 nil}
+--- response_body
+connected: 1
+failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
 not found any valid sni configuration, matched sni: *.test2.com current sni: aa.bb.test2.com
