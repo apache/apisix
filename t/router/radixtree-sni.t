@@ -437,16 +437,16 @@ lua ssl server name: "test.com"
 
 
 
-=== TEST 9: set ssl(sni: *.test.com)
+=== TEST 9: set ssl(sni: *.test2.com)
 --- config
 location /t {
     content_by_lua_block {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        local ssl_cert = t.read_file("conf/cert/apisix.crt")
-        local ssl_key =  t.read_file("conf/cert/apisix.key")
-        local data = {cert = ssl_cert, key = ssl_key, sni = "*.test.com"}
+        local ssl_cert = t.read_file("conf/cert/test2.crt")
+        local ssl_key =  t.read_file("conf/cert/test2.key")
+        local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
 
         local code, body = t.test('/apisix/admin/ssl/1',
             ngx.HTTP_PUT,
@@ -454,7 +454,7 @@ location /t {
             [[{
                 "node": {
                     "value": {
-                        "sni": "*.test.com"
+                        "sni": "*.test2.com"
                     },
                     "key": "/apisix/ssl/1"
                 },
@@ -475,8 +475,10 @@ passed
 
 
 
-=== TEST 10: client request: www.test.com
+=== TEST 10: client request: www.test2.com
 --- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
 location /t {
     content_by_lua_block {
         -- etcd sync
@@ -495,7 +497,7 @@ location /t {
 
             ngx.say("connected: ", ok)
 
-            local sess, err = sock:sslhandshake(nil, "www.test.com", false)
+            local sess, err = sock:sslhandshake(nil, "www.test2.com", false)
             if not sess then
                 ngx.say("failed to do SSL handshake: ", err)
                 return
@@ -503,7 +505,7 @@ location /t {
 
             ngx.say("ssl handshake: ", type(sess))
 
-            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
+            local req = "GET /hello HTTP/1.0\r\nHost: www.test2.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
             if not bytes then
                 ngx.say("failed to send http request: ", err)
@@ -541,7 +543,7 @@ received: Server: \w+
 received: \s+received: hello world
 close: 1 nil}
 --- error_log
-lua ssl server name: "www.test.com"
+lua ssl server name: "www.test2.com"
 --- no_error_log
 [error]
 [alert]
@@ -550,6 +552,8 @@ lua ssl server name: "www.test.com"
 
 === TEST 11: client request: aa.bb.test.com
 --- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
 location /t {
     content_by_lua_block {
         -- etcd sync
@@ -568,7 +572,7 @@ location /t {
 
             ngx.say("connected: ", ok)
 
-            local sess, err = sock:sslhandshake(nil, "aa.bb.test.com", false)
+            local sess, err = sock:sslhandshake(nil, "aa.bb.test2.com", false)
             if not sess then
                 ngx.say("failed to do SSL handshake: ", err)
                 return
@@ -576,7 +580,7 @@ location /t {
 
             ngx.say("ssl handshake: ", type(sess))
 
-            local req = "GET /hello HTTP/1.0\r\nHost: aa.bb.test.com\r\nConnection: close\r\n\r\n"
+            local req = "GET /hello HTTP/1.0\r\nHost: aa.bb.test2.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
             if not bytes then
                 ngx.say("failed to send http request: ", err)
@@ -614,8 +618,8 @@ received: Server: \w+
 received: \s+received: hello world
 close: 1 nil}
 --- error_log
-lua ssl server name: "aa.bb.test.com"
-not found any valid sni configuration, matched sni: *.test.com current sni: aa.bb.test.com
+lua ssl server name: "aa.bb.test2.com"
+not found any valid sni configuration, matched sni: *.test2.com current sni: aa.bb.test2.com
 --- no_error_log
 [error]
 [alert]
