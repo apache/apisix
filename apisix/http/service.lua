@@ -17,10 +17,11 @@
 local core = require("apisix.core")
 local services
 local error = error
+local pairs = pairs
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
 }
 
 
