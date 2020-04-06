@@ -347,8 +347,13 @@ function _M.http_access_phase()
 
     else
         if route.has_domain then
-            route = parsed_domain(route, api_ctx.conf_version,
-                                  parse_domain_in_route, route)
+            local err
+            route, err = parsed_domain(route, api_ctx.conf_version,
+                                       parse_domain_in_route, route)
+            if err then
+                core.log.error("failed to parse domain in route: ", err)
+                return core.response.exit(500)
+            end
         end
 
         if route.value.upstream and route.value.upstream.enable_websocket then
