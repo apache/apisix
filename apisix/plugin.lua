@@ -349,6 +349,10 @@ local function merge_consumer_route(route_conf, consumer_conf)
             if not new_route_conf then
                 new_route_conf = core.table.deepcopy(route_conf)
             end
+            if not new_route_conf.value.plugins then
+                new_route_conf.value.plugins = {}
+            end
+
             new_route_conf.value.plugins[name] = conf
         end
     end
