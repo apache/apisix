@@ -303,6 +303,10 @@ local function merge_service_route(service_conf, route_conf)
 
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
+            if not new_conf.value.plugins then
+                new_conf.value.plugins = {}
+            end
+
             new_conf.value.plugins[name] = conf
         end
     end
