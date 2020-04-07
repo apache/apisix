@@ -153,7 +153,8 @@ local function run_stream()
 
     local local_conf = core.config.local_conf()
     if not local_conf.apisix.stream_proxy then
-        core.log.warn("disabled stream model, can not to add any stream route")
+        core.log.warn("stream mode is disabled, can not to add any stream ",
+                      "route")
         core.response.exit(400)
     end
 
