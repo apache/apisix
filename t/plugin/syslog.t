@@ -92,6 +92,8 @@ done
 --- no_error_log
 [error]
 
+
+
 === TEST 4: add plugin
 --- config
     location /t {
@@ -149,6 +151,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 5: access
 --- request
 GET /hello
@@ -157,6 +161,8 @@ hello world
 --- no_error_log
 [error]
 --- wait: 0.2
+
+
 
 === TEST 6: flush manually
 --- config
@@ -174,6 +180,8 @@ hello world
 GET /t
 --- no_error_log
 [error]
+
+
 
 === TEST 7: small flush_limit, instant flush
 --- config

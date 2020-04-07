@@ -50,8 +50,8 @@ end
 
 function _M.flush_syslog()
     if logger.initted() then
-        bytes, err = logger.flush()
-        if err then
+        local ok, err = logger.flush()
+        if not ok then
             core.log.error("failed to flush message:", err)
         end
     end
@@ -84,8 +84,8 @@ function _M.log(conf)
         end
     end
 
-    local bytes, err = logger.log(core.json.encode(entry))
-    if err then
+    local ok, err = logger.log(core.json.encode(entry))
+    if not ok then
         core.log.error("failed to log message", err)
     end
 end
