@@ -43,12 +43,7 @@ $yaml_config =~ s/admin_key:/disable_admin_key:/;
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    my $user_yaml_config = $block->yaml_config;
-    $user_yaml_config .= <<_EOC_;
-$yaml_config
-_EOC_
-
-    $block->set_value("yaml_config", $user_yaml_config);
+    $block->set_value("yaml_config", $yaml_config);
 });
 
 run_tests;
