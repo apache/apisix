@@ -19,8 +19,6 @@ use t::APISIX 'no_plan';
 log_level('info');
 no_root_location();
 
-my $apisix_home = $ENV{APISIX_HOME} || cwd();
-
 run_tests();
 
 __DATA__
