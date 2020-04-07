@@ -25,7 +25,7 @@ local schema = {
     properties = {
         host = {type = "string"},
         port = {type = "integer"},
-        flush_limit = {type = "integer", minimum = 1024, default = 4096},
+        flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
         sock_type = {type = "string", default = "tcp"},
@@ -80,13 +80,13 @@ function _M.log(conf)
             tls = conf.tls,
         }
         if not ok then
-            core.log.error("error when initiating the sys logger processor: ", err)
+            core.log.error("failed when initiating the sys logger processor", err)
         end
     end
 
     local bytes, err = logger.log(core.json.encode(entry))
     if err then
-        core.log.error("failed to log message:", err)
+        core.log.error("failed to log message", err)
     end
 end
 
