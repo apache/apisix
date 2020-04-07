@@ -15,12 +15,41 @@
 # limitations under the License.
 #
 use t::APISIX 'no_plan';
+use Cwd qw(cwd);
 
 repeat_each(1);
 no_long_string();
 no_root_location();
 no_shuffle();
 log_level("info");
+
+my $apisix_home = $ENV{APISIX_HOME} || cwd();
+
+sub read_file($) {
+    my $infile = shift;
+    open my $in, "$apisix_home/$infile"
+        or die "cannot open $infile for reading: $!";
+    my $data = do { local $/; <$in> };
+    close $in;
+    $data;
+}
+
+my $yaml_config = read_file("conf/config.yaml");
+$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
+$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
+$yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
+$yaml_config =~ s/admin_key:/admin_key_useless:/;
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $user_yaml_config = $block->yaml_config;
+    $user_yaml_config .= <<_EOC_;
+$yaml_config
+_EOC_
+
+    $block->set_value("yaml_config", $user_yaml_config);
+});
 
 run_tests;
 
