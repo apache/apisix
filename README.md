@@ -228,7 +228,7 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 ## Who Uses APISIX?
 A wide variety of companies and organizations use APISIX for research, production and commercial product, including:
 
-<img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
+<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500">
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 
