@@ -34,8 +34,10 @@
 
 ## 属性
 
-* `endpoint`: Ziplin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
+* `endpoint`: Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
 * `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
+* `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
+* `server_addr`: 可选参数，标记当前 APISIX 实例的IP地址，默认值是 nginx 的内置变量`server_addr`。|
 
 ## 如何启用
 
@@ -49,7 +51,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "plugins": {
         "zipkin": {
             "endpoint": "http://127.0.0.1:9411/api/v2/spans",
-            "sample_ratio": 1
+            "sample_ratio": 1,
+            "service_name": "APISIX-IN-SG",
+            "server_addr": "192.168.3.50"
         }
     },
     "upstream": {
@@ -118,3 +122,44 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 ```
 
 现在就已经移除了 Zipkin 插件了。其他插件的开启和移除也是同样的方法。
+
+
+## 上游服务是Golang的示例代码
+
+```golang
+func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {
+    // create a reporter to be used by the tracer
+    reporter := httpreporter.NewReporter(enpoitUrl)
+    // set-up the local endpoint for our service host is  ip:host
+
+    thisip, _ := GetLocalIP()
+
+    host := fmt.Sprintf("%s:%d", thisip, port)
+    endpoint, _ := zipkin.NewEndpoint(serviceName, host)
+    // set-up our sampling strategy
+    sampler, _ := zipkin.NewCountingSampler(rate)
+    // initialize the tracer
+    tracer, _ := zipkin.NewTracer(
+        reporter,
+        zipkin.WithLocalEndpoint(endpoint),
+        zipkin.WithSampler(sampler),
+    )
+    return tracer
+}
+
+func main(){
+    r := gin.Default()
+
+    tracer := GetTracer(...)
+
+    // use middleware to extract parentID from http header that injected by APISIX
+    r.Use(func(c *gin.Context) {
+        span := this.Tracer.Extract(b3.ExtractHTTP(c.Request))
+        childSpan := this.Tracer.StartSpan(spanName, zipkin.Parent(span))
+        defer childSpan.Finish()
+        c.Next()
+    })
+
+}
+```
+
