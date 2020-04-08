@@ -28,7 +28,6 @@ local ngx_exit      = ngx.exit
 local math          = math
 local error         = error
 local ipairs        = ipairs
-local pairs         = pairs
 local tostring      = tostring
 local load_balancer
 

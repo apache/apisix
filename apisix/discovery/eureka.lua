@@ -182,6 +182,10 @@ local function fetch_full_registry(premature)
                     weight = metadata and metadata.weight or default_weight,
                     metadata = metadata,
                 })
+                if metadata then
+                    -- remove useless data
+                    metadata.weight = nil
+                end
             end
         end
     end
