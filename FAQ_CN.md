@@ -81,6 +81,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 2. B组：arg_id > 1000
 
 可以这么做：
+
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -114,6 +115,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 比如，将 `http://iresty.com` 重定向到 `https://iresty.com`
 
 可以这么做：
+
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/global_rules/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {

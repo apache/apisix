@@ -112,6 +112,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 An example, redirect `http://iresty.com` to `https://iresty.com`
 
 here is the way:
+
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/global_rules/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -129,6 +130,7 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 
 ## How to fix OpenResty Installation Failure on MacOS 10.15
 When you install the OpenResty on MacOs 10.15, you may face this error
+
 ```shell
 > brew install openresty
 Updating Homebrew...
