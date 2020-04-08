@@ -43,6 +43,7 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 | secret      |optional|encryption key. if you do not specify, the value is auto-generated in the background.|
 | algorithm    |  optional|encryption algorithm. support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.|
 | exp          |optional|token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 * 60 = 300 )|
+| base64_secret|optional|boolean value to indicate whether secret is base64 encoded, default value is false.|
 
 ## How To Enable
 
