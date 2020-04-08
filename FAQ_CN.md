@@ -109,11 +109,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-## 如何通过APISIX支持http自动跳转到https？
+## 如何通过 APISIX 支持 http 自动跳转到 https？
 
-比如，将 `http://iresty.com` 重定向到 `https://iresty.com`
+比如，将 `http://iresty.com` 重定向到 `https://iresty.com`，可以这么做：
 
-可以这么做：
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/global_rules/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
