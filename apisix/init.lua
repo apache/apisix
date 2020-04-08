@@ -185,6 +185,7 @@ end
 local function parse_domain(host)
     local ip_info, err = core.utils.dns_parse(dns_resolver, host)
     if not ip_info then
+        core.log.error("failed to parse domain for ", host, ", error:",err)
         return nil, err
     end
 
@@ -201,45 +202,23 @@ end
 
 
 local function parse_domain_for_nodes(nodes)
-    local new_nodes
-    if core.table.isarray(nodes) then
-        new_nodes = core.table.new(#nodes, 0)
-        for _, node in ipairs(nodes) do
-            local host = node.host
-
-            if not ipmatcher.parse_ipv4(host) and
-                    not ipmatcher.parse_ipv6(host) then
-                local ip, err = parse_domain(host)
-                if ip then
-                    local new_node = core.table.clone(node)
-                    new_node.host = ip
-                    core.table.insert(new_nodes, new_node)
-                end
-
-                if err then
-                    core.log.error("failed to parse domain for ", host, ", error:",err)
-                end
-            else
-                core.table.insert(new_nodes, node)
+    local new_nodes = core.table.new(#nodes, 0)
+    for _, node in ipairs(nodes) do
+        local host = node.host
+        if not ipmatcher.parse_ipv4(host) and
+                not ipmatcher.parse_ipv6(host) then
+            local ip, err = parse_domain(host)
+            if ip then
+                local new_node = core.table.clone(node)
+                new_node.host = ip
+                core.table.insert(new_nodes, new_node)
             end
-        end
-    else
-        new_nodes = core.table.new(0, core.table.nkeys(nodes))
-        for addr, weight in pairs(nodes) do
-            local host, port = core.utils.parse_addr(addr)
-            if not ipmatcher.parse_ipv4(host) and
-                    not ipmatcher.parse_ipv6(host) then
-                local ip, err = parse_domain(host)
-                if ip then
-                    new_nodes[ip .. ":" .. port] = weight
-                end
 
-                if err then
-                    core.log.error("failed to parse domain for ", host, ", error:",err)
-                end
-            else
-                new_nodes[addr] = weight
+            if err then
+                return nil, err
             end
+        else
+            core.table.insert(new_nodes, node)
         end
     end
     return new_nodes
@@ -248,7 +227,10 @@ end
 
 local function parse_domain_in_up(up, ver)
     local nodes = up.value.nodes
-    local new_nodes = parse_domain_for_nodes(nodes)
+    local new_nodes, err = parse_domain_for_nodes(nodes)
+    if not new_nodes then
+        return nil, err
+    end
     up.dns_value = core.table.clone(up.value)
     up.dns_value.nodes = new_nodes
     core.log.info("parse upstream which contain domain: ", core.json.delay_encode(up))
@@ -258,7 +240,10 @@ end
 
 local function parse_domain_in_route(route, ver)
     local nodes = route.value.upstream.nodes
-    local new_nodes = parse_domain_for_nodes(nodes)
+    local new_nodes, err = parse_domain_for_nodes(nodes)
+    if not new_nodes then
+        return nil, err
+    end
     route.dns_value = core.table.deepcopy(route.value)
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ", core.json.delay_encode(route))

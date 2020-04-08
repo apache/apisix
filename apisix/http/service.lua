@@ -42,19 +42,26 @@ local function filter(service)
             local host = node.host
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
-                service.has_domain = true
+                service.value.upstream.has_domain = true
                 break
             end
         end
     else
-        for addr, _ in pairs(nodes) do
-            local host = core.utils.parse_addr(addr)
+        local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
+        for addr, weight in pairs(nodes) do
+            local host, port = core.utils.parse_addr(addr)
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
-                service.has_domain = true
-                break
+                service.value.upstream.has_domain = true
             end
+            local node = {
+                host = host,
+                port = port,
+                weight = weight,
+            }
+            core.table.insert(new_nodes, node)
         end
+        service.value.upstream.nodes = new_nodes
     end
 
     core.log.info("filter service: ", core.json.delay_encode(service))

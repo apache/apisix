@@ -52,48 +52,27 @@ local _M = {
 local function fetch_health_nodes(upstream, checker)
     local nodes = upstream.nodes
     if not checker then
-        if core.table.isarray(nodes) then
-            local new_nodes = core.table.new(0, #nodes)
-            for _, node in ipairs(nodes) do
-                -- TODO filter with metadata
-                new_nodes[core.table.concat({node.host, ":", node.port})] = node.weight
-            end
-            return new_nodes
+        local new_nodes = core.table.new(0, #nodes)
+        for _, node in ipairs(nodes) do
+            -- TODO filter with metadata
+            new_nodes[core.table.concat({node.host, ":", node.port})] = node.weight
         end
-
-        return nodes
+        return new_nodes
     end
 
     local host = upstream.checks and upstream.checks.host
-    local up_nodes
-    if core.table.isarray(nodes) then
-        up_nodes = core.table.new(0, #nodes)
-        for _, node in ipairs(nodes) do
-            local ok = checker:get_target_status(node.host, node.port, host)
-            if ok then
-                -- TODO filter with metadata
-                up_nodes[core.table.concat({node.host, ":", node.port})] = node.weight
-            end
+    local up_nodes = core.table.new(0, #nodes)
+    for _, node in ipairs(nodes) do
+        local ok = checker:get_target_status(node.host, node.port, host)
+        if ok then
+            -- TODO filter with metadata
+            up_nodes[core.table.concat({node.host, ":", node.port})] = node.weight
         end
+    end
 
-        if #up_nodes == 0 then
-            core.log.warn("all upstream nodes is unhealth, use default")
-            up_nodes = upstream.nodes
-        end
-    else
-        up_nodes = core.table.new(0, core.table.nkeys(nodes))
-        for addr, weight in pairs(nodes) do
-            local ip, port = core.utils.parse_addr(addr)
-            local ok = checker:get_target_status(ip, port, host)
-            if ok then
-                up_nodes[addr] = weight
-            end
-        end
-
-        if core.table.nkeys(up_nodes) == 0 then
-            core.log.warn("all upstream nodes is unhealth, use default")
-            up_nodes = upstream.nodes
-        end
+    if #up_nodes == 0 then
+        core.log.warn("all upstream nodes is unhealth, use default")
+        up_nodes = upstream.nodes
     end
 
     return up_nodes
@@ -106,23 +85,11 @@ local function create_checker(upstream, healthcheck_parent)
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
     })
-    local nodes = upstream.nodes
-    if core.table.isarray(nodes) then
-        for _, node in ipairs(nodes) do
-            local ok, err = checker:add_target(node.host, node.port, upstream.checks.host)
-            if not ok then
-                core.log.error("failed to add new health check target: ", node.host, ":", node.port,
-                        " err: ", err)
-            end
-        end
-    else
-        for addr, weight in pairs(nodes) do
-            local ip, port = core.utils.parse_addr(addr)
-            local ok, err = checker:add_target(ip, port, upstream.checks.host)
-            if not ok then
-                core.log.error("failed to add new health check target: ", addr,
-                        " err: ", err)
-            end
+    for _, node in ipairs(upstream.nodes) do
+        local ok, err = checker:add_target(node.host, node.port, upstream.checks.host)
+        if not ok then
+            core.log.error("failed to add new health check target: ", node.host, ":", node.port,
+                    " err: ", err)
         end
     end
 
@@ -275,18 +242,8 @@ local function pick_server(route, ctx)
         up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
 
-    if not up_conf.nodes then
+    if not up_conf.nodes or #up_conf.nodes == 0 then
         return nil, nil, "no valid upstream node"
-    end
-
-    if core.table.isarray(up_conf.nodes) then
-        if #up_conf.nodes == 0 then
-            return nil, nil, "no valid upstream node"
-        end
-    else
-        if core.table.nkeys(up_conf.nodes) == 0 then
-            return nil, nil, "no valid upstream node"
-        end
     end
 
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
@@ -312,8 +269,7 @@ local function pick_server(route, ctx)
     if ctx.balancer_try_count == 1 then
         local retries = up_conf.retries
         if not retries or retries <= 0 then
-            retries = core.table.isarray(up_conf.nodes) and #up_conf.nodes
-                    or core.table.nkeys(up_conf.nodes)
+            retries = #up_conf.nodes
         end
         set_more_tries(retries)
     end
@@ -392,14 +348,21 @@ function _M.init_worker()
                         end
                     end
                 else
-                    for addr, _ in pairs(nodes) do
-                        local host = core.utils.parse_addr(addr)
+                    local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
+                    for addr, weight in pairs(nodes) do
+                        local host, port = core.utils.parse_addr(addr)
                         if not core.utils.parse_ipv4(host) and
                                 not core.utils.parse_ipv6(host) then
                             upstream.has_domain = true
-                            break
                         end
+                        local node = {
+                            host = host,
+                            port = port,
+                            weight = weight,
+                        }
+                        core.table.insert(new_nodes, node)
                     end
+                    upstream.value.nodes = new_nodes
                 end
 
                 core.log.info("filter upstream: ", core.json.delay_encode(upstream))
