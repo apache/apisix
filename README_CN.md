@@ -237,7 +237,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
 
-<img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
+<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500">
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 
