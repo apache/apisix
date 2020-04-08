@@ -120,7 +120,7 @@ function _M.log(conf)
         end
 
         if not data then
-            core.log.error('error occurred while encoding the token: ', err)
+            core.log.error('error occurred while encoding the data: ', err)
         end
 
         return send_tcp_data(conf, data)
