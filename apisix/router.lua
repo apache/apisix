@@ -108,4 +108,8 @@ function _M.http_routes()
 end
 
 
+-- for test
+_M.filter = filter
+
+
 return _M
