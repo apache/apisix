@@ -145,5 +145,6 @@ plugins:                          # plugin list
   - proxy-mirror
   - kafka-logger
   - cors
+  - consumer-restriction
 stream_plugins:
   - mqtt-proxy
