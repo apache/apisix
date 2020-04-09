@@ -49,6 +49,9 @@ apisix:
   #    disk_size: 1G
   #    disk_path: "/tmp/disk_cache_two"
   #    cache_levels: "1:2"
+  health_status:                  # Expose a uri to client check the health status of APISIX
+    uri: "/apisix/health_status"  # The uri of health
+    content: "ok"                 # Content return to client for health check uri
 
   # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
   #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.

@@ -380,6 +380,15 @@ http {
         }
         {% end %}
 
+
+        {% if health_status and health_status.uri then %}
+        location ={*health_status.uri*} {
+            {%if health_status.content then%}
+            echo "{*health_status.content*}";
+            {% end %}
+        }
+        {% end %}
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
