@@ -28,6 +28,66 @@ local schema = {
     additionalProperties = false,
 }
 
+local req_schema = {
+    type = "object",
+    properties = {
+        query = {
+            description = "pipeline query string",
+            type = "object"
+        },
+        headers = {
+            description = "pipeline header",
+            type = "object"
+        },
+        timeout = {
+            description = "pipeline timeout(ms)",
+            type = "integer",
+            default = 30000,
+        },
+        pipeline = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    version = {
+                        description = "HTTP version",
+                        type = "number",
+                        enum = {1.0, 1.1},
+                        default = 1.1,
+                    },
+                    method = {
+                        description = "HTTP method",
+                        type = "string",
+                        enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+                                "OPTIONS", "CONNECT", "TRACE"},
+                        default = "GET"
+                    },
+                    path = {
+                        type = "string",
+                        minLength = 1,
+                    },
+                    query = {
+                        description = "request header",
+                        type = "object",
+                    },
+                    headers = {
+                        description = "request query string",
+                        type = "object",
+                    },
+                    ssl_verify = {
+                        type = "boolean",
+                        default = false
+                    },
+                }
+            }
+        }
+    },
+    anyOf = {
+        {required = {"pipeline"}},
+    },
+}
+
 local _M = {
     version = 0.1,
     priority = 4010,
@@ -35,16 +95,18 @@ local _M = {
     schema = schema
 }
 
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+    return true
+end
+
 local function check_input(data)
-    if not data.pipeline then
-        return 400, {message = "missing 'pipeline' in input"}
-    end
-    local type_timeout = type(data.timeout)
-    if type_timeout ~= "number" and type_timeout ~= "nil" then
-        return 400, {message = "'timeout' should be number"}
-    end
-    if not data.timeout or data.timeout == 0 then
-        data.timeout = 30000
+    local ok, err = core.schema.check(req_schema, data)
+    if not ok then
+        return 400, {message = "bad request body", err = err}
     end
 end
 

@@ -178,7 +178,7 @@ passed
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"message":"missing 'pipeline' in input"}
+{"err":"object matches none of the requireds: [\"pipeline\"]","message":"bad request body"}
 --- no_error_log
 [error]
 
@@ -218,7 +218,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"message":"'timeout' should be number"}
+{"err":"property \"timeout\" validation failed: wrong type: expected integer, got string","message":"bad request body"}
 --- no_error_log
 [error]
 
@@ -469,5 +469,152 @@ GET /aggregate
 --- error_code: 400
 --- response_body
 {"err":"Expected value but found invalid token at character 1","req_body":"invaild json string","message":"invalid request body"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: invalid pipeline's path
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                [=[{
+                    "pipeline":[
+                    {
+                        "path": ""
+                    }]
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /aggregate
+--- error_code: 400
+--- response_body
+{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"path\" validation failed: string too short, expected at least 1, got 0","message":"bad request body"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: invalid pipeline's method
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                [=[{
+                    "pipeline":[{
+                        "path": "/c",
+                        "method": "put"
+                    }]
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /aggregate
+--- error_code: 400
+--- response_body
+{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"method\" validation failed: matches non of the enum values","message":"bad request body"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: invalid pipeline's version
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                [=[{
+                    "pipeline":[{
+                        "path": "/d",
+                        "version":1.2
+                    }]
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /aggregate
+--- error_code: 400
+--- response_body
+{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"version\" validation failed: matches non of the enum values","message":"bad request body"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: invalid pipeline's ssl
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                [=[{
+                    "pipeline":[{
+                        "path": "/d",
+                        "ssl_verify":1.2
+                    }]
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /aggregate
+--- error_code: 400
+--- response_body
+{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"ssl_verify\" validation failed: wrong type: expected boolean, got number","message":"bad request body"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: invalid pipeline's number
+--- config
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                [=[{
+                    "pipeline":[]
+                }]=]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /aggregate
+--- error_code: 400
+--- response_body
+{"err":"property \"pipeline\" validation failed: expect array to have at least 1 items","message":"bad request body"}
 --- no_error_log
 [error]
