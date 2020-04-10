@@ -32,20 +32,20 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 你需要先下载 Apache Release 源码包：
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.1/apache-apisix-1.1-incubating-src.tar.gz
-tar zxvf apache-apisix-1.1-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/1.2/apache-apisix-1.2-incubating-src.tar.gz
+tar zxvf apache-apisix-1.2-incubating-src.tar.gz
 ```
 
 安装运行时依赖的 Lua 库：
 ```
-cd apache-apisix-1.1-incubating
+cd apache-apisix-1.2-incubating
 make deps
 ```
 
 ### 通过 RPM 包安装（CentOS 7）
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.1/apisix-1.1-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.2/apisix-1.2-0.el7.noarch.rpm
 ```
 
 ### 通过 Luarocks 安装 （不支持 macOS）
@@ -61,11 +61,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > 通过 Luarocks 安装指定的版本:
 
 ```shell
-# 安装 apisix 的 1.1 版本
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.1
+# 安装 apisix 的 1.2 版本
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.2
 
 # 老版本 luarocks 可能不支持 `lua-dir` 参数，可以删除该选项
-sudo luarocks install apisix 1.1
+sudo luarocks install apisix 1.2
 ```
 
 ## 3. 管理（启动、关闭等）APISIX 服务
@@ -136,14 +136,14 @@ apisix:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
-HTTP/1.1 200 OK
+HTTP/1.2 200 OK
 Date: Fri, 28 Feb 2020 07:48:04 GMT
 Content-Type: text/plain
 ... ...
 {"node":{...},"action":"get"}
 
 $ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
-HTTP/1.1 401 Unauthorized
+HTTP/1.2 401 Unauthorized
 Date: Fri, 28 Feb 2020 08:17:58 GMT
 Content-Type: text/html
 ... ...

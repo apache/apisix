@@ -33,16 +33,16 @@
 ### Core
 - :sunrise: **支持 etcd 集群**. [#1283](https://github.com/apache/incubator-apisix/pull/1283)
 - 默认使用本地 DNS resolver, 这对于 k8s 环境更加友好. [#1387](https://github.com/apache/incubator-apisix/pull/1387)
-- 支持在 `header_filter` and `body_filter` 阶段运行全局插件. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
+- 支持在 `header_filter`、`body_filter` 和 `log` 阶段运行全局插件. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
 - 将目录 `lua/apisix` 修改为 `apisix`(**不向下兼容**). [#1351](https://github.com/apache/incubator-apisix/pull/1351)
 - 增加 dashboard 子模块. [#1360](https://github.com/apache/incubator-apisix/pull/1360)
 - 允许自定义共享字典. [#1367](https://github.com/apache/incubator-apisix/pull/1367)
 
 ### Plugin
-- :sunrise: **新增 Apache kafka 插件**. [#1312](https://github.com/apache/incubator-apisix/pull/1312)
+- :sunrise: **新增 Apache Kafka 插件**. [#1312](https://github.com/apache/incubator-apisix/pull/1312)
 - :sunrise: **新增 CORS 插件**. [#1327](https://github.com/apache/incubator-apisix/pull/1327)
-- :sunrise: **新增 tcp logger 插件**. [#1221](https://github.com/apache/incubator-apisix/pull/1221)
-- :sunrise: **新增 udp logger 插件**. [1070](https://github.com/apache/incubator-apisix/pull/1070)
+- :sunrise: **新增 TCP logger 插件**. [#1221](https://github.com/apache/incubator-apisix/pull/1221)
+- :sunrise: **新增 UDP logger 插件**. [1070](https://github.com/apache/incubator-apisix/pull/1070)
 - :sunrise: **新增 proxy mirror 插件**. [#1288](https://github.com/apache/incubator-apisix/pull/1288)
 - :sunrise: **新增 proxy cache 插件**. [#1153](https://github.com/apache/incubator-apisix/pull/1153)
 - 在 proxy-rewrite 插件中废弃 websocket 开关(**不向下兼容**). [1332](https://github.com/apache/incubator-apisix/pull/1332)
@@ -55,7 +55,7 @@
 
 ### Admin API
 - :sunrise: 对调用 Admin API 增加 key-auth 权限认证(**not backward compatible**). [#1169](https://github.com/apache/incubator-apisix/pull/1169)
-- 隐藏 ssl 私钥的返回值. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
+- 隐藏 SSL 私钥的返回值. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
 
 ### Bugfix
 - 在复用 table 之前遗漏了对数据的清理 (**会引发内存泄漏**). [#1134](https://github.com/apache/incubator-apisix/pull/1134)

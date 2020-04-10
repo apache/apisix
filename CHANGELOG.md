@@ -33,17 +33,17 @@ The 1.2 version brings many new features, including core and plugins.
 
 ### Core
 - :sunrise: **support etcd cluster**. [#1283](https://github.com/apache/incubator-apisix/pull/1283)
-- used the local DNS resolver by default, which is friendly for k8s. [#1387](https://github.com/apache/incubator-apisix/pull/1387)
-- support to run `header_filter` and `body_filter` phase for global rules. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
+- using the local DNS resolver by default, which is friendly for k8s. [#1387](https://github.com/apache/incubator-apisix/pull/1387)
+- support to run `header_filter`, `body_filter` and `log` phases for global rules. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
 - changed the `lua/apisix` dir to `apisix`(**not backward compatible**). [#1351](https://github.com/apache/incubator-apisix/pull/1351)
 - add dashboard as submodule. [#1360](https://github.com/apache/incubator-apisix/pull/1360)
-- allow add custom shared dict. [#1367](https://github.com/apache/incubator-apisix/pull/1367)
+- allow adding custom shared dict. [#1367](https://github.com/apache/incubator-apisix/pull/1367)
 
 ### Plugin
-- :sunrise: **add Apache kafka plugin**. [#1312](https://github.com/apache/incubator-apisix/pull/1312)
+- :sunrise: **add Apache Kafka plugin**. [#1312](https://github.com/apache/incubator-apisix/pull/1312)
 - :sunrise: **add CORS plugin**. [#1327](https://github.com/apache/incubator-apisix/pull/1327)
-- :sunrise: **add tcp logger plugin**. [#1221](https://github.com/apache/incubator-apisix/pull/1221)
-- :sunrise: **add udp logger plugin**. [1070](https://github.com/apache/incubator-apisix/pull/1070)
+- :sunrise: **add TCP logger plugin**. [#1221](https://github.com/apache/incubator-apisix/pull/1221)
+- :sunrise: **add UDP logger plugin**. [1070](https://github.com/apache/incubator-apisix/pull/1070)
 - :sunrise: **add proxy mirror plugin**. [#1288](https://github.com/apache/incubator-apisix/pull/1288)
 - :sunrise: **add proxy cache plugin**. [#1153](https://github.com/apache/incubator-apisix/pull/1153)
 - drop websocket enable control in proxy-rewrite plugin(**not backward compatible**). [1332](https://github.com/apache/incubator-apisix/pull/1332)
@@ -56,7 +56,7 @@ The 1.2 version brings many new features, including core and plugins.
 
 ### Admin API
 - :sunrise: support key-based authentication for Admin API(**not backward compatible**). [#1169](https://github.com/apache/incubator-apisix/pull/1169)
-- hide ssl private key in admin API. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
+- hide SSL private key in admin API. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
 
 ### Bugfix
 - missing `clear` table before to reuse table (**will cause memory leak**). [#1134](https://github.com/apache/incubator-apisix/pull/1134)

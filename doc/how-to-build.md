@@ -33,20 +33,20 @@ You can install Apache APISIX in a variety of ways, including source code packag
 You need to download the Apache source release first:
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.1/apache-apisix-1.1-incubating-src.tar.gz
-tar zxvf apache-apisix-1.1-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/1.2/apache-apisix-1.2-incubating-src.tar.gz
+tar zxvf apache-apisix-1.2-incubating-src.tar.gz
 ```
 
 Install the Lua libraries that the runtime depends on:
 ```shell
-cd apache-apisix-1.1-incubating
+cd apache-apisix-1.2-incubating
 make deps
 ```
 
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.1/apisix-1.1-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.2/apisix-1.2-0.el7.noarch.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)
@@ -62,11 +62,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > Install the specified version via Luarocks:
 
 ```shell
-# Install version 1.1
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.1
+# Install version 1.2
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.2
 
 # old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 1.1
+sudo luarocks install apisix 1.2
 ```
 
 ## 3. Manage (start/stop) APISIX Server
@@ -139,14 +139,14 @@ When calling the Admin API, `key` can be used as a token.
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
-HTTP/1.1 200 OK
+HTTP/1.2 200 OK
 Date: Fri, 28 Feb 2020 07:48:04 GMT
 Content-Type: text/plain
 ... ...
 {"node":{...},"action":"get"}
 
 $ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
-HTTP/1.1 401 Unauthorized
+HTTP/1.2 401 Unauthorized
 Date: Fri, 28 Feb 2020 08:17:58 GMT
 Content-Type: text/html
 ... ...
