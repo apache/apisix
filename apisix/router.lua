@@ -40,7 +40,7 @@ local function filter(route)
             local host = node.host
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
-                route.value.upstream.has_domain = true
+                route.has_domain = true
                 break
             end
         end
@@ -50,7 +50,7 @@ local function filter(route)
             local host, port = core.utils.parse_addr(addr)
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
-                route.value.upstream.has_domain = true
+                route.has_domain = true
             end
             local node = {
                 host = host,
@@ -98,7 +98,7 @@ end
 
 function _M.stream_init_worker()
     local router_stream = require("apisix.stream.router.ip_port")
-    router_stream.stream_init_worker()
+    router_stream.stream_init_worker(filter)
     _M.router_stream = router_stream
 end
 

@@ -64,15 +64,18 @@ local function fetch_health_nodes(upstream, checker)
     local up_nodes = core.table.new(0, #nodes)
     for _, node in ipairs(nodes) do
         local ok = checker:get_target_status(node.host, node.port, host)
+        -- core.log.info(node.host, node.port, ok)
         if ok then
             -- TODO filter with metadata
             up_nodes[core.table.concat({node.host, ":", node.port})] = node.weight
         end
     end
 
-    if #up_nodes == 0 then
+    if core.table.nkeys(up_nodes) == 0 then
         core.log.warn("all upstream nodes is unhealth, use default")
-        up_nodes = upstream.nodes
+        for _, node in ipairs(nodes) do
+            up_nodes[core.table.concat({node.host, ":", node.port})] = node.weight
+        end
     end
 
     return up_nodes
@@ -86,6 +89,7 @@ local function create_checker(upstream, healthcheck_parent)
         checks = upstream.checks,
     })
     for _, node in ipairs(upstream.nodes) do
+        -- core.log.info("add_target: ", node.host, node.port, upstream.checks.host)
         local ok, err = checker:add_target(node.host, node.port, upstream.checks.host)
         if not ok then
             core.log.error("failed to add new health check target: ", node.host, ":", node.port,
