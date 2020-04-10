@@ -19,7 +19,6 @@ local http   = require("resty.http")
 local ngx    = ngx
 local ipairs = ipairs
 local pairs  = pairs
-local type   = type
 
 local plugin_name = "api-aggregate"
 
