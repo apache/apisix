@@ -42,7 +42,7 @@ local function filter(service)
             local host = node.host
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
-                service.value.upstream.has_domain = true
+                service.has_domain = true
                 break
             end
         end
@@ -52,7 +52,7 @@ local function filter(service)
             local host, port = core.utils.parse_addr(addr)
             if not core.utils.parse_ipv4(host) and
                     not core.utils.parse_ipv6(host) then
-                service.value.upstream.has_domain = true
+                service.has_domain = true
             end
             local node = {
                 host = host,
