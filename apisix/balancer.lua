@@ -294,8 +294,7 @@ local function pick_server(route, ctx)
 
     if up_conf.timeout then
         local timeout = up_conf.timeout
-        local ok, err = set_timeouts(timeout.connect, timeout.send,
-                                     timeout.read)
+        local ok, err = set_timeouts(timeout.connect, timeout.send, timeout.read)
         if not ok then
             core.log.error("could not set upstream timeouts: ", err)
         end
