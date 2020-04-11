@@ -188,7 +188,6 @@ APISIX是通过 `upstream.nodes` 来配置下游服务的，所以使用注册�
     "weight" : 100,
     "metadata" : {
       "management.port": "8761",
-      "weight": 100
     }
   }
 ]
