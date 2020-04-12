@@ -54,8 +54,8 @@ else
 fi
 
 # lua: VERSION = $ver
-matched=`grep "VERSION = \"[0-9][0-9.]*\"" -r lua/`
-expected=`grep -F "VERSION = \"$ver\"" -r lua/`
+matched=`grep "VERSION = \"[0-9][0-9.]*\"" -r apisix/`
+expected=`grep -F "VERSION = \"$ver\"" -r apisix/`
 
 if [ "$matched" = "$expected" ]; then
     echo -e "${green}passed: (lua) VERSION = $ver ${NC}"
