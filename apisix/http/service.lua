@@ -83,29 +83,6 @@ function _M.services()
 end
 
 
-local function filter(service)
-    service.has_domain = false
-    if not service.value then
-        return
-    end
-
-    if not service.value.upstream then
-        return
-    end
-
-    for addr, _ in pairs(service.value.upstream.nodes or {}) do
-        local host = core.utils.parse_addr(addr)
-        if not core.utils.parse_ipv4(host) and
-           not core.utils.parse_ipv6(host) then
-            service.has_domain = true
-            break
-        end
-    end
-
-    core.log.info("filter service: ", core.json.delay_encode(service))
-end
-
-
 function _M.init_worker()
     local err
     services, err = core.config.new("/services", {
