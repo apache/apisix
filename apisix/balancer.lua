@@ -44,7 +44,7 @@ local lrucache_checker = core.lrucache.new({
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     name = module_name,
 }
 

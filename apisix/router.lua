@@ -21,7 +21,7 @@ local pairs   = pairs
 local ipairs  = ipairs
 
 
-local _M = {version = 0.2}
+local _M = {version = 0.3}
 
 
 local function filter(route)

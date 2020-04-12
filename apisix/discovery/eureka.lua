@@ -37,7 +37,7 @@ local useragent = 'ngx_lua-apisix/v' .. core.version.VERSION
 
 
 local _M = {
-    version = 1.0,
+    version = 0.1,
 }
 
 

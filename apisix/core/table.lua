@@ -25,7 +25,7 @@ local type         = type
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     new     = new_tab,
     clear   = require("table.clear"),
     nkeys   = nkeys,

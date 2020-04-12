@@ -42,7 +42,7 @@ local function parse_args(args)
 end
 
 
-local _M = {version = 0.3}
+local _M = {version = 0.4}
 
 
 function _M.http_init(args)

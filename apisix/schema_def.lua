@@ -18,7 +18,7 @@ local schema    = require('apisix.core.schema')
 local setmetatable = setmetatable
 local error     = error
 
-local _M = {version = 0.4}
+local _M = {version = 0.5}
 
 
 local plugins_schema = {
