@@ -39,6 +39,8 @@ script() {
     openresty -V
     sudo service etcd start
 
+    sudo rm -rf /usr/local/apisix
+
     # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps
     sudo luarocks make rockspec/apisix-master-0.rockspec
@@ -61,7 +63,8 @@ script() {
         exit 1
     fi
 
-    sudo luarocks remove rockspec/apisix-master-0.rockspec
+    sudo luarocks purge --tree=/usr/local
+    sudo rm -rf /usr/local/apisix
 }
 
 case_opt=$1
