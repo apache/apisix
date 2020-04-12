@@ -19,10 +19,9 @@
 
 # 常见问题
 
-## 为什么要做 API 网关？不是已经有其他的开源网关了吗？
+## 为什么要做 Apache APISIX 网关？
 
 微服务领域对 API 网关有新的需求：更高的灵活性、更高的性能要求，以及云原生的贴合。
-
 
 ## APISIX 和其他的 API 网关有什么不同之处？
 
@@ -49,7 +48,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 
 ## 我们为什么选择 etcd 作为配置中心？
 
-对于配置中心，配置存储只是最基本功能，APISIX 还需要下面几个特性：
+对于配置中心，配置存储只是最基本功能，Apache APISIX 还需要下面几个特性：
 
 1. 集群支持
 2. 事务
@@ -57,7 +56,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和KV数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
+Apache APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和KV数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -73,7 +72,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
 第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
 
-## 如何通过APISIX支持A/B测试？
+## 如何通过 APISIX 支持 A/B 测试？
 
 比如，根据入参`arg_id`分组：
 
@@ -110,7 +109,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-## 如何通过APISIX支持http自动跳转到https？
+## 如何通过 Apache APISIX 支持 http 自动跳转到 https？
 
 比如，将 `http://iresty.com` 重定向到 `https://iresty.com`
 
