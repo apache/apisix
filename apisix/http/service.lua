@@ -16,7 +16,6 @@
 --
 local core   = require("apisix.core")
 local ipairs = ipairs
-local pairs  = pairs
 local services
 local error = error
 local pairs = pairs
@@ -25,6 +24,20 @@ local pairs = pairs
 local _M = {
     version = 0.2,
 }
+
+
+function _M.get(service_id)
+    return services:get(service_id)
+end
+
+
+function _M.services()
+    if not services then
+        return nil, nil
+    end
+
+    return services.values, services.conf_version
+end
 
 
 local function filter(service)
@@ -66,20 +79,6 @@ local function filter(service)
     end
 
     core.log.info("filter service: ", core.json.delay_encode(service))
-end
-
-
-function _M.get(service_id)
-    return services:get(service_id)
-end
-
-
-function _M.services()
-    if not services then
-        return nil, nil
-    end
-
-    return services.values, services.conf_version
 end
 
 
