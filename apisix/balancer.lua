@@ -307,7 +307,8 @@ function _M.run(route, ctx)
 
     local ok, err = balancer.set_current_peer(ip, port)
     if not ok then
-        core.log.error("failed to set server peer: ", err)
+        core.log.error("failed to set server peer [", ip, ":", port,
+                       "] err: ", err)
         return core.response.exit(502)
     end
 

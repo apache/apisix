@@ -17,10 +17,11 @@
 local core = require("apisix.core")
 local services
 local error = error
+local pairs = pairs
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
 }
 
 
@@ -38,13 +39,36 @@ function _M.services()
 end
 
 
+local function filter(service)
+    service.has_domain = false
+    if not service.value then
+        return
+    end
+
+    if not service.value.upstream then
+        return
+    end
+
+    for addr, _ in pairs(service.value.upstream.nodes or {}) do
+        local host = core.utils.parse_addr(addr)
+        if not core.utils.parse_ipv4(host) and
+           not core.utils.parse_ipv6(host) then
+            service.has_domain = true
+            break
+        end
+    end
+
+    core.log.info("filter service: ", core.json.delay_encode(service))
+end
+
+
 function _M.init_worker()
     local err
-    services, err = core.config.new("/services",
-                        {
-                            automatic = true,
-                            item_schema = core.schema.service
-                        })
+    services, err = core.config.new("/services", {
+        automatic = true,
+        item_schema = core.schema.service,
+        filter = filter,
+    })
     if not services then
         error("failed to create etcd instance for fetching upstream: " .. err)
         return
