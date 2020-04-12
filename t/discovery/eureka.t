@@ -38,6 +38,19 @@ $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/  discovery:/  discovery: eureka #/;
 $yaml_config =~ s/#  discovery:/  discovery: eureka #/;
+
+$yaml_config .= <<_EOC_;
+eureka:
+ host:
+   - "http://127.0.0.1:8761"
+ prefix: "/eureka/"
+ weight: 100
+ timeout:
+   connect: 2000
+   send: 2000
+   read: 5000
+_EOC_
+
 run_tests();
 
 __DATA__

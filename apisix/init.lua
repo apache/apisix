@@ -445,6 +445,7 @@ function _M.grpc_access_phase()
     run_plugin("access", plugins, api_ctx)
 end
 
+
 local function common_phase(plugin_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -467,13 +468,16 @@ local function common_phase(plugin_name)
     return api_ctx
 end
 
+
 function _M.http_header_filter_phase()
     common_phase("header_filter")
 end
 
+
 function _M.http_body_filter_phase()
     common_phase("body_filter")
 end
+
 
 function _M.http_log_phase()
 
@@ -490,6 +494,7 @@ function _M.http_log_phase()
 
     core.tablepool.release("api_ctx", api_ctx)
 end
+
 
 function _M.http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
@@ -513,6 +518,7 @@ function _M.http_balancer_phase()
     api_ctx.balancer_name = "default"
     load_balancer(api_ctx.matched_route, api_ctx)
 end
+
 
 local function cors_admin()
     local local_conf = core.config.local_conf()

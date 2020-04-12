@@ -35,6 +35,30 @@ local default_weight
 local applications
 local useragent = 'ngx_lua-apisix/v' .. core.version.VERSION
 
+local schema = {
+    type = "object",
+    properties = {
+        host = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+            },
+        },
+        prefix = {type = "string"},
+        weight = {type = "integer", minimum = 0, maximum = 100},
+        timeout = {
+            type = "object",
+            properties = {
+                connect = {type = "integer", minimum = 1, default = 1000},
+                send = {type = "integer", minimum = 1, default = 1000},
+                read = {type = "integer", minimum = 1, default = 1000},
+            }
+        },
+    },
+    required = {"host"}
+}
+
 
 local _M = {
     version = 0.1,
@@ -206,6 +230,12 @@ end
 function _M.init_worker()
     if not local_conf.eureka or not local_conf.eureka.host or #local_conf.eureka.host == 0 then
         error("do not set eureka.host")
+        return
+    end
+
+    local ok, err = core.schema.check(schema, local_conf.eureka)
+    if not ok then
+        error("invalid eureka configuration: " .. err)
         return
     end
     default_weight = local_conf.eureka.weight or 100

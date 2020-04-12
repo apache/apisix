@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 -->
-
+[English](discovery.md)
 # 集成服务发现注册中心
 
 ## 摘要
