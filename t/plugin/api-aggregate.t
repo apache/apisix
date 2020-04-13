@@ -606,7 +606,6 @@ GET /aggregate
                     "pipeline":[]
                 }]=]
                 )
-
             ngx.status = code
             ngx.print(body)
         }
