@@ -39,7 +39,7 @@
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制consumer访问:   
+下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制consumer访问:
 
 
 ```shell
