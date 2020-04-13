@@ -17,9 +17,7 @@
 #
 -->
 
-
-目录
-===
+# 目录
 
 * [Route](#route)
 * [Service](#service)
@@ -72,8 +70,9 @@
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
 
 有两点需要特别注意：
-- 除了 `uri`/`uris` 是必选的之外，`plugins`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
-- 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
+
+* 除了 `uri`/`uris` 是必选的之外，`plugins`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
+* 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
 
 route 对象 json 配置内容：
 
