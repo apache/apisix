@@ -80,11 +80,11 @@
 curl --location --request POST 'http://100.109.220.139/apisix/aggregate' \
 --header 'Content-Type: application/json' \
 --d '{
-	"headers": {
-		"Content-Type": "application/json",
-		"admin-jwt":"xxxx"
-	},
-	"timeout": 500,
+    "headers": {
+        "Content-Type": "application/json",
+        "admin-jwt":"xxxx"
+    },
+    "timeout": 500,
     "pipeline": [
         {
         	"method": "POST",

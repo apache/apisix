@@ -75,16 +75,16 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 
 ## Test Plugin
 
-You can pass your request detail to aggregation api( `/apisix/aggregate` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as: 
+You can pass your request detail to aggregation api( `/apisix/aggregate` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
 ```shell
 curl --location --request POST 'http://100.109.220.139/apisix/aggregate' \
 --header 'Content-Type: application/json' \
 --d '{
-	"headers": {
-		"Content-Type": "application/json",
-		"admin-jwt":"xxxx"
-	},
-	"timeout": 500,
+    "headers": {
+        "Content-Type": "application/json",
+        "admin-jwt":"xxxx"
+    },
+    "timeout": 500,
     "pipeline": [
         {
         	"method": "POST",
