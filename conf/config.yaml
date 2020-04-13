@@ -80,11 +80,9 @@ apisix:
   #   udp:                        # UDP proxy port list
   #     - 9200
   #     - 9211
-  dns_resolver:                   # If not set, read from `/etc/resolv.conf`
-    - 114.114.114.114
-    - 223.5.5.5
-    - 1.1.1.1
-    - 8.8.8.8
+  # dns_resolver:                   # If not set, read from `/etc/resolv.conf`
+  #  - 1.1.1.1
+  #  - 8.8.8.8
   dns_resolver_valid: 30          # valid time for dns result 30 seconds
   resolver_timeout: 5             # resolver timeout
   ssl:

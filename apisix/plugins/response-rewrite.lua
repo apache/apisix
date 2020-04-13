@@ -33,6 +33,11 @@ local schema = {
             description = "new body for repsonse",
             type = "string",
         },
+        body_base64 = {
+            description = "whether new body for repsonse need base64 decode before return",
+            type = "boolean",
+            default = false,
+        },
         status_code = {
             description = "new status code for repsonse",
             type = "integer",
@@ -77,6 +82,13 @@ function _M.check_schema(conf)
         end
     end
 
+    if conf.body_base64 then
+        local body = ngx.decode_base64(conf.body)
+        if not body then
+            return  false, 'invalid base64 content'
+        end
+    end
+
     return true
 end
 
@@ -85,7 +97,13 @@ do
 
 function _M.body_filter(conf, ctx)
     if conf.body then
-        ngx.arg[1] = conf.body
+
+        if conf.body_base64 then
+            ngx.arg[1] = ngx.decode_base64(conf.body)
+        else
+            ngx.arg[1] = conf.body
+        end
+
         ngx.arg[2] = true
     end
 end

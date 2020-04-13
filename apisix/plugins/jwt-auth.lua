@@ -18,6 +18,9 @@ local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local ck       = require("resty.cookie")
 local consumer = require("apisix.consumer")
+local resty_random = require("resty.random")
+local ngx_encode_base64 = ngx.encode_base64
+local ngx_decode_base64 = ngx.decode_base64
 local ipairs   = ipairs
 local ngx      = ngx
 local ngx_time = ngx.time
@@ -35,6 +38,10 @@ local schema = {
             enum = {"HS256", "HS384", "HS512", "RS256", "ES256"}
         },
         exp = {type = "integer", minimum = 1},
+        base64_secret = {
+            type = "boolean",
+            default = false
+        }
     }
 }
 
@@ -75,7 +82,7 @@ function _M.check_schema(conf)
     end
 
     if not conf.secret then
-        conf.secret = core.id.gen_uuid_v4()
+        conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
     end
 
     if not conf.algorithm then
@@ -114,6 +121,12 @@ local function fetch_jwt_token(ctx)
     return val, err
 end
 
+local function get_secret(conf)
+    if conf.base64_secret then
+        return ngx_decode_base64(conf.secret)
+    end
+        return conf.secret
+end
 
 function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)
@@ -151,7 +164,8 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    jwt_obj = jwt:verify_jwt_obj(consumer.auth_conf.secret, jwt_obj)
+    local auth_secret = get_secret(consumer.auth_conf)
+    jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.verified then
         return 401, {message = jwt_obj.reason}
@@ -188,8 +202,9 @@ local function gen_token()
 
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
+    local auth_secret = get_secret(consumer.auth_conf)
     local jwt_token = jwt:sign(
-        consumer.auth_conf.secret,
+        auth_secret,
         {
             header={
                 typ = "JWT",

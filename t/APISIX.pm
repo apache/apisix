@@ -74,7 +74,8 @@ my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
-$yaml_config =~ s/admin_key:/admin_key_useless:/;
+$yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
+$yaml_config =~ s/admin_key:/disable_admin_key:/;
 
 my $profile = $ENV{"APISIX_PROFILE"};
 

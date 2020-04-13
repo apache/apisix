@@ -134,7 +134,10 @@ local function run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
-    if phase ~= "log" then
+    if phase ~= "log"
+        and phase ~= "header_filter"
+        and phase ~= "body_filter"
+    then
         for i = 1, #plugins, 2 do
             local phase_fun = plugins[i][phase]
             if phase_fun then
@@ -344,8 +347,13 @@ function _M.http_access_phase()
 
     else
         if route.has_domain then
-            route = parsed_domain(route, api_ctx.conf_version,
-                                  parse_domain_in_route, route)
+            local err
+            route, err = parsed_domain(route, api_ctx.conf_version,
+                                       parse_domain_in_route, route)
+            if err then
+                core.log.error("failed to parse domain in route: ", err)
+                return core.response.exit(500)
+            end
         end
 
         if route.value.upstream and route.value.upstream.enable_websocket then
@@ -433,36 +441,38 @@ function _M.grpc_access_phase()
     run_plugin("access", plugins, api_ctx)
 end
 
-
-function _M.http_header_filter_phase()
-    run_plugin("header_filter")
-end
-
-
-function _M.http_body_filter_phase()
-    run_plugin("body_filter")
-end
-
-
-function _M.http_log_phase()
+local function common_phase(plugin_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         return
     end
 
     if router.global_rules and router.global_rules.values
-       and #router.global_rules.values > 0
+            and #router.global_rules.values > 0
     then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         for _, global_rule in ipairs(router.global_rules.values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
-            run_plugin("log", plugins, api_ctx)
+            run_plugin(plugin_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
     end
+    run_plugin(plugin_name, nil, api_ctx)
+    return api_ctx
+end
 
-    run_plugin("log", nil, api_ctx)
+function _M.http_header_filter_phase()
+    common_phase("header_filter")
+end
+
+function _M.http_body_filter_phase()
+    common_phase("body_filter")
+end
+
+function _M.http_log_phase()
+
+    local api_ctx = common_phase("log")
 
     if api_ctx.uri_parse_param then
         core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
@@ -475,7 +485,6 @@ function _M.http_log_phase()
 
     core.tablepool.release("api_ctx", api_ctx)
 end
-
 
 function _M.http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx

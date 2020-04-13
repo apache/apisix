@@ -115,3 +115,46 @@ GET /t
 done
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: set route(with invalid host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "key": "remote_addr",
+                        "type": "chash",
+                        "nodes": {
+                            "xxxx.invalid:1980": 1
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: hit route
+--- request
+GET /server_port
+--- error_code: 500
+--- error_log
+failed to parse domain in route: server returned error code: 3: name error

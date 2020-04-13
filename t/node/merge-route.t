@@ -233,3 +233,94 @@ GET /t
 --- error_log eval
 [qr/merge_service_route.*"time_window":60,/,
 qr/merge_service_route.*"time_window":60,/]
+
+
+
+=== TEST 10: set service(only upstream with host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:443": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: set route(bind service 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/get",
+                    "host": "httpbin.org",
+                    "plugins": {
+                        "proxy-rewrite": {
+                                "scheme": "https"
+
+                        }
+                    },
+                    "service_id": "1"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit route
+--- request
+GET /get
+--- more_headers
+host: httpbin.org
+--- response_body eval
+qr/"Host": "httpbin.org"/
+--- no_error_log
+[error]
+--- timeout: 5
+
+
+
+=== TEST 13: not hit route
+--- request
+GET /get
+--- more_headers
+host: httpbin.orgxxx
+--- error_code: 404
+--- no_error_log
+[error]

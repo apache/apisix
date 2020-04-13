@@ -39,6 +39,8 @@ script() {
     openresty -V
     sudo service etcd start
 
+    sudo rm -rf /usr/local/apisix
+
     # install APISIX by shell
     sudo mkdir -p /usr/local/apisix/deps
     sudo PATH=$PATH ./utils/install-apisix.sh install
@@ -68,9 +70,11 @@ script() {
     if [ -s /tmp/error.log ]; then
         echo "=====found error log====="
         cat /usr/local/apisix/logs/error.log
+        exit 1
     fi
 
     sudo luarocks remove rockspec/apisix-master-0.rockspec
+    sudo luarocks purge --tree=/usr/local
 }
 
 case_opt=$1

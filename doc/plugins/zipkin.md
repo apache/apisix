@@ -39,6 +39,8 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 |---------     |--------|-----------|
 | endpoint     |required|the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`.|
 | sample_ratio |required|the ratio of sample, the minimum is 0.00001, the maximum is 1.|
+| service_name |optional|service name for zipkin reporter, the default values is `APISIX`.|
+| server_addr |optional|IPv4 address for zipkin reporter, default is nginx built-in variables $server_addr, here you can speific your external ip address.|
 
 ## How To Enable
 
@@ -52,7 +54,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "plugins": {
         "zipkin": {
             "endpoint": "http://127.0.0.1:9411/api/v2/spans",
-            "sample_ratio": 1
+            "sample_ratio": 1,
+            "service_name": "APISIX-IN-SG",
+            "server_addr": "192.168.3.50"
         }
     },
     "upstream": {
@@ -123,3 +127,43 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 ```
 
 The zipkin plugin has been disabled now. It works for other plugins.
+
+## example code for upstream ( golang with Gin )
+
+```golang
+func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {
+    // create a reporter to be used by the tracer
+    reporter := httpreporter.NewReporter(enpoitUrl)
+    // set-up the local endpoint for our service host is ip:host
+
+    thisip, _ := GetLocalIP()
+
+    host := fmt.Sprintf("%s:%d", thisip, port)
+    endpoint, _ := zipkin.NewEndpoint(serviceName, host)
+    // set-up our sampling strategy
+    sampler, _ := zipkin.NewCountingSampler(rate)
+    // initialize the tracer
+    tracer, _ := zipkin.NewTracer(
+        reporter,
+        zipkin.WithLocalEndpoint(endpoint),
+        zipkin.WithSampler(sampler),
+    )
+    return tracer
+}
+
+func main(){
+    r := gin.Default()
+
+    tracer := GetTracer(...)
+
+    // use middleware to extract parentID from http header that injected by APISIX
+    r.Use(func(c *gin.Context) {
+        span := this.Tracer.Extract(b3.ExtractHTTP(c.Request))
+        childSpan := this.Tracer.StartSpan(spanName, zipkin.Parent(span))
+        defer childSpan.Finish()
+        c.Next()
+    })
+
+}
+```
+
