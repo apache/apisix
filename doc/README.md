@@ -65,7 +65,6 @@ Plugins
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
 * [api-aggregate](plugins/api-aggregate.md): Allow you aggregate http api via http pipeline.
-* [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
 
 Deploy to the Cloud
 =======
