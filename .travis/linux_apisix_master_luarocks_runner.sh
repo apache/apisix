@@ -70,6 +70,7 @@ script() {
     if [ -s /tmp/error.log ]; then
         echo "=====found error log====="
         cat /usr/local/apisix/logs/error.log
+        exit 1
     fi
 
     sudo luarocks remove rockspec/apisix-master-0.rockspec
