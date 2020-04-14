@@ -21,7 +21,7 @@ local plugin_name = "udp-logger"
 local ngx = ngx
 local tostring = tostring
 local http = require "resty.http"
-local url = require "socket.url"
+local url = require "net.url"
 local buffers = {}
 
 local schema = {
@@ -63,6 +63,8 @@ local function send_http_data(conf, log_message)
 
     if url_decoded.scheme == "https" then
         port = 443
+    elseif not url_decoded.port then
+        port = 80
     end
 
     local httpc = http.new()
@@ -76,7 +78,7 @@ local function send_http_data(conf, log_message)
 
     if url_decoded.scheme == "https" then
         ok, err = httpc:ssl_handshake(true, host, false)
-        if err then
+        if not ok then
             return nil, "failed to perform SSL with host[" .. host .. "] "
                 .. "port[" .. tostring(port) .. "] " .. err
         end
@@ -122,7 +124,7 @@ function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
 
     if not entry.route_id then
-        core.log.error("failed to obtain the route id for tcp logger")
+        core.log.error("failed to obtain the route id for http logger")
         return
     end
 
