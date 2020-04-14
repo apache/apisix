@@ -82,7 +82,7 @@ function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
 
     if not entry.route_id then
-        core.log.error("failed to obtain the route id for tcp logger")
+        core.log.error("failed to obtain the route id for udp logger")
         return
     end
 

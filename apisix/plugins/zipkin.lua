@@ -21,6 +21,7 @@ local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
 local new_reporter = require("apisix.plugins.zipkin.reporter").new
 local ngx = ngx
 local pairs = pairs
+local tonumber = tonumber
 
 local plugin_name = "zipkin"
 
@@ -29,7 +30,17 @@ local schema = {
     type = "object",
     properties = {
         endpoint = {type = "string"},
-        sample_ratio = {type = "number", minimum = 0.00001, maximum = 1}
+        sample_ratio = {type = "number", minimum = 0.00001, maximum = 1},
+        service_name = {
+            type = "string",
+            description = "service name for zipkin reporter",
+            default = "APISIX",
+        },
+        server_addr = {
+            type = "string",
+            description = "default is $server_addr, you can speific your external ip address",
+            pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
+        },
     },
     required = {"endpoint", "sample_ratio"}
 }
@@ -71,7 +82,15 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local tracer = core.lrucache.plugin_ctx(plugin_name, ctx,
+
+    -- once the server started, server_addr and server_port won't change, so we can cache it.
+    conf.server_port = tonumber(ctx.var['server_port'])
+
+    if not conf.server_addr or conf.server_addr == '' then
+        conf.server_addr = ctx.var["server_addr"]
+    end
+
+    local tracer = core.lrucache.plugin_ctx(plugin_name .. '#' .. conf.server_addr, ctx,
                                             create_tracer, conf)
 
     ctx.opentracing_sample = tracer.sampler:sample()
@@ -109,6 +128,7 @@ function _M.rewrite(conf, ctx)
     local request_span = ctx.opentracing.request_span
     ctx.opentracing.rewrite_span = request_span:start_child_span(
                                             "apisix.rewrite", start_timestamp)
+
     ctx.REWRITE_END_TIME = tracer:time()
     ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
 end
