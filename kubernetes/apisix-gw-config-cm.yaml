@@ -144,6 +144,7 @@ data:
       - fault-injection
       - udp-logger
       - wolf-rbac
+      - consumer-restriction
 
     stream_plugins:
       - mqtt-proxy
