@@ -16,6 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
+log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -86,7 +87,7 @@ done
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1",
+                                "uri": "http://127.0.0.1:1982/hello",
                                 "batch_max_size": 1
                             }
                         },
@@ -103,7 +104,7 @@ done
                         "value": {
                             "plugins": {
                                 "http-logger": {
-                                    "uri": "http://127.0.0.1",
+                                    "uri": "http://127.0.0.1:1982/hello",
                                     "batch_max_size": 1
                                 }
                             },
@@ -141,7 +142,8 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
---- wait: 0.2
+--- error_log
+failed to keep the connection
+Batch Processor[http logger] successfully processed the entries
+--- wait: 0.5
 
