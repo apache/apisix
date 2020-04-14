@@ -62,6 +62,7 @@ GET /t
 [error]
 
 
+
 === TEST 2: whitelist and blacklist mutual exclusive
 --- config
     location /t {
@@ -82,6 +83,7 @@ value should match only one schema, but matches both schemas 1 and 2
 done
 --- no_error_log
 [error]
+
 
 
 === TEST 3: add consumer jack1
@@ -127,6 +129,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 4: add consumer jack2
 --- config
     location /t {
@@ -169,6 +173,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 5: set whitelist
@@ -222,6 +227,8 @@ hello world
 --- no_error_log
 [error]
 
+
+
 === TEST 7: verify jack2
 --- request
 GET /hello
@@ -231,6 +238,7 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 {"message":"You are not allowed"}
 --- no_error_log
 [error]
+
 
 
 === TEST 8: set blacklist
@@ -273,6 +281,7 @@ passed
 [error]
 
 
+
 === TEST 9: verify jack1
 --- request
 GET /hello
@@ -282,6 +291,8 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 {"message":"You are not allowed"}
 --- no_error_log
 [error]
+
+
 
 === TEST 10: verify jack2
 --- request
@@ -329,6 +340,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 12: verify jack1
 --- request
 GET /hello
@@ -338,6 +351,8 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 hello world
 --- no_error_log
 [error]
+
+
 
 === TEST 13: verify jack2
 --- request
