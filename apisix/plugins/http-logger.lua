@@ -61,14 +61,14 @@ local function send_http_data(conf, log_message)
     local host = url_decoded.host
     local port = url_decoded.port
 
-    if url_decoded.scheme == "https" then
+    if ((not port) and url_decoded.scheme == "https") then
         port = 443
-    elseif not url_decoded.port then
+    elseif not port then
         port = 80
     end
 
     local httpc = http.new()
-    httpc:set_timeout(conf.timeout)
+    httpc:set_timeout(conf.timeout * 1000)
     local ok, err = httpc:connect(host, port)
 
     if not ok then
@@ -84,7 +84,7 @@ local function send_http_data(conf, log_message)
         end
     end
 
-    local httpc_res, err = httpc:request({
+    local httpc_res, httpc_err = httpc:request({
         method = "POST",
         path = url_decoded.path,
         query = url_decoded.query,
@@ -98,7 +98,7 @@ local function send_http_data(conf, log_message)
 
     if not httpc_res then
         return false, "error while sending data to [" .. host .. "] port["
-            .. tostring(port) .. "] " .. err
+            .. tostring(port) .. "] " .. httpc_err
     end
 
     -- some error occurred in the server
