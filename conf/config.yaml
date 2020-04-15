@@ -50,8 +50,8 @@ apisix:
   #    disk_path: "/tmp/disk_cache_two"
   #    cache_levels: "1:2"
 
-  # allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-  #   - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
+  allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+    - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
   # port_admin: 9180              # use a separate port
 
