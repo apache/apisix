@@ -18,11 +18,22 @@ local table    = require("apisix.core.table")
 local ngx_re   = require("ngx.re")
 local resolver = require("resty.dns.resolver")
 local ipmatcher= require("resty.ipmatcher")
+local ffi      = require("ffi")
+local base     = require("resty.core.base")
 local open     = io.open
 local math     = math
 local sub_str  = string.sub
 local str_byte = string.byte
 local tonumber = tonumber
+local C        = ffi.C
+local ffi_string = ffi.string
+local get_string_buf = base.get_string_buf
+
+
+ffi.cdef[[
+    int ngx_escape_uri(char *dst, const char *src,
+        size_t size, int type);
+]]
 
 
 local _M = {
@@ -141,6 +152,16 @@ function _M.parse_addr(addr)
         local port = sub_str(addr, pos + 1)
         return host, tonumber(port)
     end
+end
+
+
+function _M.uri_safe_encode(uri)
+    local count_escaped = C.ngx_escape_uri(nil, uri, #uri, 0)
+    local len = #uri + 2 * count_escaped
+    local buf = get_string_buf(len)
+    C.ngx_escape_uri(buf, uri, #uri, 0)
+
+    return ffi_string(buf, len)
 end
 
 

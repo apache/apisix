@@ -144,6 +144,8 @@ function _M.rewrite(conf, ctx)
         end
     end
 
+    upstream_uri = core.utils.uri_safe_encode(upstream_uri)
+
     if ctx.var.is_args == "?" then
         ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
     else
