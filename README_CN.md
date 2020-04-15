@@ -104,7 +104,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [全局规则](doc/architecture-design-cn.md#Global-Rule)：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](doc/plugins/fault-injection-cn.md)
-    - [REST Admin API](doc/admin-api-cn.md)
+    - [REST Admin API](doc/admin-api-cn.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
     - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
 
 - **高度可扩展**
@@ -164,7 +164,7 @@ yarn && yarn build:prod
 使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
 不用填写用户名和密码，直接登录。
 
-Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
+Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
 
 我们部署了一个在线的 [Dashboard](http://apisix.iresty.com) ，方便你了解 APISIX。
 
