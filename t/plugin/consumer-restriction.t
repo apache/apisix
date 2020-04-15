@@ -234,6 +234,7 @@ hello world
 GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- error_code: 403
 --- response_body
 {"message":"You are not allowed"}
 --- no_error_log
@@ -287,6 +288,7 @@ passed
 GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- error_code: 403
 --- response_body
 {"message":"You are not allowed"}
 --- no_error_log
