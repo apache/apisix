@@ -27,9 +27,9 @@
 
 ## Name
 
-`http-logger` is a plugin which push Log data requests to TCP servers.
+`http-logger` is a plugin which push Log data requests to HTTP/HTTPS servers.
 
-This will provide the ability to send Log data requests as JSON objects to Monitoring tools and other TCP servers.
+This will provide the ability to send Log data requests as JSON objects to Monitoring tools and other HTTP servers.
 
 ## Attributes
 
