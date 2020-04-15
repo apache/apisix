@@ -119,7 +119,11 @@ done
                         "plugins": {
                             "http-logger": {
                                 "uri": "http://127.0.0.1:1982/hello",
-                                "batch_max_size": 1
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
                             }
                         },
                         "upstream": {
@@ -136,7 +140,11 @@ done
                             "plugins": {
                                 "http-logger": {
                                     "uri": "http://127.0.0.1:1982/hello",
-                                    "batch_max_size": 1
+                                    "batch_max_size": 1,
+                                    "max_retry_count": 1,
+                                    "retry_delay": 2,
+                                    "buffer_duration": 2,
+                                    "inactive_timeout": 2
                                 }
                             },
                             "upstream": {
@@ -190,7 +198,11 @@ Batch Processor[http logger] successfully processed the entries
                         "plugins": {
                             "http-logger": {
                                 "uri": "http://127.0.0.1:8888/hello-world-http",
-                                "batch_max_size": 1
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
                             }
                         },
                         "upstream": {
@@ -207,7 +219,11 @@ Batch Processor[http logger] successfully processed the entries
                             "plugins": {
                                 "http-logger": {
                                     "uri": "http://127.0.0.1:8888/hello-world-http",
-                                    "batch_max_size": 1
+                                    "batch_max_size": 1,
+                                    "max_retry_count": 1,
+                                    "retry_delay": 2,
+                                    "buffer_duration": 2,
+                                    "inactive_timeout": 2
                                 }
                             },
                             "upstream": {
@@ -261,7 +277,11 @@ Batch Processor[http logger] successfully processed the entries
                         "plugins": {
                             "http-logger": {
                                 "uri": "https://127.0.0.1:8888/hello-world-http",
-                                "batch_max_size": 1
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
                             }
                         },
                         "upstream": {
@@ -278,7 +298,11 @@ Batch Processor[http logger] successfully processed the entries
                             "plugins": {
                                 "http-logger": {
                                     "uri": "https://127.0.0.1:8888/hello-world-http",
-                                    "batch_max_size": 1
+                                    "batch_max_size": 1,
+                                    "max_retry_count": 1,
+                                    "retry_delay": 2,
+                                    "buffer_duration": 2,
+                                    "inactive_timeout": 2
                                 }
                             },
                             "upstream": {
@@ -332,7 +356,11 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                         "plugins": {
                             "http-logger": {
                                 "uri": "https://127.0.0.1:9999/hello-world-http",
-                                "batch_max_size": 1
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
                             }
                         },
                         "upstream": {
@@ -349,7 +377,11 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                             "plugins": {
                                 "http-logger": {
                                     "uri": "https://127.0.0.1:9999/hello-world-http",
-                                    "batch_max_size": 1
+                                    "batch_max_size": 1,
+                                    "max_retry_count": 1,
+                                    "retry_delay": 2,
+                                    "buffer_duration": 2,
+                                    "inactive_timeout": 2
                                 }
                             },
                             "upstream": {
