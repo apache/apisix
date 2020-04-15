@@ -16,9 +16,11 @@
 # limitations under the License.
 #
 -->
+
 # 构建 Apache APISIX
 
 ## 1. 安装依赖
+
 Apache APISIX 的运行环境需要 Nginx 和 etcd，
 
 所以在安装前，请根据不同的操作系统来[安装依赖](install-dependencies.md)。
@@ -37,7 +39,8 @@ tar zxvf apache-apisix-1.1-incubating-src.tar.gz
 ```
 
 安装运行时依赖的 Lua 库：
-```
+
+```shell
 cd apache-apisix-1.1-incubating
 make deps
 ```
@@ -111,12 +114,12 @@ Makefile rules:
     * 直接运行：`make test`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
 
-##### 疑难排解
+### 疑难排解
 
 如果遇到问题 `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
 确保将openresty设置为默认的nginx并按如下所示导出路径。
 
- * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+* export PATH=/usr/local/openresty/nginx/sbin:$PATH
 
 ## 5. 更新 Admin API 的 token ，保护 Apache APISIX
 
