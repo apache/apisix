@@ -104,7 +104,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Global Rule](doc/architecture-design.md#Global-Rule): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
     - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
     - [Fault Injection](doc/plugins/fault-injection.md)
-    - [REST Admin API](doc/admin-api.md)
+    - [REST Admin API](doc/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
     - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
 
 - **Highly scalable**
@@ -163,7 +163,7 @@ Copy the compiled files under `/dist` directory to the `apisix/dashboard` direct
 open `http://127.0.0.1:9080/apisix/dashboard/` in the browser.
 Do not need to fill the user name and password, log in directly.
 
-The dashboard allows any remote IP by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
+The dashboard only allows 127.0.0.1 by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
 
 We provide an online dashboard [demo version](http://apisix.iresty.com), make it easier for you to understand APISIX.
 
