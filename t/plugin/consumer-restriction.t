@@ -324,7 +324,7 @@ hello world
                             }
                         },
                         "plugins": {
-                            "basic-auth": {},
+                            "basic-auth": {}
                         }
                 }]]
                 )
