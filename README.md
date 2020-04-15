@@ -106,6 +106,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Fault Injection](doc/plugins/fault-injection.md)
     - [REST Admin API](doc/admin-api.md)
     - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
+    - External Loggers: Export access logs to external log management tools. ([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
 
 - **Highly scalable**
     - [Custom plugins](doc/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
