@@ -23,12 +23,12 @@ local schema = {
         whitelist = {
             type = "array",
             items = {type = "string"},
-            minItems = 0
+            minItems = 1
         },
         blacklist = {
             type = "array",
             items = {type = "string"},
-            minItems = 0
+            minItems = 1
         }
     },
     oneOf = {
@@ -43,7 +43,7 @@ local plugin_name = "consumer-restriction"
 
 local _M = {
     version = 0.1,
-    priority = 2400,        -- TODO: add a type field, may be a good idea
+    priority = 2400,
     name = plugin_name,
     schema = schema,
 }
@@ -69,7 +69,6 @@ end
 
 
 function _M.access(conf, ctx)
-
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
         if not ctx.consumer then
