@@ -77,7 +77,7 @@
 
 你可以将要访问的请求信息传到网关的聚合接口( `/apisix/aggregate` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
 ```shell
-curl --location --request POST 'http://100.109.220.139/apisix/aggregate' \
+curl --location --request POST 'http://127.0.0.1:9080/apisix/aggregate' \
 --header 'Content-Type: application/json' \
 --d '{
     "headers": {
@@ -87,12 +87,12 @@ curl --location --request POST 'http://100.109.220.139/apisix/aggregate' \
     "timeout": 500,
     "pipeline": [
         {
-        	"method": "POST",
+            "method": "POST",
             "path": "/community.GiftSrv/GetGifts",
             "body": "test"
         },
         {
-        	"method": "POST",
+            "method": "POST",
             "path": "/community.GiftSrv/GetGifts",
             "body": "test2"
         }

@@ -617,3 +617,70 @@ GET /aggregate
 {"err":"property \"pipeline\" validation failed: expect array to have at least 1 items","message":"bad request body"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: when client body has been wrote to temp file
+--- config
+    client_body_in_file_only on;
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/aggregate',
+                ngx.HTTP_POST,
+                [=[{
+                    "timeout": 100,
+                    "pipeline":[
+                    {
+                        "path": "/b",
+                        "headers": {
+                            "Header1": "hello",
+                            "Header2": "world"
+                        }
+                    },{
+                        "path": "/c",
+                        "method": "PUT"
+                    },{
+                        "path": "/d"
+                    }]
+                }]=],
+                [=[[
+                    {
+                        "status": 200
+                    },
+                    {
+                        "status": 201
+                    },
+                    {
+                        "status": 202
+                    }
+                ]]=]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /b {
+        content_by_lua_block {
+            ngx.status = 200
+        }
+    }
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+        }
+    }
+    location = /d {
+        content_by_lua_block {
+            ngx.status = 202
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed
+--- no_error_log
+[error]

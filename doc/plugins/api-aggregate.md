@@ -77,7 +77,7 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 
 You can pass your request detail to aggregation api( `/apisix/aggregate` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
 ```shell
-curl --location --request POST 'http://100.109.220.139/apisix/aggregate' \
+curl --location --request POST 'http://127.0.0.1:9080/apisix/aggregate' \
 --header 'Content-Type: application/json' \
 --d '{
     "headers": {
@@ -87,12 +87,12 @@ curl --location --request POST 'http://100.109.220.139/apisix/aggregate' \
     "timeout": 500,
     "pipeline": [
         {
-        	"method": "POST",
+            "method": "POST",
             "path": "/community.GiftSrv/GetGifts",
             "body": "test"
         },
         {
-        	"method": "POST",
+            "method": "POST",
             "path": "/community.GiftSrv/GetGifts",
             "body": "test2"
         }

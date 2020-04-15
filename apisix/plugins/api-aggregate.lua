@@ -14,11 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core   = require("apisix.core")
-local http   = require("resty.http")
-local ngx    = ngx
-local ipairs = ipairs
-local pairs  = pairs
+local core    = require("apisix.core")
+local http    = require("resty.http")
+local ngx     = ngx
+local io_open = io.open
+local ipairs  = ipairs
+local pairs   = pairs
 
 local plugin_name = "api-aggregate"
 
@@ -94,6 +95,7 @@ local _M = {
     schema = schema
 }
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -102,12 +104,14 @@ function _M.check_schema(conf)
     return true
 end
 
+
 local function check_input(data)
     local ok, err = core.schema.check(req_schema, data)
     if not ok then
         return 400, {message = "bad request body", err = err}
     end
 end
+
 
 local function set_base_header(data)
     if not data.headers then
@@ -127,6 +131,7 @@ local function set_base_header(data)
     end
 end
 
+
 local function set_base_query(data)
     if not data.query then
         return
@@ -145,12 +150,31 @@ local function set_base_query(data)
     end
 end
 
+
+local function getFile(file_name)
+    local f = io_open(file_name, 'r')
+    if f then
+        return f:read("*all")
+    end
+
+    return
+end
+
+
 local function aggregate()
     ngx.req.read_body()
     local req_body = ngx.req.get_body_data()
     if not req_body then
-        core.response.exit(400, {message = "no request body, you should give at least one pipeline setting"})
+        local file_name = ngx.req.get_body_file()
+        if file_name then
+            req_body = getFile(file_name)
+        end
+
+        if not req_body then
+            core.response.exit(400, {message = "no request body, you should give at least one pipeline setting"})
+        end
     end
+
     local data, err = core.json.decode(req_body)
     if not data then
         core.response.exit(400, {message = "invalid request body", req_body = req_body, err = err})
@@ -162,7 +186,6 @@ local function aggregate()
     end
 
     local httpc = http.new()
-    core.log.info(data.timeout)
     httpc:set_timeout(data.timeout)
     httpc:connect("127.0.0.1", ngx.var.server_port)
     set_base_header(data)
@@ -193,6 +216,7 @@ local function aggregate()
     core.response.exit(200, aggregated_resp)
 end
 
+
 function _M.api()
     return {
         {
@@ -202,5 +226,6 @@ function _M.api()
         }
     }
 end
+
 
 return _M
