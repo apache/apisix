@@ -20,6 +20,7 @@
 # Build Apache APISIX
 
 ## 1. Install dependencies
+
 The runtime environment for Apache APISIX requires Nginx and etcd.
 
 So before installation, please follow the different operating systems [install Dependencies](install-dependencies.md).
@@ -38,6 +39,7 @@ tar zxvf apache-apisix-1.1-incubating-src.tar.gz
 ```
 
 Install the Lua libraries that the runtime depends on:
+
 ```shell
 cd apache-apisix-1.1-incubating
 make deps
@@ -113,12 +115,12 @@ Makefile rules:
     * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
 
-##### Troubleshoot
+### Troubleshoot
 
 If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
 make sure to set openresty as default nginx. And export the path as below.
 
- * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+* export PATH=/usr/local/openresty/nginx/sbin:$PATH
 
 ## 5. Update Admin API token to protect Apache APISIX
 
