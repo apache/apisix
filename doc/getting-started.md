@@ -18,6 +18,7 @@
 -->
 
 [Chinese](getting-started-cn.md)
+
 # Quick Start Guide
 
 The goal of this guide is to get started with APISIX and to configure a secured public API with APISIX.
@@ -104,6 +105,7 @@ Technically all this information(upstream or service, plugins) can be included i
         ... Additional Configurations
     }
     ```
+
     With the above matching rule you can communicate to APISIX via the following command.
 
     ```bash
@@ -117,7 +119,6 @@ Technically all this information(upstream or service, plugins) can be included i
     The service can be load balanced through a round robin or consistent hashing (cHash) mechanism.
 
     When configuring a route you can either set the upstream information or use service abstraction to refer the upstream information.
-
 
 - Plugins
 
