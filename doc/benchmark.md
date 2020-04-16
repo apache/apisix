@@ -46,7 +46,7 @@ Note the y-axis latency in **microsecond(μs)** not millisecond.
 #### Flame Graph
 
 The result of Flame Graph:
-![](../doc/images/flamegraph-1.jpg)
+![flamegraph-1](../doc/images/flamegraph-1.jpg)
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
@@ -91,7 +91,7 @@ Note the y-axis latency in **microsecond(μs)** not millisecond.
 #### Flame Graph
 
 The result of Flame Graph:
-![](../doc/images/flamegraph-2.jpg)
+![flamegraph-2](../doc/images/flamegraph-2.jpg)
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
