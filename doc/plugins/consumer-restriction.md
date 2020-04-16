@@ -47,7 +47,7 @@ together.
 Creates a route or service object, and enable plugin `consumer-restriction`.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack1",
     "plugins": {
@@ -58,7 +58,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -X PUT -i -d '
     }
 }'
 
-curl http://127.0.0.1:9080/apisix/admin/consumers/2 -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack2",
     "plugins": {

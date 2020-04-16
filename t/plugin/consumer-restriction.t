@@ -207,7 +207,18 @@ passed
 
 
 
-=== TEST 6: verify jack1
+=== TEST 6: verify unauthorized
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: verify jack1
 --- request
 GET /hello
 --- more_headers
@@ -219,20 +230,20 @@ hello world
 
 
 
-=== TEST 7: verify jack2
+=== TEST 8: verify jack2
 --- request
 GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"You are not allowed"}
+{"message":"The consumer is not allowed"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 8: set blacklist
+=== TEST 9: set blacklist
 --- config
     location /t {
         content_by_lua_block {
@@ -273,20 +284,32 @@ passed
 
 
 
-=== TEST 9: verify jack1
+
+=== TEST 10: verify unauthorized
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: verify jack1
 --- request
 GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"You are not allowed"}
+{"message":"The consumer is not allowed"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 10: verify jack2
+=== TEST 12: verify jack2
 --- request
 GET /hello
 --- more_headers
@@ -298,7 +321,7 @@ hello world
 
 
 
-=== TEST 11: remove consumer-restriction
+=== TEST 13: set whitelist without authorization
 --- config
     location /t {
         content_by_lua_block {
@@ -314,7 +337,11 @@ hello world
                             }
                         },
                         "plugins": {
-                            "basic-auth": {}
+                            "consumer-restriction": {
+                                 "whitelist": [
+                                     "jack1"
+                                 ]
+                            }
                         }
                 }]]
                 )
@@ -334,7 +361,156 @@ passed
 
 
 
-=== TEST 12: verify jack1
+=== TEST 14: verify unauthorized
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Missing authentication information in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: verify jack1
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- error_code: 401
+--- response_body
+{"message":"Missing authentication information in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: verify jack2
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- error_code: 401
+--- response_body
+{"message":"Missing authentication information in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: set blacklist without authorization
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "consumer-restriction": {
+                                 "blacklist": [
+                                     "jack1"
+                                 ]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: verify unauthorized
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Missing authentication information in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: verify jack1
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- error_code: 401
+--- response_body
+{"message":"Missing authentication information in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: verify jack2
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- error_code: 401
+--- response_body
+{"message":"Missing authentication information in request"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: remove consumer-restriction
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: verify jack1
 --- request
 GET /hello
 --- more_headers
@@ -346,11 +522,21 @@ hello world
 
 
 
-=== TEST 13: verify jack2
+=== TEST 23: verify jack2
 --- request
 GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: verify unauthorized
+--- request
+GET /hello
 --- response_body
 hello world
 --- no_error_log

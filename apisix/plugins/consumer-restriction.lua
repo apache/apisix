@@ -69,25 +69,25 @@ end
 
 
 function _M.access(conf, ctx)
+    if not ctx.consumer then
+        return 401, { message = "Missing authentication information in request" }
+    }
+
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
-        if not ctx.consumer then
-            block = true
-        elseif is_include(ctx.consumer.username,conf.blacklist) then
+        if is_include(ctx.consumer.username, conf.blacklist) then
             block = true
         end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        if not ctx.consumer then
-            block = true
-        elseif not is_include(ctx.consumer.username,conf.whitelist) then
+        if not is_include(ctx.consumer.username, conf.whitelist) then
             block = true
         end
     end
 
     if block then
-        return 403, { message = "You are not allowed" }
+        return 403, { message = "The consumer is not allowed" }
     end
 end
 
