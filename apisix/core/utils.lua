@@ -25,6 +25,7 @@ local math     = math
 local sub_str  = string.sub
 local str_byte = string.byte
 local tonumber = tonumber
+local type     = type
 local C        = ffi.C
 local ffi_string = ffi.string
 local get_string_buf = base.get_string_buf
@@ -162,6 +163,34 @@ function _M.uri_safe_encode(uri)
     C.ngx_escape_uri(buf, uri, #uri, 0)
 
     return ffi_string(buf, len)
+end
+
+
+function _M.validate_header_field(field)
+    for i = 1, #field do
+        local b = str_byte(field, i, i)
+        -- '!' - '~', excluding ':'
+        if not (32 < b and b < 127) or b == 58 then
+            return false
+        end
+    end
+    return true
+end
+
+
+function _M.validate_header_value(value)
+    if type(value) ~= "string" then
+        return true
+    end
+
+    for i = 1, #value do
+        local b = str_byte(value, i, i)
+        -- control characters
+        if b < 32 or b >= 127 then
+            return false
+        end
+    end
+    return true
 end
 
 
