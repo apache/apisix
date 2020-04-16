@@ -33,7 +33,6 @@ local log                = core.log
 
 local default_weight
 local applications
-local useragent = 'ngx_lua-apisix/v' .. core.version.VERSION
 
 local schema = {
     type = "object",
@@ -45,6 +44,7 @@ local schema = {
                 type = "string",
             },
         },
+        fetch_interval = {type = "integer", minimum = 1, default = 30},
         prefix = {type = "string"},
         weight = {type = "integer", minimum = 0, maximum = 100},
         timeout = {
@@ -98,7 +98,6 @@ end
 local function request(request_uri, basic_auth, method, path, query, body)
     local url = request_uri .. path
     local headers = core.table.new(0, 5)
-    headers['User-Agent'] = useragent
     headers['Connection'] = 'Keep-Alive'
     headers['Accept'] = 'application/json'
 
@@ -239,8 +238,9 @@ function _M.init_worker()
         return
     end
     default_weight = local_conf.eureka.weight or 100
+    local fetch_interval = local_conf.eureka.fetch_interval or 30
     ngx_timer_at(0, fetch_full_registry)
-    ngx_timer_every(30, fetch_full_registry)
+    ngx_timer_every(fetch_interval, fetch_full_registry)
 end
 
 
