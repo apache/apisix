@@ -71,7 +71,7 @@ end
 function _M.access(conf, ctx)
     if not ctx.consumer then
         return 401, { message = "Missing authentication information in request" }
-    }
+    end
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
