@@ -142,7 +142,7 @@ script() {
     sleep 1
 
     make lint && make license-check || exit 1
-    APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t/plugin/proxy-rewrite.t
+    APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
 }
 
 after_success() {
