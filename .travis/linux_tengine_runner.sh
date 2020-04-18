@@ -23,8 +23,10 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
     echo "Create lua deps cache"
+
+    make deps
+
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
     sudo cp rockspec/apisix-master-0.rockspec build-cache/
@@ -215,7 +217,17 @@ do_install() {
 
     tengine_install
 
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls
+    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
+    tar -xf v2.4.4.tar.gz
+    cd luarocks-2.4.4
+    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+    make build > build.log 2>&1 || (cat build.log && exit 1)
+    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+    cd ..
+    rm -rf luarocks-2.4.4
+
+    sudo luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     export GO111MOUDULE=on
 
