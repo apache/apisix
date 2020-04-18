@@ -81,9 +81,6 @@ script() {
         cat /usr/local/apisix/logs/error.log
         exit 1
     fi
-
-    sudo luarocks remove rockspec/apisix-master-0.rockspec
-    sudo luarocks purge --tree=/usr/local
 }
 
 case_opt=$1

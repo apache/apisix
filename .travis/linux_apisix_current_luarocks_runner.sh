@@ -71,9 +71,6 @@ script() {
         cat /usr/local/apisix/logs/error.log
         exit 1
     fi
-
-    sudo luarocks purge --tree=/usr/local
-    sudo rm -rf /usr/local/apisix
 }
 
 case_opt=$1
