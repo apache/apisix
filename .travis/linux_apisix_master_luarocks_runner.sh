@@ -62,6 +62,7 @@ script() {
     sudo PATH=$PATH ./utils/install-apisix.sh remove
 
     # install APISIX by luarocks
+    sudo mkdir -p /usr/local/apisix
     sudo luarocks install rockspec/apisix-master-0.rockspec
 
     # show install files
