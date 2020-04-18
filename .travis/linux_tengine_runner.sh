@@ -25,6 +25,7 @@ export_or_prefix() {
 create_lua_deps() {
     echo "Create lua deps cache"
 
+    rm -rf deps
     make deps
 
     sudo rm -rf build-cache/deps
@@ -227,9 +228,6 @@ do_install() {
     cd ..
     rm -rf luarocks-2.4.4
 
-    sudo luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
-    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
-
     export GO111MOUDULE=on
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
@@ -245,6 +243,9 @@ do_install() {
             create_lua_deps
         fi
     fi
+
+    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils
