@@ -117,7 +117,7 @@ curl -i http://127.0.0.1:9080/index.html
 The response header contains `X-RateLimit-Limit` and `X-RateLimit-Remaining`,
  which mean the total number of requests and the remaining number of requests that can be sent:
 
-```cosole
+```
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -129,7 +129,7 @@ Server: APISIX web server
 
 When you visit for the third time, you will receive a response with the 503 HTTP code:
 
-```console
+```
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194

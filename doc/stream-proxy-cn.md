@@ -30,7 +30,7 @@ APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。 在 ng
 
 在 `conf/config.yaml` 配置文件设置 `stream_proxy` 选项， 指定一组需要进行动态代理的IP地址。默认情况不开启stream代理。
 
-```config
+```yaml
 apisix:
   stream_proxy:                 # TCP/UDP proxy
     tcp:                        # TCP proxy address list

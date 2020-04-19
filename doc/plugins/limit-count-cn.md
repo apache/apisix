@@ -111,7 +111,7 @@ curl -i http://127.0.0.1:9080/index.html
 
 响应头里面包含了 `X-RateLimit-Limit` 和 `X-RateLimit-Remaining`，他们的含义分别是限制的总请求数和剩余还可以发送的请求数：
 
-```console
+```
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -123,7 +123,7 @@ Server: APISIX web server
 
 当你第三次访问的时候，就会收到包含 503 返回码的响应头：
 
-```console
+```
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
