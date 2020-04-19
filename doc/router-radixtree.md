@@ -32,7 +32,7 @@ Let's take a look at a few examples and have an intuitive understanding.
 
 #### 1. Full match
 
-```
+```uri
 /blog/foo
 ```
 
@@ -40,7 +40,7 @@ It will only match `/blog/foo`.
 
 #### 2. Prefix matching
 
-```
+```uri
 /blog/bar*
 ```
 
@@ -53,7 +53,7 @@ Full match -> Deep prefix matching.
 
 Here are the rules:
 
-```
+```uri
 /blog/foo/*
 /blog/foo/a/*
 /blog/foo/c/*
@@ -67,7 +67,6 @@ Here are the rules:
 |/blog/foo/c/d | `/blog/foo/c/*` |
 |/blog/foo/gloo | `/blog/foo/*` |
 |/blog/bar | not match |
-
 
 ### How to filter route by Nginx builtin variable
 
