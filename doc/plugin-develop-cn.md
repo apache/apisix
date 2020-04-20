@@ -19,13 +19,13 @@
 [English](plugin-develop.md)
 
 # 目录
+
 - [**检查外部依赖**](#检查外部依赖)
 - [**插件命名与配置**](#插件命名与配置)
 - [**配置描述与校验**](#配置描述与校验)
 - [**确定执行阶段**](#确定执行阶段)
 - [**编写执行逻辑**](#编写执行逻辑)
 - [**编写测试用例**](#编写测试用例)
-
 
 ## 检查外部依赖
 
@@ -167,6 +167,7 @@ done
 ```
 
 一个测试用例主要有三部分内容：
+
 - 程序代码： Nginx  location 的配置内容
 - 输入： http 的 request 信息
 - 输出检查： status ，header ，body ，error_log 检查
@@ -175,9 +176,8 @@ done
 用例的断言是 response_body 返回 "done"，__no_error_log__ 表示会对 Nginx 的 error.log 检查，
 必须没有 ERROR 级别的记录。
 
-### 附上test-nginx 执行流程：
+### 附上test-nginx 执行流程
 
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
 包括 http status，http response header， http response body 等。
-

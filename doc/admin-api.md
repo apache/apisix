@@ -17,8 +17,8 @@
 #
 -->
 
+# Table of Contents
 
-Table of contents
 ===
 
 * [Route](#route)
@@ -167,7 +167,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## Service
 
@@ -245,7 +245,7 @@ Server: APISIX web server
 
 Return response from etcd currently.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## Consumer
 
@@ -312,7 +312,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 Return response from etcd currently.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## Upstream
 
@@ -392,7 +392,7 @@ Content-Type: text/plain
 
 Return response from etcd currently.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## SSL
 
@@ -428,4 +428,4 @@ Config Example:
 }
 ```
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)

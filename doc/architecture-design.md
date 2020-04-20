@@ -20,6 +20,7 @@
 [Chinese](architecture-design-cn.md)
 
 ## Table of Contents
+
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
@@ -35,7 +36,7 @@
 
 ### Plugin Loading Process
 
-![](./images/flow-load-plugin.png)
+![flow-load-plugin](./images/flow-load-plugin.png)
 
 ### Plugin Hierarchy Structure
 
@@ -225,7 +226,7 @@ As shown in the image above, by creating an Upstream object and referencing it b
 
 Upstream configuration can be directly bound to the specified `Route` or it can be bound to `Service`, but the configuration in `Route` has a higher priority. The priority behavior here is very similar to `Plugin`.
 
-#### Configuration
+### Configuration
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
@@ -340,8 +341,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 More details can be found in [Health Checking Documents](health-check.md).
 
 Here are some examples of configurations using different `hash_on` types:
-##### Consumer
+
+#### Consumer
+
 Create a consumer object:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d `
 {
@@ -353,7 +357,9 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }`
 ```
+
 Create route object and enable `key-auth` plugin authentication:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -371,13 +377,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/server_port"
 }'
 ```
+
 Test request, the `consumer_id` after authentication is passed will be used as the hash value of the load balancing hash algorithm:
+
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
-##### Cookie
+#### Cookie
+
 Create route and upstream object, `hash_on` is `cookie`:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -393,13 +403,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
 The client requests with `Cookie`:
+
 ```shell
  curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
-##### Header
+#### Header
+
 Create route and upstream object, `hash_on` is `header`, `key` is `Content-Type`:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -417,12 +431,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 The client requests with header `Content-Type`:
+
 ```shell
  curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
 ```
 
 [Back to top](#Table-of-contents)
-
 
 ## Router
 
@@ -522,8 +536,10 @@ HTTP/1.1 503 Service Temporarily Unavailable
 [Back to top](#Table-of-contents)
 
 ## Global Rule
+
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
+
 ```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
@@ -540,9 +556,11 @@ curl -X PUT \
         }
     }'
 ```
+
 Now, the `limit-count` plugin will work on all requets
 
 we can list all `GlobalRule` via admin api as below:
+
 ```shell
 curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
