@@ -97,6 +97,9 @@ function _M.check_schema(conf)
                 if #field == 0 then
                     return false, 'invalid field length in header'
                 end
+
+                core.log.info("header field: ", field)
+
                 if not core.utils.validate_header_field(field) then
                     return false, 'invalid field character in header'
                 end

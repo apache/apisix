@@ -30,7 +30,16 @@ do_install() {
     sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
-    sudo apt-get install openresty-debug
+    sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
+
+    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
+    tar -xf v2.4.4.tar.gz
+    cd luarocks-2.4.4
+    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+    make build > build.log 2>&1 || (cat build.log && exit 1)
+    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+    cd ..
+    rm -rf luarocks-2.4.4
 }
 
 script() {
@@ -43,17 +52,17 @@ script() {
 
     # install APISIX by shell
     sudo mkdir -p /usr/local/apisix/deps
-    sudo PATH=$PATH ./utils/install-apisix.sh install
+    sudo PATH=$PATH ./utils/install-apisix.sh install > build.log 2>&1 || (cat build.log && exit 1)
 
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
-    sudo PATH=$PATH ./utils/install-apisix.sh remove
+    sudo PATH=$PATH ./utils/install-apisix.sh remove > build.log 2>&1 || (cat build.log && exit 1)
 
     # install APISIX by luarocks
-    sudo luarocks install rockspec/apisix-master-0.rockspec
+    sudo luarocks install rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
 
     # show install files
     luarocks show apisix
@@ -72,9 +81,6 @@ script() {
         cat /usr/local/apisix/logs/error.log
         exit 1
     fi
-
-    sudo luarocks remove rockspec/apisix-master-0.rockspec
-    sudo luarocks purge --tree=/usr/local
 }
 
 case_opt=$1
