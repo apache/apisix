@@ -27,6 +27,7 @@ create_lua_deps() {
 
     rm -rf deps
     make deps
+    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
 
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -244,7 +245,6 @@ do_install() {
         fi
     fi
 
-    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
