@@ -19,13 +19,13 @@
 [中文](plugin-develop-cn.md)
 
 # table of contents
+
 - [**check dependencies**](#check-dependencies)
 - [**name and config**](#name-and-config)
 - [**schema and check**](#schema-and-check)
 - [**choose phase to run**](#choose-phase-to-run)
 - [**implement the logic**](#implement-the-logic)
 - [**write test case**](#write-test-case)
-
 
 ## check dependencies
 
@@ -183,6 +183,7 @@ done
 ```
 
 A test case consists of three parts :
+
 - __Program code__ : configuration content of Nginx location
 - __Input__ : http request information
 - __Output check__ : status, header, body, error log check

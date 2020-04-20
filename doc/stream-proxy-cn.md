@@ -30,7 +30,7 @@ APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。 在 ng
 
 在 `conf/config.yaml` 配置文件设置 `stream_proxy` 选项， 指定一组需要进行动态代理的IP地址。默认情况不开启stream代理。
 
-```
+```yaml
 apisix:
   stream_proxy:                 # TCP/UDP proxy
     tcp:                        # TCP proxy address list
@@ -78,4 +78,5 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
     }
 }'
 ```
+
 例子中 APISIX 把上游地址 `127.0.0.1:1995` 代理成地址为 `127.0.0.1`, 端口为 `2000`

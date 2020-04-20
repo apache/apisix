@@ -18,6 +18,7 @@
 -->
 
 [Chinese](https-cn.md)
+
 ### HTTPS
 
 `APISIX` supports to load a specific SSL certificate by TLS extension Server Name Indication (SNI).
@@ -66,7 +67,6 @@ Sometimes, one SSL certificate may contain a wildcard domain like `*.test.com`,
 that means it can accept more than one domain, eg: `www.test.com` or `mail.test.com`.
 
 Here is an example, please pay attention on the field `sni`.
-
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
