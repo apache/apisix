@@ -212,7 +212,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-passed
+{"message":"Missing authorization in request"}
 --- no_error_log
 [error]
 
@@ -290,7 +290,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-passed
+{"message":"Missing authorization in request"}
 --- no_error_log
 [error]
 
