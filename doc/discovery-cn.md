@@ -24,11 +24,11 @@
 * [**如何扩展注册中心**](#如何扩展注册中心)
     * [**基本步骤**](#基本步骤)
     * [**以 Eureka 举例**](#以-Eureka-举例)
-        * [**实现 eureka.lua**](#实现-eureka.lua)
+        * [**实现 eureka.lua**](#实现-eurekalua)
         * [**Eureka 与 APISIX 之间数据转换逻辑**](#Eureka-与-APISIX-之间数据转换逻辑)
 * [**注册中心配置**](#注册中心配置)
     * [**选择注册中心**](#选择注册中心)
-    * [**Eureka 注册中心配置**](#Eureka-注册中心配置)
+    * [**Eureka 的配置**](#Eureka-的配置)
 * [**upstream 配置**](#upstream-配置)
 
 ## 摘要

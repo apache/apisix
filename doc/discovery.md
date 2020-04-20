@@ -20,16 +20,16 @@
 
 # Integration service discovery registry
 
-* [** Summary**](#Summary)
-* [**How extend the discovery client?**](#How-extend-the-discovery-client?)
-    * [**Basic steps**](#Basic-steps)
-    * [**the example of Eureka**](#the-example-of-Eureka)
-        * [**Implementation of eureka.lua**](#Implementation-of-eureka.lua)
-        * [**How convert Eureka's instance data to APISIX's node?**](#How-convert-Eureka's-instance-data-to-APISIX's-node?)
-* [**Configuration for discovery client**](#Configuratio-for-discovery-client)
-    * [**Select discovery client**](#Select-discovery-client)
-    * [**Configuration for Eureka**](#Configuration-for-Eureka)
-* [**Upstream setting**](#Upstream-setting)
+* [**Summary**](#Summary)
+* [**How extend the discovery client?**](#how-extend-the-discovery-client)
+    * [**Basic steps**](#basic-steps)
+    * [**the example of Eureka**](#the-example-of-eureka)
+        * [**Implementation of eureka.lua**](#implementation-of-eurekalua)
+        * [**How convert Eureka's instance data to APISIX's node?**](#how-convert-eurekas-instance-data-to-apisixs-node)
+* [**Configuration for discovery client**](#configuration-for-discovery-client)
+    * [**Select discovery client**](#select-discovery-client)
+    * [**Configuration for Eureka**](#configuration-for-eureka)
+* [**Upstream setting**](#upstream-setting)
 
 ## Summary
 
