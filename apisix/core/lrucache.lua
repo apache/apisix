@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local lru_new = require("resty.lrucache").new
 local resty_lock = require("resty.lock")
 local setmetatable = setmetatable
@@ -21,6 +22,7 @@ local getmetatable = getmetatable
 local type = type
 local tostring = tostring
 local get_phase = ngx.get_phase
+local lock_shdict_name = "lrucache-lock-" .. ngx.config.subsystem
 
 local can_yield_phases = {
     ssl_session_fetch = true,
@@ -108,7 +110,7 @@ local function new_lru_fun(opts)
             return cache_obj
         end
 
-        local lock, err = resty_lock:new("lrucache-lock")
+        local lock, err = resty_lock:new(lock_shdict_name)
         if not lock then
             return nil, "failed to create lock: " .. err
         end
