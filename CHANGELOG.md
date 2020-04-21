@@ -19,12 +19,53 @@
 
 # Table of Contents
 
+- [1.2.0](#120)
 - [1.1.0](#110)
 - [1.0.0](#100)
 - [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 1.2.0
+
+The 1.2 version brings many new features, including core and plugins.
+
+### Core
+- :sunrise: **support etcd cluster**. [#1283](https://github.com/apache/incubator-apisix/pull/1283)
+- using the local DNS resolver by default, which is friendly for k8s. [#1387](https://github.com/apache/incubator-apisix/pull/1387)
+- support to run `header_filter`, `body_filter` and `log` phases for global rules. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
+- changed the `lua/apisix` dir to `apisix`(**not backward compatible**). [#1351](https://github.com/apache/incubator-apisix/pull/1351)
+- add dashboard as submodule. [#1360](https://github.com/apache/incubator-apisix/pull/1360)
+- allow adding custom shared dict. [#1367](https://github.com/apache/incubator-apisix/pull/1367)
+
+### Plugin
+- :sunrise: **add Apache Kafka plugin**. [#1312](https://github.com/apache/incubator-apisix/pull/1312)
+- :sunrise: **add CORS plugin**. [#1327](https://github.com/apache/incubator-apisix/pull/1327)
+- :sunrise: **add TCP logger plugin**. [#1221](https://github.com/apache/incubator-apisix/pull/1221)
+- :sunrise: **add UDP logger plugin**. [1070](https://github.com/apache/incubator-apisix/pull/1070)
+- :sunrise: **add proxy mirror plugin**. [#1288](https://github.com/apache/incubator-apisix/pull/1288)
+- :sunrise: **add proxy cache plugin**. [#1153](https://github.com/apache/incubator-apisix/pull/1153)
+- drop websocket enable control in proxy-rewrite plugin(**not backward compatible**). [1332](https://github.com/apache/incubator-apisix/pull/1332)
+- Adding support to public key based introspection for OAuth plugin. [#1266](https://github.com/apache/incubator-apisix/pull/1266)
+- response-rewrite plugin support binary data to client by base64. [#1381](https://github.com/apache/incubator-apisix/pull/1381)
+- plugin `grpc-transcode` supports grpc deadline. [#1149](https://github.com/apache/incubator-apisix/pull/1149)
+- support password auth for limit-count-redis. [#1150](https://github.com/apache/incubator-apisix/pull/1150)
+- Zipkin plugin add service name and report local server IP. [#1386](https://github.com/apache/incubator-apisix/pull/1386)
+- add `change_pwd` and `user_info` for Wolf-Rbac plugin. [#1204](https://github.com/apache/incubator-apisix/pull/1204)
+
+### Admin API
+- :sunrise: support key-based authentication for Admin API(**not backward compatible**). [#1169](https://github.com/apache/incubator-apisix/pull/1169)
+- hide SSL private key in admin API. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
+
+### Bugfix
+- missing `clear` table before to reuse table (**will cause memory leak**). [#1134](https://github.com/apache/incubator-apisix/pull/1134)
+- print warning error message if the yaml route file is invalid. [#1141](https://github.com/apache/incubator-apisix/pull/1141)
+- the balancer IP may be nil, use an empty string instead. [#1166](https://github.com/apache/incubator-apisix/pull/1166)
+- plugin node-status and heartbeat don't have schema. [#1249](https://github.com/apache/incubator-apisix/pull/1249)
+- the plugin basic-auth needs required field. [#1251](https://github.com/apache/incubator-apisix/pull/1251)
+- check the count of upstream valid node. [#1292](https://github.com/apache/incubator-apisix/pull/1292)
+
 
 ## 1.1.0
 
