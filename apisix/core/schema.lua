@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local jsonschema = require('jsonschema')
 local lrucache = require("apisix.core.lrucache")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
@@ -31,7 +32,12 @@ end
 
 
 function _M.check(schema, json)
-    local validator = cached_validator(schema, nil, create_validator, schema)
+    local validator, err = cached_validator(schema, nil,
+                                create_validator, schema)
+    if not validator then
+        return nil, err
+    end
+
     return validator(json)
 end
 

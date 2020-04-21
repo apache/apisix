@@ -113,6 +113,8 @@ _EOC_
 
     lua_socket_log_errors off;
 
+    lua_shared_dict lrucache-lock        10m;
+
     upstream apisix_backend {
         server 127.0.0.1:1900;
         balancer_by_lua_block {
