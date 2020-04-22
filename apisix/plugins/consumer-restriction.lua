@@ -70,7 +70,7 @@ end
 
 function _M.access(conf, ctx)
     if not ctx.consumer then
-        return 401, { message = "Missing authentication information in request" }
+        return 401, { message = "Requires authentication to access" }
     end
 
     local block = false
