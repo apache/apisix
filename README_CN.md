@@ -145,7 +145,7 @@ sudo apisix start
 
 APISIX 内置了对 Dashboard 的支持，使用步骤如下：
 
-1. 确保你的运行环境中的 Node 版本 >= 8.12.0。
+1. 确保你的运行环境中使用了最新的 Node.js 版本（>= 10）。
 
 2. 下载 [Dashboard](https://github.com/apache/incubator-apisix-dashboard) 的源码：
 ```
