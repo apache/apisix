@@ -370,7 +370,7 @@ GET /hello_new
 --- error_code eval
 500
 --- response_body
-{"1":"ERR invalid password","error_msg":"failed to limit count: ERR invalid password"}
+{"error_msg":"failed to limit count: ERR invalid password"}
 --- error_log
 failed to limit req: ERR invalid password
 
