@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local jsonschema = require('jsonschema')
 local lrucache = require("apisix.core.lrucache")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
+local pcall = pcall
 
 local _M = {version = 0.3}
 
@@ -26,12 +28,22 @@ local function create_validator(schema)
     -- local file2=io.output("/tmp/2.txt")
     -- file2:write(code)
     -- file2:close()
-    return jsonschema.generate_validator(schema)
+    local ok, res = pcall(jsonschema.generate_validator, schema)
+    if ok then
+        return res
+    end
+
+    return nil, res -- error message
 end
 
 
 function _M.check(schema, json)
-    local validator = cached_validator(schema, nil, create_validator, schema)
+    local validator, err = cached_validator(schema, nil,
+                                create_validator, schema)
+    if not validator then
+        return false, err
+    end
+
     return validator(json)
 end
 
