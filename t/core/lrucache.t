@@ -241,3 +241,41 @@ obj: {"idx":1,"_cache_ver":"ver"}
 obj: {"idx":2,"_cache_ver":"ver"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: when creating cached objects, use resty-lock to avoid repeated creation.
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            local idx = 0
+            local function create_obj()
+                idx = idx + 1
+                ngx.sleep(0.1)
+                return {idx = idx}
+            end
+
+            local lru_get = core.lrucache.new({
+                ttl = 0.1, count = 256, invalid_stale = true,
+            })
+
+            local function f()
+                local obj = lru_get("key", "ver", create_obj)
+                ngx.say("obj: ", core.json.encode(obj))
+            end
+
+            ngx.thread.spawn(f)
+            ngx.thread.spawn(f)
+
+            ngx.sleep(0.3)
+        }
+    }
+--- request
+GET /t
+--- response_body
+obj: {"idx":1,"_cache_ver":"ver"}
+obj: {"idx":1,"_cache_ver":"ver"}
+--- no_error_log
+[error]

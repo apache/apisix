@@ -113,6 +113,8 @@ _EOC_
 
     lua_socket_log_errors off;
 
+    lua_shared_dict lrucache-lock-stream   10m;
+
     upstream apisix_backend {
         server 127.0.0.1:1900;
         balancer_by_lua_block {
@@ -196,6 +198,7 @@ _EOC_
     lua_shared_dict prometheus-metrics   10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
+    lua_shared_dict lrucache-lock        10m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
