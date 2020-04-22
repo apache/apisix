@@ -144,7 +144,7 @@ Then you can try more [plugins](doc/README.md#plugins).
 ## Dashboard
 APISIX has built-in support for Dashboard, as follows:
 
-1. Please make sure your machine has Node 8.12.0 or higher, or there will occur build issues.
+1. Please make sure your machine has the latest Node.js(10 or higher), or there will occur build issues.
 
 2. Download the source codes of [Dashboard](https://github.com/apache/incubator-apisix-dashboard):
 ```
