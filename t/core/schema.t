@@ -131,3 +131,25 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: invalid schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local schema = {
+                type = "invalid type"
+            }
+
+            local ok, err = core.schema.check(schema, 11)
+            ngx.say("ok: ", ok, " err: ", err)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/ok: false err: .* invalid JSON type: invalid type/
+--- no_error_log
+[error]
