@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local balancer = require("ngx.balancer")
+local roundrobin  = require("resty.roundrobin")
 
 local schema = {
     type = "object",
@@ -69,7 +70,6 @@ function _M.check_schema(conf)
     end
 
     -- Check whether upstream exists
-
     return true
 end
 
@@ -104,6 +104,8 @@ function _M.balancer(conf, ctx)
     -- NOTE: update `ctx.balancer_name` is important, APISIX will skip other
     -- balancer handler.
     ctx.balancer_name = plugin_name
+
+    core.log.info("plugin balancer: ", plugin_name, ", picked upstream: ", core.json.encode(up_id))
     
     local ip, port, err = pick_upstream_server(up_id, ctx)
     if err then
