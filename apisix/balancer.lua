@@ -193,12 +193,12 @@ local function create_server_picker(upstream, checker)
     return nil, "invalid balancer type: " .. upstream.type, 0
 end
 
-
-local function pick_server(route, ctx)
+local function pick_upstream_server(upstream_id,ctx)
+    local route = ctx.matched_route
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local healthcheck_parent = route
-    local up_id = route.value.upstream_id
+    local up_id = upstream_id or route.value.upstream_id
     local up_conf = (route.dns_value and route.dns_value.upstream)
                     or route.value.upstream
     if not up_id and not up_conf then
@@ -293,6 +293,13 @@ local function pick_server(route, ctx)
     ctx.balancer_port = port
 
     return ip, port, err
+end
+
+_M.pick_upstream_server = pick_upstream_server
+
+
+local function pick_server(route, ctx)
+    return pick_upstream_server(route.value.upstream_id, ctx)
 end
 -- for test
 _M.pick_server = pick_server
