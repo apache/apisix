@@ -171,4 +171,4 @@ Steps:
 
 2. Restart APISIX
 
-Now you can check the info level log in logs/error.log.
+Now you can trace the info level log in logs/error.log.
