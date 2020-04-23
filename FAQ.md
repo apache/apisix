@@ -163,7 +163,7 @@ This is an OS incompatible issue, you could fix by these two steps
 
 ## How to change the log level?
 
-The default log level for APISIX is `warn`. You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
+The default log level for APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
 
 Steps:
 
