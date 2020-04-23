@@ -151,6 +151,7 @@ node -v
 ```
 
 2. 下载 [Dashboard](https://github.com/apache/incubator-apisix-dashboard) 的源码：
+RPM/yum安装的apisix-1.2版本，默认已安装至/usr/local/apisix/dashboard，参考第5步配置允许访问即可。
 ```
 git clone https://github.com/apache/incubator-apisix-dashboard.git
 ```
