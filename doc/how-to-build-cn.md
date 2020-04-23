@@ -49,6 +49,7 @@ make deps
 ```shell
 sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.2/apisix-1.2-0.el7.noarch.rpm
 ```
+安装后主目录位于`/usr/local/apisix/`
 
 ### 通过 Luarocks 安装 （不支持 macOS）
 
@@ -122,7 +123,13 @@ Makefile rules:
 
 ## 5. 更新 Admin API 的 token ，保护 Apache APISIX
 
-修改 `conf/config.yaml` 中的 `apisix.admin_key` 并重启服务。例如下面例子：
+修改 `conf/config.yaml` 中的 `apisix.admin_key` 
+重启服务
+```shell
+$ apisix restart
+```
+
+例如下面例子：
 
 ```yaml
 apisix:
@@ -146,8 +153,15 @@ Content-Type: text/plain
 
 $ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
 HTTP/1.1 401 Unauthorized
-Date: Fri, 28 Feb 2020 08:17:58 GMT
+Date: Thu, 23 Apr 2020 09:05:48 GMT
 Content-Type: text/html
 ... ...
-{"node":{...},"action":"get"}
+<html>
+<head><title>401 Authorization Required</title></head>
+<body>
+<center><h1>401 Authorization Required</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+
 ```
