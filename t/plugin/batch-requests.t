@@ -31,7 +31,7 @@ __DATA__
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                  ngx.HTTP_POST,
                  [=[{
                     "query": {
@@ -151,7 +151,7 @@ passed
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline1":[
@@ -190,7 +190,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": "200",
@@ -230,7 +230,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 2000,
@@ -299,7 +299,7 @@ passed
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 100,
@@ -367,7 +367,7 @@ timeout
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 100,
@@ -429,7 +429,7 @@ timeout
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 nil,
                 nil
@@ -455,7 +455,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 "invaild json string"
                 )
@@ -480,7 +480,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[
@@ -510,7 +510,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[{
@@ -540,7 +540,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[{
@@ -570,7 +570,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[{
@@ -600,7 +600,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[]
@@ -627,7 +627,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/aggregate',
+            local code, body = t('/apisix/batch',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 100,

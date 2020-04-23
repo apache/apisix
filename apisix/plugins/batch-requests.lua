@@ -21,7 +21,7 @@ local io_open = io.open
 local ipairs  = ipairs
 local pairs   = pairs
 
-local plugin_name = "api-aggregate"
+local plugin_name = "batch-requests"
 
 local schema = {
     type = "object",
@@ -221,7 +221,7 @@ function _M.api()
     return {
         {
             methods = {"POST"},
-            uri = "/apisix/aggregate",
+            uri = "/apisix/batch",
             handler = aggregate,
         }
     }

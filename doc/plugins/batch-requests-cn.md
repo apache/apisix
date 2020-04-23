@@ -17,20 +17,20 @@
 #
 -->
 
-# [English](api-aggregate.md)
+# [English](batch-requests.md)
 
 # 目录
 
 - [**简介**](#简介)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
-- [**聚合接口请求/响应**](#聚合接口请求/响应)
+- [**批量接口请求/响应**](#批量接口请求/响应)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
 ## 简介
 
-`api-aggregate` 插件可以让你在以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关聚合多个http请求。
+`batch-requests` 插件可以一次接受多个请求并以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个http请求，合并结果后再返回客户端，这在客户端需要访问多个接口时可以显著地提升请求性能。
 
 ## 属性
 
@@ -40,8 +40,8 @@
 
 本插件默认启用。
 
-## 聚合接口请求/响应
-插件会为 `apisix` 创建一个 `/apisix/aggregate` 的聚合接口来处理你的聚合请求。
+## 批量接口请求/响应
+插件会为 `apisix` 创建一个 `/apisix/batch` 的接口来处理你的批量请求。
 
 ### 接口请求参数:
 
@@ -75,9 +75,9 @@
 
 ## 测试插件
 
-你可以将要访问的请求信息传到网关的聚合接口( `/apisix/aggregate` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
+你可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
 ```shell
-curl --location --request POST 'http://127.0.0.1:9080/apisix/aggregate' \
+curl --location --request POST 'http://127.0.0.1:9080/apisix/batch' \
 --header 'Content-Type: application/json' \
 --d '{
     "headers": {

@@ -17,20 +17,20 @@
 #
 -->
 
-# [Chinese](api-aggregate-cn.md)
+# [Chinese](batch-requests-cn.md)
 
 # Summary
 
 - [**Description**](#Description)
 - [**Attributes**](#Attributes)
 - [**How To Enable**](#how-to-Enable)
-- [**Aggregation Api Request/Response**](#aggregation-api-request/response)
+- [**Batch Api Request/Response**](#batch-api-request/response)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
 ## Description
 
-`api-aggregate` can let you aggregate multiple request on `apisix` via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining).
+`batch-requests` can accept mutiple request and send them from `apisix` via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining),and return a aggregated response to client,this can significantly improve performance when the client needs to access multiple APIs.
 
 ## Attributes
 
@@ -40,10 +40,10 @@ None
 
 Default enbaled
 
-## Aggregation Api Request/Response
+## Batch Api Request/Response
 The plugin will create a api in `apisix` to handle your aggregation request.
 
-### Aggregate Api Request:
+### Batch Api Request:
 
 | ParameterName | Type | Optional | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -62,7 +62,7 @@ The plugin will create a api in `apisix` to handle your aggregation request.
 | path | String | No | | http request's path |
 | body | String | Yes | | http request's body |
 
-### Aggregate Api Response：
+### Batch Api Response：
 Response is `Array` of [HttpResponse](#HttpResponse).
 
 #### HttpResponse
@@ -75,9 +75,9 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 
 ## Test Plugin
 
-You can pass your request detail to aggregation api( `/apisix/aggregate` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
+You can pass your request detail to batch api( `/apisix/batch` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
 ```shell
-curl --location --request POST 'http://127.0.0.1:9080/apisix/aggregate' \
+curl --location --request POST 'http://127.0.0.1:9080/apisix/batch' \
 --header 'Content-Type: application/json' \
 --d '{
     "headers": {
@@ -100,7 +100,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/aggregate' \
 }'
 ```
 
-返回如下：
+response as below：
 ```json
 [
     {
