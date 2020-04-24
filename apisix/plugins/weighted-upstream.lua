@@ -90,11 +90,9 @@ local function create_upstream_picker(conf)
 end
 
 function _M.balancer(conf, ctx)
-    core.log.info("plugin balancer: ", plugin_name, ", ctx: ", core.json.encode(ctx), ", conf: ", core.json.encode(conf))
-
     -- 
-    local upstream_picker = lrucache_upstream_picker(ctx.conf_id, ctx.conf_version,
-            create_upstream_picker, conf, ctx)
+    local key = ctx.conf_type .. "#" .. ctx.conf_id
+    local upstream_picker = lrucache_upstream_picker(key, ctx.conf_version,create_upstream_picker, conf)
 
     local up_id = upstream_picker.get()
     if not up_id then
