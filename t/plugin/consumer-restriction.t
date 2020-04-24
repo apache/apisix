@@ -366,7 +366,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Requires authentication to access"}
+{"message":"Missing authentication or identity verification."}
 --- no_error_log
 [error]
 
@@ -379,7 +379,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Requires authentication to access"}
+{"message":"Missing authentication or identity verification."}
 --- no_error_log
 [error]
 
@@ -392,7 +392,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Requires authentication to access"}
+{"message":"Missing authentication or identity verification."}
 --- no_error_log
 [error]
 
@@ -443,7 +443,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Requires authentication to access"}
+{"message":"Missing authentication or identity verification."}
 --- no_error_log
 [error]
 
@@ -456,7 +456,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Requires authentication to access"}
+{"message":"Missing authentication or identity verification."}
 --- no_error_log
 [error]
 
@@ -469,7 +469,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Requires authentication to access"}
+{"message":"Missing authentication or identity verification."}
 --- no_error_log
 [error]
 

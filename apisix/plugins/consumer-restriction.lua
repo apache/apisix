@@ -67,10 +67,11 @@ function _M.check_schema(conf)
     return true
 end
 
+Missing identity verification
 
 function _M.access(conf, ctx)
     if not ctx.consumer then
-        return 401, { message = "Requires authentication to access" }
+        return 401, { message = "Missing authentication or identity verification." }
     end
 
     local block = false
