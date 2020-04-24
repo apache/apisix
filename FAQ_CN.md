@@ -111,3 +111,15 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
 https://github.com/iresty/lua-resty-radixtree#operator-list
+
+## 如何修改日志等级
+
+默认的APISIX日志等级为`warn`，如果需要查看`core.log.info`的打印结果需要将日志等级调整为`info`。
+
+具体步骤：
+
+1、修改conf/config.yaml中的nginx log配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
+
+2、重启APISIX
+
+之后便可以在logs/error.log中查看到info的日志了。
