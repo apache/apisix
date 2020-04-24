@@ -110,7 +110,7 @@ done
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:1984": 1
                             },
                             "type": "roundrobin"
                         },
@@ -127,7 +127,7 @@ done
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:1980": 1
+                                    "127.0.0.1:1984": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -169,7 +169,18 @@ hello world
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.syslog")
-            local ok, err = plugin.flush_syslog()
+            local logger_socket = require "resty.logger.socket"
+            local logger, err = logger_socket:new({
+                host = "127.0.0.1",
+                port = 5044,
+                flush_limit = 1,
+            })
+
+            if not logger then
+                ngx.log(ngx.ERR, "failed to create logger: ", err)
+            end
+
+            local ok, err = plugin.flush_syslog(logger)
             if not ok then
                 ngx.say(err)
             end

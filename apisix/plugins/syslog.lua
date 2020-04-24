@@ -16,7 +16,7 @@
 --
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
-local logger = require("resty.logger.socket")
+local logger_socket = require "resty.logger.socket"
 local plugin_name = "syslog"
 local ngx = ngx
 
@@ -48,9 +48,9 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-function _M.flush_syslog()
+function _M.flush_syslog(logger)
     if logger.initted() then
-        local ok, err = logger.flush()
+        local ok, err = logger:flush()
         if not ok then
             core.log.error("failed to flush message:", err)
         end
@@ -66,22 +66,21 @@ function _M.log(conf)
         return
     end
 
-    if not logger.initted() then
-        local ok, err = logger.init{
-            host = conf.host,
-            port = conf.port,
-            flush_limit = conf.flush_limit,
-            drop_limit = conf.drop_limit,
-            timeout = conf.timeout,
-            sock_type = conf.sock_type,
-            max_retry_times = conf.max_retry_times,
-            retry_interval = conf.retry_interval,
-            pool_size = conf.pool_size,
-            tls = conf.tls,
-        }
-        if not ok then
-            core.log.error("failed when initiating the sys logger processor", err)
-        end
+    local logger, err = logger_socket:new({
+        host = conf.host,
+        port = conf.port,
+        flush_limit = conf.flush_limit,
+        drop_limit = conf.drop_limit,
+        timeout = conf.timeout,
+        sock_type = conf.sock_type,
+        max_retry_times = conf.max_retry_times,
+        retry_interval = conf.retry_interval,
+        pool_size = conf.pool_size,
+        tls = conf.tls,
+    })
+
+    if not ok then
+        core.log.error("failed when initiating the sys logger processor", err)
     end
 
     local ok, err = logger.log(core.json.encode(entry))
