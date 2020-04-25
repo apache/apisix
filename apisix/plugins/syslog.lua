@@ -16,7 +16,7 @@
 --
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
-local logger_socket = require "resty.logger.socket"
+local logger_socket = require("resty.logger.socket")
 local plugin_name = "syslog"
 local ngx = ngx
 
@@ -49,14 +49,11 @@ function _M.check_schema(conf)
 end
 
 function _M.flush_syslog(logger)
-    if logger.initted() then
-        local ok, err = logger:flush()
+        local ok, err = logger:flush(logger)
         if not ok then
             core.log.error("failed to flush message:", err)
         end
-    end
 end
-
 
 function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
@@ -79,11 +76,11 @@ function _M.log(conf)
         tls = conf.tls,
     })
 
-    if not ok then
+    if not logger then
         core.log.error("failed when initiating the sys logger processor", err)
     end
 
-    local ok, err = logger.log(core.json.encode(entry))
+    local ok, err = logger:log(core.json.encode(entry))
     if not ok then
         core.log.error("failed to log message", err)
     end
