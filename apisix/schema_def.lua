@@ -29,8 +29,8 @@ local plugins_schema = {
 local id_schema = {
     anyOf = {
         {
-            type = "string", minLength = 1, maxLength = 32,
-            pattern = [[^[0-9]+$]]
+            type = "string", minLength = 1, maxLength = 64,
+            pattern = [[^[a-zA-Z0-9-_]+$]]
         },
         {type = "integer", minimum = 1}
     }
@@ -261,10 +261,10 @@ local upstream_schema = {
                 service_name = {type = "string", description = "k8s service name"},
                 port = {type = "number", minimum = 0},
                 backend_type = {
-                    type = "string", 
+                    type = "string",
                     default = "pod",
                     description = "k8s service name",
-                    enum = {"svc", "pod"}             
+                    enum = {"svc", "pod"}
                 },
             },
             anyOf = {
