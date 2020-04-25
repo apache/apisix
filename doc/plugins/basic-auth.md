@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](basic-auth-cn.md)
+[Chinese](basic-auth-cn.md)
 
 # Summary
 

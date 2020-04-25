@@ -18,13 +18,13 @@
 -->
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**Info**](#info)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -49,7 +49,7 @@ Difference between async and the sync data push.
 
 1. In sync model
 
-    In case of success, returns the offset (** cdata: LL **) of the current broker and partition.
+    In case of success, returns the offset (**cdata: LL**) of the current broker and partition.
     In case of errors, returns `nil` with a string describing the error.
 
 2. In async model
@@ -61,7 +61,7 @@ Difference between async and the sync data push.
     In case of success, returns `true`.
     In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
 
-##### Sample broker list
+### Sample broker list
 
 This plugin supports to push in to more than one broker at a time. Specify the brokers of the external kafka servers as below
 sample to take effect of this functionality.
@@ -103,7 +103,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 ## Test Plugin
 
-* success:
+- success:
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello

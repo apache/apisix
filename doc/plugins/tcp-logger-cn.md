@@ -18,12 +18,12 @@
 -->
 
 # 摘要
+
 - [**定义**](#name)
 - [**属性列表**](#attributes)
 - [**如何开启**](#how-to-enable)
 - [**测试插件**](#test-plugin)
 - [**禁用插件**](#disable-plugin)
-
 
 ## 定义
 
@@ -40,7 +40,6 @@
 | timeout |可选的|发送数据超时间。|
 | tls |可选的|布尔值，用于控制是否执行SSL验证。|
 | tls_options |可选的|TLS 选项|
-
 
 ## 如何开启
 
@@ -71,7 +70,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 ## 测试插件
 
-* 成功的情况:
+- 成功的情况:
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
@@ -81,7 +80,6 @@ hello, world
 ```
 
 ## 禁用插件
-
 
 想要禁用“tcp-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
 

@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](fault-injection.md)
+[English](fault-injection.md)
 
 # fault-injection
 

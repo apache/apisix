@@ -20,12 +20,12 @@
 [English](key-auth.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
-
 
 ## 名字
 
@@ -35,7 +35,7 @@
 
 ## 属性
 
-* `key`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。
+- `key`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。
 
 ## 如何启用
 
@@ -54,10 +54,10 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
-![](../images/plugin/key-auth-1.png)
+![key-auth-1](../images/plugin/key-auth-1.png)
 
 然后在 consumer 页面中添加 key-auth 插件：
-![](../images/plugin/key-auth-2.png)
+![key-auth-2](../images/plugin/key-auth-2.png)
 
 2. 创建 route 或 service 对象，并开启 `key-auth` 插件。
 

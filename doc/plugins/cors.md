@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](cors-cn.md)
+[Chinese](cors-cn.md)
 
 # Summary
 
@@ -33,7 +33,7 @@
 
 ## Attributes
 
-- `allow_origins`: `optional`, Which Origins is allowed to enable CORS, format as：`scheme`://`host`:`port`, for example: https://somehost.com:8081. Multiple origin use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any origin. you alse can allow all any origins forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
+- `allow_origins`: `optional`, Which Origins is allowed to enable CORS, format as：`scheme`://`host`:`port`, for example: `https://somehost.com:8081`. Multiple origin use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any origin. you alse can allow all any origins forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
 - `allow_methods`: `optional`, Which Method is allowed to enable CORS, such as: `GET`, `POST` etc. Multiple method use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any method. You alse can allow all any method forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
 - `allow_headers`: `optional`, Which headers are allowed to set in requst when access cross-origin resource. Multiple value use `,` to split. Default value: `*`.
 - `expose_headers`: `optional`, Which headers are allowed to set in response when access cross-origin resource. Multiple value use `,` to split. Default value: `*`.

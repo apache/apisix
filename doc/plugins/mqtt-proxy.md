@@ -20,12 +20,12 @@
 [中文](mqtt-proxy-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -42,7 +42,6 @@ And this plugin both support MQTT protocol [3.1.*](http://docs.oasis-open.org/mq
 |protocol_level|require |Level of protocol, it should be `4` for MQTT `3.1.*`. it should be `5` for MQTT `5.0`.|
 |upstream.ip   |require |IP address of upstream, will forward current request to.|
 |upstream.port |require |Port of upstream, will forward current request to.|
-
 
 ## How To Enable
 

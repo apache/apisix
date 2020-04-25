@@ -30,16 +30,14 @@
 
 ## Name
 
-`wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a` service` or `route`.
+`wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a ` service` or `route`.
 The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more information about `wolf`, please refer to [wolf documentation](https://github.com/iGeeky/wolf).
-
 
 ## Attributes
 
-* `server`: Set the service address of` wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
-* `appid`: Set the app id. The app id must be added in wolf-console.
-* `header_prefix`: prefix of custom HTTP header. The default value is `X-`. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`.
-
+- `server`: Set the service address of` wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
+- `appid`: Set the app id. The app id must be added in wolf-console.
+- `header_prefix`: prefix of custom HTTP header. The default value is `X-`. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`.
 
 ## Dependencies
 
@@ -47,10 +45,9 @@ The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more
 
 [Wolf quick start](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README.md)
 
-### Add `application`,` admin`, `normal user`,` permission`, `resource` and user authorize
+### Add `application`, `admin`, `normal user`, `permission`, `resource` and user authorize
 
 [Wolf-console usage](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)
-
 
 ## How To Enable
 
@@ -71,10 +68,10 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f
 ```
 
 You can visit the dashboard: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operations through the web interface, first add a consumer:
-![](../images/plugin/wolf-rbac-1.png)
+![wolf-rbac-1](../images/plugin/wolf-rbac-1.png)
 
 Then add the wolf-rbac plugin to the consumer page:
-![](../images/plugin/wolf-rbac-2.png)
+![wolf-rbac-2](../images/plugin/wolf-rbac-2.png)
 
 Notes: The `appid` filled in above needs to already exist in the wolf system.
 
@@ -99,11 +96,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## Test Plugin
 
-#### Login and get `wolf-rbac` token:
+### Login and get `wolf-rbac` token:
 
-The following `appid`,` username`, and `password` must be real ones in the wolf system.
+The following `appid`, `username`, and `password` must be real ones in the wolf system.
 
-* Login as `POST application/json`
+- Login as `POST application/json`
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
@@ -119,7 +116,7 @@ Server: APISIX web server
 {"rbac_token":"V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts","user_info":{"nickname":"test","username":"test","id":"749"}}
 ```
 
-* Login as `POST x-www-form-urlencoded`
+- Login as `POST x-www-form-urlencoded`
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
@@ -127,10 +124,9 @@ curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -d 'appid=restful&username=test&password=user-password'
 ```
 
+### try request with token
 
-#### try request with token
-
-* without token
+- without token
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" -i
@@ -140,7 +136,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing rbac token in request"}
 ```
 
-* request header(Authorization) with token:
+- request header(Authorization) with token:
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
@@ -151,7 +147,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-* request header(x-rbac-token) with token:
+- request header(x-rbac-token) with token:
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
@@ -163,7 +159,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-* request params with token:
+- request params with token:
 
 ```shell
 curl 'http://127.0.0.1:9080?rbac_token=V1%23restful%23eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -H"Host: www.baidu.com" -i
@@ -174,7 +170,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-* request cookie with token:
+- request cookie with token:
 
 ```shell
 curl http://127.0.0.1:9080 -H"Host: www.baidu.com" \
@@ -186,8 +182,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-
-#### Get `RBAC` user information
+### Get `RBAC` user information
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/user_info \
@@ -212,7 +207,7 @@ HTTP/1.1 200 OK
 }
 ```
 
-#### Change 'RBAC' user password
+### Change 'RBAC' user password
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/change_pwd \
@@ -246,4 +241,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-

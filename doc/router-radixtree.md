@@ -19,41 +19,42 @@
 
 # libradixtree
 
-### what's libradixtree?
+## what's libradixtree?
+
 [libradixtree](https://github.com/iresty/lua-resty-radixtree), adaptive radix trees implemented in Lua for OpenResty.
 
 APISIX using libradixtree as route dispatching library.
 
-### How to use libradixtree in APISIX?
+## How to use libradixtree in APISIX?
 
 This is Lua-Openresty implementation library base on FFI for [rax](https://github.com/antirez/rax).
 
 Let's take a look at a few examples and have an intuitive understanding.
 
-#### 1. Full match
+### 1. Full match
 
-```
+```bash
 /blog/foo
 ```
 
 It will only match `/blog/foo`.
 
-#### 2. Prefix matching
+### 2. Prefix matching
 
-```
+```bash
 /blog/bar*
 ```
 
 It will match the path with the prefix `/blog/bar`, eg: `/blog/bar/a`,
 `/blog/bar/b`, `/blog/bar/c/d/e`, `/blog/bar` etc.
 
-#### 3. Match priority
+### 3. Match priority
 
 Full match -> Deep prefix matching.
 
 Here are the rules:
 
-```
+```bash
 /blog/foo/*
 /blog/foo/a/*
 /blog/foo/c/*

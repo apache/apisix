@@ -51,16 +51,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
 
-![](../images/plugin/prometheus-1.png)
+![prometheus-1](../images/plugin/prometheus-1.png)
 
 然后在 route 页面中添加 prometheus 插件：
 
-![](../images/plugin/prometheus-2.png)
+![prometheus-2](../images/plugin/prometheus-2.png)
 
 ## 如何提取指标数据
 
 我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
-```
+
+```text
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
@@ -78,10 +79,9 @@ scrape_configs:
 
 我们也可以在 prometheus 控制台中去检查状态:
 
-![](../../doc/images/plugin/prometheus01.png)
+![prometheus01](../../doc/images/plugin/prometheus01.png)
 
-![](../../doc/images/plugin/prometheus02.png)
-
+![prometheus02](../../doc/images/plugin/prometheus02.png)
 
 ### Grafana 面板
 
@@ -89,11 +89,11 @@ scrape_configs:
 
 你可以到 [Grafana meta](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 
-![](../../doc/images/plugin/grafana_1.png)
+![grafana_1](../../doc/images/plugin/grafana_1.png)
 
-![](../../doc/images/plugin/grafana_2.png)
+![grafana_2](../../doc/images/plugin/grafana_2.png)
 
-![](../../doc/images/plugin/grafana_3.png)
+![grafana_3](../../doc/images/plugin/grafana_3.png)
 
 ### 可有的指标
 
@@ -104,7 +104,7 @@ scrape_configs:
 
 这里是apisix的原始的指标数据集:
 
-```
+```bash
 $ curl http://127.0.0.2:9080/apisix/prometheus/metrics
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter

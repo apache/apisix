@@ -24,6 +24,7 @@
 The proxy-cache plugin, which provides the ability to cache upstream response data and can be used with other plugins. The plugin supports disk-based caching and will support the memory-based caching in the future. The data that needs to be cached can be determined by the response code or request method and more complex caching policies can be configured by no_cache and cache_bypass attributes.
 
 *Note*:
+
 1. The cache expiration time cannot be configured dynamically. The expiration time can only be set by the upstream response header `Expires` or `Cache-Control`, and the default cache expiration time is 10s if there is no `Expires` or `Cache-Control` in the upstream response header
 2. If the upstream service is not available and APISIX will return 502 or 504, then 502 or 504 will be cached for 10s.
 
@@ -40,12 +41,13 @@ The proxy-cache plugin, which provides the ability to cache upstream response da
 |no_cache|optional|array[string]|Whether to cache data, it can use variables, and note that the data will not be cached when the value of this attribute is not empty or not '0'.|
 
 Note:
+
 1. The variable starts with $.
 2. The attribute can use a combination of the variable and the string, but it needs to be written separately as an array, and the final values are stitched together after the variable is parsed.
 
-### Examples
+## Examples
 
-#### Enable the plugin
+### Enable the plugin
 
 1:  enable the proxy-cache plugin for a specific route :
 
@@ -88,10 +90,10 @@ Apisix-Cache-Status: MISS
 
 hello
 ```
+
 > http status is '200' and the response header contains 'Apisix-Cache-Status' to indicate that the plug-in is enabled.
 
 2: Verify that the file is cached, request the address above again:
-
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -i
@@ -111,7 +113,6 @@ hello
 
 3: How to clean up the cached file, simply specify the request method as PURGE:
 
-
 ```shell
 $ curl -i http://127.0.0.1:9080/hello -X PURGE
 HTTP/1.1 200 OK
@@ -127,7 +128,6 @@ Server: APISIX web server
 ## Disable Plugin
 
 Remove the corresponding JSON in the plugin configuration to disable the plugin immediately without restarting the service:
-
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '

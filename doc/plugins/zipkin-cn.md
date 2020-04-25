@@ -20,6 +20,7 @@
 [English](zipkin.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -34,10 +35,10 @@
 
 ## 属性
 
-* `endpoint`: Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
-* `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
-* `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
-* `server_addr`: 可选参数，标记当前 APISIX 实例的IP地址，默认值是 nginx 的内置变量`server_addr`。|
+- `endpoint`: Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
+- `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
+- `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
+- `server_addr`: 可选参数，标记当前 APISIX 实例的IP地址，默认值是 nginx 的内置变量`server_addr`。|
 
 ## 如何启用
 
@@ -67,11 +68,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
 
-![](../images/plugin/zipkin-1.png)
+![zipkin-1](../images/plugin/zipkin-1.png)
 
 然后在 route 页面中添加 zipkin 插件：
 
-![](../images/plugin/zipkin-2.png)
+![zipkin-2](../images/plugin/zipkin-2.png)
 
 ## 测试插件
 
@@ -79,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 e.g. 用docker:
 
-```
+```bash
 sudo docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
@@ -93,13 +94,13 @@ HTTP/1.1 200 OK
 
 打开浏览器，访问 Zipkin 的 web 页面：
 
-```
+```bash
 http://127.0.0.1:9411/zipkin
 ```
 
-![](../../doc/images/plugin/zipkin-1.jpg)
+![zipkin-1](../../doc/images/plugin/zipkin-1.jpg)
 
-![](../../doc/images/plugin/zipkin-2.jpg)
+![zipkin-2](../../doc/images/plugin/zipkin-2.jpg)
 
 ## 禁用插件
 
@@ -122,7 +123,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 ```
 
 现在就已经移除了 Zipkin 插件了。其他插件的开启和移除也是同样的方法。
-
 
 ## 上游服务是Golang的示例代码
 
@@ -162,4 +162,3 @@ func main(){
 
 }
 ```
-

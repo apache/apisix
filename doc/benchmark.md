@@ -17,33 +17,33 @@
 #
 -->
 
-[Chinese](benchmark-cn.md)
+# [Chinese](benchmark-cn.md)
 
-### Benchmark Environments
+# Benchmark Environments
 
 n1-highcpu-8 (8 vCPUs, 7.2 GB memory) on Google Cloud
 
 But we **only** used 4 cores to run APISIX, and left 4 cores for system and [wrk](https://github.com/wg/wrk),
 which is the HTTP benchmarking tool.
 
-### Benchmark Test for reverse proxy
+# Benchmark Test for reverse proxy
 
 Only used APISIX as the reverse proxy server, with no logging, limit rate, or other plugins enabled,
 and the response size was 1KB.
 
-#### QPS
+## QPS
 
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
 <img src="../doc/images/benchmark-1.jpg" width="70%" height="70%">
 
-#### Latency
+## Latency
 
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
 <img src="../doc/images/latency-1.jpg" width="70%" height="70%">
 
-#### Flame Graph
+## Flame Graph
 
 The result of Flame Graph:
 ![flamegraph-1](../doc/images/flamegraph-1.jpg)
@@ -71,24 +71,23 @@ then run wrk:
 wrk -d 60 --latency http://127.0.0.1:9080/hello
 ```
 
-### Benchmark Test for reverse proxy, enabled 2 plugins
+# Benchmark Test for reverse proxy, enabled 2 plugins
 
 Only used APISIX as the reverse proxy server, enabled the limit rate and prometheus plugins,
 and the response size was 1KB.
 
-#### QPS
-
+#### QP
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
 <img src="../doc/images/benchmark-2.jpg" width="70%" height="70%">
 
-#### Latency
+## Latency
 
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
 <img src="../doc/images/latency-2.jpg" width="70%" height="70%">
 
-#### Flame Graph
+## Flame Graph
 
 The result of Flame Graph:
 ![flamegraph-2](../doc/images/flamegraph-2.jpg)

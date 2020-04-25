@@ -20,12 +20,12 @@
 [Chinese](zipkin-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -70,11 +70,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
 
-![](../images/plugin/zipkin-1.png)
+![zipkin-1](../images/plugin/zipkin-1.png)
 
 Then add zipkin plugin:
 
-![](../images/plugin/zipkin-2.png)
+![zipkin-2](../images/plugin/zipkin-2.png)
 
 ## Test Plugin
 
@@ -82,7 +82,7 @@ Then add zipkin plugin:
 
 e.g. using docker:
 
-```
+```bash
 sudo docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
@@ -96,13 +96,13 @@ HTTP/1.1 200 OK
 
 Then you can use a browser to access the webUI of Zipkin:
 
-```
+```bash
 http://127.0.0.1:9411/zipkin
 ```
 
-![](../../doc/images/plugin/zipkin-1.jpg)
+![zipkin-1](../../doc/images/plugin/zipkin-1.jpg)
 
-![](../../doc/images/plugin/zipkin-2.jpg)
+![zipkin-2](../../doc/images/plugin/zipkin-2.jpg)
 
 ## Disable Plugin
 
@@ -166,4 +166,3 @@ func main(){
 
 }
 ```
-

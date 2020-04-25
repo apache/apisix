@@ -18,8 +18,7 @@
 -->
 [English](README.md)
 
-Reference document
-==================
+# Reference document
 
 * [APISIX 说明](../README_CN.md)
 * [架构设计](architecture-design-cn.md)
@@ -27,8 +26,8 @@ Reference document
 * [如何构建 Apache APISIX](how-to-build-cn.md)
 * [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
 * Router(路由)
-    * [radixtree](router-radixtree.md)
-    * [r3](router-r3.md)
+  * [radixtree](router-radixtree.md)
+  * [r3](router-r3.md)
 * [独立运行模型](stand-alone-cn.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy-cn.md)
 * [管理 API](admin-api-cn.md)
@@ -36,8 +35,7 @@ Reference document
 * [代码风格](../CODE_STYLE.md)
 * [常见问答](../FAQ_CN.md)
 
-插件
-===
+# 插件
 
 * [插件热加载](plugins-cn.md)：无需重启服务，完成插件热加载或卸载。
 * [HTTPS](https-cn.md)：根据 TLS 扩展字段 SNI(Server Name Indication) 动态加载证书。

@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](cors.md)
+[English](cors.md)
 
 # 目录
 

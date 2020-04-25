@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](architecture-design-cn.md)
+# [Chinese](architecture-design-cn.md)
 
 ## Table of Contents
 
@@ -444,16 +444,16 @@ A distinguishing feature of APISIX from other API gateways is that it allows use
 
 Set the route that best suits your business needs in the local configuration `conf/config.yaml`.
 
-* `apisix.router.http`: HTTP Request Route。
-    * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
-        * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
-        * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
-        * `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as uri request parameters, request headers, cookies, and so on.
-    * `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and uri for the current request.
+- `apisix.router.http`: HTTP Request Route。
+  - `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
+        - `Absolute match`: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
+        - `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
+        - `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
+        - `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as uri request parameters, request headers, cookies, and so on.
+    - `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and uri for the current request.
 
-* `apisix.router.ssl`: SSL loads the matching route.
-    * `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).
+- `apisix.router.ssl`: SSL loads the matching route.
+  - `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).
 
 [Back to top](#Table-of-contents)
 

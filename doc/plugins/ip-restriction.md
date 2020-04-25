@@ -20,12 +20,12 @@
 [Chinese](ip-restriction-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -132,7 +132,6 @@ HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
 ```
-
 
 ## Disable Plugin
 

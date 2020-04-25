@@ -18,6 +18,7 @@
 -->
 
 # Install Dependencies
+
 - [CentOS 6](#centos-6)
 - [CentOS 7](#centos-7)
 - [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
@@ -26,8 +27,7 @@
 - [How to compile the OpenResty](#how-to-compile-the-openresty)
 - [Note](#note)
 
-CentOS 6
-========
+# CentOS 6
 
 ```shell
 # add OpenResty source
@@ -46,8 +46,7 @@ tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
 nohup etcd &
 ```
 
-CentOS 7
-========
+# CentOS 7
 
 ```shell
 # install epel, `luarocks` need it.
@@ -65,8 +64,7 @@ sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
 sudo service etcd start
 ```
 
-Ubuntu 16.04 & 18.04
-====================
+# Ubuntu 16.04 & 18.04
 
 ```shell
 # add OpenResty source
@@ -83,8 +81,7 @@ sudo apt-get install -y git etcd openresty curl luarocks
 sudo service etcd start
 ```
 
-Debian 9 & 10
-=============
+# Debian 9 & 10
 
 ```shell
 # optional
@@ -112,8 +109,7 @@ sudo apt-get install -y git openresty curl luarocks make
 nohup etcd &
 ```
 
-Mac OSX
-=======
+# Mac OSX
 
 ```shell
 # install OpenResty, etcd and some compilation tools
@@ -123,15 +119,14 @@ brew install openresty/brew/openresty etcd luarocks curl git
 etcd --enable-v2=true &
 ```
 
-How to compile the OpenResty
-============================
+# How to compile the OpenResty
 
 Compiling OpenResty from source is very complicated, it's not easy to make it clear. So we recommend that you refer to the official installation documentation.
 
 http://openresty.org/en/linux-packages.html
 
-Note
-====
+# Note
+
 - Apache APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default.
 
 You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.

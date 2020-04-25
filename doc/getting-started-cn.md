@@ -16,7 +16,8 @@
 # limitations under the License.
 #
 -->
-[English](getting-started.md)
+
+# [English](getting-started.md)
 
 # 快速入门指南
 
@@ -76,7 +77,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 ## 第二步: 在 Apache APISIX 中创建 Route
 
-为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个[ web控制台 ](https://github.com/apache/incubator-apisix-dashboard)。
+为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个[web控制台](https://github.com/apache/incubator-apisix-dashboard)。
 本指南将会使用到 Admin API 接口。
 
 一个微服务可以通过 APISIX 的路由、服务、上游和插件等多个实体之间的关系进行配置。
@@ -89,9 +90,10 @@ Service（服务）为上游服务提供了抽象。因此，您可以创建单�
 - 路由匹配规则：
 
     让我们来看看下面的场景
-    http://example.com/services/users
 
-    上面的URL托管了系统中所有跟用户有关的（getUser/GetAllUsers）微服务。例如，可以通过URL（ http://example.com/services/users/GetAllUsers ） 访问到 GetAllUsers 服务接口。
+    `http://example.com/services/users`
+
+    上面的URL托管了系统中所有跟用户有关的（getUser/GetAllUsers）微服务。例如，可以通过URL (`http://example.com/services/users/GetAllUsers`) 访问到 GetAllUsers 服务接口。
     现在要公开 `users` 路径下的所有 `GET` 服务请求（微服务）。以下是匹配此类请求的路由配置。
 
     ```json

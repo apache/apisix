@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](grpc-transcoding.md)
+[English](grpc-transcoding.md)
 
 # grpc-transcoding
 

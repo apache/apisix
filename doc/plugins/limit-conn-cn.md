@@ -18,11 +18,12 @@
 -->
 
 [English](limit-conn.md)
+
 # limit-conn
 
 Apisix 的限制并发请求（或并发连接）插件。
 
-### 属性
+## 属性
 
 * `conn`: 允许的最大并发请求数。 超过这个比率的请求(低于“ conn” + “ burst”)将被延迟以符合这个阈值。
 * `burst`: 允许延迟的过多并发请求(或连接)的数量。
@@ -35,7 +36,7 @@ Apisix 的限制并发请求（或并发连接）插件。
 
 * `rejected_code`: 当请求超过阈值时返回的 HTTP状态码， 默认值是503。
 
-#### 如何启用
+## 如何启用
 
 下面是一个示例，在指定的 route 上开启了 limit-conn 插件:
 
@@ -64,12 +65,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
-![](../images/plugin/limit-conn-1.png)
+![limit-conn-1](../images/plugin/limit-conn-1.png)
 
 然后在 route 页面中添加 limit-conn 插件：
-![](../images/plugin/limit-conn-2.png)
+![limit-conn-2](../images/plugin/limit-conn-2.png)
 
-#### test plugin
+## test plugin
 
 上面启用的插件的参数表示只允许一个并发请求。 当收到多个并发请求时，将直接返回 503 拒绝请求。
 
@@ -88,7 +89,7 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 
 这就表示 limit-conn 插件生效了。
 
-#### 移除插件
+## 移除插件
 
 当你想去掉 limit-conn 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
@@ -107,4 +108,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 现在就已经移除了 limit-conn 插件了。其他插件的开启和移除也是同样的方法。
-

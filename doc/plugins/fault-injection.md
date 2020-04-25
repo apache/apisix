@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](fault-injection-cn.md)
+[Chinese](fault-injection-cn.md)
 
 ## Name
 

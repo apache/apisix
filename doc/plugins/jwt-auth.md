@@ -20,12 +20,12 @@
 [Chinese](jwt-auth-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -64,10 +64,10 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console:
 
-![](../images/plugin/jwt-auth-1.png)
+![jwt-auth-1](../images/plugin/jwt-auth-1.png)
 
 then add jwt-auth plugin in the Consumer page:
-![](../images/plugin/jwt-auth-2.png)
+![jwt-auth-2](../images/plugin/jwt-auth-2.png)
 
 2. add a Route or add a Service , and enable the `jwt-auth` plugin
 
@@ -90,7 +90,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-#### get the token in `jwt-auth` plugin:
+### get the token in `jwt-auth` plugin
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
@@ -104,9 +104,9 @@ Server: APISIX web server
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
 ```
 
-#### try request with token
+### try request with token
 
-* without token:
+- without token:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -i
@@ -115,7 +115,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing JWT token in request"}
 ```
 
-* request header with token:
+- request header with token:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
@@ -130,7 +130,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* request params with token:
+- request params with token:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
@@ -145,7 +145,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* request cookie with token:
+- request cookie with token:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i

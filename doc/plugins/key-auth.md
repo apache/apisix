@@ -20,12 +20,12 @@
 [Chinese](key-auth-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -38,7 +38,6 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 |Name          |Requirement  |Description|
 |---------     |--------|-----------|
 | key         |required|different consumer objects should use different values, it should be unique.|
-
 
 ## How To Enable
 
@@ -59,10 +58,10 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 You can open dashboard with a browser: `http://127.0.0.1:9080/apisix/dashboard/`, to complete the above operation through the web interface, first add a route:
-![](../images/plugin/key-auth-1.png)
+![key-auth-1](../images/plugin/key-auth-1.png)
 
 Then add key-auth plugin:
-![](../images/plugin/key-auth-2.png)
+![key-auth-2](../images/plugin/key-auth-2.png)
 
 2. creates a route or service object, and enable plugin `key-auth`.
 

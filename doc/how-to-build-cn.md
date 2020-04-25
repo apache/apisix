@@ -39,7 +39,8 @@ tar zxvf apache-apisix-1.2-incubating-src.tar.gz
 ```
 
 安装运行时依赖的 Lua 库：
-```
+
+```shell
 cd apache-apisix-1.2-incubating
 make deps
 ```

@@ -20,6 +20,7 @@
 [English](ip-restriction.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -32,8 +33,8 @@
 
 ## 属性
 
-* `whitelist`: 可选，加入白名单的IP地址 或 CIDR 范围
-* `blacklist`: 可选，加入黑名单的IP地址 或 CIDR 范围
+- `whitelist`: 可选，加入白名单的IP地址 或 CIDR 范围
+- `blacklist`: 可选，加入黑名单的IP地址 或 CIDR 范围
 
 只能单独启用白名单或黑名单，两个不能一起使用。
 
@@ -100,4 +101,3 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 ```
 
 现在就已移除 `ip-restriction` 插件，其它插件的开启和移除也类似。
-

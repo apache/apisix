@@ -20,12 +20,12 @@
 [English](jwt-auth.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
-
 
 ## 名字
 
@@ -37,10 +37,10 @@
 
 ## 属性
 
-* `key`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。
-* `secret`: 可选字段，加密秘钥。如果您未指定，后台将会自动帮您生成。
-* `algorithm`：可选字段，加密算法。目前支持 `HS256`, `HS384`, `HS512`, `RS256` 和 `ES256`，如果未指定，则默认使用 `HS256`。
-* `exp`: 可选字段，token 的超时时间，以秒为单位的计时。比如有效期是 5 分钟，那么就应设置为 `5 * 60 = 300`。
+- `key`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key` ，将会出现请求匹配异常。
+- `secret`: 可选字段，加密秘钥。如果您未指定，后台将会自动帮您生成。
+- `algorithm`：可选字段，加密算法。目前支持 `HS256`, `HS384`, `HS512`, `RS256` 和 `ES256`，如果未指定，则默认使用 `HS256`。
+- `exp`: 可选字段，token 的超时时间，以秒为单位的计时。比如有效期是 5 分钟，那么就应设置为 `5 * 60 = 300`。
 
 ## 如何启用
 
@@ -58,11 +58,12 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
-![](../images/plugin/jwt-auth-1.png)
+![jwt-auth-1](../images/plugin/jwt-auth-1.png)
 
 然后在 consumer 页面中添加 jwt-auth 插件：
-![](../images/plugin/jwt-auth-2.png)
+![jwt-auth-2](../images/plugin/jwt-auth-2.png)
 
 2. 创建 Route 或 Service 对象，并开启 `jwt-auth` 插件。
 
@@ -85,7 +86,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-#### 首先进行登录获取 `jwt-auth` token:
+### 首先进行登录获取 `jwt-auth` token
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
@@ -99,9 +100,9 @@ Server: APISIX web server
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
 ```
 
-#### 使用获取到的 token 进行请求尝试
+### 使用获取到的 token 进行请求尝试
 
-* 缺少 token
+- 缺少 token
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -i
@@ -110,7 +111,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing JWT token in request"}
 ```
 
-* token 放到请求头中：
+- token 放到请求头中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
@@ -125,7 +126,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* token 放到请求参数中：
+- token 放到请求参数中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
@@ -140,7 +141,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-* token 放到 cookie 中：
+- token 放到 cookie 中：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i

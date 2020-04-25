@@ -18,8 +18,7 @@
 -->
 [Chinese](README_CN.md)
 
-Reference Documentation
-==================
+# Reference Documentation
 
 * [APISIX Readme](../README.md)
 * [Architecture Design](architecture-design.md)
@@ -28,7 +27,7 @@ Reference Documentation
 * [How to build Apache APISIX](how-to-build.md)
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 * Router
-    * [radixtree](router-radixtree.md)
+  * [radixtree](router-radixtree.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 * [Stream Proxy](stream-proxy.md)
 * [Admin API](admin-api.md)
@@ -36,8 +35,7 @@ Reference Documentation
 * [Code Style](../CODE_STYLE.md)
 * [FAQ](../FAQ.md)
 
-Plugins
-=======
+# Plugins
 
 * [hot reload](plugins.md): Hot reload without reload service.
 * [key-auth](plugins/key-auth.md): User authentication based on Key Authentication.
@@ -65,9 +63,9 @@ Plugins
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
 
-Deploy to the Cloud
-=======
-### AWS
+# Deploy to the Cloud
+
+## AWS
 
 The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
 

@@ -24,6 +24,7 @@
 Turning on the APISIX node in Stand-alone mode will no longer use the default etcd as the configuration center.
 
 This method is more suitable for two types of users:
+
 1. kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
 2. Different configuration centers: There are many implementations of the configuration center, such as Consule, etc., using the full yaml file for intermediate conversion.
 
@@ -67,7 +68,7 @@ routes:
 
 *NOTE*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
-#### How to config Router
+### How to config Router
 
 Single Router：
 
@@ -101,8 +102,7 @@ routes:
 #END
 ```
 
-
-#### How to config Router + Service
+### How to config Router + Service
 
 ```yml
 routes:
@@ -119,7 +119,7 @@ services:
 #END
 ```
 
-#### How to config Router + Upstream
+### How to config Router + Upstream
 
 ```yml
 routes:
@@ -135,7 +135,7 @@ upstreams:
 #END
 ```
 
-#### How to config Router + Service + Upstream
+### How to config Router + Service + Upstream
 
 ```yml
 routes:
@@ -154,4 +154,3 @@ upstreams:
         type: roundrobin
 #END
 ```
-
