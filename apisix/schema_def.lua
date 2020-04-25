@@ -253,6 +253,25 @@ local upstream_schema = {
             },
             required = {"connect", "send", "read"},
         },
+        k8s_deployment_info = {
+            type = "object",
+            properties = {
+                namespace = {type = "string", description = "k8s namespace"},
+                deploy_name = {type = "string", description = "k8s deployment name"},
+                service_name = {type = "string", description = "k8s service name"},
+                port = {type = "number", minimum = 0},
+                backend_type = {
+                    type = "string", 
+                    default = "pod",
+                    description = "k8s service name",
+                    enum = {"svc", "pod"}             
+                },
+            },
+            anyOf = {
+                {required = {"namespace", "deploy_name", "port"}},
+                {required = {"namespace", "service_name", "port"}},
+            },
+        },
         type = {
             description = "algorithms of load balancing",
             type = "string",
@@ -280,7 +299,10 @@ local upstream_schema = {
         desc = {type = "string", maxLength = 256},
         id = id_schema
     },
-    required = {"nodes", "type"},
+    anyOf = {
+        {required = {"type", "nodes"}},
+        {required = {"type", "k8s_deployment_info"}},
+    },
     additionalProperties = false,
 }
 
