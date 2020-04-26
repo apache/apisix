@@ -99,6 +99,11 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "wrong upstream id"}
     end
 
+    -- let schema check id
+    if id and not conf.id then
+        conf.id = id
+    end
+
     core.log.info("schema: ", core.json.delay_encode(core.schema.upstream))
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
@@ -112,7 +117,6 @@ end
 
 
 function _M.put(id, conf)
-    conf.id = id
     local id, err = check_conf(id, conf, true)
     if not id then
         return 400, err
