@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](stand-alone.md)
+[English](stand-alone.md)
 
 ## Stand-alone mode
 

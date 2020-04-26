@@ -66,9 +66,11 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 ```
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+
 ![添加路由](../images/plugin/limit-count-1.png)
 
 然后在 route 页面中添加 limit-count 插件：
+
 ![添加插件](../images/plugin/limit-count-2.png)
 
 如果你需要一个集群级别的流量控制，我们可以借助 redis server 来完成。不同的 APISIX 节点之间将共享流量限速结果，实现集群流量限速。

@@ -65,9 +65,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 route：
+
 ![limit-conn-1](../images/plugin/limit-conn-1.png)
 
 然后在 route 页面中添加 limit-conn 插件：
+
 ![limit-conn-2](../images/plugin/limit-conn-2.png)
 
 ## test plugin

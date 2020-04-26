@@ -19,8 +19,6 @@
 
 # Table of Contents
 
-===
-
 * [Route](#route)
 * [Service](#service)
 * [Consumer](#consumer)
@@ -141,11 +139,11 @@ Return response from etcd currently.
 
 |Operator   |Description       |Example|
 |--------|-----------|-------|
-|==      |Equal      |{"arg_name", "==", "json"}|
+|==      |Equal        |{"arg_name", "==", "json"}|
 |~=      |Not Equal    |{"arg_name", "~=", "json"}|
-|>       |Greater Than     |{"arg_age", ">", 24}|
-|<       |Less Than      |{"arg_age", "<", 24}|
-|~~      |Regex   |{"arg_name", "~~", "[a-z]+"}|
+|>       |Greater Than |{"arg_age", ">", 24}|
+|<       |Less Than    |{"arg_age", "<", 24}|
+|~~      |Regex        |{"arg_name", "~~", "[a-z]+"}|
 
 Consider the following example: matching requests whose `request name` is equal to `json`, `age` is greater than `18`, and `address` begins with `China`:
 
