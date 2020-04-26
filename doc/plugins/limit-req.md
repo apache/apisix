@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](limit-req-cn.md)
+[Chinese](limit-req-cn.md)
 
 # Summary
 
@@ -33,12 +33,12 @@ limit request rate using the "leaky bucket" method.
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-|rate          |required|is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.|
-|burst         |required|is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.|
-|rejected_code |required|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
-| key          |required|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
+| Name          | Requirement | Description |
+| ------------- | ----------- |--------- |
+| rate          | required    | is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
+| burst         | required    | is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
+| rejected_code | required    | The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.                                                                        |
+| key           | required    | is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header. |
 
 ## How To Enable
 
@@ -85,18 +85,18 @@ curl -i http://127.0.0.1:9080/index.html
 When you exceed, you will receive a response header with a 503 return code:
 
 ```html
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-Server: APISIX web server
+HTTP/1.1 503 Service Temporarily Unavailable Content-Type: text/html
+Content-Length: 194 Connection: keep-alive Server: APISIX web server
 
 <html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
+  <head>
+    <title>503 Service Temporarily Unavailable</title>
+  </head>
+  <body>
+    <center><h1>503 Service Temporarily Unavailable</h1></center>
+    <hr />
+    <center>openresty</center>
+  </body>
 </html>
 ```
 
@@ -105,8 +105,8 @@ This means that the limit req plugin is in effect.
 ## Disable Plugin
 
 When you want to disable the limit req plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

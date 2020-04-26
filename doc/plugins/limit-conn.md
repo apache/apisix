@@ -33,13 +33,13 @@ Limiting request concurrency (or concurrent connections) plugin for Apisix.
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-|conn          |required|is the maximum number of concurrent requests allowed. Requests exceeding this ratio (and below `conn` + `burst`) will get delayed to conform to this threshold.|
-|burst         |required|is the number of excessive concurrent requests (or connections) allowed to be delayed.|
-|default_conn_delay |required|is the default processing latency of a typical connection (or request).|
-|key           |required|is the user specified key to limit the concurrency level. <br>For example, one can use the host name (or server zone) as the key so that we limit concurrency per host name. Otherwise, we can also use the client address as the key so that we can avoid a single client from flooding our service with too many parallel connections or requests. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
-|rejected_code |required| The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
+| Name               | Requirement | Description|
+| ------------------ | ----------- | -----------|
+| conn               | required    | is the maximum number of concurrent requests allowed. Requests exceeding this ratio (and below `conn` + `burst`) will get delayed to conform to this threshold.|
+| burst              | required    | is the number of excessive concurrent requests (or connections) allowed to be delayed.|
+| default_conn_delay | required    | is the default processing latency of a typical connection (or request).|
+| key                | required    | is the user specified key to limit the concurrency level. <br> For example, one can use the host name (or server zone) as the key so that we limit concurrency per host name. Otherwise, we can also use the client address as the key so that we can avoid a single client from flooding our service with too many parallel connections or requests. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header. |
+| rejected_code      | required    | The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
 
 ## How To Enable
 
@@ -96,8 +96,8 @@ This means that the limit request concurrency plugin is in effect.
 ## Disable Plugin
 
 When you want to disable the limit-conn plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

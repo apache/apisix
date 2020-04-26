@@ -30,7 +30,7 @@ This method is more suitable for two types of users:
 
 The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. And every time interval (default 1 second), will try to detect whether the file content is updated, if there is an update, reload the rule.
 
-*Note*: When reloading and updating routing rules, they are all hot memory updates, and there will be no replacement of working processes, it is a hot update.
+_Note_: When reloading and updating routing rules, they are all hot memory updates, and there will be no replacement of working processes, it is a hot update.
 
 To enable Stand-alone model, we can set `apisix.config_center` to `yaml` in file `conf/config.yaml`.
 
@@ -39,9 +39,10 @@ Refer to the example below:
 ```yaml
 apisix:
   # ...
-  config_center: yaml   # etcd: use etcd to store the config value
-                        # yaml: fetch the config value from local yaml file
-                        # `/your_path/conf/apisix.yaml`
+  config_center:
+    yaml # etcd: use etcd to store the config value
+    # yaml: fetch the config value from local yaml file
+    # `/your_path/conf/apisix.yaml`
 ```
 
 In addition, since the current Admin API is based on the etcd configuration center solution, the Admin API will not actually work when the Stand-alone mode is enabled.
@@ -57,16 +58,15 @@ Here is a mini example:
 
 ```yaml
 routes:
-  -
-    uri: /hello
+  - uri: /hello
     upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 ```
 
-*NOTE*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
+_NOTE_: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
 ### How to config Router
 
@@ -74,12 +74,11 @@ Single Router：
 
 ```yaml
 routes:
-  -
-    uri: /hello
+  - uri: /hello
     upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 ```
 
@@ -87,18 +86,16 @@ Multiple Router：
 
 ```yaml
 routes:
-  -
-    uri: /hello
+  - uri: /hello
     upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
-  -
-    uri: /hello2
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+  - uri: /hello2
     upstream:
-        nodes:
-            "127.0.0.1:1981": 1
-        type: roundrobin
+      nodes:
+        "127.0.0.1:1981": 1
+      type: roundrobin
 #END
 ```
 
@@ -106,16 +103,14 @@ routes:
 
 ```yml
 routes:
-    -
-        uri: /hello
-        service_id: 1
+  - uri: /hello
+    service_id: 1
 services:
-    -
-        id: 1
-        upstream:
-            nodes:
-                "127.0.0.1:1980": 1
-            type: roundrobin
+  - id: 1
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 ```
 
@@ -123,15 +118,13 @@ services:
 
 ```yml
 routes:
-    -
-        uri: /hello
-        upstream_id: 1
+  - uri: /hello
+    upstream_id: 1
 upstreams:
-    -
-        id: 1
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
 #END
 ```
 
@@ -139,18 +132,15 @@ upstreams:
 
 ```yml
 routes:
-    -
-        uri: /hello
-        service_id: 1
+  - uri: /hello
+    service_id: 1
 services:
-    -
-        id: 1
-        upstream_id: 2
+  - id: 1
+    upstream_id: 2
 upstreams:
-    -
-        id: 2
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+  - id: 2
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
 #END
 ```

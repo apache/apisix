@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 -->
+[English](how-to-build.md)
 
 # 构建 Apache APISIX
 

@@ -17,7 +17,7 @@
 #
 -->
 
-[中文](mqtt-proxy-cn.md)
+[Chinese](mqtt-proxy-cn.md)
 
 # Summary
 
@@ -32,16 +32,16 @@
 The plugin `mqtt-proxy` only works in stream model, it help you to dynamic load
 balance by `client_id` of MQTT.
 
-And this plugin both support MQTT protocol [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) and [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
+And this plugin both support MQTT protocol [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) and [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
 
 ## Attributes
 
-|name          |option  |description|
-|---------     |--------|-----------|
-|protocol_name |require |Name of protocol, shoulds be `MQTT` in normal.|
-|protocol_level|require |Level of protocol, it should be `4` for MQTT `3.1.*`. it should be `5` for MQTT `5.0`.|
-|upstream.ip   |require |IP address of upstream, will forward current request to.|
-|upstream.port |require |Port of upstream, will forward current request to.|
+| name           | option  | description|
+| -------------- | ------- | ---------- |
+| protocol_name  | require | Name of protocol, shoulds be `MQTT` in normal.|
+| protocol_level | require | Level of protocol, it should be `4` for MQTT `3.1.*`. it should be `5` for MQTT `5.0`. |
+| upstream.ip    | require | IP address of upstream, will forward current request to.|
+| upstream.port  | require | Port of upstream, will forward current request to.|
 
 ## How To Enable
 

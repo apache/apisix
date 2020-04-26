@@ -33,10 +33,10 @@ URI redirect.
 
 ## Attributes
 
-|Name    |Requirement|Description|
-|------- |-----|------|
-|uri     |required| New uri which can contain Nginx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`. If you refer to a variable name that does not exist, this will not produce an error, and it will be used as an empty string.|
-|ret_code|optional|Response code, the default value is `302`.|
+| Name     | Requirement | Description |
+| -------- | ----------- | ----------- |
+| uri      | required    | New uri which can contain Nginx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`. If you refer to a variable name that does not exist, this will not produce an error, and it will be used as an empty string. |
+| ret_code | optional    | Response code, the default value is `302`.|
 
 ## How To Enable
 
@@ -105,8 +105,8 @@ It shows that the `redirect` plugin is in effect.
 ## Disable Plugin
 
 When you want to disable the `redirect` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately :
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately :
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

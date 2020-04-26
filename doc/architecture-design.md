@@ -17,9 +17,9 @@
 #
 -->
 
-# [Chinese](architecture-design-cn.md)
+[Chinese](architecture-design-cn.md)
 
-## Table of Contents
+# Table of Contents
 
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
@@ -32,9 +32,9 @@
 - [**Global Rule**](#Global-Rule)
 - [**Debug mode**](#Debug-mode)
 
-## APISIX
+# APISIX
 
-### Plugin Loading Process
+## Plugin Loading Process
 
 ![flow-load-plugin](./images/flow-load-plugin.png)
 
@@ -42,31 +42,31 @@
 
 <img src="./images/flow-plugin-internal.png" width="50%" height="50%">
 
-## APISIX Config
+# APISIX Config
 
 We can start using APISIX just by modifying `conf/config.yaml` file.
 
 ```yaml
 apisix:
-  node_listen: 9080             # APISIX listening port
+  node_listen: 9080 # APISIX listening port
 
 etcd:
   host: "http://127.0.0.1:2379" # etcd address
-  prefix: "apisix"              # apisix configurations prefix
+  prefix: "apisix" # apisix configurations prefix
   timeout: 60
 
-plugins:                        # plugin name list
+plugins: # plugin name list
   - example-plugin
   - limit-req
   - limit-count
   - ...
 ```
 
-*Note* `apisix` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* that file.
+_Note_ `apisix` will generate `conf/nginx.conf` file automatically, so please _DO NOT EDIT_ that file.
 
 [Back to top](#Table-of-contents)
 
-## Route
+# Route
 
 The route matches the client's request by defining rules, then loads and executes the corresponding plugin based on the matching result, and forwards the request to the specified Upstream.
 
@@ -110,7 +110,7 @@ For specific options of Route, please refer to [Admin API](admin-api-cn.md#route
 
 [Back to top](#Table-of-contents)
 
-## Service
+# Service
 
 A `Service` is an abstraction of an API (which can also be understood as a set of Route abstractions). It usually corresponds to the upstream service abstraction. Between `Route` and `Service`, usually the relationship of N:1, please see the following image.
 
@@ -179,7 +179,7 @@ Note: When both Route and Service enable the same plugin, the Route parameter ha
 
 [Back to top](#Table-of-contents)
 
-## Plugin
+# Plugin
 
 `Plugin` represents the plugin configuration that will be executed during the `HTTP` request/response lifecycle.
 
@@ -216,7 +216,7 @@ Not all plugins have specific configuration items. For example, there is no spec
 
 [Back to top](#Table-of-contents)
 
-## Upstream
+# Upstream
 
 Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to configuration rules. Upstream address information can be directly configured to `Route` (or `Service`). When Upstream has duplicates, you need to use "reference" to avoid duplication.
 
@@ -226,21 +226,21 @@ As shown in the image above, by creating an Upstream object and referencing it b
 
 Upstream configuration can be directly bound to the specified `Route` or it can be bound to `Service`, but the configuration in `Route` has a higher priority. The priority behavior here is very similar to `Plugin`.
 
-### Configuration
+## Configuration
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
-|Name    |Optional|Description|
-|-------         |-----|------|
-|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
-|nodes           |required|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
-|hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
-|key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
-|checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
-|retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
-|enable_websocket|optional| enable `websocket`(boolean), default `false`.|
-|timeout|optional| Set the timeout for connection, sending and receiving messages. |
-|desc     |optional|Identifies route names, usage scenarios, and more.|
+| Name             | Optional | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type             | required | `roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| nodes            | required | Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| hash_on          | optional | This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| key              | required | This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default. |
+| checks           | optional | Configure the parameters of the health check. For details, refer to [health-check](health-check.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| retries          | optional | Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| enable_websocket | optional | enable `websocket`(boolean), default `false`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| timeout          | optional | Set the timeout for connection, sending and receiving messages.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| desc             | optional | Identifies route names, usage scenarios, and more.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 Create an upstream object use case:
 
@@ -342,7 +342,7 @@ More details can be found in [Health Checking Documents](health-check.md).
 
 Here are some examples of configurations using different `hash_on` types:
 
-#### Consumer
+### Consumer
 
 Create a consumer object:
 
@@ -384,7 +384,7 @@ Test request, the `consumer_id` after authentication is passed will be used as t
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
-#### Cookie
+### Cookie
 
 Create route and upstream object, `hash_on` is `cookie`:
 
@@ -410,7 +410,7 @@ The client requests with `Cookie`:
  curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
-#### Header
+### Header
 
 Create route and upstream object, `hash_on` is `header`, `key` is `Content-Type`:
 
@@ -438,18 +438,15 @@ The client requests with header `Content-Type`:
 
 [Back to top](#Table-of-contents)
 
-## Router
+# Router
 
 A distinguishing feature of APISIX from other API gateways is that it allows users to choose different routers to better match free services, making the best choice between performance and freedom.
 
 Set the route that best suits your business needs in the local configuration `conf/config.yaml`.
 
 - `apisix.router.http`: HTTP Request Route。
-  - `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        - `Absolute match`: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
-        - `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
-        - `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
-        - `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as uri request parameters, request headers, cookies, and so on.
+
+  - `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md). - `Absolute match`: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`. - `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`. - `match priority`: first try absolute match, if you can't hit absolute match, try prefix match. - `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as uri request parameters, request headers, cookies, and so on.
     - `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and uri for the current request.
 
 - `apisix.router.ssl`: SSL loads the matching route.
@@ -457,7 +454,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 [Back to top](#Table-of-contents)
 
-## Consumer
+# Consumer
 
 For the API gateway, it is usually possible to identify a certain type of requester by using a domain name such as a request domain name, a client IP address, etc., and then perform plugin filtering and forward the request to the specified upstream, but sometimes the depth is insufficient.
 
@@ -465,10 +462,10 @@ For the API gateway, it is usually possible to identify a certain type of reques
 
 As shown in the image above, as an API gateway, you should know who the API Consumer is, so you can configure different rules for different API Consumers.
 
-|Field|Required|Description|
-|---|----|----|
-|username|Yes|Consumer Name.|
-|plugins|No|The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section.|
+| Field    | Required | Description                                                                                                                                                                                      |
+| -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| username | Yes      | Consumer Name.                                                                                                                                                                                   |
+| plugins  | No       | The corresponding plugin configuration of the Consumer, which has the highest priority: Consumer > Route > Service. For specific plugin configurations, refer to the [Plugins](#plugin) section. |
 
 In APISIX, the process of identifying a Consumer is as follows:
 
@@ -535,7 +532,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 [Back to top](#Table-of-contents)
 
-## Global Rule
+# Global Rule
 
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
@@ -567,9 +564,9 @@ curl https://{apisix_listen_address}/apisix/admin/global_rules
 
 [Back to top](#Table-of-contents)
 
-## Debug mode
+# Debug mode
 
-### Basic Debug Mode
+## Basic Debug Mode
 
 Enable basic debug mode just by setting `apisix.enable_debug = true` in `conf/config.yaml` file.
 
@@ -589,37 +586,36 @@ Server: openresty
 hello world
 ```
 
-### Advanced Debug Mode
+## Advanced Debug Mode
 
 Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will have a check every second, only the checker reads the `#END` flag, and the file would consider as closed.
 
 The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
 
-|Key|Optional|Description|Default|
-|----|-----|---------|---|
-|hook_conf.enable|required|Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled.|false|
-|hook_conf.name|required|The module list name of hook which has enabled debug trace||
-|hook_conf.log_level|required|Logging levels for input arguments & returned value|warn|
-|hook_conf.is_print_input_args|required|Enable/Disable input arguments print|true|
-|hook_conf.is_print_return_value|required|Enable/Disable returned value print|true|
+| Key                             | Optional | Description                                                                                                                               | Default |
+| ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| hook_conf.enable                | required | Enable/Disable hook debug trace. Target module function's input arguments or returned value would be printed once this option is enabled. | false   |
+| hook_conf.name                  | required | The module list name of hook which has enabled debug trace                                                                                |         |
+| hook_conf.log_level             | required | Logging levels for input arguments & returned value                                                                                       | warn    |
+| hook_conf.is_print_input_args   | required | Enable/Disable input arguments print                                                                                                      | true    |
+| hook_conf.is_print_return_value | required | Enable/Disable returned value print                                                                                                       | true    |
 
 Example:
 
 ```yaml
 hook_conf:
-  enable: false                 # Enable/Disable Hook Debug Trace
-  name: hook_phase              # The Module List Name of Hook which has enabled Debug Trace
-  log_level: warn               # Logging Levels
-  is_print_input_args: true     # Enable/Disable Input Arguments Print
-  is_print_return_value: true   # Enable/Disable Returned Value Print
+  enable: false # Enable/Disable Hook Debug Trace
+  name: hook_phase # The Module List Name of Hook which has enabled Debug Trace
+  log_level: warn # Logging Levels
+  is_print_input_args: true # Enable/Disable Input Arguments Print
+  is_print_return_value: true # Enable/Disable Returned Value Print
 
-hook_phase:                     # Module Function List, Name: hook_phase
-  apisix:                       # Referenced Module Name
-    - http_access_phase         # Function Names：Array
+hook_phase: # Module Function List, Name: hook_phase
+  apisix: # Referenced Module Name
+    - http_access_phase # Function Names：Array
     - http_header_filter_phase
     - http_body_filter_phase
     - http_log_phase
-
 #END
 ```
 

@@ -19,13 +19,13 @@
 
 # libradixtree
 
-## what's libradixtree?
+## what's libradixtree
 
 [libradixtree](https://github.com/iresty/lua-resty-radixtree), adaptive radix trees implemented in Lua for OpenResty.
 
 APISIX using libradixtree as route dispatching library.
 
-## How to use libradixtree in APISIX?
+## How to use libradixtree in APISIX
 
 This is Lua-Openresty implementation library base on FFI for [rax](https://github.com/antirez/rax).
 
@@ -61,13 +61,13 @@ Here are the rules:
 /blog/foo/bar
 ```
 
-| path | Match result |
-|------|--------------|
-|/blog/foo/bar | `/blog/foo/bar` |
-|/blog/foo/a/b/c | `/blog/foo/a/*` |
-|/blog/foo/c/d | `/blog/foo/c/*` |
-|/blog/foo/gloo | `/blog/foo/*` |
-|/blog/bar | not match |
+| path            | Match result    |
+| --------------- | --------------- |
+| /blog/foo/bar   | `/blog/foo/bar` |
+| /blog/foo/a/b/c | `/blog/foo/a/*` |
+| /blog/foo/c/d   | `/blog/foo/c/*` |
+| /blog/foo/gloo  | `/blog/foo/*`   |
+| /blog/bar       | not match       |
 
 ### How to filter route by Nginx builtin variable
 

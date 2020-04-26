@@ -17,7 +17,7 @@
 #
 -->
 
-[English](stand-alone.md)
+# [English](stand-alone.md)
 
 ## Stand-alone mode
 
@@ -31,7 +31,7 @@
 APISIX 节点服务启动后会立刻加载 `conf/apisix.yaml` 文件中的路由规则到内存，并且每间隔一定时间
 （默认 1 秒钟），都会尝试检测文件内容是否有更新，如果有更新则重新加载规则。
 
-*注意*：重新加载规则并更新时，均是内存热更新，不会有工作进程的替换过程，是个热更新过程。
+_注意_：重新加载规则并更新时，均是内存热更新，不会有工作进程的替换过程，是个热更新过程。
 
 通过设置 `conf/config.yaml` 中的 `apisix.config_center` 选项为 `yaml` 表示启
 用 Stand-alone 模式。
@@ -41,8 +41,9 @@ APISIX 节点服务启动后会立刻加载 `conf/apisix.yaml` 文件中的路�
 ```yaml
 apisix:
   # ...
-  config_center: yaml             # etcd: use etcd to store the config value
-                                  # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
+  config_center:
+    yaml # etcd: use etcd to store the config value
+    # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
 # ...
 ```
 
@@ -57,16 +58,15 @@ Admin API 实际将不起作用。
 
 ```yaml
 routes:
-  -
-    uri: /hello
+  - uri: /hello
     upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 ```
 
-*注意*：如果`conf/apisix.yaml`末尾不能找到 `#END`，那么 APISIX 将不会加载这个文件规则到内存。
+_注意_：如果`conf/apisix.yaml`末尾不能找到 `#END`，那么 APISIX 将不会加载这个文件规则到内存。
 
 ### 配置 Router
 
@@ -74,12 +74,11 @@ routes:
 
 ```yaml
 routes:
-  -
-    uri: /hello
+  - uri: /hello
     upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 ```
 
@@ -87,18 +86,16 @@ routes:
 
 ```yaml
 routes:
-  -
-    uri: /hello
+  - uri: /hello
     upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
-  -
-    uri: /hello2
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+  - uri: /hello2
     upstream:
-        nodes:
-            "127.0.0.1:1981": 1
-        type: roundrobin
+      nodes:
+        "127.0.0.1:1981": 1
+      type: roundrobin
 #END
 ```
 
@@ -106,16 +103,14 @@ routes:
 
 ```yml
 routes:
-    -
-        uri: /hello
-        service_id: 1
+  - uri: /hello
+    service_id: 1
 services:
-    -
-        id: 1
-        upstream:
-            nodes:
-                "127.0.0.1:1980": 1
-            type: roundrobin
+  - id: 1
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 ```
 
@@ -123,15 +118,13 @@ services:
 
 ```yml
 routes:
-    -
-        uri: /hello
-        upstream_id: 1
+  - uri: /hello
+    upstream_id: 1
 upstreams:
-    -
-        id: 1
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
 #END
 ```
 
@@ -139,18 +132,15 @@ upstreams:
 
 ```yml
 routes:
-    -
-        uri: /hello
-        service_id: 1
+  - uri: /hello
+    service_id: 1
 services:
-    -
-        id: 1
-        upstream_id: 2
+  - id: 1
+    upstream_id: 2
 upstreams:
-    -
-        id: 2
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
+  - id: 2
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
 #END
 ```

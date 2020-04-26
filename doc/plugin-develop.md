@@ -16,7 +16,8 @@
 # limitations under the License.
 #
 -->
-[中文](plugin-develop-cn.md)
+
+[Chinese](plugin-develop-cn.md)
 
 # table of contents
 
@@ -30,7 +31,7 @@
 ## check dependencies
 
 if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it
- needs to declare in __bin/apisix__, for example :
+needs to declare in **bin/apisix**, for example :
 
 ```nginx
     lua_shared_dict plugin-limit-req     10m;
@@ -47,18 +48,18 @@ if you have dependencies on external libraries, check the dependent items. if yo
 ```
 
 The plugin itself provides the init method. It is convenient for plugins to perform some initialization after
- the plugin is loaded.
+the plugin is loaded.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-       method "http_init" in the file __apisix.lua__, And you may need to add some processing on generated part of Nginx
-       configuration file in __bin/apisix__ file. but it is easy to have an impact on the overall situation according to the
-       existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
+method "http_init" in the file **apisix.lua**, And you may need to add some processing on generated part of Nginx
+configuration file in **bin/apisix** file. but it is easy to have an impact on the overall situation according to the
+existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
 
 ## name and config
 
 determine the name and priority of the plugin, and add to conf/config.yaml. For example, for the key-auth plugin,
- you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
- duplicate), you can see the code in file "__apisix/plugins/key-auth.lua__" :
+you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
+duplicate), you can see the code in file "**apisix/plugins/key-auth.lua**" :
 
 ```lua
    local plugin_name = "key-auth"
@@ -74,10 +75,10 @@ determine the name and priority of the plugin, and add to conf/config.yaml. For 
 
 Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first. For example, the priority of basic-auth is 2520 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the basic-auth plugin.
 
-in the "__conf/config.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
+in the "**conf/config.yaml**" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
 ```yaml
-plugins:                          # plugin list
+plugins: # plugin list
   - example-plugin
   - limit-req
   - limit-count
@@ -101,7 +102,7 @@ Note : the order of the plugins is not related to the order of execution.
 ## schema and check
 
 Write [Json Schema](https://json-schema.org) descriptions and check functions. similarly, take the key-auth plugin as an example to see its
- configuration data :
+configuration data :
 
 ```json
  "key-auth" : {
@@ -121,7 +122,7 @@ at its schema description :
    }
 ```
 
-At the same time, we need to implement the __check_schema(conf)__ method to complete the specification verification.
+At the same time, we need to implement the **check_schema(conf)** method to complete the specification verification.
 
 ```lua
    function _M.check_schema(conf)
@@ -129,7 +130,7 @@ At the same time, we need to implement the __check_schema(conf)__ method to comp
    end
 ```
 
-Note: the project has provided the public method "__core.schema.check__", which can be used directly to complete JSON
+Note: the project has provided the public method "**core.schema.check**", which can be used directly to complete JSON
 verification.
 
 ## choose phase to run
@@ -155,9 +156,9 @@ Write the logic of the plugin in the corresponding phase.
 ## write test case
 
 For functions, write and improve the test cases of various dimensions, do a comprehensive test for your plugin ! The
-test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out. APISIX uses
-[****test-nginx****](https://github.com/openresty/test-nginx) as the test framework. A test case,.t file is usually
-divided into prologue and data parts by \__data\__. Here we will briefly introduce the data part, that is, the part
+test cases of plugins are all in the "**t/plugin**" directory. You can go ahead to find out. APISIX uses
+[\***\*test-nginx\*\***](https://github.com/openresty/test-nginx) as the test framework. A test case,.t file is usually
+divided into prologue and data parts by \_\_data\_\_. Here we will briefly introduce the data part, that is, the part
 of the real test case. For example, the key-auth plugin :
 
 ```perl
@@ -184,20 +185,20 @@ done
 
 A test case consists of three parts :
 
-- __Program code__ : configuration content of Nginx location
-- __Input__ : http request information
-- __Output check__ : status, header, body, error log check
+- **Program code** : configuration content of Nginx location
+- **Input** : http request information
+- **Output check** : status, header, body, error log check
 
-When we request __/t__, which config in the configuration file, the Nginx will call "__content_by_lua_block__" instruction to
- complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
-"__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record. The log files for the unit test
+When we request **/t**, which config in the configuration file, the Nginx will call "**content_by_lua_block**" instruction to
+complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
+"**no_error_log**" means to check the "**error.log**" of Nginx. There must be no ERROR level record. The log files for the unit test
 are located in the following folder: 't/servroot/logs'.
 
 Refer the following [document](how-to-build.md#test) to setup the testing framework.
 
 ### Attach the test-nginx execution process:
 
-According to the path we configured in the makefile and some configuration items at the front of each __.t__ file, the
-framework will assemble into a complete nginx.conf file. "__t/servroot__" is the working directory of Nginx and start the
+According to the path we configured in the makefile and some configuration items at the front of each **.t** file, the
+framework will assemble into a complete nginx.conf file. "**t/servroot**" is the working directory of Nginx and start the
 Nginx instance. according to the information provided by the test case, initiate the http request and check that the
 return items of HTTP include HTTP status, HTTP response header, HTTP response body and so on.

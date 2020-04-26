@@ -24,7 +24,7 @@ or providing commercial products including APISIX.
 
 Users are encouraged to add themselves to this page, [issue](https://github.com/apache/incubator-apisix/issues/487) and PR are welcomed.
 
-1. <a href="https://www.360.cn/" rel="nofollow">360 奇虎</a>
+1. <a href="https://www.360.cn/" rel="nofollow" >360 奇虎</a>
 2. <a href="https://www.chaolian360.com/" rel="nofollow">chaolian 超链云商</a>
 3. <a href="http://www.cunw.com.cn/" rel="nofollow">cunw 湖南新云网</a>
 4. <a href="https://www.dasouche.com/" rel="nofollow">dasouche 大搜车</a>

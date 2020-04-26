@@ -25,11 +25,11 @@
 
 ## 参数
 
-|名称    |必须|描述|
-|------- |-----|------|
-|abort.http_status|是|返回给客户端的 http 状态码|
-|abort.body|否|返回给客户端的响应数据|
-|delay.duration|是|延迟时间，可以指定小数|
+| 名称              | 必须 | 描述                       |
+| ----------------- | ---- | -------------------------- |
+| abort.http_status | 是   | 返回给客户端的 http 状态码 |
+| abort.body        | 否   | 返回给客户端的响应数据     |
+| delay.duration    | 是   | 延迟时间，可以指定小数     |
 
 注：参数 abort 和 delay 至少要存在一个
 
@@ -37,7 +37,7 @@
 
 ### 启用插件
 
-示例1：为特定路由启用 `fault-injection` 插件，并指定 `abort` 参数：
+示例 1：为特定路由启用 `fault-injection` 插件，并指定 `abort` 参数：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -76,7 +76,7 @@ Fault Injection!
 
 > http status 返回`200`并且响应`body`为`Fault Injection!`，表示该插件已启用。
 
-示例2：为特定路由启用 `fault-injection` 插件，并指定 `delay` 参数：
+示例 2：为特定路由启用 `fault-injection` 插件，并指定 `delay` 参数：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

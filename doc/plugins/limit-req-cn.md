@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](limit-req.md)
+[English](limit-req.md)
 
 # limit-req
 
@@ -25,10 +25,10 @@
 
 ## 参数
 
-* `rate`：指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时
-* `burst`：请求速率超过 （`rate` + `brust`）的请求会被直接拒绝
-* `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码
-* `key`：是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。
+- `rate`：指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时
+- `burst`：请求速率超过 （`rate` + `brust`）的请求会被直接拒绝
+- `rejected_code`：当请求超过阈值被拒绝时，返回的 HTTP 状态码
+- `key`：是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端 IP 地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。
 
 ## 示例
 
@@ -77,18 +77,18 @@ curl -i http://127.0.0.1:9080/index.html
 当你超过，就会收到包含 503 返回码的响应头：
 
 ```html
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-Server: APISIX web server
+HTTP/1.1 503 Service Temporarily Unavailable Content-Type: text/html
+Content-Length: 194 Connection: keep-alive Server: APISIX web server
 
 <html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
+  <head>
+    <title>503 Service Temporarily Unavailable</title>
+  </head>
+  <body>
+    <center><h1>503 Service Temporarily Unavailable</h1></center>
+    <hr />
+    <center>openresty</center>
+  </body>
 </html>
 ```
 

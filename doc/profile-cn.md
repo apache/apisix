@@ -27,14 +27,14 @@
 
 在没有设置`APISIX_PROFILE` 时，默认使用以下三个配置文件：
 
-* conf/config.yaml
-* conf/apisix.yaml
-* conf/debug.yaml
+- conf/config.yaml
+- conf/apisix.yaml
+- conf/debug.yaml
 
 如果设置了`APISIX_PROFILE`的值为`prod`，则使用以下三个配置文件：
 
-* conf/config-prod.yaml
-* conf/apisix-prod.yaml
-* conf/debug-prod.yaml
+- conf/config-prod.yaml
+- conf/apisix-prod.yaml
+- conf/debug-prod.yaml
 
-通过这种方式虽然会增加配置文件的数量，但可以独立管理，再配置git等版本管理工具，还能更好实现版本管理。
+通过这种方式虽然会增加配置文件的数量，但可以独立管理，再配置 git 等版本管理工具，还能更好实现版本管理。

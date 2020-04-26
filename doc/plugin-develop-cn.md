@@ -30,7 +30,7 @@
 
 ## 检查外部依赖
 
-如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 __bin/apisix__ 文
+如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 **bin/apisix** 文
 件里面进行申明，例如：
 
 ```nginx
@@ -49,14 +49,14 @@
 
 插件本身提供了 init 方法。方便插件加载后做初始化动作。
 
-注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
-    可能需要在 __bin/apisix__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
-    插件机制，我们不建议这样做，除非你已经对代码完全掌握。
+注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 **apisix.lua** 文件的初始化方法 http_init 中添加逻辑，并且
+可能需要在 **bin/apisix** 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
+插件机制，我们不建议这样做，除非你已经对代码完全掌握。
 
 ## 插件命名与配置
 
-给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
-需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/key-auth.lua__ 文件中可以看到：
+给插件取一个很棒的名字，确定插件的加载优先级，然后在 **conf/config.yaml** 文件中添加上你的插件名。例如 key-auth 这个插件，
+需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 **apisix/plugins/key-auth.lua** 文件中可以看到：
 
 ```lua
    local plugin_name = "key-auth"
@@ -72,10 +72,10 @@
 
 注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。另外，优先级( priority )值大的插件，会优先执行，比如 `basic-auth` 的优先级是 2520 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `basic-auth` 插件。
 
-在 __conf/config.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
+在 **conf/config.yaml** 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
 ```yaml
-plugins:                          # plugin list
+plugins: # plugin list
   - example-plugin
   - limit-req
   - limit-count
@@ -118,7 +118,7 @@ plugins:                          # plugin list
    }
 ```
 
-同时，需要实现 __check_schema(conf)__ 方法，完成配置参数的合法性校验。
+同时，需要实现 **check_schema(conf)** 方法，完成配置参数的合法性校验。
 
 ```lua
    function _M.check_schema(conf)
@@ -126,7 +126,7 @@ plugins:                          # plugin list
    end
 ```
 
-注：项目已经提供了 __core.schema.check__ 公共方法，直接使用即可完成配置参数校验。
+注：项目已经提供了 **core.schema.check** 公共方法，直接使用即可完成配置参数校验。
 
 ## 确定执行阶段
 
@@ -140,9 +140,9 @@ plugins:                          # plugin list
 
 ## 编写测试用例
 
-针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 __t/plugin__ 目录下，可以前去了解。
-项目测试框架采用的 [****test-nginx****](https://github.com/openresty/test-nginx)  。
-一个测试用例 __.t__ 文件，通常用 \__DATA\__ 分割成 序言部分 和 数据部分。这里我们简单介绍下数据部分，
+针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 **t/plugin** 目录下，可以前去了解。
+项目测试框架采用的 [\***\*test-nginx\*\***](https://github.com/openresty/test-nginx) 。
+一个测试用例 **.t** 文件，通常用 \_\_DATA\_\_ 分割成 序言部分 和 数据部分。这里我们简单介绍下数据部分，
 也就是真正测试用例的部分，仍然以 key-auth 插件为例：
 
 ```perl
@@ -169,16 +169,16 @@ done
 
 一个测试用例主要有三部分内容：
 
-- 程序代码： Nginx  location 的配置内容
+- 程序代码： Nginx location 的配置内容
 - 输入： http 的 request 信息
 - 输出检查： status ，header ，body ，error_log 检查
 
-这里请求 __/t__ ，经过配置文件 __location__ ，调用 __content_by_lua_block__ 指令完成 lua 的脚本，最终返回。
-用例的断言是 response_body 返回 "done"，__no_error_log__ 表示会对 Nginx 的 error.log 检查，
+这里请求 **/t** ，经过配置文件 **location** ，调用 **content_by_lua_block** 指令完成 lua 的脚本，最终返回。
+用例的断言是 response_body 返回 "done"，**no_error_log** 表示会对 Nginx 的 error.log 检查，
 必须没有 ERROR 级别的记录。
 
-### 附上test-nginx 执行流程
+### 附上 test-nginx 执行流程
 
-根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
-__t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
+根据我们在 Makefile 里配置的 PATH，和每一个 **.t** 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
+**t/servroot** 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
 包括 http status，http response header， http response body 等。

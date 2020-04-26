@@ -36,9 +36,9 @@
 ## 属性
 
 - `endpoint`: Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
-- `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
+- `sample_ratio`: 监听的比例，最小为 0.00001，最大为 1。
 - `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
-- `server_addr`: 可选参数，标记当前 APISIX 实例的IP地址，默认值是 nginx 的内置变量`server_addr`。|
+- `server_addr`: 可选参数，标记当前 APISIX 实例的 IP 地址，默认值是 nginx 的内置变量`server_addr`。|
 
 ## 如何启用
 
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ### 运行 Zipkin 实例
 
-e.g. 用docker:
+e.g. 用 docker:
 
 ```bash
 sudo docker run -d -p 9411:9411 openzipkin/zipkin
@@ -124,7 +124,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 
 现在就已经移除了 Zipkin 插件了。其他插件的开启和移除也是同样的方法。
 
-## 上游服务是Golang的示例代码
+## 上游服务是 Golang 的示例代码
 
 ```golang
 func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {

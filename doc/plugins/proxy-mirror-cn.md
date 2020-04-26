@@ -27,15 +27,15 @@
 
 ## 参数
 
-|名称    |必须|类型|描述|
-|------- |-----|------|------|
-|host|是|string|指定镜像服务地址，例如：`http://127.0.0.1:9797` (地址中需要包含 schema ：http或https，不能包含 URI 部分)|
+| 名称 | 必须 | 类型   | 描述  |
+| ---- | ---- | ------ | ---- |
+| host | 是   | string | 指定镜像服务地址，例如：`http://127.0.0.1:9797` (地址中需要包含 schema ：http 或 https，不能包含 URI 部分) |
 
 ### 示例
 
 #### 启用插件
 
-示例1：为特定路由启用 `proxy-mirror` 插件：
+示例 1：为特定路由启用 `proxy-mirror` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -70,7 +70,7 @@ Last-Modified: Thu, 20 Feb 2020 14:21:41 GMT
 hello world
 ```
 
-> 由于指定的 mirror 地址是127.0.0.1:9797，所以验证此插件是否已经正常工作需要在端口为9797的服务上确认，例如，我们可以通过 python 启动一个简单的 server： python -m SimpleHTTPServer 9797。
+> 由于指定的 mirror 地址是 127.0.0.1:9797，所以验证此插件是否已经正常工作需要在端口为 9797 的服务上确认，例如，我们可以通过 python 启动一个简单的 server： python -m SimpleHTTPServer 9797。
 
 #### 禁用插件
 

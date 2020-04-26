@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](getting-started-cn.md)
+[Chinese](getting-started-cn.md)
 
 # Quick Start Guide
 
@@ -67,13 +67,13 @@ The following will be the response from the Admin API.
 
 ```json
 {
-    "node": {
-        "createdIndex": 6,
-        "modifiedIndex": 6,
-        "key": "/apisix/services",
-        "dir": true
-        },
-    "action": "get"
+  "node": {
+    "createdIndex": 6,
+    "modifiedIndex": 6,
+    "key": "/apisix/services",
+    "dir": true
+  },
+  "action": "get"
 }
 ```
 
@@ -91,39 +91,39 @@ Technically all this information(upstream or service, plugins) can be included i
 
 - Matching Rules:
 
-    Let's take the following scenario.
-    http://example.com/services/users
+  Let's take the following scenario.
+  http://example.com/services/users
 
-    The URL above hosts all the micro services related to the users(getUser/ GetAllUsers) in the system. For example the GetAllUsers endpoint can be reached via the following URL (http://example.com/services/users/GetAllUsers)
-    Now you want to expose all the `GET` endpoints(micro-services) under the `users` path. The following will be the route configuration for matching such request.
+  The URL above hosts all the micro services related to the users(getUser/ GetAllUsers) in the system. For example the GetAllUsers endpoint can be reached via the following URL (http://example.com/services/users/GetAllUsers)
+  Now you want to expose all the `GET` endpoints(micro-services) under the `users` path. The following will be the route configuration for matching such request.
 
-    ```json
-    {
-        "methods": ["GET"],
-        "host": "example.com",
-        "uri": "/services/users/*",
-        ... Additional Configurations
-    }
-    ```
+  ```json
+  {
+      "methods": ["GET"],
+      "host": "example.com",
+      "uri": "/services/users/*",
+      ... Additional Configurations
+  }
+  ```
 
-    With the above matching rule you can communicate to APISIX via the following command.
+  With the above matching rule you can communicate to APISIX via the following command.
 
-    ```bash
-    curl -i -X GET "http://{apisix_server.com}:{port}/services/users/getAllUsers?limit=10" -H "Host: example.com"
-    ```
+  ```bash
+  curl -i -X GET "http://{apisix_server.com}:{port}/services/users/getAllUsers?limit=10" -H "Host: example.com"
+  ```
 
 - Upstream information:
 
-    Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to configuration rules.
-    Thus a single upstream configuration can comprise of multiple servers which offers the same service. Each node will comprise of a key(address/ip : port) and a value(weight of the node).
-    The service can be load balanced through a round robin or consistent hashing (cHash) mechanism.
+  Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to configuration rules.
+  Thus a single upstream configuration can comprise of multiple servers which offers the same service. Each node will comprise of a key(address/ip : port) and a value(weight of the node).
+  The service can be load balanced through a round robin or consistent hashing (cHash) mechanism.
 
-    When configuring a route you can either set the upstream information or use service abstraction to refer the upstream information.
+  When configuring a route you can either set the upstream information or use service abstraction to refer the upstream information.
 
 - Plugins
 
-    Plugins allows you to extend the capabilities of APISIX and to implement arbitrary logic which can interface with the HTTP request/response lifecycle.
-    Therefore, if you want to authenticate the API then you can include the Key Auth plugin to enforce authentication for each request.
+  Plugins allows you to extend the capabilities of APISIX and to implement arbitrary logic which can interface with the HTTP request/response lifecycle.
+  Therefore, if you want to authenticate the API then you can include the Key Auth plugin to enforce authentication for each request.
 
 ### Create an Upstream
 
@@ -252,14 +252,14 @@ same route configurations via the dashboard as well.
 ### Troubleshooting
 
 - Make sure the required ports are not being used by other systems/processes (The default ports are: 9080, 9443, 2379).
-The following is the command to kill a process which is listening to a specific port (in unix based systems).
+  The following is the command to kill a process which is listening to a specific port (in unix based systems).
 
-    ```bash
-    sudo fuser -k 9443/tcp
-    ```
+      ```bash
+      sudo fuser -k 9443/tcp
+      ```
 
 - If the docker container is continuously restarting/failing, login to the container and observe the logs to diagnose the issue.
 
-    ```bash
-    docker logs -f --tail container_id
-    ```
+  ```bash
+  docker logs -f --tail container_id
+  ```

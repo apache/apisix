@@ -37,13 +37,13 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| key         |required|different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception.|
-| secret      |optional|encryption key. if you do not specify, the value is auto-generated in the background.|
-| algorithm    |  optional|encryption algorithm. support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.|
-| exp          |optional|token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 * 60 = 300 )|
-| base64_secret|optional|boolean value to indicate whether secret is base64 encoded, default value is false.|
+| Name          | Requirement | Description|
+| ------------- | ----------- | ---------  |
+| key           | required    | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
+| secret        | optional    | encryption key. if you do not specify, the value is auto-generated in the background.|
+| algorithm     | optional    | encryption algorithm. support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.|
+| exp           | optional    | token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 \* 60 = 300 )|
+| base64_secret | optional    | boolean value to indicate whether secret is base64 encoded, default value is false.|
 
 ## How To Enable
 
@@ -163,8 +163,8 @@ Accept-Ranges: bytes
 ## Disable Plugin
 
 When you want to disable the `jwt-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='

@@ -32,15 +32,15 @@ between different configuration files through environment variables. The corresp
 
 When `APISIX_PROFILE` is not set, the following three configuration files are used by default:
 
-* conf/config.yaml
-* conf/apisix.yaml
-* conf/debug.yaml
+- conf/config.yaml
+- conf/apisix.yaml
+- conf/debug.yaml
 
 If the value of `APISIX_PROFILE` is set to `prod`, the following three configuration files are used:
 
-* conf/config-prod.yaml
-* conf/apisix-prod.yaml
-* conf/debug-prod.yaml
+- conf/config-prod.yaml
+- conf/apisix-prod.yaml
+- conf/debug-prod.yaml
 
 Although this way will increase the number of configuration files, it can be managed independently, and then version management
 tools such as git can be configured, and version management can be better achieved.

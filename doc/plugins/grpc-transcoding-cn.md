@@ -27,9 +27,9 @@ HTTP(s) -> APISIX -> gRPC server
 
 ### 参数
 
-* `content`: `.proto` 文件的内容
+- `content`: `.proto` 文件的内容
 
-### 添加proto
+### 添加 proto
 
 路径中最后的数字，会被用作 proto 的 id 做唯一标识，比如下面示例的 proto `id` 是 `1` ：
 
@@ -52,10 +52,10 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 
 ## 参数列表
 
-* `proto_id`: `.proto`内容的id.
-* `service`:  grpc服务名.
-* `method`:   grpc服务中要调用的方法名.
-* `pb_option`:   proto 编码过程中的转换选项. [ "int64_as_string" / "enum_as_value" / "auto_default_values" / "enable_hooks" ]
+- `proto_id`: `.proto`内容的 id.
+- `service`: grpc 服务名.
+- `method`: grpc 服务中要调用的方法名.
+- `pb_option`: proto 编码过程中的转换选项. [ "int64_as_string" / "enum_as_value" / "auto_default_values" / "enable_hooks" ]
 
 ## 示例
 
@@ -63,8 +63,8 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 
 在指定 route 中，代理 grpc 服务接口:
 
-* 注意： 这个 route 的属性`service_protocol` 必须设置为 `grpc`
-* 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/iresty/grpc_server_example)
+- 注意： 这个 route 的属性`service_protocol` 必须设置为 `grpc`
+- 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -113,24 +113,27 @@ Proxy-Connection: keep-alive
 
 ##### 选项清单
 
-* 枚举类型
-    > enum_as_name
-    > enum_as_value
+- 枚举类型
 
-* 64位整型
-    > int64_as_number
-    > int64_as_string
-    > int64_as_hexstring
+  > enum_as_name
+  > enum_as_value
 
-* 使用默认值
-    > auto_default_values
-    > no_default_values
-    > use_default_values
-    > use_default_metatable
+- 64 位整型
 
-* Hooks开关
-    > enable_hooks
-    > disable_hooks
+  > int64_as_number
+  > int64_as_string
+  > int64_as_hexstring
+
+- 使用默认值
+
+  > auto_default_values
+  > no_default_values
+  > use_default_values
+  > use_default_metatable
+
+- Hooks 开关
+  > enable_hooks
+  > disable_hooks
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](grpc-proxy.md)
+[English](grpc-proxy.md)
 
 # grpc-proxy
 

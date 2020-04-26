@@ -23,19 +23,19 @@
 
 The proxy-mirror plugin, which provides the ability to mirror client requests.
 
-*Note*:  The response returned by the mirror request is ignored.
+_Note_: The response returned by the mirror request is ignored.
 
 ## Attributes
 
-|Name          |Requirement  | Type |Description|
-|------- |-----|------|------|
-|host|required|string|Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part)|
+| Name | Requirement | Type   | Description |
+| ---- | ----------- | ------ | ----------- |
+| host | required    | string | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part) |
 
 ### Examples
 
 #### Enable the plugin
 
-1:  enable the proxy-mirror plugin for a specific route :
+1: enable the proxy-mirror plugin for a specific route :
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -71,7 +71,7 @@ hello world
 ```
 
 > Since the specified mirror address is 127.0.0.1:9797, so to verify whether this plugin is in effect, we need to confirm on the service with port 9797.
-> For example, we can start a simple server:  python -m SimpleHTTPServer 9797
+> For example, we can start a simple server: python -m SimpleHTTPServer 9797
 
 ## Disable Plugin
 

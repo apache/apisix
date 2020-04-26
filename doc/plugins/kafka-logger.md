@@ -17,6 +17,8 @@
 #
 -->
 
+[Chinese](kafka-logger-cn.md)
+
 # Summary
 
 - [**Name**](#name)
@@ -34,14 +36,14 @@ This will provide the ability to send Log data requests as JSON objects to exter
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| broker_list |required| An array of Kafka brokers.|
-| kafka_topic |required| Target topic to push data.|
-| timeout |optional|Timeout for the upstream to send data.|
-| async |optional|Boolean value to control whether to perform async push.|
-| key |required|Key for the message.|
-| max_retry |optional|No of retries|
+| Name        | Requirement | Description                                             |
+| ----------- | ----------- | ------------------------------------------------------- |
+| broker_list | required    | An array of Kafka brokers.                              |
+| kafka_topic | required    | Target topic to push data.                              |
+| timeout     | optional    | Timeout for the upstream to send data.                  |
+| async       | optional    | Boolean value to control whether to perform async push. |
+| key         | required    | Key for the message.                                    |
+| max_retry   | optional    | No of retries                                           |
 
 ## Info
 
@@ -49,17 +51,17 @@ Difference between async and the sync data push.
 
 1. In sync model
 
-    In case of success, returns the offset (**cdata: LL**) of the current broker and partition.
-    In case of errors, returns `nil` with a string describing the error.
+   In case of success, returns the offset (**cdata: LL**) of the current broker and partition.
+   In case of errors, returns `nil` with a string describing the error.
 
 2. In async model
 
-    The `message` will write to the buffer first.
-    It will send to the kafka server when the buffer exceed the `batch_num`,
-    or every `flush_time` flush the buffer.
+   The `message` will write to the buffer first.
+   It will send to the kafka server when the buffer exceed the `batch_num`,
+   or every `flush_time` flush the buffer.
 
-    In case of success, returns `true`.
-    In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
+   In case of success, returns `true`.
+   In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
 
 ### Sample broker list
 
@@ -68,8 +70,8 @@ sample to take effect of this functionality.
 
 ```json
 {
-    "127.0.0.1":9092,
-    "127.0.0.1":9093
+  "127.0.0.1": 9092,
+  "127.0.0.1": 9093
 }
 ```
 
@@ -115,8 +117,8 @@ hello, world
 ## Disable Plugin
 
 When you want to disable the `kafka-logger` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='

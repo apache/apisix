@@ -30,12 +30,12 @@
 
 ## Name
 
-`wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a ` service` or `route`.
+`wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a `service` or `route`.
 The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more information about `wolf`, please refer to [wolf documentation](https://github.com/iGeeky/wolf).
 
 ## Attributes
 
-- `server`: Set the service address of` wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
+- `server`: Set the service address of `wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
 - `appid`: Set the app id. The app id must be added in wolf-console.
 - `header_prefix`: prefix of custom HTTP header. The default value is `X-`. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`.
 
@@ -96,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## Test Plugin
 
-### Login and get `wolf-rbac` token:
+### Login and get `wolf-rbac` token
 
 The following `appid`, `username`, and `password` must be real ones in the wolf system.
 
@@ -223,8 +223,8 @@ HTTP/1.1 200 OK
 ## Disable Plugin
 
 When you want to disable the `wolf-rbac` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

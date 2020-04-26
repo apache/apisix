@@ -23,33 +23,33 @@
 
 The proxy-cache plugin, which provides the ability to cache upstream response data and can be used with other plugins. The plugin supports disk-based caching and will support the memory-based caching in the future. The data that needs to be cached can be determined by the response code or request method and more complex caching policies can be configured by no_cache and cache_bypass attributes.
 
-*Note*:
+_Note_:
 
 1. The cache expiration time cannot be configured dynamically. The expiration time can only be set by the upstream response header `Expires` or `Cache-Control`, and the default cache expiration time is 10s if there is no `Expires` or `Cache-Control` in the upstream response header
 2. If the upstream service is not available and APISIX will return 502 or 504, then 502 or 504 will be cached for 10s.
 
 ## Attributes
 
-|Name          |Requirement  | Type |Description|
-|------- |-----|------|------|
-|cache_zone|required|string|Specify which cache area to use, each cache area can be configured with different paths. In addition, cache areas can be predefined in conf/config.yaml file|
-|cache_key|required|array[string]|key of a cache, can use variables. For example: ["$host", "$uri", "-cache-id"]|
-|cache_bypass|optional|array[string]|Whether to skip cache retrieval. That is, do not look for data in the cache. It can use variables, and note that cache data retrieval will be skipped when the value of this attribute is not empty or not '0'. For example: ["$arg_bypass"]|
-|cache_method|optional|array[string]|Decide whether to be cached according to the request method|
-|cache_http_status|optional|array[integer]|Decide whether to be cached according to the upstream response status|
-|hide_cache_headers|optional|boolean|Whether to return the Expires and Cache-Control response headers to the client, the default is false|
-|no_cache|optional|array[string]|Whether to cache data, it can use variables, and note that the data will not be cached when the value of this attribute is not empty or not '0'.|
+| Name               | Requirement | Type           | Description |
+| ------------------ | ----------- | -------------- | ----------- |
+| cache_zone         | required    | string         | Specify which cache area to use, each cache area can be configured with different paths. In addition, cache areas can be predefined in conf/config.yaml file|
+| cache_key          | required    | array[string]  | key of a cache, can use variables. For example: ["$host", "$uri", "-cache-id"]|
+| cache_bypass       | optional    | array[string]  | Whether to skip cache retrieval. That is, do not look for data in the cache. It can use variables, and note that cache data retrieval will be skipped when the value of this attribute is not empty or not '0'. For example: ["$arg_bypass"] |
+| cache_method       | optional    | array[string]  | Decide whether to be cached according to the request method|
+| cache_http_status  | optional    | array[integer] | Decide whether to be cached according to the upstream response status|
+| hide_cache_headers | optional    | boolean        | Whether to return the Expires and Cache-Control response headers to the client, the default is false|
+| no_cache           | optional    | array[string]  | Whether to cache data, it can use variables, and note that the data will not be cached when the value of this attribute is not empty or not '0'.|
 
 Note:
 
-1. The variable starts with $.
+1. The variable starts with \$.
 2. The attribute can use a combination of the variable and the string, but it needs to be written separately as an array, and the final values are stitched together after the variable is parsed.
 
 ## Examples
 
 ### Enable the plugin
 
-1:  enable the proxy-cache plugin for a specific route :
+1: enable the proxy-cache plugin for a specific route :
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
@@ -109,7 +109,7 @@ Apisix-Cache-Status: HIT
 hello
 ```
 
-> Response header  Apisix-Cache-Status has changed to HIT, indicating that the file has been cached.
+> Response header Apisix-Cache-Status has changed to HIT, indicating that the file has been cached.
 
 3: How to clean up the cached file, simply specify the request method as PURGE:
 

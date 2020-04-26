@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](getting-started.md)
+[English](getting-started.md)
 
 # 快速入门指南
 
@@ -65,19 +65,19 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 ```json
 {
-    "node": {
-        "createdIndex": 6,
-        "modifiedIndex": 6,
-        "key": "/apisix/services",
-        "dir": true
-        },
-    "action": "get"
+  "node": {
+    "createdIndex": 6,
+    "modifiedIndex": 6,
+    "key": "/apisix/services",
+    "dir": true
+  },
+  "action": "get"
 }
 ```
 
 ## 第二步: 在 Apache APISIX 中创建 Route
 
-为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个[web控制台](https://github.com/apache/incubator-apisix-dashboard)。
+为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个[web 控制台](https://github.com/apache/incubator-apisix-dashboard)。
 本指南将会使用到 Admin API 接口。
 
 一个微服务可以通过 APISIX 的路由、服务、上游和插件等多个实体之间的关系进行配置。
@@ -89,40 +89,40 @@ Service（服务）为上游服务提供了抽象。因此，您可以创建单�
 
 - 路由匹配规则：
 
-    让我们来看看下面的场景
+  让我们来看看下面的场景
 
-    `http://example.com/services/users`
+  `http://example.com/services/users`
 
-    上面的URL托管了系统中所有跟用户有关的（getUser/GetAllUsers）微服务。例如，可以通过URL (`http://example.com/services/users/GetAllUsers`) 访问到 GetAllUsers 服务接口。
-    现在要公开 `users` 路径下的所有 `GET` 服务请求（微服务）。以下是匹配此类请求的路由配置。
+  上面的 URL 托管了系统中所有跟用户有关的（getUser/GetAllUsers）微服务。例如，可以通过 URL (`http://example.com/services/users/GetAllUsers`) 访问到 GetAllUsers 服务接口。
+  现在要公开 `users` 路径下的所有 `GET` 服务请求（微服务）。以下是匹配此类请求的路由配置。
 
-    ```json
-    {
-        "methods": ["GET"],
-        "host": "example.com",
-        "uri": "/services/users/*",
-        ... Additional Configurations
-    }
-    ```
+  ```json
+  {
+      "methods": ["GET"],
+      "host": "example.com",
+      "uri": "/services/users/*",
+      ... Additional Configurations
+  }
+  ```
 
-    通过上面的匹配规则你就可以通过如下的命令跟 APISIX 进行交互了
+  通过上面的匹配规则你就可以通过如下的命令跟 APISIX 进行交互了
 
-    ```bash
-    curl -i -X GET "http://{apisix_server.com}:{port}/services/users/getAllUsers?limit=10" -H "Host: example.com"
-    ```
+  ```bash
+  curl -i -X GET "http://{apisix_server.com}:{port}/services/users/getAllUsers?limit=10" -H "Host: example.com"
+  ```
 
 - Upstream 信息：
 
-    Upstream 是一个虚拟主机抽象，它根据配置规则在给定的一组服务节点上执行负载平衡。
-    因此，单个上游配置可以由提供相同服务的多个服务器组成。每个节点将包括一个 key（地址/ip:port）和一个 value （节点的权重）。
-    服务可以通过轮询或一致哈希（cHash）机制进行负载平衡。
+  Upstream 是一个虚拟主机抽象，它根据配置规则在给定的一组服务节点上执行负载平衡。
+  因此，单个上游配置可以由提供相同服务的多个服务器组成。每个节点将包括一个 key（地址/ip:port）和一个 value （节点的权重）。
+  服务可以通过轮询或一致哈希（cHash）机制进行负载平衡。
 
-    配置路由时，可以直接设置 Upstream 信息，也可以使用服务抽象来引用 Upstream 信息。
+  配置路由时，可以直接设置 Upstream 信息，也可以使用服务抽象来引用 Upstream 信息。
 
 - 各种插件
 
-    插件允许您扩展 APISIX 的功能，并实现可以与 HTTP request / response 生命周期接口的任意逻辑。
-    因此，如果您想对 API 进行身份验证，那么您可以使用密钥验证插件来对每个请求强制进行身份验证。
+  插件允许您扩展 APISIX 的功能，并实现可以与 HTTP request / response 生命周期接口的任意逻辑。
+  因此，如果您想对 API 进行身份验证，那么您可以使用密钥验证插件来对每个请求强制进行身份验证。
 
 ### 设置 Upstream
 
@@ -138,7 +138,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034
 }'
 ```
 
-### 为转发 Upstream  添加 Route 信息
+### 为转发 Upstream 添加 Route 信息
 
 默认情况下，Apache APISIX 通过 HTTP 协议代理请求。如果我们的后端托管在 HTTPS 环境中，让我们使用 proxy-rewrite 插件将方案更改为 HTTPS 。
 
@@ -239,21 +239,21 @@ curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H '
 
 ## Apache APISIX 控制台
 
-到目前为止，已经通过使用 admin API 接口编排对 Apache APISIX 的 API 的调用。然而，Apache APISIX 还提供执行类似操作的一个 web 应用，就是web控制台。
+到目前为止，已经通过使用 admin API 接口编排对 Apache APISIX 的 API 的调用。然而，Apache APISIX 还提供执行类似操作的一个 web 应用，就是 web 控制台。
 可以在[repository](https://github.com/apache/incubator-apisix)中使用。控制台是直观的，您可以通过它编排同样的路由配置。
 
 ![Dashboard](images/dashboard.png)
 
 ### 故障排查
 
-- 确保所需的端口未被其他系统/进程使用（默认端口为：9080、9443、2379）。下面是终止正在侦听特定端口（基于unix的系统）的进程的命令。
+- 确保所需的端口未被其他系统/进程使用（默认端口为：9080、9443、2379）。下面是终止正在侦听特定端口（基于 unix 的系统）的进程的命令。
 
-    ```bash
-    sudo fuser -k 9443/tcp
-    ```
+  ```bash
+  sudo fuser -k 9443/tcp
+  ```
 
 - 如果 docker 容器持续重启或者重启失败，请登录容器并观察日志以诊断问题。
 
-    ```bash
-    docker logs -f --tail container_id
-    ```
+  ```bash
+  docker logs -f --tail container_id
+  ```

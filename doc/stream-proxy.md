@@ -32,11 +32,11 @@ By default, no any stream proxy is enabled.
 
 ```yaml
 apisix:
-  stream_proxy:                 # TCP/UDP proxy
-    tcp:                        # TCP proxy address list
+  stream_proxy: # TCP/UDP proxy
+    tcp: # TCP proxy address list
       - 9100
       - 127.0.0.1:9101
-    udp:                        # UDP proxy address list
+    udp: # UDP proxy address list
       - 9200
       - 127.0.0.1:9211
 ```

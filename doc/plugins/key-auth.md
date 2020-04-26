@@ -35,9 +35,9 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| key         |required|different consumer objects should use different values, it should be unique.|
+| Name | Requirement | Description                                                                  |
+| ---- | ----------- | ---------------------------------------------------------------------------- |
+| key  | required    | different consumer objects should use different values, it should be unique. |
 
 ## How To Enable
 
@@ -110,8 +110,8 @@ HTTP/1.1 401 Unauthorized
 ## Disable Plugin
 
 When you want to disable the `key-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='

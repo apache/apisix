@@ -27,9 +27,9 @@
 
 It is most common for an SSL certificate to contain only one domain. We can create an `ssl` object. Here is a simple case, creates a `ssl` object and `route` object.
 
-* `cert`: PEM-encoded public certificate of the SSL key pair.
-* `key`: PEM-encoded private key of the SSL key pair.
-* `sni`: Hostname to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
+- `cert`: PEM-encoded public certificate of the SSL key pair.
+- `key`: PEM-encoded private key of the SSL key pair.
+- `sni`: Hostname to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

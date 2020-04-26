@@ -21,7 +21,7 @@
 
 # prometheus
 
-此插件是提供符合prometheus数据格式的监控指标数据。
+此插件是提供符合 prometheus 数据格式的监控指标数据。
 
 ## 属性
 
@@ -65,16 +65,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
-把改uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
+把改 uri 地址配置到 prometheus 中去,就会自动完成指标数据提取.
 
 例子如下:
 
 ```yaml
 scrape_configs:
-  - job_name: 'apisix'
-    metrics_path: '/apisix/prometheus/metrics'
+  - job_name: "apisix"
+    metrics_path: "/apisix/prometheus/metrics"
     static_configs:
-    - targets: ['127.0.0.1:9080']
+      - targets: ["127.0.0.1:9080"]
 ```
 
 我们也可以在 prometheus 控制台中去检查状态:
@@ -97,12 +97,12 @@ scrape_configs:
 
 ### 可有的指标
 
-* `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。
-* `Bandwidth`: 流经apisix的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
-* `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1来表示。
-* `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
+- `Status codes`: upstream 服务返回的 HTTP 状态码，每个服务返回状态码的次数或者所有服务的状态码次数总和都可以统计到。
+- `Bandwidth`: 流经 apisix 的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
+- `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1 来表示。
+- `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
 
-这里是apisix的原始的指标数据集:
+这里是 apisix 的原始的指标数据集:
 
 ```bash
 $ curl http://127.0.0.2:9080/apisix/prometheus/metrics

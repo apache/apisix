@@ -27,7 +27,7 @@ HTTP(s) -> APISIX -> gRPC server
 
 #### Attributes
 
-* `content`: `.proto` file's content.
+- `content`: `.proto` file's content.
 
 #### Add a proto
 
@@ -52,18 +52,18 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 
 ## Attribute List
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| proto_id         |required|`.proto` content id.|
-| service         |required|the grpc service name.|
-| method         |required|the method name of grpc service.|
+| Name     | Requirement | Description                      |
+| -------- | ----------- | -------------------------------- |
+| proto_id | required    | `.proto` content id.             |
+| service  | required    | the grpc service name.           |
+| method   | required    | the method name of grpc service. |
 
 ## How To Enable
 
 Here's an example, to enable the grpc-transcode plugin to specified route:
 
-* attention: the route's option `service_protocol` must be `grpc`
-* the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
+- attention: the route's option `service_protocol` must be `grpc`
+- the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

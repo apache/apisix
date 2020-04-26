@@ -37,10 +37,10 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| username |required|different `consumer` have different value, it's unique. different `consumer` use the same `username`, and there will be a request matching exception.|
-| password |required|the user's password|
+| Name     | Requirement | Description                                                                                                                                           |
+| -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| username | required    | different `consumer` have different value, it's unique. different `consumer` use the same `username`, and there will be a request matching exception. |
+| password | required    | the user's password                                                                                                                                   |
 
 ## How To Enable
 
@@ -127,8 +127,8 @@ hello, world
 ## Disable Plugin
 
 When you want to disable the `basic-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='

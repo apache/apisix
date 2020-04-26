@@ -35,12 +35,12 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| endpoint     |required|the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`.|
-| sample_ratio |required|the ratio of sample, the minimum is 0.00001, the maximum is 1.|
-| service_name |optional|service name for zipkin reporter, the default values is `APISIX`.|
-| server_addr |optional|IPv4 address for zipkin reporter, default is nginx built-in variables $server_addr, here you can speific your external ip address.|
+| Name         | Requirement | Description |
+| ------------ | ----------- | ----------- |
+| endpoint     | required    | the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`.|
+| sample_ratio | required    | the ratio of sample, the minimum is 0.00001, the maximum is 1.|
+| service_name | optional    | service name for zipkin reporter, the default values is `APISIX`. |
+| server_addr  | optional    | IPv4 address for zipkin reporter, default is nginx built-in variables \$server_addr, here you can speific your external ip address. |
 
 ## How To Enable
 
@@ -107,8 +107,8 @@ http://127.0.0.1:9411/zipkin
 ## Disable Plugin
 
 When you want to disable the zipkin plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='

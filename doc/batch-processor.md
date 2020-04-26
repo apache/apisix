@@ -28,14 +28,14 @@ than 1 will start aggregating the entries until it reaches the max size or the t
 The only mandatory parameter to create a batch processor is a function. The function will be executed when the batch reaches the max size
 or when the buffer duration exceeds.
 
-|Name           |Requirement    |Description|
-|-------        |-----          |------|
-|id             |optional       |A unique identifier to identity the batch processor|
-|batch_max_size |optional       |Max size of each batch, default is 1000|
-|inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
-|buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
-|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
-|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
+| Name             | Requirement | Description                                                                                            |
+| ---------------- | ----------- | ------------------------------------------------------------------------------------------------------ |
+| id               | optional    | A unique identifier to identity the batch processor                                                    |
+| batch_max_size   | optional    | Max size of each batch, default is 1000                                                                |
+| inactive_timeout | optional    | maximum age in seconds when the buffer will be flushed if inactive, default is 5s                      |
+| buffer_duration  | optional    | Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5 |
+| max_retry_count  | optional    | Maximum number of retries before removing from the processing pipe line; default is zero               |
+| retry_delay      | optional    | Number of seconds the process execution should be delayed if the execution fails; default is 1         |
 
 The following code shows an example of how to use a batch processor. The batch processor takes a function to be executed as the first
 argument and the batch configuration as the second parameter.
@@ -43,10 +43,10 @@ argument and the batch configuration as the second parameter.
 ```lua
 local bp = require("apisix.plugins.batch-processor")
 local func_to_execute = function(entries)
-            -- serialize to json array core.json.encode(entries)
-            -- process/send data
-            return true
-       end
+    -- serialize to json array core.json.encode(entries)
+    -- process/send data
+    return true
+end
 
 local config = {
     max_retry_count  = 2,

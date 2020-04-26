@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](benchmark-cn.md)
+[Chinese](benchmark-cn.md)
 
 # Benchmark Environments
 
@@ -76,7 +76,8 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 Only used APISIX as the reverse proxy server, enabled the limit rate and prometheus plugins,
 and the response size was 1KB.
 
-#### QP
+## QPS
+
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
 <img src="../doc/images/benchmark-2.jpg" width="70%" height="70%">

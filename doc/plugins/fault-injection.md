@@ -21,15 +21,15 @@
 
 ## Name
 
-Fault injection plugin, this plugin can be used with other plugins and will be executed before other plugins.  The `abort` attribute will directly return the user-specified http code to the client and terminate the subsequent plugins. The `delay` attribute will delay a request and execute subsequent plugins.
+Fault injection plugin, this plugin can be used with other plugins and will be executed before other plugins. The `abort` attribute will directly return the user-specified http code to the client and terminate the subsequent plugins. The `delay` attribute will delay a request and execute subsequent plugins.
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|------- |-----|------|
-|abort.http_status|required|user-specified http code returned to the client|
-|abort.body|optional|response data returned to the client|
-|delay.duration|required|delay time(can be decimal)|
+| Name              | Requirement | Description                                     |
+| ----------------- | ----------- | ----------------------------------------------- |
+| abort.http_status | required    | user-specified http code returned to the client |
+| abort.body        | optional    | response data returned to the client            |
+| delay.duration    | required    | delay time(can be decimal)                      |
 
 Note: `abort` and `delay` must have at least one.
 

@@ -23,15 +23,15 @@
 
 `APISIX` 支持通过 TLS 扩展 SNI 实现加载特定的 SSL 证书以实现对 https 的支持。
 
-SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允许客户端在服务器端向其发送证书之前向服务器端发送请求的域名，服务器端根据客户端请求的域名选择合适的SSL证书发送给客户端。
+SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允许客户端在服务器端向其发送证书之前向服务器端发送请求的域名，服务器端根据客户端请求的域名选择合适的 SSL 证书发送给客户端。
 
 ### 单一域名指定
 
 通常情况下一个 SSL 证书只包含一个静态域名，配置一个 `ssl` 参数对象，它包括 `cert`、`key`和`sni`三个属性，详细如下：
 
-* `cert`: SSL 密钥对的公钥，pem 格式
-* `key`: SSL 密钥对的私钥，pem 格式
-* `sni`: SSL 证书所指定的域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
+- `cert`: SSL 密钥对的公钥，pem 格式
+- `key`: SSL 密钥对的私钥，pem 格式
+- `sni`: SSL 证书所指定的域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

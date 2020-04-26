@@ -17,6 +17,8 @@
 #
 -->
 
+[Chinese](tcp-logger-cn.md)
+
 # Summary
 
 - [**Name**](#name)

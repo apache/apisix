@@ -73,10 +73,10 @@ For example like this:
 
 ```yaml
 scrape_configs:
-  - job_name: 'apisix'
-    metrics_path: '/apisix/prometheus/metrics'
+  - job_name: "apisix"
+    metrics_path: "/apisix/prometheus/metrics"
     static_configs:
-    - targets: ['127.0.0.1:9080']
+      - targets: ["127.0.0.1:9080"]
 ```
 
 And we can check the status at prometheus console:
@@ -99,10 +99,10 @@ You can goto [Grafana meta](https://grafana.com/grafana/dashboards/11719) for `G
 
 ### Available metrics
 
-* `Status codes`: HTTP status codes returned by upstream services. These are available per service and across all services.
-* `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
-* `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
-* `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
+- `Status codes`: HTTP status codes returned by upstream services. These are available per service and across all services.
+- `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
+- `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
+- `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
 
 Here is the original metric data of apisix:
 
