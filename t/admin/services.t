@@ -530,7 +530,7 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                     "id": 1,
-                    "upstream_id": "invalid"
+                    "upstream_id": "invalid$"
                 }]]
                 )
 

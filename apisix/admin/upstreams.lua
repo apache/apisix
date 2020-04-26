@@ -112,6 +112,7 @@ end
 
 
 function _M.put(id, conf)
+    conf.id = id
     local id, err = check_conf(id, conf, true)
     if not id then
         return 400, err
