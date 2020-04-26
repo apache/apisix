@@ -147,21 +147,25 @@ APISIX 内置了对 Dashboard 的支持，使用步骤如下：
 
 1. 确保你的运行环境中使用了最新的 Node.js 版本（>= 10）。
 
-2. 下载 [Dashboard](https://github.com/apache/incubator-apisix-dashboard) 的源码：
+2. 下载 dashboard 子模块的源码：
 ```
-git clone https://github.com/apache/incubator-apisix-dashboard.git
+git submodule update --init --recursive
 ```
 
 3. 安装 [yarn](https://yarnpkg.com/zh-Hans/docs/install)
 
 4. 安装依赖并构建
 ```
-git checkout <v1.0>  #这里的tag版本和你使用的apisix版本一致
+cd dashboard
 yarn && yarn build:prod
 ```
 
 5. 与 APISIX 集成
 把编译后的在 `/dist` 目录下的所有文件，拷贝到 `apisix/dashboard` 目录下。
+```
+cp -r dist/* .
+```
+
 使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
 不用填写用户名和密码，直接登录。
 
