@@ -46,7 +46,7 @@ local schema = {
         },
         fetch_interval = {type = "integer", minimum = 1, default = 30},
         prefix = {type = "string"},
-        weight = {type = "integer", minimum = 0, maximum = 100},
+        weight = {type = "integer", minimum = 0},
         timeout = {
             type = "object",
             properties = {
@@ -96,6 +96,7 @@ end
 
 
 local function request(request_uri, basic_auth, method, path, query, body)
+    log.info("eureka uri:", request_uri, ".")
     local url = request_uri .. path
     local headers = core.table.new(0, 5)
     headers['Connection'] = 'Keep-Alive'
@@ -120,6 +121,7 @@ local function request(request_uri, basic_auth, method, path, query, body)
     local connect_timeout = timeout and timeout.connect or 2000
     local send_timeout = timeout and timeout.send or 2000
     local read_timeout = timeout and timeout.read or 5000
+    log.info("connect_timeout:", connect_timeout, ", send_timeout:", send_timeout, ", read_timeout:", read_timeout, ".")
     httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
     return httpc:request_uri(url, {
         version = 1.1,
@@ -238,7 +240,9 @@ function _M.init_worker()
         return
     end
     default_weight = local_conf.eureka.weight or 100
+    log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.eureka.fetch_interval or 30
+    log.info("fetch_interval:", fetch_interval, ".")
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end

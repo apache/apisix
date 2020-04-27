@@ -38,17 +38,20 @@ $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/  discovery:/  discovery: eureka #/;
 $yaml_config =~ s/#  discovery:/  discovery: eureka #/;
+$yaml_config =~ s/error_log_level: "warn"/error_log_level: "info"/;
+
 
 $yaml_config .= <<_EOC_;
 eureka:
  host:
    - "http://127.0.0.1:8761"
  prefix: "/eureka/"
- weight: 100
+ fetch_interval: 10
+ weight: 80
  timeout:
-   connect: 2000
-   send: 2000
-   read: 5000
+   connect: 1500
+   send: 1500
+   read: 1500
 _EOC_
 
 run_tests();
@@ -73,7 +76,28 @@ GET /eureka/apps/APISIX-EUREKA
 .*<name>APISIX-EUREKA</name>.*
 --- error_log
 use config_center: yaml
+default_weight:80.
+fetch_interval:10.
+eureka uri:http://127.0.0.1:8761/eureka/.
+connect_timeout:1500, send_timeout:1500, read_timeout:1500.
 --- no_error_log
 [error]
 
+
+=== TEST 2: error service_name name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /eureka/*
+    upstream:
+      service_name: APISIX-EUREKA-DEMO
+      type: roundrobin
+
+#END
+--- request
+GET /eureka/apps/APISIX-EUREKA
+--- error_code: 502
+--- error_log eval
+qr/.*failed to pick server: no valid upstream node.*/
 

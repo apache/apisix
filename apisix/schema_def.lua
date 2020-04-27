@@ -254,7 +254,6 @@ local nodes_schema = {
                         description = "weight of node",
                         type = "integer",
                         minimum = 0,
-                        maximum = 100,
                     },
                     metadata = {
                         description = "metadata of node",
