@@ -344,7 +344,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
-|nodes           |必需|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|`192.168.1.100:80`|
+|nodes           |与 `k8s_deployment_info` 二选一|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|`192.168.1.100:80`|
+|k8s_deployment_info|与 `nodes` 二选一|哈希表|字段包括 `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`，其中 `port` 字段为数值，`backend_type` 为 `pod` 或 `service`，其他为字符串 | `{"namespace": "test-namespace", "deploy_name": "test-deploy-name", "service_name": "test-service-name", "backend_type": "pod", "port": 8080}` |
 |type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
 |key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](health-check.md)||
@@ -367,6 +368,13 @@ upstream 对象 json 配置内容：
     },
     "enable_websocket": true,
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + Port`
+    "k8s_deployment_info": {    # k8s deployment 信息
+        "namespace": "test-namespace",
+        "deploy_name": "test-deploy-name",
+        "service_name": "test-service-name",
+        "backend_type": "pod",   # pod or service
+        "port": 8080
+    },
     "type":"roundrobin",        # chash or roundrobin
     "checks": {},               # 配置健康检查的参数
     "hash_on": "",
