@@ -16,6 +16,7 @@
 --
 local require       = require
 local core          = require("apisix.core")
+local config_util   = require("apisix.core.config_util")
 local plugin        = require("apisix.plugin")
 local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
@@ -263,7 +264,8 @@ function _M.http_access_phase()
     if router.global_rules and router.global_rules.values
        and #router.global_rules.values > 0 then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
-        for _, global_rule in ipairs(router.global_rules.values) do
+        local values = router.global_rules.values
+        for _, global_rule in config_util.iterate_values(values) do
             api_ctx.conf_type = "global_rule"
             api_ctx.conf_version = global_rule.modifiedIndex
             api_ctx.conf_id = global_rule.value.id
@@ -451,7 +453,8 @@ local function common_phase(plugin_name)
             and #router.global_rules.values > 0
     then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
-        for _, global_rule in ipairs(router.global_rules.values) do
+        local values = router.global_rules.values
+        for _, global_rule in config_util.iterate_values(values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
             run_plugin(plugin_name, plugins, api_ctx)
