@@ -244,7 +244,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/invalid_id',
+            local code, body = t('/apisix/admin/upstreams/invalid_id$',
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
@@ -374,7 +374,7 @@ GET /t
             local code, body = t('/apisix/admin/upstreams',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": "invalid_id",
+                    "id": "invalid_id$",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
