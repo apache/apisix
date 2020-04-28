@@ -14,15 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
-
-    } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
-    }
-}
 
 use t::APISIX 'no_plan';
 
@@ -498,3 +489,62 @@ qr{.*http://127.0.0.1:1960/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*}
 --- timeout: 10
+
+
+
+=== TEST 11: add new routh with healthcheck attribute
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i = 1, 3 do
+                t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "uri": "/server_port",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "checks": {
+                                "active": {
+                                    "http_path": "/status",
+                                    "host": "foo.com",
+                                    "healthy": {
+                                        "interval": 1,
+                                        "successes": 1
+                                    },
+                                    "unhealthy": {
+                                        "interval": 1,
+                                        "http_failures": 2
+                                    }
+                                }
+                            }
+                        }
+                    }]]
+                )
+
+                ngx.sleep(0.1)
+
+                local code, body = t('/server_port', ngx.HTTP_GET)
+                ngx.say("code: ", code, " body: ", body)
+
+                code, body = t('/apisix/admin/routes/' .. i, ngx.HTTP_DELETE)
+                ngx.say("delete code: ", code)
+
+                ngx.sleep(0.1)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+code: 200 body: passed
+delete code: 200
+code: 200 body: passed
+delete code: 200
+code: 200 body: passed
+delete code: 200
+--- no_error_log
+[error]
