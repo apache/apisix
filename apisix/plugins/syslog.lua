@@ -37,6 +37,10 @@ local schema = {
     required = {"host", "port"}
 }
 
+local lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
 local _M = {
     version = 0.1,
     priority = 401,
@@ -49,12 +53,13 @@ function _M.check_schema(conf)
 end
 
 function _M.flush_syslog(logger)
-        local ok, err = logger:flush(logger)
-        if not ok then
-            core.log.error("failed to flush message:", err)
-        end
+    local ok, err = logger:flush(logger)
+    if not ok then
+        core.log.error("failed to flush message:", err)
+    end
 end
 
+-- log phase in APISIX
 function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
 
@@ -63,23 +68,26 @@ function _M.log(conf)
         return
     end
 
-    local logger, err = logger_socket:new({
-        host = conf.host,
-        port = conf.port,
-        flush_limit = conf.flush_limit,
-        drop_limit = conf.drop_limit,
-        timeout = conf.timeout,
-        sock_type = conf.sock_type,
-        max_retry_times = conf.max_retry_times,
-        retry_interval = conf.retry_interval,
-        pool_size = conf.pool_size,
-        tls = conf.tls,
-    })
+    -- fetch it from lrucache
+    local logger, err =  lrucache("127.0.0.1", "29999",
+        logger_socket.new, logger_socket, {
+            host = conf.host,
+            port = conf.port,
+            flush_limit = conf.flush_limit,
+            drop_limit = conf.drop_limit,
+            timeout = conf.timeout,
+            sock_type = conf.sock_type,
+            max_retry_times = conf.max_retry_times,
+            retry_interval = conf.retry_interval,
+            pool_size = conf.pool_size,
+            tls = conf.tls,
+        })
 
     if not logger then
         core.log.error("failed when initiating the sys logger processor", err)
     end
 
+    -- reuse the logger object
     local ok, err = logger:log(core.json.encode(entry))
     if not ok then
         core.log.error("failed to log message", err)
