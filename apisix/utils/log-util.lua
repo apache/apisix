@@ -19,7 +19,7 @@ local core     = require("apisix.core")
 local _M = {}
 
 
-local function remove_stale_objects(premature, log_buffer)
+local function remove_stale_objects(premature, log_buffer, status)
     if premature then
         return
     end
@@ -30,6 +30,7 @@ local function remove_stale_objects(premature, log_buffer)
             log_buffer[key] = nil
         end
     end
+    status = false
 end
 
 
