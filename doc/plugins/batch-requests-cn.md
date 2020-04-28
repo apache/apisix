@@ -41,7 +41,7 @@
 本插件默认启用。
 
 ## 批量接口请求/响应
-插件会为 `apisix` 创建一个 `/apisix/batch` 的接口来处理你的批量请求。
+插件会为 `apisix` 创建一个 `/apisix/batch-requests` 的接口来处理你的批量请求。
 
 ### 接口请求参数:
 
@@ -75,9 +75,9 @@
 
 ## 测试插件
 
-你可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
+你可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch-requests` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
 ```shell
-curl --location --request POST 'http://127.0.0.1:9080/apisix/batch' \
+curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
 --d '{
     "headers": {

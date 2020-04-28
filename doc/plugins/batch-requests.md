@@ -75,9 +75,9 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 
 ## Test Plugin
 
-You can pass your request detail to batch api( `/apisix/batch` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
+You can pass your request detail to batch api( `/apisix/batch-requests` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
 ```shell
-curl --location --request POST 'http://127.0.0.1:9080/apisix/batch' \
+curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
 --d '{
     "headers": {

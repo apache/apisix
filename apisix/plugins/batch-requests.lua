@@ -108,12 +108,12 @@ end
 local function check_input(data)
     local ok, err = core.schema.check(req_schema, data)
     if not ok then
-        return 400, {message = "bad request body", err = err}
+        return 400, {error_msg = "bad request body: " .. err}
     end
 end
 
 
-local function set_base_header(data)
+local function set_common_header(data)
     if not data.headers then
         return
     end
@@ -132,7 +132,7 @@ local function set_base_header(data)
 end
 
 
-local function set_base_query(data)
+local function set_common_query(data)
     if not data.query then
         return
     end
@@ -161,7 +161,7 @@ local function getFile(file_name)
 end
 
 
-local function aggregate()
+local function batch_requests()
     ngx.req.read_body()
     local req_body = ngx.req.get_body_data()
     if not req_body then
@@ -187,9 +187,13 @@ local function aggregate()
 
     local httpc = http.new()
     httpc:set_timeout(data.timeout)
-    httpc:connect("127.0.0.1", ngx.var.server_port)
-    set_base_header(data)
-    set_base_query(data)
+    local ok, err = httpc:connect("127.0.0.1", ngx.var.server_port)
+    if not ok then
+        core.response.exit(500, {message = "connect to apisix failed", err = err})
+    end
+
+    set_common_header(data)
+    set_common_query(data)
     local responses, err = httpc:request_pipeline(data.pipeline)
     if not responses then
         core.response.exit(400, {message = "request failed", err = err})
@@ -221,8 +225,8 @@ function _M.api()
     return {
         {
             methods = {"POST"},
-            uri = "/apisix/batch",
-            handler = aggregate,
+            uri = "/apisix/batch-requests",
+            handler = batch_requests,
         }
     }
 end

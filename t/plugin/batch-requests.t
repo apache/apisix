@@ -31,7 +31,7 @@ __DATA__
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                  ngx.HTTP_POST,
                  [=[{
                     "query": {
@@ -151,7 +151,7 @@ passed
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline1":[
@@ -178,7 +178,7 @@ passed
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"object matches none of the requireds: [\"pipeline\"]","message":"bad request body"}
+{"error_msg":"bad request body: object matches none of the requireds: [\"pipeline\"]"}
 --- no_error_log
 [error]
 
@@ -190,7 +190,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": "200",
@@ -218,7 +218,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"property \"timeout\" validation failed: wrong type: expected integer, got string","message":"bad request body"}
+{"error_msg":"bad request body: property \"timeout\" validation failed: wrong type: expected integer, got string"}
 --- no_error_log
 [error]
 
@@ -230,7 +230,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 2000,
@@ -299,7 +299,7 @@ passed
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 100,
@@ -367,7 +367,7 @@ timeout
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 100,
@@ -429,7 +429,7 @@ timeout
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 nil,
                 nil
@@ -455,7 +455,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 "invaild json string"
                 )
@@ -480,7 +480,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[
@@ -498,7 +498,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"path\" validation failed: string too short, expected at least 1, got 0","message":"bad request body"}
+{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"path\" validation failed: string too short, expected at least 1, got 0"}
 --- no_error_log
 [error]
 
@@ -510,7 +510,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[{
@@ -528,7 +528,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"method\" validation failed: matches non of the enum values","message":"bad request body"}
+{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"method\" validation failed: matches non of the enum values"}
 --- no_error_log
 [error]
 
@@ -540,7 +540,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[{
@@ -558,7 +558,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"version\" validation failed: matches non of the enum values","message":"bad request body"}
+{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"version\" validation failed: matches non of the enum values"}
 --- no_error_log
 [error]
 
@@ -570,7 +570,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[{
@@ -588,7 +588,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"property \"pipeline\" validation failed: failed to validate item 1: property \"ssl_verify\" validation failed: wrong type: expected boolean, got number","message":"bad request body"}
+{"error_msg":"bad request body: property \"pipeline\" validation failed: failed to validate item 1: property \"ssl_verify\" validation failed: wrong type: expected boolean, got number"}
 --- no_error_log
 [error]
 
@@ -600,7 +600,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "pipeline":[]
@@ -614,7 +614,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"property \"pipeline\" validation failed: expect array to have at least 1 items","message":"bad request body"}
+{"error_msg":"bad request body: property \"pipeline\" validation failed: expect array to have at least 1 items"}
 --- no_error_log
 [error]
 
@@ -627,7 +627,7 @@ GET /aggregate
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/batch',
+            local code, body = t('/apisix/batch-requests',
                 ngx.HTTP_POST,
                 [=[{
                     "timeout": 100,
