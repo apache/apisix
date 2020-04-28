@@ -158,7 +158,7 @@ GET /not_found
 
 
 
-=== TEST 4: hit routes
+=== TEST 6: hit routes
 --- request
 GET /hello
 --- response_body
@@ -168,7 +168,7 @@ hello world
 
 
 
-=== TEST 6: delete upstream(id: 1)
+=== TEST 7: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -193,7 +193,7 @@ GET /t
 
 
 
-=== TEST 7: delete route(id: 1)
+=== TEST 8: delete route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -217,7 +217,7 @@ GET /t
 
 
 
-=== TEST 8: delete upstream(id: 1)
+=== TEST 9: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +241,7 @@ GET /t
 
 
 
-=== TEST 9: delete upstream again(id: 1)
+=== TEST 10: delete upstream again(id: 1)
 --- config
     location /t {
         content_by_lua_block {
