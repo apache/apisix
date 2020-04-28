@@ -17,6 +17,7 @@
 local base_prometheus = require("resty.prometheus")
 local core      = require("apisix.core")
 local ipairs    = ipairs
+local ngx       = ngx
 local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
 local prometheus
