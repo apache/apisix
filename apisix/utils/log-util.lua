@@ -18,6 +18,21 @@ local core     = require("apisix.core")
 
 local _M = {}
 
+
+local function remove_stale_objects(premature, log_buffer)
+    if premature then
+        return
+    end
+
+    for key, batch in ipairs(log_buffer) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.debug("removing batch processor stale object, route id:" .. tostring(key))
+            log_buffer[key] = nil
+        end
+    end
+end
+
+
 local function get_full_log(ngx)
     local ctx = ngx.ctx.api_ctx
     local var = ctx.var
