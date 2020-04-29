@@ -131,14 +131,14 @@ function _M.rewrite(conf, ctx)
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
     end
-    local mutiple_origin, err = core.lrucache.plugin_ctx(plugin_name, ctx,
+    local multiple_origin, err = core.lrucache.plugin_ctx(plugin_name, ctx,
                                                 create_mutiple_origin_cache, conf)
     if err then
         return 500, {message = "get mutiple origin cache failed: " .. err}
     end
 
-    if mutiple_origin then
-        if mutiple_origin[req_origin] then
+    if multiple_origin then
+        if multiple_origin[req_origin] then
             allow_origins = req_origin
         else
             return
