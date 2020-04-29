@@ -81,6 +81,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - IPv6：支持使用 IPv6 格式匹配路由
     - 支持路由的[自动过期(TTL)](doc/admin-api-cn.md#route)
     - [支持路由的优先级](doc/router-radixtree.md#3-match-priority)
+    - [支持批量 Http 请求](doc/plugins/batch-requests-cn.md)
 
 - **安全防护**
     - 多种身份认证方式: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md), [basic-auth](doc/plugins/basic-auth-cn.md), [wolf-rbac](doc/plugins/wolf-rbac-cn.md)。

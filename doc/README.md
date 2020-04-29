@@ -64,6 +64,7 @@ Plugins
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
+* [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
 
 Deploy to the Cloud
 =======
