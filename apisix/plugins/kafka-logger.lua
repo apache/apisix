@@ -21,9 +21,11 @@ local batch_processor = require("apisix.utils.batch-processor")
 local pairs    = pairs
 local type     = type
 local table    = table
+local ipairs   = ipairs
 local plugin_name = "kafka-logger"
 local stale_timer_running = false;
 local timer_at = ngx.timer.at
+local tostring = tostring
 local ngx = ngx
 local buffers = {}
 
@@ -99,7 +101,8 @@ local function remove_stale_objects(premature)
 
     for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.debug("removing batch processor stale object, route id:" .. tostring(key))
+            core.log.debug("removing batch processor stale object,"  ..
+                           " route id:" .. tostring(key))
             buffers[key] = nil
         end
     end
