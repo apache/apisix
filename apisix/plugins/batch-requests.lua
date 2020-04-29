@@ -151,10 +151,12 @@ local function set_common_query(data)
 end
 
 
-local function getFile(file_name)
+local function get_file(file_name)
     local f = io_open(file_name, 'r')
     if f then
-        return f:read("*all")
+        local req_body = f:read("*all")
+        f:close()
+        return req_body
     end
 
     return
@@ -167,11 +169,13 @@ local function batch_requests()
     if not req_body then
         local file_name = ngx.req.get_body_file()
         if file_name then
-            req_body = getFile(file_name)
+            req_body = get_file(file_name)
         end
 
         if not req_body then
-            core.response.exit(400, {message = "no request body, you should give at least one pipeline setting"})
+            core.response.exit(400, {
+                message = "no request body, you should give at least one pipeline setting"
+            })
         end
     end
 
