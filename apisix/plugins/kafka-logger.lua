@@ -22,6 +22,8 @@ local pairs    = pairs
 local type     = type
 local table    = table
 local plugin_name = "kafka-logger"
+local stale_timer_running = false;
+local timer_at = ngx.timer.at
 local ngx = ngx
 local buffers = {}
 
@@ -90,6 +92,21 @@ local function send_kafka_data(conf, log_message)
 end
 
 
+local function remove_stale_objects(premature, log_buffer, status)
+    if premature then
+        return
+    end
+
+    for key, batch in ipairs(log_buffer) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.debug("removing batch processor stale object, route id:" .. tostring(key))
+            log_buffer[key] = nil
+        end
+    end
+    status = false
+end
+
+
 function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
 
@@ -99,6 +116,12 @@ function _M.log(conf)
     end
 
     local log_buffer = buffers[entry.route_id]
+
+    if not stale_timer_running then
+        -- run the timer every 30 mins if any log is present
+        timer_at(1800, remove_stale_objects, buffers, stale_timer_running)
+        stale_timer_running = true
+    end
 
     if log_buffer then
         log_buffer:push(entry)
