@@ -92,18 +92,19 @@ local function send_kafka_data(conf, log_message)
 end
 
 
-local function remove_stale_objects(premature, log_buffer, status)
+local function remove_stale_objects(premature)
     if premature then
         return
     end
 
-    for key, batch in ipairs(log_buffer) do
+    for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
             core.log.debug("removing batch processor stale object, route id:" .. tostring(key))
-            log_buffer[key] = nil
+            buffers[key] = nil
         end
     end
-    status = false
+
+    stale_timer_running = false
 end
 
 
@@ -119,7 +120,7 @@ function _M.log(conf)
 
     if not stale_timer_running then
         -- run the timer every 30 mins if any log is present
-        timer_at(1800, remove_stale_objects, buffers, stale_timer_running)
+        timer_at(1800, remove_stale_objects)
         stale_timer_running = true
     end
 
