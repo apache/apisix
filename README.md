@@ -81,6 +81,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - IPv6: Use IPv6 to match route.
     - Support [TTL](doc/admin-api-cn.md#route)
     - [Support priority](doc/router-radixtree.md#3-match-priority)
+    - [Support Batch Http Requests](doc/plugins/batch-requests.md)
 
 - **Security**
     - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md), [wolf-rbac](doc/plugins/wolf-rbac.md)
