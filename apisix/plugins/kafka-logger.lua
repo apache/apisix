@@ -17,14 +17,13 @@
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
+local batch_processor = require("apisix.utils.batch-processor")
 local pairs    = pairs
 local type     = type
 local table    = table
-
 local plugin_name = "kafka-logger"
 local ngx = ngx
-
-local timer_at = ngx.timer.at
+local buffers = {}
 
 local schema = {
     type = "object",
@@ -32,13 +31,15 @@ local schema = {
         broker_list = {
             type = "object"
         },
-        timeout = {   -- timeout in milliseconds
-            type = "integer", minimum = 1, default= 2000
-        },
         kafka_topic = {type = "string"},
-        async =  {type = "boolean", default = false},
         key = {type = "string"},
-        max_retry = {type = "integer", minimum = 0 , default = 3},
+        timeout = {type = "integer", minimum = 1, default = 3},
+        name = {type = "string", default = "kafka logger"},
+        max_retry_count = {type = "integer", minimum = 0, default = 0},
+        retry_delay = {type = "integer", minimum = 0, default = 1},
+        buffer_duration = {type = "integer", minimum = 1, default = 60},
+        inactive_timeout = {type = "integer", minimum = 1, default = 5},
+        batch_max_size = {type = "integer", minimum = 1, default = 1000},
     },
     required = {"broker_list", "kafka_topic", "key"}
 }
@@ -50,15 +51,13 @@ local _M = {
     schema = schema,
 }
 
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-local function log(premature, conf, log_message)
-    if premature then
-        return
-    end
 
+local function send_kafka_data(conf, log_message)
     if core.table.nkeys(conf.broker_list) == 0 then
         core.log.error("failed to identify the broker specified")
     end
@@ -68,7 +67,7 @@ local function log(premature, conf, log_message)
 
     for host, port  in pairs(conf.broker_list) do
         if type(host) == 'string'
-                and type(port) == 'number' then
+            and type(port) == 'number' then
 
             local broker = {
                 host = host, port = port
@@ -77,28 +76,70 @@ local function log(premature, conf, log_message)
         end
     end
 
-    broker_config["request_timeout"] = conf.timeout
-    broker_config["max_retry"] = conf.max_retry
-
-    --Async producers will queue logs and push them when the buffer exceeds.
-    if conf.async then
-        broker_config["producer_type"] = "async"
-    end
+    broker_config["request_timeout"] = conf.timeout * 1000
 
     local prod, err = producer:new(broker_list,broker_config)
     if err then
-        core.log.error("failed to identify the broker specified", err)
-        return
+        return nil, "failed to identify the broker specified: " .. err
     end
 
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     if not ok then
-        core.log.error("failed to send data to Kafka topic", err)
+        return nil, "failed to send data to Kafka topic" .. err
     end
 end
 
+
 function _M.log(conf)
-    return timer_at(0, log, conf, core.json.encode(log_util.get_full_log(ngx)))
+    local entry = log_util.get_full_log(ngx)
+
+    if not entry.route_id then
+        core.log.error("failed to obtain the route id for kafka logger")
+        return
+    end
+
+    local log_buffer = buffers[entry.route_id]
+
+    if log_buffer then
+        log_buffer:push(entry)
+        return
+    end
+
+    -- Generate a function to be executed by the batch processor
+    local func = function(entries, batch_max_size)
+        local data, err
+        if batch_max_size == 1 then
+            data, err = core.json.encode(entries[1]) -- encode as single {}
+        else
+            data, err = core.json.encode(entries) -- encode as array [{}]
+        end
+
+        if not data then
+            return false, 'error occurred while encoding the data: ' .. err
+        end
+
+        return send_kafka_data(conf, data)
+    end
+
+    local config = {
+        name = conf.name,
+        retry_delay = conf.retry_delay,
+        batch_max_size = conf.batch_max_size,
+        max_retry_count = conf.max_retry_count,
+        buffer_duration = conf.buffer_duration,
+        inactive_timeout = conf.inactive_timeout,
+    }
+
+    local err
+    log_buffer, err = batch_processor:new(func, config)
+
+    if not log_buffer then
+        core.log.error("error when creating the batch processor: ", err)
+        return
+    end
+
+    buffers[entry.route_id] = log_buffer
+    log_buffer:push(entry)
 end
 
 return _M
