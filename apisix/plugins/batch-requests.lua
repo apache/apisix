@@ -174,14 +174,16 @@ local function batch_requests()
 
         if not req_body then
             core.response.exit(400, {
-                message = "no request body, you should give at least one pipeline setting"
+                error_msg = "no request body, you should give at least one pipeline setting"
             })
         end
     end
 
     local data, err = core.json.decode(req_body)
     if not data then
-        core.response.exit(400, {message = "invalid request body", req_body = req_body, err = err})
+        core.response.exit(400, {
+            error_msg = "invalid request body: " .. req_body .. ", err: " .. err
+        })
     end
 
     local code, body = check_input(data)
@@ -193,31 +195,31 @@ local function batch_requests()
     httpc:set_timeout(data.timeout)
     local ok, err = httpc:connect("127.0.0.1", ngx.var.server_port)
     if not ok then
-        core.response.exit(500, {message = "connect to apisix failed", err = err})
+        core.response.exit(500, {error_msg = "connect to apisix failed: " .. err})
     end
 
     set_common_header(data)
     set_common_query(data)
     local responses, err = httpc:request_pipeline(data.pipeline)
     if not responses then
-        core.response.exit(400, {message = "request failed", err = err})
+        core.response.exit(400, {error_msg = "request failed: " .. err})
     end
 
     local aggregated_resp = {}
-    for i,r in ipairs(responses) do
-        if not r.status then
+    for _, resp in ipairs(responses) do
+        if not resp.status then
             core.table.insert(aggregated_resp, {
                 status = 504,
                 reason = "upstream timeout"
             })
         end
         local sub_resp = {
-            status  = r.status,
-            reason  = r.reason,
-            headers = r.headers,
+            status  = resp.status,
+            reason  = resp.reason,
+            headers = resp.headers,
         }
-        if r.has_body then
-            sub_resp.body = r:read_body()
+        if resp.has_body then
+            sub_resp.body = resp:read_body()
         end
         core.table.insert(aggregated_resp, sub_resp)
     end

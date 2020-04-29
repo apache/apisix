@@ -443,7 +443,7 @@ timeout
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"message":"no request body, you should give at least one pipeline setting"}
+{"error_msg":"no request body, you should give at least one pipeline setting"}
 --- no_error_log
 [error]
 
@@ -468,7 +468,7 @@ GET /aggregate
 GET /aggregate
 --- error_code: 400
 --- response_body
-{"err":"Expected value but found invalid token at character 1","req_body":"invaild json string","message":"invalid request body"}
+{"error_msg":"invalid request body: invaild json string, err: Expected value but found invalid token at character 1"}
 --- no_error_log
 [error]
 
