@@ -68,8 +68,15 @@ function _M.log(conf)
         return
     end
 
+    -- fetch api_ctx
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        core.log.error("invalid api_ctx cannot proceed with sys logger plugin")
+        return core.response.exit(500)
+    end
+
     -- fetch it from lrucache
-    local logger, err =  lrucache("127.0.0.1", "29999",
+    local logger, err =  lrucache(api_ctx.conf_type .. "#" .. api_ctx.conf_id, api_ctx.conf_version,
         logger_socket.new, logger_socket, {
             host = conf.host,
             port = conf.port,
