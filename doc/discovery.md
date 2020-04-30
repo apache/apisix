@@ -205,6 +205,40 @@ Server: APISIX web server
 {"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
+Because the upstream interface URL may have conflict, usually in the gateway by prefix to distinguish:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/a/*",
+    "plugins": {
+        "proxy-rewrite" : {
+            regex_uri: ["^/a/(.*)", "/${1}"]
+        }
+    }
+    "upstream": {
+        "service_name": "A-SERVICE",
+        "type": "roundrobin"
+    }
+}'
+
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/b/*",
+    "plugins": {
+        "proxy-rewrite" : {
+            regex_uri: ["^/b/(.*)", "/${1}"]
+        }
+    }
+    "upstream": {
+        "service_name": "B-SERVICE",
+        "type": "roundrobin"
+    }
+}'
+```
+
+Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configuration allows access to A-SERVICE's `/test` API through `/a/test` and B-SERVICE's `/test` API through `/b/test`.
+
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
 
 

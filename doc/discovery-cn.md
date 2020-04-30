@@ -213,6 +213,41 @@ Server: APISIX web server
 {"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
+因为上游的接口 URL 可能会有冲突，通常会在网关通过前缀来进行区分：
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/a/*",
+    "plugins": {
+        "proxy-rewrite" : {
+            regex_uri: ["^/a/(.*)", "/${1}"]
+        }
+    }
+    "upstream": {
+        "service_name": "A-SERVICE",
+        "type": "roundrobin"
+    }
+}'
+
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/b/*",
+    "plugins": {
+        "proxy-rewrite" : {
+            regex_uri: ["^/b/(.*)", "/${1}"]
+        }
+    }
+    "upstream": {
+        "service_name": "B-SERVICE",
+        "type": "roundrobin"
+    }
+}'
+```
+
+假如 A-SERVICE 和 B-SERVICE 都提供了一个 `/test` 的接口，通过上面的配置，可以通过 `/a/test` 访问 A-SERVICE 的 `/test` 接口，通过 `/b/test` 访问 B-SERVICE 的 `/test` 接口。
+
+
 **注意**：配置 `upstream.service_name` 后 `upstream.nodes` 将不再生效，而是使用从注册中心的数据来替换，即使注册中心的数据是空的。
 
 

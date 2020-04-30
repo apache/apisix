@@ -101,3 +101,31 @@ GET /eureka/apps/APISIX-EUREKA
 --- error_log eval
 qr/.*failed to pick server: no valid upstream node.*/
 
+
+=== TEST 3: with proxy-rewrite
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /eureka-test/*
+    plugins:
+      proxy-rewrite:
+        regex_uri: ["^/eureka-test/(.*)", "/${1}"]
+    upstream:
+      service_name: APISIX-EUREKA
+      type: roundrobin
+
+#END
+--- request
+GET /eureka-test/eureka/apps/APISIX-EUREKA
+--- response_body_like
+.*<name>APISIX-EUREKA</name>.*
+--- error_log
+use config_center: yaml
+default_weight:80.
+fetch_interval:10.
+eureka uri:http://127.0.0.1:8761/eureka/.
+connect_timeout:1500, send_timeout:1500, read_timeout:1500.
+--- no_error_log
+[error]
+
