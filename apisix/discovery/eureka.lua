@@ -75,13 +75,13 @@ local function service_info()
     local basic_auth
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
-    local user_and_password_idx = string_find(url, "@", 1, true)
-    if user_and_password_idx then
-        local protocol_header_idx = string_find(url, "://", 1, true)
-        local protocol_header = string_sub(url, 1, protocol_header_idx + 2)
-        local user_and_password = string_sub(url, protocol_header_idx + 3, user_and_password_idx - 1)
-        local other = string_sub(url, user_and_password_idx + 1)
-        url = protocol_header .. other
+    local auth_idx = string_find(url, "@", 1, true)
+    if auth_idx then
+        local protocol_idx = string_find(url, "://", 1, true)
+        local protocol = string_sub(url, 1, protocol_idx + 2)
+        local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
+        local other = string_sub(url, auth_idx + 1)
+        url = protocol .. other
         basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
     end
     if local_conf.eureka.prefix then
@@ -121,7 +121,8 @@ local function request(request_uri, basic_auth, method, path, query, body)
     local connect_timeout = timeout and timeout.connect or 2000
     local send_timeout = timeout and timeout.send or 2000
     local read_timeout = timeout and timeout.read or 5000
-    log.info("connect_timeout:", connect_timeout, ", send_timeout:", send_timeout, ", read_timeout:", read_timeout, ".")
+    log.info("connect_timeout:", connect_timeout, ", send_timeout:", send_timeout,
+            ", read_timeout:", read_timeout, ".")
     httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
     return httpc:request_uri(url, {
         version = 1.1,
