@@ -83,13 +83,13 @@ local function create_mutiple_origin_cache(conf)
     local origin_cache = {}
     local iterator, err = re_gmatch(conf.allow_origins, "([^,]+)", "jiox")
     if not iterator then
-        core.log.error("match origins failed: " .. err)
+        core.log.error("match origins failed: ", err)
         return nil
     end
     while true do
         local origin, err = iterator()
         if err then
-            core.log.error("iterate origins failed: " .. err)
+            core.log.error("iterate origins failed: ", err)
             return nil
         end
         if not origin then
