@@ -174,10 +174,10 @@ function _M.collect()
     local config = core.config.new()
     local version, err = config:server_version()
     if version then
-        metrics.etcd_reachable:set(1, app_name_label_name)
+        metrics.etcd_reachable:set(1, core.name)
 
     else
-        metrics.etcd_reachable:set(0, app_name_label_name)
+        metrics.etcd_reachable:set(0, core.name)
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
     end

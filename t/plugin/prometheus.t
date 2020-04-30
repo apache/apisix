@@ -121,7 +121,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like
-apisix_etcd_reachable 1
+apisix_etcd_reachable{application_name="APISIX"} 1
 --- no_error_log
 [error]
 
@@ -151,7 +151,7 @@ apisix_etcd_reachable 1
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="",node="127.0.0.1",application_name="APISIX"\} \d+/
 --- no_error_log
 [error]
 
@@ -293,7 +293,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="",node="127.0.0.1",application_name="APISIX"\} \d+/
 --- no_error_log
 [error]
 
@@ -303,7 +303,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",node="127.0.0.1"\} \d+/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_count\{type="request",service="",node="127.0.0.1"\} \d+/
+qr/apisix_http_latency_count\{type="request",service="",node="127.0.0.1",application_name="APISIX"\} \d+/
 --- no_error_log
 [error]
 
@@ -386,7 +386,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="2",service="1",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="2",service="1",node="127.0.0.1",application_name="APISIX"\} \d+/
 --- no_error_log
 [error]
 
@@ -521,7 +521,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="3",service="",node="127.0.0.1"\} 2/
+qr/apisix_http_status\{code="404",route="3",service="",node="127.0.0.1",application_name="APISIX"\} 2/
 --- no_error_log
 [error]
 
