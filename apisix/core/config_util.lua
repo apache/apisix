@@ -14,26 +14,31 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local assert = assert
-local type = type
 local setmetatable = setmetatable
-local math = math
+local type = type
 
 
 local _M = {}
-local mt = { __index = _M }
 
-function _M.new(conf)
-    local sample_ratio = conf.sample_ratio
-    assert(type(sample_ratio) == "number" and
-        sample_ratio >= 0 and sample_ratio <= 1, "invalid sample_ratio")
-    return setmetatable({
-        sample_ratio = sample_ratio
-	}, mt)
+
+local function _iterate_values(self, tab)
+    while true do
+        self.idx = self.idx + 1
+        local v = tab[self.idx]
+        if type(v) == "table" then
+            return self.idx, v
+        end
+        if v == nil then
+            return nil, nil
+        end
+        -- skip the tombstone
+    end
 end
 
-function _M.sample(self)
-    return math.random() < self.sample_ratio
+
+function _M.iterate_values(tab)
+    local iter = setmetatable({idx = 0}, {__call = _iterate_values})
+    return iter, tab, 0
 end
 
 

@@ -285,6 +285,7 @@ local function sync_data(self)
         end
 
     elseif res.value then
+        res.clean_handlers = {}
         insert_tab(self.values, res)
         self.values_hash[key] = #self.values
         res.value.id = key

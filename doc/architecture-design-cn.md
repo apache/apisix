@@ -238,7 +238,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |名字    |可选|说明|
 |-------         |-----|------|
 |type            |必填|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
-|nodes           |必填|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80` 等。value 则是节点的权重。当权重值为 `0` 代表该上游节点失效，不会被选中，可以用于暂时摘除节点的情况。|
+|nodes           |与 `k8s_deployment_info` 二选一|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80` 等。value 则是节点的权重。当权重值为 `0` 代表该上游节点失效，不会被选中，可以用于暂时摘除节点的情况。|
+|k8s_deployment_info|与 `nodes` 二选一|哈希表|字段包括 `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`，其中 `port` 字段为数值，`backend_type` 为 `pod` 或 `service`，其他为字符串 |
 |key             |可选|在 `type` 等于 `chash` 是必选项。 `key` 需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`|
 |hash_on         |可选|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
@@ -259,10 +260,12 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "roundrobin",
-    "nodes": {
-        "127.0.0.1:80": 1,
-        "127.0.0.2:80": 2,
-        "foo.com:80": 3
+    "k8s_deployment_info": {
+        "namespace": "test-namespace",
+        "deploy_name": "test-deploy-name",
+        "service_name": "test-service-name",
+        "backend_type": "pod",
+        "port": 8080
     }
 }'
 

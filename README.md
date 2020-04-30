@@ -81,6 +81,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - IPv6: Use IPv6 to match route.
     - Support [TTL](doc/admin-api-cn.md#route)
     - [Support priority](doc/router-radixtree.md#3-match-priority)
+    - [Support Batch Http Requests](doc/plugins/batch-requests.md)
 
 - **Security**
     - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md), [wolf-rbac](doc/plugins/wolf-rbac.md)
@@ -146,21 +147,25 @@ APISIX has built-in support for Dashboard, as follows:
 
 1. Please make sure your machine has the latest Node.js(10 or higher), or there will occur build issues.
 
-2. Download the source codes of [Dashboard](https://github.com/apache/incubator-apisix-dashboard):
+2. Download the source codes of dashboard submodule:
 ```
-git clone https://github.com/apache/incubator-apisix-dashboard.git
+git submodule update --init --recursive
 ```
 
 3. Install [yarn](https://yarnpkg.com/en/docs/install)
 
 4. Install dependencies then run build command:
 ```
-git checkout <v1.0> #The tag version same to apisix.
+cd dashboard
 yarn && yarn build:prod
 ```
 
 5. Integration with APISIX
 Copy the compiled files under `/dist` directory to the `apisix/dashboard` directory,
+```
+cp -r dist/* .
+```
+
 open `http://127.0.0.1:9080/apisix/dashboard/` in the browser.
 Do not need to fill the user name and password, log in directly.
 

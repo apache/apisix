@@ -18,6 +18,11 @@ local resty_http = require "resty.http"
 local to_hex = require "resty.string".to_hex
 local cjson = require "cjson".new()
 cjson.encode_number_precision(16)
+local assert = assert
+local type = type
+local setmetatable = setmetatable
+local math = math
+local tostring = tostring
 
 
 local _M = {}

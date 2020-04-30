@@ -81,6 +81,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - IPv6：支持使用 IPv6 格式匹配路由
     - 支持路由的[自动过期(TTL)](doc/admin-api-cn.md#route)
     - [支持路由的优先级](doc/router-radixtree.md#3-match-priority)
+    - [支持批量 Http 请求](doc/plugins/batch-requests-cn.md)
 
 - **安全防护**
     - 多种身份认证方式: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md), [basic-auth](doc/plugins/basic-auth-cn.md), [wolf-rbac](doc/plugins/wolf-rbac-cn.md)。
@@ -147,21 +148,25 @@ APISIX 内置了对 Dashboard 的支持，使用步骤如下：
 
 1. 确保你的运行环境中使用了最新的 Node.js 版本（>= 10）。
 
-2. 下载 [Dashboard](https://github.com/apache/incubator-apisix-dashboard) 的源码：
+2. 下载 dashboard 子模块的源码：
 ```
-git clone https://github.com/apache/incubator-apisix-dashboard.git
+git submodule update --init --recursive
 ```
 
 3. 安装 [yarn](https://yarnpkg.com/zh-Hans/docs/install)
 
 4. 安装依赖并构建
 ```
-git checkout <v1.0>  #这里的tag版本和你使用的apisix版本一致
+cd dashboard
 yarn && yarn build:prod
 ```
 
 5. 与 APISIX 集成
 把编译后的在 `/dist` 目录下的所有文件，拷贝到 `apisix/dashboard` 目录下。
+```
+cp -r dist/* .
+```
+
 使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
 不用填写用户名和密码，直接登录。
 
