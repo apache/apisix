@@ -69,6 +69,7 @@ GET /t
 --- response_body
 test-gateway
 --- error_log
-config etcd prefix /test-gateway
+config etcd prefix /test-gateway,
+etcd prefix /test-gateway,
 --- no_error_log
 [error]
