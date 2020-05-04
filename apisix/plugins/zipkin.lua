@@ -33,8 +33,7 @@ local schema = {
         sample_ratio = {type = "number", minimum = 0.00001, maximum = 1},
         service_name = {
             type = "string",
-            description = "service name for zipkin reporter",
-            default = "APISIX",
+            description = "service name for zipkin reporter"
         },
         server_addr = {
             type = "string",

@@ -380,7 +380,10 @@ function _M.new(key, opts)
     end
 
     local etcd_conf = clone_tab(local_conf.etcd)
-    local prefix = etcd_conf.prefix or (local_conf.apisix.name and '/' .. local_conf.apisix.name) or "/apisix"
+    local prefix = etcd_conf.prefix
+            or (local_conf.apisix.name and '/' .. local_conf.apisix.name)
+            or "/apisix"
+    log.info("config etcd prefix ", prefix)
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil

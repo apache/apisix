@@ -17,6 +17,7 @@
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local etcd = require("resty.etcd")
 local clone_tab = require("table.clone")
+local log = require("apisix.core.log")
 
 local _M = {version = 0.1}
 
@@ -28,7 +29,10 @@ local function new()
     end
 
     local etcd_conf = clone_tab(local_conf.etcd)
-    local prefix = etcd_conf.prefix or (local_conf.apisix.name and '/' .. local_conf.apisix.name) or "/apisix"
+    local prefix = etcd_conf.prefix
+            or (local_conf.apisix.name and '/' .. local_conf.apisix.name)
+            or "/apisix"
+    log.info("etcd prefix ", prefix)
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil

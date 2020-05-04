@@ -30,7 +30,20 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
-run_tests;
+
+sub read_file($) {
+    my $infile = shift;
+    open my $in, $infile
+        or die "cannot open $infile for reading: $!";
+    my $cert = do { local $/; <$in> };
+    close $in;
+    $cert;
+}
+
+our $yaml_config = read_file("conf/config.yaml");
+$yaml_config =~ s/name: APISIX/name: test-gateway/;
+
+run_tests();
 
 __DATA__
 
@@ -661,5 +674,14 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+=== TEST 32: change application_name
+--- yaml_config eval: $::yaml_config
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like
+apisix_etcd_reachable{application_name="test-gateway"} 1
 --- no_error_log
 [error]

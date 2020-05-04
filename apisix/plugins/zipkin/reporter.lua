@@ -44,6 +44,7 @@ function _M.new(conf)
     local server_port = conf.server_port
     local server_addr = conf.server_addr
     assert(type(endpoint) == "string", "invalid http endpoint")
+    core.log.info("the service name of zipkin:", service_name)
     return setmetatable({
         endpoint = endpoint,
         service_name = service_name,
