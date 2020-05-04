@@ -19,7 +19,6 @@ local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local tostring = tostring
 local ipairs = ipairs
-local tonumber = tonumber
 local type = type
 
 
@@ -99,15 +98,18 @@ local function check_conf(id, conf, need_id)
     if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
         return nil, {error_msg = "wrong upstream id"}
     end
+
+    -- let schema check id
+    if id and not conf.id then
+        conf.id = id
+    end
+
     core.log.info("schema: ", core.json.delay_encode(core.schema.upstream))
     core.log.info("conf  : ", core.json.delay_encode(conf))
+
     local ok, err = check_upstream_conf(conf)
     if not ok then
         return nil, {error_msg = err}
-    end
-
-    if need_id and not tonumber(id) then
-        return nil, {error_msg = "wrong type of service id"}
     end
 
     return need_id and id or true

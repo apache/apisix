@@ -24,6 +24,7 @@
 开启 Stand-alone 模式的 APISIX 节点，将不再使用默认的 etcd 作为配置中心。
 
 这种方式比较适合两类用户：
+
 1. kubernetes(k8s)：声明式 API 场景，通过全量 yaml 配置来动态更新修改路由规则。
 2. 不同配置中心：配置中心的实现有很多，比如 Consule 等，使用全量 yaml 做中间转换桥梁。
 
@@ -48,7 +49,6 @@ apisix:
 此外由于目前 Admin API 都是基于 etcd 配置中心解决方案，当开启 Stand-alone 模式后，
 Admin API 实际将不起作用。
 
-
 ## 如何配置规则
 
 所有的路由规则均存放在 `conf/apisix.yaml` 这一个文件中，APISIX 会以每秒（默认）频率检查文件是否有变化，如果有变化，则会检查文件末尾是否能找到 `#END` 结尾，找到后则重新加载文件更新到内存。
@@ -68,7 +68,7 @@ routes:
 
 *注意*：如果`conf/apisix.yaml`末尾不能找到 `#END`，那么 APISIX 将不会加载这个文件规则到内存。
 
-#### 配置 Router
+### 配置 Router
 
 单个 Router：
 
@@ -102,8 +102,7 @@ routes:
 #END
 ```
 
-
-#### 配置 Router + Service
+### 配置 Router + Service
 
 ```yml
 routes:
@@ -120,7 +119,7 @@ services:
 #END
 ```
 
-#### 配置 Router + Upstream
+### 配置 Router + Upstream
 
 ```yml
 routes:

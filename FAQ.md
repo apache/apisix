@@ -160,3 +160,15 @@ https://developer.apple.com/download/more/.
 This is an OS incompatible issue, you could fix by these two steps
 1. `brew edit openresty/brew/openresty`
 1. add `\ -fno-stack-check` in with-luajit-xcflags line.
+
+## How to change the log level?
+
+The default log level for APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
+
+Steps:
+
+1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
+
+2. Restart APISIX
+
+Now you can trace the info level log in logs/error.log.

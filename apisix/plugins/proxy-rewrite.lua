@@ -97,6 +97,15 @@ function _M.check_schema(conf)
                 if #field == 0 then
                     return false, 'invalid field length in header'
                 end
+
+                core.log.info("header field: ", field)
+
+                if not core.utils.validate_header_field(field) then
+                    return false, 'invalid field character in header'
+                end
+                if not core.utils.validate_header_value(value) then
+                    return false, 'invalid value character in header'
+                end
                 core.table.insert(conf.headers_arr, field)
                 core.table.insert(conf.headers_arr, value)
             else
@@ -143,6 +152,8 @@ function _M.rewrite(conf, ctx)
             return 500, {message = msg}
         end
     end
+
+    upstream_uri = core.utils.uri_safe_encode(upstream_uri)
 
     if ctx.var.is_args == "?" then
         ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")

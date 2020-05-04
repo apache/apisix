@@ -14,6 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local assert = assert
+local type = type
+local setmetatable = setmetatable
+local math = math
+
+
 local _M = {}
 local mt = { __index = _M }
 

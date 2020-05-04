@@ -14,37 +14,31 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
-local jsonschema = require('jsonschema')
-local lrucache = require("apisix.core.lrucache")
-local cached_validator = lrucache.new({count = 1000, ttl = 0})
-local pcall = pcall
-
-local _M = {version = 0.3}
+local setmetatable = setmetatable
+local type = type
 
 
-local function create_validator(schema)
-    -- local code = jsonschema.generate_validator_code(schema, opts)
-    -- local file2=io.output("/tmp/2.txt")
-    -- file2:write(code)
-    -- file2:close()
-    local ok, res = pcall(jsonschema.generate_validator, schema)
-    if ok then
-        return res
+local _M = {}
+
+
+local function _iterate_values(self, tab)
+    while true do
+        self.idx = self.idx + 1
+        local v = tab[self.idx]
+        if type(v) == "table" then
+            return self.idx, v
+        end
+        if v == nil then
+            return nil, nil
+        end
+        -- skip the tombstone
     end
-
-    return nil, res -- error message
 end
 
 
-function _M.check(schema, json)
-    local validator, err = cached_validator(schema, nil,
-                                create_validator, schema)
-    if not validator then
-        return false, err
-    end
-
-    return validator(json)
+function _M.iterate_values(tab)
+    local iter = setmetatable({idx = 0}, {__call = _iterate_values})
+    return iter, tab, 0
 end
 
 
