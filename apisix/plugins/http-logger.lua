@@ -17,7 +17,7 @@
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local batch_processor = require("apisix.utils.batch-processor")
-local plugin_name = "udp-logger"
+local plugin_name = "http-logger"
 local ngx = ngx
 local tostring = tostring
 local http = require "resty.http"

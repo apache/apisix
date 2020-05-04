@@ -51,23 +51,20 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 The following is an example on how to enable the http-logger for a specific route.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "foo",
-    "plugins": {
-          "plugins": {
-                "http-logger": {
-                     "uri": "127.0.0.1:80/postendpoint?param=1",
-                }
-           },
-          "upstream": {
-               "type": "roundrobin",
-               "nodes": {
-                   "127.0.0.1:1980": 1
-               }
-          },
-          "uri": "/hello"
-    }
+      "plugins": {
+            "http-logger": {
+                 "uri": "127.0.0.1:80/postendpoint?param=1",
+            }
+       },
+      "upstream": {
+           "type": "roundrobin",
+           "nodes": {
+               "127.0.0.1:1980": 1
+           }
+      },
+      "uri": "/hello"
 }'
 ```
 
