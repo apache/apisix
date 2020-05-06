@@ -26,7 +26,12 @@ local require = require
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local events
-local unpack_tab = table.unpack
+local unpack_tab
+do
+    local tab = {} and table
+    unpack_tab = tab.unpack -- can not use `table.unpack` directly, luacheck
+                            -- will show warning message
+end
 
 
 local viewer_methods = {
