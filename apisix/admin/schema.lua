@@ -16,7 +16,6 @@
 --
 
 local core = require("apisix.core")
-local plugins = require("apisix.admin.plugins")
 
 
 local _M = {}
@@ -29,7 +28,7 @@ function _M.get(name)
         return 200, json_schema
     end
 
-    return plugins.get(name)
+    return 400, {error_msg = "not found schema"}
 end
 
 

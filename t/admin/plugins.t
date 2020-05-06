@@ -74,3 +74,113 @@ GET /apisix/admin/plugins/heartbeat
 {"additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: get plugin limit-count schema
+--- request
+GET /apisix/admin/plugins/limit-count
+--- response_body eval
+qr/"required":\["count","time_window","key","rejected_code"]/
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: serverless-pre-function
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/plugins/serverless-pre-function',
+            ngx.HTTP_GET,
+            nil,
+            [[{
+                "properties": {
+                    "phase": {
+                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "type": "string"
+                    },
+                    "functions": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": ["functions"],
+                "type": "object"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: serverless-post-function
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/plugins/serverless-post-function',
+            ngx.HTTP_GET,
+            nil,
+            [[{
+                "properties": {
+                    "phase": {
+                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "type": "string"
+                    },
+                    "functions": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": ["functions"],
+                "type": "object"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: get plugin udp-logger schema
+--- request
+GET /apisix/admin/plugins/udp-logger
+--- response_body  eval
+qr/{"properties":/
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: get plugin grpc-transcode schema
+--- request
+GET /apisix/admin/plugins/grpc-transcode
+--- response_body eval
+qr/"proto_id".*additionalProperties/
+--- no_error_log
+[error]

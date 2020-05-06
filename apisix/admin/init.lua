@@ -43,6 +43,7 @@ local resources_http = {
     ssl             = require("apisix.admin.ssl"),
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
+    plugins         = require("apisix.admin.plugins"),
 }
 
 
