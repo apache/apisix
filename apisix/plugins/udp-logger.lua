@@ -57,7 +57,8 @@ local function send_udp_data(conf, log_message)
     local ok, err = sock:setpeername(conf.host, conf.port)
 
     if not ok then
-        return nil, "failed to connect to UDP server: host[" .. conf.host
+        res = false
+        err_msg = "failed to connect to UDP server: host[" .. conf.host
                     .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 
@@ -70,8 +71,9 @@ local function send_udp_data(conf, log_message)
 
     ok, err = sock:close()
     if not ok then
-        core.log.error("failed to close the UDP connection, host[",
-                        conf.host, "] port[", conf.port, "] ", err)
+        res = false
+        err_msg = "failed to close the UDP connection, host[",
+                        conf.host, "] port[", conf.port, "] " .. err
     end
 
     return res, err_msg

@@ -58,6 +58,8 @@ end
 
 
 local function send_kafka_data(conf, log_message)
+    local err_msg
+    local res = true
     if core.table.nkeys(conf.broker_list) == 0 then
         core.log.error("failed to identify the broker specified")
     end
@@ -80,13 +82,17 @@ local function send_kafka_data(conf, log_message)
 
     local prod, err = producer:new(broker_list,broker_config)
     if err then
-        return nil, "failed to identify the broker specified: " .. err
+        res = false
+        err_msg = "failed to identify the broker specified: " .. err
     end
 
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     if not ok then
-        return nil, "failed to send data to Kafka topic" .. err
+        res = false
+        err_msg = "failed to send data to Kafka topic" .. err
     end
+
+    return res, err_msg
 end
 
 
