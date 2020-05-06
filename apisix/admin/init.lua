@@ -26,6 +26,7 @@ local require = require
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local events
+local unpack_tab = table.unpack
 
 
 local viewer_methods = {
@@ -33,7 +34,7 @@ local viewer_methods = {
 }
 
 
-local resources = {
+local resources_http = {
     routes          = require("apisix.admin.routes"),
     services        = require("apisix.admin.services"),
     upstreams       = require("apisix.admin.upstreams"),
@@ -43,7 +44,11 @@ local resources = {
     plugins         = require("apisix.admin.plugins"),
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
-    stream_routes   = require("apisix.admin.stream_routes"),
+}
+
+
+local resources_stream = {
+    routes   = require("apisix.admin.stream_routes"),
 }
 
 
@@ -85,29 +90,15 @@ local function check_token(ctx)
 end
 
 
-local function run()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401)
-    end
-
-    local uri_segs = core.utils.split_uri(ngx.var.uri)
+local function run_http(uri_segs)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
 
-    -- /apisix/admin/schema/route
-    local seg_res, seg_id = uri_segs[4], uri_segs[5]
-    local seg_sub_path = core.table.concat(uri_segs, "/", 6)
-    if seg_res == "schema" and seg_id == "plugins" then
-        -- /apisix/admin/schema/plugins/limit-count
-        seg_res, seg_id = uri_segs[5], uri_segs[6]
-        seg_sub_path = core.table.concat(uri_segs, "/", 7)
-    end
+    -- /apisix/admin/:workspace/http/routes/1
+    -- /apisix/admin/:workspace/http/schema/limit-count
+    local seg_res, seg_id = uri_segs[6], uri_segs[7]
+    local seg_sub_path = core.table.concat(uri_segs, "/", 8)
 
-    local resource = resources[seg_res]
+    local resource = resources_http[seg_res]
     if not resource then
         core.response.exit(404)
     end
@@ -147,10 +138,7 @@ local function run()
 end
 
 
-local function run_stream()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-
+local function run_stream(uri_segs)
     local local_conf = core.config.local_conf()
     if not local_conf.apisix.stream_proxy then
         core.log.warn("stream mode is disabled, can not to add any stream ",
@@ -158,25 +146,14 @@ local function run_stream()
         core.response.exit(400)
     end
 
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401)
-    end
-
-    local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
 
-    -- /apisix/admin/schema/route
-    local seg_res, seg_id = uri_segs[4], uri_segs[5]
-    local seg_sub_path = core.table.concat(uri_segs, "/", 6)
-    if seg_res == "schema" and seg_id == "plugins" then
-        -- /apisix/admin/schema/plugins/limit-count
-        seg_res, seg_id = uri_segs[5], uri_segs[6]
-        seg_sub_path = core.table.concat(uri_segs, "/", 7)
-    end
+    -- /apisix/admin/:workspace/stream/routes/1
+    -- /apisix/admin/:workspace/stream/schema/limit-count
+    local seg_res, seg_id = uri_segs[6], uri_segs[7]
+    local seg_sub_path = core.table.concat(uri_segs, "/", 8)
 
-    local resource = resources[seg_res]
+    local resource = resources_stream[seg_res]
     if not resource then
         core.response.exit(404)
     end
@@ -226,7 +203,7 @@ local function get_plugins_list()
         core.response.exit(401)
     end
 
-    local plugins = resources.plugins.get_plugins_list()
+    local plugins = resources_http.plugins.get_plugins_list()
     core.response.exit(200, plugins)
 end
 
@@ -256,6 +233,63 @@ local function reload_plugins(data, event, source, pid)
 end
 
 
+-- /apisix/admin/routes
+-- /apisix/admin/routes/1
+-- /apisix/admin/http/routes
+-- /apisix/admin/http/routes/1
+-- /apisix/admin/:workspace/http/routes
+-- /apisix/admin/:workspace/http/routes/1
+local valid_models = {
+    http = true,
+    stream = true,
+}
+
+local function run()
+    local api_ctx = {}
+    core.ctx.set_vars_meta(api_ctx)
+
+    local ok, err = check_token(api_ctx)
+    if not ok then
+        core.log.warn("failed to check token: ", err)
+        core.response.exit(401)
+    end
+
+    local uri_segs = core.utils.split_uri(ngx.var.uri)
+    core.log.info("uri: ", core.json.delay_encode(uri_segs))
+
+    -- /apisix/admin/routes
+    if #uri_segs == 4 then
+        uri_segs = {"", "apisix", "admin", "", "http", unpack_tab(uri_segs, 4)}
+
+    elseif #uri_segs == 5 then
+        -- /apisix/admin/routes/1
+        -- /apisix/admin/http/routes
+        if valid_models[uri_segs[4]] then
+            uri_segs = {"", "apisix", "admin", "", unpack_tab(uri_segs, 4)}
+        else
+            uri_segs = {"", "apisix", "admin", "", "http", unpack_tab(uri_segs, 4)}
+        end
+
+    elseif #uri_segs == 6 then
+
+        -- /apisix/admin/http/routes/1
+        -- /apisix/admin/:workspace/http/routes
+        if valid_models[uri_segs[4]] then
+            uri_segs = {"", "apisix", "admin", "", unpack_tab(uri_segs, 4)}
+        else
+            uri_segs = {"", "apisix", "admin", unpack_tab(uri_segs, 4)}
+        end
+    end
+
+    local model = uri_segs[5] or "http"
+    if model == "http" then
+        return run_http(uri_segs)
+    end
+
+    return run_stream(uri_segs)
+end
+
+
 local uri_route = {
     {
         paths = [[/apisix/admin/*]],
@@ -263,16 +297,15 @@ local uri_route = {
         handler = run,
     },
     {
-        paths = [[/apisix/admin/stream_routes*]],
-        methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
-        handler = run_stream,
-    },
-    {
-        paths = [[/apisix/admin/plugins/list]],
-        methods = {"GET", "PUT", "POST", "DELETE"},
+        paths = {
+            [[/apisix/admin/plugins/list]],
+            [[/apisix/admin/http/plugins/list]],
+        },
+        methods = {"GET"},
         handler = get_plugins_list,
     },
     {
+        -- "/apisix/admin/plugins/reload"
         paths = reload_event,
         methods = {"PUT"},
         handler = post_reload_plugins,

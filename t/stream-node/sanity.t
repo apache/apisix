@@ -28,7 +28,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
@@ -72,7 +72,7 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.2",
@@ -113,7 +113,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_DELETE
             )
 
@@ -137,7 +137,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",

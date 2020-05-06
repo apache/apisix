@@ -31,7 +31,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
@@ -55,7 +55,7 @@ __DATA__
                             },
                             "desc": "new route"
                         },
-                        "key": "/apisix/stream_routes/1"
+                        "key": "/apisix/stream/routes/1"
                     },
                     "action": "set"
                 }]]
@@ -79,7 +79,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                  ngx.HTTP_GET,
                  nil,
                 [[{
@@ -94,7 +94,7 @@ passed
                             },
                             "desc": "new route"
                         },
-                        "key": "/apisix/stream_routes/1"
+                        "key": "/apisix/stream/routes/1"
                     },
                     "action": "get"
                 }]]
@@ -118,7 +118,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/stream_routes/1',
+            local code, message = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_DELETE,
                 nil,
                 [[{
@@ -142,7 +142,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/stream_routes',
+            local code, message, res = t('/apisix/admin/stream/routes',
                 ngx.HTTP_POST,
                 [[{
                     "remote_addr": "127.0.0.1",
@@ -179,8 +179,8 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/stream_routes/" + 1)
-            code, message = t('/apisix/admin/stream_routes/' .. id,
+            local id = string.sub(res.node.key, #"/apisix/stream/routes/" + 1)
+            code, message = t('/apisix/admin/stream/routes/' .. id,
                 ngx.HTTP_DELETE,
                 nil,
                 [[{
@@ -205,7 +205,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
@@ -242,7 +242,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
+            local code, body = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
@@ -281,7 +281,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/stream_routes/1',
+            local code, message = t('/apisix/admin/stream/routes/1',
                 ngx.HTTP_DELETE,
                 nil,
                 [[{
