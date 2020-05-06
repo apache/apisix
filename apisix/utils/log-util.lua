@@ -61,6 +61,7 @@ local function get_full_log(ngx, conf)
         log.request.body = ngx.req.get_body_data()
     end
 
+    return log
 end
 
 _M.get_full_log = get_full_log
