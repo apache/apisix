@@ -256,28 +256,20 @@ local function run()
     local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
 
-    -- /apisix/admin/routes
-    if #uri_segs == 4 then
+    local typ = uri_segs[4]
+    if resources_http[typ] then
+        -- /apisix/admin/routes
         uri_segs = {"", "apisix", "admin", "", "http", unpack_tab(uri_segs, 4)}
 
-    elseif #uri_segs == 5 then
-        -- /apisix/admin/routes/1
+    elseif valid_models[typ] then
         -- /apisix/admin/http/routes
-        if valid_models[uri_segs[4]] then
-            uri_segs = {"", "apisix", "admin", "", unpack_tab(uri_segs, 4)}
-        else
-            uri_segs = {"", "apisix", "admin", "", "http", unpack_tab(uri_segs, 4)}
-        end
+        -- /apisix/admin/stream/routes/1
+        uri_segs = {"", "apisix", "admin", "", unpack_tab(uri_segs, 4)}
 
-    elseif #uri_segs == 6 then
-
-        -- /apisix/admin/http/routes/1
+    else
         -- /apisix/admin/:workspace/http/routes
-        if valid_models[uri_segs[4]] then
-            uri_segs = {"", "apisix", "admin", "", unpack_tab(uri_segs, 4)}
-        else
-            uri_segs = {"", "apisix", "admin", unpack_tab(uri_segs, 4)}
-        end
+        -- /apisix/admin/:workspace/stream/routes
+        uri_segs = {"", "apisix", "admin", unpack_tab(uri_segs, 4)}
     end
 
     local model = uri_segs[5] or "http"
