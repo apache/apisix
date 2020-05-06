@@ -29,10 +29,12 @@ local schema = {
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
         sock_type = {type = "string", default = "tcp"},
-        max_retry_times = {type = "integer", minimum = 1, default = 3},
-        retry_interval = {type = "integer", minimum = 10, default = 100},
+        max_retry_times = {type = "integer", minimum = 1, default = 1},
+        retry_interval = {type = "integer", minimum = 0, default = 1},
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
+        batch_max_size = {type = "integer", minimum = 1, default = 1000},
+        buffer_duration = {type = "integer", minimum = 1, default = 60},
     },
     required = {"host", "port"}
 }
@@ -68,11 +70,34 @@ function _M.log(conf)
         return
     end
 
+    local log_buffer = buffers[entry.route_id]
+
+    if log_buffer then
+        log_buffer:push(entry)
+        return
+    end
+
     -- fetch api_ctx
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         core.log.error("invalid api_ctx cannot proceed with sys logger plugin")
         return core.response.exit(500)
+    end
+
+    -- Generate a function to be executed by the batch processor
+    local func = function(entries, batch_max_size)
+        local data, err
+        if batch_max_size == 1 then
+            data, err = core.json.encode(entries[1]) -- encode as single {}
+        else
+            data, err = core.json.encode(entries) -- encode as array [{}]
+        end
+
+        if not data then
+            return false, 'error occurred while encoding the data: ' .. err
+        end
+
+        return send_kafka_data(conf, data)
     end
 
     -- fetch it from lrucache
