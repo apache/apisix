@@ -50,6 +50,7 @@ dependencies = {
     "jsonschema = 0.8",
     "lua-resty-ipmatcher = 0.6",
     "lua-resty-kafka = 0.07",
+    "lua-resty-logger-socket = 2.0-0",
 }
 
 build = {
