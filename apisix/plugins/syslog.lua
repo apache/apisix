@@ -16,15 +16,21 @@
 --
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
+local batch_processor = require("apisix.utils.batch-processor")
 local logger_socket = require("resty.logger.socket")
+local pairs    = pairs
+local type     = type
+local table    = table
 local plugin_name = "syslog"
 local ngx = ngx
+local buffers = {}
 
 local schema = {
     type = "object",
     properties = {
         host = {type = "string"},
         port = {type = "integer"},
+        name = {type = "string", default = "sys logger"},
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -61,6 +67,47 @@ function _M.flush_syslog(logger)
     end
 end
 
+local function send_syslog_data(conf, log_message)
+    local err_msg
+    local res = true
+
+    -- fetch api_ctx
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        core.log.error("invalid api_ctx cannot proceed with sys logger plugin")
+        return core.response.exit(500)
+    end
+
+    -- fetch it from lrucache
+    local logger, err =  lrucache(api_ctx.conf_type .. "#" .. api_ctx.conf_id, api_ctx.conf_version,
+            logger_socket.new, logger_socket, {
+                host = conf.host,
+                port = conf.port,
+                flush_limit = conf.flush_limit,
+                drop_limit = conf.drop_limit,
+                timeout = conf.timeout,
+                sock_type = conf.sock_type,
+                max_retry_times = conf.max_retry_times,
+                retry_interval = conf.retry_interval,
+                pool_size = conf.pool_size,
+                tls = conf.tls,
+            })
+
+    if not logger then
+        res = false
+        err_msg = "failed when initiating the sys logger processor".. err
+    end
+
+    -- reuse the logger object
+    local ok, err = logger:log(core.json.encode(entry))
+    if not ok then
+        res = false
+        err_msg = "failed to log message" .. err
+    end
+
+    return res, err_msg
+end
+
 -- log phase in APISIX
 function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
@@ -77,13 +124,6 @@ function _M.log(conf)
         return
     end
 
-    -- fetch api_ctx
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        core.log.error("invalid api_ctx cannot proceed with sys logger plugin")
-        return core.response.exit(500)
-    end
-
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
@@ -97,33 +137,29 @@ function _M.log(conf)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        return send_kafka_data(conf, data)
+        return send_syslog_data(conf, data)
     end
 
-    -- fetch it from lrucache
-    local logger, err =  lrucache(api_ctx.conf_type .. "#" .. api_ctx.conf_id, api_ctx.conf_version,
-        logger_socket.new, logger_socket, {
-            host = conf.host,
-            port = conf.port,
-            flush_limit = conf.flush_limit,
-            drop_limit = conf.drop_limit,
-            timeout = conf.timeout,
-            sock_type = conf.sock_type,
-            max_retry_times = conf.max_retry_times,
-            retry_interval = conf.retry_interval,
-            pool_size = conf.pool_size,
-            tls = conf.tls,
-        })
+    local config = {
+        name = conf.name,
+        retry_delay = conf.retry_interval,
+        batch_max_size = conf.batch_max_size,
+        max_retry_count = conf.max_retry_times,
+        buffer_duration = conf.buffer_duration,
+        inactive_timeout = conf.timeout,
+    }
 
-    if not logger then
-        core.log.error("failed when initiating the sys logger processor", err)
+    local err
+    log_buffer, err = batch_processor:new(func, config)
+
+    if not log_buffer then
+        core.log.error("error when creating the batch processor: ", err)
+        return
     end
 
-    -- reuse the logger object
-    local ok, err = logger:log(core.json.encode(entry))
-    if not ok then
-        core.log.error("failed to log message", err)
-    end
+    buffers[entry.route_id] = log_buffer
+    log_buffer:push(entry)
+
 end
 
 return _M
