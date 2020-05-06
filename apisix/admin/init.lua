@@ -290,8 +290,8 @@ local uri_route = {
     },
     {
         paths = {
-            [[/apisix/admin/plugins/list]],
-            [[/apisix/admin/http/plugins/list]],
+            [[/apisix/admin/plugins]],
+            [[/apisix/admin/http/plugins]],
         },
         methods = {"GET"},
         handler = get_plugins_list,

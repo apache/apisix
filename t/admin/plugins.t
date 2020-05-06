@@ -26,9 +26,9 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: get plugins' name
+=== TEST 1: get the list of plugins
 --- request
-GET /apisix/admin/plugins/list
+GET /apisix/admin/plugins
 --- response_body_like eval
 qr/\["limit-req","limit-count","limit-conn","key-auth","basic-auth","prometheus","node-status","jwt-auth","zipkin","ip-restriction","grpc-transcode","serverless-pre-function","serverless-post-function","openid-connect","proxy-rewrite","redirect","response-rewrite","fault-injection","udp-logger","wolf-rbac","proxy-cache","tcp-logger","proxy-mirror","kafka-logger","cors","syslog","batch-requests","http-logger"\]/
 --- no_error_log
@@ -36,18 +36,7 @@ qr/\["limit-req","limit-count","limit-conn","key-auth","basic-auth","prometheus"
 
 
 
-=== TEST 2: wrong path
---- request
-GET /apisix/admin/plugins
---- error_code: 400
---- response_body
-{"error_msg":"not found plugin name"}
---- no_error_log
-[error]
-
-
-
-=== TEST 3: get plugin schema
+=== TEST 2: get plugin limit-req schema
 --- request
 GET /apisix/admin/plugins/limit-req
 --- response_body
@@ -57,7 +46,7 @@ GET /apisix/admin/plugins/limit-req
 
 
 
-=== TEST 4: get plugin node-status schema
+=== TEST 3: get plugin node-status schema
 --- request
 GET /apisix/admin/plugins/node-status
 --- response_body
@@ -67,7 +56,7 @@ GET /apisix/admin/plugins/node-status
 
 
 
-=== TEST 5: get plugin heartbeat schema
+=== TEST 4: get plugin heartbeat schema
 --- request
 GET /apisix/admin/plugins/heartbeat
 --- response_body
@@ -77,7 +66,7 @@ GET /apisix/admin/plugins/heartbeat
 
 
 
-=== TEST 6: get plugin limit-count schema
+=== TEST 5: get plugin limit-count schema
 --- request
 GET /apisix/admin/plugins/limit-count
 --- response_body eval
@@ -87,7 +76,7 @@ qr/"required":\["count","time_window","key","rejected_code"]/
 
 
 
-=== TEST 7: serverless-pre-function
+=== TEST 6: serverless-pre-function
 --- config
 location /t {
     content_by_lua_block {
@@ -127,7 +116,7 @@ passed
 
 
 
-=== TEST 8: serverless-post-function
+=== TEST 7: serverless-post-function
 --- config
 location /t {
     content_by_lua_block {
@@ -167,7 +156,7 @@ passed
 
 
 
-=== TEST 9: get plugin udp-logger schema
+=== TEST 8: get plugin udp-logger schema
 --- request
 GET /apisix/admin/plugins/udp-logger
 --- response_body  eval
@@ -177,7 +166,7 @@ qr/{"properties":/
 
 
 
-=== TEST 10: get plugin grpc-transcode schema
+=== TEST 9: get plugin grpc-transcode schema
 --- request
 GET /apisix/admin/plugins/grpc-transcode
 --- response_body eval
