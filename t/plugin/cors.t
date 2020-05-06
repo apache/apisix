@@ -426,3 +426,68 @@ OPTIONS /hello HTTP/1.1
 
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: set route(auth plugins faills)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "key-auth": {},
+                        "cors": {
+                            "allow_origins": "**",
+                            "allow_methods": "**",
+                            "allow_headers": "*",
+                            "expose_headers": "*"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: auth failed still work
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+ExternalHeader1: val
+ExternalHeader2: val
+ExternalHeader3: val
+--- response_body
+{"message":"Missing API key found in request"}
+--- error_code: 401
+--- response_headers
+Access-Control-Allow-Origin: https://sub.domain.com
+Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
+Access-Control-Allow-Headers: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 5
+Access-Control-Allow-Credentials:
+--- no_error_log
+[error]
