@@ -80,18 +80,18 @@ local function send_syslog_data(conf, log_message)
 
     -- fetch it from lrucache
     local logger, err =  lrucache(api_ctx.conf_type .. "#" .. api_ctx.conf_id, api_ctx.conf_version,
-            logger_socket.new, logger_socket, {
-                host = conf.host,
-                port = conf.port,
-                flush_limit = conf.flush_limit,
-                drop_limit = conf.drop_limit,
-                timeout = conf.timeout,
-                sock_type = conf.sock_type,
-                max_retry_times = conf.max_retry_times,
-                retry_interval = conf.retry_interval,
-                pool_size = conf.pool_size,
-                tls = conf.tls,
-            })
+        logger_socket.new, logger_socket, {
+            host = conf.host,
+            port = conf.port,
+            flush_limit = conf.flush_limit,
+            drop_limit = conf.drop_limit,
+            timeout = conf.timeout,
+            sock_type = conf.sock_type,
+            max_retry_times = conf.max_retry_times,
+            retry_interval = conf.retry_interval,
+            pool_size = conf.pool_size,
+            tls = conf.tls,
+        })
 
     if not logger then
         res = false
