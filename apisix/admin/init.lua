@@ -41,7 +41,6 @@ local resources_http = {
     consumers       = require("apisix.admin.consumers"),
     schema          = require("apisix.admin.schema"),
     ssl             = require("apisix.admin.ssl"),
-    plugins         = require("apisix.admin.plugins"),
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
 }

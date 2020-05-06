@@ -129,7 +129,7 @@ passed
 
 === TEST 7: get plugin's schema
 --- request
-GET /apisix/admin/schema/plugins/limit-count
+GET /apisix/admin/schema/limit-count
 --- response_body eval
 qr/"required":\["count","time_window","key","rejected_code"]/
 --- no_error_log
@@ -139,7 +139,7 @@ qr/"required":\["count","time_window","key","rejected_code"]/
 
 === TEST 8: get not exist plugin
 --- request
-GET /apisix/admin/schema/plugins/no-exist
+GET /apisix/admin/schema/no-exist
 --- error_code: 400
 --- no_error_log
 [error]
@@ -151,7 +151,7 @@ GET /apisix/admin/schema/plugins/no-exist
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        local code, body = t('/apisix/admin/schema/plugins/serverless-pre-function',
+        local code, body = t('/apisix/admin/schema/serverless-pre-function',
             ngx.HTTP_GET,
             nil,
             [[{
@@ -191,7 +191,7 @@ passed
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        local code, body = t('/apisix/admin/schema/plugins/serverless-post-function',
+        local code, body = t('/apisix/admin/schema/serverless-post-function',
             ngx.HTTP_GET,
             nil,
             [[{
@@ -228,7 +228,7 @@ passed
 
 === TEST 11: get plugin udp-logger schema
 --- request
-GET /apisix/admin/schema/plugins/udp-logger
+GET /apisix/admin/schema/udp-logger
 --- response_body  eval
 qr/{"properties":/
 --- no_error_log
@@ -238,7 +238,7 @@ qr/{"properties":/
 
 === TEST 12: get plugin grpc-transcode schema
 --- request
-GET /apisix/admin/schema/plugins/grpc-transcode
+GET /apisix/admin/schema/grpc-transcode
 --- response_body eval
 qr/"proto_id".*additionalProperties/
 --- no_error_log
