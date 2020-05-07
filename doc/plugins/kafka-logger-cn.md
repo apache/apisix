@@ -31,6 +31,11 @@
 
 这将提供将Log数据请求作为JSON对象发送到外部Kafka集群的功能。
 
+该插件提供了将Log Data作为批处理推送到外部Kafka主题的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
+
+有关Apache APISIX中Batch-Processor的更多信息，请参考。
+[Batch-Processor](../batch-processor-cn.md)
+
 ## 属性列表
 
 |属性名称          |必选项  |描述|
