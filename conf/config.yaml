@@ -146,6 +146,7 @@ plugins:                          # plugin list
   - kafka-logger
   - cors
   - consumer-restriction
+  - syslog
   - batch-requests
 stream_plugins:
   - mqtt-proxy
