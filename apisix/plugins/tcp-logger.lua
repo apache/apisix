@@ -89,8 +89,8 @@ local function send_tcp_data(conf, log_message)
 
     ok, err = sock:close()
     if not ok then
-        core.log.error("failed to close the TCP connection, host[",
-                        conf.host, "] port[", conf.port, "] ", err)
+        err_msg = "failed to close the TCP server: host[" .. conf.host
+                .. "] port[" .. tostring(conf.port) .. "] err: " .. err
     end
 
     return res, err_msg

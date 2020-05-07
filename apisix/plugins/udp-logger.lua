@@ -72,8 +72,8 @@ local function send_udp_data(conf, log_message)
     ok, err = sock:close()
     if not ok then
         res = false
-        err_msg = "failed to close the UDP connection, host[",
-                        conf.host, "] port[", conf.port, "] " .. err
+        err_msg = "failed to close the UDP connection: host[" .. conf.host
+                .. "] port[" .. tostring(conf.port) .. "] err:" .. err
     end
 
     return res, err_msg
