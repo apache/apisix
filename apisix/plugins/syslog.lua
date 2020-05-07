@@ -18,9 +18,6 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local batch_processor = require("apisix.utils.batch-processor")
 local logger_socket = require("resty.logger.socket")
-local pairs    = pairs
-local type     = type
-local table    = table
 local plugin_name = "syslog"
 local ngx = ngx
 local buffers = {}
@@ -99,7 +96,7 @@ local function send_syslog_data(conf, log_message)
     end
 
     -- reuse the logger object
-    local ok, err = logger:log(core.json.encode(entry))
+    local ok, err = logger:log(core.json.encode(log_message))
     if not ok then
         res = false
         err_msg = "failed to log message" .. err
