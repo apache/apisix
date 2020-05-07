@@ -32,6 +32,11 @@
 
 This will provide the ability to send Log data requests as JSON objects to external Kafka clusters.
 
+This plugin provides the ability to push Log data as a batch to you're external Kafka topics. In case if you did not recieve the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+
+For more info on Batch-Processor in Apache APISIX please refer.
+[Batch-Processor](../batch-processor.md)
+
 ## Attributes
 
 |Name           |Requirement    |Description|
