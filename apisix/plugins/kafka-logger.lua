@@ -93,7 +93,7 @@ local function send_kafka_data(conf, log_message)
     end
 end
 
-
+-- remove stale objects from the memory after timer expires
 local function remove_stale_objects(premature)
     if premature then
         return

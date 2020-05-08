@@ -97,7 +97,7 @@ local function send_tcp_data(conf, log_message)
     return res, err_msg
 end
 
-
+-- remove stale objects from the memory after timer expires
 local function remove_stale_objects(premature)
     if premature then
         return
