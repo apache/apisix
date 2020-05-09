@@ -147,5 +147,6 @@ plugins:                          # plugin list
   - cors
   - syslog
   - batch-requests
+  - http-logger
 stream_plugins:
   - mqtt-proxy
