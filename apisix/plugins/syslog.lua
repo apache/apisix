@@ -24,6 +24,7 @@ local buffers = {}
 local ipairs   = ipairs
 local stale_timer_running = false;
 local timer_at = ngx.timer.at
+local tostring = tostring
 
 local schema = {
     type = "object",
