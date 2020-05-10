@@ -127,7 +127,8 @@ qr/\{"message":"Hello world"\}/
 
 === TEST 4: hit route by post
 --- request
-POST /grpctest?name=world
+POST /grpctest
+name=world
 --- response_body eval
 qr/\{"message":"Hello world"\}/
 --- no_error_log
@@ -135,7 +136,18 @@ qr/\{"message":"Hello world"\}/
 
 
 
-=== TEST 5: wrong service protocol
+=== TEST 5: hit route by post json
+--- request
+POST /grpctest
+{"name": "world"}
+--- response_body eval
+qr/\{"message":"Hello world"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: wrong service protocol
 --- config
     location /t {
         content_by_lua_block {
@@ -176,7 +188,7 @@ GET /t
 
 
 
-=== TEST 6: wrong upstream address
+=== TEST 7: wrong upstream address
 --- config
     location /t {
         content_by_lua_block {
@@ -218,7 +230,7 @@ passed
 
 
 
-=== TEST 7: hit route (Connection refused)
+=== TEST 8: hit route (Connection refused)
 --- request
 GET /grpctest
 --- response_body eval
@@ -229,7 +241,7 @@ Connection refused) while connecting to upstream
 
 
 
-=== TEST 8: update proto(id: 1)
+=== TEST 9: update proto(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -276,7 +288,7 @@ passed
 
 
 
-=== TEST 9: set routes(id: 2)
+=== TEST 10: set routes(id: 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -319,7 +331,7 @@ passed
 
 
 
-=== TEST 10: hit route
+=== TEST 11: hit route
 --- request
 GET /grpc_plus?a=1&b=2
 --- response_body eval
@@ -329,7 +341,7 @@ qr/\{"result":3\}/
 
 
 
-=== TEST 11: hit route
+=== TEST 12: hit route
 --- request
 GET /grpc_plus?a=1&b=2251799813685260
 --- response_body eval
@@ -339,7 +351,7 @@ qr/\{"result":"#2251799813685261"\}/
 
 
 
-=== TEST 12: set route3 deadline nodelay
+=== TEST 13: set route3 deadline nodelay
 --- config
     location /t {
         content_by_lua_block {
@@ -381,7 +393,7 @@ passed
 
 
 
-=== TEST 13: hit route
+=== TEST 14: hit route
 --- request
 GET /grpc_deadline?name=apisix
 --- response_body eval
@@ -391,7 +403,7 @@ qr/\{"message":"Hello apisix"\}/
 
 
 
-=== TEST 14: set route4 deadline delay
+=== TEST 15: set route4 deadline delay
 --- config
     location /t {
         content_by_lua_block {
@@ -433,14 +445,14 @@ passed
 
 
 
-=== TEST 15: hit route
+=== TEST 16: hit route
 --- request
 GET /grpc_delay?name=apisix
 --- error_code: 504
 
 
 
-=== TEST 16: set routes: missing method
+=== TEST 17: set routes: missing method
 --- config
     location /t {
         content_by_lua_block {
