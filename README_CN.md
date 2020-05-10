@@ -135,7 +135,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **[ARM64](http
 ```shell
 sudo apisix start
 ```
-
+```shell
+/usr/bin/apisix init && /usr/bin/apisix init_etcd && /usr/bin/openresty -p /usr/local/apisix -g 'daemon off;'
+```
 2. 入门指南
 
 入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/getting-started-cn.md)的步骤即可。

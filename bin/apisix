@@ -260,7 +260,9 @@ http {
 
     {% if with_module_reqstas then %}
     req_status_zone server "$host:$server_addr:$server_port" 10M;
+    req_status_zone_recycle server 10 60;
     req_status_lazy on;
+    req_status server;
     {% end %}
 
     upstream apisix_backend {
@@ -689,7 +691,7 @@ local function init()
     local with_module_reqstas = false
     if or_ver and or_ver:find("ngx_http_reqstat_module", 1, true) then
         io.stdout:write("'ngx_http_reqstat_module' module is enable in ", "your openresty.\n")
-        with_module_status = true
+        with_module_reqstas = true
     end
 
     -- Using template.render
