@@ -81,7 +81,7 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "methods": ["GET"],
+                    "methods": ["GET", "POST"],
                     "uri": "/grpctest",
                     "service_protocol": "grpc",
                     "plugins": {
