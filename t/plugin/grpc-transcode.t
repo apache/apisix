@@ -140,6 +140,8 @@ qr/\{"message":"Hello world"\}/
 --- request
 POST /grpctest
 {"name": "world"}
+--- more_headers
+Content-Type: application/json
 --- response_body eval
 qr/\{"message":"Hello world"\}/
 --- no_error_log
