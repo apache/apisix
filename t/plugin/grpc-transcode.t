@@ -125,7 +125,18 @@ qr/\{"message":"Hello world"\}/
 
 
 
-=== TEST 4: wrong service protocol
+=== TEST 4: hit route by post
+--- request
+POST /grpctest?name=world
+--- response_body eval
+qr/\{"message":"Hello world"\}/
+--- no_error_log
+[error]
+--- ONLY
+
+
+
+=== TEST 5: wrong service protocol
 --- config
     location /t {
         content_by_lua_block {
@@ -166,7 +177,7 @@ GET /t
 
 
 
-=== TEST 5: wrong upstream address
+=== TEST 6: wrong upstream address
 --- config
     location /t {
         content_by_lua_block {
@@ -208,7 +219,7 @@ passed
 
 
 
-=== TEST 6: hit route (Connection refused)
+=== TEST 7: hit route (Connection refused)
 --- request
 GET /grpctest
 --- response_body eval
@@ -219,7 +230,7 @@ Connection refused) while connecting to upstream
 
 
 
-=== TEST 7: update proto(id: 1)
+=== TEST 8: update proto(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +277,7 @@ passed
 
 
 
-=== TEST 8: set routes(id: 2)
+=== TEST 9: set routes(id: 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -309,7 +320,7 @@ passed
 
 
 
-=== TEST 9: hit route
+=== TEST 10: hit route
 --- request
 GET /grpc_plus?a=1&b=2
 --- response_body eval
@@ -319,7 +330,7 @@ qr/\{"result":3\}/
 
 
 
-=== TEST 10: hit route
+=== TEST 11: hit route
 --- request
 GET /grpc_plus?a=1&b=2251799813685260
 --- response_body eval
@@ -329,7 +340,7 @@ qr/\{"result":"#2251799813685261"\}/
 
 
 
-=== TEST 11: set route3 deadline nodelay
+=== TEST 12: set route3 deadline nodelay
 --- config
     location /t {
         content_by_lua_block {
@@ -371,7 +382,7 @@ passed
 
 
 
-=== TEST 12: hit route
+=== TEST 13: hit route
 --- request
 GET /grpc_deadline?name=apisix
 --- response_body eval
@@ -381,7 +392,7 @@ qr/\{"message":"Hello apisix"\}/
 
 
 
-=== TEST 13: set route4 deadline delay
+=== TEST 14: set route4 deadline delay
 --- config
     location /t {
         content_by_lua_block {
@@ -423,14 +434,14 @@ passed
 
 
 
-=== TEST 14: hit route
+=== TEST 15: hit route
 --- request
 GET /grpc_delay?name=apisix
 --- error_code: 504
 
 
 
-=== TEST 15: set routes: missing method
+=== TEST 16: set routes: missing method
 --- config
     location /t {
         content_by_lua_block {
