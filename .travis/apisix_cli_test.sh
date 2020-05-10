@@ -72,3 +72,19 @@ done
 
 sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"
+
+# check access log format
+
+sed -i 's/#access_log_format: |+/access_log_format: "test config accesslog"/g' conf/config.yaml
+
+make init
+
+grep "log_format main test config accesslog" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to config the log_format"
+    exit 1
+fi
+
+echo "passed: change access.log format"
+sed -i 's/access_log_format: "test config accesslog"/\#access_log_format: |+/g' conf/config.yaml
+

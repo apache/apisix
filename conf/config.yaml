@@ -101,9 +101,10 @@ nginx_config:                     # config for render the template to genarate n
   http:
     access_log: "logs/access.log"
     #access_log_format: |+         # access.log recommended format
-    #  '[host:$http_host][uri:$uri][scheme:$scheme][rsp_st:$status][ups_st:$upstream_status][cip:$remote_addr][uip:$upstream_addr][vip:$server_addr]'
-    #  '[rsp_len:$bytes_sent][req_len:$request_length][req_t:$request_time][ups_rsp_t:$upstream_response_time][ups_conn_t:$upstream_connect_time]'
-    #  '[ups_head_t:$upstream_header_time][tcp_rtt:$tcpinfo_rtt][$pid][$time_local][req_id:$request_id]'
+    #  '{"host":"$http_host", "uri":"$uri", "scheme":"$scheme", "rsp_st":"$status", "ups_st":"$upstream_status", "cip":"$remote_addr", '
+    #  '"uip":"$upstream_addr", "vip":"$server_addr", "rsp_len":"$bytes_sent", "req_len":"$request_length", "req_t":"$request_time", '
+    #  '"ups_rsp_t":"$upstream_response_time", "ups_conn_t":"$upstream_connect_time", "ups_head_t":"$upstream_header_time", "tcp_rtt":"$tcpinfo_rtt", '
+    #  '"pid":"$pid", "time_local":"$time_local", "req_id":"$request_id"}'
 
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
     client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
