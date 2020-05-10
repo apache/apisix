@@ -38,8 +38,8 @@ local pkg_path_org = package.path
 
 local apisix_home = "/usr/local/apisix"
 local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
-                  .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
-local pkg_path  = apisix_home ..    "/deps/share/lua/5.1/?.lua;;"
+        .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
+local pkg_path = apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 
 -- only for developer, use current folder as working space
 local is_root_path = false
@@ -51,18 +51,18 @@ if script_path:sub(1, 2) == './' then
     end
 
     if string.match(apisix_home, '^/[root][^/]+') then
-            is_root_path = true
+        is_root_path = true
     end
 
     pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
-                .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
-    pkg_path  = apisix_home .. "/?/init.lua;"
-                .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
+            .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
+    pkg_path = apisix_home .. "/?/init.lua;"
+            .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 end
 -- print("apisix_home: ", apisix_home)
 
 package.cpath = pkg_cpath .. pkg_cpath_org
-package.path  = pkg_path .. pkg_path_org
+package.path = pkg_path .. pkg_path_org
 
 do
     -- skip luajit environment
@@ -71,8 +71,8 @@ do
         local ok, json = pcall(require, "cjson")
         if ok and json then
             io.stderr:write("please remove the cjson library in Lua, it may "
-                            .. "conflict with the cjson library in openresty. "
-                            .. "\n luarocks remove cjson\n")
+                    .. "conflict with the cjson library in openresty. "
+                    .. "\n luarocks remove cjson\n")
             return
         end
     end
@@ -112,10 +112,10 @@ env APISIX_PROFILE;
 {% if stream_proxy then %}
 stream {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
-                      .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
+        .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
-                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                      .. [=[{*lua_cpath*};";
+        .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+        .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
     lua_shared_dict lrucache-lock-stream   10m;
@@ -167,10 +167,10 @@ stream {
 
 http {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
-                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
+        .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
-                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                      .. [=[{*lua_cpath*};";
+        .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+        .. [=[{*lua_cpath*};";
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
@@ -256,6 +256,11 @@ http {
     {% for _, real_ip in ipairs(http.real_ip_from) do %}
     set_real_ip_from {*real_ip*};
     {% end %}
+    {% end %}
+
+    {% if with_module_reqstas then %}
+    req_status_zone server "$host:$server_addr:$server_port" 10M;
+    req_status_lazy on;
     {% end %}
 
     upstream apisix_backend {
@@ -348,10 +353,33 @@ http {
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
-            allow 127.0.0.0/24;
-            deny all;
             access_log off;
             stub_status;
+            {% if allow_status then %}
+            {% for _, allow_ip in ipairs(allow_status) do %}
+            allow {*allow_ip*};
+            {% end %}
+            {% end %}
+            {% if not allow_status then %}
+            allow 127.0.0.0/24;
+            {% end %}
+            deny all;
+        }
+        {% end %}
+
+        {% if with_module_reqstas then %}
+        location = /apisix/stats-rss {
+            req_status_show;
+            access_log   off;
+            {% if allow_reqstats then %}
+            {% for _, allow_ip in ipairs(allow_reqstats) do %}
+            allow {*allow_ip*};
+            {% end %}
+            {% end %}
+            {% if not allow_reqstats then %}
+            allow 127.0.0.0/24;
+            {% end %}
+            deny all;
         }
         {% end %}
 
@@ -533,7 +561,6 @@ local function read_file(file_path)
     return data
 end
 
-
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
     profile.apisix_home = apisix_home .. "/"
@@ -549,7 +576,7 @@ end
 local function get_openresty_version()
     local str = "nginx version: openresty/"
     local ret = excute_cmd("openresty -v 2>&1")
-    local pos = string.find(ret,str)
+    local pos = string.find(ret, str)
     if pos then
         return string.sub(ret, pos + string.len(str))
     end
@@ -578,9 +605,11 @@ end
 local function split(self, sep)
     local sep, fields = sep or ":", {}
     local pattern = string.format("([^%s]+)", sep)
-    self:gsub(pattern, function(c) fields[#fields + 1] = c end)
+    self:gsub(pattern, function(c)
+        fields[#fields + 1] = c
+    end)
     return fields
- end
+end
 
 local function check_or_version(cur_ver_s, need_ver_s)
     local cur_vers = split(cur_ver_s, [[.]])
@@ -602,7 +631,6 @@ local function check_or_version(cur_ver_s, need_ver_s)
     return true
 end
 
-
 local function local_dns_resolver(file_path)
     local file, err = io.open(file_path, "rb")
     if not file then
@@ -619,8 +647,7 @@ local function local_dns_resolver(file_path)
     return dns_addrs
 end
 
-
-local _M = {version = 0.1}
+local _M = { version = 0.1 }
 
 function _M.help()
     print([[
@@ -640,7 +667,7 @@ end
 local function init()
     if is_root_path then
         print('Warning! Running apisix under /root is only suitable for development environments'
-            .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
+                .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
     end
 
     -- read_yaml_conf
@@ -654,9 +681,15 @@ local function init()
     local with_module_status = true
     if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
         io.stderr:write("'http_stub_status_module' module is missing in ",
-                        "your openresty, please check it out. Without this ",
-                        "module, there will be fewer monitoring indicators.\n")
+                "your openresty, please check it out. Without this ",
+                "module, there will be fewer monitoring indicators.\n")
         with_module_status = false
+    end
+
+    local with_module_reqstas = false
+    if or_ver and or_ver:find("ngx_http_reqstat_module", 1, true) then
+        io.stdout:write("'ngx_http_reqstat_module' module is enable in ", "your openresty.\n")
+        with_module_status = true
     end
 
     -- Using template.render
@@ -666,7 +699,8 @@ local function init()
         os_name = excute_cmd("uname"),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
-        error_log = {level = "warn"},
+        with_module_reqstas = with_module_reqstas,
+        error_log = { level = "warn" },
     }
 
     if not yaml_conf.apisix then
@@ -683,10 +717,10 @@ local function init()
         sys_conf["worker_rlimit_core"] = "16G"
     end
 
-    for k,v in pairs(yaml_conf.apisix) do
+    for k, v in pairs(yaml_conf.apisix) do
         sys_conf[k] = v
     end
-    for k,v in pairs(yaml_conf.nginx_config) do
+    for k, v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
     end
 
@@ -697,7 +731,7 @@ local function init()
         sys_conf["worker_rlimit_nofile"] = wc + 128
     end
 
-    if(sys_conf["enable_dev_mode"] == true) then
+    if (sys_conf["enable_dev_mode"] == true) then
         sys_conf["worker_processes"] = 1
     else
         sys_conf["worker_processes"] = "auto"
@@ -763,7 +797,7 @@ local function init_etcd(show_output)
     local uri
     --convert old single etcd config to multiple etcd config
     if type(yaml_conf.etcd.host) == "string" then
-        yaml_conf.etcd.host = {yaml_conf.etcd.host}
+        yaml_conf.etcd.host = { yaml_conf.etcd.host }
     end
 
     local host_count = #(yaml_conf.etcd.host)
@@ -773,10 +807,10 @@ local function init_etcd(show_output)
         local is_success = true
         uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
-        for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
-                                   "/plugins", "/consumers", "/node_status",
-                                   "/ssl", "/global_rules", "/stream_routes",
-                                   "/proto"}) do
+        for _, dir_name in ipairs({ "/routes", "/upstreams", "/services",
+                                    "/plugins", "/consumers", "/node_status",
+                                    "/ssl", "/global_rules", "/stream_routes",
+                                    "/proto" }) do
             local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true "
                     .. "--connect-timeout " .. timeout
@@ -806,7 +840,7 @@ end
 _M.init_etcd = init_etcd
 
 local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
-                       .. apisix_home .. [[/conf/nginx.conf]]
+        .. apisix_home .. [[/conf/nginx.conf]]
 
 function _M.start(...)
     init(...)
@@ -824,8 +858,8 @@ function _M.stop()
 end
 
 function _M.restart()
-  _M.stop()
-  _M.start()
+    _M.stop()
+    _M.start()
 end
 
 function _M.reload()
