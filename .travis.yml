@@ -55,8 +55,8 @@ before_install:
 install:
   - $PWD/.travis/${OSNAME}_runner.sh do_install
 
-script:
-  - $PWD/.travis/${OSNAME}_runner.sh script
+# script:
+#   - $PWD/.travis/${OSNAME}_runner.sh script
 
-after_success:
-  - $PWD/.travis/${OSNAME}_runner.sh after_success
+# after_success:
+#   - $PWD/.travis/${OSNAME}_runner.sh after_success
