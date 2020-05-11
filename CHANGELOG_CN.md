@@ -37,7 +37,7 @@
 - 默认只允许本地环回地址 127.0.0.1 访问 admin API 和 dashboard. [#1458](https://github.com/apache/incubator-apisix/pull/1458)
 
 ### Plugin
-- :sunrise: **新增批量请求插件**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
+- :sunrise: **新增 batch request 插件**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
 - 实现完成 `sys logger` 插件. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
 
 
