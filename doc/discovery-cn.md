@@ -173,9 +173,9 @@ eureka:
   fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
   weight: 100                      # default weight for node
   timeout:
-    connect: 2000                  # 连接 eureka 的超时时间
-    send: 2000                     # 向 eureka 发送数据的超时时间
-    read: 5000                     # 从 eureka 读数据的超时时间
+    connect: 2000                  # 连接 eureka 的超时时间，默认2000ms
+    send: 2000                     # 向 eureka 发送数据的超时时间，默认2000ms
+    read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
 ```
 
 通过 `eureka.host ` 配置 eureka 的服务器地址。

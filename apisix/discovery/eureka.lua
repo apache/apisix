@@ -50,9 +50,9 @@ local schema = {
         timeout = {
             type = "object",
             properties = {
-                connect = {type = "integer", minimum = 1, default = 1000},
-                send = {type = "integer", minimum = 1, default = 1000},
-                read = {type = "integer", minimum = 1, default = 1000},
+                connect = {type = "integer", minimum = 1, default = 2000},
+                send = {type = "integer", minimum = 1, default = 2000},
+                read = {type = "integer", minimum = 1, default = 5000},
             }
         },
     },
@@ -138,7 +138,7 @@ end
 local function parse_instance(instance)
     local status = instance.status
     local overridden_status = instance.overriddenstatus or instance.overriddenStatus
-    if overridden_status and "UNKNOWN" ~= overridden_status then
+    if overridden_status and overridden_status ~= "UNKNOWN" then
         status = overridden_status
     end
 
@@ -157,7 +157,7 @@ local function parse_instance(instance)
     local ip = instance.ipAddr
     if not ipmatcher.parse_ipv4(ip) and
             not ipmatcher.parse_ipv6(ip) then
-        log.error("invalid ip:", ip)
+        log.error(instance.app, " service ", instance.hostName, " node IP ", ip, " is invalid(must be IPv4 or IPv6).")
         return
     end
     return ip, port, instance.metadata

@@ -125,9 +125,9 @@ etcd:
 #  fetch_interval: 30              # default 30s
 #  weight: 100                     # default weight for node
 #  timeout:
-#    connect: 2000
-#    send: 2000
-#    read: 5000
+#    connect: 2000                 # default 2000ms
+#    send: 2000                    # default 2000ms
+#    read: 5000                    # default 5000ms
 
 plugins:                          # plugin list
   - example-plugin

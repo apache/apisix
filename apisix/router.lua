@@ -109,7 +109,7 @@ end
 
 
 -- for test
-_M.filter = filter
+_M.filter_test = filter
 
 
 return _M

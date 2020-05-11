@@ -172,12 +172,12 @@ eureka:
     - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
     - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
   prefix: "/eureka/"
-  fetch_interval: 30
+  fetch_interval: 30               # 30s
   weight: 100                      # default weight for node
   timeout:
-    connect: 2000
-    send: 2000
-    read: 5000
+    connect: 2000                  # 2000ms
+    send: 2000                     # 2000ms
+    read: 5000                     # 5000ms
 ```
 
 
