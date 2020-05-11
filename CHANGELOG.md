@@ -34,8 +34,7 @@ The 1.3 version is mainly for security update.
 
 ### Security
 - reject invalid header[#1462](https://github.com/apache/incubator-apisix/pull/1462) and uri safe encode[#1461](https://github.com/apache/incubator-apisix/pull/1461)
-- only allow 127.0.0.1 access admin API and dashboard by default. [#1458]
-(https://github.com/apache/incubator-apisix/pull/1458)
+- only allow 127.0.0.1 access admin API and dashboard by default. [#1458](https://github.com/apache/incubator-apisix/pull/1458)
 
 ### Plugin
 - :sunrise: **add batch request plugin**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
