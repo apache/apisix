@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [1.3.0](#130)
 - [1.2.0](#120)
 - [1.1.0](#110)
 - [1.0.0](#100)
@@ -26,6 +27,46 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 1.3.0
+
+The 1.3 version is mainly to strengthen the stability of the code, bug fix and add more documentation.
+
+### Doc
+- upload Node.js version for building dashboard. [#1485](https://github.com/apache/incubator-apisix/pull/1485)
+- add short introduction about how to change log level. [#1484](https://github.com/apache/incubator-apisix/pull/1484)
+- update steps of build dashboard. [#1506](https://github.com/apache/incubator-apisix/pull/1506)
+- fix the doc style for serverless*.md. [#1511](https://github.com/apache/incubator-apisix/pull/1511)
+- fixed wrong configurations in the logger docs. [#1530](https://github.com/apache/incubator-apisix/pull/1530)
+- alter logger plugins documentations. [#1541](https://github.com/apache/incubator-apisix/pull/1541)
+
+### CI
+- fix regex usage in some cases. [#1504](https://github.com/apache/incubator-apisix/pull/1504)
+- used tag instead of branch. [#1503](https://github.com/apache/incubator-apisix/pull/1503)
+- check lua code style in all Lua file under apisix/. [#1518](https://github.com/apache/incubator-apisix/pull/1518)
+- reindex by tools `reindex`. [#1519](https://github.com/apache/incubator-apisix/pull/1519)
+- updated the dashboard submodule to latest version. [#1540](https://github.com/apache/incubator-apisix/pull/1540)
+
+### Plugin
+- :sunrise: **add batch request plugin**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
+- Updating kafka logger to use the batch processor util. [#1358](https://github.com/apache/incubator-apisix/pull/1358)
+- implemented plugin `sys logger`. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
+- use buffer for plugin `syslog`. [#1551](https://github.com/apache/incubator-apisix/pull/1551)
+
+### Admin
+- :sunrise: **support saving k8s deployment info to upstream**. [#1502](https://github.com/apache/incubator-apisix/pull/1502)
+
+### Bugfix
+- fixed wrong string join in limit-count plugin. [#1487](https://github.com/apache/incubator-apisix/pull/1487)
+- when creating cached objects, use resty-lock to avoid repeated creation. [#1486](https://github.com/apache/incubator-apisix/pull/1486)
+- init `clean_handlers` when add new item from etcd. [#1412](https://github.com/apache/incubator-apisix/pull/1412)
+- skip tombstone mark when iterating the global values. [#1517](https://github.com/apache/incubator-apisix/pull/1517)
+- using rewrite phase and add lru cache for multiple origin. [#1531](https://github.com/apache/incubator-apisix/pull/1531)
+- Adding function to remove stale objects from kafka logger. [#1526](https://github.com/apache/incubator-apisix/pull/1526)
+- removed stale objects from tcp logger. [#1543](https://github.com/apache/incubator-apisix/pull/1543)
+- removing stale objects from udp logger. [#1544](https://github.com/apache/incubator-apisix/pull/1544)
+- limit the maximum length of Lua code to 100. [#1525](https://github.com/apache/incubator-apisix/pull/1525)
+
 
 ## 1.2.0
 
