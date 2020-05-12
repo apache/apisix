@@ -55,6 +55,13 @@ apisix:
   #   - "::/64"
   # port_admin: 9180              # use a separate port
 
+  # allow get nginx status data
+  allow_status:                 # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+    - 127.0.0.0/24              # If we don't set any IP list, then any IP access is not allowed by default.
+  # allow get request stats data
+  allow_reqstats:               # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+    - 127.0.0.0/24              # If we don't set any IP list, then any IP access is not allowed by default.
+
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
   # Disabling this configuration item means that the Admin API does not

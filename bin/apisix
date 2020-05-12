@@ -258,6 +258,13 @@ http {
     {% end %}
     {% end %}
 
+    {% if with_module_reqstas then %}
+    req_status_zone server "$host:$server_addr:$server_port" 10M;
+    req_status_zone_recycle server 10 60;
+    req_status_lazy on;
+    req_status server;
+    {% end %}
+
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
@@ -348,10 +355,33 @@ http {
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
-            allow 127.0.0.0/24;
-            deny all;
             access_log off;
             stub_status;
+            {% if allow_status then %}
+            {% for _, allow_ip in ipairs(allow_status) do %}
+            allow {*allow_ip*};
+            {% end %}
+            {% end %}
+            {% if not allow_status then %}
+            allow 127.0.0.0/24;
+            {% end %}
+            deny all;
+        }
+        {% end %}
+
+        {% if with_module_reqstas then %}
+        location = /apisix/stats-rss {
+            req_status_show;
+            access_log   off;
+            {% if allow_reqstats then %}
+            {% for _, allow_ip in ipairs(allow_reqstats) do %}
+            allow {*allow_ip*};
+            {% end %}
+            {% end %}
+            {% if not allow_reqstats then %}
+            allow 127.0.0.0/24;
+            {% end %}
+            deny all;
         }
         {% end %}
 
@@ -659,6 +689,12 @@ local function init()
         with_module_status = false
     end
 
+    local with_module_reqstas = false
+    if or_ver and or_ver:find("ngx_http_reqstat_module", 1, true) then
+        io.stdout:write("'ngx_http_reqstat_module' module is enable in ", "your openresty.\n")
+        with_module_reqstas = true
+    end
+
     -- Using template.render
     local sys_conf = {
         lua_path = pkg_path_org,
@@ -666,7 +702,8 @@ local function init()
         os_name = excute_cmd("uname"),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
-        error_log = {level = "warn"},
+        with_module_reqstas = with_module_reqstas,
+        error_log = { level = "warn" },
     }
 
     if not yaml_conf.apisix then
