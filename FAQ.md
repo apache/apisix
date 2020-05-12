@@ -184,5 +184,5 @@ curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 If your APISIX node does not open the Admin API, then you can manually load the plug-in by reloading APISIX.
 
 ```shell
-openresty -p /usr/local/apisix -c /usr/local/apisix/conf/nginx.conf -s reload
+apisix reload
 ```

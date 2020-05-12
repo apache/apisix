@@ -135,5 +135,5 @@ curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 如果你的 APISIX 节点并没有打开 Admin API，那么你可以通过手动 reload APISIX 的方式加载插件。
 
 ```shell
-openresty -p /usr/local/apisix -c /usr/local/apisix/conf/nginx.conf -s reload
+apisix reload
 ```
