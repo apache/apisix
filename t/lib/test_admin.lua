@@ -101,6 +101,8 @@ end
 
 
 function _M.comp_tab(left_tab, right_tab)
+    dir_names = {}
+
     if type(left_tab) == "string" then
         left_tab = json.decode(left_tab)
     end
@@ -110,7 +112,7 @@ function _M.comp_tab(left_tab, right_tab)
 
     local ok, err = com_tab(left_tab, right_tab)
     if not ok then
-        return 500, "failed, " .. err
+        return false, err
     end
 
     return true
