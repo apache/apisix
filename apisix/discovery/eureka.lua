@@ -157,7 +157,8 @@ local function parse_instance(instance)
     local ip = instance.ipAddr
     if not ipmatcher.parse_ipv4(ip) and
             not ipmatcher.parse_ipv6(ip) then
-        log.error(instance.app, " service ", instance.hostName, " node IP ", ip, " is invalid(must be IPv4 or IPv6).")
+        log.error(instance.app, " service ", instance.hostName, " node IP ", ip,
+                " is invalid(must be IPv4 or IPv6).")
         return
     end
     return ip, port, instance.metadata
