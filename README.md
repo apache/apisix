@@ -39,7 +39,7 @@ APISIX is a cloud-based microservices API gateway that handles traditional north
 
 APISIX provides dynamic load balancing, authentication, rate limiting, other plugins through plugin mechanisms, and supports plugins you develop yourself.
 
-For more detailed information, see the [White Paper](https://www.iresty.com/download/Choosing%20the%20Right%20Microservice%20API%20Gateway%20for%20the%20Enterprise%20User.pdf).
+For more detailed information, see the [White Paper](https://static.apiseven.com/2020/05/1589275276-Choosing-the-Right-Microservice-API-Gateway-for-the-Enterprise-User.pdf).
 
 ![](doc/images/apisix.png)
 
