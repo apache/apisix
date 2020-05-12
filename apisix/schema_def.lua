@@ -454,9 +454,23 @@ _M.ssl = {
         sni = {
             type = "string",
             pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-        }
+        },
+        snis = {
+            type = "array",
+            items = {
+                type = "string",
+                pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+            }
+        },
+        exptime = {
+            type = "integer",
+            minimum = 1588262400,  -- 2020/5/1 0:0:0
+        },
     },
-    required = {"sni", "key", "cert"},
+    oneOf = {
+        {required = {"sni", "key", "cert"}},
+        {required = {"snis", "key", "cert"}}
+    },
     additionalProperties = false,
 }
 
