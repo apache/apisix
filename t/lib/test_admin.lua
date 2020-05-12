@@ -100,6 +100,25 @@ function _M.test_ipv6(uri)
 end
 
 
+function _M.comp_tab(left_tab, right_tab)
+    dir_names = {}
+
+    if type(left_tab) == "string" then
+        left_tab = json.decode(left_tab)
+    end
+    if type(right_tab) == "string" then
+        right_tab = json.decode(right_tab)
+    end
+
+    local ok, err = com_tab(left_tab, right_tab)
+    if not ok then
+        return false, err
+    end
+
+    return true
+end
+
+
 function _M.test(uri, method, body, pattern)
     if type(body) == "table" then
         body = json.encode(body)
@@ -117,7 +136,7 @@ function _M.test(uri, method, body, pattern)
     -- https://github.com/ledgetech/lua-resty-http
     uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
           .. ":" .. ngx.var.server_port .. uri
-    local res = httpc:request_uri(uri,
+    local res, err = httpc:request_uri(uri,
         {
             method = method,
             body = body,
@@ -139,11 +158,9 @@ function _M.test(uri, method, body, pattern)
     if pattern == nil then
         return res.status, "passed", res.body
     end
+
     local res_data = json.decode(res.body)
-    if type(pattern) == "string" then
-        pattern = json.decode(pattern)
-    end
-    local ok, err = com_tab(pattern, res_data)
+    local ok, err = _M.comp_tab(pattern, res_data)
     if not ok then
         return 500, "failed, " .. err, res_data
     end

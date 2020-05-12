@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](grpc-transcoding-cn.md)
+# [Chinese](grpc-transcoding-cn.md)
 
 ## Name
 
@@ -26,6 +26,7 @@ HTTP(s) -> APISIX -> gRPC server
 ### Proto
 
 #### Attributes
+
 * `content`: `.proto` file's content.
 
 #### Add a proto
@@ -49,7 +50,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 }'
 ```
 
-## Attributes
+## Attribute List
 
 |Name          |Requirement  |Description|
 |---------     |--------|-----------|
@@ -86,16 +87,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-
 ## Test Plugin
 
 The above configuration proxy :
+
 ```shell
 curl -i http://127.0.0.1:9080/grpctest?name=world
 ```
 
 response:
-```
+
+```shell
 HTTP/1.1 200 OK
 Date: Fri, 16 Aug 2019 11:55:36 GMT
 Content-Type: application/json
@@ -108,4 +110,3 @@ Proxy-Connection: keep-alive
 ```
 
 This means that the proxying is working.
-

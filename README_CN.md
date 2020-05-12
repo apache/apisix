@@ -81,6 +81,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - IPv6：支持使用 IPv6 格式匹配路由
     - 支持路由的[自动过期(TTL)](doc/admin-api-cn.md#route)
     - [支持路由的优先级](doc/router-radixtree.md#3-match-priority)
+    - [支持批量 Http 请求](doc/plugins/batch-requests-cn.md)
 
 - **安全防护**
     - 多种身份认证方式: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md), [basic-auth](doc/plugins/basic-auth-cn.md), [wolf-rbac](doc/plugins/wolf-rbac-cn.md)。
@@ -90,11 +91,13 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [限制请求数](doc/plugins/limit-count-cn.md)
     - [限制并发](doc/plugins/limit-conn-cn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
+    - [CORS](doc/plugins/cors-cn.md)
 
 - **运维友好**
     - OpenTracing 可观测性: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin-cn.md)。
     - 监控和指标: [Prometheus](doc/plugins/prometheus-cn.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
+    - 高可用：支持配置同一个集群内的多个 etcd 地址。
     - 控制台: 内置控制台来操作 APISIX 集群。
     - 版本控制：支持操作的多次回滚。
     - CLI: 使用命令行来启动、关闭和重启 APISIX。
@@ -102,8 +105,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [全局规则](doc/architecture-design-cn.md#Global-Rule)：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](doc/plugins/fault-injection-cn.md)
-    - [REST Admin API](doc/admin-api-cn.md)
+    - [REST Admin API](doc/admin-api-cn.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
     - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
+    - 外部日志记录器：将访问日志导出到外部日志管理工具。([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
 
 - **高度可扩展**
     - [自定义插件](doc/plugin-develop-cn.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。
@@ -132,9 +136,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **[ARM64](http
 sudo apisix start
 ```
 
-2. 测试限流插件
+2. 入门指南
 
-你可以测试限流插件，来上手体验 APISIX，按照[限流插件文档](doc/plugins/limit-count-cn.md)的步骤即可。
+入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/getting-started-cn.md)的步骤即可。
 
 更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
 
@@ -142,27 +146,31 @@ sudo apisix start
 
 APISIX 内置了对 Dashboard 的支持，使用步骤如下：
 
-1. 确保你的运行环境中的 Node 版本 >= 8.12.0。
+1. 确保你的运行环境中使用了最新的 Node.js 版本（>= 10）。
 
-2. 下载 [Dashboard](https://github.com/apache/incubator-apisix-dashboard) 的源码：
+2. 下载 dashboard 子模块的源码：
 ```
-git clone https://github.com/apache/incubator-apisix-dashboard.git
+git submodule update --init --recursive
 ```
 
 3. 安装 [yarn](https://yarnpkg.com/zh-Hans/docs/install)
 
 4. 安装依赖并构建
 ```
-git checkout <v1.0>  #这里的tag版本和你使用的apisix版本一致
+cd dashboard
 yarn && yarn build:prod
 ```
 
 5. 与 APISIX 集成
 把编译后的在 `/dist` 目录下的所有文件，拷贝到 `apisix/dashboard` 目录下。
+```
+cp -r dist/* .
+```
+
 使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
 不用填写用户名和密码，直接登录。
 
-Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
+Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
 
 我们部署了一个在线的 [Dashboard](http://apisix.iresty.com) ，方便你了解 APISIX。
 
@@ -216,6 +224,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 
 
 ## 视频和文章
+- 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
 - 2019.12.14 [从 0 到 1：Apache APISIX 的 Apache 之路](https://zhuanlan.zhihu.com/p/99620158)
 - 2019.12.14 [基于 Apache APISIX 的下一代微服务架构](https://www.upyun.com/opentalk/445.html)
 - 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html)
@@ -234,7 +243,7 @@ Dashboard 默认允许任何 IP 访问。你可以自行修改 `conf/config.yaml
 ## APISIX 的用户有哪些？
 有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
 
-<img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
+<img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500">
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 

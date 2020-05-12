@@ -22,7 +22,10 @@ local function trim(s)
 end
 
 local function excute_cmd(cmd)
-    local t = io.popen(cmd)
+    local t, err = io.popen(cmd)
+    if not t then
+        return nil, "failed to execute command: " .. cmd .. ", error info:" .. err
+    end
     local data = t:read("*all")
     t:close()
     return data
@@ -36,9 +39,7 @@ local pkg_path_org = package.path
 local apisix_home = "/usr/local/apisix"
 local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                   .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
-local pkg_path  = apisix_home .. "/deps/share/lua/5.1/apisix/lua/?.lua;"
-                  .. "/usr/local/share/lua/5.1/apisix/lua/?.lua;"
-                  .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
+local pkg_path  = apisix_home ..    "/deps/share/lua/5.1/?.lua;;"
 
 -- only for developer, use current folder as working space
 local is_root_path = false
@@ -55,7 +56,7 @@ if script_path:sub(1, 2) == './' then
 
     pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                 .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
-    pkg_path  = apisix_home .. "/lua/?.lua;"
+    pkg_path  = apisix_home .. "/?/init.lua;"
                 .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 end
 -- print("apisix_home: ", apisix_home)
@@ -110,14 +111,17 @@ env APISIX_PROFILE;
 
 {% if stream_proxy then %}
 stream {
-    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[/usr/local/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
+                      .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
+
+    lua_shared_dict lrucache-lock-stream   10m;
+
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
+    resolver_timeout {*resolver_timeout*};
 
     upstream apisix_backend {
         server 127.0.0.1:80;
@@ -162,10 +166,8 @@ stream {
 {% end %}
 
 http {
-    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;/usr/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[/usr/local/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[$prefix/deps/share/lua/5.1/apisix/lua/?.lua;]=]
-                      .. [=[{*apisix_lua_home*}/lua/?.lua;;{*lua_path*};";
+    lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
+                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
@@ -176,11 +178,19 @@ http {
     lua_shared_dict plugin-limit-conn    10m;
     lua_shared_dict upstream-healthcheck 10m;
     lua_shared_dict worker-events        10m;
+    lua_shared_dict lrucache-lock        10m;
 
     # for openid-connect plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
+
+    # for custom shared dict
+    {% if http.lua_shared_dicts then %}
+    {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
+    lua_shared_dict {*cache_key*} {*cache_size*};
+    {% end %}
+    {% end %}
 
     {% if proxy_cache then %}
     # for proxy cache
@@ -207,8 +217,8 @@ http {
 
     lua_socket_log_errors off;
 
-    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*} ipv6=off;
-    resolver_timeout 5;
+    resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
+    resolver_timeout {*resolver_timeout*};
 
     lua_http10_buffering off;
 
@@ -260,7 +270,12 @@ http {
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
-        apisix.http_init()
+
+        local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
+        local args = {
+            dns_resolver = dns_resolver,
+        }
+        apisix.http_init(args)
     }
 
     init_worker_by_lua_block {
@@ -373,6 +388,7 @@ http {
         }
 
         location / {
+            set $upstream_mirror_host        '';
             set $upstream_scheme             'http';
             set $upstream_host               $host;
             set $upstream_upgrade            '';
@@ -427,7 +443,7 @@ http {
             set $upstream_hdr_cache_control     '';
 
             proxy_cache                         $upstream_cache_zone;
-            proxy_cache_valid                   any {% if proxy_cache and proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 5s {% end %};
+            proxy_cache_valid                   any {% if proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 10s {% end %};
             proxy_cache_min_uses                1;
             proxy_cache_methods                 GET HEAD;
             proxy_cache_lock_timeout            5s;
@@ -444,6 +460,7 @@ http {
             {% end %}
 
             proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
+            mirror          /proxy_mirror;
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -480,14 +497,24 @@ http {
                 apisix.http_log_phase()
             }
         }
+
+        location = /proxy_mirror {
+            internal;
+
+            if ($upstream_mirror_host = "") {
+                return 200;
+            }
+
+            proxy_pass $upstream_mirror_host$request_uri;
+        }
     }
 }
 ]=]
 
 local function write_file(file_path, data)
-    local file = io.open(file_path, "w+")
+    local file, err = io.open(file_path, "w+")
     if not file then
-        return false, "failed to open file: " .. file_path
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
     end
 
     file:write(data)
@@ -496,9 +523,9 @@ local function write_file(file_path, data)
 end
 
 local function read_file(file_path)
-    local file = io.open(file_path, "rb")
+    local file, err = io.open(file_path, "rb")
     if not file then
-        return false, "failed to open file: " .. file_path
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
     end
 
     local data = file:read("*all")
@@ -506,12 +533,6 @@ local function read_file(file_path)
     return data
 end
 
-local function exec(command)
-    local t= io.popen(command)
-    local res = t:read("*all")
-    t:close()
-    return trim(res)
-end
 
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
@@ -581,6 +602,24 @@ local function check_or_version(cur_ver_s, need_ver_s)
     return true
 end
 
+
+local function local_dns_resolver(file_path)
+    local file, err = io.open(file_path, "rb")
+    if not file then
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
+    end
+    local dns_addrs = {}
+    for line in file:lines() do
+        local addr, n = line:gsub("^nameserver%s+(%d+%.%d+%.%d+%.%d+)%s*$", "%1")
+        if n == 1 then
+            table.insert(dns_addrs, addr)
+        end
+    end
+    file:close()
+    return dns_addrs
+end
+
+
 local _M = {version = 0.1}
 
 function _M.help()
@@ -624,7 +663,7 @@ local function init()
     local sys_conf = {
         lua_path = pkg_path_org,
         lua_cpath = pkg_cpath_org,
-        os_name = exec("uname"),
+        os_name = excute_cmd("uname"),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
@@ -662,6 +701,19 @@ local function init()
         sys_conf["worker_processes"] = 1
     else
         sys_conf["worker_processes"] = "auto"
+    end
+
+    local dns_resolver = sys_conf["dns_resolver"]
+    if not dns_resolver or #dns_resolver == 0 then
+        local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
+        if not dns_addrs then
+            error("failed to import local DNS: " .. err)
+        end
+
+        if #dns_addrs == 0 then
+            error("local DNS is empty")
+        end
+        sys_conf["dns_resolver"] = dns_addrs
     end
 
     local conf_render = template.compile(ngx_tpl)
@@ -706,28 +758,48 @@ local function init_etcd(show_output)
     end
 
     local etcd_conf = yaml_conf.etcd
-    local uri = etcd_conf.host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
     local timeout = etcd_conf.timeout or 3
+    local uri
+    --convert old single etcd config to multiple etcd config
+    if type(yaml_conf.etcd.host) == "string" then
+        yaml_conf.etcd.host = {yaml_conf.etcd.host}
+    end
 
-    for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
-                               "/plugins", "/consumers", "/node_status",
-                               "/ssl", "/global_rules", "/stream_routes",
-                               "/proto"}) do
-        local cmd = "curl " .. uri .. dir_name
+    local host_count = #(yaml_conf.etcd.host)
+
+    for index, host in ipairs(yaml_conf.etcd.host) do
+
+        local is_success = true
+        uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
+
+        for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
+                                   "/plugins", "/consumers", "/node_status",
+                                   "/ssl", "/global_rules", "/stream_routes",
+                                   "/proto"}) do
+            local cmd = "curl " .. uri .. dir_name
                     .. "?prev_exist=false -X PUT -d dir=true "
                     .. "--connect-timeout " .. timeout
                     .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
-        local res = exec(cmd)
-        if not res:find("index", 1, true)
-           and not res:find("createdIndex", 1, true) then
-            error(cmd .. "\n" .. res)
+            local res = excute_cmd(cmd)
+            if not res:find("index", 1, true)
+                    and not res:find("createdIndex", 1, true) then
+                is_success = false
+                if (index == hostCount) then
+                    error(cmd .. "\n" .. res)
+                end
+                break
+            end
+
+            if show_output then
+                print(cmd)
+                print(res)
+            end
         end
 
-        if show_output then
-            print(cmd)
-            print(res)
+        if is_success then
+            break
         end
     end
 end

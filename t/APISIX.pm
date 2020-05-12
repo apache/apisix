@@ -37,12 +37,45 @@ sub read_file($) {
     $data;
 }
 
+sub local_dns_resolver() {
+    open my $in, "/etc/resolv.conf" or die "cannot open /etc/resolv.conf";
+    my @lines =  <$in>;
+    my @dns_addrs = ();
+    foreach my $line (@lines){
+        $line =~ m/^nameserver\s+(\d+[.]\d+[.]\d+[.]\d+)\s*$/;
+        if ($1) {
+            push(@dns_addrs, $1);
+        }
+    }
+    close($in);
+    return @dns_addrs
+}
+
+
+my $dns_addrs_str = "";
+my $dns_addrs_tbl_str = "";
+my $enable_local_dns = $ENV{"ENABLE_LOCAL_DNS"};
+if ($enable_local_dns) {
+    my @dns_addrs = local_dns_resolver();
+    $dns_addrs_tbl_str = "{";
+    foreach my $addr (@dns_addrs){
+        $dns_addrs_str = "$dns_addrs_str $addr";
+        $dns_addrs_tbl_str = "$dns_addrs_tbl_str\"$addr\", ";
+    }
+    $dns_addrs_tbl_str = "$dns_addrs_tbl_str}";
+} else {
+    $dns_addrs_str = "8.8.8.8 114.114.114.114";
+    $dns_addrs_tbl_str = "{\"8.8.8.8\", \"114.114.114.114\"}";
+}
+
+
 my $yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
-$yaml_config =~ s/admin_key:/admin_key_useless:/;
+$yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
+$yaml_config =~ s/admin_key:/disable_admin_key:/;
 
 my $profile = $ENV{"APISIX_PROFILE"};
 
@@ -75,10 +108,12 @@ _EOC_
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;./?.lua;;";
-    lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;./?.so;;";
+    lua_package_path "./?.lua;./?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "./?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 
     lua_socket_log_errors off;
+
+    lua_shared_dict lrucache-lock-stream   10m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -146,13 +181,16 @@ _EOC_
     require "resty.core"
 
     apisix = require("apisix")
-    apisix.http_init()
+    local args = {
+        dns_resolver = $dns_addrs_tbl_str,
+    }
+    apisix.http_init(args)
 _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/lua/?.lua;$apisix_home/t/?.lua;./?.lua;;";
-    lua_package_cpath "$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;./?.so;;";
+    lua_package_path "./?.lua;./?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "./?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
@@ -160,8 +198,9 @@ _EOC_
     lua_shared_dict prometheus-metrics   10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
+    lua_shared_dict lrucache-lock        10m;
 
-    resolver 8.8.8.8 114.114.114.114 ipv6=off;
+    resolver $dns_addrs_str;
     resolver_timeout 5;
 
     underscores_in_headers on;
@@ -263,6 +302,7 @@ _EOC_
         }
 
         location / {
+            set \$upstream_mirror_host        '';
             set \$upstream_scheme             'http';
             set \$upstream_host               \$host;
             set \$upstream_upgrade            '';
@@ -306,6 +346,7 @@ _EOC_
             proxy_pass_header  Server;
             proxy_pass_header  Date;
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
+            mirror             /proxy_mirror;
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -340,6 +381,16 @@ _EOC_
             log_by_lua_block {
                 apisix.http_log_phase()
             }
+        }
+
+        location = /proxy_mirror {
+            internal;
+
+            if (\$upstream_mirror_host = "") {
+                return 200;
+            }
+
+            proxy_pass \$upstream_mirror_host\$request_uri;
         }
 _EOC_
 

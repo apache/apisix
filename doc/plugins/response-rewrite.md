@@ -31,13 +31,14 @@ response rewrite plugin, rewrite the content from upstream.
 
 **senario**:
 1. can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing).
-2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use [redirect](redirect-cn.md) plugin if you just want a redirection.
+2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use [redirect](redirect.md) plugin if you just want a redirection.
 
 ## Attributes
 |Name    |Requirement|Description|
 |-------         |-----|------|
 |status_code   |optional| New `status code` to client|
 |body          |optional| New `body` to client, and the content-length will be reset too.|
+|body_base64   |optional| This is a boolean value，identify if `body` in configuration need base64 decoded before rewrite to client.|
 |headers             |optional| Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
 
 ## How To Enable

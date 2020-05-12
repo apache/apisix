@@ -17,8 +17,8 @@
 #
 -->
 
+# Table of Contents
 
-Table of contents
 ===
 
 * [Route](#route)
@@ -60,7 +60,7 @@ Table of contents
 |remote_addr|False |Match Rules|The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.|"192.168.1.0/24"|
 |remote_addrs|False |Match Rules|The `remote_addr` in the form of a list indicates that multiple different IP addresses are allowed, and match any one of them.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
 |methods  |False |Match Rules|If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.|{"GET", "POST"}|
-|priority  |False |Match Rules|If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.|priority = 10|
+|priority  |False |Match Rules|If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`. Larger value means higher priority. The default value is 0.|priority = 10|
 |vars       |False  |Match Rules |A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For the operator part, the currently supported operators are `==`, `~=`,`>`, `<`, and `~~`. For the `>` and `<` operators, the result is first converted to `number` and then compared. See a list of [supported operators](#available-operators) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|False|Match Rules|User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.|function(vars) return vars["arg_name"] == "json" end|
 |plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
@@ -167,7 +167,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## Service
 
@@ -245,7 +245,7 @@ Server: APISIX web server
 
 Return response from etcd currently.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## Consumer
 
@@ -312,7 +312,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 Return response from etcd currently.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## Upstream
 
@@ -337,7 +337,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |Name    |Optional|Description|
 |-------         |-----|------|
 |type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
-|nodes           |required|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
+|nodes           |required if `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
+|k8s_deployment_info|required if `nodes` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
 |key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
@@ -359,6 +360,13 @@ Config Example:
     },
     "enable_websocket": true,
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
+    "k8s_deployment_info": {    # kubernetes deployment info
+        "namespace": "test-namespace",
+        "deploy_name": "test-deploy-name",
+        "service_name": "test-service-name",
+        "backend_type": "pod",    # pod or service
+        "port": 8080
+    },
     "type":"roundrobin",        # chash or roundrobin
     "checks": {},               # Health check parameters
     "hash_on": "",
@@ -392,7 +400,7 @@ Content-Type: text/plain
 
 Return response from etcd currently.
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)
 
 ## SSL
 
@@ -428,4 +436,4 @@ Config Example:
 }
 ```
 
-[Back to TOC](#table-of-contents)
+[Back to TOC](#Table-of-Contents)

@@ -45,3 +45,35 @@ encode: ["first","a",1,true]
 encode: ["a",1,true,true]
 --- no_error_log
 [error]
+
+
+
+=== TEST 2: deepcopy
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local deepcopy = core.table.deepcopy
+            local cases = {
+                {t = {1, 2, a = {2, 3}}},
+                {t = {{a = b}, 2, true}},
+                {t = {{a = b}, {{a = c}, {}, 1}, true}},
+            }
+            for _, case in ipairs(cases) do
+                local t = case.t
+                local actual = core.json.encode(deepcopy(t))
+                local expect = core.json.encode(t)
+                if actual ~= expect then
+                    ngx.say("expect ", expect, ", actual ", actual)
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok
+--- no_error_log
+[error]

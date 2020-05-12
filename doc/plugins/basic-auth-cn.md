@@ -17,15 +17,15 @@
 #
 -->
 
-[English](basic-auth.md)
+# [English](basic-auth.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
-
 
 ## 名字
 
@@ -37,12 +37,12 @@
 
 ## 属性
 
-* `username`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。
-* `password`: 用户的密码
+- `username`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。
+- `password`: 用户的密码
 
 ## 如何启用
 
-1. 创建一个 consumer 对象，并设置插件 `basic-auth` 的值。
+### 1. 创建一个 consumer 对象，并设置插件 `basic-auth` 的值。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -56,13 +56,14 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
 你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
-![](../images/plugin/basic-auth-1.png)
+![auth-1](../images/plugin/basic-auth-1.png)
 
 然后在 consumer 页面中添加 basic-auth 插件：
-![](../images/plugin/basic-auth-2.png)
+![auth-2](../images/plugin/basic-auth-2.png)
 
-2. 创建 Route 或 Service 对象，并开启 `basic-auth` 插件。
+### 2. 创建 Route 或 Service 对象，并开启 `basic-auth` 插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -83,8 +84,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-
-* 缺少 Authorization header
+- 缺少 Authorization header
 
 ```shell
 $ curl http://127.0.0.2:9080/hello -i
@@ -93,7 +93,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing authorization in request"}
 ```
 
-* 用户名不存在：
+- 用户名不存在：
 
 ```shell
 $ curl -i -ubar:bar http://127.0.0.1:9080/hello
@@ -102,7 +102,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid user key in authorization"}
 ```
 
-* 密码错误：
+- 密码错误：
 
 ```shell
 $ curl -i -ufoo:foo http://127.0.0.1:9080/hello
@@ -112,7 +112,7 @@ HTTP/1.1 401 Unauthorized
 ...
 ```
 
-* 成功请求：
+- 成功请求：
 
 ```shell
 $ curl -i -ufoo:bar http://127.0.0.1:9080/hello
@@ -121,7 +121,6 @@ HTTP/1.1 200 OK
 hello, foo!
 ...
 ```
-
 
 ## 禁用插件
 

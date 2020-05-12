@@ -19,13 +19,13 @@
 [中文](plugin-develop-cn.md)
 
 # table of contents
+
 - [**check dependencies**](#check-dependencies)
 - [**name and config**](#name-and-config)
 - [**schema and check**](#schema-and-check)
 - [**choose phase to run**](#choose-phase-to-run)
 - [**implement the logic**](#implement-the-logic)
 - [**write test case**](#write-test-case)
-
 
 ## check dependencies
 
@@ -50,7 +50,7 @@ The plugin itself provides the init method. It is convenient for plugins to perf
  the plugin is loaded.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-       method "http_init" in the file __lua/apisix.lua__, And you may need to add some processing on generated part of Nginx
+       method "http_init" in the file __apisix.lua__, And you may need to add some processing on generated part of Nginx
        configuration file in __bin/apisix__ file. but it is easy to have an impact on the overall situation according to the
        existing plugin mechanism, we do not recommend this unless you have a complete grasp of the code.
 
@@ -58,7 +58,7 @@ Note : if the dependency of some plugin needs to be initialized when Nginx start
 
 determine the name and priority of the plugin, and add to conf/config.yaml. For example, for the key-auth plugin,
  you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
- duplicate), you can see the code in file "__lua/apisix/plugins/key-auth.lua__" :
+ duplicate), you can see the code in file "__apisix/plugins/key-auth.lua__" :
 
 ```lua
    local plugin_name = "key-auth"
@@ -183,6 +183,7 @@ done
 ```
 
 A test case consists of three parts :
+
 - __Program code__ : configuration content of Nginx location
 - __Input__ : http request information
 - __Output check__ : status, header, body, error log check
