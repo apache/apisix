@@ -123,3 +123,17 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 2、重启APISIX
 
 之后便可以在logs/error.log中查看到info的日志了。
+
+## 如何加载自己编写的插件
+
+Apache APISIX 的插件支持热加载，如果你的 APISIX 节点打开了 Admin API，那么对于新增/删除/修改插件等场景，均可以通过调用 HTTP 接口的方式热加载插件，不需要重启服务。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+```
+
+如果你的 APISIX 节点并没有打开 Admin API，那么你可以通过手动 reload APISIX 的方式加载插件。
+
+```shell
+apisix reload
+```
