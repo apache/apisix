@@ -16,8 +16,6 @@
 # limitations under the License.
 #
 -->
-
-
 ## Health Checks for Upstream
 
 Health Check of APISIX is based on [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck),
@@ -41,7 +39,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
          "nodes": {
             "127.0.0.1:1980": 1,
             "127.0.0.1:1970": 1
-        }
+        },
         "type": "roundrobin",
         "retries": 2,
         "checks": {

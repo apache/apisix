@@ -59,7 +59,12 @@ Plugins
 * [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
 * [fault-injection](plugins/fault-injection.md): The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
 * [proxy-cache](plugins/proxy-cache.md): Provides the ability to cache upstream response data.
-* [tcp-logger](plugins/tcp-logger.md): Log requests to TCP servers
+* [tcp-logger](plugins/tcp-logger.md): Log requests to TCP servers.
+* [udp-logger](plugins/udp-logger.md): Log requests to UDP servers.
+* [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+* [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
+* [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
+* [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
 
 Deploy to the Cloud
 =======

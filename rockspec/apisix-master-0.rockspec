@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 package = "apisix"
 version = "master-0"
 supported_platforms = {"linux", "macosx"}
@@ -35,7 +36,7 @@ dependencies = {
     "lua-resty-balancer = 0.02rc5",
     "lua-resty-ngxvar = 0.5",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-healthcheck-iresty = 2.0",
+    "lua-resty-healthcheck-api7 = 2.2.0",
     "lua-resty-jwt = 0.2.0",
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
@@ -46,8 +47,10 @@ dependencies = {
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 0.1",
     "lua-resty-prometheus = 1.0",
-    "jsonschema = 0.7",
+    "jsonschema = 0.8",
     "lua-resty-ipmatcher = 0.6",
+    "lua-resty-kafka = 0.07",
+    "lua-resty-logger-socket = 2.0-0",
 }
 
 build = {

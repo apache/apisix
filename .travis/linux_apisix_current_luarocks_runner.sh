@@ -30,7 +30,16 @@ do_install() {
     sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
-    sudo apt-get install openresty-debug
+    sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
+
+    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
+    tar -xf v2.4.4.tar.gz
+    cd luarocks-2.4.4
+    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+    make build > build.log 2>&1 || (cat build.log && exit 1)
+    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+    cd ..
+    rm -rf luarocks-2.4.4
 }
 
 script() {
@@ -39,9 +48,11 @@ script() {
     openresty -V
     sudo service etcd start
 
+    sudo rm -rf /usr/local/apisix
+
     # install APISIX with local version
-    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps
-    sudo luarocks make rockspec/apisix-master-0.rockspec
+    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps  > build.log 2>&1 || (cat build.log && exit 1)
+    sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
 
     # show install file
     luarocks show apisix
@@ -54,7 +65,12 @@ script() {
     # apisix cli test
     sudo PATH=$PATH .travis/apisix_cli_test.sh
 
-    sudo luarocks remove rockspec/apisix-master-0.rockspec
+    cat /usr/local/apisix/logs/error.log | grep '\[error\]' > /tmp/error.log | true
+    if [ -s /tmp/error.log ]; then
+        echo "=====found error log====="
+        cat /usr/local/apisix/logs/error.log
+        exit 1
+    fi
 }
 
 case_opt=$1

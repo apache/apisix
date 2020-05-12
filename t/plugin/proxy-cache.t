@@ -618,3 +618,48 @@ GET /t
 qr/cache_zone invalid_disk_cache not found/
 --- no_error_log
 [error]
+
+
+
+=== TEST 24: sanity check (invalid variable for cache_key)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_zone": "disk_cache_one",
+                               "cache_key": ["$uri", "$request_method"],
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_method": ["GET"],
+                               "cache_http_status": [200],
+                               "hide_cache_headers": true,
+                               "no_cache": ["$arg_no_cache"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1985": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin proxy-cache err: cache_key variable \$request_method unsupported/
+--- no_error_log
+[error]

@@ -23,8 +23,12 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
     echo "Create lua deps cache"
+
+    rm -rf deps
+    make deps
+    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
     sudo cp rockspec/apisix-master-0.rockspec build-cache/
@@ -34,6 +38,15 @@ before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     docker pull redis:3.0-alpine
     docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
+    docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
+    # spin up kafka cluster for tests (1 zookeper and 1 kafka instance)
+    docker pull bitnami/zookeeper:3.6.0
+    docker pull bitnami/kafka:latest
+    docker network create kafka-net --driver bridge
+    docker run --name zookeeper-server -d -p 2181:2181 --network kafka-net -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:3.6.0
+    docker run --name kafka-server1 -d --network kafka-net -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092 -p 9092:9092 -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true bitnami/kafka:latest
+    sleep 5
+    docker exec -it kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
 }
 
 tengine_install() {
@@ -46,8 +59,9 @@ tengine_install() {
         return
     fi
 
-    wget https://openresty.org/download/openresty-1.15.8.2.tar.gz
-    tar zxf openresty-1.15.8.2.tar.gz
+    export OPENRESTY_VERSION=1.15.8.3
+    wget https://openresty.org/download/openresty-$OPENRESTY_VERSION.tar.gz
+    tar zxf openresty-$OPENRESTY_VERSION.tar.gz
     wget https://codeload.github.com/alibaba/tengine/tar.gz/2.3.2
     tar zxf 2.3.2
     wget https://codeload.github.com/openresty/luajit2/tar.gz/v2.1-20190912
@@ -55,19 +69,19 @@ tengine_install() {
     wget https://codeload.github.com/simplresty/ngx_devel_kit/tar.gz/v0.3.1
     tar zxf v0.3.1
 
-    rm -rf openresty-1.15.8.2/bundle/nginx-1.15.8
-    mv tengine-2.3.2 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/nginx-1.15.8
+    mv tengine-2.3.2 openresty-$OPENRESTY_VERSION/bundle/
 
-    rm -rf openresty-1.15.8.2/bundle/LuaJIT-2.1-20190507
-    mv luajit2-2.1-20190912 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/LuaJIT-2.1-20190507
+    mv luajit2-2.1-20190912 openresty-$OPENRESTY_VERSION/bundle/
 
-    rm -rf openresty-1.15.8.2/bundle/ngx_devel_kit-0.3.1rc1
-    mv ngx_devel_kit-0.3.1 openresty-1.15.8.2/bundle/
+    rm -rf openresty-$OPENRESTY_VERSION/bundle/ngx_devel_kit-0.3.1rc1
+    mv ngx_devel_kit-0.3.1 openresty-$OPENRESTY_VERSION/bundle/
 
-    sed -i "s/= auto_complete 'LuaJIT';/= auto_complete 'luajit2';/g" openresty-1.15.8.2/configure
-    sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-1.15.8.2/configure
+    sed -i "s/= auto_complete 'LuaJIT';/= auto_complete 'luajit2';/g" openresty-$OPENRESTY_VERSION/configure
+    sed -i 's/= auto_complete "nginx";/= auto_complete "tengine";/g' openresty-$OPENRESTY_VERSION/configure
 
-    cd openresty-1.15.8.2
+    cd openresty-$OPENRESTY_VERSION
 
     # patching start
     # https://github.com/alibaba/tengine/issues/1381#issuecomment-541493008
@@ -97,6 +111,9 @@ tengine_install() {
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_pipelining.patch
     wget -P patches https://raw.githubusercontent.com/openresty/openresty/master/patches/nginx-1.17.4-upstream_timeout_fields.patch
     wget -P patches https://raw.githubusercontent.com/totemofwolf/openresty/master/patches/tengine-2.3.2-privileged_agent_process.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-delete_unused_variable.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-keepalive_post_request_status.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-tolerate_backslash_zero_in_uri.patch
 
     cd bundle/tengine-2.3.2
     patch -p1 < ../../patches/nginx-1.17.4-always_enable_cc_feature_tests.patch
@@ -124,6 +141,9 @@ tengine_install() {
     patch -p1 < ../../patches/nginx-1.17.4-upstream_pipelining.patch
     patch -p1 < ../../patches/nginx-1.17.4-upstream_timeout_fields.patch
     patch -p1 < ../../patches/tengine-2.3.2-privileged_agent_process.patch
+    patch -p1 < ../../patches/tengine-2.3.2-delete_unused_variable.patch
+    patch -p1 < ../../patches/tengine-2.3.2-keepalive_post_request_status.patch
+    patch -p1 < ../../patches/tengine-2.3.2-tolerate_backslash_zero_in_uri.patch
 
     cd -
     # patching end
@@ -161,19 +181,19 @@ tengine_install() {
         --add-module=bundle/tengine-2.3.2/modules/mod_dubbo \
         --add-module=bundle/tengine-2.3.2/modules/ngx_multi_upstream_module \
         --add-module=bundle/tengine-2.3.2/modules/mod_config \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_concat_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_footer_filter_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_proxy_connect_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_reqstat_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_concat_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_footer_filter_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_proxy_connect_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_reqstat_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_slice_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_sysguard_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_trim_filter_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_trim_filter_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_check_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_consistent_hash_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dynamic_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dyups_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dynamic_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_dyups_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_upstream_session_sticky_module \
-        --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_http_user_agent_module \
+        --add-module=bundle/tengine-2.3.2/modules/ngx_http_user_agent_module \
         --add-dynamic-module=bundle/tengine-2.3.2/modules/ngx_slab_stat \
         > build.log 2>&1 || (cat build.log && exit 1)
 
@@ -186,7 +206,7 @@ tengine_install() {
     mkdir -p build-cache${OPENRESTY_PREFIX}
     cp -r ${OPENRESTY_PREFIX}/* build-cache${OPENRESTY_PREFIX}
     ls build-cache${OPENRESTY_PREFIX}
-    rm -rf openresty-1.15.8.2
+    rm -rf openresty-${OPENRESTY_VERSION}
 }
 
 do_install() {
@@ -197,10 +217,18 @@ do_install() {
     sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
+    sudo apt-get install lua5.1 liblua5.1-0-dev
 
     tengine_install
 
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls
+    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
+    tar -xf v2.4.4.tar.gz
+    cd luarocks-2.4.4
+    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+    make build > build.log 2>&1 || (cat build.log && exit 1)
+    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+    cd ..
+    rm -rf luarocks-2.4.4
 
     export GO111MOUDULE=on
 
@@ -217,6 +245,8 @@ do_install() {
             create_lua_deps
         fi
     fi
+
+    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils

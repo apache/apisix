@@ -30,7 +30,7 @@ APISIX can dynamic load balancing TCP/UDP proxy. In Nginx world, we call TCP/UDP
 Setting the `stream_proxy` option in `conf/config.yaml`, specify a list of addresses that require dynamic proxy.
 By default, no any stream proxy is enabled.
 
-```
+```yaml
 apisix:
   stream_proxy:                 # TCP/UDP proxy
     tcp:                        # TCP proxy address list

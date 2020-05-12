@@ -160,3 +160,29 @@ https://developer.apple.com/download/more/.
 This is an OS incompatible issue, you could fix by these two steps
 1. `brew edit openresty/brew/openresty`
 1. add `\ -fno-stack-check` in with-luajit-xcflags line.
+
+## How to change the log level?
+
+The default log level for APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
+
+Steps:
+
+1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
+
+2. Restart APISIX
+
+Now you can trace the info level log in logs/error.log.
+
+## How to reload your own plugin
+
+The Apache APISIX plugin supports hot reloading. If your APISIX node has the Admin API turned on, then for scenarios such as adding / deleting / modifying plugins, you can hot reload the plugin by calling the HTTP interface without restarting the service.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+```
+
+If your APISIX node does not open the Admin API, then you can manually load the plug-in by reloading APISIX.
+
+```shell
+apisix reload
+```

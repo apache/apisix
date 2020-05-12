@@ -74,7 +74,7 @@ script() {
     sudo mkdir -p /usr/local/var/log/nginx/
     sudo touch /usr/local/var/log/nginx/error.log
     sudo chmod 777 /usr/local/var/log/nginx/error.log
-    APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t
+    APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t/admin/*.t
 }
 
 after_success() {

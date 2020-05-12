@@ -20,6 +20,7 @@
 [Chinese](architecture-design-cn.md)
 
 ## Table of Contents
+
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
@@ -35,7 +36,7 @@
 
 ### Plugin Loading Process
 
-![](./images/flow-load-plugin.png)
+![flow-load-plugin](./images/flow-load-plugin.png)
 
 ### Plugin Hierarchy Structure
 
@@ -190,7 +191,7 @@ The configuration of the plugin can be directly bound to the specified Route, or
 
 A plugin will only be executed once in a single request, even if it is bound to multiple different objects (such as Route or Service).
 
-The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../lua/apisix/plugins/example-plugin.lua#L37).
+The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../apisix/plugins/example-plugin.lua#L37).
 
 The plugin configuration is submitted as part of Route or Service and placed under `plugins`. It internally uses the plugin name as the hash's key to hold configuration items for different plugins.
 
@@ -225,14 +226,15 @@ As shown in the image above, by creating an Upstream object and referencing it b
 
 Upstream configuration can be directly bound to the specified `Route` or it can be bound to `Service`, but the configuration in `Route` has a higher priority. The priority behavior here is very similar to `Plugin`.
 
-#### Configuration
+### Configuration
 
 In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
 
 |Name    |Optional|Description|
 |-------         |-----|------|
 |type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
-|nodes           |required|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
+|nodes           |required if `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
+|k8s_deployment_info |required if `nodes` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
 |key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
@@ -247,10 +249,12 @@ Create an upstream object use case:
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "roundrobin",
-    "nodes": {
-        "127.0.0.1:80": 1,
-        "127.0.0.2:80": 2,
-        "foo.com:80": 3
+    "k8s_deployment_info": {
+        "namespace": "test-namespace",
+        "deploy_name": "test-deploy-name",
+        "service_name": "test-service-name",
+        "backend_type": "pod",
+        "port": 8080
     }
 }'
 
@@ -340,8 +344,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 More details can be found in [Health Checking Documents](health-check.md).
 
 Here are some examples of configurations using different `hash_on` types:
-##### Consumer
+
+#### Consumer
+
 Create a consumer object:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d `
 {
@@ -353,7 +360,9 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }`
 ```
+
 Create route object and enable `key-auth` plugin authentication:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -371,13 +380,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/server_port"
 }'
 ```
+
 Test request, the `consumer_id` after authentication is passed will be used as the hash value of the load balancing hash algorithm:
+
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
-##### Cookie
+#### Cookie
+
 Create route and upstream object, `hash_on` is `cookie`:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -393,13 +406,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
 The client requests with `Cookie`:
+
 ```shell
  curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
-##### Header
+#### Header
+
 Create route and upstream object, `hash_on` is `header`, `key` is `Content-Type`:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -417,12 +434,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 The client requests with header `Content-Type`:
+
 ```shell
  curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
 ```
 
 [Back to top](#Table-of-contents)
-
 
 ## Router
 
@@ -522,8 +539,10 @@ HTTP/1.1 503 Service Temporarily Unavailable
 [Back to top](#Table-of-contents)
 
 ## Global Rule
+
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
+
 ```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
@@ -540,9 +559,11 @@ curl -X PUT \
         }
     }'
 ```
+
 Now, the `limit-count` plugin will work on all requets
 
 we can list all `GlobalRule` via admin api as below:
+
 ```shell
 curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
