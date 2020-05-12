@@ -39,7 +39,7 @@ APISIX 是基于云原生的微服务 API 网关，它是所有业务流量的�
 
 APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限速等功能，并且支持你自己开发的插件。
 
-更多详细的信息，可以查阅[ APISIX 的白皮书](https://www.iresty.com/download/%E4%BC%81%E4%B8%9A%E7%94%A8%E6%88%B7%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E5%BE%AE%E6%9C%8D%E5%8A%A1%20API%20%E7%BD%91%E5%85%B3.pdf)
+更多详细的信息，可以查阅[ APISIX 的白皮书](https://static.apiseven.com/2020/05/1589275281-%E4%BC%81%E4%B8%9A%E7%94%A8%E6%88%B7%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E5%BE%AE%E6%9C%8D%E5%8A%A1-API-%E7%BD%91%E5%85%B3.pdf)
 
 ![](doc/images/apisix.png)
 
