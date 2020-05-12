@@ -20,12 +20,14 @@ local ipairs    = ipairs
 local ngx       = ngx
 local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
+local tonumber = tonumber
 local prometheus
 
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
     80, 90, 100, 200, 300, 400, 500, 1000,
-    2000, 5000, 10000, 30000, 60000 }
+    2000, 5000, 10000, 30000, 60000
+}
 
 local metrics = {}
 
@@ -54,6 +56,10 @@ function _M.init()
         "HTTP request latency per service in APISIX",
         {"type", "service", "node"}, DEFAULT_BUCKETS)
 
+    metrics.overhead = prometheus:histogram("http_overhead",
+        "HTTP request overhead per service in APISIX",
+        {"type", "service", "node"}, DEFAULT_BUCKETS)
+
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
             {"type", "route", "service", "node"})
@@ -79,6 +85,12 @@ function _M.log(conf, ctx)
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency, "request", service_id, balancer_ip)
+
+    local overhead = latency
+    if ctx.var.upstream_response_time then
+        overhead = overhead - tonumber(ctx.var.upstream_response_time)
+    end
+    metrics.overhead:observe(overhead, "request", service_id, balancer_ip)
 
     metrics.bandwidth:inc(vars.request_length, "ingress", route_id, service_id,
                           balancer_ip)
