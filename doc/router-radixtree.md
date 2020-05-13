@@ -78,9 +78,9 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 {
     "uri": "/index.html",
     "vars": [
-        ["http_host", "iresty.com"],
-        ["cookie__device_id", "a66f0cdc4ba2df8c096f74c9110163a9"],
-        ["arg_name", "jack"]
+        ["http_host", "==", "iresty.com"],
+        ["cookie__device_id","~~", "a66f0cdc4ba2df8c096f74c9110163a9"],
+        ["arg_name", "==", "jack"]
     ],
     "upstream": {
         "type": "roundrobin",
