@@ -786,7 +786,7 @@ local function init_etcd(show_output)
             if not res:find("index", 1, true)
                     and not res:find("createdIndex", 1, true) then
                 is_success = false
-                if (index == hostCount) then
+                if (index == host_count) then
                     error(cmd .. "\n" .. res)
                 end
                 break
