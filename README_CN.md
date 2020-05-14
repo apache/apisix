@@ -121,7 +121,7 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **[ARM64](https://zhuanlan.zhihu.com/p/84467919)** Ubuntu 18.04
 
 安装 APISIX 的步骤：
-1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/install-dependencies.md)
+1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/install-dependencies-cn.md)
 2. 有以下几种方式来安装 Apache APISIX:
     - 通过[源码包安装](doc/how-to-build-cn.md#通过源码包安装);
     - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/how-to-build-cn.md#通过-rpm-包安装centos-7)；
