@@ -28,6 +28,7 @@ return {
         ["apisix/plugins/prometheus/*"] = "plugins/prometheus",
         ["apisix/plugins/zipkin/*"] = "plugins/zipkin",
         ["apisix/utils/*"] = "utils",
+        ["apisix/discovery/*"] = "discovery",
 
         -- can not enable both at http and stream, will fix it later.
         --  ["apisix/stream/*"] = "stream",
