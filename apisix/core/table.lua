@@ -25,13 +25,14 @@ local type         = type
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     new     = new_tab,
     clear   = require("table.clear"),
     nkeys   = nkeys,
     insert  = table.insert,
     concat  = table.concat,
     clone   = require("table.clone"),
+    isarray = require("table.isarray"),
 }
 
 
