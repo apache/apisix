@@ -33,9 +33,9 @@ participates in the Apache community formally or informally, or claims
 any affiliation with the Foundation, in any Foundation-related
 activities and especially when representing the ASF, in any role.
 
-This code __is not exhaustive or complete__. It serves to distill our 
-common understanding of a collaborative, shared environment and goals. 
-We expect it to be followed in spirit as much as in the letter, so that 
+This code __is not exhaustive or complete__. It serves to distill our
+common understanding of a collaborative, shared environment and goals.
+We expect it to be followed in spirit as much as in the letter, so that
 it can enrich all of us and the technical communities in which we participate.
 
 ## Specific Guidelines ##
@@ -94,7 +94,7 @@ that participants are unaware of their bad behaviour than that they
 intentionally try to degrade the quality of the discussion.  Should there be
 difficulties in dealing with the situation, you may report your compliance
 issues in confidence to either:
- 
+
  * President of the Apache Software Foundation: Sam Ruby (rubys at intertwingly dot net)
 
 or one of our volunteers:
@@ -123,3 +123,4 @@ This statement thanks the following, on which it draws for content and inspirati
   * [Mozilla Code of Conduct/Draft](https://wiki.mozilla.org/Code_of_Conduct/Draft#Conflicts_of_Interest)
   * [Python Diversity Appendix](https://www.python.org/community/diversity/)
   * [Python Mentors Home Page](http://pythonmentors.com/)
+  
