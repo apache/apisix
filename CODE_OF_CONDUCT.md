@@ -123,4 +123,3 @@ This statement thanks the following, on which it draws for content and inspirati
   * [Mozilla Code of Conduct/Draft](https://wiki.mozilla.org/Code_of_Conduct/Draft#Conflicts_of_Interest)
   * [Python Diversity Appendix](https://www.python.org/community/diversity/)
   * [Python Mentors Home Page](http://pythonmentors.com/)
-  
