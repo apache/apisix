@@ -44,7 +44,6 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | broker_list   |required       | An array of Kafka brokers.|
 | kafka_topic   |required       | Target topic to push data.|
 | timeout       |optional       |Timeout for the upstream to send data.|
-| async         |optional       |Boolean value to control whether to perform async push.|
 | key           |required       |Key for the message.|
 |name           |optional       |A unique identifier to identity the batch processor|
 |batch_max_size |optional       |Max size of each batch, default is 1000|
@@ -55,21 +54,12 @@ For more info on Batch-Processor in Apache APISIX please refer.
 
 ## Info
 
-Difference between async and the sync data push.
+The `message` will write to the buffer first.
+It will send to the kafka server when the buffer exceed the `batch_max_size`,
+or every `buffer_duration` flush the buffer.
 
-1. In sync model
-
-    In case of success, returns the offset (** cdata: LL **) of the current broker and partition.
-    In case of errors, returns `nil` with a string describing the error.
-
-2. In async model
-
-    The `message` will write to the buffer first.
-    It will send to the kafka server when the buffer exceed the `batch_num`,
-    or every `flush_time` flush the buffer.
-
-    In case of success, returns `true`.
-    In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
+In case of success, returns `true`.
+In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
 
 ##### Sample broker list
 

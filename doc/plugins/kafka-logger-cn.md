@@ -41,7 +41,6 @@
 | broker_list |必须| 要推送的 kafka 的 broker 列表。|
 | kafka_topic |必须| 要推送的 topic。|
 | timeout |可选| 发送数据的超时时间。|
-| async |可选的| 布尔值，用于控制是否执行异步推送。|
 | key |必须| 用于加密消息的密钥。|
 | name |必须| batch processor 的唯一标识。|
 | batch_max_size |可选| 批量发送的消息最大数量，当到达该阀值后会立即发送消息|
@@ -52,21 +51,12 @@
 
 ## 工作原理
 
-异步与同步数据推送之间的区别。
+消息将首先写入缓冲区。
+当缓冲区超过`batch_max_size`时，它将发送到kafka服务器，
+或每个`buffer_duration`刷新缓冲区。
 
-1. 同步模型
-
-    如果成功，则返回当前 Broker 和 Parition 的偏移量（** cdata：LL **）。
-    如果发生错误，则返回“ nil”，并带有描述错误的字符串。
-
-2. 在异步模型中
-
-    消息将首先写入缓冲区。
-    当缓冲区超过`batch_max_size`时，它将发送到kafka服务器，
-    或每个`buffer_duration`刷新缓冲区。
-
-    如果成功，则返回“ true”。
-    如果出现错误，则返回“ nil”，并带有描述错误的字符串（“缓冲区溢出”）。
+如果成功，则返回“ true”。
+如果出现错误，则返回“ nil”，并带有描述错误的字符串（`buffer overflow`）。
 
 ##### Broker 列表
 
