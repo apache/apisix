@@ -58,7 +58,15 @@ local function get_full_log(ngx, conf)
     }
 
     if conf.include_req_body then
-        log.request.body = ngx.req.get_body_data()
+        local body = ngx.req.get_body_data()
+        if body then
+            log.request.body = body
+        else
+            local body_file = ngx.req.get_body_file()
+            if body_file then
+                log.request.body_file = body_file
+            end
+        end
     end
 
     return log
