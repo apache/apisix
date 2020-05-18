@@ -17,57 +17,50 @@
 #
 -->
 
-# Summary
-- [**定义**](#name)
-- [**属性列表**](#attributes)
-- [**信息**](#info)
-- [**如何开启**](#how-to-enable)
-- [**测试插件**](#test-plugin)
-- [**禁用插件**](#disable-plugin)
+# 目录
+- [**简介**](#简介)
+- [**属性**](#属性)
+- [**工作原理**](#工作原理)
+- [**如何启用**](#如何启用)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
 
-## 定义
+## 简介
 
-`kafka-logger` 是一个插件，可用作ngx_lua nginx模块的Kafka客户端驱动程序。
+`kafka-logger` 是一个插件，可用作ngx_lua nginx 模块的 Kafka 客户端驱动程序。
 
-这将提供将Log数据请求作为JSON对象发送到外部Kafka集群的功能。
+它可以将接口请求日志以 JSON 的形式推送给外部 Kafka 集群。如果在短时间内没有收到日志数据，请放心，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
 
-该插件提供了将Log Data作为批处理推送到外部Kafka主题的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
-
-有关Apache APISIX中Batch-Processor的更多信息，请参考。
+有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考。
 [Batch-Processor](../batch-processor-cn.md)
 
-## 属性列表
+## 属性
 
 |属性名称          |必选项  |描述|
 |---------     |--------|-----------|
-| broker_list |必要的| 一系列的Kafka经纪人。|
-| kafka_topic |必要的| 定位主题以推送数据。|
-| timeout |可选的|上游发送数据超时。|
-| async |可选的|布尔值，用于控制是否执行异步推送。|
-| key |必要的|消息的密钥。|
-| max_retry |可选的|没有重试次数。|
+| broker_list |必须| 要推送的 kafka 的 broker 列表。|
+| kafka_topic |必须| 要推送的 topic。|
+| timeout |可选| 发送数据的超时时间。|
+| key |必须| 用于加密消息的密钥。|
+| name |必须| batch processor 的唯一标识。|
+| batch_max_size |可选| 批量发送的消息最大数量，当到达该阀值后会立即发送消息|
+| inactive_timeout |可选| 不活跃时间，如果在该时间范围内都没有消息写入缓冲区，那么会立即发送到 kafka。默认值： 5(s)|
+| buffer_duration |可选| 缓冲周期，消息停留在缓冲区的最大时间，当超过该时间时会立即发送到 kafka。默认值： 60(s)|
+| max_retry_count |可选| 最大重试次数。默认值： 0|
+| retry_delay |可选| 重试间隔。默认值： 1(s)|
 
-## 信息
+## 工作原理
 
-异步与同步数据推送之间的区别。
+消息将首先写入缓冲区。
+当缓冲区超过`batch_max_size`时，它将发送到kafka服务器，
+或每个`buffer_duration`刷新缓冲区。
 
-1. 同步模型
+如果成功，则返回“ true”。
+如果出现错误，则返回“ nil”，并带有描述错误的字符串（`buffer overflow`）。
 
-    如果成功，则返回当前代理和分区的偏移量（** cdata：LL **）。
-    如果发生错误，则返回“ nil”，并带有描述错误的字符串。
+##### Broker 列表
 
-2. 在异步模型中
-
-    消息将首先写入缓冲区。
-    当缓冲区超过`batch_num`时，它将发送到kafka服务器，
-    或每个`flush_time`刷新缓冲区。
-
-    如果成功，则返回“ true”。
-    如果出现错误，则返回“ nil”，并带有描述错误的字符串（“缓冲区溢出”）。
-
-##### 样本经纪人名单
-
-此插件支持一次推送到多个经纪人。如以下示例所示，指定外部kafka服务器的代理，以使此功能生效。
+插件支持一次推送到多个 Broker，如下配置：
 
 ```json
 {
@@ -76,9 +69,9 @@
 }
 ```
 
-## 如何开启
+## 如何启用
 
-1. 这是有关如何为特定路由启用kafka-logger插件的示例。
+1. 为特定路由启用 kafka-logger 插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
