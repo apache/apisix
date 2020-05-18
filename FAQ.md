@@ -107,26 +107,29 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
+
+Here is the operator list of current `lua-resty-radixtree`：
+https://github.com/iresty/lua-resty-radixtree#operator-list
+
 ## How to redirect http To https via APISIX?
 
-An example, redirect `http://iresty.com` to `https://iresty.com`
+An example, redirect `http://foo.com` to `https://foo.com`
 
-here is the way:
+There are several different ways to do this.
 
+1. `serverless` plugin:
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/global_rules/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
+    "uri": "/index.html",
     "plugins": {
         "serverless-pre-function": {
-          "phase": "rewrite",
-          "functions": ["return function() if ngx.var.scheme == 'http' and ngx.var.host == 'iresty.com' then ngx.header['Location'] = 'https://iresty.com' .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
+            "phase": "rewrite",
+            "functions": ["return function() if ngx.var.scheme == \"http\" and ngx.var.host == \"foo.com\" then ngx.header[\"Location\"] = \"https://foo.com\" .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
         }
     }
 }'
 ```
-
-Here is the operator list of current `lua-resty-radixtree`：
-https://github.com/iresty/lua-resty-radixtree#operator-list
 
 ## How to fix OpenResty Installation Failure on MacOS 10.15
 When you install the OpenResty on MacOs 10.15, you may face this error
