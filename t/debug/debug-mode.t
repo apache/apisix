@@ -76,6 +76,7 @@ loaded plugin and sort by priority: 900 name: redirect
 loaded plugin and sort by priority: 899 name: response-rewrite
 loaded plugin and sort by priority: 506 name: grpc-transcode
 loaded plugin and sort by priority: 500 name: prometheus
+loaded plugin and sort by priority: 410 name: http-logger
 loaded plugin and sort by priority: 405 name: tcp-logger
 loaded plugin and sort by priority: 403 name: kafka-logger
 loaded plugin and sort by priority: 401 name: syslog

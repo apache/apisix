@@ -23,7 +23,7 @@
 
 Apache APISIX 的运行环境需要 Nginx 和 etcd，
 
-所以在安装前，请根据不同的操作系统来[安装依赖](install-dependencies.md)。
+所以在安装前，请根据不同的操作系统来[安装依赖](install-dependencies-cn.md)。
 
 ## 2. 安装 Apache APISIX
 
