@@ -119,14 +119,35 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 比如，将 `http://foo.com` 重定向到 `https://foo.com`
 
 有几种不同的方法来实现：
-1. 使用`rewrite`插件：
+1. 使用`redirect`插件：
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "host": "foo.com",
+    "vars": [
+        [
+            "scheme",
+            "==",
+            "http"
+        ]
+    ],
+    "plugins": {
+        "redirect": {
+            "uri": "https://$host$request_uri",
+            "ret_code": 301
+        }
+    }
+}'
+```
 
 1. 使用`serverless`插件：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/index.html",
+    "uri": "/hello",
     "plugins": {
         "serverless-pre-function": {
             "phase": "rewrite",
@@ -134,6 +155,30 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
         }
     }
 }'
+```
+
+然后测试下是否生效：
+```shell
+curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
+```
+
+响应体应该是：
+```
+HTTP/1.1 301 Moved Permanently
+Date: Mon, 18 May 2020 02:56:04 GMT
+Content-Type: text/html
+Content-Length: 166
+Connection: keep-alive
+Location: https://foo.com/hello
+Server: APISIX web server
+
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
 ```
 
 ## 如何修改日志等级

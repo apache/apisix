@@ -346,3 +346,56 @@ Location: /hello//bar
 --- error_code: 301
 --- no_error_log
 [error]
+
+
+
+
+=== TEST 11: http -> https redirect
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "vars": [
+                        [
+                            "scheme",
+                            "==",
+                            "http"
+                        ]
+                    ],
+                    "plugins": {
+                        "redirect": {
+                            "uri": "https://$host$request_uri",
+                            "ret_code": 301
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello
