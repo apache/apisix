@@ -128,7 +128,7 @@ end
 
 -- log phase in APISIX
 function _M.log(conf)
-    local entry = log_util.get_full_log(ngx)
+    local entry = log_util.get_full_log(ngx, conf)
 
     if not entry.route_id then
         core.log.error("failed to obtain the route id for sys logger")
