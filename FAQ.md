@@ -111,7 +111,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 Here is the operator list of current `lua-resty-radixtree`：
 https://github.com/iresty/lua-resty-radixtree#operator-list
 
-## How to redirect http To https via APISIX?
+## How to redirect http to https via APISIX?
 
 An example, redirect `http://foo.com` to `https://foo.com`
 
