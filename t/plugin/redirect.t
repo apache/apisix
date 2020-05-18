@@ -349,8 +349,7 @@ Location: /hello//bar
 
 
 
-
-=== TEST 11: http -> https redirect
+=== TEST 15: http -> https redirect
 --- config
     location /t {
         content_by_lua_block {
@@ -391,7 +390,7 @@ passed
 
 
 
-=== TEST 12: redirect
+=== TEST 16: redirect
 --- request
 GET /hello
 --- more_headers
