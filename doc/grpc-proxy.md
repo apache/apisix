@@ -18,17 +18,16 @@
 -->
 
 [中文](grpc-proxy-cn.md)
+
 # grpc-proxy
 
 proxying gRPC traffic:
 gRPC client -> APISIX -> gRPC server
 
-### Parameters
+## Parameters
 
 * `service_protocol`:  the route's option `service_protocol` must be `grpc`
 * `uri`:   format likes /service/method , Example：/helloworld.Greeter/SayHello
-
-
 
 ### Example
 
@@ -55,7 +54,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-
 #### testing
 
 Invoking the route created before：
@@ -68,4 +66,3 @@ $ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  -d '{"n
 ```
 
 This means that the proxying is working.
-

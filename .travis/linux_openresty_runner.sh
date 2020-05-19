@@ -23,8 +23,11 @@ export_or_prefix() {
 }
 
 create_lua_deps() {
-    sudo luarocks make --lua-dir=${OPENRESTY_PREFIX}/luajit rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local
     echo "Create lua deps cache"
+
+    make deps
+    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
     sudo cp rockspec/apisix-master-0.rockspec build-cache/
@@ -34,17 +37,22 @@ before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     docker pull redis:3.0-alpine
     docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
+    docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
     # spin up kafka cluster for tests (1 zookeper and 1 kafka instance)
     docker pull bitnami/zookeeper:3.6.0
     docker pull bitnami/kafka:latest
     docker network create kafka-net --driver bridge
     docker run --name zookeeper-server -d -p 2181:2181 --network kafka-net -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:3.6.0
     docker run --name kafka-server1 -d --network kafka-net -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092 -p 9092:9092 -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true bitnami/kafka:latest
+    docker pull bitinit/eureka
+    docker run --name eureka -d -p 8761:8761 --env ENVIRONMENT=apisix --env spring.application.name=apisix-eureka --env server.port=8761 --env eureka.instance.ip-address=127.0.0.1 --env eureka.client.registerWithEureka=true --env eureka.client.fetchRegistry=false --env eureka.client.serviceUrl.defaultZone=http://127.0.0.1:8761/eureka/ bitinit/eureka
     sleep 5
     docker exec -it kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
 }
 
 do_install() {
+    export_or_prefix
+
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
@@ -52,13 +60,20 @@ do_install() {
     sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
+    sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
 
-    sudo apt-get install openresty-debug
-    sudo luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls
+    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
+    tar -xf v2.4.4.tar.gz
+    cd luarocks-2.4.4
+    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+    make build > build.log 2>&1 || (cat build.log && exit 1)
+    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+    cd ..
+    rm -rf luarocks-2.4.4
+
+    sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     export GO111MOUDULE=on
-
-    export_or_prefix
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -73,6 +88,9 @@ do_install() {
             create_lua_deps
         fi
     fi
+
+    # sudo apt-get install tree -y
+    # tree deps
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils
@@ -116,8 +134,9 @@ script() {
     ./bin/apisix init
     ./bin/apisix init_etcd
     ./bin/apisix start
-    mkdir -p logs
+
     sleep 1
+    cat logs/error.log
 
     sudo sh ./t/grpc-proxy-test.sh
     sleep 1

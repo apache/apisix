@@ -115,6 +115,23 @@ function _M.mock_zipkin()
         if not span.traceId then
             ngx.exit(400)
         end
+
+        if not span.localEndpoint then
+            ngx.exit(400)
+        end
+
+        if span.localEndpoint.serviceName ~= 'APISIX' and span.localEndpoint.serviceName ~= 'apisix' then
+            ngx.exit(400)
+        end
+
+        if span.localEndpoint.port ~= 1984 then
+            ngx.exit(400)
+        end
+
+        if span.localEndpoint.ipv4 ~= ngx.req.get_uri_args()['server_addr'] then
+            ngx.exit(400)
+        end
+
     end
 end
 
@@ -153,7 +170,7 @@ function _M.wolf_rbac_access_check()
 
     local args = ngx.req.get_uri_args()
     local resName = args.resName
-    if resName == '/hello' then
+    if resName == '/hello' or resName == '/wolf/rbac/custom/headers' then
         ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator",username="admin", id="100"} }}))
     else
         ngx.status = 401
@@ -161,6 +178,33 @@ function _M.wolf_rbac_access_check()
     end
 end
 
+function _M.wolf_rbac_user_info()
+    local headers = ngx.req.get_headers()
+    local token = headers['x-rbac-token']
+    if token ~= 'wolf-rbac-token' then
+        ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
+        ngx.exit(0)
+    end
+
+    ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
+end
+
+function _M.wolf_rbac_change_pwd()
+    ngx.req.read_body()
+    local data = ngx.req.get_body_data()
+    local args = json_decode(data)
+    if args.oldPassword ~= "123456" then
+        ngx.say(json_encode({ok=false, reason="ERR_OLD_PASSWORD_INCORRECT"}))
+        ngx.exit(0)
+    end
+
+    ngx.say(json_encode({ok=true, data={ }}))
+end
+
+function _M.wolf_rbac_custom_headers()
+    local headers = ngx.req.get_headers()
+    ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username'] .. ',nickname:' .. headers['X-Nickname'])
+end
 
 function _M.websocket_handshake()
     local websocket = require "resty.websocket.server"

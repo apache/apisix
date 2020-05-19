@@ -32,34 +32,34 @@
 
 This will provide the ability to send Log data requests as JSON objects to external Kafka clusters.
 
+This plugin provides the ability to push Log data as a batch to you're external Kafka topics. In case if you did not recieve the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+
+For more info on Batch-Processor in Apache APISIX please refer.
+[Batch-Processor](../batch-processor.md)
+
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| broker_list |required| An array of Kafka brokers.|
-| kafka_topic |required| Target topic to push data.|
-| timeout |optional|Timeout for the upstream to send data.|
-| async |optional|Boolean value to control whether to perform async push.|
-| key |required|Key for the message.|
-| max_retry |optional|No of retries|
+|Name           |Requirement    |Description|
+|---------      |--------       |-----------|
+| broker_list   |required       | An array of Kafka brokers.|
+| kafka_topic   |required       | Target topic to push data.|
+| timeout       |optional       |Timeout for the upstream to send data.|
+| key           |required       |Key for the message.|
+|name           |optional       |A unique identifier to identity the batch processor|
+|batch_max_size |optional       |Max size of each batch, default is 1000|
+|inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
+|buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
+|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
+|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
 
 ## Info
 
-Difference between async and the sync data push.
+The `message` will write to the buffer first.
+It will send to the kafka server when the buffer exceed the `batch_max_size`,
+or every `buffer_duration` flush the buffer.
 
-1. In sync model
-
-    In case of success, returns the offset (** cdata: LL **) of the current broker and partition.
-    In case of errors, returns `nil` with a string describing the error.
-
-2. In async model
-
-    The `message` will write to the buffer first.
-    It will send to the kafka server when the buffer exceed the `batch_num`,
-    or every `flush_time` flush the buffer.
-
-    In case of success, returns `true`.
-    In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
+In case of success, returns `true`.
+In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
 
 ##### Sample broker list
 
@@ -75,12 +75,11 @@ sample to take effect of this functionality.
 
 ## How To Enable
 
-1. Here is an examle on how to enable kafka-logger plugin for a specific route.
+The following is an example on how to enable the kafka-logger for a specific route.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "foo",
     "plugins": {
        "kafka-logger": {
            "broker_list" :
@@ -88,7 +87,9 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
                "127.0.0.1":9092
              },
            "kafka_topic" : "test2",
-           "key" : "key1"
+           "key" : "key1",
+           "batch_max_size": 1,
+           "name": "kafka logger"
        }
     },
     "upstream": {
@@ -114,9 +115,8 @@ hello, world
 
 ## Disable Plugin
 
-When you want to disable the `kafka-logger` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+Remove the corresponding json configuration in the plugin configuration to disable the `kafka-logger`.
+APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
 $ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='

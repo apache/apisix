@@ -19,13 +19,13 @@
 [English](plugin-develop.md)
 
 # 目录
+
 - [**检查外部依赖**](#检查外部依赖)
 - [**插件命名与配置**](#插件命名与配置)
 - [**配置描述与校验**](#配置描述与校验)
 - [**确定执行阶段**](#确定执行阶段)
 - [**编写执行逻辑**](#编写执行逻辑)
 - [**编写测试用例**](#编写测试用例)
-
 
 ## 检查外部依赖
 
@@ -48,14 +48,14 @@
 
 插件本身提供了 init 方法。方便插件加载后做初始化动作。
 
-注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __lua/apisix.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
+注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix.lua__ 文件的初始化方法 http_init 中添加逻辑，并且
     可能需要在 __bin/apisix__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的
     插件机制，我们不建议这样做，除非你已经对代码完全掌握。
 
 ## 插件命名与配置
 
 给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
-需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __lua/apisix/plugins/key-auth.lua__ 文件中可以看到：
+需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/key-auth.lua__ 文件中可以看到：
 
 ```lua
    local plugin_name = "key-auth"
@@ -167,6 +167,7 @@ done
 ```
 
 一个测试用例主要有三部分内容：
+
 - 程序代码： Nginx  location 的配置内容
 - 输入： http 的 request 信息
 - 输出检查： status ，header ，body ，error_log 检查
@@ -175,9 +176,8 @@ done
 用例的断言是 response_body 返回 "done"，__no_error_log__ 表示会对 Nginx 的 error.log 检查，
 必须没有 ERROR 级别的记录。
 
-### 附上test-nginx 执行流程：
+### 附上test-nginx 执行流程
 
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
 包括 http status，http response header， http response body 等。
-

@@ -31,6 +31,11 @@
 
 以实现将日志数据以JSON格式发送到监控工具或其它TCP服务的能力。
 
+该插件提供了将Log Data作为批处理推送到外部TCP服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
+
+有关Apache APISIX中Batch-Processor的更多信息，请参考。
+[Batch-Processor](../batch-processor-cn.md)
+
 ## 属性列表
 
 |属性名称          |必选项  |描述|
@@ -47,25 +52,22 @@
 1. 下面例子展示了如何为指定路由开启 `tcp-logger` 插件的。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "foo",
-    "plugins": {
-          "plugins": {
-                "tcp-logger": {
-                     "host": "127.0.0.1",
-                     "port": 5044,
-                     "tls": false
-                }
-           },
-          "upstream": {
-               "type": "roundrobin",
-               "nodes": {
-                   "127.0.0.1:1980": 1
-               }
-          },
-          "uri": "/hello"
-    }
+      "plugins": {
+            "tcp-logger": {
+                 "host": "127.0.0.1",
+                 "port": 5044,
+                 "tls": false
+            }
+       },
+      "upstream": {
+           "type": "roundrobin",
+           "nodes": {
+               "127.0.0.1:1980": 1
+           }
+      },
+      "uri": "/hello"
 }'
 ```
 

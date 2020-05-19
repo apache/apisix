@@ -19,12 +19,51 @@
 
 # Table of Contents
 
+- [1.2.0](#120)
 - [1.1.0](#110)
 - [1.0.0](#100)
 - [0.9.0](#090)
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 1.2.0
+1.2 版本在内核以及插件上带来了非常多的更新。
+
+### Core
+- :sunrise: **支持 etcd 集群**. [#1283](https://github.com/apache/incubator-apisix/pull/1283)
+- 默认使用本地 DNS resolver, 这对于 k8s 环境更加友好. [#1387](https://github.com/apache/incubator-apisix/pull/1387)
+- 支持在 `header_filter`、`body_filter` 和 `log` 阶段运行全局插件. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
+- 将目录 `lua/apisix` 修改为 `apisix`(**不向下兼容**). [#1351](https://github.com/apache/incubator-apisix/pull/1351)
+- 增加 dashboard 子模块. [#1360](https://github.com/apache/incubator-apisix/pull/1360)
+- 允许自定义共享字典. [#1367](https://github.com/apache/incubator-apisix/pull/1367)
+
+### Plugin
+- :sunrise: **新增 Apache Kafka 插件**. [#1312](https://github.com/apache/incubator-apisix/pull/1312)
+- :sunrise: **新增 CORS 插件**. [#1327](https://github.com/apache/incubator-apisix/pull/1327)
+- :sunrise: **新增 TCP logger 插件**. [#1221](https://github.com/apache/incubator-apisix/pull/1221)
+- :sunrise: **新增 UDP logger 插件**. [1070](https://github.com/apache/incubator-apisix/pull/1070)
+- :sunrise: **新增 proxy mirror 插件**. [#1288](https://github.com/apache/incubator-apisix/pull/1288)
+- :sunrise: **新增 proxy cache 插件**. [#1153](https://github.com/apache/incubator-apisix/pull/1153)
+- 在 proxy-rewrite 插件中废弃 websocket 开关(**不向下兼容**). [1332](https://github.com/apache/incubator-apisix/pull/1332)
+-  OAuth 插件中增加基于公钥的自省支持. [#1266](https://github.com/apache/incubator-apisix/pull/1266)
+- response-rewrite 插件通过 base64 来支持传输二进制数据. [#1381](https://github.com/apache/incubator-apisix/pull/1381)
+- gRPC 转码插件支持 `deadline`. [#1149](https://github.com/apache/incubator-apisix/pull/1149)
+- limit count 插件支持 redis 权限认证. [#1150](https://github.com/apache/incubator-apisix/pull/1150)
+- Zipkin 插件支持名字和本地服务器 ip 的记录. [#1386](https://github.com/apache/incubator-apisix/pull/1386)
+- Wolf-Rbac 插件增加 `change_pwd` 和 `user_info` 参数. [#1204](https://github.com/apache/incubator-apisix/pull/1204)
+
+### Admin API
+- :sunrise: 对调用 Admin API 增加 key-auth 权限认证(**not backward compatible**). [#1169](https://github.com/apache/incubator-apisix/pull/1169)
+- 隐藏 SSL 私钥的返回值. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
+
+### Bugfix
+- 在复用 table 之前遗漏了对数据的清理 (**会引发内存泄漏**). [#1134](https://github.com/apache/incubator-apisix/pull/1134)
+- 如果 yaml 中路由非法就打印警告信息. [#1141](https://github.com/apache/incubator-apisix/pull/1141)
+- 使用空字符串替代空的 balancer IP. [#1166](https://github.com/apache/incubator-apisix/pull/1166)
+- 修改 node-status 和 heartbeat 插件没有 schema 的问题. [#1249](https://github.com/apache/incubator-apisix/pull/1249)
+- basic-auth 增加 required 字段. [#1251](https://github.com/apache/incubator-apisix/pull/1251)
+- 检查上游合法节点的个数. [#1292](https://github.com/apache/incubator-apisix/pull/1292)
 
 
 ## 1.1.0

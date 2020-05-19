@@ -1,0 +1,165 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: apps/v1beta2 # for versions before 1.8.0 use apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: apisix-gw
+  name: apisix-gw-deployment
+  # namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: apisix-gw
+  template:
+    metadata:
+      labels:
+        app: apisix-gw
+    spec:
+      # tolerations:
+      # - key: "group"
+      #   operator: "Equal"
+      #   value: "prod"
+      #   effect: "NoSchedule"
+      # nodeSelector:
+      #   env: prod
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - apisix-gw
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - |
+          sysctl -w net.core.somaxconn=65535
+          sysctl -w net.ipv4.ip_local_port_range="1024 65535"
+          sysctl -w net.ipv4.tcp_max_syn_backlog=8192
+          sysctl -w fs.file-max=1048576
+          sysctl -w fs.inotify.max_user_instances=16384
+          sysctl -w fs.inotify.max_user_watches=524288
+          sysctl -w fs.inotify.max_queued_events=16384
+        image: busybox:latest
+        name: init-sysctl
+        resources: {}
+        securityContext:
+          privileged: true
+          procMount: Default
+      restartPolicy: Always
+
+      containers:
+        - env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          image: 'apache/apisix:latest'
+          imagePullPolicy: IfNotPresent
+          name: apisix-gw-deployment
+          ports:
+          - containerPort: 9080
+            name: http
+            protocol: TCP
+          - containerPort: 9443
+            name: https
+            protocol: TCP
+          # livenessProbe:
+          #   failureThreshold: 3
+          #   httpGet:
+          #     path: /healthz
+          #     port: 10254
+          #     scheme: HTTP
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10
+          #   successThreshold: 1
+          #   timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 9080
+            timeoutSeconds: 1
+          lifecycle:
+            # For alpine based image
+            # https://k8s.imroc.io/troubleshooting/cases/dns-lookup-5s-delay
+            # postStart:
+            #   exec:
+            #     command:
+            #     - /bin/sh
+            #     - -c
+            #     - "/bin/echo 'options single-request-reopen' >> /etc/resolv.conf"
+            preStop:
+              exec:
+                command:
+                - /bin/sh
+                - -c
+                - "sleep 30"
+          # cpu core(s), 1 == 1000m
+          resources:
+            limits:
+              cpu: '2'
+            requests:
+              cpu: '50m'
+
+          volumeMounts:
+            - mountPath: /usr/local/apisix/conf/config.yaml
+              name: apisix-config-yaml-configmap
+              subPath: config.yaml
+            - mountPath: /etc/localtime
+              name: localtime
+              readOnly: true
+            # - mountPath: /usr/local/apisix/conf/nginx.conf
+            #   name: apisix-nginx-conf-configmap
+            #   subPath: nginx.conf
+            # - mountPath: /usr/local/openresty/openssl/ssl/openssl.cnf
+            #   name: apisix-openssl-cnf-configmap
+            #   subPath: openssl.cnf
+
+      volumes:
+        - configMap:
+            name: apisix-gw-config.yaml
+          name: apisix-config-yaml-configmap
+        - hostPath:
+            path: /etc/localtime
+            type: File
+          name: localtime
+        # - configMap:
+        #     name: apisix-gw-nginx.conf
+        #   name: apisix-nginx-conf-configmap
+        # - configMap:
+        #     name: apisix-gw-openssl.cnf.conf
+        #   name: apisix-openssl-cnf-configmap

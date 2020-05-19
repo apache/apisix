@@ -235,7 +235,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: expect object to have at least 1 properties"}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
 
 
 
@@ -244,7 +244,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/invalid_id',
+            local code, body = t('/apisix/admin/upstreams/invalid_id$',
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
@@ -374,7 +374,7 @@ GET /t
             local code, body = t('/apisix/admin/upstreams',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": "invalid_id",
+                    "id": "invalid_id$",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
@@ -523,7 +523,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): wrong type: expected integer, got string"}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -553,7 +553,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): expected -100 to be greater than 0"}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 

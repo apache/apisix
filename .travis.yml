@@ -38,8 +38,6 @@ addons:
       - libssl-dev
       - perl
       - etcd
-      - luarocks
-      - lua-check
   homebrew:
     update: true
 

@@ -17,7 +17,8 @@
 #
 -->
 
-## 目录
+# 目录
+
 - [**APISIX**](#apisix)
 - [**APISIX Config**](#apisix-config)
 - [**Route**](#route)
@@ -33,7 +34,7 @@
 
 ### 插件加载流程
 
-![](./images/flow-load-plugin.png)
+![插件加载流程](./images/flow-load-plugin.png)
 
 ### 插件内部结构
 
@@ -192,7 +193,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 优先级更高。
 
 一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
-插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../lua/apisix/plugins/example-plugin.lua#L37)。
+插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../apisix/plugins/example-plugin.lua#L37)。
 
 插件配置作为 Route 或 Service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
 名字作为哈希的 key 来保存不同插件的配置项。
@@ -230,14 +231,15 @@ Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规�
 Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑定在 `Service` 中，不过 `Route` 中的配置
 优先级更高。这里的优先级行为与 `Plugin` 非常相似
 
-#### 配置参数
+### 配置参数
 
 APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面表格。
 
 |名字    |可选|说明|
 |-------         |-----|------|
 |type            |必填|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
-|nodes           |必填|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80` 等。value 则是节点的权重。当权重值为 `0` 代表该上游节点失效，不会被选中，可以用于暂时摘除节点的情况。|
+|nodes           |与 `k8s_deployment_info` 二选一|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80` 等。value 则是节点的权重。当权重值为 `0` 代表该上游节点失效，不会被选中，可以用于暂时摘除节点的情况。|
+|k8s_deployment_info|与 `nodes` 二选一|哈希表|字段包括 `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`，其中 `port` 字段为数值，`backend_type` 为 `pod` 或 `service`，其他为字符串 |
 |key             |可选|在 `type` 等于 `chash` 是必选项。 `key` 需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`|
 |hash_on         |可选|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](health-check.md)|
@@ -245,6 +247,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
 
 `hash_on` 比较复杂，这里专门说明下：
+
 1. 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)
 1. 设为 `header` 时, `key` 为必传参数，其值为自定义的 header name, 即 "http_`key`"
 1. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie_`key`"
@@ -257,10 +260,12 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "roundrobin",
-    "nodes": {
-        "127.0.0.1:80": 1,
-        "127.0.0.2:80": 2,
-        "foo.com:80": 3
+    "k8s_deployment_info": {
+        "namespace": "test-namespace",
+        "deploy_name": "test-deploy-name",
+        "service_name": "test-service-name",
+        "backend_type": "pod",
+        "port": 8080
     }
 }'
 
@@ -310,6 +315,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 下面是一个配置了健康检查的示例：
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -345,11 +351,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
 更多细节可以参考[健康检查的文档](health-check.md)。
 
 下面是几个使用不同`hash_on`类型的配置示例：
-##### Consumer
+
+#### Consumer
+
 创建一个consumer对象:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d `
 {
@@ -361,7 +371,9 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }`
 ```
+
 新建路由，打开`key-auth`插件认证，`upstream`的`hash_on`类型为`consumer`：
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -379,13 +391,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/server_port"
 }'
 ```
+
 测试请求，认证通过后的`consumer_id`将作为负载均衡哈希算法的哈希值：
+
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
 ##### Cookie
+
 新建路由和`Upstream`，`hash_on`类型为`cookie`：
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -403,12 +419,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 客户端请求携带`Cookie`：
+
 ```shell
  curl http://127.0.0.1:9080/hash_on_cookie -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
 ##### Header
+
 新建路由和`Upstream`，`hash_on`类型为`header`， `key`为`content-type`：
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -426,12 +445,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 客户端请求携带`content-type`的`header`：
+
 ```shell
  curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
 ```
 
 [返回目录](#目录)
-
 
 ## Router
 
@@ -531,8 +550,10 @@ HTTP/1.1 503 Service Temporarily Unavailable
 [返回目录](#目录)
 
 ## Global Rule
+
 [Plugin](#Plugin) 只能绑定在 [Service](#Service) 或者 [Route](#Route) 上，如果我们需要一个能作用于所有请求的 [Plugin](#Plugin) 该怎么办呢？
 这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
+
 ```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
@@ -549,9 +570,11 @@ curl -X PUT \
         }
     }'
 ```
+
 如上所注册的 `limit-count` 插件将会作用于所有的请求。
 
 我们可以通过以下接口查看所有的 `GlobalRule`:
+
 ```shell
 curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```

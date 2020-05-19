@@ -17,6 +17,7 @@
 #
 -->
 [English](getting-started.md)
+
 # 快速入门指南
 
 本指南的目的是介绍如何使用 APISIX 来配置出一个安全的可以对外提供服务的 API。当您读完本指南，你需要自己安装一下 APISIX 应用，并准备好一个可以对外提供服务的 API，该服务将由 API key 进行访问保护。
@@ -101,6 +102,7 @@ Service（服务）为上游服务提供了抽象。因此，您可以创建单�
         ... Additional Configurations
     }
     ```
+
     通过上面的匹配规则你就可以通过如下的命令跟 APISIX 进行交互了
 
     ```bash

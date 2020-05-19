@@ -30,6 +30,8 @@ add_block_preprocessor(sub {
 
     function test(route, ctx, count)
         local balancer = require("apisix.balancer")
+        local router = require("apisix.router")
+        router.filter_test(route)
         local res = {}
         for i = 1, count or 12 do
             local host, port, err = balancer.pick_server(route, ctx)
