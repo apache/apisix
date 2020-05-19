@@ -114,14 +114,18 @@ end
 
 
 local function set_common_header(data)
-    if not data.headers then
-        return
-    end
+    local ck = core.request.header(nil, "Cookie")
 
     for i,req in ipairs(data.pipeline) do
         if not req.headers then
-            req.headers = data.headers
-        else
+            req.headers = {}
+        end
+
+        if ck then
+            req.headers["Cookie"] = ck
+        end
+
+        if data.headers then
             for k, v in pairs(data.headers) do
                 if not req.headers[k] then
                     req.headers[k] = v

@@ -119,7 +119,14 @@ function _M.comp_tab(left_tab, right_tab)
 end
 
 
-function _M.test(uri, method, body, pattern)
+function _M.test(uri, method, body, pattern, headers)
+    if not headers then
+        headers = {}
+    end
+    if not headers["Content-Type"] then
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    end
+
     if type(body) == "table" then
         body = json.encode(body)
     end
@@ -141,9 +148,7 @@ function _M.test(uri, method, body, pattern)
             method = method,
             body = body,
             keepalive = false,
-            headers = {
-            ["Content-Type"] = "application/x-www-form-urlencoded",
-            },
+            headers = headers,
         }
     )
     if not res then
