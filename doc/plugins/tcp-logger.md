@@ -31,6 +31,11 @@
 
 This will provide the ability to send Log data requests as JSON objects to Monitoring tools and other TCP servers.
 
+This plugin provides the ability to push Log data as a batch to you're external TCP servers. In case if you did not recieve the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+
+For more info on Batch-Processor in Apache APISIX please refer.
+[Batch-Processor](../batch-processor.md)
+
 ## Attributes
 
 |Name           |Requirement    |Description|

@@ -17,83 +17,106 @@
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local batch_processor = require("apisix.utils.batch-processor")
-local plugin_name = "udp-logger"
-local tostring = tostring
-local buffers = {}
+local plugin_name = "http-logger"
 local ngx = ngx
-local udp = ngx.socket.udp
-local ipairs   = ipairs
-local stale_timer_running = false;
-local timer_at = ngx.timer.at
+local tostring = tostring
+local http = require "resty.http"
+local url = require "net.url"
+local buffers = {}
 
 local schema = {
     type = "object",
     properties = {
-        host = {type = "string"},
-        port = {type = "integer", minimum = 0},
+        uri = {type = "string"},
+        auth_header = {type = "string", default = ""},
         timeout = {type = "integer", minimum = 1, default = 3},
-        name = {type = "string", default = "udp logger"},
+        name = {type = "string", default = "http logger"},
+        max_retry_count = {type = "integer", minimum = 0, default = 0},
+        retry_delay = {type = "integer", minimum = 0, default = 1},
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
     },
-    required = {"host", "port"}
+    required = {"uri"}
 }
 
 
 local _M = {
     version = 0.1,
-    priority = 400,
+    priority = 410,
     name = plugin_name,
     schema = schema,
 }
+
 
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-local function send_udp_data(conf, log_message)
+
+local function send_http_data(conf, log_message)
     local err_msg
     local res = true
-    local sock = udp()
-    sock:settimeout(conf.timeout * 1000)
-    local ok, err = sock:setpeername(conf.host, conf.port)
+    local url_decoded = url.parse(conf.uri)
+    local host = url_decoded.host
+    local port = url_decoded.port
+
+    if ((not port) and url_decoded.scheme == "https") then
+        port = 443
+    elseif not port then
+        port = 80
+    end
+
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout * 1000)
+    local ok, err = httpc:connect(host, port)
 
     if not ok then
-        return nil, "failed to connect to UDP server: host[" .. conf.host
-                    .. "] port[" .. tostring(conf.port) .. "] err: " .. err
+        return false, "failed to connect to host[" .. host .. "] port["
+            .. tostring(port) .. "] " .. err
     end
 
-    ok, err = sock:send(log_message)
-    if not ok then
-        res = false
-        err_msg = "failed to send data to UDP server: host[" .. conf.host
-                  .. "] port[" .. tostring(conf.port) .. "] err:" .. err
-    end
-
-    ok, err = sock:close()
-    if not ok then
-        core.log.error("failed to close the UDP connection, host[",
-                        conf.host, "] port[", conf.port, "] ", err)
-    end
-
-    return res, err_msg
-end
-
--- remove stale objects from the memory after timer expires
-local function remove_stale_objects(premature)
-    if premature then
-        return
-    end
-
-    for key, batch in ipairs(buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.debug("removing batch processor stale object, route id:", tostring(key))
-            buffers[key] = nil
+    if url_decoded.scheme == "https" then
+        ok, err = httpc:ssl_handshake(true, host, false)
+        if not ok then
+            return nil, "failed to perform SSL with host[" .. host .. "] "
+                .. "port[" .. tostring(port) .. "] " .. err
         end
     end
 
-    stale_timer_running = false
+    local httpc_res, httpc_err = httpc:request({
+        method = "POST",
+        path = url_decoded.path,
+        query = url_decoded.query,
+        body = log_message,
+        headers = {
+            ["Host"] = url_decoded.host,
+            ["Content-Type"] = "application/json",
+            ["Authorization"] = conf.auth_header
+        }
+    })
+
+    if not httpc_res then
+        return false, "error while sending data to [" .. host .. "] port["
+            .. tostring(port) .. "] " .. httpc_err
+    end
+
+    -- some error occurred in the server
+    if httpc_res.status >= 400 then
+        res =  false
+        err_msg = "server returned status code[" .. httpc_res.status .. "] host["
+            .. host .. "] port[" .. tostring(port) .. "] "
+            .. "body[" .. httpc_res:read_body() .. "]"
+    end
+
+    -- keep the connection alive
+    ok, err = httpc:set_keepalive(conf.keepalive)
+
+    if not ok then
+        core.log.debug("failed to keep the connection alive", err)
+    end
+
+    return res, err_msg
 end
 
 
@@ -101,17 +124,11 @@ function _M.log(conf)
     local entry = log_util.get_full_log(ngx)
 
     if not entry.route_id then
-        core.log.error("failed to obtain the route id for udp logger")
+        core.log.error("failed to obtain the route id for http logger")
         return
     end
 
     local log_buffer = buffers[entry.route_id]
-
-    if not stale_timer_running then
-        -- run the timer every 30 mins if any log is present
-        timer_at(1800, remove_stale_objects)
-        stale_timer_running = true
-    end
 
     if log_buffer then
         log_buffer:push(entry)
@@ -131,7 +148,7 @@ function _M.log(conf)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        return send_udp_data(conf, data)
+        return send_http_data(conf, data)
     end
 
     local config = {

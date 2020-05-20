@@ -18,7 +18,7 @@ local schema    = require('apisix.core.schema')
 local setmetatable = setmetatable
 local error     = error
 
-local _M = {version = 0.4}
+local _M = {version = 0.5}
 
 
 local plugins_schema = {
@@ -225,11 +225,9 @@ local health_checker = {
 }
 
 
-local upstream_schema = {
-    type = "object",
-    properties = {
-        nodes = {
-            description = "nodes of upstream",
+local nodes_schema = {
+    anyOf = {
+        {
             type = "object",
             patternProperties = {
                 [".*"] = {
@@ -240,6 +238,39 @@ local upstream_schema = {
             },
             minProperties = 1,
         },
+        {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    host = host_def,
+                    port = {
+                        description = "port of node",
+                        type = "integer",
+                        minimum = 1,
+                    },
+                    weight = {
+                        description = "weight of node",
+                        type = "integer",
+                        minimum = 0,
+                    },
+                    metadata = {
+                        description = "metadata of node",
+                        type = "object",
+                    }
+                },
+                required = {"host", "port", "weight"},
+            },
+        }
+    }
+}
+
+
+local upstream_schema = {
+    type = "object",
+    properties = {
+        nodes = nodes_schema,
         retries = {
             type = "integer",
             minimum = 1,
@@ -297,11 +328,13 @@ local upstream_schema = {
             type        = "boolean"
         },
         desc = {type = "string", maxLength = 256},
+        service_name = {type = "string", maxLength = 50},
         id = id_schema
     },
     anyOf = {
         {required = {"type", "nodes"}},
         {required = {"type", "k8s_deployment_info"}},
+        {required = {"type", "service_name"}},
     },
     additionalProperties = false,
 }
@@ -454,9 +487,23 @@ _M.ssl = {
         sni = {
             type = "string",
             pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-        }
+        },
+        snis = {
+            type = "array",
+            items = {
+                type = "string",
+                pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+            }
+        },
+        exptime = {
+            type = "integer",
+            minimum = 1588262400,  -- 2020/5/1 0:0:0
+        },
     },
-    required = {"sni", "key", "cert"},
+    oneOf = {
+        {required = {"sni", "key", "cert"}},
+        {required = {"snis", "key", "cert"}}
+    },
     additionalProperties = false,
 }
 

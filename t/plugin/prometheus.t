@@ -524,3 +524,13 @@ GET /apisix/prometheus/metrics
 qr/apisix_http_status\{code="404",route="3",service="",node="127.0.0.1"\} 2/
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: fetch the prometheus metric data with `overhead`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/.*apisix_http_overhead_bucket.*/
+--- no_error_log
+[error]

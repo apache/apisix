@@ -17,46 +17,43 @@
 #
 -->
 
-# 摘要
+# Summary
 - [**定义**](#name)
 - [**属性列表**](#attributes)
 - [**如何开启**](#how-to-enable)
 - [**测试插件**](#test-plugin)
 - [**禁用插件**](#disable-plugin)
 
-
 ## 定义
 
-`udp-logger` 是用于将日志数据发送到UDP服务的插件。
+`http-logger` 是一个插件，可将Log数据请求推送到HTTP / HTTPS服务器。
 
-以实现将日志数据以JSON格式发送到监控工具或其它UDP服务的能力。
-
-此插件提供了将批处理数据批量推送到外部UDP服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志
-
-有关Apache APISIX中Batch-Processor的更多信息，请参考。
-[Batch-Processor](../batch-processor.md)
+这将提供将Log数据请求作为JSON对象发送到监视工具和其他HTTP服务器的功能。
 
 ## 属性列表
 
 |属性名称          |必选项  |描述|
 |---------     |--------|-----------|
-| host |必要的| UDP 服务的IP地址或主机名。|
-| port |必要的| 目标端口。|
-| timeout |可选的|发送数据超时间。|
-
+| uri |必要的| 服务器的URI |
+| authorization |可选的| 授权头部 |
+| keepalive |可选的|发送请求后保持连接活动的时间|
+| name |可选的|标识logger的唯一标识符|
+| batch_max_size |可选的|每批的最大大小，默认为1000|
+| inactive_timeout |可选的|刷新缓冲区的最大时间（以秒为单位），默认值为5s|
+| buffer_duration |可选的|必须先处理批次中最旧条目的最长期限（以秒为单位），默认值为5|
+| max_retry_count |可选的|从处理管道中移除之前的最大重试次数，默认为0|
+| retry_delay |可选的|如果执行失败，则应延迟执行流程的秒数，默认为1|
 
 ## 如何开启
 
-1. 下面例子展示了如何为指定路由开启 `udp-logger` 插件的。
+1. 这是有关如何为特定路由启用http-logger插件的示例。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
-            "tcp-logger": {
-                 "host": "127.0.0.1",
-                 "port": 5044,
-                 "tls": false
+            "http-logger": {
+                 "uri": "127.0.0.1:80/postendpoint?param=1"
             }
        },
       "upstream": {
@@ -71,7 +68,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 成功的情况:
+* 成功:
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
@@ -82,8 +79,7 @@ hello, world
 
 ## 禁用插件
 
-
-想要禁用“udp-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
+在插件配置中删除相应的json配置以禁用http-logger。APISIX插件是热重载的，因此无需重新启动APISIX：
 
 ```shell
 $ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
