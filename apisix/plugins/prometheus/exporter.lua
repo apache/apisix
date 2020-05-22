@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local base_prometheus = require("resty.prometheus")
+local base_prometheus = require("prometheus")
 local core      = require("apisix.core")
 local ipairs    = ipairs
 local ngx       = ngx
@@ -81,27 +81,28 @@ function _M.log(conf, ctx)
         service_id = vars.host
     end
 
-    metrics.status:inc(1, vars.status, route_id, service_id, balancer_ip)
+    metrics.status:inc(1, {vars.status, route_id, service_id, balancer_ip})
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    metrics.latency:observe(latency, "request", service_id, balancer_ip)
+    metrics.latency:observe(latency, {"request", service_id, balancer_ip})
 
     local overhead = latency
     if ctx.var.upstream_response_time then
         overhead = overhead - tonumber(ctx.var.upstream_response_time)
     end
-    metrics.overhead:observe(overhead, "request", service_id, balancer_ip)
+    metrics.overhead:observe(overhead, {"request", service_id, balancer_ip})
 
-    metrics.bandwidth:inc(vars.request_length, "ingress", route_id, service_id,
-                          balancer_ip)
+    metrics.bandwidth:inc(vars.request_length,
+                          {"ingress", route_id, service_id, balancer_ip})
 
-    metrics.bandwidth:inc(vars.bytes_sent, "egress", route_id, service_id,
-                          balancer_ip)
+    metrics.bandwidth:inc(vars.bytes_sent,
+                          {"egress", route_id, service_id, balancer_ip})
 end
 
 
     local ngx_statu_items = {"active", "accepted", "handled", "total",
                              "reading", "writing", "waiting"}
+    local label_values = {}
 local function nginx_status()
     local res = ngx_capture("/apisix/nginx_status")
     if not res or res.status ~= 200 then
@@ -126,7 +127,8 @@ local function nginx_status()
             break
         end
 
-        metrics.connections:set(val[0], name)
+        label_values[1] = name
+        metrics.connections:set(val[0], label_values)
     end
 end
 
