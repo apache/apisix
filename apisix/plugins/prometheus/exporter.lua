@@ -21,6 +21,7 @@ local ngx       = ngx
 local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
 local tonumber = tonumber
+local select = select
 local prometheus
 
 -- Default set of latency buckets, 1ms to 60s:
@@ -32,7 +33,20 @@ local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
 local metrics = {}
 
 
-local _M = {version = 0.3}
+    local inner_tab_arr = {}
+    local clear_tab = core.table.clear
+local function gen_arr(...)
+    clear_tab(inner_tab_arr)
+
+    for i = 1, select('#', ...) do
+        inner_tab_arr[i] = select(i, ...)
+    end
+
+    return inner_tab_arr
+end
+
+
+local _M = {}
 
 
 function _M.init()
@@ -81,22 +95,25 @@ function _M.log(conf, ctx)
         service_id = vars.host
     end
 
-    metrics.status:inc(1, {vars.status, route_id, service_id, balancer_ip})
+    metrics.status:inc(1,
+        gen_arr(vars.status, route_id, service_id, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    metrics.latency:observe(latency, {"request", service_id, balancer_ip})
+    metrics.latency:observe(latency,
+        gen_arr("request", service_id, balancer_ip))
 
     local overhead = latency
     if ctx.var.upstream_response_time then
         overhead = overhead - tonumber(ctx.var.upstream_response_time)
     end
-    metrics.overhead:observe(overhead, {"request", service_id, balancer_ip})
+    metrics.overhead:observe(overhead,
+        gen_arr("request", service_id, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
-                          {"ingress", route_id, service_id, balancer_ip})
+        gen_arr("ingress", route_id, service_id, balancer_ip))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-                          {"egress", route_id, service_id, balancer_ip})
+        gen_arr("egress", route_id, service_id, balancer_ip))
 end
 
 
