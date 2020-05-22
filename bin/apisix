@@ -768,6 +768,7 @@ local function init_etcd(show_output)
 
     local host_count = #(yaml_conf.etcd.host)
 
+    local etcd_ok = false
     for index, host in ipairs(yaml_conf.etcd.host) do
 
         local is_success = true
@@ -799,8 +800,13 @@ local function init_etcd(show_output)
         end
 
         if is_success then
+            etcd_ok = true
             break
         end
+    end
+
+    if not etcd_ok then
+        error("none of the configured etcd works well")
     end
 end
 _M.init_etcd = init_etcd
