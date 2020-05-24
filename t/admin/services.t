@@ -626,14 +626,23 @@ GET /t
 --- no_error_log
 [error]
 
-
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
 
 === TEST 19: patch service(whole)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1/',
+            local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "upstream": {
@@ -679,9 +688,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1/desc',
+            local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PATCH,
-                '"new 19 service"',
+                [[{
+                    "desc": "new 19 service"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -731,6 +742,7 @@ passed
                         "value": {
                             "upstream": {
                                 "nodes": {
+                                    "127.0.0.1:8080": 1,
                                     "127.0.0.1:8081": 3,
                                     "127.0.0.1:8082": 4
                                 },

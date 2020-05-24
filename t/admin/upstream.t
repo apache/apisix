@@ -652,7 +652,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "nodes": {
@@ -696,7 +696,9 @@ passed
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1/desc',
                 ngx.HTTP_PATCH,
-                '"new 21 upstream"',
+                [[{
+                    "desc": "new 21 upstream"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -730,16 +732,19 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/nodes',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
-                    "127.0.0.1:8081": 3,
-                    "127.0.0.1:8082": 4
+                    "nodes": {
+                        "127.0.0.1:8081": 3,
+                        "127.0.0.1:8082": 4
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "nodes": {
+                                "127.0.0.1:8080": 1,
                                 "127.0.0.1:8081": 3,
                                 "127.0.0.1:8082": 4
                             },
@@ -771,9 +776,11 @@ passed
             local code, body = t('/apisix/admin/upstreams/1/nodes',
                 ngx.HTTP_PATCH,
                 [[{
-                    "127.0.0.1:8081": 0,
-                    "127.0.0.1:8082": 4
-                }]],
+                    "nodes": {
+                        "127.0.0.1:8081": 3,
+                        "127.0.0.1:8082": 0
+                    }
+                }]],                
                 [[{
                     "node": {
                         "value": {
