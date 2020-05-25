@@ -142,7 +142,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-1. 使用`serverless`插件：
+2. 使用`serverless`插件：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
