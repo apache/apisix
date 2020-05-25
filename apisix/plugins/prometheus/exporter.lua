@@ -50,6 +50,12 @@ local _M = {}
 
 
 function _M.init()
+    -- todo: support hot reload, we may need to update the lua-prometheus
+    -- library
+    if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        return
+    end
+
     core.table.clear(metrics)
 
     -- across all services
