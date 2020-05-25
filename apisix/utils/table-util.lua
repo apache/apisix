@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
 
 local _M = {}
 
@@ -26,8 +25,8 @@ local function merge(origin, extend)
             else
                 origin[k] = v
             end
-        elseif v == ngx.null or v == null then
-        	origin[k] = nil
+        elseif v == ngx.null then
+            origin[k] = nil
         else
             origin[k] = v
         end

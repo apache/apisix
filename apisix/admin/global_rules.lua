@@ -116,7 +116,7 @@ function _M.patch(id, conf)
 
     if type(conf) ~= "table"  then
         return 400, {error_msg = "invalid configuration"}
-    end    
+    end
 
     local key = "/global_rules/" .. id
     local res_old, err = core.etcd.get(key)
@@ -134,7 +134,7 @@ function _M.patch(id, conf)
     local node_value = res_old.body.node.value
 
     node_value = table_util.merge(node_value, conf);
-    
+
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
     local ok, err = check_conf(id, node_value, true)

@@ -241,7 +241,7 @@ function _M.patch(id, conf)
                   core.json.delay_encode(res_old, true))
 
     local new_value = res_old.body.node.value
-    
+
     new_value = table_util.merge(new_value, conf);
 
     core.log.info("new value ", core.json.delay_encode(new_value, true))
