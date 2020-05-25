@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [1.3.0](#130)
 - [1.2.0](#120)
 - [1.1.0](#110)
 - [1.0.0](#100)
@@ -26,6 +27,19 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 1.3.0
+
+1.3 版本主要带来安全更新。
+
+## Security
+- 拒绝无效的 header [#1462](https://github.com/apache/incubator-apisix/pull/1462) 并对 uri 进行安全编码 [#1461](https://github.com/apache/incubator-apisix/pull/1461)
+- 默认只允许本地环回地址 127.0.0.1 访问 admin API 和 dashboard. [#1458](https://github.com/apache/incubator-apisix/pull/1458)
+
+### Plugin
+- :sunrise: **新增 batch request 插件**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
+- 实现完成 `sys logger` 插件. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
+
 
 ## 1.2.0
 1.2 版本在内核以及插件上带来了非常多的更新。
