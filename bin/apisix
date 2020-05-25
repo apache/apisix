@@ -239,6 +239,7 @@ http {
     more_set_headers 'Server: APISIX web server';
 
     include mime.types;
+    charset utf-8;
 
     {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};
