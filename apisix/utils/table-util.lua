@@ -14,6 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx = ngx
+local pairs = pairs
+local type = type
 
 local _M = {}
 
