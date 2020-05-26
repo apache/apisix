@@ -73,7 +73,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
 第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
 
-## 如何通过APISIX支持A/B测试？
+## 如何通过 APISIX 支持 A/B 测试？
 
 比如，根据入参`arg_id`分组：
 
@@ -81,6 +81,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 2. B组：arg_id > 1000
 
 可以这么做：
+
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -109,8 +110,76 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
+
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
 https://github.com/iresty/lua-resty-radixtree#operator-list
+
+## 如何支持 http 自动跳转到 https？
+
+比如，将 `http://foo.com` 重定向到 `https://foo.com`
+
+有几种不同的方法来实现：
+1. 使用`redirect`插件：
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "host": "foo.com",
+    "vars": [
+        [
+            "scheme",
+            "==",
+            "http"
+        ]
+    ],
+    "plugins": {
+        "redirect": {
+            "uri": "https://$host$request_uri",
+            "ret_code": 301
+        }
+    }
+}'
+```
+
+2. 使用`serverless`插件：
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "serverless-pre-function": {
+            "phase": "rewrite",
+            "functions": ["return function() if ngx.var.scheme == \"http\" and ngx.var.host == \"foo.com\" then ngx.header[\"Location\"] = \"https://foo.com\" .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
+        }
+    }
+}'
+```
+
+然后测试下是否生效：
+```shell
+curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
+```
+
+响应体应该是：
+```
+HTTP/1.1 301 Moved Permanently
+Date: Mon, 18 May 2020 02:56:04 GMT
+Content-Type: text/html
+Content-Length: 166
+Connection: keep-alive
+Location: https://foo.com/hello
+Server: APISIX web server
+
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
 
 ## 如何修改日志等级
 
