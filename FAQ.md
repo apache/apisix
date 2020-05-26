@@ -78,7 +78,7 @@ An example, if you want to group by the request param `arg_id`：
 1. Group A：arg_id <= 1000
 2. Group B：arg_id > 1000
 
-here is the way：
+here is the way:
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -107,11 +107,81 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
+
 Here is the operator list of current `lua-resty-radixtree`：
 https://github.com/iresty/lua-resty-radixtree#operator-list
 
+## How to redirect http to https via APISIX?
+
+An example, redirect `http://foo.com` to `https://foo.com`
+
+There are several different ways to do this.
+1. `redirect` plugin:
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "host": "foo.com",
+    "vars": [
+        [
+            "scheme",
+            "==",
+            "http"
+        ]
+    ],
+    "plugins": {
+        "redirect": {
+            "uri": "https://$host$request_uri",
+            "ret_code": 301
+        }
+    }
+}'
+```
+
+2. `serverless` plugin：
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "serverless-pre-function": {
+            "phase": "rewrite",
+            "functions": ["return function() if ngx.var.scheme == \"http\" and ngx.var.host == \"foo.com\" then ngx.header[\"Location\"] = \"https://foo.com\" .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
+        }
+    }
+}'
+```
+
+Then test it to see if it works：
+```shell
+curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
+```
+
+The response body should be:
+```
+HTTP/1.1 301 Moved Permanently
+Date: Mon, 18 May 2020 02:56:04 GMT
+Content-Type: text/html
+Content-Length: 166
+Connection: keep-alive
+Location: https://foo.com/hello
+Server: APISIX web server
+
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
+
+
 ## How to fix OpenResty Installation Failure on MacOS 10.15
 When you install the OpenResty on MacOs 10.15, you may face this error
+
 ```shell
 > brew install openresty
 Updating Homebrew...
