@@ -108,6 +108,7 @@ reload: default
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
+### install:          Install the apisix
 .PHONY: install
 install: default
 	$(INSTALL) -d /usr/local/apisix/
