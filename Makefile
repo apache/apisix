@@ -110,7 +110,7 @@ reload: default
 
 ### install:          Install the apisix
 .PHONY: install
-install:
+install: default
 	$(INSTALL) -d /usr/local/apisix/
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
