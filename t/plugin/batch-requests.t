@@ -687,7 +687,7 @@ passed
 
 
 
-=== TEST 15: copy cookie to every rquest
+=== TEST 15: copy cookie to every request
 --- config
     client_body_in_file_only on;
     location = /aggregate {
