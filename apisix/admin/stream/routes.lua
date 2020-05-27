@@ -83,7 +83,7 @@ function _M.put(id, conf)
         return 400, err
     end
 
-    local key = "/stream_routes/" .. id
+    local key = "/stream/routes/" .. id
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put stream route[", key, "]: ", err)
@@ -95,7 +95,7 @@ end
 
 
 function _M.get(id)
-    local key = "/stream_routes"
+    local key = "/stream/routes"
     if id then
         key = key .. "/" .. id
     end
@@ -116,8 +116,8 @@ function _M.post(id, conf)
         return 400, err
     end
 
-    local key = "/stream_routes"
-    local res, err = core.etcd.push("/stream_routes", conf)
+    local key = "/stream/routes"
+    local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post stream route[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -132,7 +132,7 @@ function _M.delete(id)
         return 400, {error_msg = "missing stream stream route id"}
     end
 
-    local key = "/stream_routes/" .. id
+    local key = "/stream/routes/" .. id
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then

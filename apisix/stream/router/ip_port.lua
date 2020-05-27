@@ -81,14 +81,14 @@ end
 
 function _M.stream_init_worker(filter)
     local err
-    user_routes, err = core.config.new("/stream_routes", {
+    user_routes, err = core.config.new("/stream/routes", {
             automatic = true,
             item_schema = core.schema.stream_route,
             filter = filter,
         })
 
     if not user_routes then
-        error("failed to create etcd instance for fetching /stream_routes : "
+        error("failed to create etcd instance for fetching /stream/routes : "
               .. err)
     end
 end

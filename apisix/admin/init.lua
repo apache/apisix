@@ -53,7 +53,7 @@ local resources_http = {
 
 
 local resources_stream = {
-    routes   = require("apisix.admin.stream_routes"),
+    routes = require("apisix.admin.stream.routes"),
 }
 
 
@@ -148,7 +148,7 @@ local function run_stream(uri_segs)
     if not local_conf.apisix.stream_proxy then
         core.log.warn("stream mode is disabled, can not to add any stream ",
                       "route")
-        core.response.exit(400)
+        core.response.exit(400, {error_msg = "stream mode is disabled"})
     end
 
     core.log.info("uri: ", core.json.delay_encode(uri_segs))

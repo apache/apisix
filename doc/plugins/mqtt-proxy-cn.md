@@ -60,7 +60,7 @@
 下面是一个示例，在指定的 route 上开启了 mqtt-proxy 插件:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/stream/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "remote_addr": "127.0.0.1",
     "plugins": {
@@ -81,6 +81,6 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 当你想去掉插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/stream_routes/1 -X DELETE
+$ curl http://127.0.0.1:2379/v2/keys/apisix/stream/routes/1 -X DELETE
 ```
 现在就已经移除了 mqtt-proxy 插件了。
