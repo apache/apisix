@@ -159,5 +159,7 @@ plugins:                          # plugin list
   - syslog
   - batch-requests
   - http-logger
+  - skywalking
+
 stream_plugins:
   - mqtt-proxy
