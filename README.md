@@ -94,7 +94,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [CORS](doc/plugins/cors.md)
 
 - **OPS friendly**
-    - OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)
+    - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
     - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
     - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
     - High availability: support to configure multiple etcd addresses in the same cluster.
