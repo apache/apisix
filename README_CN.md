@@ -94,7 +94,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [CORS](doc/plugins/cors-cn.md)
 
 - **运维友好**
-    - OpenTracing 可观测性: [支持 Apache Skywalking 和 Zipkin](doc/plugins/zipkin-cn.md)。
+    - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/plugins/skywalking-cn.md) 和 [Zipkin](doc/plugins/zipkin-cn.md)。
     - 监控和指标: [Prometheus](doc/plugins/prometheus-cn.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。

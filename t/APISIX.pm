@@ -199,6 +199,7 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
+    lua_shared_dict skywalking-tracing-buffer    100m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
