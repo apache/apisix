@@ -110,7 +110,7 @@ function _M.log(conf, ctx)
 
     local overhead = latency
     if ctx.var.upstream_response_time then
-        overhead = overhead - tonumber(ctx.var.upstream_response_time)
+        overhead =  overhead - tonumber(ctx.var.upstream_response_time) * 1000
     end
     metrics.overhead:observe(overhead,
         gen_arr("request", service_id, balancer_ip))
