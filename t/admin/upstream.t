@@ -694,7 +694,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/desc',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "desc": "new 21 upstream"
@@ -773,7 +773,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/nodes',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "nodes": {
@@ -785,8 +785,8 @@ passed
                     "node": {
                         "value": {
                             "nodes": {
-                                "127.0.0.1:8081": 0,
-                                "127.0.0.1:8082": 4
+                                "127.0.0.1:8081": 3,
+                                "127.0.0.1:8082": 0
                             },
                             "type": "roundrobin",
                             "desc": "new 21 upstream"
@@ -805,7 +805,6 @@ GET /t
 passed
 --- no_error_log
 [error]
-
 
 
 === TEST 24: set upstream(type: chash)

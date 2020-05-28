@@ -996,7 +996,7 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 [[{
-                    "methods": ["GET", ngx.null, ngx.null, ngx.null, ngx.null, ngx.null, ngx.null, ngx.null, ngx.null],
+                    "methods": ["GET", null, null, null, null, null, null, null, null]
                 }]],
                 [[{
                     "node": {
@@ -1029,9 +1029,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/uri',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
-                '"/patch_test"',
+                [[{
+                    "uri": "/patch_test"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -1067,11 +1069,11 @@ passed
                     "methods": ["GET"],
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:8080": ngx.null
+                            "127.0.0.1:8080": null,
                             "127.0.0.2:8080": 1
-                        },
+                        }
                     },
-                    "desc": "new route",
+                    "desc": "new route"
                 }]],
                 [[{
                     "node": {
