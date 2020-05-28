@@ -111,7 +111,19 @@ qr/skywalking service Instance registered, service instance id: 1/
 
 
 
-=== TEST 3: change sample ratio
+=== TEST 3: test heartbeat
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- no_error_log
+[error]
+--- error_log
+skywalking heartbeat ok
+
+
+
+=== TEST 4: change sample ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -171,7 +183,7 @@ passed
 
 
 
-=== TEST 4: not tiger skywalking
+=== TEST 5: not tiger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -181,7 +193,7 @@ push data into skywalking context
 
 
 
-=== TEST 5: disabled
+=== TEST 6: disabled
 --- config
     location /t {
         content_by_lua_block {
@@ -233,10 +245,84 @@ passed
 
 
 
-=== TEST 6: not tiger skywalking
+=== TEST 7: not tiger skywalking
 --- request
 GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
 rewrite phase of skywalking plugin
+
+
+
+=== TEST 8: enable skywalking
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "skywalking": {
+                                "endpoint": "http://127.0.0.1:1982/mock_skywalking",
+                                "sample_ratio": 1,
+                                "service_name": "APISIX"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "skywalking": {
+                                    "endpoint": "http://127.0.0.1:1982/mock_skywalking",
+                                    "sample_ratio": 1,
+                                    "service_name":"APISIX"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/opentracing"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: test segments report
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- no_error_log
+[error]
+--- error_log
+skywalking segments reported
