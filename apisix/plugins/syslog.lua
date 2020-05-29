@@ -42,6 +42,7 @@ local schema = {
         tls = {type = "boolean", default = false},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         buffer_duration = {type = "integer", minimum = 1, default = 60},
+        include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}
 }
@@ -127,7 +128,7 @@ end
 
 -- log phase in APISIX
 function _M.log(conf)
-    local entry = log_util.get_full_log(ngx)
+    local entry = log_util.get_full_log(ngx, conf)
 
     if not entry.route_id then
         core.log.error("failed to obtain the route id for sys logger")
