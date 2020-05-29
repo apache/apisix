@@ -36,6 +36,7 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
+        include_req_body = {type = "boolean", default = false}
     },
     required = {"uri"}
 }
@@ -121,7 +122,7 @@ end
 
 
 function _M.log(conf)
-    local entry = log_util.get_full_log(ngx)
+    local entry = log_util.get_full_log(ngx, conf)
 
     if not entry.route_id then
         core.log.error("failed to obtain the route id for http logger")
