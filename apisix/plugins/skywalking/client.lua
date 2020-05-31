@@ -33,7 +33,7 @@ local function register_service(conf)
         return service_id
     end
 
-    local service_name = conf.service_name
+    local service_name = conf.service_name or core.name
     local service = register.newServiceRegister(service_name)
 
     local httpc = http.new()
