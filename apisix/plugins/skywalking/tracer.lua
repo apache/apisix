@@ -36,7 +36,7 @@ function _M.start(ctx, endpoint, upstream_name)
     local instance_id = tracing_buffer:get(endpoint .. '_instance_id')
     local service_id = tracing_buffer:get(endpoint .. '_service_id')
 
-    if service_id and service_id then
+    if service_id and instance_id then
         context = tracing_context.new(service_id, instance_id)
     else
         context = tracing_context.newNoOP()
