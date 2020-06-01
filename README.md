@@ -70,6 +70,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Hash-based Load Balancing: Load balance with consistent hashing sessions.
     - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
     - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
+    - [Dynamic service discovery](doc/discovery.md)：Support service discovery based on registry, reduce the reverse proxy maintenance costs.
 
 - **Fine-grained routing**
     - [Supports full path matching and prefix matching](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
