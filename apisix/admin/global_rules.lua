@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local type = type
 local tostring = tostring
-local table_util = require("apisix.utils.table-util")
 
 
 local _M = {
@@ -133,7 +132,7 @@ function _M.patch(id, conf)
 
     local node_value = res_old.body.node.value
 
-    node_value = table_util.merge(node_value, conf);
+    node_value = core.table.merge(node_value, conf);
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 

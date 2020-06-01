@@ -20,7 +20,6 @@ local get_services = require("apisix.http.service").services
 local tostring = tostring
 local ipairs = ipairs
 local type = type
-local table_util = require("apisix.utils.table-util")
 
 
 local _M = {
@@ -242,7 +241,7 @@ function _M.patch(id, conf)
 
     local new_value = res_old.body.node.value
 
-    new_value = table_util.merge(new_value, conf);
+    new_value = core.table.merge(new_value, conf);
 
     core.log.info("new value ", core.json.delay_encode(new_value, true))
 
