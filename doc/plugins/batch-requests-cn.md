@@ -67,7 +67,7 @@
 
 #### HttpResponse
 | 参数名 | 类型 | 描述 |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- |
 | status | Integer | Http 请求的状态码 |
 | reason | String | Http 请求的返回信息 |
 | body | String | Http 请求的响应体 |
