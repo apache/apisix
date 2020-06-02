@@ -104,17 +104,17 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf, sub_path)
+function _M.patch(id, conf)
     if not id then
         return 400, {error_msg = "missing global rule id"}
     end
 
-    if not sub_path then
-        return 400, {error_msg = "missing sub-path"}
-    end
-
     if not conf then
         return 400, {error_msg = "missing new configuration"}
+    end
+
+    if type(conf) ~= "table"  then
+        return 400, {error_msg = "invalid configuration"}
     end
 
     local key = "/global_rules/" .. id
@@ -131,32 +131,9 @@ function _M.patch(id, conf, sub_path)
                   core.json.delay_encode(res_old, true))
 
     local node_value = res_old.body.node.value
-    local sub_value = node_value
-    local sub_paths = core.utils.split_uri(sub_path)
-    for i = 1, #sub_paths - 1 do
-        local sub_name = sub_paths[i]
-        if sub_value[sub_name] == nil then
-            sub_value[sub_name] = {}
-        end
 
-        sub_value = sub_value[sub_name]
+    node_value = core.table.merge(node_value, conf);
 
-        if type(sub_value) ~= "table" then
-            return 400, "invalid sub-path: /"
-                        .. core.table.concat(sub_paths, 1, i)
-        end
-    end
-
-    if type(sub_value) ~= "table" then
-        return 400, "invalid sub-path: /" .. sub_path
-    end
-
-    local sub_name = sub_paths[#sub_paths]
-    if sub_name and sub_name ~= "" then
-        sub_value[sub_name] = conf
-    else
-        node_value = conf
-    end
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
     local ok, err = check_conf(id, node_value, true)

@@ -164,16 +164,17 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rules/1/plugins',
+            local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PATCH,
                 [[{
+                    "plugins": {
                     "limit-count": {
                         "count": 3,
                         "time_window": 60,
                         "rejected_code": 503,
                         "key": "remote_addr"
                     }
-                }]],
+                }}]],
                 [[{
                     "node": {
                         "value": {

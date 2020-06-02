@@ -40,7 +40,7 @@
 |PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/routes     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/routes/{id}|无|删除资源|
-|PATCH    |/apisix/admin/routes/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
+|PATCH    |/apisix/admin/routes/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
 
 > uri 请求参数：
 
@@ -187,7 +187,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/services/{id}|无|删除资源|
-|PATCH    |/apisix/admin/services/{id}/{path}|{...}|修改已有 Service 的部分内容，其他不涉及部分会原样保留。|
+|PATCH    |/apisix/admin/services/{id}|{...}|修改已有 Service 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
 
 > body 请求参数：
 
@@ -336,7 +336,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 |PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/upstreams/{id}|无|删除资源|
-|PATCH    |/apisix/admin/upstreams/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
+|PATCH    |/apisix/admin/upstreams/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
 
 > body 请求参数：
 

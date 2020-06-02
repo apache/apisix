@@ -993,9 +993,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/methods',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
-                '["GET"]',
+                [[{
+                    "methods": ["GET", null, null, null, null, null, null, null, null]
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -1027,9 +1029,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/uri',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
-                '"/patch_test"',
+                [[{
+                    "uri": "/patch_test"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -1054,23 +1058,22 @@ passed
 
 
 
-=== TEST 30: patch route(whole)
+=== TEST 30: patch route(multi)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "methods": ["GET"],
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin"
+                            "127.0.0.1:8080": null,
+                            "127.0.0.2:8080": 1
+                        }
                     },
-                    "desc": "new route",
-                    "uri": "/index.html"
+                    "desc": "new route"
                 }]],
                 [[{
                     "node": {
@@ -1078,11 +1081,11 @@ passed
                             "methods": [
                                 "GET"
                             ],
-                            "uri": "/index.html",
+                            "uri": "/patch_test",
                             "desc": "new route",
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:8080": 1
+                                    "127.0.0.2:8080": 1
                                 },
                                 "type": "roundrobin"
                             }
