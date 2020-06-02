@@ -114,7 +114,11 @@ function _M.mock_skywalking_v2_instance_register()
 end
 
 function _M.mock_skywalking_v2_instance_heartbeat()
-    ngx.say('ok')
+    ngx.say('skywalking heartbeat ok')
+end
+
+function _M.mock_skywalking_v2_segments()
+    ngx.say('skywalking segments ok')
 end
 
 function _M.mock_zipkin()

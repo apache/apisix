@@ -111,8 +111,6 @@ local function register_service_instance(conf, service_id)
         for _, result in ipairs(register_results) do
             if result.key == service_instance_name then
                 instance_id = result.value
-                core.log.debug("skywalking service Instance registered, ",
-                                "service instance id: ", instance_id)
             end
         end
 
@@ -136,7 +134,7 @@ local function ping(endpoint)
         ngx.now() * 1000)
 
     local httpc = http.new()
-    local _, err = httpc:request_uri(endpoint .. '/v2/instance/heartbeat', {
+    local res, err = httpc:request_uri(endpoint .. '/v2/instance/heartbeat', {
         method = "POST",
         body = core.json.encode(ping_pkg),
         headers = {
@@ -146,6 +144,8 @@ local function ping(endpoint)
 
     if err then
         core.log.error("skywalking agent ping failed, err: ", err)
+    else
+        core.log.debug(res.body)
     end
 end
 
@@ -173,6 +173,7 @@ local function report_traces(endpoint)
                 break
             else
                 count = count + 1
+                core.log.debug(res.body)
             end
         else
             core.log.error("skywalking segment report failed, err: ", err)
@@ -197,11 +198,16 @@ function _M.heartbeat(conf)
             return
         end
 
+        core.log.debug("skywalking service registered, ",
+                                "service id: ", service_id)
+
         local service_instance_id = register_service_instance(conf, service_id)
         if not service_instance_id then
             return
         end
 
+        core.log.debug("skywalking service Instance registered, ",
+                                "service instance id: ", service_instance_id)
         report_traces(conf.endpoint)
         ping(conf.endpoint)
     end
