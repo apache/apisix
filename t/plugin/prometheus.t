@@ -200,7 +200,7 @@ GET /t
 {"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
-
+---
 
 
 === TEST 10: set it in service (with wrong property)
@@ -532,5 +532,81 @@ qr/apisix_http_status\{code="404",route="3",service="",node="127.0.0.1"\} 2/
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/.*apisix_http_overhead_bucket.*/
+--- no_error_log
+[error]
+
+=== TEST 26: add service 3 to distinguish other services
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1981": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+=== TEST 27: add a route 4 to redirect /hello4
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": 3,
+                    "uri": "/hello4"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+=== TEST 28: request from client to /hello4 ( all hit, the hello4 sleep 1s)
+--- pipelined_requests eval
+["GET /hello4", "GET /hello4", "GET /hello4"]
+--- error_code eval
+[200, 200, 200]
+--- no_error_log
+[error]
+
+
+=== TEST 29: fetch the prometheus metric data with `overhead`(the overhead < 1s)
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"00500.0.*/
 --- no_error_log
 [error]
