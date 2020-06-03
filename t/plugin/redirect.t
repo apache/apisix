@@ -14,17 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
-
-    } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
-    }
-}
-
 use t::APISIX 'no_plan';
+
+$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 
 repeat_each(1);
 no_long_string();

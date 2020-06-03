@@ -131,15 +131,17 @@ function _M.rewrite(conf, ctx)
         conf.ret_code = 301
     end
 
-    local new_uri, err = concat_new_uri(conf.uri, ctx)
-    if not new_uri then
-        core.log.error("failed to generate new uri by: ", conf.uri, " error: ",
-                       err)
-        core.response.exit(500)
-    end
+    if conf.uri and conf.ret_code then
+        local new_uri, err = concat_new_uri(conf.uri, ctx)
+        if not new_uri then
+            core.log.error("failed to generate new uri by: ", conf.uri, " error: ",
+                        err)
+            core.response.exit(500)
+        end
 
-    core.response.set_header("Location", new_uri)
-    core.response.exit(conf.ret_code)
+        core.response.set_header("Location", new_uri)
+        core.response.exit(conf.ret_code)
+    end
 end
 
 
