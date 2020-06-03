@@ -34,8 +34,9 @@ URI redirect.
 
 |Name    |Requirement|Description|
 |------- |-----|------|
-|uri     |required| New uri which can contain Nginx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`. If you refer to a variable name that does not exist, this will not produce an error, and it will be used as an empty string.|
-|ret_code|optional|Response code, the default value is `302`.|
+|uri     |required, need pick one from `uri` and `http_to_https`| New uri which can contain Nginx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`. If you refer to a variable name that does not exist, this will not produce an error, and it will be used as an empty string.|
+|ret_code|optional, only works with `uri`|Response code, the default value is `302`.|
+|http_to_https|required, need pick one from `uri` and `http_to_https`|Boolean value. The default value is `false`. When it is set to `ture` and the request is HTTP, will be automatically redirected to HTTPS with 301 response code, and the URI will keep the same as client request.|
 
 ## How To Enable
 
@@ -100,6 +101,19 @@ Location: /test/default.html
 We can check the response code and the response header `Location`.
 
 It shows that the `redirect` plugin is in effect.
+
+ Here is an example of redirect HTTP to HTTPS:
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "redirect": {
+            "http_to_https": true
+        }
+    }
+}'
+```
 
 ## Disable Plugin
 

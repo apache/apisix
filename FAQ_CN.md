@@ -119,7 +119,21 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 比如，将 `http://foo.com` 重定向到 `https://foo.com`
 
 有几种不同的方法来实现：
-1. 使用`redirect`插件：
+1. 直接使用 `redirect` 插件的 `http_to_https` 功能：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "host": "foo.com",
+    "plugins": {
+        "redirect": {
+            "http_to_https": true
+        }
+    }
+}'
+```
+
+2. 结合高级路由规则 `vars` 和 `redirect` 插件一起使用：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -142,7 +156,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-2. 使用`serverless`插件：
+3. 使用`serverless`插件：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
