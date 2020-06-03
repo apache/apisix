@@ -116,7 +116,21 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 An example, redirect `http://foo.com` to `https://foo.com`
 
 There are several different ways to do this.
-1. `redirect` plugin:
+1. Directly use the `http_to_https` in `redirect` plugin：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "host": "foo.com",
+    "plugins": {
+        "redirect": {
+            "http_to_https": true
+        }
+    }
+}'
+```
+
+2. Use with advanced routing rule `vars` with `redirect` plugin:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -139,7 +153,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-2. `serverless` plugin：
+3. `serverless` plugin：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
