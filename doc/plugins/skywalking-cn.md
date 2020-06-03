@@ -95,11 +95,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
             ```
         2. 安装 ElasticSearch管理界面elasticsearch-hq
             ```
-            sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq 
+            sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq
             ```
         3. 启动skywalking：
             ```
-            sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server 
+            sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server
             ```
 2. Skywalking管理系统：
     1. 启动管理系统：
@@ -113,22 +113,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 3. 测试示例:
     - 通过访问apisix，访问上游服务
 
-        ```bash            
-          $ curl -v http://10.110.149.192:9080/uid/12
-          HTTP/1.1 200 OK
-          OK
-          ...
+        ```bash
+        $ curl -v http://10.110.149.192:9080/uid/12
+        HTTP/1.1 200 OK
+        OK
+        ...
       ```
-      
     - 打开浏览器，访问 Skywalking 的 web 页面：
         ```
         http://10.110.149.175:8080/
         ```
-        可以看到访问拓扑图  
-        ![](../../doc/images/plugin/skywalking-4.png)  
-        可以看到服务追踪图  
+        可以看到访问拓扑图\
+        ![](../../doc/images/plugin/skywalking-4.png)\
+        可以看到服务追踪图\
         ![](../../doc/images/plugin/skywalking-5.png)
-
 ## 禁用插件
 
 当你想去掉插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：

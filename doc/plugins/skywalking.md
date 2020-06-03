@@ -31,11 +31,8 @@
 
 ## Name
 
-**Skywalking**(https://github.com/apache/skywalking)  is an OpenTracing plugin.
-
- The skywalking server can supports both http and grpc protocols . The APISIX client only support http protocols.
- 
-
+**Skywalking**(https://github.com/apache/skywalking)  is an OpenTracing plugin.\
+The skywalking server can supports both http and grpc protocols . The APISIX client only support http protocols.
 ## Attributes
 |Name          |Requirement  |Description|
 |-------|-------|-------|
@@ -69,20 +66,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-You can open dashboard with a browser:`http://127.0.0.1:9080/apisix/dashboard/`，to complete the above operation through the web interface, first add a route:
-
-![](../images/plugin/skywalking-1.png)
-
-Then add skywalking plugin:
-
+You can open dashboard with a browser:`http://127.0.0.1:9080/apisix/dashboard/`，to complete the above operation through the web interface, first add a route:\
+![](../images/plugin/skywalking-1.png)\
+Then add skywalking plugin:\
 ![](../images/plugin/skywalking-2.png)
-
 ## Test Plugin
 
 ### Run-Skywalking-Example
 
-#### e.g. 
+#### e.g.
 1. Run Skywalking Server:
     - By default,use H2 storage , start skywalking directly
         ```
@@ -93,18 +85,17 @@ Then add skywalking plugin:
         1. Firstly, you should install elasticsearch:
             ```
             sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --restart always -e "discovery.type=single-node" elasticsearch:6.7.2
-
             ```
         2. You can install ElasticSearch management page: elasticsearch-hq(Optional)
             ```
-            sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq 
+            sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq
             ```
-        3. Run skywalking server：
+        3. Run skywalking server:
             ```
-            sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server 
+            sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server
             ```
-2. Skywalking WebUI：
-    1. Run SkyWalking webUI Server：
+2. Skywalking WebUI:
+    1. Run SkyWalking webUI Server:
         ```
         sudo docker run --name skywalking-ui -d -p 8080:8080 --link skywalking:skywalking -e SW_OAP_ADDRESS=skywalking:12800 --restart always apache/skywalking-ui
         ```
@@ -114,21 +105,19 @@ Then add skywalking plugin:
 
 3. Test:
     -  Access to upstream services through access apisix:
-
-        ```bash            
-          $ curl -v http://10.110.149.192:9080/uid/12
-          HTTP/1.1 200 OK
-          OK
-          ...
-      ```
-      
-    - Open the webUI of skyWalking：
+        ```bash
+        $ curl -v http://10.110.149.192:9080/uid/12
+        HTTP/1.1 200 OK
+        OK
+        ...
+        ```
+    - Open the webUI of skyWalking:
         ```
         http://10.110.149.175:8080/
         ```
-         You can see the topology of all service
-        ![](../../doc/images/plugin/skywalking-4.png)  
-        You can also see the tracer of all service 
+        You can see the topology of all service\
+        ![](../../doc/images/plugin/skywalking-4.png)\
+        You can also see the tracer of all service\
         ![](../../doc/images/plugin/skywalking-5.png)
 
 ## Disable Plugin
@@ -136,7 +125,6 @@ Then add skywalking plugin:
 When you want to disable the skyWalking plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
-
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
@@ -189,7 +177,7 @@ update the file of agent/config/agent.config
 agent.service_name=yourservername
 collector.backend_service=10.110.149.175:11800
 ```
-Run the script：
+Run the script:
 ```
 nohup java -javaagent:/root/skywalking/app/agent/skywalking-agent.jar \
 -jar /root/skywalking/app/app.jar \
