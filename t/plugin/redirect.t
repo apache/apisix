@@ -398,3 +398,92 @@ Host: foo.com
 --- error_code: 301
 --- response_headers
 Location: https://foo.com/hello
+
+
+
+=== TEST 17: enable http_to_https
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello
+
+
+
+=== TEST 19: enable http_to_https with ret_code(not take effect)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "ret_code": 302
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello

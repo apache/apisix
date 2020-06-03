@@ -27,8 +27,9 @@ URI 重定向插件。
 
 |名称    |必须|描述|
 |------- |-----|------|
-|uri     |是| 可以包含 Nginx 变量的 URI，例如：`/test/index.html`, `$uri/index.html`。你可以通过类似于 `$ {xxx}` 的方式引用变量，以避免产生歧义，例如：`${uri}foo/index.html`。若你需要保留 `$` 字符，那么使用如下格式：`/\$foo/index.html`。|
-|ret_code|否|请求响应码，默认值为 `302`。|
+|uri     |是，与 `http_to_https` 二选一| 可以包含 Nginx 变量的 URI，例如：`/test/index.html`, `$uri/index.html`。你可以通过类似于 `$ {xxx}` 的方式引用变量，以避免产生歧义，例如：`${uri}foo/index.html`。若你需要保留 `$` 字符，那么使用如下格式：`/\$foo/index.html`。|
+|ret_code|否，只和 `uri` 配置使用。|请求响应码，默认值为 `302`。|
+|http_to_https|是，与 `uri` 二选一|布尔值，默认是 `false`。当设置为 `ture` 并且请求是 http 时，会自动 301 重定向为 https，uri 保持不变|
 
 ### 示例
 
@@ -93,6 +94,21 @@ Location: /test/default.html
 ```
 
 我们可以检查响应码和响应头中的 `Location` 参数，它表示该插件已启用。
+
+```
+
+下面是一个实现 http 到 https 跳转的示例：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "redirect": {
+            "http_to_https": true
+        }
+    }
+}'
+```
 
 #### 禁用插件
 
