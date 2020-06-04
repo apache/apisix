@@ -617,3 +617,49 @@ GET /apisix/prometheus/metrics
 qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"00500.0.*/
 --- no_error_log
 [error]
+
+
+
+=== TEST 30: delete route 4
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: delete service 3
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/3',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
