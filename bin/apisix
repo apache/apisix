@@ -286,7 +286,18 @@ http {
 
     {% if enable_admin and port_admin then %}
     server {
+        {%if https_admin then%}
+        listen {* port_admin *} ssl;
+        ssl_certificate      cert/apisix_admin_ssl.crt;
+        ssl_certificate_key  cert/apisix_admin_ssl.key;
+        ssl_session_cache    shared:SSL:1m;
+
+        ssl_protocols {* ssl.ssl_protocols *};
+        ssl_ciphers {* ssl.ssl_ciphers *};
+        ssl_prefer_server_ciphers on;
+        {% else %}
         listen {* port_admin *};
+        {%end%}
         log_not_found off;
         location /apisix/admin {
             {%if allow_admin then%}
