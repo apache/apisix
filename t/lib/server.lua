@@ -30,7 +30,7 @@ end
 
 -- mock server for test the fix of overhead's value
 function _M.hello4()
-    ngx.sleep(1)
+    _M.sleep1()
     ngx.say("hello4 world")
 end
 

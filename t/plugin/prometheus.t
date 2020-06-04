@@ -200,7 +200,7 @@ GET /t
 {"error_msg":"failed to check the configuration of plugin prometheus err: additional properties forbidden, found invalid_property"}
 --- no_error_log
 [error]
----
+
 
 
 === TEST 10: set it in service (with wrong property)
@@ -535,6 +535,8 @@ qr/.*apisix_http_overhead_bucket.*/
 --- no_error_log
 [error]
 
+
+
 === TEST 26: add service 3 to distinguish other services
 --- config
     location /t {
@@ -568,6 +570,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 27: add a route 4 to redirect /hello4
 --- config
     location /t {
@@ -594,6 +598,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 28: request from client to /hello4 ( all hit, the hello4 sleep 1s)
 --- pipelined_requests eval
 ["GET /hello4", "GET /hello4", "GET /hello4"]
@@ -601,6 +607,7 @@ passed
 [200, 200, 200]
 --- no_error_log
 [error]
+
 
 
 === TEST 29: fetch the prometheus metric data with `overhead`(the overhead < 1s)
