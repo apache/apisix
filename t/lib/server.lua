@@ -28,12 +28,6 @@ function _M.hello1()
     ngx.say("hello1 world")
 end
 
--- mock server for test the fix of overhead's value
-function _M.hello4()
-    _M.sleep1()
-    ngx.say("hello4 world")
-end
-
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
