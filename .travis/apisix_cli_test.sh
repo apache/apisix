@@ -83,3 +83,4 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
+
