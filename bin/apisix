@@ -21,6 +21,8 @@ local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+-- Note: The `excute_cmd` return value will have a line break at the end, 
+-- it is recommended to use the `trim` function to handle the return value. 
 local function excute_cmd(cmd)
     local t, err = io.popen(cmd)
     if not t then
