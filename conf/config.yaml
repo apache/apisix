@@ -54,6 +54,7 @@ apisix:
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
   # port_admin: 9180              # use a separate port
+  # https_admin: true             # enable https
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
