@@ -189,9 +189,8 @@ function _M.patch(id, conf)
     if res_old.status ~= 200 then
         return res_old.status, res_old.body
     end
-    core.log.info(
-        "key: ", key, " old value: ", core.json.delay_encode(res_old, true)
-    )
+    core.log.info("key: ", key, " old value: ",
+                  core.json.delay_encode(res_old, true))
 
     local new_value = res_old.body.node.value
 
