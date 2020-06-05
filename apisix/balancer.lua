@@ -86,7 +86,7 @@ end
 local function create_checker(upstream, healthcheck_parent)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
-    end    
+    end
     local checker = healthcheck.new({
         name = "upstream#" .. healthcheck_parent.key,
         shm_name = "upstream-healthcheck",
