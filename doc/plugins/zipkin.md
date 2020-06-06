@@ -20,14 +20,11 @@
 [Chinese](zipkin-cn.md)
 
 # Summary
-- [Summary](#summary)
-  - [Name](#name)
-  - [Attributes](#attributes)
-  - [How To Enable](#how-to-enable)
-  - [Test Plugin](#test-plugin)
-    - [run the Zipkin instance](#run-the-zipkin-instance)
-  - [Disable Plugin](#disable-plugin)
-  - [example code for upstream ( golang with Gin )](#example-code-for-upstream--golang-with-gin)
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Test Plugin**](#test-plugin)
+- [**Disable Plugin**](#disable-plugin)
 
 
 ## Name
@@ -114,7 +111,7 @@ When you want to disable the zipkin plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/index.html",

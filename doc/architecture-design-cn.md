@@ -559,7 +559,6 @@ HTTP/1.1 503 Service Temporarily Unavailable
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
   -d '{
         "plugins": {
             "limit-count": {
@@ -578,7 +577,7 @@ curl -X PUT \
 我们可以通过以下接口查看所有的 `GlobalRule`:
 
 ```shell
-curl https://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' 
+curl https://{apisix_listen_address}/apisix/admin/global_rules
 ```
 
 [返回目录](#目录)

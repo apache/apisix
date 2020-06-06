@@ -21,13 +21,11 @@
 
 ===
 
-- [Table of Contents](#table-of-contents)
-  - [Route](#route)
-    - [Available Operators](#available-operators)
-  - [Service](#service)
-  - [Consumer](#consumer)
-  - [Upstream](#upstream)
-  - [SSL](#ssl)
+* [Route](#route)
+* [Service](#service)
+* [Consumer](#consumer)
+* [Upstream](#upstream)
+* [SSL](#ssl)
 
 ## Route
 
@@ -211,7 +209,7 @@ Config Example:
 Example：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -X PUT -i -d '
 {
     "plugins": {
         "limit-count": {
@@ -288,7 +286,7 @@ The binding authentication and authorization plug-in is a bit special. When it n
 Example:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/2  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/2 -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -380,7 +378,7 @@ Config Example:
 Example：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -i -X PUT -d '
 > {
 >     "type": "roundrobin",
 >     "nodes": {

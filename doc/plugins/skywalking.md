@@ -20,15 +20,14 @@
 [Chinese](skywalking-cn.md)
 
 # Summary
-- [Summary](#summary)
-  - [Name](#name)
-  - [Attributes](#attributes)
-  - [How To Enable](#how-to-enable)
-  - [Test Plugin](#test-plugin)
-    - [Run-Skywalking-Example](#run-skywalking-example)
-      - [e.g.](#eg)
-  - [Disable Plugin](#disable-plugin)
-  - [Upstream services(Code With SpringBoot)](#upstream-servicescode-with-springboot)
+- [**Summary**](#Summary)
+  - [**Name**](#Name)
+  - [**Attributes**](#Attributes)
+  - [**How To Enable**](#How-To-Enable)
+  - [**Test Plugin**](#Test-Plugin)
+    - [**Run Skywalking Example**](#Run-Skywalking-Example)
+  - [**Disable Plugin**](#Disable-Plugin)
+  - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
 ## Name
 
@@ -128,7 +127,7 @@ When you want to disable the skyWalking plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
     "methods": ["GET"],
     "uris": [
