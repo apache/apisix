@@ -1146,7 +1146,7 @@ GET /t
 
 
 
-=== TEST 35: type chash, hash_on: consumer, donot need upstream key
+=== TEST 35: type chash, hash_on: consumer, do not need upstream key
 --- config
     location /t {
         content_by_lua_block {
