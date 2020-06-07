@@ -125,4 +125,4 @@ fi
 
 set -ex
 
-echo "passed: rollback to the default admin config"
+echo "rollback to the default admin config"
