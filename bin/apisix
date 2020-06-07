@@ -228,7 +228,7 @@ http {
 
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
 
-    access_log {* http.access_log *} main buffer=32768 flush=3;
+    access_log {* http.access_log *} main buffer=16384 flush=1;
     open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
     keepalive_timeout {* http.keepalive_timeout *};
