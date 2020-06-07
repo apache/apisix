@@ -72,3 +72,47 @@ done
 
 sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"
+
+# check admin https enabled
+
+sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
+sed  -i 's/\# https_admin: true/https_admin: true/'  conf/config.yaml
+
+make init
+
+grep "listen 9180 ssl" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to enabled https for admin"
+    exit 1
+fi
+
+make run
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to enabled https for admin"
+    exit 1
+fi
+
+echo "passed: admin https enabled"
+
+# rollback to the default
+
+make stop
+
+sed  -i 's/port_admin: 9180/\# port_admin: 9180/'  conf/config.yaml
+sed  -i 's/https_admin: true/\# https_admin: true/'  conf/config.yaml
+
+make init
+
+set +ex
+
+grep "listen 9180 ssl" conf/nginx.conf > /dev/null
+if [ ! $? -eq 1 ]; then
+    echo "failed: failed to rollback to the default admin config"
+    exit 1
+fi
+
+set -ex
+
+echo "rollback to the default admin config"
