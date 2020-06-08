@@ -534,3 +534,132 @@ GET /apisix/prometheus/metrics
 qr/.*apisix_http_overhead_bucket.*/
 --- no_error_log
 [error]
+
+
+
+=== TEST 26: add service 3 to distinguish other services
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1981": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: add a route 4 to redirect /sleep1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": 3,
+                    "uri": "/sleep1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: request from client to /sleep1 ( all hit)
+--- pipelined_requests eval
+["GET /sleep1", "GET /sleep1", "GET /sleep1"]
+--- error_code eval
+[200, 200, 200]
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: fetch the prometheus metric data with `overhead`(the overhead < 1s)
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"00500.0.*/
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: delete route 4
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: delete service 3
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/3',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

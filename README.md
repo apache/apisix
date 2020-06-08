@@ -39,8 +39,6 @@ APISIX is a cloud-based microservices API gateway that handles traditional north
 
 APISIX provides dynamic load balancing, authentication, rate limiting, other plugins through plugin mechanisms, and supports plugins you develop yourself.
 
-For more detailed information, see the [White Paper](https://static.apiseven.com/2020/05/1589275276-Choosing-the-Right-Microservice-API-Gateway-for-the-Enterprise-User.pdf).
-
 ![](doc/images/apisix.png)
 
 ## Features
@@ -50,7 +48,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **All platforms**
     - Cloud-Native: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
     - Run Environment: Both OpenResty and Tengine are supported.
-    - Supports [ARM64](https://zhuanlan.zhihu.com/p/84467919): Don't worry about the lock-in of the infra technology.
+    - Supports ARM64: Don't worry about the lock-in of the infra technology.
 
 - **Multi protocols**
     - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
@@ -72,6 +70,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Hash-based Load Balancing: Load balance with consistent hashing sessions.
     - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
     - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
+    - [Dynamic service discovery](doc/discovery.md)：Support service discovery based on registry, reduce the reverse proxy maintenance costs.
 
 - **Fine-grained routing**
     - [Supports full path matching and prefix matching](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
@@ -94,7 +93,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [CORS](doc/plugins/cors.md)
 
 - **OPS friendly**
-    - OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)
+    - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
     - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
     - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
     - High availability: support to configure multiple etcd addresses in the same cluster.
@@ -106,7 +105,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
     - [Fault Injection](doc/plugins/fault-injection.md)
     - [REST Admin API](doc/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
-    - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
     - External Loggers: Export access logs to external log management tools. ([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
 
 - **Highly scalable**
@@ -121,7 +119,7 @@ APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1,
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
 Steps to install APISIX:
-1. Installation runtime dependencies: OpenResty and etcd, refer to [documentation](doc/install-dependencies.md)
+1. Installation runtime dependencies: Nginx and etcd, refer to [documentation](doc/install-dependencies.md)
 2. There are several ways to install Apache APISIX:
     - [Source Release](doc/how-to-build.md#installation-via-source-release)
     - [RPM package](doc/how-to-build.md#installation-via-rpm-package-centos-7) for CentOS 7
@@ -170,8 +168,6 @@ open `http://127.0.0.1:9080/apisix/dashboard/` in the browser.
 Do not need to fill the user name and password, log in directly.
 
 The dashboard only allows 127.0.0.1 by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
-
-We provide an online dashboard [demo version](http://apisix.iresty.com), make it easier for you to understand APISIX.
 
 ## Benchmark
 

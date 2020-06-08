@@ -95,6 +95,12 @@ plugins:                          # plugin list
 
 注：先后顺序与执行顺序无关。
 
+特别需要注意的是，如果你的插件有新建自己的代码目录，那么就需要修改 Makefile 文件，新增创建文件夹的操作，比如：
+```
+$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
+$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
+```
+
 ## 配置描述与校验
 
 定义插件的配置项，以及对应的 [Json Schema](https://json-schema.org) 描述，并完成对 json 的校验，这样方便对配置的数据规

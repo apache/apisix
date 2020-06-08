@@ -36,7 +36,12 @@ function onCtrlC () {
     sudo openresty -p $PWD/benchmark/server -s stop || exit 1
 }
 
-sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" conf/nginx.conf
+if [[ "$(uname)" == "Darwin" ]]; then
+    sed  -i "" "s/worker_processes .*/worker_processes $worker_cnt;/g" conf/nginx.conf
+else
+    sed  -i "s/worker_processes .*/worker_processes $worker_cnt;/g" conf/nginx.conf
+fi
+
 make run
 
 sleep 3
