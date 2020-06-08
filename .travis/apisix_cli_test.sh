@@ -23,16 +23,6 @@
 
 set -ex
 
-# check if the user has enabled etcd v2 protocol.
-
-code=$(curl -i -m 10 -o /dev/null -s -w %{http_code} 'http://127.0.0.1:2379/v2/keys')
-if [ $code -eq 404 ]; then
-    echo "failed: Please make sure that you have enabled the v2 protocol of etcd."
-    exit 1
-fi
-
-echo "passed: the user has enabled etcd v2 protocol."
-
 # check whether the 'reuseport' is in nginx.conf .
 make init
 
