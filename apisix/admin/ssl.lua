@@ -18,7 +18,7 @@ local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local aes = require "resty.aes"
-local str = require "resty.string"
+local ngx_encode_base64 = ngx.encode_base64
 
 local _M = {
     version = 0.1,
@@ -103,14 +103,14 @@ function _M.put(id, conf)
 
     -- encrypt private key
     local local_conf = core.config.local_conf()
-    local iv = ""
+    local iv = "edd1c9f0985e76a2"
     if local_conf and local_conf.apisix
        and local_conf.apisix.ssl.key_encrypt_salt then
         iv = local_conf.apisix.ssl.key_encrypt_salt
     end
     local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
     local encrypted = aes_128_cbc_with_iv:encrypt(conf.key)
-    conf.key = str.to_hex(encrypted)
+    conf.key = ngx_encode_base64(encrypted)
 
     local key = "/ssl/" .. id
     local res, err = core.etcd.set(key, conf)
@@ -149,6 +149,18 @@ function _M.post(id, conf)
     if not id then
         return 400, err
     end
+
+    -- encrypt private key
+    local local_conf = core.config.local_conf()
+    local iv = "edd1c9f0985e76a2"
+    if local_conf and local_conf.apisix
+       and local_conf.apisix.ssl.key_encrypt_salt then
+        iv = local_conf.apisix.ssl.key_encrypt_salt
+    end
+    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
+    local encrypted = aes_128_cbc_with_iv:encrypt(conf.key)
+    conf.key = ngx_encode_base64(encrypted)
+    -- conf.key = str.to_hex(encrypted)
 
     local key = "/ssl"
     -- core.log.info("key: ", key)

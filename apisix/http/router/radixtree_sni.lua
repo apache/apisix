@@ -22,6 +22,8 @@ local ipairs           = ipairs
 local type             = type
 local error            = error
 local str_find         = string.find
+local aes              = require "resty.aes"
+local ngx_decode_base64 = ngx.decode_base64
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
@@ -39,11 +41,25 @@ local function create_router(ssl_items)
     local route_items = core.table.new(#ssl_items, 0)
     local idx = 0
 
+    local local_conf = core.config.local_conf()
+    local iv = "edd1c9f0985e76a2"
+    if local_conf and local_conf.apisix
+       and local_conf.apisix.ssl
+       and local_conf.apisix.ssl.key_encrypt_salt then
+        iv = local_conf.apisix.ssl.key_encrypt_salt
+    end
+    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
+
     for _, ssl in ipairs(ssl_items) do
         if type(ssl) == "table" and 
             ssl.value ~= nil and 
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
             local sni = ssl.value.sni:reverse()
+            -- decrypt private key
+            local decrypted = aes_128_cbc_with_iv:decrypt(ngx_decode_base64(ssl.value.key))
+            ssl.value.key = decrypted
+
+            local 
             idx = idx + 1
             route_items[idx] = {
                 paths = sni,
@@ -132,7 +148,7 @@ function _M.match_and_set(api_ctx)
     end
 
     local matched_ssl = api_ctx.matched_ssl
-    core.log.info("debug: ", core.json.delay_encode(matched_ssl, true))
+    core.log.info("debug - matched: ", core.json.delay_encode(matched_ssl, true))
     ok, err = set_pem_ssl_key(matched_ssl.value.cert, matched_ssl.value.key)
     if not ok then
         return false, err
@@ -142,11 +158,12 @@ function _M.match_and_set(api_ctx)
 end
 
 
-function _M.init_worker()
+function _M.init_worker(filter)
     local err
     ssl_certificates, err = core.config.new("/ssl", {
                         automatic = true,
-                        item_schema = core.schema.ssl
+                        item_schema = core.schema.ssl,
+                        filter = filter,
                     })
     if not ssl_certificates then
         error("failed to create etcd instance for fetching ssl certificates: "
