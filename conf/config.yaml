@@ -158,6 +158,7 @@ plugins:                          # plugin list
   - proxy-mirror
   - kafka-logger
   - cors
+  - consumer-restriction
   - syslog
   - batch-requests
   - http-logger
