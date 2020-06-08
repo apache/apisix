@@ -499,6 +499,12 @@ _M.ssl = {
             type = "integer",
             minimum = 1588262400,  -- 2020/5/1 0:0:0
         },
+        status = {
+            description = "ssl status",
+            type = "integer",
+            enum = {1, 0},
+            default = 1
+        }
     },
     oneOf = {
         {required = {"sni", "key", "cert"}},

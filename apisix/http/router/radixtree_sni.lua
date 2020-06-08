@@ -40,7 +40,9 @@ local function create_router(ssl_items)
     local idx = 0
 
     for _, ssl in ipairs(ssl_items) do
-        if type(ssl) == "table" then
+        if type(ssl) == "table" and 
+            ssl.value ~= nil and 
+            (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
             local sni = ssl.value.sni:reverse()
             idx = idx + 1
             route_items[idx] = {
