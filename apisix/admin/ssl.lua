@@ -17,7 +17,8 @@
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
-
+local aes = require "resty.aes"
+local str = require "resty.string"
 
 local _M = {
     version = 0.1,
@@ -99,6 +100,17 @@ function _M.put(id, conf)
     if not id then
         return 400, err
     end
+
+    -- encrypt private key
+    local local_conf = core.config.local_conf()
+    local iv = ""
+    if local_conf and local_conf.apisix
+       and local_conf.apisix.ssl.key_encrypt_salt then
+        iv = local_conf.apisix.ssl.key_encrypt_salt
+    end
+    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
+    local encrypted = aes_128_cbc_with_iv:encrypt(conf.key)
+    conf.key = str.to_hex(encrypted)
 
     local key = "/ssl/" .. id
     local res, err = core.etcd.set(key, conf)
