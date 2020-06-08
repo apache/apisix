@@ -214,7 +214,7 @@ serivce 对象 json 配置内容：
 
 ```shell
 # 创建一个Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "plugins": {
         "limit-count": {
@@ -294,7 +294,7 @@ consumer 对象 json 配置内容：
 
 ```shell
 # 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/2 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/2  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -387,7 +387,7 @@ upstream 对象 json 配置内容：
 
 ```shell
 # 创建一个upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -i -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 > {
 >     "type": "roundrobin",
 >     "nodes": {
