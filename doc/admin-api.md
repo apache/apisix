@@ -53,7 +53,8 @@
 
 |Parameter      |Required   |Type |Description        |Example|
 |---------|---------|----|-----------|----|
-|desc     |False |Auxiliary   |Identifies route names, usage scenarios, and more.|customer xxxx|
+|name     |False |Auxiliary   |Identifies route names.|customer-xxxx|
+|desc     |False |Auxiliary   |route description, usage scenarios, and more.|customer xxxx|
 |uri      |True |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design.md#router) allows more advanced matching, see [Router](architecture-design.md#router) for more.|"/hello"|
 |host     |False |Match Rules|Currently requesting a domain name, such as `foo.com`; pan-domain names such as `*.foo.com` are also supported.|"foo.com"|
 |hosts    |False |Match Rules|The `host` in the form of a list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
@@ -83,6 +84,7 @@ Config Example:
     "hosts": ["a.com","b.com"], # A set of host. Host and hosts only need to be non-empty one.
     "plugins": {},              # Bound plugin
     "priority": 0,              # If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.
+    "name": "route-xxx",
     "desc": "hello world",
     "remote_addr": "127.0.0.1", # Client IP
     "remote_addrs": ["127.0.0.1"], # A set of Client IP. Remote_addr and remo-te_addrs only need to be non-empty one.
@@ -192,7 +194,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
 |upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
 |upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
-|desc     |False |Auxiliary   |Identifies route names, usage scenarios, and more.|customer xxxx|
+|name     |False |Auxiliary   |Identifies service names.|customer-xxxx|
+|desc     |False |Auxiliary   |service usage scenarios, and more.|customer xxxx|
 
 Config Example:
 
@@ -202,6 +205,7 @@ Config Example:
     "plugins": {},      # Bound plugin
     "upstream_id": "1", # upstream id, recommended
     "upstream": {},     # upstream, not recommended
+    "name": "service-test",
     "desc": "hello world",
 }
 ```
@@ -345,7 +349,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
 |enable_websocket|optional| enable `websocket`(boolean), default `false`.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
-|desc     |optional|Identifies route names, usage scenarios, and more.|
+|name     |optional|Identifies upstream names|
+|desc     |optional|upstream usage scenarios, and more.|
 
 Config Example:
 
@@ -371,6 +376,7 @@ Config Example:
     "checks": {},               # Health check parameters
     "hash_on": "",
     "key": "",
+    "name": "upstream-for-test",
     "desc": "hello world",
 }
 ```
