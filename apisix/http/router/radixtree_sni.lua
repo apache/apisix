@@ -21,6 +21,7 @@ local ngx_ssl          = require("ngx.ssl")
 local ipairs           = ipairs
 local type             = type
 local error            = error
+local str_find         = string.find
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
@@ -49,6 +50,7 @@ local function create_router(ssl_items)
                         return
                     end
                     api_ctx.matched_ssl = ssl
+                    api_ctx.matched_sni = sni
                 end
             }
         end
@@ -114,9 +116,16 @@ function _M.match_and_set(api_ctx)
     end
 
     core.log.debug("sni: ", sni)
-    local ok = radixtree_router:dispatch(sni:reverse(), nil, api_ctx)
+    local sni_rev = sni:reverse()
+    local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
         core.log.warn("not found any valid sni configuration")
+        return false
+    end
+
+    if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
+        core.log.warn("not found any valid sni configuration, matched sni: ",
+                      api_ctx.matched_sni:reverse(), " current sni: ", sni)
         return false
     end
 
