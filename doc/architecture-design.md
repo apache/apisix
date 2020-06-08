@@ -548,6 +548,7 @@ We can register a global [Plugin](#Plugin) with `GlobalRule`:
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
   -d '{
         "plugins": {
             "limit-count": {
