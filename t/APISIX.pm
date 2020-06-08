@@ -72,6 +72,8 @@ if ($enable_local_dns) {
 my $yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
+my $test2_crt = read_file("conf/cert/test2.crt");
+my $test2_key = read_file("conf/cert/test2.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
@@ -418,6 +420,10 @@ $user_yaml_config
 $ssl_crt
 >>> ../conf/cert/apisix.key
 $ssl_key
+>>> ../conf/cert/test2.crt
+$test2_crt
+>>> ../conf/cert/test2.key
+$test2_key
 $user_apisix_yaml
 _EOC_
 
