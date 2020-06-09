@@ -807,6 +807,7 @@ passed
 [error]
 
 
+
 === TEST 24: set upstream(type: chash)
 --- config
     location /t {
