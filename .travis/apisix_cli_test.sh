@@ -92,7 +92,7 @@ if [ $count -ne 0 ]; then
     exit 1
 fi
 
-sed  -i 's/enable_dev_mode: true/enable_dev_mode: false/g'  conf/config.yaml
+git checkout conf/config.yaml
 
 # check whether the 'worker_cpu_affinity' is in nginx.conf .
 
