@@ -1146,7 +1146,7 @@ GET /t
 
 
 
-=== TEST 35: type chash, hash_on: consumer, don't need upstream key
+=== TEST 35: type chash, hash_on: consumer, do not need upstream key
 --- config
     location /t {
         content_by_lua_block {
@@ -1234,5 +1234,47 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches non of the enum values"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: set upstream(id: 1 + name: test name)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "name": "test upstream name"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "name": "test upstream name"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
