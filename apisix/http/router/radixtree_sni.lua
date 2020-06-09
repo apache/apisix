@@ -56,15 +56,15 @@ local function create_router(ssl_items)
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
 
             local j = 0
-            local sni = ssl.value.sni:reverse()
+            local sni
             if type(ssl.value.snis) == "table" and #ssl.value.snis > 0 then
-                local sni = core.table.new(0, #ssl.value.snis)
+                sni = core.table.new(0, #ssl.value.snis)
                 for _, s in ipairs(ssl.value.snis) do
                     j = j + 1
-                    sni[j] = s.reverse()
+                    sni[j] = s:reverse()
                 end              
             else
-                local sni = ssl.value.sni:reverse()
+                sni = ssl.value.sni:reverse()
             end
             
             -- decrypt private key
