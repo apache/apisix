@@ -22,6 +22,9 @@ local tostring = tostring
 local buffers = {}
 local ngx = ngx
 local tcp = ngx.socket.tcp
+local ipairs   = ipairs
+local stale_timer_running = false;
+local timer_at = ngx.timer.at
 
 local schema = {
     type = "object",
@@ -37,6 +40,7 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
+        include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}
 }
@@ -94,9 +98,25 @@ local function send_tcp_data(conf, log_message)
     return res, err_msg
 end
 
+-- remove stale objects from the memory after timer expires
+local function remove_stale_objects(premature)
+    if premature then
+        return
+    end
+
+    for key, batch in ipairs(buffers) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.debug("removing batch processor stale object, route id:", tostring(key))
+            buffers[key] = nil
+        end
+    end
+
+    stale_timer_running = false
+end
+
 
 function _M.log(conf)
-    local entry = log_util.get_full_log(ngx)
+    local entry = log_util.get_full_log(ngx, conf)
 
     if not entry.route_id then
         core.log.error("failed to obtain the route id for tcp logger")
@@ -104,6 +124,12 @@ function _M.log(conf)
     end
 
     local log_buffer = buffers[entry.route_id]
+
+    if not stale_timer_running then
+        -- run the timer every 30 mins if any log is present
+        timer_at(1800, remove_stale_objects)
+        stale_timer_running = true
+    end
 
     if log_buffer then
         log_buffer:push(entry)

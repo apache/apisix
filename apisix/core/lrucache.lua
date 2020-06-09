@@ -14,10 +14,27 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local lru_new = require("resty.lrucache").new
+local resty_lock = require("resty.lock")
 local setmetatable = setmetatable
 local getmetatable = getmetatable
 local type = type
+local tostring = tostring
+local get_phase = ngx.get_phase
+local lock_shdict_name = "lrucache-lock"
+if ngx.config.subsystem == "stream" then
+    lock_shdict_name = lock_shdict_name .. "-" .. ngx.config.subsystem
+end
+
+local can_yield_phases = {
+    ssl_session_fetch = true,
+    ssl_session_store = true,
+    rewrite = true,
+    access = true,
+    content = true,
+    timer = true
+}
 
 -- todo: support to config it in YAML.
 local GLOBAL_ITEMS_COUNT= 1024
@@ -28,6 +45,38 @@ local global_lru_fun
 local lua_metatab = {}
 
 
+local function fetch_valid_cache(lru_obj, invalid_stale, item_ttl,
+                                 item_release, key, version)
+    local obj, stale_obj = lru_obj:get(key)
+    if obj and obj._cache_ver == version then
+        local met_tab = getmetatable(obj)
+        if met_tab ~= lua_metatab then
+            return obj
+        end
+
+        return obj.val
+    end
+
+    if not invalid_stale and stale_obj and
+        stale_obj._cache_ver == version then
+        lru_obj:set(key, stale_obj, item_ttl)
+
+        local met_tab = getmetatable(stale_obj)
+        if met_tab ~= lua_metatab then
+            return stale_obj
+        end
+
+        return stale_obj.val
+    end
+
+    if item_release and obj then
+        item_release(obj)
+    end
+
+    return nil
+end
+
+
 local function new_lru_fun(opts)
     local item_count = opts and opts.count or GLOBAL_ITEMS_COUNT
     local item_ttl = opts and opts.ttl or GLOBAL_TTL
@@ -36,34 +85,53 @@ local function new_lru_fun(opts)
     local lru_obj = lru_new(item_count)
 
     return function (key, version, create_obj_fun, ...)
-        local obj, stale_obj = lru_obj:get(key)
-        if obj and obj._cache_ver == version then
-            local met_tab = getmetatable(obj)
-            if met_tab ~= lua_metatab then
-                return obj
+        if not can_yield_phases[get_phase()] then
+            local cache_obj = fetch_valid_cache(lru_obj, invalid_stale,
+                                item_ttl, item_release, key, version)
+            if cache_obj then
+                return cache_obj
             end
 
-            return obj.val
-        end
+            local obj, err = create_obj_fun(...)
+            if type(obj) == 'table' then
+                obj._cache_ver = version
+                lru_obj:set(key, obj, item_ttl)
 
-        if not invalid_stale and stale_obj and
-           stale_obj._cache_ver == version then
-            lru_obj:set(key, stale_obj, item_ttl)
-
-            local met_tab = getmetatable(stale_obj)
-            if met_tab ~= lua_metatab then
-                return stale_obj
+            elseif obj ~= nil then
+                local cached_obj = setmetatable(
+                        {val = obj, _cache_ver = version},
+                        lua_metatab)
+                lru_obj:set(key, cached_obj, item_ttl)
             end
 
-            return stale_obj.val
+            return obj, err
         end
 
-        if item_release and obj then
-            item_release(obj)
+        local cache_obj = fetch_valid_cache(lru_obj, invalid_stale, item_ttl,
+                            item_release, key, version)
+        if cache_obj then
+            return cache_obj
         end
 
-        local err
-        obj, err = create_obj_fun(...)
+        local lock, err = resty_lock:new(lock_shdict_name)
+        if not lock then
+            return nil, "failed to create lock: " .. err
+        end
+
+        local key_s = tostring(key)
+        local elapsed, err = lock:lock(key_s)
+        if not elapsed then
+            return nil, "failed to acquire the lock: " .. err
+        end
+
+        cache_obj = fetch_valid_cache(lru_obj, invalid_stale, item_ttl,
+                        nil, key, version)
+        if cache_obj then
+            lock:unlock()
+            return cache_obj
+        end
+
+        local obj, err = create_obj_fun(...)
         if type(obj) == 'table' then
             obj._cache_ver = version
             lru_obj:set(key, obj, item_ttl)
@@ -73,6 +141,7 @@ local function new_lru_fun(opts)
                                             lua_metatab)
             lru_obj:set(key, cached_obj, item_ttl)
         end
+        lock:unlock()
 
         return obj, err
     end

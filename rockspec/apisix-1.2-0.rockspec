@@ -20,7 +20,7 @@ supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/incubator-apisix",
-    branch = "v1.2",
+    tag = "1.2",
 }
 
 description = {

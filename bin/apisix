@@ -21,6 +21,8 @@ local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+-- Note: The `excute_cmd` return value will have a line break at the end,
+-- it is recommended to use the `trim` function to handle the return value.
 local function excute_cmd(cmd)
     local t, err = io.popen(cmd)
     if not t then
@@ -118,6 +120,8 @@ stream {
                       .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
+    lua_shared_dict lrucache-lock-stream   10m;
+
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
     resolver_timeout {*resolver_timeout*};
 
@@ -176,6 +180,8 @@ http {
     lua_shared_dict plugin-limit-conn    10m;
     lua_shared_dict upstream-healthcheck 10m;
     lua_shared_dict worker-events        10m;
+    lua_shared_dict lrucache-lock        10m;
+    lua_shared_dict skywalking-tracing-buffer    100m;
 
     # for openid-connect plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
@@ -224,7 +230,7 @@ http {
 
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
 
-    access_log {* http.access_log *} main buffer=32768 flush=3;
+    access_log {* http.access_log *} main buffer=16384 flush=1;
     open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
     keepalive_timeout {* http.keepalive_timeout *};
@@ -236,6 +242,7 @@ http {
     more_set_headers 'Server: APISIX web server';
 
     include mime.types;
+    charset utf-8;
 
     {% if real_ip_header then %}
     real_ip_header {* real_ip_header *};
@@ -281,7 +288,18 @@ http {
 
     {% if enable_admin and port_admin then %}
     server {
+        {%if https_admin then%}
+        listen {* port_admin *} ssl;
+        ssl_certificate      cert/apisix_admin_ssl.crt;
+        ssl_certificate_key  cert/apisix_admin_ssl.key;
+        ssl_session_cache    shared:SSL:1m;
+
+        ssl_protocols {* ssl.ssl_protocols *};
+        ssl_ciphers {* ssl.ssl_ciphers *};
+        ssl_prefer_server_ciphers on;
+        {% else %}
         listen {* port_admin *};
+        {%end%}
         log_not_found off;
         location /apisix/admin {
             {%if allow_admin then%}
@@ -660,7 +678,7 @@ local function init()
     local sys_conf = {
         lua_path = pkg_path_org,
         lua_cpath = pkg_cpath_org,
-        os_name = excute_cmd("uname"),
+        os_name = trim(excute_cmd("uname")),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
@@ -766,6 +784,18 @@ local function init_etcd(show_output)
 
     local host_count = #(yaml_conf.etcd.host)
 
+    -- check whether the user has enabled etcd v2 protocol
+    for index, host in ipairs(yaml_conf.etcd.host) do
+        uri = host .. "/v2/keys"
+        local cmd = "curl -i -m ".. timeout * 2 .. " -o /dev/null -s -w %{http_code} " .. uri
+        local res = excute_cmd(cmd)
+        if res == "404" then
+            io.stderr:write(string.format("failed: please make sure that you have enabled the v2 protocol of etcd on %s.\n", host))
+            return
+        end
+    end
+
+    local etcd_ok = false
     for index, host in ipairs(yaml_conf.etcd.host) do
 
         local is_success = true
@@ -784,7 +814,7 @@ local function init_etcd(show_output)
             if not res:find("index", 1, true)
                     and not res:find("createdIndex", 1, true) then
                 is_success = false
-                if (index == hostCount) then
+                if (index == host_count) then
                     error(cmd .. "\n" .. res)
                 end
                 break
@@ -797,8 +827,13 @@ local function init_etcd(show_output)
         end
 
         if is_success then
+            etcd_ok = true
             break
         end
+    end
+
+    if not etcd_ok then
+        error("none of the configured etcd works well")
     end
 end
 _M.init_etcd = init_etcd
@@ -828,13 +863,17 @@ end
 
 function _M.reload()
     local test_cmd = openresty_args .. [[ -t -q ]]
-    if os.execute((test_cmd)) ~= 0 then
+    -- When success,
+    -- On linux, os.execute returns 0,
+    -- On macos, os.execute returns 3 values: true, exit, 0, and we need the first.
+    local test_ret = os.execute((test_cmd))
+    if (test_ret == 0 or test_ret == true) then
+        local cmd = openresty_args .. [[ -s reload]]
+        -- print(cmd)
+        os.execute(cmd)
         return
     end
-
-    local cmd = openresty_args .. [[ -s reload]]
-    -- print(cmd)
-    os.execute(cmd)
+    print("test openresty failed")
 end
 
 function _M.version()

@@ -18,7 +18,7 @@ local schema    = require('apisix.core.schema')
 local setmetatable = setmetatable
 local error     = error
 
-local _M = {version = 0.4}
+local _M = {version = 0.5}
 
 
 local plugins_schema = {
@@ -29,8 +29,8 @@ local plugins_schema = {
 local id_schema = {
     anyOf = {
         {
-            type = "string", minLength = 1, maxLength = 32,
-            pattern = [[^[0-9]+$]]
+            type = "string", minLength = 1, maxLength = 64,
+            pattern = [[^[a-zA-Z0-9-_]+$]]
         },
         {type = "integer", minimum = 1}
     }
@@ -225,11 +225,9 @@ local health_checker = {
 }
 
 
-local upstream_schema = {
-    type = "object",
-    properties = {
-        nodes = {
-            description = "nodes of upstream",
+local nodes_schema = {
+    anyOf = {
+        {
             type = "object",
             patternProperties = {
                 [".*"] = {
@@ -240,6 +238,39 @@ local upstream_schema = {
             },
             minProperties = 1,
         },
+        {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    host = host_def,
+                    port = {
+                        description = "port of node",
+                        type = "integer",
+                        minimum = 1,
+                    },
+                    weight = {
+                        description = "weight of node",
+                        type = "integer",
+                        minimum = 0,
+                    },
+                    metadata = {
+                        description = "metadata of node",
+                        type = "object",
+                    }
+                },
+                required = {"host", "port", "weight"},
+            },
+        }
+    }
+}
+
+
+local upstream_schema = {
+    type = "object",
+    properties = {
+        nodes = nodes_schema,
         retries = {
             type = "integer",
             minimum = 1,
@@ -252,6 +283,25 @@ local upstream_schema = {
                 read = {type = "number", minimum = 0},
             },
             required = {"connect", "send", "read"},
+        },
+        k8s_deployment_info = {
+            type = "object",
+            properties = {
+                namespace = {type = "string", description = "k8s namespace"},
+                deploy_name = {type = "string", description = "k8s deployment name"},
+                service_name = {type = "string", description = "k8s service name"},
+                port = {type = "number", minimum = 0},
+                backend_type = {
+                    type = "string",
+                    default = "pod",
+                    description = "k8s service name",
+                    enum = {"svc", "pod"}
+                },
+            },
+            anyOf = {
+                {required = {"namespace", "deploy_name", "port"}},
+                {required = {"namespace", "service_name", "port"}},
+            },
         },
         type = {
             description = "algorithms of load balancing",
@@ -277,10 +327,16 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
+        service_name = {type = "string", maxLength = 50},
         id = id_schema
     },
-    required = {"nodes", "type"},
+    anyOf = {
+        {required = {"type", "nodes"}},
+        {required = {"type", "k8s_deployment_info"}},
+        {required = {"type", "service_name"}},
+    },
     additionalProperties = false,
 }
 
@@ -314,6 +370,7 @@ _M.route = {
             },
             uniqueItems = true,
         },
+        name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         priority = {type = "integer", default = 0},
 
@@ -391,6 +448,7 @@ _M.service = {
         plugins = plugins_schema,
         upstream = upstream_schema,
         upstream_id = id_schema,
+        name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
     },
     anyOf = {
@@ -432,9 +490,23 @@ _M.ssl = {
         sni = {
             type = "string",
             pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-        }
+        },
+        snis = {
+            type = "array",
+            items = {
+                type = "string",
+                pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+            }
+        },
+        exptime = {
+            type = "integer",
+            minimum = 1588262400,  -- 2020/5/1 0:0:0
+        },
     },
-    required = {"sni", "key", "cert"},
+    oneOf = {
+        {required = {"sni", "key", "cert"}},
+        {required = {"snis", "key", "cert"}}
+    },
     additionalProperties = false,
 }
 

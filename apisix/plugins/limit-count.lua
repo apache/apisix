@@ -125,7 +125,7 @@ function _M.access(conf, ctx)
         end
 
         core.log.error("failed to limit req: ", err)
-        return 500, {error_msg = "failed to limit count: ", err}
+        return 500, {error_msg = "failed to limit count: " .. err}
     end
 
     core.response.set_header("X-RateLimit-Limit", conf.count,

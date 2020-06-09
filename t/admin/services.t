@@ -353,7 +353,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/invalid_id',
+            local code, body = t('/apisix/admin/services/invalid_id$',
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {
@@ -475,7 +475,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": "invalid_id",
+                    "id": "invalid_id$",
                     "plugins": {}
                 }]]
                 )
@@ -530,7 +530,7 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                     "id": 1,
-                    "upstream_id": "invalid"
+                    "upstream_id": "invalid$"
                 }]]
                 )
 
@@ -633,7 +633,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1/',
+            local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "upstream": {
@@ -679,9 +679,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1/desc',
+            local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PATCH,
-                '"new 19 service"',
+                [[{
+                    "desc": "new 19 service"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -717,20 +719,23 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1/upstream',
+            local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PATCH,
                 [[{
-                    "nodes": {
-                        "127.0.0.1:8081": 3,
-                        "127.0.0.1:8082": 4
-                    },
-                    "type": "roundrobin"
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8081": 3,
+                            "127.0.0.1:8082": 4
+                        },
+                        "type": "roundrobin"
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "upstream": {
                                 "nodes": {
+                                    "127.0.0.1:8080": 1,
                                     "127.0.0.1:8081": 3,
                                     "127.0.0.1:8082": 4
                                 },
@@ -875,5 +880,51 @@ GET /t
 GET /t
 --- response_body
 200 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: set service(id: 1 + test service name)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "name": "test service name"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "name": "test service name"
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

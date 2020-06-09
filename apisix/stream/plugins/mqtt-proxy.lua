@@ -16,6 +16,8 @@
 --
 local core      = require("apisix.core")
 local balancer  = require("ngx.balancer")
+local bit       = require "bit"
+local ngx       = ngx
 local ngx_exit  = ngx.exit
 local str_byte  = string.byte
 local str_sub   = string.sub

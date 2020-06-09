@@ -15,12 +15,13 @@
 -- limitations under the License.
 --
 local require = require
-local core  = require("apisix.core")
-local error = error
-local pairs = pairs
+local core    = require("apisix.core")
+local error   = error
+local pairs   = pairs
+local ipairs  = ipairs
 
 
-local _M = {version = 0.2}
+local _M = {version = 0.3}
 
 
 local function filter(route)
@@ -29,17 +30,36 @@ local function filter(route)
         return
     end
 
-    if not route.value.upstream then
+    if not route.value.upstream or not route.value.upstream.nodes then
         return
     end
 
-    for addr, _ in pairs(route.value.upstream.nodes or {}) do
-        local host = core.utils.parse_addr(addr)
-        if not core.utils.parse_ipv4(host) and
-           not core.utils.parse_ipv6(host) then
-            route.has_domain = true
-            break
+    local nodes = route.value.upstream.nodes
+    if core.table.isarray(nodes) then
+        for _, node in ipairs(nodes) do
+            local host = node.host
+            if not core.utils.parse_ipv4(host) and
+                    not core.utils.parse_ipv6(host) then
+                route.has_domain = true
+                break
+            end
         end
+    else
+        local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
+        for addr, weight in pairs(nodes) do
+            local host, port = core.utils.parse_addr(addr)
+            if not core.utils.parse_ipv4(host) and
+                    not core.utils.parse_ipv6(host) then
+                route.has_domain = true
+            end
+            local node = {
+                host = host,
+                port = port,
+                weight = weight,
+            }
+            core.table.insert(new_nodes, node)
+        end
+        route.value.upstream.nodes = new_nodes
     end
 
     core.log.info("filter route: ", core.json.delay_encode(route))
@@ -78,7 +98,7 @@ end
 
 function _M.stream_init_worker()
     local router_stream = require("apisix.stream.router.ip_port")
-    router_stream.stream_init_worker()
+    router_stream.stream_init_worker(filter)
     _M.router_stream = router_stream
 end
 
@@ -86,6 +106,10 @@ end
 function _M.http_routes()
     return _M.router_http.routes()
 end
+
+
+-- for test
+_M.filter_test = filter
 
 
 return _M

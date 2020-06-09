@@ -131,11 +131,18 @@ GET /hello
                 ngx.status = code
             end
             ngx.say(body)
+
+            local code, body = t('/not_found', ngx.HTTP_GET)
+            ngx.say(code)
+            local code, body = t('/not_found', ngx.HTTP_GET)
+            ngx.say(code)
         }
     }
 --- request
 GET /t
 --- response_body
 passed
+404
+404
 --- no_error_log
 [error]

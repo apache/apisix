@@ -14,25 +14,48 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local base_prometheus = require("resty.prometheus")
+local base_prometheus = require("prometheus")
 local core      = require("apisix.core")
 local ipairs    = ipairs
+local ngx       = ngx
 local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
+local tonumber = tonumber
+local select = select
 local prometheus
 
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
     80, 90, 100, 200, 300, 400, 500, 1000,
-    2000, 5000, 10000, 30000, 60000 }
+    2000, 5000, 10000, 30000, 60000
+}
 
 local metrics = {}
 
 
-local _M = {version = 0.3}
+    local inner_tab_arr = {}
+    local clear_tab = core.table.clear
+local function gen_arr(...)
+    clear_tab(inner_tab_arr)
+
+    for i = 1, select('#', ...) do
+        inner_tab_arr[i] = select(i, ...)
+    end
+
+    return inner_tab_arr
+end
+
+
+local _M = {}
 
 
 function _M.init()
+    -- todo: support hot reload, we may need to update the lua-prometheus
+    -- library
+    if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        return
+    end
+
     core.table.clear(metrics)
 
     -- across all services
@@ -51,6 +74,10 @@ function _M.init()
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency per service in APISIX",
+        {"type", "service", "node"}, DEFAULT_BUCKETS)
+
+    metrics.overhead = prometheus:histogram("http_overhead",
+        "HTTP request overhead per service in APISIX",
         {"type", "service", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
@@ -74,21 +101,31 @@ function _M.log(conf, ctx)
         service_id = vars.host
     end
 
-    metrics.status:inc(1, vars.status, route_id, service_id, balancer_ip)
+    metrics.status:inc(1,
+        gen_arr(vars.status, route_id, service_id, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
-    metrics.latency:observe(latency, "request", service_id, balancer_ip)
+    metrics.latency:observe(latency,
+        gen_arr("request", service_id, balancer_ip))
 
-    metrics.bandwidth:inc(vars.request_length, "ingress", route_id, service_id,
-                          balancer_ip)
+    local overhead = latency
+    if ctx.var.upstream_response_time then
+        overhead =  overhead - tonumber(ctx.var.upstream_response_time) * 1000
+    end
+    metrics.overhead:observe(overhead,
+        gen_arr("request", service_id, balancer_ip))
 
-    metrics.bandwidth:inc(vars.bytes_sent, "egress", route_id, service_id,
-                          balancer_ip)
+    metrics.bandwidth:inc(vars.request_length,
+        gen_arr("ingress", route_id, service_id, balancer_ip))
+
+    metrics.bandwidth:inc(vars.bytes_sent,
+        gen_arr("egress", route_id, service_id, balancer_ip))
 end
 
 
     local ngx_statu_items = {"active", "accepted", "handled", "total",
                              "reading", "writing", "waiting"}
+    local label_values = {}
 local function nginx_status()
     local res = ngx_capture("/apisix/nginx_status")
     if not res or res.status ~= 200 then
@@ -113,7 +150,8 @@ local function nginx_status()
             break
         end
 
-        metrics.connections:set(val[0], name)
+        label_values[1] = name
+        metrics.connections:set(val[0], label_values)
     end
 end
 

@@ -20,6 +20,7 @@
 [Chinese](serverless-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -41,16 +42,17 @@ Both plug-ins receive the same parameters.
 | phase         |optional|The default phase is `access`, if not specified. The valid phases are: `rewrite`, `access`,`Header_filer`, `body_filter`, `log` and `balancer`.|
 | functions         |required|A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially.|
 
-
 Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:<br>
-```
+
+```lua
 return function()
     ngx.log(ngx.ERR, 'one')
 end
 ```
 
 Closure is also legal:
-```
+
+```lua
 local count = 1
 return function()
     count = count + 1
@@ -59,7 +61,8 @@ end
 ```
 
 But code that is not a function type is illegal:
- ```
+
+```lua
 local count = 1
 ngx.say(count)
 ```
@@ -90,7 +93,8 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 ## Test Plugin
 
  Use curl to access:
- ```shell
+
+```shell
 curl -i http://127.0.0.1:9080/index.html
 ```
 

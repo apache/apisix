@@ -40,7 +40,7 @@
 |PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/routes     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/routes/{id}|无|删除资源|
-|PATCH    |/apisix/admin/routes/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
+|PATCH    |/apisix/admin/routes/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
 
 > uri 请求参数：
 
@@ -59,7 +59,8 @@
 |upstream_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
 |service_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design-cn.md#service)||
 |service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
-|desc     |可选 |辅助   |标识路由名称、使用场景等。|客户 xxxx|
+|name     |可选 |辅助   |标识路由名称|route-xxxx|
+|desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
 |host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。|"foo.com"|
 |hosts    |可选 |匹配规则|列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。|{"foo.com", "*.bar.com"}|
 |remote_addr|可选 |匹配规则|客户端请求 IP 地址: `192.168.1.101`、`192.168.1.102` 以及 CIDR 格式的支持 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配：`::1`，`fe80::1`, `fe80::1/64` 等。|"192.168.1.0/24"|
@@ -86,6 +87,7 @@ route 对象 json 配置内容：
     "hosts": ["a.com","b.com"], # 一组 host 域名， host 与 hosts 只需要有一个非空即可
     "plugins": {},              # 指定 route 绑定的插件
     "priority": 0,              # apisix 支持多种匹配方式，可能会在一次匹配中同时匹配到多条路由，此时优先级高的优先匹配中
+    "name": "路由xxx",
     "desc": "hello world",
     "remote_addr": "127.0.0.1", # 客户端请求 IP 地址
     "remote_addrs": ["127.0.0.1"],  # 一组客户端请求 IP 地址， remote_addr 与 remote_addrs 只需要有一个非空即可
@@ -187,7 +189,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/services/{id}|无|删除资源|
-|PATCH    |/apisix/admin/services/{id}/{path}|{...}|修改已有 Service 的部分内容，其他不涉及部分会原样保留。|
+|PATCH    |/apisix/admin/services/{id}|{...}|修改已有 Service 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
 
 > body 请求参数：
 
@@ -196,7 +198,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |plugins  |可选 |Plugin|详见 [Plugin](architecture-design-cn.md#plugin) ||
 |upstream | upstream 或 upstream_id 两个选一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design-cn.md#upstream)||
 |upstream_id| upstream 或 upstream_id 两个选一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
-|desc     |可选 |辅助   |标识服务名称、使用场景等。||
+|name     |可选 |辅助   |标识服务名称。||
+|desc     |可选 |辅助   |服务描述、使用场景等。||
 
 serivce 对象 json 配置内容：
 
@@ -206,6 +209,7 @@ serivce 对象 json 配置内容：
     "plugins": {},          # 指定 service 绑定的插件
     "upstream_id": "1",     # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},         # upstream 信息对象，不建议使用
+    "name": "测试svc",  # service 名称
     "desc": "hello world",  # service 描述
 }
 ```
@@ -214,7 +218,7 @@ serivce 对象 json 配置内容：
 
 ```shell
 # 创建一个Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "plugins": {
         "limit-count": {
@@ -294,7 +298,7 @@ consumer 对象 json 配置内容：
 
 ```shell
 # 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/2 -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/2  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -336,7 +340,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 |PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/upstreams/{id}|无|删除资源|
-|PATCH    |/apisix/admin/upstreams/{id}/{path}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留。|
+|PATCH    |/apisix/admin/upstreams/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
 
 > body 请求参数：
 
@@ -344,7 +348,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
-|nodes           |必需|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|`192.168.1.100:80`|
+|nodes           |与 `k8s_deployment_info` 二选一|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。|`192.168.1.100:80`|
+|k8s_deployment_info|与 `nodes` 二选一|哈希表|字段包括 `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`，其中 `port` 字段为数值，`backend_type` 为 `pod` 或 `service`，其他为字符串 | `{"namespace": "test-namespace", "deploy_name": "test-deploy-name", "service_name": "test-service-name", "backend_type": "pod", "port": 8080}` |
 |type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
 |key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](health-check.md)||
@@ -352,7 +357,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
 |enable_websocket     |可选 |辅助|是否允许启用 websocket 能力||
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
-|desc     |可选 |辅助|标识服务名称、使用场景等。||
+|name     |可选 |辅助|标识上游服务名称、使用场景等。||
+|desc     |可选 |辅助|上游服务描述、使用场景等。||
 
 upstream 对象 json 配置内容：
 
@@ -367,10 +373,18 @@ upstream 对象 json 配置内容：
     },
     "enable_websocket": true,
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + Port`
+    "k8s_deployment_info": {    # k8s deployment 信息
+        "namespace": "test-namespace",
+        "deploy_name": "test-deploy-name",
+        "service_name": "test-service-name",
+        "backend_type": "pod",   # pod or service
+        "port": 8080
+    },
     "type":"roundrobin",        # chash or roundrobin
     "checks": {},               # 配置健康检查的参数
     "hash_on": "",
     "key": "",
+    "name": "upstream-xxx",      # upstream 名称
     "desc": "hello world",      # upstream 描述
 }
 ```
@@ -379,7 +393,7 @@ upstream 对象 json 配置内容：
 
 ```shell
 # 创建一个upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -i -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 > {
 >     "type": "roundrobin",
 >     "nodes": {

@@ -101,6 +101,8 @@ end
 
 
 function _M.comp_tab(left_tab, right_tab)
+    dir_names = {}
+
     if type(left_tab) == "string" then
         left_tab = json.decode(left_tab)
     end
@@ -110,14 +112,21 @@ function _M.comp_tab(left_tab, right_tab)
 
     local ok, err = com_tab(left_tab, right_tab)
     if not ok then
-        return 500, "failed, " .. err
+        return false, err
     end
 
     return true
 end
 
 
-function _M.test(uri, method, body, pattern)
+function _M.test(uri, method, body, pattern, headers)
+    if not headers then
+        headers = {}
+    end
+    if not headers["Content-Type"] then
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    end
+
     if type(body) == "table" then
         body = json.encode(body)
     end
@@ -139,9 +148,7 @@ function _M.test(uri, method, body, pattern)
             method = method,
             body = body,
             keepalive = false,
-            headers = {
-            ["Content-Type"] = "application/x-www-form-urlencoded",
-            },
+            headers = headers,
         }
     )
     if not res then

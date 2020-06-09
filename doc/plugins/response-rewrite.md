@@ -20,6 +20,7 @@
 [Chinese](response-rewrite-cn.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -27,13 +28,16 @@
 - [**Disable Plugin**](#disable-plugin)
 
 ## Name
+
 response rewrite plugin, rewrite the content from upstream.
 
 **senario**:
+
 1. can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing).
 2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use [redirect](redirect.md) plugin if you just want a redirection.
 
 ## Attributes
+
 |Name    |Requirement|Description|
 |-------         |-----|------|
 |status_code   |optional| New `status code` to client|
@@ -42,6 +46,7 @@ response rewrite plugin, rewrite the content from upstream.
 |headers             |optional| Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
 
 ## How To Enable
+
 Here's an example, enable the `response rewrite` plugin on the specified route:
 
 ```shell
@@ -68,6 +73,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 ## Test Plugin
+
 Testing based on the above examples :
 
 ```shell
@@ -76,6 +82,7 @@ curl -X GET -i  http://127.0.0.1:9080/test/index.html
 
 It will output like below,no matter what kind of content from upstream.
 ```
+
 HTTP/1.1 200 OK
 Date: Sat, 16 Nov 2019 09:15:12 GMT
 Transfer-Encoding: chunked
@@ -89,9 +96,11 @@ X-Server-status: on
 This means that the `response rewrite` plugin is in effect.
 
 ## Disable Plugin
+
 When you want to disable the `response rewrite` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -107,4 +116,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 The `response rewrite` plugin has been disabled now. It works for other plugins.
-
