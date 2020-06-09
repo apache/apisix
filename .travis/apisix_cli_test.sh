@@ -73,6 +73,18 @@ done
 sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"
 
+# check whether the 'worker_cpu_affinity' is in nginx.conf .
+
+make init
+
+grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
+    exit 1
+fi
+
+echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
+
 # check admin https enabled
 
 sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
