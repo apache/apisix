@@ -154,7 +154,20 @@ function _M.match_and_set(api_ctx)
         return false
     end
 
-    if type(api_ctx.matched_sni) == "string" then
+
+    if type(api_ctx.matched_sni) == "table" then
+        local matched = false
+        for _, msni in ipairs(api_ctx.matched_sni) do
+            if sni_rev == msni or not str_find(sni_rev, ".", #msni, true) then
+                matched = true
+            end
+        end
+        if not matched then
+            core.log.warn("not found any valid sni configuration, matched sni: ",
+                          core.json.delay_encode(api_ctx.matched_sni, true), " current sni: ", sni)
+            return false            
+        end
+    else
         if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
             core.log.warn("not found any valid sni configuration, matched sni: ",
                           api_ctx.matched_sni:reverse(), " current sni: ", sni)

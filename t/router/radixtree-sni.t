@@ -604,7 +604,7 @@ passed
 
 
 
-=== TEST 13: client request: www.test2.com -- fail
+=== TEST 13: client request: www.test2.com -- failed by disable
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -728,6 +728,53 @@ connected: 1
 failed to do SSL handshake: 18: self signed certificate
 --- error_log
 lua ssl server name: "test2.com"
+--- no_error_log
+[error]
+[alert]
+
+
+
+=== TEST 16: client request: aa.bb.test2.com  -- snis un-include
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "aa.bb.test2.com", true)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", type(sess))
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+failed to do SSL handshake: certificate host mismatch
+--- error_log
+lua ssl server name: "aa.bb.test2.com"
+not found any valid sni configuration, matched sni: ["moc.2tset","moc.2tset.*"] current sni: aa.bb.test2.com
 --- no_error_log
 [error]
 [alert]
