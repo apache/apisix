@@ -21,6 +21,8 @@ local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+-- Note: The `excute_cmd` return value will have a line break at the end,
+-- it is recommended to use the `trim` function to handle the return value.
 local function excute_cmd(cmd)
     local t, err = io.popen(cmd)
     if not t then
@@ -676,7 +678,7 @@ local function init()
     local sys_conf = {
         lua_path = pkg_path_org,
         lua_cpath = pkg_cpath_org,
-        os_name = excute_cmd("uname"),
+        os_name = trim(excute_cmd("uname")),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
