@@ -42,13 +42,14 @@ local function create_router(ssl_items)
     local idx = 0
 
     local local_conf = core.config.local_conf()
-    local iv = "edd1c9f0985e76a2"
+    local iv
     if local_conf and local_conf.apisix
        and local_conf.apisix.ssl
        and local_conf.apisix.ssl.key_encrypt_salt then
         iv = local_conf.apisix.ssl.key_encrypt_salt
     end
-    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
+    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and 
+            assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
     for _, ssl in ipairs(ssl_items) do
         if type(ssl) == "table" and 
@@ -68,8 +69,11 @@ local function create_router(ssl_items)
             end
             
             -- decrypt private key
-            local decrypted = aes_128_cbc_with_iv:decrypt(ngx_decode_base64(ssl.value.key))
-            ssl.value.key = decrypted
+            if aes_128_cbc_with_iv ~= nil and 
+                not str_find(ssl.value.key, "---") then
+                local decrypted = aes_128_cbc_with_iv:decrypt(ngx_decode_base64(ssl.value.key))
+                ssl.value.key = decrypted
+            end
 
             local 
             idx = idx + 1
