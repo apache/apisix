@@ -59,7 +59,8 @@
 |upstream_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
 |service_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design-cn.md#service)||
 |service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
-|desc     |可选 |辅助   |标识路由名称、使用场景等。|客户 xxxx|
+|name     |可选 |辅助   |标识路由名称|route-xxxx|
+|desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
 |host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。|"foo.com"|
 |hosts    |可选 |匹配规则|列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。|{"foo.com", "*.bar.com"}|
 |remote_addr|可选 |匹配规则|客户端请求 IP 地址: `192.168.1.101`、`192.168.1.102` 以及 CIDR 格式的支持 `192.168.1.0/24`。特别的，APISIX 也完整支持 IPv6 地址匹配：`::1`，`fe80::1`, `fe80::1/64` 等。|"192.168.1.0/24"|
@@ -86,6 +87,7 @@ route 对象 json 配置内容：
     "hosts": ["a.com","b.com"], # 一组 host 域名， host 与 hosts 只需要有一个非空即可
     "plugins": {},              # 指定 route 绑定的插件
     "priority": 0,              # apisix 支持多种匹配方式，可能会在一次匹配中同时匹配到多条路由，此时优先级高的优先匹配中
+    "name": "路由xxx",
     "desc": "hello world",
     "remote_addr": "127.0.0.1", # 客户端请求 IP 地址
     "remote_addrs": ["127.0.0.1"],  # 一组客户端请求 IP 地址， remote_addr 与 remote_addrs 只需要有一个非空即可
@@ -196,7 +198,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |plugins  |可选 |Plugin|详见 [Plugin](architecture-design-cn.md#plugin) ||
 |upstream | upstream 或 upstream_id 两个选一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design-cn.md#upstream)||
 |upstream_id| upstream 或 upstream_id 两个选一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design-cn.md#upstream)||
-|desc     |可选 |辅助   |标识服务名称、使用场景等。||
+|name     |可选 |辅助   |标识服务名称。||
+|desc     |可选 |辅助   |服务描述、使用场景等。||
 
 serivce 对象 json 配置内容：
 
@@ -206,6 +209,7 @@ serivce 对象 json 配置内容：
     "plugins": {},          # 指定 service 绑定的插件
     "upstream_id": "1",     # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},         # upstream 信息对象，不建议使用
+    "name": "测试svc",  # service 名称
     "desc": "hello world",  # service 描述
 }
 ```
@@ -353,7 +357,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
 |enable_websocket     |可选 |辅助|是否允许启用 websocket 能力||
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
-|desc     |可选 |辅助|标识服务名称、使用场景等。||
+|name     |可选 |辅助|标识上游服务名称、使用场景等。||
+|desc     |可选 |辅助|上游服务描述、使用场景等。||
 
 upstream 对象 json 配置内容：
 
@@ -379,6 +384,7 @@ upstream 对象 json 配置内容：
     "checks": {},               # 配置健康检查的参数
     "hash_on": "",
     "key": "",
+    "name": "upstream-xxx",      # upstream 名称
     "desc": "hello world",      # upstream 描述
 }
 ```
