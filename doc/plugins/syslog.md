@@ -90,7 +90,7 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",

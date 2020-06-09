@@ -548,6 +548,36 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
+结合 [consumer-restriction](./plugins/consumer-restriction-cn.md) 插件，限制jack对该 route 的访问
+
+# 设置黑名单，禁止jack访问该API
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "key-auth": {},
+        "consumer-restriction": {
+            "blacklist": [
+                "jack"
+            ]
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/hello"
+}'
+
+# 反复测试，均返回 403，jack被禁止访问
+$ curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+HTTP/1.1 403
+...
+
+```
+
+
 [返回目录](#目录)
 
 ## Global Rule
@@ -559,6 +589,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
   -d '{
         "plugins": {
             "limit-count": {
@@ -577,7 +608,7 @@ curl -X PUT \
 我们可以通过以下接口查看所有的 `GlobalRule`:
 
 ```shell
-curl https://{apisix_listen_address}/apisix/admin/global_rules
+curl https://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 [返回目录](#目录)
