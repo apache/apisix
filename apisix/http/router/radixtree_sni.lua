@@ -186,12 +186,11 @@ function _M.match_and_set(api_ctx)
 end
 
 
-function _M.init_worker(filter)
+function _M.init_worker()
     local err
     ssl_certificates, err = core.config.new("/ssl", {
                         automatic = true,
                         item_schema = core.schema.ssl,
-                        filter = filter,
                     })
     if not ssl_certificates then
         error("failed to create etcd instance for fetching ssl certificates: "

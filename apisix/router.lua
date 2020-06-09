@@ -67,29 +67,6 @@ local function filter(route)
     core.log.info("filter route: ", core.json.delay_encode(route))
 end
 
--- decrypt private key
-do
-    local local_conf = core.config.local_conf()
-    local iv = "edd1c9f0985e76a2"
-    if local_conf and local_conf.apisix
-       and local_conf.apisix.ssl
-       and local_conf.apisix.ssl.key_encrypt_salt then
-        iv = local_conf.apisix.ssl.key_encrypt_salt
-    end
-    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
-local function filter_ssl(ssl)
-    if not ssl.value or not ssl.value.key then
-        return
-    end
-
-    -- decrypt private key
-    local decrypted = aes_128_cbc_with_iv:decrypt(ssl.key)
-
-    ssl.key = str.to_hex(encrypted)
-
-    core.log.info("filter ssl: ", core.json.delay_encode(ssl))
-end
-end  -- end do
 
 function _M.http_init_worker()
     local conf = core.config.local_conf()
@@ -106,8 +83,7 @@ function _M.http_init_worker()
     _M.router_http = router_http
 
     local router_ssl = require("apisix.http.router." .. router_ssl_name)
-    router_ssl.init_worker(filter_ssl)
-    core.log.info(" filter ssl filter_ssl ")
+    router_ssl.init_worker()
     _M.router_ssl = router_ssl
 
     local global_rules, err = core.config.new("/global_rules", {
