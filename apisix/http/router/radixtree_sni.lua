@@ -54,7 +54,19 @@ local function create_router(ssl_items)
         if type(ssl) == "table" and 
             ssl.value ~= nil and 
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
+
+            local j = 0
             local sni = ssl.value.sni:reverse()
+            if type(ssl.value.snis) == "table" and #ssl.value.snis > 0 then
+                local sni = core.table.new(0, #ssl.value.snis)
+                for _, s in ipairs(ssl.value.snis) do
+                    j = j + 1
+                    sni[j] = s.reverse()
+                end              
+            else
+                local sni = ssl.value.sni:reverse()
+            end
+            
             -- decrypt private key
             local decrypted = aes_128_cbc_with_iv:decrypt(ngx_decode_base64(ssl.value.key))
             ssl.value.key = decrypted
@@ -134,6 +146,7 @@ function _M.match_and_set(api_ctx)
     end
 
     core.log.debug("sni: ", sni)
+    
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
@@ -141,10 +154,12 @@ function _M.match_and_set(api_ctx)
         return false
     end
 
-    if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
-        core.log.warn("not found any valid sni configuration, matched sni: ",
-                      api_ctx.matched_sni:reverse(), " current sni: ", sni)
-        return false
+    if type(api_ctx.matched_sni) == "string" then
+        if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
+            core.log.warn("not found any valid sni configuration, matched sni: ",
+                          api_ctx.matched_sni:reverse(), " current sni: ", sni)
+            return false
+        end
     end
 
     local matched_ssl = api_ctx.matched_ssl

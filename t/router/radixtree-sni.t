@@ -163,6 +163,8 @@ received: Connection: close
 received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
+--- error_log
+lua ssl server name: "www.test.com"
 --- no_error_log
 [error]
 [alert]
@@ -314,6 +316,8 @@ received: Connection: close
 received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
+--- error_log
+lua ssl server name: "www.test.com"
 --- no_error_log
 [error]
 [alert]
@@ -425,6 +429,8 @@ received: Connection: close
 received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
+--- error_log
+lua ssl server name: "test.com"
 --- no_error_log
 [error]
 [alert]
@@ -507,6 +513,8 @@ GET /t
 --- response_body
 connected: 1
 failed to do SSL handshake: 18: self signed certificate
+--- error_log
+lua ssl server name: "www.test2.com"
 --- no_error_log
 [error]
 [alert]
@@ -552,8 +560,9 @@ GET /t
 connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
-sni: aa.bb.test2.com
+lua ssl server name: "aa.bb.test2.com"
 not found any valid sni configuration, matched sni: *.test2.com current sni: aa.bb.test2.com
 --- no_error_log
 [error]
 [alert]
+
