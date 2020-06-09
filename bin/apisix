@@ -781,6 +781,17 @@ local function init_etcd(show_output)
 
     local host_count = #(yaml_conf.etcd.host)
 
+    -- check whether the user has enabled etcd v2 protocol
+    for index, host in ipairs(yaml_conf.etcd.host) do
+        uri = host .. "/v2/keys"
+        local cmd = "curl -i -m ".. timeout * 2 .. " -o /dev/null -s -w %{http_code} " .. uri
+        local res = excute_cmd(cmd)
+        if res == "404" then
+            io.stderr:write(string.format("failed: please make sure that you have enabled the v2 protocol of etcd on %s.\n", host))
+            return
+        end
+    end
+
     local etcd_ok = false
     for index, host in ipairs(yaml_conf.etcd.host) do
 
