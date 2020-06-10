@@ -98,7 +98,7 @@ local function check_conf(id, conf, need_id)
 end
 
 
-function aes_encrypt(origin)
+local function aes_encrypt(origin)
     local local_conf = core.config.local_conf()
     local iv
     if local_conf and local_conf.apisix
