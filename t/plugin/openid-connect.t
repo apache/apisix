@@ -368,11 +368,7 @@ passed
             local res, err = httpc:request_uri(uri, {
                 method = "GET",
                     headers = {
-                        ["Authorization"] = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                        ".eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk" ..
-                        "4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCB" ..
-                        "jb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqX" ..
-                        "RyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w",
+                        ["Authorization"] = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJfT3B2Wm5lSkR3T0NqczZSZmFObjdIc0lKZmRhMWxfU0ZkYUo2SU1hV0k0In0.eyJqdGkiOiJjNGY4ZWNjNS0wZWYzLTQzYWYtOTJkZS0xMmY5YjJhNDhiYzAiLCJleHAiOjE1OTE4MjMyOTgsIm5iZiI6MCwiaWF0IjoxNTkxNzg3Mjk4LCJpc3MiOiJodHRwczovL2VmYWN0b3J5LXNlY3VyaXR5LXBvcnRhbC5zYWx6YnVyZ3Jlc2VhcmNoLmF0L2F1dGgvcmVhbG1zL0NBTVBBSUdOX1JFQUxNIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjUxZGUzNzQ4LTZiNzctNGZmNC04ZDE5LWY1YTg4NThjYWZkMyIsInR5cCI6IkJlYXJlciIsImF6cCI6IkNBTVBBSUdOX0NMSUVOVCIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6ImQxZDliMWQ1LTk1ZWQtNDI4NS04NTEzLWYwOGEwNmVjNjM1NyIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiIsImN1c3RvbWVyLWFkdmVydGlzZXIiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6ImVtYWlsIHByb2ZpbGUiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6ImFkdmVydGlzZXJfdXNlciJ9.A3R-JABGHLNIPcjibrUFmJG8Nzm3gLjCYTne9ibP0LXrM9cJRdmjK75g9wtSfI4a313S5TwyG_Y-4OXfy0IeI4GgAv2q7mGgP4dKplHnGO_4vhEmFqbiEI2__2saAWatmgTz8LV2sA1D0B9zU-hHy7MzaLVXPvVXFG3lACB0ecmLRweeVRRQQQRibe9lh0VrOBoJQfl-zOc8GWVagpYrmJlr-zMMqm5MYCE1rNPwA28IfeAT8-wQxwqPTMq01q2bHU3qFqWDITEUcJIwowriKrSY1uU6t9c6Roff6HJKl6BOLoXLo5jTuPtBSfLhBU9BWceYnJ9m-o9TVenijI1vFQ",
                     }
                 })
             ngx.status = res.status

@@ -163,6 +163,7 @@ plugins:                          # plugin list
   - batch-requests
   - http-logger
   - skywalking
+  - authz-keycloak
 
 stream_plugins:
   - mqtt-proxy
