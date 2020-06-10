@@ -14,13 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local schema_plugin = require("apisix.admin.plugins").check_schema
-local tostring = tostring
-local aes = require "resty.aes"
+local core              = require("apisix.core")
+local schema_plugin     = require("apisix.admin.plugins").check_schema
+local tostring          = tostring
+local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
-local type = type
-local assert = assert
+local str_find          = string.find
+local type              = type
+local assert            = assert
 
 local _M = {
     version = 0.1,
@@ -97,7 +98,7 @@ local function check_conf(id, conf, need_id)
 end
 
 
-function encrypt(origin)
+function aes_encrypt(origin)
     local local_conf = core.config.local_conf()
     local iv
     if local_conf and local_conf.apisix
@@ -107,7 +108,7 @@ function encrypt(origin)
     local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
-    if aes_128_cbc_with_iv ~= nil then
+    if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
         local encrypted = aes_128_cbc_with_iv:encrypt(origin)
         if encrypted == nil then
             core.log.error("failed to encrypt key[", origin, "] ")
@@ -128,7 +129,7 @@ function _M.put(id, conf)
     end
 
     -- encrypt private key
-    conf.key = encrypt(conf.key)
+    conf.key = aes_encrypt(conf.key)
 
     local key = "/ssl/" .. id
     local res, err = core.etcd.set(key, conf)
@@ -169,7 +170,7 @@ function _M.post(id, conf)
     end
 
     -- encrypt private key
-    conf.key = encrypt(conf.key)
+    conf.key = aes_encrypt(conf.key)
 
     local key = "/ssl"
     -- core.log.info("key: ", key)

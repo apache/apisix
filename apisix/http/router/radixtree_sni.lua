@@ -73,7 +73,11 @@ local function create_router(ssl_items)
             if aes_128_cbc_with_iv ~= nil and
                 not str_find(ssl.value.key, "---") then
                 local decrypted = aes_128_cbc_with_iv:decrypt(ngx_decode_base64(ssl.value.key))
-                ssl.value.key = decrypted
+                if decrypted == nil then
+                    core.log.error("decrypt ssl key failed. key[", ssl.value.key, "] ")
+                else
+                    ssl.value.key = decrypted
+                end
             end
 
             local
