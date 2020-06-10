@@ -214,8 +214,8 @@ end
 
 
 function _M.aes_encrypt(origin)
-    local iv = "1234567890123456" 
-    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) 
+    local iv = "1234567890123456"
+    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
 
     if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
         local encrypted = aes_128_cbc_with_iv:encrypt(origin)
