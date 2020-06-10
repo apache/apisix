@@ -25,7 +25,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route(only arg_k)
+=== TEST 1: set route with filter_func
 --- config
     location /t {
         content_by_lua_block {
