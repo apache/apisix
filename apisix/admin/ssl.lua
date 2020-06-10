@@ -97,13 +97,7 @@ local function check_conf(id, conf, need_id)
 end
 
 
-function _M.put(id, conf)
-    local id, err = check_conf(id, conf, true)
-    if not id then
-        return 400, err
-    end
-
-    -- encrypt private key
+function encrypt(origin)
     local local_conf = core.config.local_conf()
     local iv
     if local_conf and local_conf.apisix
@@ -114,9 +108,27 @@ function _M.put(id, conf)
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
     if aes_128_cbc_with_iv ~= nil then
-        local encrypted = aes_128_cbc_with_iv:encrypt(conf.key)
-        conf.key = ngx_encode_base64(encrypted)
+        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
+        if encrypted == nil then
+            core.log.error("failed to encrypt key[", origin, "] ")
+            return origin
+        end
+
+        return ngx_encode_base64(encrypted)
     end
+
+    return origin
+end
+
+
+function _M.put(id, conf)
+    local id, err = check_conf(id, conf, true)
+    if not id then
+        return 400, err
+    end
+
+    -- encrypt private key
+    conf.key = encrypt(conf.key)
 
     local key = "/ssl/" .. id
     local res, err = core.etcd.set(key, conf)
@@ -157,20 +169,7 @@ function _M.post(id, conf)
     end
 
     -- encrypt private key
-    local local_conf = core.config.local_conf()
-    local iv
-    if local_conf and local_conf.apisix
-       and local_conf.apisix.ssl.key_encrypt_salt then
-        iv = local_conf.apisix.ssl.key_encrypt_salt
-    end
-
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
-            assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
-
-    if aes_128_cbc_with_iv ~= nil then
-        local encrypted = aes_128_cbc_with_iv:encrypt(conf.key)
-        conf.key = ngx_encode_base64(encrypted)
-    end
+    conf.key = encrypt(conf.key)
 
     local key = "/ssl"
     -- core.log.info("key: ", key)
