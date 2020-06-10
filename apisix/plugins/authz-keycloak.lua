@@ -72,7 +72,8 @@ local function send_http_data(conf, token)
     local httpc = http.new()
     local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, {
         method = "POST",
-        body = "grant_type=" .. conf.grant_type .. "&audience=" .. conf.audience .. "&permission=" .. conf.permissions,
+        body = "grant_type=" .. conf.grant_type .. "&audience="
+            .. conf.audience .. "&permission=" .. conf.permissions,
         headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded",
             ["Authorization"] = token
