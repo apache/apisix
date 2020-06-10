@@ -86,7 +86,7 @@ if [ $count -ne 1 ]; then
     exit 1
 fi
 
-count=`grep -c "listen 9080.*reuseport" conf/nginx.conf`
+count=`grep -c "listen 9080.*reuseport" conf/nginx.conf || true`
 if [ $count -ne 0 ]; then
     echo "failed: reuseport should be disabled when enable enable_dev_mode"
     exit 1
