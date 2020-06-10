@@ -48,12 +48,12 @@ local function create_router(ssl_items)
        and local_conf.apisix.ssl.key_encrypt_salt then
         iv = local_conf.apisix.ssl.key_encrypt_salt
     end
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and 
+    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
     for _, ssl in ipairs(ssl_items) do
-        if type(ssl) == "table" and 
-            ssl.value ~= nil and 
+        if type(ssl) == "table" and
+            ssl.value ~= nil and
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
 
             local j = 0
@@ -63,19 +63,19 @@ local function create_router(ssl_items)
                 for _, s in ipairs(ssl.value.snis) do
                     j = j + 1
                     sni[j] = s:reverse()
-                end              
+                end
             else
                 sni = ssl.value.sni:reverse()
             end
-            
+
             -- decrypt private key
-            if aes_128_cbc_with_iv ~= nil and 
+            if aes_128_cbc_with_iv ~= nil and
                 not str_find(ssl.value.key, "---") then
                 local decrypted = aes_128_cbc_with_iv:decrypt(ngx_decode_base64(ssl.value.key))
                 ssl.value.key = decrypted
             end
 
-            local 
+            local
             idx = idx + 1
             route_items[idx] = {
                 paths = sni,
@@ -150,7 +150,7 @@ function _M.match_and_set(api_ctx)
     end
 
     core.log.debug("sni: ", sni)
-    
+
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
@@ -169,7 +169,7 @@ function _M.match_and_set(api_ctx)
         if not matched then
             core.log.warn("not found any valid sni configuration, matched sni: ",
                           core.json.delay_encode(api_ctx.matched_sni, true), " current sni: ", sni)
-            return false            
+            return false
         end
     else
         if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then

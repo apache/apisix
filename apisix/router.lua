@@ -19,8 +19,6 @@ local core    = require("apisix.core")
 local error   = error
 local pairs   = pairs
 local ipairs  = ipairs
-local aes = require "resty.aes"
-local str = require "resty.string"
 
 
 local _M = {version = 0.3}

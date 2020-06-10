@@ -108,7 +108,7 @@ function _M.put(id, conf)
        and local_conf.apisix.ssl.key_encrypt_salt then
         iv = local_conf.apisix.ssl.key_encrypt_salt
     end
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and 
+    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
     if aes_128_cbc_with_iv ~= nil then
@@ -162,7 +162,7 @@ function _M.post(id, conf)
         iv = local_conf.apisix.ssl.key_encrypt_salt
     end
 
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and 
+    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
     if aes_128_cbc_with_iv ~= nil then
