@@ -19,6 +19,8 @@ local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local aes = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
+local type = type
+local assert = assert
 
 local _M = {
     version = 0.1,

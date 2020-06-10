@@ -23,6 +23,7 @@ local type             = type
 local error            = error
 local str_find         = string.find
 local aes              = require "resty.aes"
+local assert           = assert
 local ngx_decode_base64 = ngx.decode_base64
 local ssl_certificates
 local radixtree_router
