@@ -149,3 +149,18 @@ fi
 set -ex
 
 echo "passed: rollback to the default admin config"
+
+# enable enable_root
+sed  -i 's/enable_root: false/enable_root: true/g'  conf/config.yaml
+
+make init
+
+count=`grep -c "user root;" conf/nginx.conf`
+if [ $count -ne 1 ]; then
+    echo "failed: user is not root when enable enable_root"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
+echo "passed: enable enable_root"
