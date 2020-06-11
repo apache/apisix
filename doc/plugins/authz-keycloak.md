@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](jwt-auth-cn.md)
+[Chinese](authz-keycloak-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -25,111 +25,73 @@
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
+- [**Examples**](#examples)
 
 
 ## Name
 
-`jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.
+`authz-keycloak` is an authorization plugin to be used with the Keycloak Identity Server. Keycloak is an OAuth/OIDC and
+UMA compliant Ideneity Server. Although, its developed to working in conjunction with Keycloak it should work with any
+OAuth/OIDC and UMA compliant identity providers as well.
 
-The `consumer` then adds its key to the query string parameter, request header, or `cookie` to verify its request.
-
-For more information on JWT, refer to [JWT](https://jwt.io/) for more information.
+For more information on JWT, refer to [Keycloak Authorization Docs](https://www.keycloak.org/docs/latest/authorization_services) for more information.
 
 ## Attributes
 
 |Name           |Requirement    |Description|
 |---------      |--------       |-----------|
-| token_endpoint|required       |different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception.|
-| permissions   |optional       |encryption key. if you do not specify, the value is auto-generated in the background.|
-| grant_type    |optional       |encryption algorithm. support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.|
-| audience      |optional       |token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 * 60 = 300 )|
-| enforcement_mode|optional     |boolean value to indicate whether secret is base64 encoded, default value is false.|
-| timeout       |optional       |boolean value to indicate whether secret is base64 encoded, default value is false.|
+| token_endpoint|required       |A OAuth2-compliant Token Endpoint that supports the urn:ietf:params:oauth:grant-type:uma-ticket grant type.|
+| grant_type    |required       |This parameter is required. Must be urn:ietf:params:oauth:grant-type:uma-ticket.|
+| audience      |optional       | The client identifier of the resource server to which the client is seeking access. This parameter is mandatory in case the permission parameter is defined.|
+| permissions   |optional       |This parameter is optional. A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: RESOURCE_ID#SCOPE_ID.|
+| timeout       |optional       |Timeout for the http connection with the Identity Server. Default is 3 seconds|
+| policy_enforcement_mode|required     |Enforcing or Permissive.|
+
+
+### Policy Enforcement Mode
+
+Specifies how policies are enforced when processing authorization requests sent to the server.
+
+**Enforcing**
+
+- (default mode) Requests are denied by default even when there is no policy associated with a given resource.
+
+**Permissive**
+
+- Requests are allowed even when there is no policy associated with a given resource.
+
 
 ## How To Enable
 
-1. set a consumer and config the value of the `jwt-auth` option
+Create a route and enable the authz-keycloak plugin on the route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "jack",
+    "uri": "/get",
     "plugins": {
-        "jwt-auth": {
-            "key": "user-key",
-            "secret": "my-secret-key"
+        "authz-keycloak": {
+        	"token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
+        	"permissions": "resource name#scope name",
+            "audience": "Client ID"
         }
-    }
-}'
-```
-
-you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Consumer through the web console:
-
-![](../images/plugin/jwt-auth-1.png)
-
-then add jwt-auth plugin in the Consumer page:
-![](../images/plugin/jwt-auth-2.png)
-
-2. add a Route or add a Service , and enable the `jwt-auth` plugin
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "jwt-auth": {}
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+    	"type": "roundrobin",
+    	"nodes": {
+        	"127.0.0.1:8080": 1
+    	}
     }
-}'
+}
 ```
+
 
 ## Test Plugin
 
-#### get the token in `jwt-auth` plugin:
-
 ```shell
-$ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-HTTP/1.1 200 OK
-Date: Wed, 24 Jul 2019 10:33:31 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
+curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 ```
 
-#### try request with token
-
-* without token:
-
-```shell
-$ curl http://127.0.0.1:9080/index.html -i
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Missing JWT token in request"}
-```
-
-* request header with token:
-
-```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-...
-Accept-Ranges: bytes
-
-<!DOCTYPE html>
-<html lang="cn">
-...
-```
 
 ## Disable Plugin
 
@@ -138,17 +100,25 @@ When you want to disable the `jwt-auth` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "id": 1,
-    "plugins": {},
+    "uri": "/get",
+    "plugins": {
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
+    	"type": "roundrobin",
+    	"nodes": {
+        	"127.0.0.1:8080": 1
+    	}
     }
-}'
+}
+```
+
+## Examples
+
+Checkout the unit test for of the authz-keycloak.t to understand how the authorization policies can be integrated into your
+API workflows. Run the following docker image and visit `http://localhost:8090` to view the associated policies for the unit tests.
+
+```bash
+docker run -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 sshniro/keycloak-apisix
 ```
