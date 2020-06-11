@@ -130,7 +130,7 @@ The following image shows how the policies are configures in the Keycloak server
 ## Future Development
 
 - Currently the authz-plugin requires to define the resource name and required scopes inorder to enforce policies for the routes.
-However, Keycloak's official adapters (Java, JS) also provides path matching by querying Keycloak paths dynamically, and 
+However, Keycloak's official adapters (Java, JS) also provides path matching by querying Keycloak paths dynamically, and
 lazy loading the paths to identify resources. Future version on authz-plugin will support this functionality.
 
 - Support to read scope and configurations from the Keycloak JSON File
