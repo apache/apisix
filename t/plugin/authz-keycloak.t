@@ -111,7 +111,7 @@ done
                         "plugins": {
                             "authz-keycloak": {
                                 "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
-                                "permissions": "res:campaign#scopes:view",
+                                "permissions": "course_resource#view",
                                 "audience": "CAMPAIGN_CLIENT",
                                 "response_mode": "decision",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -132,7 +132,7 @@ done
                             "plugins": {
                                 "authz-keycloak": {
                                     "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
-                                    "permissions": "res:campaign#scopes:view",
+                                    "permissions": "course_resource#view",
                                     "audience": "CAMPAIGN_CLIENT",
                                     "response_mode": "decision",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -178,7 +178,7 @@ passed
             local uri = "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
-                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=advertiser_user&password=advertiser_user",
+                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
                     headers = {
                         ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
@@ -253,7 +253,7 @@ Invalid bearer token
                         "plugins": {
                             "authz-keycloak": {
                                 "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
-                                "permissions": "res:campaign#scopes:create",
+                                "permissions": "course_resource#delete",
                                 "audience": "CAMPAIGN_CLIENT",
                                 "response_mode": "decision",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -274,7 +274,7 @@ Invalid bearer token
                             "plugins": {
                                 "authz-keycloak": {
                                     "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
-                                    "permissions": "res:campaign#scopes:create",
+                                    "permissions": "course_resource#delete",
                                     "audience": "CAMPAIGN_CLIENT",
                                     "response_mode": "decision",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -320,7 +320,7 @@ passed
             local uri = "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
-                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=advertiser_user&password=advertiser_user",
+                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
                     headers = {
                         ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
