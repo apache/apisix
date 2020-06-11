@@ -81,9 +81,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({token_endpoint = "https://efactory-security-portal.salzburgresearch.at/",
-                                                 permissions = "res:customer#scopes:view",
-                                                })
+            local ok, err = plugin.check_schema({permissions = "res:customer#scopes:view"})
             if not ok then
                 ngx.say(err)
             end
@@ -94,7 +92,7 @@ done
 --- request
 GET /t
 --- response_body
-property "grant_type" is required
+property "token_endpoint" is required
 done
 --- no_error_log
 [error]

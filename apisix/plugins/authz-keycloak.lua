@@ -39,14 +39,14 @@ local schema = {
             default = "ENFORCING"
         }
     },
-    required = {"token_endpoint", "grant_type"}
+    required = {"token_endpoint"}
 }
 
 
 local _M = {
     version = 0.1,
     priority = 2000,
-    type = 'authz-keycloak',
+    type = 'auth',
     name = plugin_name,
     schema = schema,
 }
@@ -82,17 +82,16 @@ local function evaluate_permissions(conf, token)
             ["Authorization"] = token
         },
         keepalive_timeout = 60000,
-        keepalive_pool = 10
+        keepalive_pool = 5
     })
 
     if not httpc_res then
         core.response.exit(500, httpc_err)
-        core.log.error("error while sending data to [" .. host .. "] port["
+        core.log.error("error while sending authz request to [" .. host .. "] port["
             .. tostring(port) .. "] " .. httpc_err)
         return
     end
 
-     --reject the call
     if httpc_res.status >= 400 then
         core.log.error("status code: " .. httpc_res.status .. " msg: ".. httpc_res.body)
         core.response.exit(httpc_res.status, httpc_res.body)
