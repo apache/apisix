@@ -75,8 +75,8 @@ If using a proxy doesn't solve this problem, you can add `--verbose` option duri
 
 An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in uri as a condition：
 
-1. Group A：arg_id <= 1000
-2. Group B：arg_id > 1000
+1. Group A：id <= 1000
+2. Group B：id > 1000
 
 here is the way:
 ```shell
