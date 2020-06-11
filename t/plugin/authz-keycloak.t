@@ -168,22 +168,42 @@ passed
 
 
 
-=== TEST 5: access with correct token
+=== TEST 6: Get access token
 --- config
     location /t {
         content_by_lua_block {
+            local json_decode = require("cjson").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            local uri = "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
-                    method = "GET",
+                    method = "POST",
+                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=advertiser_user&password=advertiser_user",
                     headers = {
-                        ["Authorization"] = "Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ6SUxOWUMzaFp0LTI5emc2VVY2RWV6WGMxZEZyamxSLVIxNHJ2cHdsUmhBIn0.eyJleHAiOjIwMjM4MjY2NjAsImlhdCI6MTU5MTgyNjY2MCwianRpIjoiMjE0MzcwMGItYjlmNS00YWRjLWFkZDQtOTg2MzhlMjY0ZGE3IiwiaXNzIjoiaHR0cDovLzEyNy4wLjAuMTo4MDkwL2F1dGgvcmVhbG1zL0NBTVBBSUdOX0NMSUVOVCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJmZjA3NmUxNi0wMzNiLTQ5MjMtYjVjNS05MGZkNDc3NDFlMDciLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJDQU1QQUlHTl9DTElFTlQiLCJzZXNzaW9uX3N0YXRlIjoiNDUzZTVkY2YtNzM4MC00NTI2LTlmYTYtYWMwY2ZjZWU4NWVmIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiY3VzdG9tZXItYWR2ZXJ0aXNlciJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWR2ZXJ0aXNlcl91c2VyIn0.MU1cYsEroZ4Vv70UBuHNpcxyvolQ-yGsnDuoM-muuqHsDgonRMz-_xeoc_RNRNcecJBbziyISZwaPNFb6089eeSQuqHO0FOuKF0ALc_5RO4xhrQWx3bupwNmJ6NcmjKKELDc62zZ2qE-aVGC4qMQ3hlF02-nkwjleV9GLFaDONUpxwnvtQrwuZVzuyMfX4mBOjUhwcmIFGJn5I4Ju3cgNZjOoTz4SOoa7sw8QU7--MXjwe0YUdvX654SVLYlRs_87ybwzCKtj8RQ2HBzqLGjHcAQId3Jrhd18nV1iMznzRVwsWm0r7t6CqhUOODFvJ8qx6Ij6m2VIqPOv43iQrIv_w",
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
                 })
-            ngx.status = res.status
+
             if res.status == 200 then
-                ngx.say(true)
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. accessToken,
+                    }
+                 })
+
+                if res.status == 200 then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
             end
         }
     }
@@ -193,7 +213,5 @@ GET /t
 true
 --- no_error_log
 [error]
-
-
 
 

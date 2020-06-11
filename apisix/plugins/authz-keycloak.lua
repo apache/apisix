@@ -20,6 +20,7 @@ local sub_str  = string.sub
 local plugin_name = "authz-keycloak"
 local url = require "net.url"
 local tostring = tostring
+local json_decode = require("cjson").decode
 
 
 local schema = {
@@ -62,6 +63,19 @@ local function send_http_data(conf, token)
     local url_decoded = url.parse(conf.token_endpoint)
     local host = url_decoded.host
     local port = url_decoded.port
+
+    --local uri = "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token"
+    --local httpc = http.new()
+    --local res, err = httpc:request_uri(uri, {
+    --    method = "POST",
+    --    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=advertiser_user&password=advertiser_user",
+    --    headers = {
+    --        ["Content-Type"] = "application/x-www-form-urlencoded"
+    --    }
+    --})
+    --
+    --local body = json_decode(res.body)
+    --core.log.error("token is" .. body["access_token"])
 
     if ((not port) and url_decoded.scheme == "https") then
         port = 443
