@@ -215,4 +215,143 @@ true
 [error]
 
 
+=== TEST 6: wrong access token
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer wrongtoken",
+                    }
+                })
+            if res.status == 401 then
+                ngx.say(true)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- error_log
+Invalid bearer token
 
+
+
+=== TEST 7: add plugin to access unauthorized scope
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
+                                "permissions": "res:campaign#scopes:create",
+                                "audience": "CAMPAIGN_CLIENT",
+                                "response_mode": "decision",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "authz-keycloak": {
+                                    "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
+                                    "permissions": "res:campaign#scopes:create",
+                                    "audience": "CAMPAIGN_CLIENT",
+                                    "response_mode": "decision",
+                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                    "timeout": 3
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello1"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: Get access token for invalid scope test case
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("cjson").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=advertiser_user&password=advertiser_user",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. accessToken,
+                    }
+                 })
+
+                if res.status == 403 then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- error_log
+{"error":"access_denied","error_description":"not_authorized"}
