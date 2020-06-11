@@ -84,7 +84,7 @@ ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 else
-	@echo "Moat is running..."
+	@echo "APISIX is running..."
 endif
 
 
