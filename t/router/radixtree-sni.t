@@ -650,7 +650,89 @@ lua ssl server name: "www.test2.com"
 
 
 
-=== TEST 14: set ssl(snis: {test2.com, *.test2.com})
+=== TEST 14: enable ssl(sni: *.test2.com)
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local data = {status = 1}
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PATCH,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "status": 1
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: client request: www.test2.com again
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "www.test2.com", true)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", type(sess))
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+failed to do SSL handshake: 18: self signed certificate
+--- error_log
+lua ssl server name: "www.test2.com"
+--- no_error_log
+[error]
+[alert]
+
+
+
+=== TEST 16: set ssl(snis: {test2.com, *.test2.com})
 --- config
 location /t {
     content_by_lua_block {
@@ -688,7 +770,7 @@ passed
 
 
 
-=== TEST 15: client request: test2.com
+=== TEST 17: client request: test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -734,7 +816,7 @@ lua ssl server name: "test2.com"
 
 
 
-=== TEST 16: client request: aa.bb.test2.com  -- snis un-include
+=== TEST 18: client request: aa.bb.test2.com  -- snis un-include
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -781,7 +863,7 @@ not found any valid sni configuration, matched sni: ["moc.2tset","moc.2tset.*"] 
 
 
 
-=== TEST 17: set ssl(encrypt ssl key with another iv)
+=== TEST 19: set ssl(encrypt ssl key with another iv)
 --- config
 location /t {
     content_by_lua_block {
@@ -819,7 +901,7 @@ passed
 
 
 
-=== TEST 18: client request: test2.com
+=== TEST 20: client request: test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
