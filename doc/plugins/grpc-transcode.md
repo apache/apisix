@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](grpc-transcoding-cn.md)
+# [Chinese](grpc-transcode-cn.md)
 
 ## Name
 

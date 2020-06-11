@@ -52,7 +52,7 @@ Reference document
 * [proxy-rewrite](plugins/proxy-rewrite-cn.md): 支持自定义修改 proxy 到上游的信息。
 * [prometheus](plugins/prometheus-cn.md)：以 Prometheus 格式导出 APISIX 自身的状态信息，方便被外部 Prometheus 服务抓取。
 * [OpenTracing](plugins/zipkin-cn.md)：支持 Zikpin 和 Apache SkyWalking。
-* [grpc-transcode](plugins/grpc-transcoding-cn.md)：REST <--> gRPC 转码。
+* [grpc-transcode](plugins/grpc-transcode-cn.md)：REST <--> gRPC 转码。
 * [serverless](plugins/serverless-cn.md)：允许在 APISIX 中的不同阶段动态运行 Lua 代码。
 * [ip-restriction](plugins/ip-restriction-cn.md): IP 黑白名单。
 * [openid-connect](plugins/oauth.md)
