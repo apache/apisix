@@ -56,7 +56,7 @@ done
             local ok, err = plugin.check_schema({token_endpoint = "https://efactory-security-portal.salzburgresearch.at/",
                                                  permissions = "res:customer#scopes:view",
                                                  timeout = 3,
-                                                 audience = "CAMPAIGN_CLIENT",
+                                                 audience = "University",
                                                  max_retry_count = 2,
                                                  response_mode = "decision",
                                                  grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
@@ -110,10 +110,9 @@ done
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                 "permissions": "course_resource#view",
-                                "audience": "CAMPAIGN_CLIENT",
-                                "response_mode": "decision",
+                                "audience": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3
                             }
@@ -131,10 +130,9 @@ done
                         "value": {
                             "plugins": {
                                 "authz-keycloak": {
-                                    "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
+                                    "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                     "permissions": "course_resource#view",
-                                    "audience": "CAMPAIGN_CLIENT",
-                                    "response_mode": "decision",
+                                    "audience": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                     "timeout": 3
                                 }
@@ -175,10 +173,10 @@ passed
             local json_decode = require("cjson").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
-                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
                     headers = {
                         ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
@@ -252,10 +250,9 @@ Invalid bearer token
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                 "permissions": "course_resource#delete",
-                                "audience": "CAMPAIGN_CLIENT",
-                                "response_mode": "decision",
+                                "audience": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3
                             }
@@ -273,10 +270,9 @@ Invalid bearer token
                         "value": {
                             "plugins": {
                                 "authz-keycloak": {
-                                    "token_endpoint": "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token",
+                                    "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                     "permissions": "course_resource#delete",
-                                    "audience": "CAMPAIGN_CLIENT",
-                                    "response_mode": "decision",
+                                    "audience": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                     "timeout": 3
                                 }
@@ -317,10 +313,10 @@ passed
             local json_decode = require("cjson").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/CAMPAIGN_CLIENT/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
-                    body = "grant_type=password&client_id=CAMPAIGN_CLIENT&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
                     headers = {
                         ["Content-Type"] = "application/x-www-form-urlencoded"
                     }

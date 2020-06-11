@@ -122,3 +122,15 @@ API workflows. Run the following docker image and visit `http://localhost:8090` 
 ```bash
 docker run -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 sshniro/keycloak-apisix
 ```
+
+The following image shows how the policies are configures in the Keycloak server.
+
+![Keycloak policy design](../images/plugin/authz-keycloak.png)
+
+## Future Development
+
+- Currently the authz-plugin requires to define the resource name and required scopes inorder to enforce policies for the routes.
+However, Keycloak's official adapters (Java, JS) also provides path matching by querying Keycloak paths dynamically, and 
+lazy loading the paths to identify resources. Future version on authz-plugin will support this functionality.
+
+- Support to read scope and configurations from the Keycloak JSON File

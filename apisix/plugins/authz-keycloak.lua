@@ -27,13 +27,16 @@ local schema = {
     properties = {
         token_endpoint = {type = "string"},
         permissions = {type = "string"},
-        grant_type = {type = "string"},
+        grant_type = {
+            type = "string",
+            default="urn:ietf:params:oauth:grant-type:uma-ticket"
+        },
         audience = {type = "string"},
-        response_mode = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         enforcement_mode = {
             type = "string",
-            enum = {"ENFORCING", "PERMISSIVE"}
+            enum = {"ENFORCING", "PERMISSIVE"},
+            default = "ENFORCING"
         }
     },
     required = {"token_endpoint", "grant_type"}
@@ -43,7 +46,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2000,
-    type = 'auth',
+    type = 'authz-keycloak',
     name = plugin_name,
     schema = schema,
 }
@@ -58,7 +61,7 @@ function _M.check_schema(conf)
 end
 
 
-local function send_http_data(conf, token)
+local function evaluate_permissions(conf, token)
     local url_decoded = url.parse(conf.token_endpoint)
     local host = url_decoded.host
     local port = url_decoded.port
@@ -73,7 +76,7 @@ local function send_http_data(conf, token)
     local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, {
         method = "POST",
         body = "grant_type=" .. conf.grant_type .. "&audience="
-            .. conf.audience .. "&permission=" .. conf.permissions,
+            .. conf.audience .. "&permission=" .. conf.permissions .. "&response_mode=decision",
         headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded",
             ["Authorization"] = token
@@ -118,8 +121,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing JWT token in request"}
     end
 
-    --core.log.error('The token is' .. jwt_token)
-    send_http_data(conf, jwt_token)
+    evaluate_permissions(conf, jwt_token)
     core.log.debug("hit keycloak-auth rewrite")
 end
 
