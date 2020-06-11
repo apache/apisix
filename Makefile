@@ -79,9 +79,13 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
+ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
 	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
+else
+	@echo "APISIX is running..."
+endif
 
 
 ### stop:             Stop the apisix server
