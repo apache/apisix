@@ -40,7 +40,7 @@ response rewrite plugin, rewrite the content from upstream.
 
 |Name    |Requirement|Description|
 |-------         |-----|------|
-|status_code   |optional| New `status code` to client|
+|status_code   |optional| New `status code` to client, keep the original response code by default.|
 |body          |optional| New `body` to client, and the content-length will be reset too.|
 |body_base64   |optional| This is a boolean value，identify if `body` in configuration need base64 decoded before rewrite to client.|
 |headers             |optional| Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
