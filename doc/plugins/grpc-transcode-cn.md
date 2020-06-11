@@ -17,9 +17,9 @@
 #
 -->
 
-# [English](grpc-transcoding.md)
+# [English](grpc-transcode.md)
 
-# grpc-transcoding
+# grpc-transcode
 
 HTTP(s) -> APISIX -> gRPC server
 
