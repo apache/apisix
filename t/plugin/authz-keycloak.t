@@ -168,7 +168,7 @@ passed
 
 
 
-=== TEST 6: Get access token
+=== TEST 5: Get access token
 --- config
     location /t {
         content_by_lua_block {
@@ -213,5 +213,6 @@ GET /t
 true
 --- no_error_log
 [error]
+
 
 
