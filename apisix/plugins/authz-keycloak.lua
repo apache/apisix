@@ -132,7 +132,7 @@ local function evaluate_permissions(conf, token)
     end
 
     if httpc_res.status >= 400 then
-        core.log.error("status code: " .. httpc_res.status .. " msg: ".. httpc_res.body)
+        core.log.error("status code: ", httpc_res.status, " msg: ", httpc_res.body)
         core.response.exit(httpc_res.status, httpc_res.body)
     end
 end
