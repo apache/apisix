@@ -54,11 +54,9 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({token_endpoint = "https://efactory-security-portal.salzburgresearch.at/",
-                                                 permissions = "res:customer#scopes:view",
-                                                 timeout = 3,
+                                                 permissions = {"res:customer#scopes:view"},
+                                                 timeout = 1000,
                                                  audience = "University",
-                                                 max_retry_count = 2,
-                                                 response_mode = "decision",
                                                  grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
                                                  })
             if not ok then
@@ -76,12 +74,12 @@ done
 [error]
 
 
-=== TEST 3: grant_type missing
+=== TEST 3: token_endpoint missing
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({permissions = "res:customer#scopes:view"})
+            local ok, err = plugin.check_schema({permissions = {"res:customer#scopes:view"}})
             if not ok then
                 ngx.say(err)
             end
@@ -98,7 +96,7 @@ done
 [error]
 
 
-=== TEST 4: add plugin
+=== TEST 4: add plugin with view course permissions
 --- config
     location /t {
         content_by_lua_block {
@@ -109,10 +107,10 @@ done
                         "plugins": {
                             "authz-keycloak": {
                                 "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
-                                "permissions": "course_resource#view",
+                                "permissions": ["course_resource#view"],
                                 "audience": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                "timeout": 3
+                                "timeout": 3000
                             }
                         },
                         "upstream": {
@@ -129,10 +127,10 @@ done
                             "plugins": {
                                 "authz-keycloak": {
                                     "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
-                                    "permissions": "course_resource#view",
+                                    "permissions": ["course_resource#view"],
                                     "audience": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3
+                                    "timeout": 3000
                                 }
                             },
                             "upstream": {
@@ -164,7 +162,7 @@ passed
 
 
 
-=== TEST 5: Get access token
+=== TEST 5: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -211,7 +209,7 @@ true
 [error]
 
 
-=== TEST 6: wrong access token
+=== TEST 6: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -221,7 +219,7 @@ true
             local res, err = httpc:request_uri(uri, {
                     method = "GET",
                     headers = {
-                        ["Authorization"] = "Bearer wrongtoken",
+                        ["Authorization"] = "Bearer wrong_token",
                     }
                 })
             if res.status == 401 then
@@ -238,7 +236,7 @@ Invalid bearer token
 
 
 
-=== TEST 7: add plugin to access unauthorized scope
+=== TEST 7: add plugin for delete course route
 --- config
     location /t {
         content_by_lua_block {
@@ -249,10 +247,10 @@ Invalid bearer token
                         "plugins": {
                             "authz-keycloak": {
                                 "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
-                                "permissions": "course_resource#delete",
+                                "permissions": ["course_resource#delete"],
                                 "audience": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                "timeout": 3
+                                "timeout": 3000
                             }
                         },
                         "upstream": {
@@ -269,10 +267,10 @@ Invalid bearer token
                             "plugins": {
                                 "authz-keycloak": {
                                     "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
-                                    "permissions": "course_resource#delete",
+                                    "permissions": ["course_resource#delete"],
                                     "audience": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3
+                                    "timeout": 3000
                                 }
                             },
                             "upstream": {
@@ -304,7 +302,7 @@ passed
 
 
 
-=== TEST 8: Get access token for invalid scope test case
+=== TEST 8: Get access token for student and delete course
 --- config
     location /t {
         content_by_lua_block {

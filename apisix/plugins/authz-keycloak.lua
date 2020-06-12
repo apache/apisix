@@ -14,30 +14,42 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core     = require("apisix.core")
-local http = require "resty.http"
-local sub_str  = string.sub
+local core      = require("apisix.core")
+local http      = require "resty.http"
+local sub_str   = string.sub
+local url       = require "net.url"
+local tostring  = tostring
+local ngx       = ngx
 local plugin_name = "authz-keycloak"
-local url = require "net.url"
-local tostring = tostring
 
 
 local schema = {
     type = "object",
     properties = {
-        token_endpoint = {type = "string"},
-        permissions = {type = "string"},
+        token_endpoint = {type = "string", minLength = 1, maxLength = 4096},
+        permissions = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 1, maxLength = 100
+            },
+            uniqueItems = true
+        },
         grant_type = {
             type = "string",
             default="urn:ietf:params:oauth:grant-type:uma-ticket"
         },
         audience = {type = "string"},
-        timeout = {type = "integer", minimum = 1, default = 3},
-        enforcement_mode = {
+        timeout = {type = "integer", minimum = 1000, default = 3000},
+        policy_enforcement_mode = {
             type = "string",
             enum = {"ENFORCING", "PERMISSIVE"},
             default = "ENFORCING"
-        }
+        },
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+
     },
     required = {"token_endpoint"}
 }
@@ -60,6 +72,14 @@ function _M.check_schema(conf)
     return true
 end
 
+local function is_path_protected(conf)
+    -- TODO if permissions are empty lazy load paths from Keycloak
+    if conf.permissions == nil then
+        return false
+    end
+    return true
+end
+
 
 local function evaluate_permissions(conf, token)
     local url_decoded = url.parse(conf.token_endpoint)
@@ -72,23 +92,42 @@ local function evaluate_permissions(conf, token)
         port = 80
     end
 
+    if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
+        core.response.exit(403)
+        return
+    end
+
     local httpc = http.new()
-    local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, {
+    httpc:set_timeout(conf.timeout)
+
+    local permissions_encoded =  ngx.encode_args({permission = conf.permissions})
+
+    local params = {
         method = "POST",
-        body = "grant_type=" .. conf.grant_type .. "&audience="
-            .. conf.audience .. "&permission=" .. conf.permissions .. "&response_mode=decision",
+        body =  ngx.encode_args({
+            grant_type = conf.grant_type,
+            audience = conf.audience,
+            response_mode = "decision"
+        }) .. "&" .. permissions_encoded,
         headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded",
             ["Authorization"] = token
-        },
-        keepalive_timeout = 60000,
-        keepalive_pool = 5
-    })
+        }
+    }
+
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout
+        params.keepalive_pool = conf.keepalive_pool
+    else
+        params.keepalive = conf.keepalive
+    end
+
+    local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, params)
 
     if not httpc_res then
+        core.log.error("error while sending authz request to [", host ,"] port[",
+                        tostring(port), "] ", httpc_err)
         core.response.exit(500, httpc_err)
-        core.log.error("error while sending authz request to [" .. host .. "] port["
-            .. tostring(port) .. "] " .. httpc_err)
         return
     end
 
@@ -101,15 +140,15 @@ end
 
 local function fetch_jwt_token(ctx)
     local token = core.request.header(ctx, "authorization")
-    if token then
-        local prefix = sub_str(token, 1, 7)
-        if prefix ~= 'Bearer ' and prefix ~= 'bearer ' then
-            return "Bearer " .. token
-        end
-        return token
-    else
+    if not token then
         return nil, "authorization header not available"
     end
+
+    local prefix = sub_str(token, 1, 7)
+    if prefix ~= 'Bearer ' and prefix ~= 'bearer ' then
+        return "Bearer " .. token
+    end
+    return token
 end
 
 

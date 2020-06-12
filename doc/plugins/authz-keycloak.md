@@ -72,7 +72,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
         "authz-keycloak": {
         	"token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
-        	"permissions": "resource name#scope name",
+        	"permissions": ["resource name#scope name"],
             "audience": "Client ID"
         }
     },
@@ -95,9 +95,8 @@ curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 
 ## Disable Plugin
 
-When you want to disable the `jwt-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+Remove the corresponding json configuration in the plugin configuration to disable the `authz-keycloak`.
+APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
