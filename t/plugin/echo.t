@@ -140,6 +140,7 @@ before the body modification hello upstream
 --- wait: 0.2
 
 
+
 === TEST 5: update plugin
 --- config
     location /t {
@@ -195,6 +196,8 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 6: access without upstream body change
 --- request

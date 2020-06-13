@@ -33,6 +33,11 @@ local schema = {
             type = "string"
         }
     },
+    anyOf = {
+        {required = {"before_body"}},
+        {required = {"body"}},
+        {required = {"after_body"}}
+    },
     minProperties = 1
 }
 
