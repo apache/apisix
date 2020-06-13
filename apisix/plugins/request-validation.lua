@@ -14,10 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core     = require("apisix.core")
-local ngx      = ngx
-local plugin_name = "request-validation"
-local json_decode = require("cjson").decode
+local core          = require("apisix.core")
+local plugin_name   = "request-validation"
+local json_decode   = require("cjson").decode
+local ngx           = ngx
 
 
 local schema = {
@@ -50,7 +50,7 @@ end
 function _M.rewrite(conf)
     if conf.body_schema.properties.header_schema then
         local headers = ngx.req.get_headers()
-        local ok, err = core.schema.check(header_schema, headers)
+        local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
             core.response.exit(400, err)
