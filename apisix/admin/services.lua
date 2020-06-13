@@ -42,27 +42,6 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "wrong service id"}
     end
 
-    if id then
-        local key = "/services/" .. id
-        core.log.info("key: ", key)
-
-        local res, err = core.etcd.get(key)
-        if not res then
-            return nil, {
-                error_msg = "failed to fetch service info by " .. "service id [" .. id
-                    .. "]: " .. err,
-            }
-        end
-
-        if res.status ~= 200 then
-            return nil, {
-                error_msg = "failed to fetch service info by " .. "service id [" .. id
-                    .. "], " .. "response code: " .. res.status,
-            }
-        end
-
-    end
-
     core.log.info("schema: ", core.json.delay_encode(core.schema.service))
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.service, conf)
@@ -115,6 +94,22 @@ function _M.put(id, conf)
 
     local key = "/services/" .. id
     core.log.info("key: ", key)
+
+    local res, err = core.etcd.get(key)
+    if not res then
+        return nil, {
+            error_msg = "failed to fetch service info by " .. "service id [" .. id .. "]: "
+                .. err,
+        }
+    end
+
+    if res.status ~= 200 then
+        return nil, {
+            error_msg = "failed to fetch service info by " .. "service id [" .. id .. "], "
+                .. "response code: " .. res.status,
+        }
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put service[", key, "]: ", err)
@@ -176,6 +171,22 @@ function _M.delete(id)
     end
 
     local key = "/services/" .. id
+
+    local res, err = core.etcd.get(key)
+    if not res then
+        return nil, {
+            error_msg = "failed to fetch service info by " .. "service id [" .. id .. "]: "
+                .. err,
+        }
+    end
+
+    if res.status ~= 200 then
+        return nil, {
+            error_msg = "failed to fetch service info by " .. "service id [" .. id .. "], "
+                .. "response code: " .. res.status,
+        }
+    end
+
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete service[", key, "]: ", err)
