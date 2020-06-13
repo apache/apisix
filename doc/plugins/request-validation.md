@@ -144,7 +144,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                 }
             }
         }
-        
     }
 }
 ```
