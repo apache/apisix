@@ -23,14 +23,19 @@ local json_decode = require("cjson").decode
 local schema = {
     type = "object",
     properties = {
-        body_schema = {type = "object"}
+        body_schema = {type = "object"},
+        header_schema = {type = "object"}
+    },
+    oneOf = {
+        {required = {"body_schema"}},
+        {required = {"header_schema"}}
     }
 }
 
 
 local _M = {
     version = 0.1,
-    priority = 3000,
+    priority = 2800,
     type = 'validation',
     name = plugin_name,
     schema = schema,
@@ -38,28 +43,40 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
 function _M.rewrite(conf)
-    local body = ngx.req.get_body_data()
-    local data, error = json_decode(body)
-
-    if not data then
-        core.log.error('failed to decode the body')
-        core.response.exit(400)
-        return
+    if conf.body_schema.properties.header_schema then
+        local headers = ngx.req.get_headers()
+        local ok, err = core.schema.check(header_schema, headers)
+        if not ok then
+            core.log.error("req schema validation failed", err)
+            core.response.exit(400, err)
+        end
     end
 
-    local ok, err = core.schema.check(conf.body_schema, data)
-    if not ok then
-        core.response.exit(400, err)
+    if not conf.body_schema.properties.body_schema then
+        ngx.req.read_body()
+        local body = ngx.req.get_body_data()
+        if not body then
+            body = ngx.req.get_body_file()
+        end
+
+        local data, error = json_decode(body)
+
+        if not data then
+            core.log.error('failed to decode the req body', error)
+            core.response.exit(400)
+            return
+        end
+
+        local ok, err = core.schema.check(conf.body_schema, data)
+        if not ok then
+            core.log.error("req schema validation failed", err)
+            core.response.exit(400, err)
+        end
     end
 end
 

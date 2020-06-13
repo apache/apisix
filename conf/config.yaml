@@ -167,6 +167,7 @@ plugins:                          # plugin list
   - http-logger
   - skywalking
   - echo
+  - request-validation
 
 stream_plugins:
   - mqtt-proxy
