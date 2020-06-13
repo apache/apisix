@@ -37,9 +37,10 @@ local schema = {
         },
         grant_type = {
             type = "string",
-            default="urn:ietf:params:oauth:grant-type:uma-ticket"
+            default="urn:ietf:params:oauth:grant-type:uma-ticket",
+            minLength = 1, maxLength = 100
         },
-        audience = {type = "string"},
+        audience = {type = "string", minLength = 1, maxLength = 100},
         timeout = {type = "integer", minimum = 1000, default = 3000},
         policy_enforcement_mode = {
             type = "string",
@@ -51,7 +52,7 @@ local schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
 
     },
-    required = {"token_endpoint"}
+    required = {"token_endpoint", "grant_type"}
 }
 
 
@@ -86,10 +87,12 @@ local function evaluate_permissions(conf, token)
     local host = url_decoded.host
     local port = url_decoded.port
 
-    if ((not port) and url_decoded.scheme == "https") then
-        port = 443
-    elseif not port then
-        port = 80
+    if not port then
+        if url_decoded.scheme == "https" then
+            port = 443
+        else
+            port = 80
+        end
     end
 
     if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
@@ -100,15 +103,14 @@ local function evaluate_permissions(conf, token)
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
 
-    local permissions_encoded =  ngx.encode_args({permission = conf.permissions})
-
     local params = {
         method = "POST",
         body =  ngx.encode_args({
             grant_type = conf.grant_type,
             audience = conf.audience,
-            response_mode = "decision"
-        }) .. "&" .. permissions_encoded,
+            response_mode = "decision",
+            permission = conf.permissions
+        }),
         headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded",
             ["Authorization"] = token
@@ -153,6 +155,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
+    core.log.debug("hit keycloak-auth rewrite")
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
         core.log.error("failed to fetch JWT token: ", err)
@@ -160,7 +163,6 @@ function _M.rewrite(conf, ctx)
     end
 
     evaluate_permissions(conf, jwt_token)
-    core.log.debug("hit keycloak-auth rewrite")
 end
 
 
