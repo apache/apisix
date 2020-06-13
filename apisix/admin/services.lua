@@ -42,6 +42,27 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "wrong service id"}
     end
 
+    if id then
+        local key = "/services/" .. id
+        core.log.info("key: ", key)
+
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {
+                error_msg = "failed to fetch service info by " .. "service id [" .. id
+                    .. "]: " .. err,
+            }
+        end
+
+        if res.status ~= 200 then
+            return nil, {
+                error_msg = "failed to fetch service info by " .. "service id [" .. id
+                    .. "], " .. "response code: " .. res.status,
+            }
+        end
+
+    end
+
     core.log.info("schema: ", core.json.delay_encode(core.schema.service))
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.service, conf)
@@ -63,16 +84,15 @@ local function check_conf(id, conf, need_id)
         local res, err = core.etcd.get(key)
         if not res then
             return nil, {
-                error_msg = "failed to fetch upstream info by "
-                    .. "upstream id [" .. upstream_id .. "]: " .. err,
+                error_msg = "failed to fetch upstream info by " .. "upstream id ["
+                    .. upstream_id .. "]: " .. err,
             }
         end
 
         if res.status ~= 200 then
             return nil, {
-                error_msg = "failed to fetch upstream info by "
-                    .. "upstream id [" .. upstream_id .. "], "
-                    .. "response code: " .. res.status,
+                error_msg = "failed to fetch upstream info by " .. "upstream id ["
+                    .. upstream_id .. "], " .. "response code: " .. res.status,
             }
         end
     end
@@ -148,9 +168,8 @@ function _M.delete(id)
             if type(route) == "table" and route.value and route.value.service_id
                 and tostring(route.value.service_id) == id then
                 return 400, {
-                    error_msg = "can not delete this service directly,"
-                        .. " route [" .. route.value.id
-                        .. "] is still using it now",
+                    error_msg = "can not delete this service directly," .. " route ["
+                        .. route.value.id .. "] is still using it now",
                 }
             end
         end
@@ -189,8 +208,7 @@ function _M.patch(id, conf)
     if res_old.status ~= 200 then
         return res_old.status, res_old.body
     end
-    core.log.info("key: ", key, " old value: ",
-                  core.json.delay_encode(res_old, true))
+    core.log.info("key: ", key, " old value: ", core.json.delay_encode(res_old, true))
 
     local new_value = res_old.body.node.value
 
