@@ -97,14 +97,14 @@ function _M.put(id, conf)
 
     local res, err = core.etcd.get(key)
     if not res then
-        return nil, {
+        return 500, {
             error_msg = "failed to fetch service info by " .. "service id [" .. id .. "]: "
                 .. err,
         }
     end
 
     if res.status ~= 200 then
-        return nil, {
+        return res.status, {
             error_msg = "failed to fetch service info by " .. "service id [" .. id .. "], "
                 .. "response code: " .. res.status,
         }
@@ -174,14 +174,14 @@ function _M.delete(id)
 
     local res, err = core.etcd.get(key)
     if not res then
-        return nil, {
+        return 400, {
             error_msg = "failed to fetch service info by " .. "service id [" .. id .. "]: "
                 .. err,
         }
     end
 
     if res.status ~= 200 then
-        return nil, {
+        return res.status, {
             error_msg = "failed to fetch service info by " .. "service id [" .. id .. "], "
                 .. "response code: " .. res.status,
         }
