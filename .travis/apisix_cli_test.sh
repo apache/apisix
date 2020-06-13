@@ -23,6 +23,8 @@
 
 set -ex
 
+git checkout conf/config.yaml
+
 # check whether the 'reuseport' is in nginx.conf .
 make init
 
@@ -73,6 +75,37 @@ done
 sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"
 
+# enable enable_dev_mode
+sed  -i 's/enable_dev_mode: false/enable_dev_mode: true/g'  conf/config.yaml
+
+make init
+
+count=`grep -c "worker_processes 1;" conf/nginx.conf`
+if [ $count -ne 1 ]; then
+    echo "failed: worker_processes is not 1 when enable enable_dev_mode"
+    exit 1
+fi
+
+count=`grep -c "listen 9080.*reuseport" conf/nginx.conf || true`
+if [ $count -ne 0 ]; then
+    echo "failed: reuseport should be disabled when enable enable_dev_mode"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
+# check whether the 'worker_cpu_affinity' is in nginx.conf .
+
+make init
+
+grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
+    exit 1
+fi
+
+echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
+
 # check admin https enabled
 
 sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
@@ -115,4 +148,4 @@ fi
 
 set -ex
 
-echo "rollback to the default admin config"
+echo "passed: rollback to the default admin config"

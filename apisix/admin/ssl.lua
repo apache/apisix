@@ -14,10 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local schema_plugin = require("apisix.admin.plugins").check_schema
-local tostring = tostring
-
+local core              = require("apisix.core")
+local schema_plugin     = require("apisix.admin.plugins").check_schema
+local tostring          = tostring
+local aes               = require "resty.aes"
+local ngx_encode_base64 = ngx.encode_base64
+local str_find          = string.find
+local type              = type
+local assert            = assert
 
 local _M = {
     version = 0.1,
@@ -94,11 +98,38 @@ local function check_conf(id, conf, need_id)
 end
 
 
+local function aes_encrypt(origin)
+    local local_conf = core.config.local_conf()
+    local iv
+    if local_conf and local_conf.apisix
+       and local_conf.apisix.ssl.key_encrypt_salt then
+        iv = local_conf.apisix.ssl.key_encrypt_salt
+    end
+    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
+            assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
+
+    if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
+        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
+        if encrypted == nil then
+            core.log.error("failed to encrypt key[", origin, "] ")
+            return origin
+        end
+
+        return ngx_encode_base64(encrypted)
+    end
+
+    return origin
+end
+
+
 function _M.put(id, conf)
     local id, err = check_conf(id, conf, true)
     if not id then
         return 400, err
     end
+
+    -- encrypt private key
+    conf.key = aes_encrypt(conf.key)
 
     local key = "/ssl/" .. id
     local res, err = core.etcd.set(key, conf)
@@ -138,6 +169,9 @@ function _M.post(id, conf)
         return 400, err
     end
 
+    -- encrypt private key
+    conf.key = aes_encrypt(conf.key)
+
     local key = "/ssl"
     -- core.log.info("key: ", key)
     local res, err = core.etcd.push("/ssl", conf)
@@ -160,6 +194,59 @@ function _M.delete(id)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete ssl[", key, "]: ", err)
+        return 500, {error_msg = err}
+    end
+
+    return res.status, res.body
+end
+
+
+function _M.patch(id, conf)
+    if not id then
+        return 400, {error_msg = "missing route id"}
+    end
+
+    if not conf then
+        return 400, {error_msg = "missing new configuration"}
+    end
+
+    if type(conf) ~= "table"  then
+        return 400, {error_msg = "invalid configuration"}
+    end
+
+    local key = "/ssl"
+    if id then
+        key = key .. "/" .. id
+    end
+
+    local res_old, err = core.etcd.get(key)
+    if not res_old then
+        core.log.error("failed to get ssl [", key, "] in etcd: ", err)
+        return 500, {error_msg = err}
+    end
+
+    if res_old.status ~= 200 then
+        return res_old.status, res_old.body
+    end
+    core.log.info("key: ", key, " old value: ",
+                  core.json.delay_encode(res_old, true))
+
+
+    local node_value = res_old.body.node.value
+
+    node_value = core.table.merge(node_value, conf);
+
+    core.log.info("new ssl conf: ", core.json.delay_encode(node_value, true))
+
+    local id, err = check_conf(id, node_value, true)
+    if not id then
+        return 400, err
+    end
+
+    -- TODO: this is not safe, we need to use compare-set
+    local res, err = core.etcd.set(key, node_value)
+    if not res then
+        core.log.error("failed to set new ssl[", key, "] to etcd: ", err)
         return 500, {error_msg = err}
     end
 

@@ -379,3 +379,56 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: default rejected_code
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-req": {
+                            "rate": 4,
+                            "burst": 2,
+                            "key": "remote_addr"
+                        }
+                    },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "desc": "上游节点",
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-req": {
+                                    "rejected_code": 503,
+                                    "key": "remote_addr"
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
