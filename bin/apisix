@@ -21,6 +21,8 @@ local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+-- Note: The `excute_cmd` return value will have a line break at the end,
+-- it is recommended to use the `trim` function to handle the return value.
 local function excute_cmd(cmd)
     local t, err = io.popen(cmd)
     if not t then
@@ -676,7 +678,7 @@ local function init()
     local sys_conf = {
         lua_path = pkg_path_org,
         lua_cpath = pkg_cpath_org,
-        os_name = excute_cmd("uname"),
+        os_name = trim(excute_cmd("uname")),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
@@ -712,6 +714,7 @@ local function init()
 
     if(sys_conf["enable_dev_mode"] == true) then
         sys_conf["worker_processes"] = 1
+        sys_conf["enable_reuseport"] = false
     else
         sys_conf["worker_processes"] = "auto"
     end
@@ -780,6 +783,17 @@ local function init_etcd(show_output)
     end
 
     local host_count = #(yaml_conf.etcd.host)
+
+    -- check whether the user has enabled etcd v2 protocol
+    for index, host in ipairs(yaml_conf.etcd.host) do
+        uri = host .. "/v2/keys"
+        local cmd = "curl -i -m ".. timeout * 2 .. " -o /dev/null -s -w %{http_code} " .. uri
+        local res = excute_cmd(cmd)
+        if res == "404" then
+            io.stderr:write(string.format("failed: please make sure that you have enabled the v2 protocol of etcd on %s.\n", host))
+            return
+        end
+    end
 
     local etcd_ok = false
     for index, host in ipairs(yaml_conf.etcd.host) do

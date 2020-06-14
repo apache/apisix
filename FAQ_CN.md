@@ -73,12 +73,12 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 如果使用代理仍然解决不了这个问题，那可以在安装的过程中添加 `--verbose` 选项来查看具体是慢在什么地方。排除前面的
 第一种情况，只可能是第二种，`git` 协议被封。这个时候可以执行 `git config --global url."https://".insteadOf git://` 命令使用 `https` 协议替代。
 
-## 如何通过 APISIX 支持 A/B 测试？
+## 如何通过 APISIX 支持灰度发布？
 
-比如，根据入参`arg_id`分组：
+比如，`foo.com/product/index.html?id=204&page=2`, 根据 uri 中 query string 中的 `id` 作为条件来灰度发布：
 
-1. A组：arg_id <= 1000
-2. B组：arg_id > 1000
+1. A组：id <= 1000
+2. B组：id > 1000
 
 可以这么做：
 

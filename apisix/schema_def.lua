@@ -502,6 +502,12 @@ _M.ssl = {
             type = "integer",
             minimum = 1588262400,  -- 2020/5/1 0:0:0
         },
+        status = {
+            description = "ssl status, 1 to enable, 0 to disable",
+            type = "integer",
+            enum = {1, 0},
+            default = 1
+        }
     },
     oneOf = {
         {required = {"sni", "key", "cert"}},
@@ -509,6 +515,7 @@ _M.ssl = {
     },
     additionalProperties = false,
 }
+
 
 
 _M.proto = {

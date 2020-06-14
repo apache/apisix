@@ -14,9 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local http = require("resty.http")
-local json = require("cjson.safe")
-local dir_names = {}
+local http              = require("resty.http")
+local json              = require("cjson.safe")
+local aes               = require "resty.aes"
+local ngx_encode_base64 = ngx.encode_base64
+local str_find          = string.find
+local dir_names         = {}
 
 
 local _M = {}
@@ -207,6 +210,24 @@ function _M.req_self_with_http(uri, method, body, headers)
     )
 
     return res, err
+end
+
+
+function _M.aes_encrypt(origin)
+    local iv = "1234567890123456"
+    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
+
+    if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
+        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
+        if encrypted == nil then
+            core.log.error("failed to encrypt key[", origin, "] ")
+            return origin
+        end
+
+        return ngx_encode_base64(encrypted)
+    end
+
+    return origin
 end
 
 
