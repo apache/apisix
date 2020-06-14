@@ -49,12 +49,10 @@ end
 
 
 function _M.rewrite(conf)
-    local headers = {}
+    local headers = ngx.req.get_headers()
     local body = {}
 
-    if not conf.body_schema.properties.header_schema then
-        headers = ngx.req.get_headers()
-
+    if conf.body_schema.properties.header_schema then
         local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
@@ -67,21 +65,23 @@ function _M.rewrite(conf)
         body = ngx.req.get_body_data()
 
         if headers["content-type"] then
-            if lower(headers["content-type"]) == "application/json" then
+            if headers["content-type"] == "application/json" then
                 local data, error = json_decode(body)
 
                 if not data then
-                    core.log.error('failed to decode the req body', error)
-                    core.response.exit(400)
-                    return
+                  core.log.error('failed to decode the req body', error)
+                  core.response.exit(400)
+                  return
                 end
 
                 local ok, err = core.schema.check(conf.body_schema, data)
                 if not ok then
-                    core.log.error("req schema validation failed", err)
-                    core.response.exit(400, err)
+                  core.log.error("req schema validation failed", err)
+                  core.response.exit(400, err)
                 end
-            end
+              end
+        else
+          core.response.exit(400, err)
         end
     end
 end
