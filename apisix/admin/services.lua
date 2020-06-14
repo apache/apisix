@@ -95,21 +95,6 @@ function _M.put(id, conf)
     local key = "/services/" .. id
     core.log.info("key: ", key)
 
-    local res, err = core.etcd.get(key)
-    if not res then
-        return 500, {
-            error_msg = "failed to fetch service info by " .. "service id [" .. id .. "]: "
-                .. err,
-        }
-    end
-
-    if res.status ~= 200 then
-        return res.status, {
-            error_msg = "failed to fetch service info by " .. "service id [" .. id .. "], "
-                .. "response code: " .. res.status,
-        }
-    end
-
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put service[", key, "]: ", err)
