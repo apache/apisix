@@ -38,6 +38,7 @@ local schema = {
         grant_type = {
             type = "string",
             default="urn:ietf:params:oauth:grant-type:uma-ticket",
+            enum = {"urn:ietf:params:oauth:grant-type:uma-ticket"},
             minLength = 1, maxLength = 100
         },
         audience = {type = "string", minLength = 1, maxLength = 100},
@@ -52,7 +53,7 @@ local schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
 
     },
-    required = {"token_endpoint", "grant_type"}
+    required = {"token_endpoint"}
 }
 
 
