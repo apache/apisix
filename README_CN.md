@@ -237,7 +237,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 - [思必驰：为什么我们重新写了一个 k8s ingress controller?](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
 
 ## APISIX 的用户有哪些？
-有很多公司和组织把 APISIX 用户学习、研究、生产环境和商业产品中，包括：
+有很多公司和组织把 APISIX 用于学习、研究、生产环境和商业产品中，包括：
 
 <img src="https://raw.githubusercontent.com/api7/website-of-API7/master/user-wall.jpg" width="900" height="500">
 
