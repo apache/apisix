@@ -18,8 +18,6 @@ local core          = require("apisix.core")
 local plugin_name   = "request-validation"
 local json_decode   = require("cjson").decode
 local ngx           = ngx
-local lower         = string.lower
-
 
 local schema = {
     type = "object",
