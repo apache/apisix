@@ -48,7 +48,6 @@ end
 
 function _M.rewrite(conf)
     local headers = ngx.req.get_headers()
-    local body = {}
 
     if conf.body_schema.properties.header_schema then
         local ok, err = core.schema.check(conf.header_schema, headers)
@@ -60,7 +59,7 @@ function _M.rewrite(conf)
 
     if not conf.body_schema.properties.body_schema then
         ngx.req.read_body()
-        body = ngx.req.get_body_data()
+        local body = ngx.req.get_body_data()
 
         if headers["content-type"] then
             if headers["content-type"] == "application/json" then
@@ -79,7 +78,7 @@ function _M.rewrite(conf)
                 end
               end
         else
-          core.response.exit(400, err)
+          core.response.exit(400)
         end
     end
 end
