@@ -31,7 +31,7 @@ __DATA__
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
                                    token_endpoint = "https://efactory-security-portal.salzburgresearch.at/",
-                                   grant_type = "test grant type"
+                                   grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
                                    })
             if not ok then
                 ngx.say(err)
