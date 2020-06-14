@@ -62,7 +62,7 @@ done
 --- request
 GET /t
 --- response_body
-value should match only one schema, but matches none
+object matches none of the requireds: ["body_schema"] or ["header_schema"]
 done
 --- no_error_log
 [error]
