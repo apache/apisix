@@ -18,7 +18,7 @@ local get_request      = require("resty.core.base").get_request
 local radixtree_new    = require("resty.radixtree").new
 local core             = require("apisix.core")
 local ngx_ssl          = require("ngx.ssl")
-local ipairs           = ipairs
+local config_util      = require("apisix.core.config_util")
 local type             = type
 local error            = error
 local ssl_certificates
@@ -38,20 +38,18 @@ local function create_router(ssl_items)
     local route_items = core.table.new(#ssl_items, 0)
     local idx = 0
 
-    for _, ssl in ipairs(ssl_items) do
-        if type(ssl) == "table" then
-            local sni = ssl.value.sni:reverse()
-            idx = idx + 1
-            route_items[idx] = {
-                paths = sni,
-                handler = function (api_ctx)
-                    if not api_ctx then
-                        return
-                    end
-                    api_ctx.matched_ssl = ssl
+    for _, ssl in config_util.iterate_values(ssl_items) do
+        local sni = ssl.value.sni:reverse()
+        idx = idx + 1
+        route_items[idx] = {
+            paths = sni,
+            handler = function (api_ctx)
+                if not api_ctx then
+                    return
                 end
-            }
-        end
+                api_ctx.matched_ssl = ssl
+            end
+        }
     end
 
     core.log.info("route items: ", core.json.delay_encode(route_items, true))
