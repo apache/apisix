@@ -743,7 +743,7 @@ passed
                 ]]=],
                 {
                     Cookie = "request-cookies",
-                    Header = "request-header"
+                    OuterHeader = "request-header"
                 })
 
             ngx.status = code
@@ -755,21 +755,21 @@ passed
         content_by_lua_block {
             ngx.status = 200
             ngx.header["X-Cookie"] = ngx.req.get_headers()["Cookie"] .. "-b"
-            ngx.header["X-HeaderB"] = ngx.req.get_headers()["Header"] .. "-b"
+            ngx.header["X-HeaderB"] = ngx.req.get_headers()["OuterHeader"] .. "-b"
         }
     }
     location = /c {
         content_by_lua_block {
             ngx.status = 201
             ngx.header["X-Cookie"] = ngx.req.get_headers()["Cookie"] .. "-c"
-            ngx.header["X-HeaderC"] = ngx.req.get_headers()["Header"] .. "-c"
+            ngx.header["X-HeaderC"] = ngx.req.get_headers()["OuterHeader"] .. "-c"
         }
     }
     location = /d {
         content_by_lua_block {
             ngx.status = 202
             ngx.header["X-Cookie"] = ngx.req.get_headers()["Cookie"] .. "-d"
-            ngx.header["X-HeaderD"] = ngx.req.get_headers()["Header"] .. "-d"
+            ngx.header["X-HeaderD"] = ngx.req.get_headers()["OuterHeader"] .. "-d"
         }
     }
 --- request
