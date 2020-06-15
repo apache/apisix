@@ -81,7 +81,11 @@ done
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                "body":"hello upstream"
+                                "body":"hello upstream",
+                                 "headers": {
+                                    "Location":"https://www.iresty.com",
+                                    "Authorization": "Basic Zm9vOmJhcg=="
+                                 }
                             }
                         },
                         "upstream": {
@@ -98,8 +102,12 @@ done
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                "body":"hello upstream"
-                                }
+                                "body":"hello upstream",
+                                "headers": {
+                                    "Location":"https://www.iresty.com",
+                                    "Authorization": "Basic Zm9vOmJhcg=="
+                                 }
+                               }
                             },
                             "upstream": {
                                 "nodes": {
@@ -133,6 +141,8 @@ passed
 === TEST 4: access
 --- request
 GET /hello
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
 --- response_body chomp
 before the body modification hello upstream
 --- no_error_log
@@ -202,8 +212,10 @@ passed
 === TEST 6: access without upstream body change
 --- request
 GET /hello
---- response_body
-before the body modification hello world
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_body chomp
+before the body modification authorized body
 --- no_error_log
 [error]
 --- wait: 0.2

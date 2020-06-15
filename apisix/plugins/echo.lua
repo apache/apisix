@@ -35,7 +35,25 @@ local schema = {
             description = "body after the modification of filter phase.",
             type = "string"
         },
-
+        headers = {
+            description = "new headers for repsonse",
+            type = "object",
+            minProperties = 1,
+        }
+        --unathorized_body = {
+        --    description = "body to return if the auth header is not found.",
+        --    type = "string"
+        --},
+        --unathorized_body = {
+        --    description = "body to return if the auth header is not found.",
+        --    type = "string"
+        --},
+        --authorized_body = {
+        --    description = "body to return if the auth header is verified.",
+        --    type = "string"
+        --},
+        --username = { type = "string" },
+        --password = { type = "string" },
     },
     anyOf = {
         {required = {"before_body"}},
@@ -56,7 +74,6 @@ local _M = {
 
 
 function _M.check_schema(conf)
-
     if conf.headers then
         conf.headers_arr = {}
 
@@ -77,6 +94,16 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+
+function _M.header_filter(conf, ctx)
+    if conf.headers_arr then
+        local field_cnt = #conf.headers_arr
+        for i = 1, field_cnt, 2 do
+            ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
+        end
+    end
+end
+
 function _M.body_filter(conf, ctx)
     if conf.body then
         ngx.arg[1] = conf.body
@@ -92,21 +119,81 @@ function _M.body_filter(conf, ctx)
     ngx.arg[2] = true
 end
 
-function _M.header_filter(conf, ctx)
-    if conf.headers_arr then
-        local field_cnt = #conf.headers_arr
-        for i = 1, field_cnt, 2 do
-            ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
-        end
+
+--
+--local function extract_auth_header(authorization)
+--
+--    local function do_extract(auth)
+--        local obj = { username = "", password = "" }
+--
+--        local m, err = ngx.re.match(auth, "Basic\\s(.+)")
+--        if err then
+--            -- error authorization
+--            return nil, err
+--        end
+--
+--        local decoded = ngx.decode_base64(m[1])
+--
+--        local res
+--        res, err = ngx_re.split(decoded, ":")
+--        if err then
+--            return nil, "split authorization err:" .. err
+--        end
+--
+--        obj.username = ngx.re.gsub(res[1], "\\s+", "")
+--        obj.password = ngx.re.gsub(res[2], "\\s+", "")
+--        core.log.info("plugin access phase, authorization: ",
+--                obj.username, ": ", obj.password)
+--
+--        return obj, nil
+--    end
+--
+--    local matcher, err = lrucache(authorization, nil, do_extract, authorization)
+--
+--    if matcher then
+--        return matcher.username, matcher.password, err
+--    else
+--        return "", "", err
+--    end
+--
+--end
+--
+function _M.access(conf, ctx)
+    local auth_header = core.request.header(ctx, "Authorization")
+    if not auth_header then
+        return 401, "unauthorized body"
     end
+
+    --local username, password, err = extract_auth_header(auth_header)
+    --if err then
+    --    return 401, { message = err }
+    --end
+    --
+    ---- 2. get user info from consumer plugin
+    --local consumer_conf = consumer.plugin(plugin_name)
+    --if not consumer_conf then
+    --    return 401, { message = "Missing related consumer" }
+    --end
+    --
+    --local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
+    --        consumer_conf.conf_version,
+    --        create_consume_cache, consumer_conf)
+    --
+    ---- 3. check user exists
+    --local cur_consumer = consumers[username]
+    --if not cur_consumer then
+    --    return 401, { message = "Invalid user key in authorization" }
+    --end
+    --core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
+    --
+    --
+    ---- 4. check the password is correct
+    --if cur_consumer.auth_conf.password ~= password then
+    --    return 401, { message = "Password is error" }
+    --end
+    return 200, "authorized body"
 end
 
-function _M.access(conf, ctx)
-    local auth_header = ngx.headers["Authorization"]
-    if not auth_header then
-        return 401, { message = conf.unathorized_body }
-    end
-    return 200, { message = conf.authorized_body }
-end
+
 
 return _M
