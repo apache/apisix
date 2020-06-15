@@ -30,8 +30,12 @@ local schema = {
     properties = {
         ret_code = {type = "integer", minimum = 200, default = 302},
         uri = {type = "string", minLength = 2},
+        http_to_https = {type = "boolean"}, -- default is false
     },
-    required = {"uri"},
+    oneOf = {
+        {required = {"uri"}},
+        {required = {"http_to_https"}}
+    }
 }
 
 
@@ -80,11 +84,13 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    local uri_segs, err = parse_uri(conf.uri)
-    if not uri_segs then
-        return false, err
+    if conf.uri then
+        local uri_segs, err = parse_uri(conf.uri)
+        if not uri_segs then
+            return false, err
+        end
+        core.log.info(core.json.delay_encode(uri_segs))
     end
-    core.log.info(core.json.delay_encode(uri_segs))
 
     return true
 end
@@ -120,15 +126,22 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    local new_uri, err = concat_new_uri(conf.uri, ctx)
-    if not new_uri then
-        core.log.error("failed to generate new uri by: ", conf.uri, " error: ",
-                       err)
-        core.response.exit(500)
+    if conf.http_to_https and ctx.var.scheme == "http" then
+        conf.uri = "https://$host$request_uri"
+        conf.ret_code = 301
     end
 
-    core.response.set_header("Location", new_uri)
-    core.response.exit(conf.ret_code)
+    if conf.uri and conf.ret_code then
+        local new_uri, err = concat_new_uri(conf.uri, ctx)
+        if not new_uri then
+            core.log.error("failed to generate new uri by: ", conf.uri, " error: ",
+                        err)
+            core.response.exit(500)
+        end
+
+        core.response.set_header("Location", new_uri)
+        core.response.exit(conf.ret_code)
+    end
 end
 
 

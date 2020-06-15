@@ -18,7 +18,7 @@ local core     = require("apisix.core")
 
 local _M = {}
 
-local function get_full_log(ngx)
+local function get_full_log(ngx, conf)
     local ctx = ngx.ctx.api_ctx
     local var = ctx.var
     local service_id
@@ -34,7 +34,7 @@ local function get_full_log(ngx)
         service_id = var.host
     end
 
-    return  {
+    local log =  {
         request = {
             url = url,
             uri = var.request_uri,
@@ -56,6 +56,20 @@ local function get_full_log(ngx)
         start_time = ngx.req.start_time() * 1000,
         latency = (ngx.now() - ngx.req.start_time()) * 1000
     }
+
+    if conf.include_req_body then
+        local body = ngx.req.get_body_data()
+        if body then
+            log.request.body = body
+        else
+            local body_file = ngx.req.get_body_file()
+            if body_file then
+                log.request.body_file = body_file
+            end
+        end
+    end
+
+    return log
 end
 
 _M.get_full_log = get_full_log

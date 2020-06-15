@@ -79,9 +79,13 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
+ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
 	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
+else
+	@echo "APISIX is running..."
+endif
 
 
 ### stop:             Stop the apisix server
@@ -110,7 +114,7 @@ reload: default
 
 ### install:          Install the apisix
 .PHONY: install
-install:
+install: default
 	$(INSTALL) -d /usr/local/apisix/
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
@@ -150,6 +154,9 @@ install:
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
 	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
+	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/stream/plugins
 	$(INSTALL) apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/stream/plugins/

@@ -28,7 +28,6 @@ function _M.hello1()
     ngx.say("hello1 world")
 end
 
-
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
@@ -90,7 +89,6 @@ function _M.opentracing()
     ngx.say("opentracing")
 end
 
-
 function _M.with_header()
     ngx.header['Content-Type'] = 'application/xml'
     ngx.header['X-Server-id'] = 100
@@ -98,6 +96,28 @@ function _M.with_header()
     ngx.say("hello")
     ngx.say("world")
     ngx.say("!")
+end
+
+function _M.mock_skywalking_v2_service_register()
+    ngx.say('[{"key":"APISIX","value":1}]')
+end
+
+function _M.mock_skywalking_v2_instance_register()
+    ngx.req.read_body()
+    local data = ngx.req.get_body_data()
+    data = json_decode(data)
+    local key = data['instances'][1]['instanceUUID']
+    local ret = {}
+    ret[1] = {key = key, value = 1}
+    ngx.say(json_encode(ret))
+end
+
+function _M.mock_skywalking_v2_instance_heartbeat()
+    ngx.say('skywalking heartbeat ok')
+end
+
+function _M.mock_skywalking_v2_segments()
+    ngx.say('skywalking segments ok')
 end
 
 function _M.mock_zipkin()

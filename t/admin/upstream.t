@@ -652,7 +652,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "nodes": {
@@ -694,9 +694,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/desc',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
-                '"new 21 upstream"',
+                [[{
+                    "desc": "new 21 upstream"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -730,16 +732,19 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/nodes',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
-                    "127.0.0.1:8081": 3,
-                    "127.0.0.1:8082": 4
+                    "nodes": {
+                        "127.0.0.1:8081": 3,
+                        "127.0.0.1:8082": 4
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "nodes": {
+                                "127.0.0.1:8080": 1,
                                 "127.0.0.1:8081": 3,
                                 "127.0.0.1:8082": 4
                             },
@@ -768,18 +773,20 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/nodes',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
-                    "127.0.0.1:8081": 0,
-                    "127.0.0.1:8082": 4
-                }]],
+                    "nodes": {
+                        "127.0.0.1:8081": 3,
+                        "127.0.0.1:8082": 0
+                    }
+                }]],                
                 [[{
                     "node": {
                         "value": {
                             "nodes": {
-                                "127.0.0.1:8081": 0,
-                                "127.0.0.1:8082": 4
+                                "127.0.0.1:8081": 3,
+                                "127.0.0.1:8082": 0
                             },
                             "type": "roundrobin",
                             "desc": "new 21 upstream"
@@ -1140,7 +1147,7 @@ GET /t
 
 
 
-=== TEST 35: type chash, hash_on: consumer, don't need upstream key
+=== TEST 35: type chash, hash_on: consumer, do not need upstream key
 --- config
     location /t {
         content_by_lua_block {
@@ -1228,5 +1235,47 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches non of the enum values"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: set upstream(id: 1 + name: test name)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "name": "test upstream name"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "name": "test upstream name"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

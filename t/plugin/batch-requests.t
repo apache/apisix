@@ -684,3 +684,84 @@ GET /aggregate
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: copy cookie to every request
+--- config
+    client_body_in_file_only on;
+    location = /aggregate {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                ngx.HTTP_POST,
+                [=[{
+                    "timeout": 100,
+                    "pipeline":[
+                    {
+                        "path": "/b",
+                        "headers": {
+                            "Header1": "hello",
+                            "Header2": "world"
+                        }
+                    },{
+                        "path": "/c",
+                        "method": "PUT"
+                    },{
+                        "path": "/d"
+                    }]
+                }]=],
+                [=[[
+                    {
+                        "status": 200,
+                        "headers": {
+                            "X-Cookie": "request-cookies-b"
+                        }
+                    },
+                    {
+                        "status": 201,
+                        "headers": {
+                            "X-Cookie": "request-cookies-c"
+                        }
+                    },
+                    {
+                        "status": 202,
+                        "headers": {
+                            "X-Cookie": "request-cookies-d"
+                        }
+                    }
+                ]]=],
+                {
+                    Cookie = "request-cookies"
+                })
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+
+    location = /b {
+        content_by_lua_block {
+            ngx.status = 200
+            ngx.header["X-Cookie"] = ngx.req.get_headers()["Cookie"] .. "-b"
+        }
+    }
+    location = /c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.header["X-Cookie"] = ngx.req.get_headers()["Cookie"] .. "-c"
+        }
+    }
+    location = /d {
+        content_by_lua_block {
+            ngx.status = 202
+            ngx.header["X-Cookie"] = ngx.req.get_headers()["Cookie"] .. "-d"
+        }
+    }
+--- request
+GET /aggregate
+--- response_body
+passed
+--- no_error_log
+[error]

@@ -85,5 +85,24 @@ local function deepcopy(orig)
 end
 _M.deepcopy = deepcopy
 
+local ngx_null = ngx.null
+local function merge(origin, extend)
+    for k,v in pairs(extend) do
+        if type(v) == "table" then
+            if type(origin[k] or false) == "table" then
+                merge(origin[k] or {}, extend[k] or {})
+            else
+                origin[k] = v
+            end
+        elseif v == ngx_null then
+            origin[k] = nil
+        else
+            origin[k] = v
+        end
+    end
+
+    return origin
+end
+_M.merge = merge
 
 return _M

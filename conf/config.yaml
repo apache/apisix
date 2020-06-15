@@ -54,6 +54,8 @@ apisix:
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
   # port_admin: 9180              # use a separate port
+  # https_admin: true             # enable HTTPS when use a separate port for Admin API.
+                                  # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
@@ -91,6 +93,9 @@ apisix:
     listen_port: 9443
     ssl_protocols: "TLSv1 TLSv1.1 TLSv1.2 TLSv1.3"
     ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA"
+    key_encrypt_salt: "edd1c9f0985e76a2"    #  If not set, will save origin ssl key into etcd.
+                                            #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
+                                            #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !! 
 #  discovery: eureka               # service discovery center
 nginx_config:                     # config for render the template to genarate nginx.conf
   error_log: "logs/error.log"
@@ -156,8 +161,12 @@ plugins:                          # plugin list
   - proxy-mirror
   - kafka-logger
   - cors
+  - consumer-restriction
   - syslog
   - batch-requests
   - http-logger
+  - skywalking
+  - echo
+
 stream_plugins:
   - mqtt-proxy
