@@ -14,7 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local healthcheck = require("resty.healthcheck")
+local healthcheck
+local require     = require
 local roundrobin  = require("resty.roundrobin")
 local discovery   = require("apisix.discovery.init").discovery
 local resty_chash = require("resty.chash")
@@ -26,6 +27,7 @@ local str_gsub    = string.gsub
 local pairs       = pairs
 local ipairs      = ipairs
 local tostring    = tostring
+
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
@@ -82,6 +84,9 @@ end
 
 
 local function create_checker(upstream, healthcheck_parent)
+    if healthcheck == nil then
+        healthcheck = require("resty.healthcheck")
+    end
     local checker = healthcheck.new({
         name = "upstream#" .. healthcheck_parent.key,
         shm_name = "upstream-healthcheck",
@@ -378,5 +383,12 @@ function _M.init_worker()
     end
 end
 
+function _M.upstreams()
+    if not upstreams_etcd then
+        return nil, nil
+    end
+
+    return upstreams_etcd.values, upstreams_etcd.conf_version
+end
 
 return _M

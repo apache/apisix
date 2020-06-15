@@ -98,6 +98,12 @@ plugins:                          # plugin list
 
 Note : the order of the plugins is not related to the order of execution.
 
+If your plugin has a new code directory of its own, you will need to modify the `Makefile` to create directory, such as:
+```
+$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
+$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
+```
+
 ## schema and check
 
 Write [Json Schema](https://json-schema.org) descriptions and check functions. similarly, take the key-auth plugin as an example to see its

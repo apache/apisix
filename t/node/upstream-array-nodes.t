@@ -177,6 +177,7 @@ passed
 [error]
 
 
+
 === TEST 7: set route(id: 1)
 --- config
     location /t {

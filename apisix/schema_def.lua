@@ -327,6 +327,7 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         service_name = {type = "string", maxLength = 50},
         id = id_schema
@@ -369,6 +370,7 @@ _M.route = {
             },
             uniqueItems = true,
         },
+        name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         priority = {type = "integer", default = 0},
 
@@ -446,6 +448,7 @@ _M.service = {
         plugins = plugins_schema,
         upstream = upstream_schema,
         upstream_id = id_schema,
+        name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
     },
     anyOf = {
@@ -499,6 +502,12 @@ _M.ssl = {
             type = "integer",
             minimum = 1588262400,  -- 2020/5/1 0:0:0
         },
+        status = {
+            description = "ssl status, 1 to enable, 0 to disable",
+            type = "integer",
+            enum = {1, 0},
+            default = 1
+        }
     },
     oneOf = {
         {required = {"sni", "key", "cert"}},
@@ -506,6 +515,7 @@ _M.ssl = {
     },
     additionalProperties = false,
 }
+
 
 
 _M.proto = {

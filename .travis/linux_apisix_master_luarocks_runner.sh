@@ -20,6 +20,7 @@ set -ex
 
 export_or_prefix() {
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
 }
 
 do_install() {
@@ -62,7 +63,7 @@ script() {
     sudo PATH=$PATH ./utils/install-apisix.sh remove > build.log 2>&1 || (cat build.log && exit 1)
 
     # install APISIX by luarocks
-    sudo luarocks install rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
+    sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
 
     # show install files
     luarocks show apisix

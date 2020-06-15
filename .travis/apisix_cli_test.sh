@@ -23,6 +23,8 @@
 
 set -ex
 
+git checkout conf/config.yaml
+
 # check whether the 'reuseport' is in nginx.conf .
 make init
 
@@ -72,3 +74,78 @@ done
 
 sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"
+
+# enable enable_dev_mode
+sed  -i 's/enable_dev_mode: false/enable_dev_mode: true/g'  conf/config.yaml
+
+make init
+
+count=`grep -c "worker_processes 1;" conf/nginx.conf`
+if [ $count -ne 1 ]; then
+    echo "failed: worker_processes is not 1 when enable enable_dev_mode"
+    exit 1
+fi
+
+count=`grep -c "listen 9080.*reuseport" conf/nginx.conf || true`
+if [ $count -ne 0 ]; then
+    echo "failed: reuseport should be disabled when enable enable_dev_mode"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
+# check whether the 'worker_cpu_affinity' is in nginx.conf .
+
+make init
+
+grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
+    exit 1
+fi
+
+echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
+
+# check admin https enabled
+
+sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
+sed  -i 's/\# https_admin: true/https_admin: true/'  conf/config.yaml
+
+make init
+
+grep "listen 9180 ssl" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to enabled https for admin"
+    exit 1
+fi
+
+make run
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to enabled https for admin"
+    exit 1
+fi
+
+echo "passed: admin https enabled"
+
+# rollback to the default
+
+make stop
+
+sed  -i 's/port_admin: 9180/\# port_admin: 9180/'  conf/config.yaml
+sed  -i 's/https_admin: true/\# https_admin: true/'  conf/config.yaml
+
+make init
+
+set +ex
+
+grep "listen 9180 ssl" conf/nginx.conf > /dev/null
+if [ ! $? -eq 1 ]; then
+    echo "failed: failed to rollback to the default admin config"
+    exit 1
+fi
+
+set -ex
+
+echo "passed: rollback to the default admin config"

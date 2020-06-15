@@ -135,7 +135,7 @@ function _M.put(id, conf, sub_path, args)
     local key = "/routes/" .. id
     local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
-        core.log.error("failed to put route[", key, "]: ", err)
+        core.log.error("failed to put route[", key, "] to etcd: ", err)
         return 500, {error_msg = err}
     end
 
@@ -151,7 +151,7 @@ function _M.get(id)
 
     local res, err = core.etcd.get(key)
     if not res then
-        core.log.error("failed to get route[", key, "]: ", err)
+        core.log.error("failed to get route[", key, "] from etcd: ", err)
         return 500, {error_msg = err}
     end
 
@@ -169,7 +169,7 @@ function _M.post(id, conf, sub_path, args)
     -- core.log.info("key: ", key)
     local res, err = core.etcd.push("/routes", conf, args.ttl)
     if not res then
-        core.log.error("failed to post route[", key, "]: ", err)
+        core.log.error("failed to post route[", key, "] to etcd: ", err)
         return 500, {error_msg = err}
     end
 
@@ -186,7 +186,7 @@ function _M.delete(id)
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then
-        core.log.error("failed to delete route[", key, "]: ", err)
+        core.log.error("failed to delete route[", key, "] in etcd: ", err)
         return 500, {error_msg = err}
     end
 
@@ -194,17 +194,17 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf, sub_path, args)
+function _M.patch(id, conf, args)
     if not id then
         return 400, {error_msg = "missing route id"}
     end
 
-    if not sub_path then
-        return 400, {error_msg = "missing sub-path"}
-    end
-
     if not conf then
         return 400, {error_msg = "missing new configuration"}
+    end
+
+    if type(conf) ~= "table"  then
+        return 400, {error_msg = "invalid configuration"}
     end
 
     local key = "/routes"
@@ -214,7 +214,7 @@ function _M.patch(id, conf, sub_path, args)
 
     local res_old, err = core.etcd.get(key)
     if not res_old then
-        core.log.error("failed to get route [", key, "]: ", err)
+        core.log.error("failed to get route [", key, "] in etcd: ", err)
         return 500, {error_msg = err}
     end
 
@@ -224,33 +224,11 @@ function _M.patch(id, conf, sub_path, args)
     core.log.info("key: ", key, " old value: ",
                   core.json.delay_encode(res_old, true))
 
+
     local node_value = res_old.body.node.value
-    local sub_value = node_value
-    local sub_paths = core.utils.split_uri(sub_path)
-    for i = 1, #sub_paths - 1 do
-        local sub_name = sub_paths[i]
-        if sub_value[sub_name] == nil then
-            sub_value[sub_name] = {}
-        end
 
-        sub_value = sub_value[sub_name]
+    node_value = core.table.merge(node_value, conf);
 
-        if type(sub_value) ~= "table" then
-            return 400, "invalid sub-path: /"
-                        .. core.table.concat(sub_paths, 1, i)
-        end
-    end
-
-    if type(sub_value) ~= "table" then
-        return 400, "invalid sub-path: /" .. sub_path
-    end
-
-    local sub_name = sub_paths[#sub_paths]
-    if sub_name and sub_name ~= "" then
-        sub_value[sub_name] = conf
-    else
-        node_value = conf
-    end
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
     local id, err = check_conf(id, node_value, true)
@@ -261,7 +239,7 @@ function _M.patch(id, conf, sub_path, args)
     -- TODO: this is not safe, we need to use compare-set
     local res, err = core.etcd.set(key, node_value, args.ttl)
     if not res then
-        core.log.error("failed to set new route[", key, "]: ", err)
+        core.log.error("failed to set new route[", key, "] to etcd: ", err)
         return 500, {error_msg = err}
     end
 

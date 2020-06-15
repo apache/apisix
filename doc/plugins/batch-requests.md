@@ -67,7 +67,7 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 
 #### HttpResponse
 | ParameterName | Type | Description |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- |
 | status | Integer | http status code |
 | reason | String | http reason phrase |
 | body | String | http response body |

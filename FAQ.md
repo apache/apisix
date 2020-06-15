@@ -71,14 +71,14 @@ Run the `luarocks config rocks_servers` command(this command is supported after 
 
 If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is. Excluding the first case, only the second that the `git` protocol is blocked. Then we can run `git config --global url."https://".insteadOf git://` to using the 'HTTPS' protocol instead of `git`.
 
-## How to support A/B testing via APISIX?
+## How to support gray release via APISIX?
 
-An example, if you want to group by the request param `arg_id`：
+An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in uri as a condition：
 
-1. Group A：arg_id <= 1000
-2. Group B：arg_id > 1000
+1. Group A：id <= 1000
+2. Group B：id > 1000
 
-here is the way：
+here is the way:
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -107,11 +107,95 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
+
 Here is the operator list of current `lua-resty-radixtree`：
 https://github.com/iresty/lua-resty-radixtree#operator-list
 
+## How to redirect http to https via APISIX?
+
+An example, redirect `http://foo.com` to `https://foo.com`
+
+There are several different ways to do this.
+1. Directly use the `http_to_https` in `redirect` plugin：
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "host": "foo.com",
+    "plugins": {
+        "redirect": {
+            "http_to_https": true
+        }
+    }
+}'
+```
+
+2. Use with advanced routing rule `vars` with `redirect` plugin:
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "host": "foo.com",
+    "vars": [
+        [
+            "scheme",
+            "==",
+            "http"
+        ]
+    ],
+    "plugins": {
+        "redirect": {
+            "uri": "https://$host$request_uri",
+            "ret_code": 301
+        }
+    }
+}'
+```
+
+3. `serverless` plugin：
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {
+        "serverless-pre-function": {
+            "phase": "rewrite",
+            "functions": ["return function() if ngx.var.scheme == \"http\" and ngx.var.host == \"foo.com\" then ngx.header[\"Location\"] = \"https://foo.com\" .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
+        }
+    }
+}'
+```
+
+Then test it to see if it works：
+```shell
+curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
+```
+
+The response body should be:
+```
+HTTP/1.1 301 Moved Permanently
+Date: Mon, 18 May 2020 02:56:04 GMT
+Content-Type: text/html
+Content-Length: 166
+Connection: keep-alive
+Location: https://foo.com/hello
+Server: APISIX web server
+
+<html>
+<head><title>301 Moved Permanently</title></head>
+<body>
+<center><h1>301 Moved Permanently</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
+
+
 ## How to fix OpenResty Installation Failure on MacOS 10.15
 When you install the OpenResty on MacOs 10.15, you may face this error
+
 ```shell
 > brew install openresty
 Updating Homebrew...
