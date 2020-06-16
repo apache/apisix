@@ -18,7 +18,8 @@ local get_request      = require("resty.core.base").get_request
 local radixtree_new    = require("resty.radixtree").new
 local core             = require("apisix.core")
 local ngx_ssl          = require("ngx.ssl")
-local ipairs           = ipairs
+local config_util      = require("apisix.core.config_util")
+local ipairs	       = ipairs
 local type             = type
 local error            = error
 local str_find         = string.find
@@ -52,9 +53,8 @@ local function create_router(ssl_items)
     local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
-    for _, ssl in ipairs(ssl_items) do
-        if type(ssl) == "table" and
-            ssl.value ~= nil and
+    for _, ssl in config_util.iterate_values(ssl_items) do
+        if ssl.value ~= nil and
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
 
             local j = 0
