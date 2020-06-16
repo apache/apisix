@@ -66,6 +66,7 @@ loaded plugin and sort by priority: 2520 name: basic-auth
 loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth
 loaded plugin and sort by priority: 2400 name: consumer-restriction
+loaded plugin and sort by priority: 2000 name: authz-keycloak
 loaded plugin and sort by priority: 1010 name: proxy-mirror
 loaded plugin and sort by priority: 1009 name: proxy-cache
 loaded plugin and sort by priority: 1008 name: proxy-rewrite
