@@ -19,6 +19,7 @@ local radixtree_new    = require("resty.radixtree").new
 local core             = require("apisix.core")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
+local ipairs	       = ipairs
 local type             = type
 local error            = error
 local str_find         = string.find
