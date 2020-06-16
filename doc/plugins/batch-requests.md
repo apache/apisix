@@ -32,6 +32,10 @@
 
 `batch-requests` can accept mutiple request and send them from `apisix` via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining),and return a aggregated response to client,this can significantly improve performance when the client needs to access multiple APIs.
 
+> **Tips**
+>
+> The HTTP headers for the outer batch request, except for the Content- headers such as Content-Type, apply to every request in the batch. If you specify a given HTTP header in both the outer request and an individual call, then the individual call header's value overrides the outer batch request header's value. The headers for an individual call apply only to that call.
+
 ## Attributes
 
 None
@@ -41,7 +45,7 @@ None
 Default enbaled
 
 ## Batch Api Request/Response
-The plugin will create a api in `apisix` to handle your aggregation request.
+The plugin will create a api in `apisix` to handle your batch request.
 
 ### Batch Api Request:
 
