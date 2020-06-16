@@ -167,6 +167,7 @@ plugins:                          # plugin list
   - http-logger
   - skywalking
   - echo
+  - authz-keycloak
 
 stream_plugins:
   - mqtt-proxy
