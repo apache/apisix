@@ -84,7 +84,7 @@ done
                                 "body":"hello upstream",
                                  "headers": {
                                     "Location":"https://www.iresty.com",
-                                    "Authorization": "Basic Zm9vOmJhcg=="
+                                    "Authorization": "userpass"
                                  }
                             }
                         },
@@ -105,7 +105,7 @@ done
                                 "body":"hello upstream",
                                 "headers": {
                                     "Location":"https://www.iresty.com",
-                                    "Authorization": "Basic Zm9vOmJhcg=="
+                                    "Authorization": "userpass"
                                  }
                                }
                             },
@@ -142,7 +142,7 @@ passed
 --- request
 GET /hello
 --- more_headers
-Authorization: Basic Zm9vOmJhcg==
+Authorization: userpass
 --- response_body chomp
 before the body modification hello upstream
 --- no_error_log
@@ -213,9 +213,31 @@ passed
 --- request
 GET /hello
 --- more_headers
-Authorization: Basic Zm9vOmJhcg==
+Authorization: userpass
 --- response_body chomp
 before the body modification authorized body
 --- no_error_log
 [error]
+--- wait: 0.2
+
+
+
+=== TEST 7: access with wrong auth header value throws 401
+--- request
+GET /hello
+--- more_headers
+Authorization: password
+--- error_code: 401
+--- response_body chomp
+before the body modification unauthorized body
+--- wait: 0.2
+
+
+
+=== TEST 8: access without auth header value throws 401
+--- request
+GET /hello
+--- error_code: 401
+--- response_body chomp
+before the body modification unauthorized body
 --- wait: 0.2
