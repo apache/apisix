@@ -28,7 +28,7 @@
 
 ## Name
 
-Limiting request concurrency (or concurrent connections) plugin for Apisix.
+Limiting request concurrency plugin.
 
 ## Attributes
 
@@ -38,7 +38,9 @@ Limiting request concurrency (or concurrent connections) plugin for Apisix.
 |burst         |required|is the number of excessive concurrent requests (or connections) allowed to be delayed.|
 |default_conn_delay |required|is the default processing latency of a typical connection (or request).|
 |key           |required|is the user specified key to limit the concurrency level. <br>For example, one can use the host name (or server zone) as the key so that we limit concurrency per host name. Otherwise, we can also use the client address as the key so that we can avoid a single client from flooding our service with too many parallel connections or requests. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
-|rejected_code |required| The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
+|rejected_code |required| The HTTP status code returned when the request exceeds `conn` + `burst` will be rejected. The default is 503.|
+
+**Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
 ## How To Enable
 
