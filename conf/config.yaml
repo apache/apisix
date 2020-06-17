@@ -168,6 +168,7 @@ plugins:                          # plugin list
   - skywalking
   - echo
   - authz-keycloak
+  - uri-blocklist
 
 stream_plugins:
   - mqtt-proxy
