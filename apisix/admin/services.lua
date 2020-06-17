@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local upstreams = require("apisix.admin.upstreams")
+local ngx_re = require("ngx.re")
 local tostring = tostring
 local ipairs = ipairs
 local type = type
@@ -47,6 +48,16 @@ local function check_conf(id, conf, need_id)
     local ok, err = core.schema.check(core.schema.service, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
+    end
+
+    core.log.info("id  : ", id)
+
+    local id_match, _ = ngx.re.match(id, "^[0-9a-zA-Z]{1,}$")
+
+    core.log.info("id match: ", core.json.delay_encode(id_match))
+
+    if not id_match then
+        return nil, {error_msg = "wrong type of service id"}
     end
 
     local upstream_conf = conf.upstream
