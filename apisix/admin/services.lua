@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx_re = ngx.re
 local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
@@ -49,12 +50,7 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
-    core.log.info("id  : ", id)
-
-    local id_match, _ = ngx.re.match(id, "^[0-9a-zA-Z]{1,}$")
-
-    core.log.info("id match: ", core.json.delay_encode(id_match))
-
+    local id_match, _ = ngx_re.match(id, "^[0-9a-zA-Z]{1,}$", "jo")
     if not id_match then
         return nil, {error_msg = "wrong type of service id"}
     end
