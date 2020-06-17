@@ -55,14 +55,14 @@ Reference document
 * [grpc-transcode](plugins/grpc-transcode.md)：REST <--> gRPC 转码。
 * [serverless](plugins/serverless.md)：允许在 APISIX 中的不同阶段动态运行 Lua 代码。
 * [ip-restriction](plugins/ip-restriction.md): IP 黑白名单。
-* [openid-connect](../plugins/oauth.md)
+* [openid-connect](plugins/oauth.md)
 * [redirect](plugins/redirect.md): URI 重定向。
 * [response-rewrite](plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
 * [fault-injection](plugins/fault-injection.md)：故障注入，可以返回指定的响应体、响应码和响应时间，从而提供了不同的失败场景下处理的能力，例如服务失败、服务过载、服务高延时等。
 * [proxy-cache](plugins/proxy-cache.md)：代理缓存插件提供缓存后端响应数据的能力。
 * [proxy-mirror](plugins/proxy-mirror.md)：代理镜像插件提供镜像客户端请求的能力。
-* [udp-logger](../plugins/udp-logger.md): 将请求记录到UDP服务器
-* [tcp-logger](../plugins/tcp-logger.md): 将请求记录到TCP服务器
+* [udp-logger](plugins/udp-logger.md): 将请求记录到UDP服务器
+* [tcp-logger](plugins/tcp-logger.md): 将请求记录到TCP服务器
 * [kafka-logger](plugins/kafka-logger.md): 将请求记录到外部Kafka服务器。
-* [cors](plugins/cors.md): 为你的API启用CORS.
+* [cors](plugins/cors.md): 为你的API启用 CORS
 * [batch-requests](plugins/batch-requests.md): 以 **http pipeline** 的方式在网关一次性发起多个 `http` 请求。
