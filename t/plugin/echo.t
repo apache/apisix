@@ -250,6 +250,7 @@ Location: https://www.iresty.com
 Authorization: password
 
 
+
 === TEST 8: access without auth header value throws 401
 --- request
 GET /hello
@@ -260,4 +261,3 @@ before the body modification unauthorized body
 Location: https://www.iresty.com
 Authorization:
 --- wait: 0.2
-
