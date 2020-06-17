@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local upstreams = require("apisix.admin.upstreams")
-local ngx_re = require("ngx.re")
 local tostring = tostring
 local ipairs = ipairs
 local type = type
