@@ -85,7 +85,9 @@ done
                                  "headers": {
                                     "Location":"https://www.iresty.com",
                                     "Authorization": "userpass"
-                                 }
+                                 },
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpass"
                             }
                         },
                         "upstream": {
@@ -104,9 +106,10 @@ done
                                 "before_body": "before the body modification ",
                                 "body":"hello upstream",
                                 "headers": {
-                                    "Location":"https://www.iresty.com",
-                                    "Authorization": "userpass"
-                                 }
+                                    "Location":"https://www.iresty.com"
+                                 },
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpass"
                                }
                             },
                             "upstream": {
@@ -165,9 +168,10 @@ Authorization: userpass
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpass",
                                 "headers": {
-                                    "Location":"https://www.iresty.com",
-                                    "Authorization": "userpass"
+                                    "Location":"https://www.iresty.com"
                                 }
                             }
                         },
@@ -185,9 +189,10 @@ Authorization: userpass
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpass",
                                 "headers": {
-                                    "Location":"https://www.iresty.com",
-                                    "Authorization": "userpass"
+                                    "Location":"https://www.iresty.com"
                                 }
                                }
                             },
@@ -223,13 +228,10 @@ passed
 === TEST 6: access without upstream body change
 --- request
 GET /hello
---- more_headers
-Authorization: userpass
 --- response_body chomp
 before the body modification authorized body
 --- response_headers
 Location: https://www.iresty.com
-Authorization: userpass
 --- wait: 0.2
 --- no_error_log
 [error]
@@ -237,21 +239,150 @@ Authorization: userpass
 
 
 
-=== TEST 7: access with wrong auth header value throws 401
+=== TEST 7: update plugin back
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpasswrd",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                               "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpasswrd",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                               }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: access with wrong value in auth header value throws 401
 --- request
 GET /hello
---- more_headers
-Authorization: password
 --- error_code: 401
 --- response_body chomp
 before the body modification unauthorized body
 --- response_headers
 Location: https://www.iresty.com
-Authorization: password
 
 
 
-=== TEST 8: access without auth header value throws 401
+=== TEST 9: update plugin back
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "before_body": "before the body modification ",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                               "echo": {
+                                "before_body": "before the body modification ",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                               }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: access with no auth header and value throws 401
 --- request
 GET /hello
 --- error_code: 401
@@ -259,5 +390,3 @@ GET /hello
 before the body modification unauthorized body
 --- response_headers
 Location: https://www.iresty.com
-Authorization:
---- wait: 0.2
