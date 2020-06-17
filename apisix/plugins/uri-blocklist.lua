@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local re_compile = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find
+local ipairs = ipairs
 
 local schema = {
     type = "object",
