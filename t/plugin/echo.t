@@ -145,6 +145,9 @@ GET /hello
 Authorization: userpass
 --- response_body chomp
 before the body modification hello upstream
+--- response_headers
+Location: https://www.iresty.com
+Authorization: userpass
 --- no_error_log
 [error]
 --- wait: 0.2
@@ -161,7 +164,11 @@ before the body modification hello upstream
                  [[{
                         "plugins": {
                             "echo": {
-                                "before_body": "before the body modification "
+                                "before_body": "before the body modification ",
+                                "headers": {
+                                    "Location":"https://www.iresty.com",
+                                    "Authorization": "userpass"
+                                }
                             }
                         },
                         "upstream": {
@@ -177,8 +184,12 @@ before the body modification hello upstream
                         "value": {
                             "plugins": {
                                "echo": {
-                                "before_body": "before the body modification "
+                                "before_body": "before the body modification ",
+                                "headers": {
+                                    "Location":"https://www.iresty.com",
+                                    "Authorization": "userpass"
                                 }
+                               }
                             },
                             "upstream": {
                                 "nodes": {
@@ -216,6 +227,10 @@ GET /hello
 Authorization: userpass
 --- response_body chomp
 before the body modification authorized body
+--- response_headers
+Location: https://www.iresty.com
+Authorization: userpass
+--- wait: 0.2
 --- no_error_log
 [error]
 --- wait: 0.2
@@ -230,8 +245,9 @@ Authorization: password
 --- error_code: 401
 --- response_body chomp
 before the body modification unauthorized body
---- wait: 0.2
-
+--- response_headers
+Location: https://www.iresty.com
+Authorization: password
 
 
 === TEST 8: access without auth header value throws 401
@@ -240,4 +256,8 @@ GET /hello
 --- error_code: 401
 --- response_body chomp
 before the body modification unauthorized body
+--- response_headers
+Location: https://www.iresty.com
+Authorization:
 --- wait: 0.2
+

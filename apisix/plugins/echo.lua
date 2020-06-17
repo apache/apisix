@@ -98,8 +98,20 @@ function _M.access(conf, ctx)
     local auth_header = core.request.header(ctx, "Authorization")
 
     if auth_header and auth_header == "userpass" then
-        return 200, "authorized body"
+        if auth_header == "userpass" then
+            return 200, "authorized body"
+        end
     end
+
+    if conf.headers_arr then
+        local field_cnt = #conf.headers_arr
+        for i = 1, field_cnt, 2 do
+            if conf.headers_arr[i] == "Authorization" then
+                conf.headers_arr[i+1] = auth_header
+            end
+        end
+    end
+
     return 401, "unauthorized body"
 end
 
