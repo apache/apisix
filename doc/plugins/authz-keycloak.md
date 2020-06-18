@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](authz-keycloak-cn.md)
+[中文](authz-keycloak-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -34,7 +34,7 @@
 UMA compliant Ideneity Server. Although, its developed to working in conjunction with Keycloak it should work with any
 OAuth/OIDC and UMA compliant identity providers as well.
 
-For more information on JWT, refer to [Keycloak Authorization Docs](https://www.keycloak.org/docs/latest/authorization_services) for more information.
+For more information on Keycloak, refer to [Keycloak Authorization Docs](https://www.keycloak.org/docs/latest/authorization_services) for more information.
 
 ## Attributes
 
@@ -63,7 +63,7 @@ Specifies how policies are enforced when processing authorization requests sent 
 
 ## How To Enable
 
-Create a route and enable the authz-keycloak plugin on the route:
+Create a `route` and enable the `authz-keycloak` plugin on the route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -128,8 +128,8 @@ The following image shows how the policies are configures in the Keycloak server
 
 ## Future Development
 
-- Currently the authz-plugin requires to define the resource name and required scopes inorder to enforce policies for the routes.
+- Currently the `authz-plugin` requires to define the resource name and required scopes in order to enforce policies for the routes.
 However, Keycloak's official adapters (Java, JS) also provides path matching by querying Keycloak paths dynamically, and
-lazy loading the paths to identify resources. Future version on authz-plugin will support this functionality.
+lazy loading the paths to identity resources. Future version on authz-plugin will support this functionality.
 
 - Support to read scope and configurations from the Keycloak JSON File
