@@ -48,6 +48,7 @@ done
 [error]
 
 
+
 === TEST 2: full schema check
 --- config
     location /t {
@@ -74,6 +75,7 @@ done
 [error]
 
 
+
 === TEST 3: token_endpoint missing
 --- config
     location /t {
@@ -94,6 +96,7 @@ property "token_endpoint" is required
 done
 --- no_error_log
 [error]
+
 
 
 === TEST 4: add plugin with view course permissions
@@ -207,6 +210,7 @@ GET /t
 true
 --- no_error_log
 [error]
+
 
 
 === TEST 6: invalid access token
