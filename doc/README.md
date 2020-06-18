@@ -65,6 +65,7 @@ Plugins
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
 * [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
+* [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server
 
 Deploy to the Cloud
 =======
