@@ -19,6 +19,7 @@ local core        = require("apisix.core")
 local resty_chash = require("resty.chash")
 local str_char    = string.char
 local str_gsub    = string.gsub
+local pairs = pairs
 
 
 local _M = {}
