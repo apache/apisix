@@ -197,7 +197,7 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/services/5eeb3dc90f747328b2930b0b")
+            local id = string.sub(res.node.key, #"/apisix/services/"+1)
             code, message = t('/apisix/admin/services/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -413,7 +413,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": "1",
+                    "id": "5eeb3dc90f747328b2930b0b",
                     "plugins": {}
                 }]],
                 [[{
@@ -502,7 +502,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": 5eeb3dc90f747328b2930b0b,
+                    "id": "5eeb3dc90f747328b2930b0b",
                     "invalid_property": "/index.html"
                 }]]
                 )
@@ -529,7 +529,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": 5eeb3dc90f747328b2930b0b,
+                    "id": "5eeb3dc90f747328b2930b0b",
                     "upstream_id": "invalid$"
                 }]]
                 )
@@ -556,7 +556,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": 5eeb3dc90f747328b2930b0b,
+                    "id": "5eeb3dc90f747328b2930b0b",
                     "upstream_id": "9999999999"
                 }]]
                 )
@@ -609,7 +609,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                 ngx.HTTP_POST,
                 [[{
-                    "id": 5eeb3dc90f747328b2930b0b,
+                    "id": "5eeb3dc90f747328b2930b0b",
                     "plugins": {}
                 }]]
                 )
