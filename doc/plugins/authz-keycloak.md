@@ -40,10 +40,10 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 
 |Name           |Requirement    |Description|
 |---------      |--------       |-----------|
-| token_endpoint|required       |A OAuth2-compliant Token Endpoint that supports the urn:ietf:params:oauth:grant-type:uma-ticket grant type.|
+| token_endpoint|required       |A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type.|
 | grant_type    |optional       |Default value is `urn:ietf:params:oauth:grant-type:uma-ticket`.|
 | audience      |optional       |The client identifier of the resource server to which the client is seeking access. This parameter is mandatory in case the permission parameter is defined.|
-| permissions   |optional       |This parameter is optional. A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: RESOURCE_ID#SCOPE_ID.|
+| permissions   |optional       |This parameter is optional. A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: `RESOURCE_ID#SCOPE_ID`.|
 | timeout       |optional       |Timeout for the http connection with the Identity Server. Default is 3 seconds|
 | policy_enforcement_mode|required     |Enforcing or Permissive.|
 

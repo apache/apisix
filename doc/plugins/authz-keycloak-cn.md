@@ -37,10 +37,10 @@
 
 |名称           |选项    |描述|
 |---------      |--------       |-----------|
-| token_endpoint|必填       |接受 OAuth2 兼容 token 的接口，需要支持 urn:ietf:params:oauth:grant-type:uma-ticket 授权类型|
+| token_endpoint|必填       |接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型|
 | grant_type    |选填       |默认值为 `urn:ietf:params:oauth:grant-type:uma-ticket`|
 | audience      |选填       |客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。|
-| permissions   |选填       |描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：RESOURCE_ID#SCOPE_ID|
+| permissions   |选填       |描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID`|
 | timeout       |选填       |与身份认证服务器的 http 连接的超时时间。默认值为 3 秒。|
 | policy_enforcement_mode|必填     |只能是 ENFORCING 或 PERMISSIVE。|
 
@@ -58,7 +58,7 @@
 
 ## 如何启用
 
-创建一个 `route` 对象用它启用 `authz-keycloak` 插件：
+创建一个 `route` 对象，并在该 `route` 对象上启用 `authz-keycloak` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 
 ## 禁用插件
 
-在插件设置页面中删除相应的 json 配置即可禁用 `authz-keycloak` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务器。
+在插件设置页面中删除相应的 json 配置即可禁用 `authz-keycloak` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
