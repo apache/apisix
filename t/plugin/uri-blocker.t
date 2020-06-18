@@ -34,7 +34,7 @@ location /t {
             ngx.HTTP_PUT,
             [[{
                 "plugins": {
-                    "uri-blocklist": {
+                    "uri-blocker": {
                         "filter_rules": [".+("]
                     }
                 },
@@ -51,7 +51,7 @@ location /t {
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin uri-blocklist err: pcre_compile() failed: missing ) in \".+(\""}
+{"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing ) in \".+(\""}
 --- no_error_log
 [error]
 
@@ -66,7 +66,7 @@ location /t {
             ngx.HTTP_PUT,
             [[{
                 "plugins": {
-                    "uri-blocklist": {
+                    "uri-blocker": {
                         "filter_rules": ["^a", "^b"]
                     }
                 },
@@ -100,7 +100,7 @@ location /t {
             ngx.HTTP_PUT,
             [[{
                 "plugins": {
-                    "uri-blocklist": {
+                    "uri-blocker": {
                         "filter_rules": ["^a", "^b("]
                     }
                 },
@@ -118,7 +118,7 @@ location /t {
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin uri-blocklist err: pcre_compile() failed: missing ) in \"^b(\""}
+{"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing ) in \"^b(\""}
 --- no_error_log
 [error]
 
@@ -133,7 +133,7 @@ location /t {
             ngx.HTTP_PUT,
             [[{
                 "plugins": {
-                    "uri-blocklist": {
+                    "uri-blocker": {
                         "filter_rules": ["aa"]
                     }
                 },
@@ -149,7 +149,7 @@ location /t {
                 "node": {
                     "value": {
                         "plugins": {
-                            "uri-blocklist": {
+                            "uri-blocker": {
                                 "filter_rules": ["aa"]
                             }
                         }

@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](uri-blocklist.md)
+[Chinese](uri-blocker.md)
 
 # Summary
 
@@ -29,25 +29,25 @@
 
 ## Name
 
-The plugin helps we intercept user requests, we only need to indicate the blocklist.
+The plugin helps we intercept user requests, we only need to indicate the `block_rules`.
 
 ## Attributes
 
 |Name          |Requirement  |Description|
 |---------     |--------|-----------|
-|filter_rules  |required|Regular filter rule array. Each of these items is a regular rule. If the current request URI hits any one of them, set the response code to rejected_code to exit the current user request. Example: `["root.exe", "root.m+"]`.|
+|block_rules  |required|Regular filter rule array. Each of these items is a regular rule. If the current request URI hits any one of them, set the response code to rejected_code to exit the current user request. Example: `["root.exe", "root.m+"]`.|
 |rejected_code |optional|The HTTP status code returned when the request URI hit any of `filter_rule`, default `403`.|
 
 ## How To Enable
 
-Here's an example, enable the `uri blocklist` plugin on the specified route:
+Here's an example, enable the `uri blocker` plugin on the specified route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/*",
     "plugins": {
-        "uri-blocklist": {
+        "uri-blocker": {
             "filter_rules": ["root.exe", "root.m+"]
         }
     },
@@ -76,7 +76,7 @@ Server: APISIX web server
 
 ## Disable Plugin
 
-When you want to disable the `uri blocklist` plugin, it is very simple,
+When you want to disable the `uri blocker` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 
@@ -93,4 +93,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The `uri blocklist` plugin has been disabled now. It works for other plugins.
+The `uri blocker` plugin has been disabled now. It works for other plugins.

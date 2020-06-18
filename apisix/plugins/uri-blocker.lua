@@ -41,7 +41,7 @@ local schema = {
 }
 
 
-local plugin_name = "uri-blocklist"
+local plugin_name = "uri-blocker"
 
 local _M = {
     version = 0.1,
