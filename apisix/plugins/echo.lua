@@ -40,10 +40,6 @@ local schema = {
             type = "object",
             minProperties = 1,
         },
-        auth_header = {
-            description = "auth header",
-            type = "string"
-        },
         auth_value = {
             description = "auth value",
             type = "string"
@@ -105,11 +101,10 @@ end
 function _M.access(conf, ctx)
     local value = core.request.header(ctx, "Authorization")
 
-    if conf.auth_header == "Authorization" and value == conf.auth_value then
-            return 200, "authorized body"
+    if value ~= conf.auth_value then
+        return 401, "unauthorized body"
     end
 
-    return 401, "unauthorized body"
 end
 
 function _M.header_filter(conf, ctx)

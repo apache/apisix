@@ -86,7 +86,6 @@ done
                                     "Location":"https://www.iresty.com",
                                     "Authorization": "userpass"
                                  },
-                                 "auth_header" : "Authorization",
                                  "auth_value" : "userpass"
                             }
                         },
@@ -108,7 +107,6 @@ done
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                  },
-                                 "auth_header" : "Authorization",
                                  "auth_value" : "userpass"
                                }
                             },
@@ -168,8 +166,7 @@ Authorization: userpass
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_header" : "Authorization",
-                                 "auth_value" : "userpass",
+                                "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -189,7 +186,6 @@ Authorization: userpass
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_header" : "Authorization",
                                  "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
@@ -230,8 +226,8 @@ passed
 GET /hello
 --- more_headers
 Authorization: userpass
---- response_body chomp
-before the body modification authorized body
+--- response_body
+before the body modification hello world
 --- response_headers
 Location: https://www.iresty.com
 --- wait: 0.2
@@ -252,7 +248,6 @@ Location: https://www.iresty.com
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_header" : "Authorization",
                                  "auth_value" : "userpasswrd",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
@@ -273,7 +268,6 @@ Location: https://www.iresty.com
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_header" : "Authorization",
                                  "auth_value" : "userpasswrd",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
@@ -312,6 +306,8 @@ passed
 === TEST 8: access with wrong value in auth header value throws 401
 --- request
 GET /hello
+--- more_headers
+Authorization: userpass
 --- error_code: 401
 --- response_body chomp
 before the body modification unauthorized body
@@ -387,6 +383,8 @@ passed
 === TEST 10: access with no auth header and value throws 401
 --- request
 GET /hello
+--- more_headers
+Authorization: userpass
 --- error_code: 401
 --- response_body chomp
 before the body modification unauthorized body
@@ -406,7 +404,6 @@ Location: https://www.iresty.com
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_header" : "Authorization",
                                  "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
@@ -427,7 +424,6 @@ Location: https://www.iresty.com
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_header" : "Authorization",
                                  "auth_value" : "userpass",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
