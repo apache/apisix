@@ -25,7 +25,7 @@ Reference document
 * [架构设计](architecture-design-cn.md)
 * [压力测试](benchmark-cn.md)
 * [如何构建 Apache APISIX](how-to-build-cn.md)
-* [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
+* [健康检查](health-check-cn.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
 * Router(路由)
     * [radixtree](router-radixtree.md)
     * [r3](router-r3.md)
