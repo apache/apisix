@@ -335,6 +335,12 @@ function _M.http_access_phase()
         local upstreams_etcd = core.config.fetch_created_obj("/upstreams")
         if upstreams_etcd then
             local upstream = upstreams_etcd:get(tostring(up_id))
+            if upstream then
+                core.log.error("failed to fetch upstream by id: ", up_id,
+                               ", APISIX may be starting")
+                return core.response.exit(500)
+            end
+
             if upstream.has_domain then
                 local _, err = parsed_domain(upstream, api_ctx.conf_version,
                                              parse_domain_in_up, upstream)
