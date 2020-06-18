@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](authz-keycloak-cn.md)
+[中文](authz-keycloak-cn.md)
 
 # Summary
 - [**Name**](#name)
@@ -34,16 +34,16 @@
 UMA compliant Ideneity Server. Although, its developed to working in conjunction with Keycloak it should work with any
 OAuth/OIDC and UMA compliant identity providers as well.
 
-For more information on JWT, refer to [Keycloak Authorization Docs](https://www.keycloak.org/docs/latest/authorization_services) for more information.
+For more information on Keycloak, refer to [Keycloak Authorization Docs](https://www.keycloak.org/docs/latest/authorization_services) for more information.
 
 ## Attributes
 
 |Name           |Requirement    |Description|
 |---------      |--------       |-----------|
-| token_endpoint|required       |A OAuth2-compliant Token Endpoint that supports the urn:ietf:params:oauth:grant-type:uma-ticket grant type.|
+| token_endpoint|required       |A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type.|
 | grant_type    |optional       |Default value is `urn:ietf:params:oauth:grant-type:uma-ticket`.|
 | audience      |optional       |The client identifier of the resource server to which the client is seeking access. This parameter is mandatory in case the permission parameter is defined.|
-| permissions   |optional       |This parameter is optional. A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: RESOURCE_ID#SCOPE_ID.|
+| permissions   |optional       |This parameter is optional. A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: `RESOURCE_ID#SCOPE_ID`.|
 | timeout       |optional       |Timeout for the http connection with the Identity Server. Default is 3 seconds|
 | policy_enforcement_mode|required     |Enforcing or Permissive.|
 
@@ -63,7 +63,7 @@ Specifies how policies are enforced when processing authorization requests sent 
 
 ## How To Enable
 
-Create a route and enable the authz-keycloak plugin on the route:
+Create a `route` and enable the `authz-keycloak` plugin on the route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -128,8 +128,8 @@ The following image shows how the policies are configures in the Keycloak server
 
 ## Future Development
 
-- Currently the authz-plugin requires to define the resource name and required scopes inorder to enforce policies for the routes.
+- Currently the `authz-plugin` requires to define the resource name and required scopes in order to enforce policies for the routes.
 However, Keycloak's official adapters (Java, JS) also provides path matching by querying Keycloak paths dynamically, and
-lazy loading the paths to identify resources. Future version on authz-plugin will support this functionality.
+lazy loading the paths to identity resources. Future version on authz-plugin will support this functionality.
 
 - Support to read scope and configurations from the Keycloak JSON File
