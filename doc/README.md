@@ -16,12 +16,12 @@
 # limitations under the License.
 #
 -->
-[Chinese](README_CN.md)
+[Chinese](./zh-cn/README.md)
 
 Reference Documentation
 ==================
 
-* [APISIX Readme](../README.md)
+* [APISIX Readme](./README.md)
 * [Architecture Design](architecture-design.md)
 * [Benchmark](benchmark.md)
 * [Getting Started Guide](getting-started.md)
