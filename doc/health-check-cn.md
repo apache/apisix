@@ -16,6 +16,9 @@
 # limitations under the License.
 #
 -->
+
+# [English](health-check.md)
+
 ## Upstream的健康检查
 
 APISIX的健康检查使用[lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck)实现，你可以在upstream中使用它。
