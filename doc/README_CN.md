@@ -66,3 +66,4 @@ Reference document
 * [kafka-logger](plugins/kafka-logger-cn.md): 将请求记录到外部Kafka服务器。
 * [cors](plugins/cors-cn.md): 为你的API启用CORS.
 * [batch-requests](plugins/batch-requests-cn.md): 以 **http pipeline** 的方式在网关一次性发起多个 `http` 请求。
+* [authz-keycloak](plugins/authz-keycloak-cn.md): 支持 Keycloak 身份认证服务器
