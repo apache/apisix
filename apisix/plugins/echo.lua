@@ -103,9 +103,9 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.access(conf, ctx)
-    local auth_header = core.request.header(ctx, "Authorization")
+    local value = core.request.header(ctx, "Authorization")
 
-    if conf.auth_header == "Authorization" and conf.auth_value == "userpass" then
+    if conf.auth_header == "Authorization" and value == conf.auth_value then
             return 200, "authorized body"
     end
 

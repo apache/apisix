@@ -228,6 +228,8 @@ passed
 === TEST 6: access without upstream body change
 --- request
 GET /hello
+--- more_headers
+Authorization: userpass
 --- response_body chomp
 before the body modification authorized body
 --- response_headers
@@ -383,6 +385,85 @@ passed
 
 
 === TEST 10: access with no auth header and value throws 401
+--- request
+GET /hello
+--- error_code: 401
+--- response_body chomp
+before the body modification unauthorized body
+--- response_headers
+Location: https://www.iresty.com
+
+
+
+=== TEST 11: update plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpass",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                               "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_header" : "Authorization",
+                                 "auth_value" : "userpass",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                               }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: access without authorization as a header should throws 401
 --- request
 GET /hello
 --- error_code: 401
