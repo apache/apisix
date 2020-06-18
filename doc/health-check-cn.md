@@ -84,7 +84,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     `healthy`的阀值字段：
     * `active.healthy.interval`: 健康的目标节点的健康检查间隔时间（以秒为单位），最小值为1。
     * `active.healthy.successes`: 确定目标是否健康的成功次数，最小值为1。
-   
+
     `unhealthy`的阀值字段：
     * `active.unhealthy.interval`: 针对不健康目标节点的健康检查之间的间隔（以秒为单位），最小值为1。
     * `active.unhealthy.http_failures`: 确定目标节点不健康的http请求失败次数，最小值为1。
