@@ -26,12 +26,12 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set service(id: 1)
+=== TEST 1: set service(id: 5eeb3dc90f747328b2930b0b)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "upstream": {
@@ -53,7 +53,7 @@ __DATA__
                             },
                             "desc": "new service"
                         },
-                        "key": "/apisix/services/1"
+                        "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
                     },
                     "action": "set"
                 }]]
@@ -72,12 +72,12 @@ passed
 
 
 
-=== TEST 2: get service(id: 1)
+=== TEST 2: get service(id: 5eeb3dc90f747328b2930b0b)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_GET,
                  nil,
                 [[{
@@ -91,7 +91,7 @@ passed
                             },
                             "desc": "new service"
                         },
-                        "key": "/apisix/services/1"
+                        "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
                     },
                     "action": "get"
                 }]]
@@ -110,12 +110,12 @@ passed
 
 
 
-=== TEST 3: delete service(id: 1)
+=== TEST 3: delete service(id: 5eeb3dc90f747328b2930b0b)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/services/1',
+            local code, message = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -197,7 +197,7 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/services/" + 1)
+            local id = string.sub(res.node.key, #"/apisix/services/5eeb3dc90f747328b2930b0b")
             code, message = t('/apisix/admin/services/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -224,7 +224,7 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/services/1',
+            local code, message, res = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "upstream": {
@@ -273,7 +273,7 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/services/1',
+            local code, message, res = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {
@@ -325,7 +325,7 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/services/1',
+            local code, message, res = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {}
@@ -353,7 +353,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/invalid_id$',
+            local code, body = t('/apisix/admin/services/@invalid_id$',
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {
@@ -383,7 +383,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/@invalid_id$',
                  ngx.HTTP_PUT,
                  [[{
                     "id": 3,
@@ -421,7 +421,7 @@ GET /t
                         "value": {
                             "plugins": {}
                         },
-                        "key": "/apisix/services/1"
+                        "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
                     },
                     "action": "set"
                 }]]
@@ -475,7 +475,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": "invalid_id$",
+                    "id": "@invalid_id$",
                     "plugins": {}
                 }]]
                 )
@@ -502,7 +502,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": 1,
+                    "id": 5eeb3dc90f747328b2930b0b,
                     "invalid_property": "/index.html"
                 }]]
                 )
@@ -529,7 +529,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": 1,
+                    "id": 5eeb3dc90f747328b2930b0b,
                     "upstream_id": "invalid$"
                 }]]
                 )
@@ -556,7 +556,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": 1,
+                    "id": 5eeb3dc90f747328b2930b0b,
                     "upstream_id": "9999999999"
                 }]]
                 )
@@ -580,7 +580,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_POST,
                  [[{
                     "plugins": {}
@@ -609,7 +609,7 @@ GET /t
             local code, body = t('/apisix/admin/services',
                 ngx.HTTP_POST,
                 [[{
-                    "id": 1,
+                    "id": 5eeb3dc90f747328b2930b0b,
                     "plugins": {}
                 }]]
                 )
@@ -633,7 +633,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                 ngx.HTTP_PATCH,
                 [[{
                     "upstream": {
@@ -655,7 +655,7 @@ GET /t
                             },
                             "desc": "new 20 service"
                         },
-                        "key": "/apisix/services/1"
+                        "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
                     },
                     "action": "set"
                 }]]
@@ -679,7 +679,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                 ngx.HTTP_PATCH,
                 [[{
                     "desc": "new 19 service"
@@ -695,7 +695,7 @@ passed
                             },
                             "desc": "new 19 service"
                         },
-                        "key": "/apisix/services/1"
+                        "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
                     },
                     "action": "set"
                 }]]
@@ -719,7 +719,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                 ngx.HTTP_PATCH,
                 [[{
                     "upstream": {
@@ -759,12 +759,12 @@ passed
 
 
 
-=== TEST 22: set service(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
+=== TEST 22: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, default hash_on: vars, missing key)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "upstream": {
@@ -790,12 +790,12 @@ GET /t
 
 
 
-=== TEST 23: set service(id: 1) and upstream(type:chash, hash_on: header, missing key)
+=== TEST 23: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: header, missing key)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "upstream": {
@@ -822,12 +822,12 @@ GET /t
 
 
 
-=== TEST 24: set service(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
+=== TEST 24: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: cookie, missing key)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "upstream": {
@@ -854,12 +854,12 @@ GET /t
 
 
 
-=== TEST 25: set service(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
+=== TEST 25: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, hash_on: consumer, missing key is ok)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
+            local code, body = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
                  ngx.HTTP_PUT,
                  [[{
                     "upstream": {
