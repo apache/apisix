@@ -22,6 +22,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
+local upstream_c    = require("apisix.upstream")
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -92,6 +93,7 @@ function _M.http_init_worker()
     end
 
     require("apisix.debug").init_worker()
+    require("apisix.upstream").init_worker()
 
     local local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
@@ -383,6 +385,8 @@ function _M.http_access_phase()
         end
     end
     run_plugin("access", plugins, api_ctx)
+
+    upstream_c.fetch(route, api_ctx)
 end
 
 
