@@ -35,7 +35,7 @@ location /t {
             [[{
                 "plugins": {
                     "uri-blocker": {
-                        "filter_rules": [".+("]
+                        "block_rules": [".+("]
                     }
                 },
                 "uri": "/hello"
@@ -67,7 +67,7 @@ location /t {
             [[{
                 "plugins": {
                     "uri-blocker": {
-                        "filter_rules": ["^a", "^b"]
+                        "block_rules": ["^a", "^b"]
                     }
                 },
                 "uri": "/hello"
@@ -87,7 +87,7 @@ passed
 --- no_error_log
 [error]
 --- error_log
-concat filter_rules: ^a|^b,
+concat block_rules: ^a|^b,
 
 
 
@@ -101,7 +101,7 @@ location /t {
             [[{
                 "plugins": {
                     "uri-blocker": {
-                        "filter_rules": ["^a", "^b("]
+                        "block_rules": ["^a", "^b("]
                     }
                 },
                 "uri": "/hello"
@@ -134,7 +134,7 @@ location /t {
             [[{
                 "plugins": {
                     "uri-blocker": {
-                        "filter_rules": ["aa"]
+                        "block_rules": ["aa"]
                     }
                 },
                 "upstream": {
@@ -150,7 +150,7 @@ location /t {
                     "value": {
                         "plugins": {
                             "uri-blocker": {
-                                "filter_rules": ["aa"]
+                                "block_rules": ["aa"]
                             }
                         }
                     }
@@ -171,7 +171,7 @@ passed
 --- no_error_log
 [error]
 --- error_log
-concat filter_rules: aa,
+concat block_rules: aa,
 
 
 

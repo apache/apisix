@@ -22,7 +22,7 @@ local ipairs = ipairs
 local schema = {
     type = "object",
     properties = {
-        filter_rules = {
+        block_rules = {
             type = "array",
             items = {
                 type = "string",
@@ -37,7 +37,7 @@ local schema = {
             default = 403
         },
     },
-    required = {"filter_rules"},
+    required = {"block_rules"},
 }
 
 
@@ -57,25 +57,25 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    local filter_rules = {}
-    for i, re_rule in ipairs(conf.filter_rules) do
+    local block_rules = {}
+    for i, re_rule in ipairs(conf.block_rules) do
         local ok, err = re_compile(re_rule, "j")
         -- core.log.warn("ok: ", tostring(ok), " err: ", tostring(err), " re_rule: ", re_rule)
         if not ok then
             return false, err
         end
-        filter_rules[i] = re_rule
+        block_rules[i] = re_rule
     end
 
-    conf.filter_rules_concat = core.table.concat(filter_rules, "|")
-    core.log.info("concat filter_rules: ", conf.filter_rules_concat)
+    conf.block_rules_concat = core.table.concat(block_rules, "|")
+    core.log.info("concat block_rules: ", conf.block_rules_concat)
     return true
 end
 
 
 function _M.rewrite(conf, ctx)
     core.log.info("uri: ", ctx.var.request_uri)
-    local from = re_find(ctx.var.request_uri, conf.filter_rules_concat, "jo")
+    local from = re_find(ctx.var.request_uri, conf.block_rules_concat, "jo")
     if from then
         core.response.exit(conf.rejected_code)
     end
