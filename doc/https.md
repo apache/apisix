@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](https-cn.md)
+[Chinese](zh-cn/https.md)
 
 ### HTTPS
 

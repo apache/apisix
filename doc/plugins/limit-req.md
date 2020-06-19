@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](limit-req-cn.md)
+# [Chinese](../zh-cn/plugins/limit-req.md)
 
 # Summary
 

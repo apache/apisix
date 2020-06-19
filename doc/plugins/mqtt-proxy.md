@@ -17,7 +17,7 @@
 #
 -->
 
-[中文](mqtt-proxy-cn.md)
+[中文](../zh-cn/plugins/mqtt-proxy.md)
 
 # Summary
 - [**Name**](#name)
