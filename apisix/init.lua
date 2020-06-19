@@ -589,6 +589,10 @@ function _M.stream_preread_phase()
     api_ctx.plugins = plugin.stream_filter(matched_route, plugins)
     -- core.log.info("valid plugins: ", core.json.delay_encode(plugins, true))
 
+    api_ctx.conf_type = "stream/route"
+    api_ctx.conf_version = matched_route.modifiedIndex
+    api_ctx.conf_id = matched_route.value.id
+
     run_plugin("preread", plugins, api_ctx)
 
     set_upstream(matched_route, api_ctx)
