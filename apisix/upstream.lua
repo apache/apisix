@@ -49,7 +49,7 @@ local function set_directly(ctx, key, ver, conf, parent)
     ctx.upstream_healthcheck_parent = parent
     return
 end
-_M.set_directly = set_directly
+_M.set = set_directly
 
 
 function _M.set_by_route(route, api_ctx)
