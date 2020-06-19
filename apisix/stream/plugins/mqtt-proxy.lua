@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local balancer  = require("ngx.balancer")
 local bit       = require "bit"
 local ngx       = ngx
 local ngx_exit  = ngx.exit
