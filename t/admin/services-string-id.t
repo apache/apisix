@@ -158,6 +158,7 @@ GET /t
 [error]
 
 
+
 === TEST 5: invalid service id
 --- config
     location /t {
@@ -212,6 +213,7 @@ GET /t
 {"error_msg":"wrong service id"}
 --- no_error_log
 [error]
+
 
 
 === TEST 7: set service(id: 5eeb3dc90f747328b2930b0b) and upstream(type:chash, default hash_on: vars, missing key)
