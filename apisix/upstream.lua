@@ -9,7 +9,7 @@ local upstreams_etcd
 local _M = {}
 
 
-function _M.fetch(route, api_ctx)
+function _M.set(route, api_ctx)
     local up_id = route.value.upstream_id
     if up_id then
         if not upstreams_etcd then
@@ -29,6 +29,10 @@ function _M.fetch(route, api_ctx)
         api_ctx.upstream_key = up_conf.type .. "#upstream_" .. up_id
         api_ctx.upstream_version = up_obj.modifiedIndex
         api_ctx.upstream_healthcheck_parent = up_obj
+        return
+    end
+
+    if api_ctx.upstream_conf then
         return
     end
 

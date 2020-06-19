@@ -158,25 +158,25 @@ function _M.preread(conf, ctx)
     end
 
     core.log.info("mqtt client id: ", res.client_id)
+
+    local up_conf = {
+        type = "roundrobin",
+        nodes = {
+            {host = conf.upstream.ip, port = conf.upstream.port, weight = 1}
+        }
+    }
+
+    local matched_route = ctx.matched_route
+    ctx.upstream_conf = up_conf
+    ctx.upstream_version = ctx.conf_version
+    ctx.upstream_key = up_conf.type .. "#route_" .. matched_route.value.id
+    ctx.upstream_healthcheck_parent = ctx.matched_route
+    return
 end
 
 
 function _M.log(conf, ctx)
     core.log.info("plugin log phase, conf: ", core.json.encode(conf))
-end
-
-
-function _M.balancer(conf, ctx)
-    core.log.info("plugin balancer phase, conf: ", core.json.encode(conf))
-    -- ctx.balancer_name = plugin_name
-    local up = conf.upstream
-    ctx.balancer_name = plugin_name
-
-    local ok, err = balancer.set_current_peer(up.ip, up.port)
-    if not ok then
-        core.log.error("failed to set server peer: ", err)
-        return ngx_exit(1)
-    end
 end
 
 

@@ -60,25 +60,24 @@ end
 function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
     -- return 200, {message = "hit example plugin"}
-end
-
-
-function _M.balancer(conf, ctx)
-    core.log.warn("plugin balancer phase, conf: ", core.json.encode(conf))
 
     if not conf.ip then
         return
     end
 
-    -- NOTE: update `ctx.balancer_name` is important, APISIX will skip other
-    -- balancer handler.
-    ctx.balancer_name = plugin_name
+    local up_conf = {
+        type = "roundrobin",
+        nodes = {
+            {host = conf.ip, port = conf.port, weight = 1}
+        }
+    }
 
-    local ok, err = balancer.set_current_peer(conf.ip, conf.port)
-    if not ok then
-        core.log.error("failed to set server peer: ", err)
-        return core.response.exit(502)
-    end
+    local matched_route = ctx.matched_route
+    ctx.upstream_conf = up_conf
+    ctx.upstream_version = ctx.conf_version
+    ctx.upstream_key = up_conf.type .. "#route_" .. matched_route.value.id
+    ctx.upstream_healthcheck_parent = ctx.matched_route
+    return
 end
 
 
