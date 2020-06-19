@@ -26,6 +26,32 @@ local upstreams_etcd
 local _M = {}
 
 
+local function set_directly(ctx, key, ver, conf, parent)
+    if not ctx then
+        error("missing argument ctx", 2)
+    end
+    if not key then
+        error("missing argument key", 2)
+    end
+    if not ver then
+        error("missing argument ver", 2)
+    end
+    if not conf then
+        error("missing argument conf", 2)
+    end
+    if not parent then
+        error("missing argument parent", 2)
+    end
+
+    ctx.upstream_conf = conf
+    ctx.upstream_version = ver
+    ctx.upstream_key = key
+    ctx.upstream_healthcheck_parent = parent
+    return
+end
+_M.set_directly = set_directly
+
+
 function _M.set(route, api_ctx)
     local up_id = route.value.upstream_id
     if up_id then
@@ -41,11 +67,8 @@ function _M.set(route, api_ctx)
         core.log.info("upstream: ", core.json.delay_encode(up_obj))
 
         local up_conf = up_obj.dns_value or up_obj.value
-
-        api_ctx.upstream_conf = up_conf
-        api_ctx.upstream_key = up_conf.type .. "#upstream_" .. up_id
-        api_ctx.upstream_version = up_obj.modifiedIndex
-        api_ctx.upstream_healthcheck_parent = up_obj
+        set_directly(api_ctx, up_conf.type .. "#upstream_" .. up_id,
+                     up_obj.modifiedIndex, up_conf, up_obj)
         return
     end
 
@@ -59,12 +82,13 @@ function _M.set(route, api_ctx)
         return core.response.exit(500, "missing upstream configuration")
     end
 
-    api_ctx.upstream_conf = up_conf
-    api_ctx.upstream_version = api_ctx.conf_version
-    api_ctx.upstream_key = up_conf.type .. "#route_" .. route.value.id
-    api_ctx.upstream_healthcheck_parent = route
+    set_directly(api_ctx, up_conf.type .. "#route_" .. route.value.id,
+                 api_ctx.conf_version, up_conf, route)
     return
 end
+
+
+
 
 
 function _M.upstreams()

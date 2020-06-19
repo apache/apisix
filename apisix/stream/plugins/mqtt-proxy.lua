@@ -15,7 +15,8 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local bit       = require "bit"
+local upstream_set = require("apisix.upstream").set_directly
+local bit       = require("bit")
 local ngx       = ngx
 local ngx_exit  = ngx.exit
 local str_byte  = string.byte
@@ -166,10 +167,8 @@ function _M.preread(conf, ctx)
     }
 
     local matched_route = ctx.matched_route
-    ctx.upstream_conf = up_conf
-    ctx.upstream_version = ctx.conf_version
-    ctx.upstream_key = up_conf.type .. "#route_" .. matched_route.value.id
-    ctx.upstream_healthcheck_parent = ctx.matched_route
+    upstream_set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
+                 ctx.conf_version, up_conf, matched_route)
     return
 end
 
