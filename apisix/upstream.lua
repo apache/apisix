@@ -79,7 +79,8 @@ function _M.set(route, api_ctx)
     local up_conf = (route.dns_value and route.dns_value.upstream)
                     or route.value.upstream
     if not up_conf then
-        return core.response.exit(500, "missing upstream configuration")
+        core.log.error("missing upstream configuration in Route or Service")
+        return core.response.exit(502)
     end
 
     set_directly(api_ctx, up_conf.type .. "#route_" .. route.value.id,
