@@ -424,6 +424,8 @@ function _M.grpc_access_phase()
 
     run_plugin("rewrite", plugins, api_ctx)
     run_plugin("access", plugins, api_ctx)
+
+    set_upstream(route, api_ctx)
 end
 
 
