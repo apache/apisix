@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local upstream_set = require("apisix.upstream").set_directly
+local upstream  = require("apisix.upstream")
 local bit       = require("bit")
 local ngx       = ngx
 local ngx_exit  = ngx.exit
@@ -162,12 +162,17 @@ function _M.preread(conf, ctx)
     local up_conf = {
         type = "roundrobin",
         nodes = {
-            {host = conf.upstream.ip, port = conf.upstream.port, weight = 1}
+            {host = conf.upstream.ip, port = conf.upstream.port, weight = 1},
         }
     }
 
+    local ok, err = upstream.check_schema(up_conf)
+    if not ok then
+        return 500, err
+    end
+
     local matched_route = ctx.matched_route
-    upstream_set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
+    upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
                  ctx.conf_version, up_conf, matched_route)
     return
 end

@@ -20,7 +20,7 @@ local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
-local upstreams_etcd
+local upstreams
 
 
 local _M = {}
@@ -52,19 +52,19 @@ end
 _M.set_directly = set_directly
 
 
-function _M.set(route, api_ctx)
+function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
         return true
     end
 
     local up_id = route.value.upstream_id
     if up_id then
-        if not upstreams_etcd then
+        if not upstreams then
             return false, "need to create a etcd instance for fetching "
                           .. "upstream information"
         end
 
-        local up_obj = upstreams_etcd:get(tostring(up_id))
+        local up_obj = upstreams:get(tostring(up_id))
         if not up_obj then
             return false, "failed to find upstream by id: " .. up_id
         end
@@ -89,17 +89,22 @@ end
 
 
 function _M.upstreams()
-    if not upstreams_etcd then
+    if not upstreams then
         return nil, nil
     end
 
-    return upstreams_etcd.values, upstreams_etcd.conf_version
+    return upstreams.values, upstreams.conf_version
+end
+
+
+function _M.check_schema(conf)
+    return core.schema.check(core.schema.upstream, conf)
 end
 
 
 function _M.init_worker()
     local err
-    upstreams_etcd, err = core.config.new("/upstreams", {
+    upstreams, err = core.config.new("/upstreams", {
             automatic = true,
             item_schema = core.schema.upstream,
             filter = function(upstream)
@@ -139,7 +144,7 @@ function _M.init_worker()
                 core.log.info("filter upstream: ", core.json.delay_encode(upstream))
             end,
         })
-    if not upstreams_etcd then
+    if not upstreams then
         error("failed to create etcd instance for fetching upstream: " .. err)
         return
     end

@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local upstream_set = require("apisix.upstream").set_directly
+local upstream = require("apisix.upstream")
 
 local schema = {
     type = "object",
@@ -72,8 +72,13 @@ function _M.access(conf, ctx)
         }
     }
 
+    local ok, err = upstream.check_schema(up_conf)
+    if not ok then
+        return 500, err
+    end
+
     local matched_route = ctx.matched_route
-    upstream_set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
+    upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
                  ctx.conf_version, up_conf, matched_route)
     return
 end
