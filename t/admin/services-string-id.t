@@ -336,6 +336,6 @@ GET /t
 --- request
 GET /t
 --- response_body
-200 passed
+201 passed
 --- no_error_log
 [error]
