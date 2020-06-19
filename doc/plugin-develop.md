@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 -->
-[中文](plugin-develop-cn.md)
+[中文](zh-cn/plugin-develop.md)
 
 # table of contents
 

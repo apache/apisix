@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](proxy-cache-cn.md)
+[Chinese](/doc/zh-cn/plugins/proxy-cache.md)
 
 # proxy-cache
 

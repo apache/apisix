@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](batch-requests-cn.md)
+# [Chinese](../zh-cn/plugins/batch-requests.md)
 
 # Summary
 

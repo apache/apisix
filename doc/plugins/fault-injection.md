@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](fault-injection-cn.md)
+# [Chinese](../zh-cn/plugins/fault-injection.md)
 
 ## Name
 

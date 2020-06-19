@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](plugins-cn.md)
+[Chinese](zh-cn/plugins.md)
 
 ## Hot reload
 

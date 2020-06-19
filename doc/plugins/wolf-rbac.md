@@ -17,7 +17,7 @@
 #
 -->
 
-[中文](wolf-rbac-cn.md)
+[中文](../zh-cn/plugins/wolf-rbac.md)
 
 # Summary
 
