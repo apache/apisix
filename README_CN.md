@@ -51,26 +51,26 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - 支持 ARM64: 不用担心底层技术的锁定。
 
 - **多协议**
-    - [TCP/UDP 代理](doc/stream-proxy-cn.md): 动态 TCP/UDP 代理。
-    - [动态 MQTT 代理](doc/plugins/mqtt-proxy-cn.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
-    - [gRPC 代理](doc/grpc-proxy-cn.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
+    - [TCP/UDP 代理](doc/zh-cn/stream-proxy.md): 动态 TCP/UDP 代理。
+    - [动态 MQTT 代理](doc/zh-cn/plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
+    - [gRPC 代理](doc/zh-cn/grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
     - [gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
     - Websocket 代理
     - Proxy Protocol
     - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
     - HTTP(S) 反向代理
-    - [SSL](doc/https-cn.md)：动态加载 SSL 证书。
+    - [SSL](doc/zh-cn/https.md)：动态加载 SSL 证书。
 
 - **全动态能力**
-    - [热更新和热插件](doc/plugins-cn.md): 无需重启服务，就可以持续更新配置和插件。
-    - [代理请求重写](doc/plugins/proxy-rewrite-cn.md): 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
-    - [输出内容重写](doc/plugins/response-rewrite-cn.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
-    - [Serverless](doc/plugins/serverless-cn.md): 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
+    - [热更新和热插件](doc/zh-cn/plugins.md): 无需重启服务，就可以持续更新配置和插件。
+    - [代理请求重写](doc/zh-cn/plugins/proxy-rewrite.md): 支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
+    - [输出内容重写](doc/zh-cn/plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
+    - [Serverless](doc/zh-cn/plugins/serverless.md): 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
     - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
     - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
     - [健康检查](doc/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
     - 熔断器: 智能跟踪不健康上游服务。
-    - [动态服务发现](doc/discovery-cn.md)：支持基于注册中心的服务发现功能，降低反向代理维护成本。
+    - [动态服务发现](doc/zh-cn/discovery.md)：支持基于注册中心的服务发现功能，降低反向代理维护成本。
 
 - **精细化路由**
     - [支持全路径匹配和前缀匹配](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
@@ -78,37 +78,37 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - 支持[各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
     - 支持[自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
     - IPv6：支持使用 IPv6 格式匹配路由
-    - 支持路由的[自动过期(TTL)](doc/admin-api-cn.md#route)
+    - 支持路由的[自动过期(TTL)](doc/zh-cn/admin-api.md#route)
     - [支持路由的优先级](doc/router-radixtree.md#3-match-priority)
-    - [支持批量 Http 请求](doc/plugins/batch-requests-cn.md)
+    - [支持批量 Http 请求](doc/zh-cn/plugins/batch-requests.md)
 
 - **安全防护**
-    - 多种身份认证方式: [key-auth](doc/plugins/key-auth-cn.md), [JWT](doc/plugins/jwt-auth-cn.md), [basic-auth](doc/plugins/basic-auth-cn.md), [wolf-rbac](doc/plugins/wolf-rbac-cn.md)。
-    - [IP 黑白名单](doc/plugins/ip-restriction-cn.md)
+    - 多种身份认证方式: [key-auth](doc/zh-cn/plugins/key-auth.md), [JWT](doc/zh-cn/plugins/jwt-auth.md), [basic-auth](doc/zh-cn/plugins/basic-auth.md), [wolf-rbac](doc/zh-cn/plugins/wolf-rbac.md)。
+    - [IP 黑白名单](doc/zh-cn/plugins/ip-restriction.md)
     - [IdP 支持](doc/plugins/oauth.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
-    - [限制速率](doc/plugins/limit-req-cn.md)
-    - [限制请求数](doc/plugins/limit-count-cn.md)
-    - [限制并发](doc/plugins/limit-conn-cn.md)
+    - [限制速率](doc/zh-cn/plugins/limit-req.md)
+    - [限制请求数](doc/zh-cn/plugins/limit-count.md)
+    - [限制并发](doc/zh-cn/plugins/limit-conn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
-    - [CORS](doc/plugins/cors-cn.md)
+    - [CORS](doc/zh-cn/plugins/cors.md)
 
 - **运维友好**
-    - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/plugins/skywalking-cn.md) 和 [Zipkin](doc/plugins/zipkin-cn.md)。
-    - 监控和指标: [Prometheus](doc/plugins/prometheus-cn.md)
+    - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
+    - 监控和指标: [Prometheus](doc/zh-cn/plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
     - 控制台: 内置控制台来操作 APISIX 集群。
     - 版本控制：支持操作的多次回滚。
     - CLI: 使用命令行来启动、关闭和重启 APISIX。
-    - [单机模式](doc/stand-alone-cn.md): 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
-    - [全局规则](doc/architecture-design-cn.md#Global-Rule)：允许对所有请求执行插件，比如黑白名单、限流限速等。
+    - [单机模式](doc/zh-cn/stand-alone.md): 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
+    - [全局规则](doc/zh-cn/architecture-design.md#Global-Rule)：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
-    - [故障注入](doc/plugins/fault-injection-cn.md)
-    - [REST Admin API](doc/admin-api-cn.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
+    - [故障注入](doc/zh-cn/plugins/fault-injection.md)
+    - [REST Admin API](doc/zh-cn/admin-api.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
     - 外部日志记录器：将访问日志导出到外部日志管理工具。([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
 
 - **高度可扩展**
-    - [自定义插件](doc/plugin-develop-cn.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。
+    - [自定义插件](doc/zh-cn/plugin-develop.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。
     - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
     - 自定义路由: 支持用户自己实现路由算法。
 
@@ -119,11 +119,11 @@ APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注�
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
 安装 APISIX 的步骤：
-1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/install-dependencies-cn.md)
+1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
 2. 有以下几种方式来安装 Apache APISIX:
-    - 通过[源码包安装](doc/how-to-build-cn.md#通过源码包安装);
-    - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/how-to-build-cn.md#通过-rpm-包安装centos-7)；
-    - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/how-to-build-cn.md#通过-luarocks-安装-不支持-macos)；
+    - 通过[源码包安装](doc/zh-cn/how-to-build.md#通过源码包安装);
+    - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/zh-cn/how-to-build.md#通过-rpm-包安装centos-7)；
+    - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/zh-cn/how-to-build.md#通过-luarocks-安装-不支持-macos)；
     - 你也可以使用 [Docker 镜像](https://github.com/apache/incubator-apisix-docker) 来安装。
 
 ## 快速上手
@@ -136,9 +136,9 @@ sudo apisix start
 
 2. 入门指南
 
-入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/getting-started-cn.md)的步骤即可。
+入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/zh-cn/getting-started.md)的步骤即可。
 
-更进一步，你可以跟着文档来尝试更多的[插件](doc/README_CN.md#插件)。
+更进一步，你可以跟着文档来尝试更多的[插件](doc/zh-cn/README.md#插件)。
 
 ## 控制台
 
@@ -176,7 +176,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 ## 文档
 
-[Apache APISIX 文档索引](doc/README_CN.md)
+[Apache APISIX 文档索引](doc/zh-cn/README.md)
 
 ## Apache APISIX 和 Kong 的比较
 

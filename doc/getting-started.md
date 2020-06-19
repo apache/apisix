@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](getting-started-cn.md)
+[Chinese](zh-cn/getting-started.md)
 
 # Quick Start Guide
 

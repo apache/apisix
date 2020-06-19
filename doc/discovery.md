@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 -->
-[Chinese](discovery-cn.md)
+[Chinese](zh-cn/discovery.md)
 
 # Integration service discovery registry
 

@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](benchmark-cn.md)
+[Chinese](zh-cn/benchmark.md)
 
 ### Benchmark Environments
 
@@ -35,13 +35,13 @@ and the response size was 1KB.
 
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-<img src="../doc/images/benchmark-1.jpg" width="70%" height="70%">
+<img src="./images/benchmark-1.jpg" width="70%" height="70%">
 
 #### Latency
 
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-<img src="../doc/images/latency-1.jpg" width="70%" height="70%">
+<img src="./images/latency-1.jpg" width="70%" height="70%">
 
 #### Flame Graph
 
@@ -80,18 +80,18 @@ and the response size was 1KB.
 
 The x-axis means the size of CPU core, and the y-axis is QPS.
 
-<img src="../doc/images/benchmark-2.jpg" width="70%" height="70%">
+<img src="./images/benchmark-2.jpg" width="70%" height="70%">
 
 #### Latency
 
 Note the y-axis latency in **microsecond(μs)** not millisecond.
 
-<img src="../doc/images/latency-2.jpg" width="70%" height="70%">
+<img src="./images/latency-2.jpg" width="70%" height="70%">
 
 #### Flame Graph
 
 The result of Flame Graph:
-![flamegraph-2](../doc/images/flamegraph-2.jpg)
+![flamegraph-2](./images/flamegraph-2.jpg)
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
