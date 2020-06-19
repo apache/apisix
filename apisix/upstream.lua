@@ -53,39 +53,38 @@ _M.set_directly = set_directly
 
 
 function _M.set(route, api_ctx)
+    if api_ctx.upstream_conf then
+        return true
+    end
+
     local up_id = route.value.upstream_id
     if up_id then
         if not upstreams_etcd then
-            return nil, nil, "need to create a etcd instance for fetching "
-                             .. "upstream information"
+            return false, "need to create a etcd instance for fetching "
+                          .. "upstream information"
         end
 
         local up_obj = upstreams_etcd:get(tostring(up_id))
         if not up_obj then
-            return nil, nil, "failed to find upstream by id: " .. up_id
+            return false, "failed to find upstream by id: " .. up_id
         end
         core.log.info("upstream: ", core.json.delay_encode(up_obj))
 
         local up_conf = up_obj.dns_value or up_obj.value
         set_directly(api_ctx, up_conf.type .. "#upstream_" .. up_id,
                      up_obj.modifiedIndex, up_conf, up_obj)
-        return
-    end
-
-    if api_ctx.upstream_conf then
-        return
+        return true
     end
 
     local up_conf = (route.dns_value and route.dns_value.upstream)
                     or route.value.upstream
     if not up_conf then
-        core.log.error("missing upstream configuration in Route or Service")
-        return core.response.exit(502)
+        return false, "missing upstream configuration in Route or Service"
     end
 
     set_directly(api_ctx, up_conf.type .. "#route_" .. route.value.id,
                  api_ctx.conf_version, up_conf, route)
-    return
+    return true
 end
 
 
