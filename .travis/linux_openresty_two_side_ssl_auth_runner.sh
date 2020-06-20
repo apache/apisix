@@ -109,7 +109,6 @@ script() {
 
     ./bin/apisix stop
     sleep 1
-    
 
     make lint && make license-check || exit 1
 }
