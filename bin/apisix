@@ -290,8 +290,15 @@ http {
     server {
         {%if https_admin then%}
         listen {* port_admin *} ssl;
+
+        {%if ssl.verify_client then%}
+        ssl_certificate      cert/two_side_server.crt;
+        ssl_certificate_key  cert/two_side_server.key;
+        {% else %}
         ssl_certificate      cert/apisix_admin_ssl.crt;
         ssl_certificate_key  cert/apisix_admin_ssl.key;
+        {%end%}
+
         ssl_session_cache    shared:SSL:1m;
 
         ssl_protocols {* ssl.ssl_protocols *};
@@ -299,7 +306,7 @@ http {
         ssl_prefer_server_ciphers on;
 
         {%if ssl.verify_client then%}
-        ssl_client_certificate cert/apisix_admin_ca.crt;
+        ssl_client_certificate cert/two_side_ca.crt;
         ssl_verify_client on;
         {%end%}
 
