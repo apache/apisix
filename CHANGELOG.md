@@ -42,7 +42,7 @@
 - :sunrise: **Consume Restriction Plugin** [1437](https://github.com/apache/incubator-apisix/pull/1437)
 
 ### Improvements
-- Batch Request : cp all header to every request [1697](https://github.com/apache/incubator-apisix/pull/1697)
+- Batch Request : Copy all headers to every request [1697](https://github.com/apache/incubator-apisix/pull/1697)
 - SSL private key encryption [1678](https://github.com/apache/incubator-apisix/pull/1678)
 - Improvement of docs for multiple plugins
 

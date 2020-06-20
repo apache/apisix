@@ -43,7 +43,7 @@
 
 ### Improvements
 - Batch Request : 对每个请求拷贝头 [1697](https://github.com/apache/incubator-apisix/pull/1697)
-- SSL private 秘钥加密 [1678](https://github.com/apache/incubator-apisix/pull/1678)
+- SSL 私钥加密 [1678](https://github.com/apache/incubator-apisix/pull/1678)
 - 众多插件文档改善
 
 ## 1.3.0
