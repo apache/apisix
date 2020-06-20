@@ -7,6 +7,8 @@ matrix:
       services:
         - docker
       env: OSNAME=linux_openresty
+    - os: linux
+      env: OSNAME=linux_openresty_two_side_ssl_auth
     - os: osx
       env: OSNAME=osx_openresty
       cache:

@@ -143,9 +143,6 @@ script() {
     sudo sh ./t/grpc-proxy-test.sh
     sleep 1
 
-    echo '127.0.0.1 nginx.test.com' > /etc/hosts
-    curl --cacert ./conf/cert/apisix_admin_ca.crt --key ./conf/cert/apisix_admin_client.key --cert ./conf/cert/apisix_admin_client.crt  https://nginx.test.com:9180/apisix/admin/ssls
-
     ./bin/apisix stop
     sleep 1
 
