@@ -104,7 +104,7 @@ script() {
     cat logs/error.log
 
 
-    curl --cacert ./conf/cert/apisix_admin_ca.crt --key ./conf/cert/apisix_admin_client.key --cert ./conf/cert/apisix_admin_client.crt  https://nginx.test.com:9180/apisix/admin/ssls
+    curl --cacert ./conf/cert/apisix_admin_ca.crt --key ./conf/cert/apisix_admin_client.key --cert ./conf/cert/apisix_admin_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://nginx.test.com:9180/apisix/admin/routes
 
     ./bin/apisix stop
     sleep 1
