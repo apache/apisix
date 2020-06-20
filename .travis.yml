@@ -43,7 +43,7 @@ addons:
   homebrew:
     update: true
   hosts:
-    - nginx.test.com
+    - admin.apisix.dev
 
 cache:
   directories:
