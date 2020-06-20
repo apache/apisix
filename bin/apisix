@@ -297,6 +297,12 @@ http {
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
         ssl_prefer_server_ciphers on;
+
+        {%if ssl.verify_client then%}
+        ssl_client_certificate cert/apisix_admin_ca.crt;
+        ssl_verify_client on;
+        {%end%}
+
         {% else %}
         listen {* port_admin *};
         {%end%}
