@@ -83,7 +83,7 @@ The shortcomings mentioned above are independently abstracted in APISIX by the t
 The route example created below is to proxy the request with uri `/index.html` to the Upstream service with the address `39.97.63.215:80`:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -122,7 +122,7 @@ The following example creates a Service that enables the current-limit plugin, a
 
 ```shell
 # create new Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/200 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/services/200 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -141,14 +141,14 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/200 -H 'X-API-KEY: edd1c9f034
 }'
 
 # create new Route and reference the service by id `200`
-curl http://127.0.0.1:9080/apisix/admin/routes/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/100 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
     "service_id": "200"
 }'
 
-curl http://127.0.0.1:9080/apisix/admin/routes/101 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/101 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/foo/index.html",
@@ -159,7 +159,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/101 -H 'X-API-KEY: edd1c9f034335f
 Of course, we can also specify different plugin parameters or upstream for Route. Some of the following Routes have different current-limit parameters. Other parts (such as upstream) continue to use the configuration parameters in Service.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/bar/index.html",
     "id": "102",
@@ -247,7 +247,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 Create an upstream object use case:
 
 ```json
-curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "roundrobin",
     "k8s_deployment_info": {
@@ -259,7 +259,7 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
@@ -274,7 +274,7 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335
 After the upstream object is created, it can be referenced by specific `Route` or `Service`, for example:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream_id": 2
@@ -284,7 +284,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 For convenience, you can also directly bind the upstream address to a `Route` or `Service`, for example:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -307,7 +307,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Here's an example of configuring a health check:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -351,7 +351,7 @@ Here are some examples of configurations using different `hash_on` types:
 Create a consumer object:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d `
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d `
 {
     "username": "jack",
     "plugins": {
@@ -365,7 +365,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Create route object and enable `key-auth` plugin authentication:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "key-auth": {}
@@ -393,7 +393,7 @@ curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 Create route and upstream object, `hash_on` is `cookie`:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hash_on_cookie",
     "upstream": {
@@ -419,7 +419,7 @@ The client requests with `Cookie`:
 Create route and upstream object, `hash_on` is `header`, `key` is `Content-Type`:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hash_on_header",
     "upstream": {
@@ -492,7 +492,7 @@ How to enable a specific plugin for a Consumer, you can see the following exampl
 
 ```shell
 # Create a Consumer , specify the authentication plugin key-auth, and enable the specific plugin limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -509,7 +509,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f0343
 }'
 
 # Create a Router, set routing rules and enable plugin configuration
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "key-auth": {}
@@ -540,7 +540,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 Use the [consumer-restriction](./plugins/consumer-restriction-cn.md) plug-in to restrict the access of Jack to this API.
 
 # Add Jack to the blacklist
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "key-auth": {},

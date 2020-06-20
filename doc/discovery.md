@@ -20,16 +20,17 @@
 
 # Integration service discovery registry
 
-* [**Summary**](#Summary)
-* [**How extend the discovery client?**](#how-extend-the-discovery-client)
-    * [**Basic steps**](#basic-steps)
-    * [**the example of Eureka**](#the-example-of-eureka)
-        * [**Implementation of eureka.lua**](#implementation-of-eurekalua)
-        * [**How convert Eureka's instance data to APISIX's node?**](#how-convert-eurekas-instance-data-to-apisixs-node)
-* [**Configuration for discovery client**](#configuration-for-discovery-client)
-    * [**Select discovery client**](#select-discovery-client)
-    * [**Configuration for Eureka**](#configuration-for-eureka)
-* [**Upstream setting**](#upstream-setting)
+- [Integration service discovery registry](#integration-service-discovery-registry)
+  - [Summary](#summary)
+  - [How extend the discovery client?](#how-extend-the-discovery-client)
+    - [Basic steps](#basic-steps)
+    - [the example of Eureka](#the-example-of-eureka)
+      - [Implementation of eureka.lua](#implementation-of-eurekalua)
+      - [How convert Eureka's instance data to APISIX's node?](#how-convert-eurekas-instance-data-to-apisixs-node)
+  - [Configuration for discovery client](#configuration-for-discovery-client)
+    - [Select discovery client](#select-discovery-client)
+    - [Configuration for Eureka](#configuration-for-eureka)
+  - [Upstream setting](#upstream-setting)
 
 ## Summary
 
@@ -186,7 +187,7 @@ eureka:
 Here is an example of routing a request with a uri of "/user/*" to a service which named "user-service"  in the registry :
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json'  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/user/*",
     "upstream": {
@@ -208,7 +209,7 @@ Server: APISIX web server
 Because the upstream interface URL may have conflict, usually in the gateway by prefix to distinguish:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'content-type: application/json'  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/a/*",
     "plugins": {
@@ -222,7 +223,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'content-type: application/json'  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/b/*",
     "plugins": {
