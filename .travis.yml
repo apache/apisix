@@ -42,6 +42,8 @@ addons:
       - etcd
   homebrew:
     update: true
+  hosts:
+    - nginx.test.com
 
 cache:
   directories:

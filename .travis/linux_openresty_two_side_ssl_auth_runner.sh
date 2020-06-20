@@ -93,7 +93,7 @@ script() {
     openresty -V
     sudo service etcd start
 
-    mv ./conf/config-for-two-side-ssl-auth.yaml ./conf/config.yaml
+    mv -f ./conf/config-for-two-side-ssl-auth.yaml ./conf/config.yaml
 
     ./bin/apisix help
     ./bin/apisix init
@@ -104,7 +104,6 @@ script() {
     cat logs/error.log
 
 
-    sudo echo '127.0.0.1 nginx.test.com' > /etc/hosts
     curl --cacert ./conf/cert/apisix_admin_ca.crt --key ./conf/cert/apisix_admin_client.key --cert ./conf/cert/apisix_admin_client.crt  https://nginx.test.com:9180/apisix/admin/ssls
 
     ./bin/apisix stop
