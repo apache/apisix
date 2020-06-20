@@ -342,3 +342,26 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: string id(DELETE)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/a-b-c-ABC_0123',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

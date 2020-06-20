@@ -1807,7 +1807,30 @@ passed
 
 
 
-=== TEST 49: invalid string id
+=== TEST 49: string id(delete)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/a-b-c-ABC_0123',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 50: invalid string id
 --- config
     location /t {
         content_by_lua_block {
