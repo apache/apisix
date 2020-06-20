@@ -1,0 +1,69 @@
+Certificate:
+    Data:
+        Version: 1 (0x0)
+        Serial Number: 64207 (0xfacf)
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=cn, ST=GuangDong, L=guangzhou, O=IBM, OU=ops, CN=www.test.com
+        Validity
+            Not Before: Jun 18 11:49:31 2020 GMT
+            Not After : Jul  6 11:49:31 2030 GMT
+        Subject: C=cn, ST=GuangDong, O=IBM, L=guangzhou, CN=client.test.com
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:c7:4a:1d:d9:9b:aa:a4:aa:63:bc:88:4c:0c:97:
+                    b0:a0:a4:4f:6e:55:9b:3a:1c:0e:d7:6a:d7:e8:ca:
+                    00:15:0f:3c:65:c6:1a:4e:d1:4d:23:6a:6f:23:7b:
+                    4d:59:66:45:ec:1f:e3:e1:47:60:c4:97:96:71:fc:
+                    cf:36:b0:fa:de:2b:98:4d:b8:dd:92:a9:2d:63:1e:
+                    ba:2b:af:38:2c:41:d9:6c:f9:9d:3e:f5:6d:12:c4:
+                    54:e2:cf:c2:b0:57:50:a0:d8:61:44:0d:6d:c7:41:
+                    2b:58:16:4d:3f:d6:6a:c3:1f:a6:23:b5:76:b7:6d:
+                    4f:19:73:80:1a:f7:3f:2a:8a:be:23:66:e8:af:4b:
+                    dd:1f:b1:6c:c2:ed:92:1c:cb:5d:19:7f:c8:74:18:
+                    c7:e0:02:23:42:d3:4b:a9:a0:ff:89:50:7e:65:7d:
+                    d2:5c:a1:48:f0:a8:8c:b0:fa:13:c5:2b:00:c8:d9:
+                    cd:71:cf:a2:fd:8f:57:5f:07:1c:95:07:e3:53:8d:
+                    41:c8:4c:fc:e2:eb:e0:aa:eb:00:68:82:56:ca:50:
+                    21:4e:c6:c9:27:9a:13:04:96:8f:63:44:f2:ee:88:
+                    46:a2:05:29:07:6a:e6:cf:18:b5:5c:86:62:39:a5:
+                    a9:60:5e:64:2a:50:da:9c:17:0f:68:e6:fd:12:e2:
+                    85:29
+                Exponent: 65537 (0x10001)
+    Signature Algorithm: sha256WithRSAEncryption
+         3b:0a:92:a0:22:83:a4:e2:62:1f:b9:5c:b3:86:82:ad:67:03:
+         6f:fb:cc:6b:7b:23:66:c7:16:1d:bb:28:67:0e:0e:73:24:d0:
+         bb:56:34:26:f9:0e:8d:64:34:dc:78:43:80:5f:1a:70:ca:46:
+         8f:cc:ed:1d:51:3b:61:2f:a1:10:9e:d5:a2:e0:43:47:4e:5f:
+         2e:93:11:42:5a:a5:dc:29:7d:ab:44:0d:3b:91:ec:e3:3d:2f:
+         3f:57:9f:0f:0f:18:60:8b:d6:8a:d1:ce:9e:f2:97:17:7f:6f:
+         38:42:87:a5:e0:03:1e:6f:ea:1b:13:4c:00:e8:56:0d:51:7d:
+         1a:35:63:0e:6e:e7:f7:47:3c:58:50:b8:c1:5d:64:b6:43:d3:
+         71:6a:96:db:d5:ca:7e:ed:74:a0:1a:59:ba:1e:03:96:dc:31:
+         98:03:43:58:6d:af:8a:64:da:60:a0:03:44:09:b8:b7:10:9f:
+         0c:e1:8d:a9:c5:4b:2b:b3:58:08:3f:20:02:cc:6b:e2:86:8a:
+         05:89:67:0d:66:cb:a5:2c:50:96:5f:1e:55:d5:d4:a8:07:0e:
+         27:21:b1:61:ad:b1:6c:57:7a:d1:6c:89:0a:6e:d9:ba:8e:fa:
+         c2:96:6b:3e:d1:35:63:4b:b8:fb:36:a9:8b:89:06:51:45:17:
+         c4:0f:19:6b
+-----BEGIN CERTIFICATE-----
+MIIDOzCCAiMCAwD6zzANBgkqhkiG9w0BAQsFADBoMQswCQYDVQQGEwJjbjESMBAG
+A1UECAwJR3VhbmdEb25nMRIwEAYDVQQHDAlndWFuZ3pob3UxDDAKBgNVBAoMA0lC
+TTEMMAoGA1UECwwDb3BzMRUwEwYDVQQDDAx3d3cudGVzdC5jb20wHhcNMjAwNjE4
+MTE0OTMxWhcNMzAwNzA2MTE0OTMxWjBdMQswCQYDVQQGEwJjbjESMBAGA1UECAwJ
+R3VhbmdEb25nMQwwCgYDVQQKDANJQk0xEjAQBgNVBAcMCWd1YW5nemhvdTEYMBYG
+A1UEAwwPY2xpZW50LnRlc3QuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+CgKCAQEAx0od2ZuqpKpjvIhMDJewoKRPblWbOhwO12rX6MoAFQ88ZcYaTtFNI2pv
+I3tNWWZF7B/j4UdgxJeWcfzPNrD63iuYTbjdkqktYx66K684LEHZbPmdPvVtEsRU
+4s/CsFdQoNhhRA1tx0ErWBZNP9Zqwx+mI7V2t21PGXOAGvc/Koq+I2bor0vdH7Fs
+wu2SHMtdGX/IdBjH4AIjQtNLqaD/iVB+ZX3SXKFI8KiMsPoTxSsAyNnNcc+i/Y9X
+XwcclQfjU41ByEz84uvgqusAaIJWylAhTsbJJ5oTBJaPY0Ty7ohGogUpB2rmzxi1
+XIZiOaWpYF5kKlDanBcPaOb9EuKFKQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQA7
+CpKgIoOk4mIfuVyzhoKtZwNv+8xreyNmxxYduyhnDg5zJNC7VjQm+Q6NZDTceEOA
+XxpwykaPzO0dUTthL6EQntWi4ENHTl8ukxFCWqXcKX2rRA07kezjPS8/V58PDxhg
+i9aK0c6e8pcXf284Qoel4AMeb+obE0wA6FYNUX0aNWMObuf3RzxYULjBXWS2Q9Nx
+apbb1cp+7XSgGlm6HgOW3DGYA0NYba+KZNpgoANECbi3EJ8M4Y2pxUsrs1gIPyAC
+zGvihooFiWcNZsulLFCWXx5V1dSoBw4nIbFhrbFsV3rRbIkKbtm6jvrClms+0TVj
+S7j7NqmLiQZRRRfEDxlr
+-----END CERTIFICATE-----
