@@ -100,9 +100,7 @@ local function check_conf(id, conf, need_id)
     end
 
     -- let schema check id
-    if id and not conf.id then
-        conf.id = id
-    end
+    conf.id = id
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.upstream))
     core.log.info("conf  : ", core.json.delay_encode(conf))
