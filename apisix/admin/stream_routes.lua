@@ -31,16 +31,18 @@ local function check_conf(id, conf, need_id)
 
     id = id or conf.id
     if need_id and not id then
-        return nil, {error_msg = "missing stream stream route id"}
+        return nil, {error_msg = "missing stream route id"}
     end
 
     if not need_id and id then
-        return nil, {error_msg = "wrong stream stream route id, do not need it"}
+        return nil, {error_msg = "wrong stream route id, do not need it"}
     end
 
     if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
-        return nil, {error_msg = "wrong stream stream route id"}
+        return nil, {error_msg = "wrong stream route id"}
     end
+
+    conf.id = id
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.stream_route))
     core.log.info("conf  : ", core.json.delay_encode(conf))
@@ -129,7 +131,7 @@ end
 
 function _M.delete(id)
     if not id then
-        return 400, {error_msg = "missing stream stream route id"}
+        return 400, {error_msg = "missing stream route id"}
     end
 
     local key = "/stream_routes/" .. id

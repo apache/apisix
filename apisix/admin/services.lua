@@ -20,7 +20,6 @@ local schema_plugin = require("apisix.admin.plugins").check_schema
 local upstreams = require("apisix.admin.upstreams")
 local tostring = tostring
 local ipairs = ipairs
-local tonumber = tonumber
 local type = type
 
 
@@ -47,6 +46,7 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "wrong service id"}
     end
 
+    conf.id = id
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.service))
     core.log.info("conf  : ", core.json.delay_encode(conf))
@@ -55,7 +55,7 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
-    if need_id and not tonumber(id) then
+    if need_id and not id then
         return nil, {error_msg = "wrong type of service id"}
     end
 
