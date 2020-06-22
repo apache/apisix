@@ -264,3 +264,69 @@ GET /hello?c1=2
 GET /hello?cc=2
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: SQL injection
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "plugins": {
+                    "uri-blocker": {
+                        "block_rules": ["select.+(from|limit)", "(?:(union(.*?)select))"]
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]]
+        )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+--- error_log
+concat block_rules: select.+(from|limit)|(?:(union(.*?)select)),
+
+
+
+=== TEST 13: hit block rule
+--- request
+GET /hello?name=;select%20from%20sys
+--- error_code: 403
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: hit block rule
+--- request
+GET /hello?name=;union%20select%20
+--- error_code: 403
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: not hit block rule
+--- request
+GET /hello?cc=2
+--- no_error_log
+[error]
