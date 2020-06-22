@@ -291,7 +291,7 @@ http {
         {%if https_admin then%}
         listen {* port_admin *} ssl;
 
-        {%if mtls and mtls.enable then%}
+        {%if mtls and mtls.mtls_enable then%}
         ssl_verify_client on;
         ssl_certificate      {* mtls.server_cert *};
         ssl_certificate_key  {* mtls.server_key *};

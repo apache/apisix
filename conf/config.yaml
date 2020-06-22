@@ -57,7 +57,7 @@ apisix:
   # https_admin: true             # enable HTTPS when use a separate port for Admin API.
                                   # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
   mtls:
-    enable: false               # Enable or disable mtls. Enable depends on `port_admin` and `https_admin`.
+    mtls_enable: false          # Enable or disable mtls. Enable depends on `port_admin` and `https_admin`.
     ca_cert: ""                 # Path of your self-signed ca cert.
     server_key: ""              # Path of your self-signed server side cert.
     server_cert: ""             # Path of your self-signed server side key.
