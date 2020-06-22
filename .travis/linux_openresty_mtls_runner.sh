@@ -97,9 +97,9 @@ script() {
     sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
     sed  -i 's/\# https_admin: true/https_admin: true/'  conf/config.yaml
     sed  -i 's/mtls_enable: false/mtls_enable: true/'  conf/config.yaml
-    sed  -i 's/ca_cert: ""/ca_cert: "../t/certs/mtls_ca.crt"/'  conf/config.yaml
-    sed  -i 's/server_key: ""/server_key: "../t/certs/mtls_server.key"/'  conf/config.yaml
-    sed  -i 's/server_cert: ""/server_cert: "../t/certs/mtls_server.crt"/'  conf/config.yaml
+    sed  -i 's#ca_cert: ""#ca_cert: "../t/certs/mtls_ca.crt"#'  conf/config.yaml
+    sed  -i 's#server_key: ""#server_key: "../t/certs/mtls_server.key"#'  conf/config.yaml
+    sed  -i 's#server_cert: ""#server_cert: "../t/certs/mtls_server.crt"#'  conf/config.yaml
 
     ./bin/apisix help
     ./bin/apisix init
