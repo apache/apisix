@@ -93,7 +93,7 @@ script() {
     openresty -V
     sudo service etcd start
 
-    # enable mtls
+    # enable mTLS
     sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
     sed  -i 's/\# https_admin: true/https_admin: true/'  conf/config.yaml
     sed  -i 's/mtls_enable: false/mtls_enable: true/'  conf/config.yaml
@@ -112,7 +112,7 @@ script() {
 
     code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
     if [ ! $code -eq 200 ]; then
-        echo "failed: failed to enabled mtls for admin"
+        echo "failed: failed to enabled mTLS for admin"
         exit 1
     fi
 
