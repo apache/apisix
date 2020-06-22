@@ -58,9 +58,9 @@ apisix:
                                   # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
   mtls:
     mtls_enable: false          # Enable or disable mTLS. Enable depends on `port_admin` and `https_admin`.
-    ca_cert: ""                 # Path of your self-signed ca cert.
-    server_key: ""              # Path of your self-signed server side cert.
-    server_cert: ""             # Path of your self-signed server side key.
+    ca_cert: "../t/certs/mtls_ca.crt"                     # Path of your self-signed ca cert.
+    server_key: "../t/certs/mtls_server.key"              # Path of your self-signed server side cert.
+    server_cert: "../t/certs/mtls_server.crt"             # Path of your self-signed server side key.
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
