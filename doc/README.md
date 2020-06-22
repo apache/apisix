@@ -65,10 +65,12 @@ Plugins
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
 * [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
-* [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server
+* [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.
+* [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
 
 Deploy to the Cloud
 =======
+
 ### AWS
 
 The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
