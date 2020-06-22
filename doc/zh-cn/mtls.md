@@ -17,24 +17,25 @@
 #
 -->
 
-[English](../two-side-auth-with-ssl.md)
+[English](../mtls.md)
 
 ## 开启双向认证
 
 1. 生成自签证书对，包括 ca、server、client 证书对。
 
-2. 用刚刚生成的证书相应的替换 `cert/two-side-ca.crt`、`cert/two-side-client.crt` 和 `cert/two-side-client.key`。 
-
-3. 修改 `conf/config.yaml` 中的配置项:
+2. 修改 `conf/config.yaml` 中的配置项:
 ```yaml
   port_admin: 9180
   https_admin: true
 
-  ssl:
-    verify_client: true   
+  mtls:
+    enable: true               # Enable or disable mtls. Enable depends on `port_admin` and `https_admin`.
+    ca_cert: "/data/certs/mtls_ca.crt"                 # Path of your self-signed ca cert.
+    server_key: "/data/certs/mtls_server.key"          # Path of your self-signed server side cert.
+    server_cert: "/data/certs/mtls_server.crt"         # Path of your self-signed server side key.
 ```
 
-4. 执行命令:
+3. 执行命令:
 ```shell
 apisix init
 apisix reload

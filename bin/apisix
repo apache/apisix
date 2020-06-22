@@ -291,9 +291,11 @@ http {
         {%if https_admin then%}
         listen {* port_admin *} ssl;
 
-        {%if ssl.verify_client then%}
-        ssl_certificate      cert/two_side_server.crt;
-        ssl_certificate_key  cert/two_side_server.key;
+        {%if mtls and mtls.enable then%}
+        ssl_verify_client on;
+        ssl_certificate      {* mtls.server_cert *};
+        ssl_certificate_key  {* mtls.server_key *};
+        ssl_client_certificate {* mtls.ca_cert *};
         {% else %}
         ssl_certificate      cert/apisix_admin_ssl.crt;
         ssl_certificate_key  cert/apisix_admin_ssl.key;
@@ -304,11 +306,6 @@ http {
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
         ssl_prefer_server_ciphers on;
-
-        {%if ssl.verify_client then%}
-        ssl_client_certificate cert/two_side_ca.crt;
-        ssl_verify_client on;
-        {%end%}
 
         {% else %}
         listen {* port_admin *};

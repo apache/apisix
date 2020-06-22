@@ -17,24 +17,25 @@
 #
 -->
 
-[Chinese](zh-cn/two-side-auth-with-ssl.md)
+[Chinese](zh-cn/mtls.md)
 
-## Enable client-to-server authentication with ssl certificates
+## Enable mutual TLS authentication
 
 1. Generate self-signed key pairs, including ca, server, client key pairs.
 
-2. Replace `cert/two-side-ca.crt` with the ca cert just generated. And replace `cert/two-side-client.crt` and `cert/two-side-client.key` in the same way.
-
-3. Modify configuration items in `conf/config.yaml`:
+2. Modify configuration items in `conf/config.yaml`:
 ```yaml
   port_admin: 9180
   https_admin: true
 
-  ssl:
-    verify_client: true   
+  mtls:
+    enable: true               # Enable or disable mtls. Enable depends on `port_admin` and `https_admin`.
+    ca_cert: "/data/certs/mtls_ca.crt"                 # Path of your self-signed ca cert.
+    server_key: "/data/certs/mtls_server.key"          # Path of your self-signed server side cert.
+    server_cert: "/data/certs/mtls_server.crt"         # Path of your self-signed server side key.  
 ```
 
-4. Run command:
+3. Run command:
 ```shell
 apisix init
 apisix reload
