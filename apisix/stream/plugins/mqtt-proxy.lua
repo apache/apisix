@@ -15,8 +15,8 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local balancer  = require("ngx.balancer")
-local bit       = require "bit"
+local upstream  = require("apisix.upstream")
+local bit       = require("bit")
 local ngx       = ngx
 local ngx_exit  = ngx.exit
 local str_byte  = string.byte
@@ -158,25 +158,28 @@ function _M.preread(conf, ctx)
     end
 
     core.log.info("mqtt client id: ", res.client_id)
+
+    local up_conf = {
+        type = "roundrobin",
+        nodes = {
+            {host = conf.upstream.ip, port = conf.upstream.port, weight = 1},
+        }
+    }
+
+    local ok, err = upstream.check_schema(up_conf)
+    if not ok then
+        return 500, err
+    end
+
+    local matched_route = ctx.matched_route
+    upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
+                 ctx.conf_version, up_conf, matched_route)
+    return
 end
 
 
 function _M.log(conf, ctx)
     core.log.info("plugin log phase, conf: ", core.json.encode(conf))
-end
-
-
-function _M.balancer(conf, ctx)
-    core.log.info("plugin balancer phase, conf: ", core.json.encode(conf))
-    -- ctx.balancer_name = plugin_name
-    local up = conf.upstream
-    ctx.balancer_name = plugin_name
-
-    local ok, err = balancer.set_current_peer(up.ip, up.port)
-    if not ok then
-        core.log.error("failed to set server peer: ", err)
-        return ngx_exit(1)
-    end
 end
 
 
