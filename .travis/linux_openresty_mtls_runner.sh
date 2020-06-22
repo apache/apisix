@@ -93,7 +93,7 @@ script() {
     openresty -V
     sudo service etcd start
 
-    mv -f ./conf/config-for-two-side-ssl-auth.yaml ./conf/config.yaml
+    mv -f ./conf/config-mtls.yaml ./conf/config.yaml
 
     ./bin/apisix help
     ./bin/apisix init
