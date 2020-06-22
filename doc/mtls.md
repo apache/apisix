@@ -32,7 +32,7 @@
     enable: true               # Enable or disable mtls. Enable depends on `port_admin` and `https_admin`.
     ca_cert: "/data/certs/mtls_ca.crt"                 # Path of your self-signed ca cert.
     server_key: "/data/certs/mtls_server.key"          # Path of your self-signed server side cert.
-    server_cert: "/data/certs/mtls_server.crt"         # Path of your self-signed server side key.  
+    server_cert: "/data/certs/mtls_server.crt"         # Path of your self-signed server side key.
 ```
 
 3. Run command:

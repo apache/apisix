@@ -110,7 +110,11 @@ script() {
     cat logs/error.log
 
 
-    curl --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes
+    code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
+    if [ ! $code -eq 200 ]; then
+        echo "failed: failed to enabled mtls for admin"
+        exit 1
+    fi
 
     ./bin/apisix stop
     sleep 1
