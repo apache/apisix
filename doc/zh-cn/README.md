@@ -18,7 +18,7 @@
 -->
 [English](../README.md)
 
-Reference document
+参考文档
 ==================
 
 * [APISIX 说明](../../README_CN.md)
@@ -61,9 +61,9 @@ Reference document
 * [fault-injection](plugins/fault-injection.md)：故障注入，可以返回指定的响应体、响应码和响应时间，从而提供了不同的失败场景下处理的能力，例如服务失败、服务过载、服务高延时等。
 * [proxy-cache](plugins/proxy-cache.md)：代理缓存插件提供缓存后端响应数据的能力。
 * [proxy-mirror](plugins/proxy-mirror.md)：代理镜像插件提供镜像客户端请求的能力。
-* [udp-logger](plugins/udp-logger.md): 将请求记录到UDP服务器
-* [tcp-logger](plugins/tcp-logger.md): 将请求记录到TCP服务器
-* [kafka-logger](plugins/kafka-logger.md): 将请求记录到外部Kafka服务器。
+* [udp-logger](plugins/udp-logger.md): 将请求记录到 UDP 服务器
+* [tcp-logger](plugins/tcp-logger.md): 将请求记录到 TCP 服务器
+* [kafka-logger](plugins/kafka-logger.md): 将请求记录到外部 Kafka 服务器。
 * [cors](plugins/cors.md): 为你的API启用 CORS
 * [batch-requests](plugins/batch-requests.md): 以 **http pipeline** 的方式在网关一次性发起多个 `http` 请求。
 * [authz-keycloak](plugins/authz-keycloak-cn.md): 支持 Keycloak 身份认证服务器
