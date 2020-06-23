@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 -->
-
 ### kubernetes
 
 There are some yaml files for deploying apisix in Kubernetes.
