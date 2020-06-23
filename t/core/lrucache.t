@@ -258,7 +258,7 @@ obj: {"idx":2,"_cache_ver":"ver"}
             end
 
             local lru_get = core.lrucache.new({
-                ttl = 0.1, count = 256, invalid_stale = true,
+                ttl = 1, count = 256, invalid_stale = true,
             })
 
             local function f()
