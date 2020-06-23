@@ -105,7 +105,6 @@ events {
 }
 
 worker_rlimit_core  {* worker_rlimit_core *};
-working_directory   /tmp/apisix_cores/;
 
 worker_shutdown_timeout 3;
 
