@@ -18,7 +18,7 @@
 -->
 [English](../README.md)
 
-Reference document
+参考文档
 ==================
 
 * [APISIX 说明](../../README_CN.md)
