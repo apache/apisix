@@ -67,6 +67,7 @@ Plugins
 * [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
 * [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.
 * [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
+* [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
 
 Deploy to the Cloud
 =======
