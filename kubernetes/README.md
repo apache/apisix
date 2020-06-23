@@ -17,6 +17,10 @@
 #
 -->
 
+### kubernetes
+
+This is a yaml file for deploying apisix in kubernetes, but does not include the deployment of etcd.
+
 ### Usage
 
 #### Create configmap for apache incubator-apisix
