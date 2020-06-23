@@ -68,3 +68,4 @@ Reference document
 * [batch-requests](plugins/batch-requests.md): 以 **http pipeline** 的方式在网关一次性发起多个 `http` 请求。
 * [authz-keycloak](plugins/authz-keycloak-cn.md): 支持 Keycloak 身份认证服务器
 * [uri-blocker](plugins/uri-blocker.md): 根据 URI 拦截用户请求。
+* [oauth](plugins/oauth.md): 提供 OAuth 2 身份验证和自省。
