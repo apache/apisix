@@ -69,7 +69,7 @@ Plugins
 * [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
 * [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
 
-Deploy to the Cloud
+Deploy
 =======
 
 ### AWS
@@ -77,3 +77,8 @@ Deploy to the Cloud
 The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
 
 See [this guide](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md) by [Pahud Hsieh](https://github.com/pahud) and learn how to provision the recommended architecture 100% in AWS CDK.
+
+### Kubernetes
+
+See [this guide](../kubernetes/README.md) and learn how to deploy apisix in Kubernetes.
+
