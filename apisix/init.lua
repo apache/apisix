@@ -328,9 +328,9 @@ function _M.http_access_phase()
         local uri = api_ctx.var.uri
         if str_byte(uri, #uri) == str_byte("/") then
             api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
+            core.log.info("remove the end of uri '/', current uri: ",
+                          api_ctx.var.uri)
         end
-
-        core.log.info("new uri: ", api_ctx.var.uri)
     end
 
     router.router_http.match(api_ctx)
