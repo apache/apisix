@@ -19,7 +19,15 @@
 
 [Chinese](zh-cn/mtls.md)
 
-## Enable mutual TLS authentication
+## Mutual TLS authentication
+
+### Why use it
+
+Mutual TLS authentication provides a better way to prevent unauthorized access to APISIX.
+
+The clients will provide their certificates to the server and the server will check whether the cert is signed by the supplied CA and decide whether to serve the request.
+
+### How to enable
 
 1. Generate self-signed key pairs, including ca, server, client key pairs.
 
@@ -41,4 +49,14 @@
 ```shell
 apisix init
 apisix reload
+```
+
+### How client calls
+
+Please replace the following certificate paths and domain name with your real ones.
+
+* Note: The same CA certificate as the server needs to be used *
+
+```shell
+curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```

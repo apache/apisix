@@ -19,7 +19,13 @@
 
 [English](../mtls.md)
 
-## 开启双向认证
+## 双向认证
+
+### 为什么使用
+
+双向认证可以更好的防止未经授权访问 APISIX ，客户端将向服务器提供其证书，服务器将检查证书是否由提供的 CA 签名并决定是否响应请求。
+
+### 如何开启
 
 1. 生成自签证书对，包括 ca、server、client 证书对。
 
@@ -31,7 +37,7 @@
 
   mtls:
     enable: true               # Enable or disable mTLS. Enable depends on `port_admin` and `https_admin`.
-    ca_cert: "/data/certs/mtls_ca.crt"                 # Path of your self-signed ca cert.
+    ca_cert: "/data/certs/mtls_ca.crt"                 # Path of your self-signed CA cert.
     server_key: "/data/certs/mtls_server.key"          # Path of your self-signed server side cert.
     server_cert: "/data/certs/mtls_server.crt"         # Path of your self-signed server side key.
 ```
@@ -41,4 +47,14 @@
 ```shell
 apisix init
 apisix reload
+```
+
+### 客户端如何调用
+
+请将以下证书及域名替换为您的真实内容。
+
+* 注意：需要和服务器使用相同的 CA 证书 *
+
+```shell
+curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
