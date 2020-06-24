@@ -291,7 +291,10 @@ http {
         {%if https_admin then%}
         listen {* port_admin *} ssl;
 
-        {%if admin_api_mtls and admin_api_mtls.mtls_enable then%}
+        {%if admin_api_mtls and admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert ~= "" and 
+         admin_api_mtls.admin_ssl_cert_key and admin_api_mtls.admin_ssl_cert_key ~= "" and 
+         admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= "" 
+        then%}
         ssl_verify_client on;
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};

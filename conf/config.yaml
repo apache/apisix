@@ -53,14 +53,13 @@ apisix:
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
-  port_admin: 9180              # use a separate port
-  https_admin: true             # enable HTTPS when use a separate port for Admin API.
-                                  # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
-  admin_api_mtls:
-    mtls_enable: true          # Enable or disable mTLS. Enable depends on `port_admin` and `https_admin`.
-    admin_ssl_cert: "../t/certs/mtls_server.crt"             # Path of your self-signed server side cert.
-    admin_ssl_cert_key: "../t/certs/mtls_server.key"              # Path of your self-signed server side key.
-    admin_ssl_ca_cert: "../t/certs/mtls_ca.crt"                     # Path of your self-signed ca cert.
+  # port_admin: 9180              # use a separate port
+  # https_admin: true             # enable HTTPS when use a separate port for Admin API.
+                                # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
+  admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
+    admin_ssl_cert: ""             # Path of your self-signed server side cert.
+    admin_ssl_cert_key: ""              # Path of your self-signed server side key.
+    admin_ssl_ca_cert: ""                     # Path of your self-signed ca cert.
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
