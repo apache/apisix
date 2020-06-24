@@ -81,5 +81,5 @@
 
 ### Kubernetes
 
-请参阅[指南](../../kubernetes/README.md)并了解如何在 Kubernetes 中部署 apisix。
+请参阅[指南](../../kubernetes/README.md)并了解如何在 Kubernetes 中部署 APISIX。
 
