@@ -28,7 +28,6 @@
 * [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
 * Router(路由)
     * [radixtree](../router-radixtree.md)
-    * [r3](router-r3.md)
 * [独立运行模型](stand-alone.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy.md)
 * [管理 API](admin-api.md)
