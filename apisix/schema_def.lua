@@ -481,6 +481,7 @@ _M.upstream = upstream_schema
 _M.ssl = {
     type = "object",
     properties = {
+        id = id_schema,
         cert = {
             type = "string", minLength = 128, maxLength = 64*1024
         },
@@ -533,6 +534,7 @@ _M.proto = {
 _M.global_rule = {
     type = "object",
     properties = {
+        id = id_schema,
         plugins = plugins_schema
     },
     required = {"plugins"},
@@ -543,6 +545,7 @@ _M.global_rule = {
 _M.stream_route = {
     type = "object",
     properties = {
+        id = id_schema,
         remote_addr = remote_addr_def,
         server_addr = {
             description = "server IP",
