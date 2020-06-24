@@ -109,7 +109,7 @@ script() {
     sleep 1
     cat logs/error.log
 
-    # correct certs 
+    # correct certs
     code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
     if [ ! $code -eq 200 ]; then
         echo "failed: failed to enabled mTLS for admin"
@@ -123,7 +123,7 @@ script() {
         exit 1
     fi
 
-    # no ca cert 
+    # no ca cert
     code=$(curl -i -o /dev/null -s -w %{http_code} --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
     if [ ! $code -eq 000 ]; then
         echo "failed: failed to enabled mTLS for admin"
@@ -133,6 +133,13 @@ script() {
     # error key
     code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_server.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
     if [ ! $code -eq 000 ]; then
+        echo "failed: failed to enabled mTLS for admin"
+        exit 1
+    fi
+
+    # skip
+    code=$(curl -i -o /dev/null -s -w %{http_code} -k -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
+    if [ ! $code -eq 400 ]; then
         echo "failed: failed to enabled mTLS for admin"
         exit 1
     fi
