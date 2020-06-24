@@ -24,6 +24,7 @@
 1. Generate self-signed key pairs, including ca, server, client key pairs.
 
 2. Modify configuration items in `conf/config.yaml`:
+
 ```yaml
   port_admin: 9180
   https_admin: true
@@ -36,6 +37,7 @@
 ```
 
 3. Run command:
+
 ```shell
 apisix init
 apisix reload

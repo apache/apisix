@@ -24,6 +24,7 @@
 1. 生成自签证书对，包括 ca、server、client 证书对。
 
 2. 修改 `conf/config.yaml` 中的配置项:
+
 ```yaml
   port_admin: 9180
   https_admin: true
@@ -36,6 +37,7 @@
 ```
 
 3. 执行命令:
+
 ```shell
 apisix init
 apisix reload
