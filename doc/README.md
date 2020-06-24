@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 -->
+
 [Chinese](./zh-cn/README.md)
 
 Reference Documentation
@@ -27,8 +28,7 @@ Reference Documentation
 * [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
-* Router
-    * [radixtree](router-radixtree.md)
+* [Router radixtree](router-radixtree.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 * [Stream Proxy](stream-proxy.md)
 * [Admin API](admin-api.md)
