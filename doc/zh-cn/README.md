@@ -77,7 +77,7 @@
 
 推荐的方法是在 [AWS Fargate](https://aws.amazon.com/fargate/) 上使用  [AWS CDK](https://aws.amazon.com/cdk/) 部署 APISIX，这有助于将 APISIX 层和上游层分离到具有自动缩放功能的完全托管和安全的无服务器容器计算环境之上。
 
-请参阅 [Pahud Hsieh](https://github.com/pahud) 撰写的[指南](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md) ，了解如何在 AWS CDK 中 100％ 配置推荐的架构。
+请参阅 [Pahud Hsieh](https://github.com/pahud) 撰写的[指南](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md)，了解如何在 AWS CDK 中 100％ 配置推荐的架构。
 
 ### Kubernetes
 
