@@ -519,6 +519,10 @@ local function cors_admin()
                             "Access-Control-Max-Age", "3600")
 end
 
+local function add_content_type()
+    core.response.set_header("Content-Type", "application/json")
+end
+
 do
     local router
 
@@ -529,6 +533,9 @@ function _M.http_admin()
 
     -- add cors rsp header
     cors_admin()
+
+    -- add content type to rsp header
+    add_content_type()
 
     -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
     local ok = router:dispatch(get_var("uri"), {method = get_method()})
