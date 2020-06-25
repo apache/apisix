@@ -274,7 +274,8 @@ script() {
     sudo service etcd start
     etcd --version
     sleep 20
-    sudo service etcd status
+    sudo lsof -i -P | grep LISTEN | grep etcd
+    curl http://127.0.0.1:2379/version
 
     ./build-cache/grpc_server_example &
 
