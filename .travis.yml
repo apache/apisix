@@ -1,10 +1,9 @@
-dist: xenial
+dist: bionic
 sudo: required
 
 matrix:
   include:
     - os: linux
-      dist: bionic
       services:
         - docker
       env: OSNAME=linux_openresty
@@ -15,7 +14,6 @@ matrix:
           - $HOME/Library/Caches/Homebrew
           - /usr/local/Homebrew
     - os: linux
-      dist: bionic
       services:
         - docker
       env: OSNAME=linux_tengine
