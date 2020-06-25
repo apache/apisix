@@ -129,6 +129,7 @@ script() {
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
     sudo service etcd start
+    etcd --version
 
     ./build-cache/grpc_server_example &
 
