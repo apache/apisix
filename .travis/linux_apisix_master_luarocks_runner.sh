@@ -48,6 +48,9 @@ script() {
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
     sudo service etcd start
+    etcd --version
+    sleep 20
+    sudo service etcd status
 
     sudo rm -rf /usr/local/apisix
 

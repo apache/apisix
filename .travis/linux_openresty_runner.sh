@@ -130,6 +130,8 @@ script() {
     openresty -V
     sudo service etcd start
     etcd --version
+    sleep 20
+    sudo service etcd status
 
     ./build-cache/grpc_server_example &
 
