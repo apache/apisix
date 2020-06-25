@@ -26,15 +26,15 @@ no_root_location();
 log_level("info");
 
 # Authentication is enabled at etcd and credentials are set
-system('etcdctl --endpoints="http://127.0.0.1:2376" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
-system('etcdctl --endpoints="http://127.0.0.1:2376" -u root:5tHkHhYkjr6cQY auth enable');
-system('etcdctl --endpoints="http://127.0.0.1:2376" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
+system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
+system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
+system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
 
 run_tests;
 
 # Authentication is disabled at etcd & guest access is granted
-system('etcdctl --endpoints="http://127.0.0.1:2376" -u root:5tHkHhYkjr6cQY auth disable');
-system('etcdctl --endpoints="http://127.0.0.1:2376" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
+system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
+system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
 
 
 __DATA__
