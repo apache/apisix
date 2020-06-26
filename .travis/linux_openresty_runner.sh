@@ -128,7 +128,11 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
-    sudo service etcd start
+    sudo service etcd stop
+    mkdir -p ~/etcd-data
+    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcd --version
+    sleep 5
 
     ./build-cache/grpc_server_example &
 
@@ -147,7 +151,7 @@ script() {
     sleep 1
 
     make lint && make license-check || exit 1
-    APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -r t
+    APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
 after_success() {
