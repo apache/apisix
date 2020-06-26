@@ -112,7 +112,7 @@ local function run_plugin(phase, plugins, api_ctx)
     end
 
     plugins = plugins or api_ctx.plugins
-    if not plugins then
+    if not plugins or #plugins == 0 then
         return api_ctx
     end
 
@@ -435,7 +435,7 @@ function _M.grpc_access_phase()
 end
 
 
-local function common_phase(plugin_name)
+local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         return
@@ -447,11 +447,12 @@ local function common_phase(plugin_name)
         for _, global_rule in config_util.iterate_values(values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
-            run_plugin(plugin_name, plugins, api_ctx)
+            run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
     end
-    run_plugin(plugin_name, nil, api_ctx)
+
+    run_plugin(phase_name, nil, api_ctx)
     return api_ctx
 end
 
