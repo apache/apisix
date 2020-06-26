@@ -39,6 +39,9 @@ local lrucache_server_picker = core.lrucache.new({
 local lrucache_checker = core.lrucache.new({
     ttl = 300, count = 256
 })
+local lrucache_addr = core.lrucache.new({
+    ttl = 300, count = 1024 * 4
+})
 
 
 local _M = {
@@ -143,6 +146,12 @@ local function create_server_picker(upstream, checker)
 end
 
 
+local function parse_addr(addr)
+    local ip, port, err = core.utils.parse_addr(addr)
+    return {ip = ip, port = port}, err
+end
+
+
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
@@ -214,11 +223,11 @@ local function pick_server(route, ctx)
         end
     end
 
-    local ip, port, err = core.utils.parse_addr(server)
-    ctx.balancer_ip = ip
-    ctx.balancer_port = port
-    core.log.info("proxy to ", ip, ":", port)
-    return ip, port, err
+    local res, err = lrucache_addr(server, nil, parse_addr, server)
+    ctx.balancer_ip = res.ip
+    ctx.balancer_port = res.port
+    -- core.log.info("proxy to ", ip, ":", port)
+    return res.ip, res.port, err
 end
 
 

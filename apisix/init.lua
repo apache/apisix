@@ -262,6 +262,8 @@ function _M.http_access_phase()
         api_ctx.conf_type = nil
         api_ctx.conf_version = nil
         api_ctx.conf_id = nil
+
+        api_ctx.global_rules = router.global_rules
     end
 
     router.router_http.match(api_ctx)
@@ -439,11 +441,9 @@ local function common_phase(plugin_name)
         return
     end
 
-    if router.global_rules and router.global_rules.values
-            and #router.global_rules.values > 0
-    then
+    if api_ctx.global_rules then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = router.global_rules.values
+        local values = api_ctx.global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
