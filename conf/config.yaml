@@ -122,7 +122,8 @@ etcd:
     - "http://127.0.0.1:2379"     # multiple etcd address
   prefix: "/apisix"               # apisix configurations prefix
   timeout: 3                      # 3 seconds
-
+  # user: root                     # root username for etcd
+  # password: 5tHkHhYkjr6cQY        # root password for etcd
 #eureka:
 #  host:                           # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
 #    - "http://127.0.0.1:8761"
