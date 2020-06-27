@@ -42,6 +42,12 @@ function _M.http_header_filter_phase()
     end
 end
 
+function _M.http_body_filter_phase()
+    if ngx.ctx then
+        -- do something
+    end
+end
+
 function _M.http_log_phase()
     if ngx.ctx then
         -- do something
