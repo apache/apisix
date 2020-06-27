@@ -147,8 +147,8 @@ end
 
 
 local function parse_addr(addr)
-    local ip, port, err = core.utils.parse_addr(addr)
-    return {ip = ip, port = port}, err
+    local host, port, err = core.utils.parse_addr(addr)
+    return {host = host, port = port}, err
 end
 
 
@@ -162,13 +162,25 @@ local function pick_server(route, ctx)
 
     if up_conf.service_name then
         if not discovery then
-            return nil, nil, "discovery is uninitialized"
+            return nil, "discovery is uninitialized"
         end
         up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
 
     if not up_conf.nodes or #up_conf.nodes == 0 then
-        return nil, nil, "no valid upstream node"
+        return nil, "no valid upstream node"
+    end
+
+    if up_conf.timeout then
+        local timeout = up_conf.timeout
+        local ok, err = set_timeouts(timeout.connect, timeout.send, timeout.read)
+        if not ok then
+            core.log.error("could not set upstream timeouts: ", err)
+        end
+    end
+
+    if #up_conf.nodes == 1 then
+        return up_conf.nodes[1]
     end
 
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
@@ -206,28 +218,25 @@ local function pick_server(route, ctx)
     local server_picker = lrucache_server_picker(key, version,
                             create_server_picker, up_conf, checker)
     if not server_picker then
-        return nil, nil, "failed to fetch server picker"
+        return nil, "failed to fetch server picker"
     end
 
     local server, err = server_picker.get(ctx)
     if not server then
         err = err or "no valid upstream node"
-        return nil, nil, "failed to find valid upstream server, " .. err
-    end
-
-    if up_conf.timeout then
-        local timeout = up_conf.timeout
-        local ok, err = set_timeouts(timeout.connect, timeout.send, timeout.read)
-        if not ok then
-            core.log.error("could not set upstream timeouts: ", err)
-        end
+        return nil, "failed to find valid upstream server, " .. err
     end
 
     local res, err = lrucache_addr(server, nil, parse_addr, server)
-    ctx.balancer_ip = res.ip
+    ctx.balancer_ip = res.host
     ctx.balancer_port = res.port
-    -- core.log.info("proxy to ", ip, ":", port)
-    return res.ip, res.port, err
+    -- core.log.info("proxy to ", host, ":", port)
+    if err then
+        core.log.error("failed to parse server addr: ", server, " err: ", err)
+        return core.response.exit(502)
+    end
+
+    return res
 end
 
 
@@ -236,15 +245,15 @@ _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
-    local ip, port, err = pick_server(route, ctx)
+    local res, err = pick_server(route, ctx)
     if err then
         core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
 
-    local ok, err = balancer.set_current_peer(ip, port)
+    local ok, err = balancer.set_current_peer(res.host, res.port)
     if not ok then
-        core.log.error("failed to set server peer [", ip, ":", port,
+        core.log.error("failed to set server peer [", res.host, ":", res.port,
                        "] err: ", err)
         return core.response.exit(502)
     end
