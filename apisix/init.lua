@@ -112,7 +112,7 @@ local function run_plugin(phase, plugins, api_ctx)
     end
 
     plugins = plugins or api_ctx.plugins
-    if not plugins then
+    if not plugins or #plugins == 0 then
         return api_ctx
     end
 
@@ -262,6 +262,8 @@ function _M.http_access_phase()
         api_ctx.conf_type = nil
         api_ctx.conf_version = nil
         api_ctx.conf_id = nil
+
+        api_ctx.global_rules = router.global_rules
     end
 
     router.router_http.match(api_ctx)
@@ -433,25 +435,24 @@ function _M.grpc_access_phase()
 end
 
 
-local function common_phase(plugin_name)
+local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         return
     end
 
-    if router.global_rules and router.global_rules.values
-            and #router.global_rules.values > 0
-    then
+    if api_ctx.global_rules then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = router.global_rules.values
+        local values = api_ctx.global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
-            run_plugin(plugin_name, plugins, api_ctx)
+            run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
     end
-    run_plugin(plugin_name, nil, api_ctx)
+
+    run_plugin(phase_name, nil, api_ctx)
     return api_ctx
 end
 
