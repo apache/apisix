@@ -35,7 +35,7 @@ our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/admin_key:/disable_admin_key:/;
-$yaml_config =~ s/delete_uri_tail_slash: true/delete_uri_tail_slash: false/;
+$yaml_config =~ s/delete_uri_tail_slash: false/delete_uri_tail_slash: true/;
 
 run_tests();
 
@@ -86,10 +86,11 @@ hello world
 
 
 
-=== TEST 3: not hit route
+=== TEST 3: hit route
 --- request
 GET /hello/
 --- yaml_config eval: $::yaml_config
---- error_code: 404
+--- response_body
+hello world
 --- no_error_log
 [error]
