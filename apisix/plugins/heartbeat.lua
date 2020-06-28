@@ -114,7 +114,7 @@ local function report()
     local res
     res, err = request_apisix_svr(args)
     if not res then
-        core.log.error("failed to report heartbeat information: ", err)
+        core.log.info("failed to report heartbeat information: ", err)
         return
     end
 
