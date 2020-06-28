@@ -39,6 +39,9 @@ local lrucache_server_picker = core.lrucache.new({
 local lrucache_checker = core.lrucache.new({
     ttl = 300, count = 256
 })
+local lrucache_addr = core.lrucache.new({
+    ttl = 300, count = 1024 * 4
+})
 
 
 local _M = {
@@ -143,25 +146,47 @@ local function create_server_picker(upstream, checker)
 end
 
 
+local function parse_addr(addr)
+    local host, port, err = core.utils.parse_addr(addr)
+    return {host = host, port = port}, err
+end
+
+
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
-    local healthcheck_parent = ctx.upstream_healthcheck_parent
     local up_conf = ctx.upstream_conf
-    local version = ctx.upstream_version
-    local key = ctx.upstream_key
-
     if up_conf.service_name then
         if not discovery then
-            return nil, nil, "discovery is uninitialized"
+            return nil, "discovery is uninitialized"
         end
         up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
 
-    if not up_conf.nodes or #up_conf.nodes == 0 then
-        return nil, nil, "no valid upstream node"
+    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
+    if nodes_count == 0 then
+        return nil, "no valid upstream node"
     end
 
+    if up_conf.timeout then
+        local timeout = up_conf.timeout
+        local ok, err = set_timeouts(timeout.connect, timeout.send,
+                                     timeout.read)
+        if not ok then
+            core.log.error("could not set upstream timeouts: ", err)
+        end
+    end
+
+    if nodes_count == 1 then
+        local node = up_conf.nodes[1]
+        ctx.balancer_ip = node.host
+        ctx.balancer_port = node.port
+        return node
+    end
+
+    local healthcheck_parent = ctx.upstream_healthcheck_parent
+    local version = ctx.upstream_version
+    local key = ctx.upstream_key
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
@@ -197,28 +222,25 @@ local function pick_server(route, ctx)
     local server_picker = lrucache_server_picker(key, version,
                             create_server_picker, up_conf, checker)
     if not server_picker then
-        return nil, nil, "failed to fetch server picker"
+        return nil, "failed to fetch server picker"
     end
 
     local server, err = server_picker.get(ctx)
     if not server then
         err = err or "no valid upstream node"
-        return nil, nil, "failed to find valid upstream server, " .. err
+        return nil, "failed to find valid upstream server, " .. err
     end
 
-    if up_conf.timeout then
-        local timeout = up_conf.timeout
-        local ok, err = set_timeouts(timeout.connect, timeout.send, timeout.read)
-        if not ok then
-            core.log.error("could not set upstream timeouts: ", err)
-        end
+    local res, err = lrucache_addr(server, nil, parse_addr, server)
+    ctx.balancer_ip = res.host
+    ctx.balancer_port = res.port
+    -- core.log.info("proxy to ", host, ":", port)
+    if err then
+        core.log.error("failed to parse server addr: ", server, " err: ", err)
+        return core.response.exit(502)
     end
 
-    local ip, port, err = core.utils.parse_addr(server)
-    ctx.balancer_ip = ip
-    ctx.balancer_port = port
-    core.log.info("proxy to ", ip, ":", port)
-    return ip, port, err
+    return res
 end
 
 
@@ -227,16 +249,16 @@ _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
-    local ip, port, err = pick_server(route, ctx)
-    if err then
+    local server, err = pick_server(route, ctx)
+    if not server then
         core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
 
-    local ok, err = balancer.set_current_peer(ip, port)
+    local ok, err = balancer.set_current_peer(server.host, server.port)
     if not ok then
-        core.log.error("failed to set server peer [", ip, ":", port,
-                       "] err: ", err)
+        core.log.error("failed to set server peer [", server.host, ":",
+                       server.port, "] err: ", err)
         return core.response.exit(502)
     end
 
