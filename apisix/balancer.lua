@@ -163,7 +163,7 @@ local function pick_server(route, ctx)
         up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
 
-    local nodes_count = #up_conf.nodes
+    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
         return nil, "no valid upstream node"
     end
@@ -249,16 +249,16 @@ _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
-    local res, err = pick_server(route, ctx)
-    if err then
+    local server, err = pick_server(route, ctx)
+    if not server then
         core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
 
-    local ok, err = balancer.set_current_peer(res.host, res.port)
+    local ok, err = balancer.set_current_peer(server.host, server.port)
     if not ok then
-        core.log.error("failed to set server peer [", res.host, ":", res.port,
-                       "] err: ", err)
+        core.log.error("failed to set server peer [", server.host, ":",
+                       server.port, "] err: ", err)
         return core.response.exit(502)
     end
 
