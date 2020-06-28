@@ -25,7 +25,7 @@ end
 
 local function fake_fetch()
     ngx.ctx.ip = "127.0.0.1"
-    ngx.ctx.port = 80
+    ngx.ctx.port = 1980
 end
 
 function _M.http_access_phase()

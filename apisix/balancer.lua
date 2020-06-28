@@ -155,11 +155,7 @@ end
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
-    local healthcheck_parent = ctx.upstream_healthcheck_parent
     local up_conf = ctx.upstream_conf
-    local version = ctx.upstream_version
-    local key = ctx.upstream_key
-
     if up_conf.service_name then
         if not discovery then
             return nil, "discovery is uninitialized"
@@ -167,25 +163,30 @@ local function pick_server(route, ctx)
         up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
 
-    if not up_conf.nodes or #up_conf.nodes == 0 then
+    local nodes_count = #up_conf.nodes
+    if nodes_count == 0 then
         return nil, "no valid upstream node"
     end
 
     if up_conf.timeout then
         local timeout = up_conf.timeout
-        local ok, err = set_timeouts(timeout.connect, timeout.send, timeout.read)
+        local ok, err = set_timeouts(timeout.connect, timeout.send,
+                                     timeout.read)
         if not ok then
             core.log.error("could not set upstream timeouts: ", err)
         end
     end
 
-    if #up_conf.nodes == 1 then
+    if nodes_count == 1 then
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
         return node
     end
 
+    local healthcheck_parent = ctx.upstream_healthcheck_parent
+    local version = ctx.upstream_version
+    local key = ctx.upstream_key
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
