@@ -92,7 +92,6 @@ loaded plugin and sort by priority: -2000 name: serverless-post-function
 
 
 
-
 === TEST 2: set route(no plugin)
 --- config
     location /t {
