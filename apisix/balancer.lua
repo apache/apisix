@@ -180,7 +180,10 @@ local function pick_server(route, ctx)
     end
 
     if #up_conf.nodes == 1 then
-        return up_conf.nodes[1]
+        local node = up_conf.nodes[1]
+        ctx.balancer_ip = node.host
+        ctx.balancer_port = node.port
+        return node
     end
 
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
