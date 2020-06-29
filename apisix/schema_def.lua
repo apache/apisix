@@ -445,6 +445,11 @@ _M.service = {
     type = "object",
     properties = {
         id = id_schema,
+        hosts = {
+            type = "array",
+            items = host_def,
+            uniqueItems = true,
+        },
         plugins = plugins_schema,
         upstream = upstream_schema,
         upstream_id = id_schema,

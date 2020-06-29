@@ -18,6 +18,7 @@ local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
+local service_fetch = require("apisix.http.service").get
 local ipairs = ipairs
 local type = type
 local error = error
@@ -53,6 +54,12 @@ local function push_host_router(route, host_routes, only_uri_routes)
     end
 
     local hosts = route.value.hosts or {route.value.host}
+    if #hosts == 0 and route.value.service_id then
+        local service = service_fetch(route.value.service_id)
+        if service.value.hosts ~= nil then
+            hosts = service.value.hosts
+        end
+    end
 
     local radixtree_route = {
         paths = route.value.uris or route.value.uri,
