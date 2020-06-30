@@ -23,11 +23,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: ${{ matrix.platform }} - Get dependencies
-        if: matrix.platform == ubuntu-18.04
+        if: matrix.platform == 'ubuntu-18.04'
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
         
       - name: ${{ matrix.platform }} - Get dependencies
-        if: matrix.platform == macos-latest
+        if: matrix.platform == 'macos-latest'
         run: brew install cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
 
       - name: Before install
