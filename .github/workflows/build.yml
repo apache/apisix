@@ -8,13 +8,13 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         platform: [ubuntu-18.04]
         os_name: [linux_openresty, linux_tengine, linux_apisix_master_luarocks, linux_apisix_current_luarocks]
         include:
           - platform: macos-latest
             os_name: osx_openresty
-      
 
     runs-on: ${{ matrix.platform }}
 
@@ -22,8 +22,13 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Get dependencies
+      - name: ${{ matrix.platform }} - Get dependencies
+        if: matrix.platform == ubuntu-18.04
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
+        
+      - name: ${{ matrix.platform }} - Get dependencies
+        if: matrix.platform == macos-latest
+        run: brew install cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
 
       - name: Before install
         run: ./.travis/${{ matrix.os_name }}_runner.sh before_install
