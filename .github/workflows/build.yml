@@ -27,13 +27,13 @@ jobs:
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
 
       - name: Before install
-        run: ./.travis/${{ matrix.os_name }}_runner.sh before_install
+        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Install
-        run: ./.travis/${{ matrix.os_name }}_runner.sh do_install
+        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Script
-        run: ./.travis/${{ matrix.os_name }}_runner.sh script
+        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
 
       - name: After success
-        run: ./.travis/${{ matrix.os_name }}_runner.sh after_success
+        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh after_success
