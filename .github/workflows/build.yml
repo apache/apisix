@@ -25,6 +25,14 @@ jobs:
       - name: ${{ matrix.platform }} - Get dependencies
         if: matrix.platform == 'ubuntu-18.04'
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
+      
+      - name: Preprocessing for macos
+        if: matrix.platform == 'macos-latest'
+        run: |
+          sudo chown -R `whoami` /usr/local/Homebrew/
+          sudo chown -R $(whoami) $(brew --prefix)/*
+          sudo mkdir /usr/local/Frameworks
+          sudo chown -R `whoami` /usr/local/Frameworks/
 
       - name: Before install
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
