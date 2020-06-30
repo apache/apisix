@@ -237,7 +237,7 @@ function _M.filter(user_route, plugins)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
-        if local_conf and local_conf.apisix.enable_debug then
+        if local_conf and local_conf.apisix.enable_debug and not ngx.headers_sent then
             core.response.set_header("Apisix-Plugins", "no plugin")
         end
         return plugins
@@ -253,7 +253,7 @@ function _M.filter(user_route, plugins)
         end
     end
 
-    if local_conf.apisix.enable_debug then
+    if local_conf.apisix.enable_debug and not ngx.headers_sent then
         local t = {}
         for i = 1, #plugins, 2 do
             core.table.insert(t, plugins[i].name)
