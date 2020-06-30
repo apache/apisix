@@ -22,7 +22,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: ${{ matrix.platform }} - Get dependencies
+      - name: Get dependencies - ${{ matrix.platform }}
         if: matrix.platform == 'ubuntu-18.04'
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
       
@@ -31,7 +31,6 @@ jobs:
         run: |
           sudo chown -R `whoami` /usr/local/Homebrew/
           sudo chown -R $(whoami) $(brew --prefix)/*
-          sudo mkdir /usr/local/Frameworks
           sudo chown -R `whoami` /usr/local/Frameworks/
 
       - name: Before install
