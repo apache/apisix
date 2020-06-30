@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [1.4.0](#140)
 - [1.3.0](#130)
 - [1.2.0](#120)
 - [1.1.0](#110)
@@ -27,6 +28,24 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 1.4.0
+
+### Core
+- Admin API: Support unique names for routes [1655](https://github.com/apache/incubator-apisix/pull/1655)
+- Optimization of log buffer size and flush time [1570](https://github.com/apache/incubator-apisix/pull/1570)
+
+### New plugins
+- :sunrise: **Apache Skywalking plugin** [1241](https://github.com/apache/incubator-apisix/pull/1241)
+- :sunrise: **Keycloak Identity Server Plugin** [1701](https://github.com/apache/incubator-apisix/pull/1701)
+- :sunrise: **Echo Plugin** [1632](https://github.com/apache/incubator-apisix/pull/1632)
+- :sunrise: **Consume Restriction Plugin** [1437](https://github.com/apache/incubator-apisix/pull/1437)
+
+### Improvements
+- Batch Request : Copy all headers to every request [1697](https://github.com/apache/incubator-apisix/pull/1697)
+- SSL private key encryption [1678](https://github.com/apache/incubator-apisix/pull/1678)
+- Improvement of docs for multiple plugins
+
 
 ## 1.3.0
 
