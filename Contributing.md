@@ -51,6 +51,11 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## Contribution Guidelines for Documentation
 
+* Linting/Style
+
+    Use a markdown linting tool to lint the content. The following is a [plugin](https://github.com/apache/incubator-apisix/issues/1273)
+    used by our community to lint the docs.
+
 * Active Voice
 
     In general, use active voice when formulating the sentence instead of passive voice. A sentence written in the active voice will emphasize
@@ -98,15 +103,15 @@ Once we've discussed your changes and you've got your code ready, make sure that
         $ make lint
         luacheck -q lua
         Total: 0 warnings / 0 errors in 74 files
-        ./utils/lj-releng lua/*.lua \
-            lua/apisix/*.lua \
-            lua/apisix/admin/*.lua \
-            lua/apisix/core/*.lua \
-            lua/apisix/http/*.lua \
-            lua/apisix/http/router/*.lua \
-            lua/apisix/plugins/*.lua \
-            lua/apisix/plugins/grpc-transcode/*.lua \
-            lua/apisix/plugins/limit-count/*.lua > \
+        ./utils/lj-releng \
+            apisix/*.lua \
+            apisix/admin/*.lua \
+            apisix/core/*.lua \
+            apisix/http/*.lua \
+            apisix/http/router/*.lua \
+            apisix/plugins/*.lua \
+            apisix/plugins/grpc-transcode/*.lua \
+            apisix/plugins/limit-count/*.lua > \
             /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 ```
 * test case style

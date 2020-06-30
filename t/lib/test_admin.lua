@@ -14,9 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local http = require("resty.http")
-local json = require("cjson.safe")
-local dir_names = {}
+local http              = require("resty.http")
+local json              = require("cjson.safe")
+local aes               = require "resty.aes"
+local ngx_encode_base64 = ngx.encode_base64
+local str_find          = string.find
+local dir_names         = {}
 
 
 local _M = {}
@@ -100,7 +103,33 @@ function _M.test_ipv6(uri)
 end
 
 
-function _M.test(uri, method, body, pattern)
+function _M.comp_tab(left_tab, right_tab)
+    dir_names = {}
+
+    if type(left_tab) == "string" then
+        left_tab = json.decode(left_tab)
+    end
+    if type(right_tab) == "string" then
+        right_tab = json.decode(right_tab)
+    end
+
+    local ok, err = com_tab(left_tab, right_tab)
+    if not ok then
+        return false, err
+    end
+
+    return true
+end
+
+
+function _M.test(uri, method, body, pattern, headers)
+    if not headers then
+        headers = {}
+    end
+    if not headers["Content-Type"] then
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    end
+
     if type(body) == "table" then
         body = json.encode(body)
     end
@@ -117,14 +146,12 @@ function _M.test(uri, method, body, pattern)
     -- https://github.com/ledgetech/lua-resty-http
     uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
           .. ":" .. ngx.var.server_port .. uri
-    local res = httpc:request_uri(uri,
+    local res, err = httpc:request_uri(uri,
         {
             method = method,
             body = body,
             keepalive = false,
-            headers = {
-            ["Content-Type"] = "application/x-www-form-urlencoded",
-            },
+            headers = headers,
         }
     )
     if not res then
@@ -139,11 +166,9 @@ function _M.test(uri, method, body, pattern)
     if pattern == nil then
         return res.status, "passed", res.body
     end
+
     local res_data = json.decode(res.body)
-    if type(pattern) == "string" then
-        pattern = json.decode(pattern)
-    end
-    local ok, err = com_tab(pattern, res_data)
+    local ok, err = _M.comp_tab(pattern, res_data)
     if not ok then
         return 500, "failed, " .. err, res_data
     end
@@ -185,6 +210,24 @@ function _M.req_self_with_http(uri, method, body, headers)
     )
 
     return res, err
+end
+
+
+function _M.aes_encrypt(origin)
+    local iv = "1234567890123456"
+    local aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv}))
+
+    if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
+        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
+        if encrypted == nil then
+            core.log.error("failed to encrypt key[", origin, "] ")
+            return origin
+        end
+
+        return ngx_encode_base64(encrypted)
+    end
+
+    return origin
 end
 
 

@@ -30,14 +30,13 @@ development environment. You have to change it back. It's very easy to make mist
 The solution to the above problem is to distinguish the current running environment through environment variables, and switch
 between different configuration files through environment variables. The corresponding environment variable in APISIX is: `APISIX_PROFILE`
 
-
 When `APISIX_PROFILE` is not set, the following three configuration files are used by default:
 
 * conf/config.yaml
 * conf/apisix.yaml
 * conf/debug.yaml
 
-If the value of `APISIX_PROFILE` is set to` prod`, the following three configuration files are used:
+If the value of `APISIX_PROFILE` is set to `prod`, the following three configuration files are used:
 
 * conf/config-prod.yaml
 * conf/apisix-prod.yaml

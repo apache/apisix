@@ -102,7 +102,8 @@ done
                         "plugins": {
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 2000
+                                "port": 2000,
+                                "batch_max_size": 1
                             }
                         },
                         "upstream": {
@@ -119,7 +120,8 @@ done
                             "plugins": {
                                 "udp-logger": {
                                     "host": "127.0.0.1",
-                                    "port": 2000
+                                    "port": 2000,
+                                    "batch_max_size": 1
                                 }
                             },
                             "upstream": {
@@ -173,7 +175,8 @@ opentracing
                         "plugins": {
                             "udp-logger": {
                                 "host": "312.0.0.1",
-                                "port": 2000
+                                "port": 2000,
+                                "batch_max_size": 1
                             }
                         },
                         "upstream": {
@@ -190,7 +193,8 @@ opentracing
                             "plugins": {
                                 "udp-logger": {
                                     "host": "312.0.0.1",
-                                    "port": 2000
+                                    "port": 2000,
+                                    "batch_max_size": 1
                                 }
                             },
                             "upstream": {
@@ -224,4 +228,4 @@ GET /t
 --- error_log
 failed to connect to UDP server: host[312.0.0.1] port[2000]
 [error]
---- wait: 0.2
+--- wait: 2

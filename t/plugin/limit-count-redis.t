@@ -247,7 +247,7 @@ passed
                     local val = redis.pcall('CONFIG', 'SET', key, value)
                     return val
                     ]], 0)
-                -- 
+                --
                 if not res then
                     ngx.say("failed to set: ", err)
                     return
@@ -370,7 +370,7 @@ GET /hello_new
 --- error_code eval
 500
 --- response_body
-{"1":"ERR invalid password","error_msg":"failed to limit count: "}
+{"error_msg":"failed to limit count: ERR invalid password"}
 --- error_log
 failed to limit req: ERR invalid password
 
@@ -426,7 +426,7 @@ failed to limit req: ERR invalid password
                     local val = redis.pcall('CONFIG', 'SET', key, value)
                     return val
                     ]], 0)
-                -- 
+                --
                 if not res then
                     ngx.say("failed to set: ", err)
                     return
