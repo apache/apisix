@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [ubuntu-18.04]
+        os_name: [linux_openresty, linux_tengine, linux_apisix_master_luarocks, linux_apisix_current_luarocks]
+        include:
+          - platform: macos-latest
+            os_name: osx_openresty
+      
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
+
+      - name: Before install
+        run: ./.travis/${{ matrix.os.os_name }}_runner.sh before_install
+
+      - name: Install
+        run: ./.travis/${{ matrix.os.os_name }}_runner.sh do_install
+
+      - name: Script
+        run: ./.travis/${{ matrix.os.os_name }}_runner.sh script
+
+      - name: After success
+        run: ./.travis/${{ matrix.os.os_name }}_runner.sh after_success
