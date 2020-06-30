@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v2
 
 #----------------------------------------------------------------------------
-      - name: Get dependencies - ${{ matrix.platform }}
+      - name: Linux Get dependencies
         if: matrix.platform == 'ubuntu-18.04'
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
 
