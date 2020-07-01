@@ -308,6 +308,7 @@ local function sync_data(self)
             key = short_key(self, self.values[i].key)
             self.values_hash[key] = i
         end
+        self.sync_times = 0
     end
 
     self.conf_version = self.conf_version + 1
