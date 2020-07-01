@@ -115,7 +115,8 @@ received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
 received: Server: \w+
-received: \nreceived: hello world
+received: 
+received: hello world
 failed to receive a line: closed []
 close: 1 nil}
 --- no_error_log
