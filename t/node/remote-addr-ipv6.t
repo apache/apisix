@@ -120,7 +120,7 @@ request sent: 59
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: $::server
+received: Server: "$::server"
 received: 
 received: hello world
 failed to receive a line: closed []
