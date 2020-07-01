@@ -26,6 +26,12 @@ if ((defined $travis_os_name) && $travis_os_name eq "linux") {
     plan 'no_plan';
 }
 
+my $server_name = $ENV{SERVER_NAME};
+our $server = openresty;
+if ((defined $server_name) && $server_name eq "linux_tengine") {
+    $server = Tengine;
+}
+
 run_tests();
 
 __DATA__
@@ -114,7 +120,7 @@ request sent: 59
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: Tengine
+received: Server: $::server
 received: 
 received: hello world
 failed to receive a line: closed []
