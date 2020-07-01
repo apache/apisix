@@ -115,7 +115,7 @@ location /t {
 --- request
 GET /t
 --- response_body eval
-connected: 1
+qr{connected: 1
 request sent: 59
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
@@ -124,7 +124,7 @@ received: Server: "$::server"
 received: 
 received: hello world
 failed to receive a line: closed []
-close: 1 nil
+close: 1 nil}
 --- no_error_log
 [error]
 
