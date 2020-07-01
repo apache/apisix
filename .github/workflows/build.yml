@@ -39,9 +39,9 @@ jobs:
         if: matrix.platform == 'ubuntu-18.04'
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
 
-      - name: Linux After success
-        if: matrix.platform == 'ubuntu-18.04'
-        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh after_success
+#       - name: Linux After success
+#         if: matrix.platform == 'ubuntu-18.04'
+#         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh after_success
 #----------------------------------------------------------------------------
       - name: MacOS Before install
         if: matrix.platform == 'macos-latest'
@@ -55,6 +55,6 @@ jobs:
         if: matrix.platform == 'macos-latest'
         run: ./.travis/${{ matrix.os_name }}_runner.sh script
 
-      - name: MacOS After success
-        if: matrix.platform == 'macos-latest'
-        run: ./.travis/${{ matrix.os_name }}_runner.sh after_success
+#       - name: MacOS After success
+#         if: matrix.platform == 'macos-latest'
+#         run: ./.travis/${{ matrix.os_name }}_runner.sh after_success
