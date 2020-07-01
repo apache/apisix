@@ -27,9 +27,9 @@ if ((defined $travis_os_name) && $travis_os_name eq "linux") {
 }
 
 my $server_name = $ENV{SERVER_NAME};
-our $server = openresty;
+our $server = "openresty";
 if ((defined $server_name) && $server_name eq "linux_tengine") {
-    $server = Tengine;
+    $server = "Tengine";
 }
 
 run_tests();
