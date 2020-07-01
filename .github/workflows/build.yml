@@ -18,12 +18,7 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
 
-    steps:
-      - name: Test ipv6
-        run: |
-          ifconfig
-          ping6 google.com
-        
+    steps:        
       - name: Check out code
         uses: actions/checkout@v2
 
@@ -39,6 +34,9 @@ jobs:
       - name: Linux Install
         if: matrix.platform == 'ubuntu-18.04'
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh do_install
+      
+      - name: Apisix version
+        run: apisix version
 
       - name: Linux Script
         if: matrix.platform == 'ubuntu-18.04'
