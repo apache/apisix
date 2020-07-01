@@ -17,6 +17,9 @@ jobs:
             os_name: osx_openresty
 
     runs-on: ${{ matrix.platform }}
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+
 
     steps:        
       - name: Check out code
