@@ -19,6 +19,11 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
+      - name: Test ipv6
+        run: |
+          sudo apt install -y curl
+          curl -6 www.google.com
+        
       - name: Check out code
         uses: actions/checkout@v2
 
