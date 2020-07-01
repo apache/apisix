@@ -114,7 +114,7 @@ location /t {
 }
 --- request
 GET /t
---- response_body
+--- response_body eval
 connected: 1
 request sent: 59
 received: HTTP/1.1 200 OK
