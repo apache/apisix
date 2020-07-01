@@ -34,9 +34,6 @@ jobs:
       - name: Linux Install
         if: matrix.platform == 'ubuntu-18.04'
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh do_install
-      
-      - name: Apisix version
-        run: apisix version
 
       - name: Linux Script
         if: matrix.platform == 'ubuntu-18.04'
