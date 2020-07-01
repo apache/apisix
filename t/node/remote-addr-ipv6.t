@@ -120,9 +120,8 @@ request sent: 59
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
-received: Server: "$::server"
-received: 
-received: hello world
+received: Server: \w+
+received: \nreceived: hello world
 failed to receive a line: closed []
 close: 1 nil}
 --- no_error_log
