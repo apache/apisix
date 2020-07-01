@@ -19,6 +19,10 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
+      - name: Test ipv6
+        run: |
+          ifconfig
+          ping6 google.com
         
       - name: Check out code
         uses: actions/checkout@v2
