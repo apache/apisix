@@ -630,5 +630,18 @@ function _M.stream_log_phase()
     run_plugin("log")
 end
 
+do
+    local dns_resolver_cache = core.lrucache.new({
+        ttl = 30, count = 512, invalid_stale = true,
+    })
+
+    function _M.dns_resolve(hostname)
+        if ipmatcher.parse_ipv4(hostname) or
+                ipmatcher.parse_ipv6(hostname) then
+            return hostname
+        end
+        return dns_resolver_cache(hostname, 0.1, parse_domain, hostname)
+    end
+end
 
 return _M
