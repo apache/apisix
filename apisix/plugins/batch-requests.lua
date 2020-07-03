@@ -14,12 +14,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core    = require("apisix.core")
-local http    = require("resty.http")
-local ngx     = ngx
-local io_open = io.open
-local ipairs  = ipairs
-local pairs   = pairs
+local core      = require("apisix.core")
+local http      = require("resty.http")
+local ngx       = ngx
+local io_open   = io.open
+local ipairs    = ipairs
+local pairs     = pairs
+local str_find  = string.find
+local str_lower = string.lower
+
 
 local plugin_name = "batch-requests"
 
@@ -112,22 +115,42 @@ local function check_input(data)
     end
 end
 
+local function lowercase_key_or_init(obj)
+    if not obj then
+        return {}
+    end
 
-local function set_common_header(data)
-    local ck = core.request.header(nil, "Cookie")
+    local lowercase_key_obj = {}
+    for k, v in pairs(obj) do
+        lowercase_key_obj[str_lower(k)] = v
+    end
+
+    return lowercase_key_obj
+end
+
+local function ensure_header_lowercase(data)
+    data.headers = lowercase_key_or_init(data.headers)
 
     for i,req in ipairs(data.pipeline) do
-        if not req.headers then
-            req.headers = {}
+        req.headers = lowercase_key_or_init(req.headers)
+    end
+end
+
+
+local function set_common_header(data)
+    local outer_headers = core.request.headers(nil)
+    for i,req in ipairs(data.pipeline) do
+        for k, v in pairs(data.headers) do
+            if not req.headers[k] then
+                req.headers[k] = v
+            end
         end
 
-        if ck then
-            req.headers["Cookie"] = ck
-        end
-
-        if data.headers then
-            for k, v in pairs(data.headers) do
-                if not req.headers[k] then
+        if outer_headers then
+            for k, v in pairs(outer_headers) do
+                local is_content_header = str_find(k, "content-", 1, true) == 1
+                -- skip header start with "content-"
+                if not req.headers[k] and not is_content_header then
                     req.headers[k] = v
                 end
             end
@@ -202,8 +225,10 @@ local function batch_requests()
         core.response.exit(500, {error_msg = "connect to apisix failed: " .. err})
     end
 
+    ensure_header_lowercase(data)
     set_common_header(data)
     set_common_query(data)
+
     local responses, err = httpc:request_pipeline(data.pipeline)
     if not responses then
         core.response.exit(400, {error_msg = "request failed: " .. err})

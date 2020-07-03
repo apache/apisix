@@ -18,9 +18,13 @@ local core = require("apisix.core")
 local local_plugins = require("apisix.plugin").plugins_hash
 local stream_local_plugins = require("apisix.plugin").stream_plugins_hash
 local pairs     = pairs
+local ipairs    = ipairs
 local pcall     = pcall
 local require   = require
 local table_remove = table.remove
+local table_sort = table.sort
+local table_insert = table.insert
+
 
 local _M = {
     version = 0.1,
@@ -114,7 +118,23 @@ function _M.get_plugins_list()
         table_remove(plugins, 1)
     end
 
-    return plugins
+    local priorities = {}
+    local success = {}
+    for i, name in ipairs(plugins) do
+        local plugin_name = "apisix.plugins." .. name
+        local ok, plugin = pcall(require, plugin_name)
+        if ok and plugin.priority then
+            priorities[name] = plugin.priority
+            table_insert(success, name)
+        end
+    end
+
+    local function cmp(x, y)
+        return priorities[x] > priorities[y]
+    end
+
+    table_sort(success, cmp)
+    return success
 end
 
 

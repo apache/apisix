@@ -78,7 +78,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Support [various operators as judgment conditions for routing](https://github.com/iresty/lua-resty-radixtree#operator-list), for example `{"arg_age", ">", 24}`
     - Support [custom route matching function](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
     - IPv6: Use IPv6 to match route.
-    - Support [TTL](doc/admin-api-cn.md#route)
+    - Support [TTL](doc/zh-cn/admin-api.md#route)
     - [Support priority](doc/router-radixtree.md#3-match-priority)
     - [Support Batch Http Requests](doc/plugins/batch-requests.md)
 
@@ -90,7 +90,8 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Limit-count](doc/plugins/limit-count.md)
     - [Limit-concurrency](doc/plugins/limit-conn.md)
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
-    - [CORS](doc/plugins/cors.md)
+    - [CORS](doc/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
+    - [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
 
 - **OPS friendly**
     - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)

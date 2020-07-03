@@ -116,11 +116,12 @@ local function introspect(ctx, conf)
             end
         else
             res, err = openidc.introspect(conf)
-            if res then
+            if err then
+                return ngx.HTTP_UNAUTHORIZED, err
+            else
                 return res
             end
         end
-
         if conf.bearer_only then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm
                                              .. '",error="' .. err .. '"'

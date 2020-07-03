@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](response-rewrite-cn.md)
+[Chinese](../zh-cn/plugins/response-rewrite.md)
 
 # Summary
 

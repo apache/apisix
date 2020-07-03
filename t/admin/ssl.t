@@ -353,3 +353,91 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: string id
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+
+            local code, body = t.test('/apisix/admin/ssl/a-b-c-ABC_0123',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+            if code > 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: string id(delete)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+
+            local code, body = t.test('/apisix/admin/ssl/a-b-c-ABC_0123',
+                ngx.HTTP_DELETE
+            )
+            if code > 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: invalid id
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+
+            local code, body = t.test('/apisix/admin/ssl/*invalid',
+                ngx.HTTP_PUT,
+                core.json.encode(data)
+            )
+            if code > 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- no_error_log
+[error]

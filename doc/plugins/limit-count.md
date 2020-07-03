@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](limit-count-cn.md)
+[Chinese](../zh-cn/plugins/limit-count.md)
 
 # Summary
 
@@ -44,6 +44,9 @@ Limit request rate by a fixed number of requests in a given time window.
 |redis_port    |optional|When using the `redis` policy, this property specifies the port of the Redis server. The default port is 6379.|
 |redis_password|optional|When using the `redis` policy, this property specifies the password of the Redis server.|
 |redis_timeout |optional|When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server. The default timeout is 1000 ms(1 second).|
+
+
+**Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
 ## How To Enable
 

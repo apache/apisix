@@ -284,7 +284,6 @@ passed
 
 
 
-
 === TEST 10: verify unauthorized
 --- request
 GET /hello
