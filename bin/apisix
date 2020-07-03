@@ -323,7 +323,7 @@ http {
 
             alias dashboard/;
 
-            try_files $uri $uri/index.html /index.html;
+            try_files $uri $uri/index.html /index.html =404;
         }
 
         location /robots.txt {
@@ -393,7 +393,7 @@ http {
 
             alias dashboard/;
 
-            try_files $uri $uri/index.html /index.html;
+            try_files $uri $uri/index.html /index.html =404;
         }
         {% end %}
 
