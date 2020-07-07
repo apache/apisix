@@ -21,6 +21,7 @@
 - [Install Dependencies](#install-dependencies)
 - [Note](#note)
 - [CentOS 7](#centos-7)
+- [Fedora 31 & 32](#fedora-31--32)
 - [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
@@ -55,6 +56,21 @@ sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
 
 # start etcd server
 sudo service etcd start
+```
+
+Fedora 31 & 32
+==============
+
+```shell
+# add OpenResty source
+sudo yum install yum-utils
+sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
+
+# install OpenResty, etcd and some compilation tools
+sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
+
+# start etcd server
+sudo etcd --enable-v2=true &
 ```
 
 Ubuntu 16.04 & 18.04

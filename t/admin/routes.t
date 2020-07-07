@@ -1773,6 +1773,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 48: string id
 --- config
     location /t {
@@ -1858,7 +1860,8 @@ GET /t
 [error]
 
 
-=== TEST 50: Verify Response Content-Type=applciation/json
+
+=== TEST 51: Verify Response Content-Type=applciation/json
 --- config
     location /t {
         content_by_lua_block {
