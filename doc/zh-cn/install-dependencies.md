@@ -18,34 +18,23 @@
 -->
 
 # 安装依赖
-- [CentOS 6](#centos-6)
+- [注意](#注意)
 - [CentOS 7](#centos-7)
 - [Fedora 31 & 32](#fedora-31--32)
 - [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
-- [如何编译 Openresty](#如何编译-openresty)
-- [注意](#注意)
 
-CentOS 6
-========
+注意
+====
+- Apache APISIX 目前只支持 `v2` 版本的 etcd，但是最新版的 etcd (从 3.4 起)已经默认关闭了 `v2` 版本的功能。所以你需要添加启动参数 `--enable-v2=true` 来开启 `v2` 的功能，目前对 `v3` etcd 的开发工作已经启动，不久后便可投入使用。
 
 ```shell
-# 添加 OpenResty 源
-sudo yum install yum-utils
-sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-
-# 安装 OpenResty, etcd 和 编译工具
-sudo yum install -y openresty curl git gcc luarocks lua-devel make
-
-wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
-    cd etcd-v3.3.13-linux-amd64 && \
-    sudo cp -a etcd etcdctl /usr/bin/
-
-# 开启 etcd server
-nohup etcd &
+etcd --enable-v2=true &
 ```
+
+- 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
+
 
 CentOS 7
 ========
@@ -138,16 +127,3 @@ brew install openresty/brew/openresty etcd luarocks curl git
 # 开启 etcd server 并启用 v2 的功能
 etcd --enable-v2=true &
 ```
-
-如何编译 Openresty
-============================
-
-编译 Openresty 是一件比较复杂的事情，没办法简单地说明白。所以我们推荐你直接参考官方的安装文档。
-
-http://openresty.org/en/linux-packages.html
-
-注意
-====
-- Apache APISIX 目前只支持 `v2` 版本的 etcd，但是最新版的 etcd (从 3.4 起)已经默认关闭了 `v2` 版本的功能。所以你需要添加启动参数 `--enable-v2=true` 来开启 `v2` 的功能，目前对 `v3` etcd 的开发工作已经启动，不久后便可投入使用。
-
-- 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
