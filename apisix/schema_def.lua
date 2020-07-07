@@ -238,7 +238,7 @@ local nodes_schema = {
                 [".*"] = {
                     description = "weight of node",
                     type = "integer",
-                    minimum = 0,
+                    minimum = -1,
                 }
             },
             minProperties = 1,
@@ -258,7 +258,7 @@ local nodes_schema = {
                     weight = {
                         description = "weight of node",
                         type = "integer",
-                        minimum = 0,
+                        minimum = -1,
                     },
                     metadata = {
                         description = "metadata of node",

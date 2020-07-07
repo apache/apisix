@@ -56,7 +56,9 @@ local function fetch_health_nodes(upstream, checker)
         local new_nodes = core.table.new(0, #nodes)
         for _, node in ipairs(nodes) do
             -- TODO filter with metadata
-            new_nodes[node.host .. ":" .. node.port] = node.weight
+            if node.weight >= 0 then
+                new_nodes[node.host .. ":" .. node.port] = node.weight
+            end
         end
         return new_nodes
     end
@@ -68,14 +70,18 @@ local function fetch_health_nodes(upstream, checker)
         local ok = checker:get_target_status(node.host, port or node.port, host)
         if ok then
             -- TODO filter with metadata
-            up_nodes[node.host .. ":" .. node.port] = node.weight
+            if node.weight >= 0 then
+                up_nodes[node.host .. ":" .. node.port] = node.weight
+            end
         end
     end
 
     if core.table.nkeys(up_nodes) == 0 then
         core.log.warn("all upstream nodes is unhealth, use default")
         for _, node in ipairs(nodes) do
-            up_nodes[node.host .. ":" .. node.port] = node.weight
+            if node.weight >= 0 then
+                up_nodes[node.host .. ":" .. node.port] = node.weight
+            end
         end
     end
 
@@ -194,18 +200,43 @@ local function pick_server(route, ctx)
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
-    if checker and ctx.balancer_try_count > 1 then
-        local state, code = get_last_failure()
-        local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
-        local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
-        if state == "failed" then
-            if code == 504 then
-                checker:report_timeout(ctx.balancer_ip, port or ctx.balancer_port, host)
+    if ctx.balancer_try_count > 1 then
+        if checker then
+            local state, code = get_last_failure()
+            local host = up_conf.checks and up_conf.checks.active and
+                         up_conf.checks.active.host
+            local port = up_conf.checks and up_conf.checks.active and
+                         up_conf.checks.active.port
+            core.log.warn("state, code: ", state, code)
+
+            if state == "failed" then
+                if code == 504 then
+                    checker:report_timeout(ctx.balancer_ip,
+                                           port or ctx.balancer_port,
+                                           host)
+                else
+                    checker:report_tcp_failure(ctx.balancer_ip,
+                                               port or ctx.balancer_port,
+                                               host)
+                end
+
             else
-                checker:report_tcp_failure(ctx.balancer_ip, port or ctx.balancer_port, host)
+                checker:report_http_status(ctx.balancer_ip,
+                                           port or ctx.balancer_port,
+                                           host,
+                                           code)
             end
         else
-            checker:report_http_status(ctx.balancer_ip, port or ctx.balancer_port, host, code)
+            local state, code = get_last_failure()
+            if state == "failed" and code ~= 504 then
+                for _, node in ipairs(up_conf.nodes) do
+                    if node.weight == -1 then   -- backup node
+                        ctx.balancer_ip = node.host
+                        ctx.balancer_port = node.port
+                        return node
+                    end
+                end
+            end
         end
     end
 
@@ -214,6 +245,7 @@ local function pick_server(route, ctx)
         if not retries or retries <= 0 then
             retries = #up_conf.nodes
         end
+        core.log.info("set tries: ", retries)
         set_more_tries(retries)
     end
 
