@@ -326,7 +326,7 @@ http {
             try_files $uri $uri/index.html /index.html =404;
         }
 
-        location /robots.txt {
+        location =/robots.txt {
             return 200 'User-agent: *\nDisallow: /';
         }
     }
