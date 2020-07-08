@@ -157,7 +157,7 @@ function _M.rewrite(conf, ctx)
     local index, _ = find_str(upstream_uri, "?")
     if index then
         upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index-1)) ..
-        str_sub(upstream_uri, index)
+        sub_str(upstream_uri, index)
     else
         upstream_uri = core.utils.uri_safe_encode(upstream_uri)
     end
