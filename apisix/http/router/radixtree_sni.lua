@@ -80,7 +80,6 @@ local function create_router(ssl_items)
                 end
             end
 
-            local
             idx = idx + 1
             route_items[idx] = {
                 paths = sni,
@@ -159,7 +158,7 @@ function _M.match_and_set(api_ctx)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
-        core.log.warn("not found any valid sni configuration")
+        core.log.warn("failed to found any SSL certificate by sni: ", sni)
         return false
     end
 
@@ -172,13 +171,13 @@ function _M.match_and_set(api_ctx)
             end
         end
         if not matched then
-            core.log.warn("not found any valid sni configuration, matched sni: ",
+            core.log.warn("failed to found any valid sni configuration, matched sni: ",
                           core.json.delay_encode(api_ctx.matched_sni, true), " current sni: ", sni)
             return false
         end
     else
         if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
-            core.log.warn("not found any valid sni configuration, matched sni: ",
+            core.log.warn("failed to found any valid sni configuration, matched sni: ",
                           api_ctx.matched_sni:reverse(), " current sni: ", sni)
             return false
         end
