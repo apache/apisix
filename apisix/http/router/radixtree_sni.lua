@@ -158,7 +158,7 @@ function _M.match_and_set(api_ctx)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
-        core.log.warn("failed to found any SSL certificate by SNI: ", sni)
+        core.log.warn("failed to find any SSL certificate by SNI: ", sni)
         return false
     end
 
@@ -171,13 +171,13 @@ function _M.match_and_set(api_ctx)
             end
         end
         if not matched then
-            core.log.warn("failed to found any SSL certificate by SNI: ",
+            core.log.warn("failed to find any SSL certificate by SNI: ",
                           sni, " matched SNIs: ", core.json.delay_encode(api_ctx.matched_sni, true))
             return false
         end
     else
         if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
-            core.log.warn("failed to found any SSL certificate by SNI: ",
+            core.log.warn("failed to find any SSL certificate by SNI: ",
                           sni, " matched SNI: ", api_ctx.matched_sni:reverse())
             return false
         end
