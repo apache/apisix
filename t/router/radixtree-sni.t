@@ -448,7 +448,7 @@ location /t {
         local ssl_key =  t.read_file("conf/cert/test2.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssl/2',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
@@ -456,7 +456,7 @@ location /t {
                     "value": {
                         "sni": "*.test2.com"
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssl/2"
                 },
                 "action": "set"
             }]]
