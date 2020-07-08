@@ -105,6 +105,7 @@ nginx_config:                     # config for render the template to genarate n
     worker_connections: 10620
   http:
     access_log: "logs/access.log"
+    access_prometheus_log: "logs/access_prometheus.log"
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
     client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
     client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client

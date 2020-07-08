@@ -228,8 +228,17 @@ http {
     lua_regex_cache_max_entries 8192;
 
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
-
-    access_log {* http.access_log *} main buffer=16384 flush=3;
+    
+    map $http_user_agent $prometheus_access_log {
+        ~Prometheus 1;
+        default 0;
+    }
+    map $http_user_agent $balancer_access_log {
+        ~Prometheus 0;
+        default 1;
+    }
+    access_log {* http.access_log *} main buffer=16384 flush=3 if=$balancer_access_log;
+    access_log {* http.access_prometheus_log *} main buffer=16384 flush=3 if=$prometheus_access_log;
     open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
     keepalive_timeout {* http.keepalive_timeout *};
