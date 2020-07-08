@@ -207,8 +207,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
-not found any valid sni configuration
-
+failed to found any SSL certificate by sni
 
 
 === TEST 5: set ssl(sni: wildcard)
@@ -635,7 +634,7 @@ connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
-not found any valid sni configuration, matched sni: *.test2.com current sni: aa.bb.test2.com
+failed to found any SSL certificate by sni: aa.bb.test2.com matched sni: *.test2.com
 --- no_error_log
 [error]
 [alert]
@@ -651,7 +650,7 @@ location /t {
 
         local data = {status = 0}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssl/2',
             ngx.HTTP_PATCH,
             core.json.encode(data),
             [[{
@@ -659,7 +658,7 @@ location /t {
                     "value": {
                         "status": 0
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssl/2"
                 },
                 "action": "set"
             }]]
@@ -733,7 +732,7 @@ location /t {
 
         local data = {status = 1}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssl/2',
             ngx.HTTP_PATCH,
             core.json.encode(data),
             [[{
@@ -741,7 +740,7 @@ location /t {
                     "value": {
                         "status": 1
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssl/2"
                 },
                 "action": "set"
             }]]
@@ -930,11 +929,10 @@ connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
-not found any valid sni configuration, matched sni: ["moc.2tset","moc.2tset.*"] current sni: aa.bb.test2.com
+failed to found any SSL certificate by sni: aa.bb.test2.com matched snis: ["moc.2tset","moc.2tset.*"]
 --- no_error_log
 [error]
 [alert]
-
 
 
 === TEST 20: set ssl(encrypt ssl key with another iv)
