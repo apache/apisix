@@ -210,6 +210,7 @@ failed to do SSL handshake: certificate host mismatch
 failed to found any SSL certificate by sni
 
 
+
 === TEST 5: set ssl(sni: wildcard)
 --- config
 location /t {
@@ -517,6 +518,7 @@ lua ssl server name: "www.test2.com"
 --- no_error_log
 [error]
 [alert]
+
 
 
 === TEST 11: client request: test.com again
@@ -935,6 +937,7 @@ failed to found any SSL certificate by sni: aa.bb.test2.com matched snis: ["moc.
 [alert]
 
 
+
 === TEST 20: set ssl(encrypt ssl key with another iv)
 --- config
 location /t {
@@ -976,7 +979,6 @@ passed
 === TEST 21: client request: test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
 location /t {
     content_by_lua_block {
         -- etcd sync
@@ -1013,3 +1015,23 @@ connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
 decrypt ssl key failed.
+
+
+
+=== TEST 22: remove ssl2
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local code, body = t.test('/apisix/admin/ssl/2', ngx.HTTP_DELETE)
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- no_error_log
+[error]
