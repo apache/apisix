@@ -150,7 +150,8 @@ function _M.match_and_set(api_ctx)
     local sni
     sni, err = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        return false, "failed to fetch SSL certificate by for " .. sni .. " : " .. (err or "not found")
+        return false, "failed to fetch SSL certificate by for " ..
+        sni .. " : " .. (err or "not found")
     end
 
     core.log.debug("sni: ", sni)
