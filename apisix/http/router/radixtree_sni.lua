@@ -150,8 +150,7 @@ function _M.match_and_set(api_ctx)
     local sni
     sni, err = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        return false, "failed to fetch SSL certificate by for " ..
-        sni .. " : " .. (err or "not found")
+        return false, "failed to fetch SSL certificate: " .. (err or "not found")
     end
 
     core.log.debug("sni: ", sni)
@@ -159,7 +158,7 @@ function _M.match_and_set(api_ctx)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
-        core.log.warn("failed to found any SSL certificate by sni: ", sni)
+        core.log.warn("failed to found any SSL certificate by SNI: ", sni)
         return false
     end
 
@@ -172,14 +171,14 @@ function _M.match_and_set(api_ctx)
             end
         end
         if not matched then
-            core.log.warn("failed to found any SSL certificate by sni: ",
-                          sni, " matched snis: ", core.json.delay_encode(api_ctx.matched_sni, true))
+            core.log.warn("failed to found any SSL certificate by SNI: ",
+                          sni, " matched SNIs: ", core.json.delay_encode(api_ctx.matched_sni, true))
             return false
         end
     else
         if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
-            core.log.warn("failed to found any SSL certificate by sni: ",
-                          sni, " matched sni: ", api_ctx.matched_sni:reverse())
+            core.log.warn("failed to found any SSL certificate by SNI: ",
+                          sni, " matched SNI: ", api_ctx.matched_sni:reverse())
             return false
         end
     end

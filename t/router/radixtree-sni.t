@@ -207,7 +207,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
-failed to found any SSL certificate by sni
+failed to found any SSL certificate by SNI
 
 
 
@@ -636,7 +636,7 @@ connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
-failed to found any SSL certificate by sni: aa.bb.test2.com matched sni: *.test2.com
+failed to found any SSL certificate by SNI: aa.bb.test2.com matched SNI: *.test2.com
 --- no_error_log
 [error]
 [alert]
@@ -891,7 +891,27 @@ lua ssl server name: "test2.com"
 
 
 
-=== TEST 19: client request: aa.bb.test2.com  -- snis un-include
+=== TEST 19: remove ssl2
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local code, body = t.test('/apisix/admin/ssl/2', ngx.HTTP_DELETE)
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: client request: aa.bb.test2.com  -- snis un-include
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -931,14 +951,14 @@ connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
-failed to found any SSL certificate by sni: aa.bb.test2.com matched snis: ["moc.2tset","moc.2tset.*"]
+failed to found any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["moc.2tset","moc.2tset.*"]
 --- no_error_log
 [error]
 [alert]
 
 
 
-=== TEST 20: set ssl(encrypt ssl key with another iv)
+=== TEST 21: set ssl(encrypt ssl key with another iv)
 --- config
 location /t {
     content_by_lua_block {
@@ -976,7 +996,7 @@ passed
 
 
 
-=== TEST 21: client request: test2.com
+=== TEST 22: client request: test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 location /t {
@@ -1015,23 +1035,3 @@ connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
 decrypt ssl key failed.
-
-
-
-=== TEST 22: remove ssl2
---- config
-location /t {
-    content_by_lua_block {
-        local core = require("apisix.core")
-        local t = require("lib.test_admin")
-
-        local code, body = t.test('/apisix/admin/ssl/2', ngx.HTTP_DELETE)
-
-        ngx.status = code
-        ngx.say(body)
-    }
-}
---- request
-GET /t
---- no_error_log
-[error]
