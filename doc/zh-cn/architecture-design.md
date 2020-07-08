@@ -38,7 +38,7 @@
 
 ### 插件内部结构
 
-<img src="./images/flow-plugin-internal.png" width="50%" height="50%">
+<img src="../images/flow-plugin-internal.png" width="50%" height="50%">
 
 ## APISIX Config
 
@@ -73,7 +73,7 @@ Route 字面意思就是路由，通过定义一些规则来匹配客户端的�
 Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_addr 等)，插件配置(限流限速等)和上游信息。
 请看下图示例，是一些 Route 规则的实例，当某些属性值相同时，图中用相同颜色标识。
 
-<img src="./images/routes-example.png" width="50%" height="50%">
+<img src="../images/routes-example.png" width="50%" height="50%">
 
 我们直接在 Route 中完成所有参数的配置，优点是容易设置，每个 Route 都相对独立自由度比较高。但当我们的 Route 有比较多的重复配置（比如启用相同的插件配置或上游信息），一旦我们要更新这些相同属性时，就需要遍历所有 Route 并进行修改，给后期管理维护增加不少复杂度。
 
@@ -114,7 +114,7 @@ Server: APISIX web server
 `Service` 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route`
 与 `Service` 之间，通常是 N:1 的关系，参看下图。
 
-<img src="./images/service-example.png" width="50%" height="50%">
+<img src="../images/service-example.png" width="50%" height="50%">
 
 不同 Route 规则同时绑定到一个 Service 上，这些 Route 将具有相同的上游和插件配置，减少冗余配置。
 
@@ -224,7 +224,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 
 Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，就需要用“引用”方式避免重复了。
 
-<img src="./images/upstream-example.png" width="50%" height="50%">
+<img src="../images/upstream-example.png" width="50%" height="50%">
 
 如上图所示，通过创建 Upstream 对象，在 `Route` 用 ID 方式引用，就可以确保只维护一个对象的值了。
 
@@ -477,7 +477,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 对于 API 网关通常可以用请求域名、客户端 IP 地址等字段识别到某类请求方，
 然后进行插件过滤并转发请求到指定上游，但有时候这个深度不够。
 
-<img src="./images/consumer-who.png" width="50%" height="50%">
+<img src="../images/consumer-who.png" width="50%" height="50%">
 
 如上图所示，作为 API 网关，需要知道 API Consumer（消费方）具体是谁，这样就可以对不同 API Consumer 配置不同规则。
 
@@ -488,7 +488,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 在 APISIX 中，识别 Consumer 的过程如下图：
 
-<img src="./images/consumer-internal.png" width="50%" height="50%">
+<img src="../images/consumer-internal.png" width="50%" height="50%">
 
 1. 授权认证：比如有 [key-auth](../plugins/key-auth.md)、[JWT](plugins/jwt-auth.md) 等。
 2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
@@ -551,6 +551,8 @@ HTTP/1.1 503 Service Temporarily Unavailable
 结合 [consumer-restriction](plugins/consumer-restriction.md) 插件，限制jack对该 route 的访问
 
 # 设置黑名单，禁止jack访问该API
+
+```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -576,7 +578,6 @@ HTTP/1.1 403
 ...
 
 ```
-
 
 [返回目录](#目录)
 
