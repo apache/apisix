@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-18.04]
+        os_name: [linux_openresty, linux_tengine, linux_apisix_master_luarocks, linux_apisix_current_luarocks]
+        include:
+          - platform: macos-latest
+            os_name: osx_openresty
+
+    runs-on: ${{ matrix.platform }}
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+
+
+    steps:        
+      - name: Check out code
+        uses: actions/checkout@v2
+
+#----------------------------------------------------------------------------
+      - name: Linux Get dependencies
+        if: matrix.platform == 'ubuntu-18.04'
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
+
+      - name: Linux Before install
+        if: matrix.platform == 'ubuntu-18.04'
+        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: Linux Install
+        if: matrix.platform == 'ubuntu-18.04'
+        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: Linux Script
+        if: matrix.platform == 'ubuntu-18.04'
+        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
+
+#       - name: Linux After success
+#         if: matrix.platform == 'ubuntu-18.04'
+#         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh after_success
+#----------------------------------------------------------------------------
+      - name: MacOS Before install
+        if: matrix.platform == 'macos-latest'
+        run: ./.travis/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: MacOS Install
+        if: matrix.platform == 'macos-latest'
+        run: ./.travis/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: MacOS Script
+        if: matrix.platform == 'macos-latest'
+        run: ./.travis/${{ matrix.os_name }}_runner.sh script
+
+#       - name: MacOS After success
+#         if: matrix.platform == 'macos-latest'
+#         run: ./.travis/${{ matrix.os_name }}_runner.sh after_success
