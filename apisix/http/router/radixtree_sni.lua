@@ -25,6 +25,7 @@ local error            = error
 local str_find         = string.find
 local aes              = require "resty.aes"
 local assert           = assert
+local str_gsub         = string.gsub
 local ngx_decode_base64 = ngx.decode_base64
 local ssl_certificates
 local radixtree_router
@@ -171,8 +172,13 @@ function _M.match_and_set(api_ctx)
             end
         end
         if not matched then
+            local log_snis = core.json.encode(api_ctx.matched_sni, true)
+            if log_snis ~= nil then
+                log_snis = str_gsub(log_snis:reverse(), "%[", "%]")
+                log_snis = str_gsub(log_snis, "%]", "%[", 1)
+            end
             core.log.warn("failed to find any SSL certificate by SNI: ",
-                          sni, " matched SNIs: ", core.json.delay_encode(api_ctx.matched_sni, true))
+                          sni, " matched SNIs: ", log_snis)
             return false
         end
     else

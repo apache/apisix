@@ -951,7 +951,7 @@ connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
-failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["moc.2tset","moc.2tset.*"]
+failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["*.test2.com","test2.com"]
 --- no_error_log
 [error]
 [alert]
