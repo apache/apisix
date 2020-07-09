@@ -23,8 +23,7 @@ export_or_prefix() {
 }
 
 before_install() {
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug
-    brew install go@1.13
+    HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis@3.2
 
     sudo sed -i "" "s/requirepass/#requirepass/g" /usr/local/etc/redis.conf
     brew services start redis@3.2
