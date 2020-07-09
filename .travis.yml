@@ -7,12 +7,12 @@ matrix:
       services:
         - docker
       env: OSNAME=linux_openresty
-    # - os: osx
-    #   env: OSNAME=osx_openresty
-    #   cache:
-    #     directories:
-    #       - $HOME/Library/Caches/Homebrew
-    #       - /usr/local/Homebrew
+    - os: osx
+      env: OSNAME=osx_openresty
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /usr/local/Homebrew
     - os: linux
       services:
         - docker
