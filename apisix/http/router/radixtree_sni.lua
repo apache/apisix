@@ -96,6 +96,10 @@ local function create_router(ssl_items)
     end
 
     core.log.info("route items: ", core.json.delay_encode(route_items, true))
+    -- for testing
+    if #route_items > 1 then
+        core.log.info("we have more than 1 ssl certs now")
+    end
     local router, err = radixtree_new(route_items)
     if not router then
         return nil, err
