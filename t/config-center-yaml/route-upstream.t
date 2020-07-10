@@ -147,18 +147,17 @@ hello world
 --- apisix_yaml
 routes:
     -
-        uri: /hello
+        uri: /get
         upstream_id: 1
 upstreams:
     -
         id: 1
         nodes:
-            "localhost:1980": 1
-        type:roundrobin
+            "httpbin.org:80": 1
+        type: roundrobin
 #END
 --- request
-GET /hello
---- response_body
-hello world
+GET /get
+--- error_code: 200
 --- no_error_log
 [error]
