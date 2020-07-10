@@ -448,7 +448,7 @@ location /t {
         local ssl_key =  t.read_file("conf/cert/test2.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/2',
+        local code, body = t.test('/apisix/admin/ssl/1',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
@@ -456,7 +456,7 @@ location /t {
                     "value": {
                         "sni": "*.test2.com"
                     },
-                    "key": "/apisix/ssl/2"
+                    "key": "/apisix/ssl/1"
                 },
                 "action": "set"
             }]]
@@ -521,82 +521,7 @@ lua ssl server name: "www.test2.com"
 
 
 
-=== TEST 11: client request: test.com again
---- config
-listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
-location /t {
-    content_by_lua_block {
-        -- etcd sync
-        ngx.sleep(0.2)
-
-        do
-            local sock = ngx.socket.tcp()
-
-            sock:settimeout(2000)
-
-            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            ngx.say("connected: ", ok)
-
-            local sess, err = sock:sslhandshake(nil, "test.com", false)
-            if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
-            end
-
-            ngx.say("ssl handshake: ", type(sess))
-
-            local req = "GET /hello HTTP/1.0\r\nHost: test.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
-        end  -- do
-        -- collectgarbage()
-    }
-}
---- request
-GET /t
---- response_body eval
-qr{connected: 1
-ssl handshake: userdata
-sent http request: 58 bytes.
-received: HTTP/1.1 200 OK
-received: Content-Type: text/plain
-received: Connection: close
-received: Server: \w+
-received: \nreceived: hello world
-close: 1 nil}
---- error_log
-lua ssl server name: "test.com"
---- no_error_log
-[error]
-[alert]
-
-
-
-=== TEST 12: client request: aa.bb.test2.com
+=== TEST 11: client request: aa.bb.test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -643,7 +568,7 @@ failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNI: *.test2.
 
 
 
-=== TEST 13: disable ssl(sni: *.test2.com)
+=== TEST 12: disable ssl(sni: *.test2.com)
 --- config
 location /t {
     content_by_lua_block {
@@ -652,7 +577,7 @@ location /t {
 
         local data = {status = 0}
 
-        local code, body = t.test('/apisix/admin/ssl/2',
+        local code, body = t.test('/apisix/admin/ssl/1',
             ngx.HTTP_PATCH,
             core.json.encode(data),
             [[{
@@ -660,7 +585,7 @@ location /t {
                     "value": {
                         "status": 0
                     },
-                    "key": "/apisix/ssl/2"
+                    "key": "/apisix/ssl/1"
                 },
                 "action": "set"
             }]]
@@ -679,7 +604,7 @@ passed
 
 
 
-=== TEST 14: client request: www.test2.com -- failed by disable
+=== TEST 13: client request: www.test2.com -- failed by disable
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -725,7 +650,7 @@ lua ssl server name: "www.test2.com"
 
 
 
-=== TEST 15: enable ssl(sni: *.test2.com)
+=== TEST 14: enable ssl(sni: *.test2.com)
 --- config
 location /t {
     content_by_lua_block {
@@ -734,7 +659,7 @@ location /t {
 
         local data = {status = 1}
 
-        local code, body = t.test('/apisix/admin/ssl/2',
+        local code, body = t.test('/apisix/admin/ssl/1',
             ngx.HTTP_PATCH,
             core.json.encode(data),
             [[{
@@ -742,7 +667,7 @@ location /t {
                     "value": {
                         "status": 1
                     },
-                    "key": "/apisix/ssl/2"
+                    "key": "/apisix/ssl/1"
                 },
                 "action": "set"
             }]]
@@ -761,7 +686,7 @@ passed
 
 
 
-=== TEST 16: client request: www.test2.com again
+=== TEST 15: client request: www.test2.com again
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -807,7 +732,7 @@ lua ssl server name: "www.test2.com"
 
 
 
-=== TEST 17: set ssl(snis: {test2.com, *.test2.com})
+=== TEST 16: set ssl(snis: {test2.com, *.test2.com})
 --- config
 location /t {
     content_by_lua_block {
@@ -845,7 +770,7 @@ passed
 
 
 
-=== TEST 18: client request: test2.com
+=== TEST 17: client request: test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -891,27 +816,7 @@ lua ssl server name: "test2.com"
 
 
 
-=== TEST 19: remove ssl2
---- config
-location /t {
-    content_by_lua_block {
-        local core = require("apisix.core")
-        local t = require("lib.test_admin")
-
-        local code, body = t.test('/apisix/admin/ssl/2', ngx.HTTP_DELETE)
-
-        ngx.status = code
-        ngx.say(body)
-    }
-}
---- request
-GET /t
---- no_error_log
-[error]
-
-
-
-=== TEST 20: client request: aa.bb.test2.com  -- snis un-include
+=== TEST 18: client request: aa.bb.test2.com  -- snis un-include
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -958,7 +863,7 @@ failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["*.tes
 
 
 
-=== TEST 21: set ssl(encrypt ssl key with another iv)
+=== TEST 19: set ssl(encrypt ssl key with another iv)
 --- config
 location /t {
     content_by_lua_block {
@@ -996,7 +901,7 @@ passed
 
 
 
-=== TEST 22: client request: test2.com
+=== TEST 20: client request: test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 location /t {
