@@ -313,9 +313,14 @@ function _M.http_access_phase()
     local enable_websocket
     local up_id = route.value.upstream_id
     if up_id then
-        local upstreams_etcd = core.config.fetch_created_obj("/upstreams")
-        if upstreams_etcd then
-            local upstream = upstreams_etcd:get(tostring(up_id))
+        local upstreams = core.config.fetch_created_obj("/upstreams")
+        if upstreams then
+            local upstream = upstreams:get(tostring(up_id))
+            if not upstream then
+                core.log.error("failed to find upstream by id: " .. up_id)
+                return core.response.exit(500)
+            end
+
             if upstream.has_domain then
                 local _, err = parsed_domain(upstream, api_ctx.conf_version,
                                              parse_domain_in_up, upstream)
