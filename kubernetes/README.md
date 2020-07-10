@@ -23,6 +23,27 @@ There are some yaml files for deploying apisix in Kubernetes.
 ### Prerequisites
 - Install etcd
 
+#### when using etcd-operator
+when using etcd-operator, you need to change apisix-gw-config-cm.yaml:
+
+* add CoreDNS IP into dns_resolver
+
+```
+dns_resolver:
+  - 10.233.0.3      # default coreDNS cluster ip
+
+```
+* change etcd host
+
+Following {your-namespace} should be changed to your namespace, for example `default`.
+> Mention: must use `Full Qualified Domain Name`. Short name `etcd-cluster-client` is not work.
+
+```
+etcd:
+  host:
+    - "http://etcd-cluster-client.{your-namespace}.svc.cluster.local:2379"     # multiple etcd address
+```
+
 ### Usage
 
 #### Create configmap for apache incubator-apisix
