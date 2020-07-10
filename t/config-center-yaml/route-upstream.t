@@ -139,3 +139,26 @@ GET /hello
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: upstream domain
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /hello
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "localhost:1980": 1
+        type:roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
