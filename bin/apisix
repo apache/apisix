@@ -291,7 +291,7 @@ http {
         listen {* port_admin *} ssl;
         ssl_certificate      cert/apisix_admin_ssl.crt;
         ssl_certificate_key  cert/apisix_admin_ssl.key;
-        ssl_session_cache    shared:SSL:1m;
+        ssl_session_cache    shared:SSL:20m;
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
@@ -354,7 +354,8 @@ http {
 
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
-        ssl_session_cache    shared:SSL:1m;
+        ssl_session_cache    shared:SSL:20m;
+        ssl_session_timeout 10m;
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
