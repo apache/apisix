@@ -311,7 +311,7 @@ end
 
 
 function _M.fetch_created_obj(key)
-    return created_obj[key]
+    return created_obj[sub_str(key, 2)]
 end
 
 
