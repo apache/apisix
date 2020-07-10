@@ -256,7 +256,7 @@ we have more than 1 ssl certs now
 
 
 
-=== TEST 6: set second ssl(sni: apisix.dev)
+=== TEST 6: set third ssl(sni: apisix.dev)
 --- config
 location /t {
     content_by_lua_block {
