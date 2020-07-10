@@ -106,7 +106,7 @@ events {
 
 worker_rlimit_core  {* worker_rlimit_core *};
 
-worker_shutdown_timeout 3;
+worker_shutdown_timeout {* worker_shutdown_timeout *};
 
 env APISIX_PROFILE;
 
