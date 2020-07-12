@@ -148,3 +148,27 @@ warn log
 notice log
 info log
 debug log
+
+
+
+=== TEST 6: print error log with prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local log = require("apisix.core").log.new("test: ")
+            log.error("error log")
+            log.warn("warn log")
+            log.notice("notice log")
+            log.info("info log")
+            ngx.say("done")
+        }
+    }
+--- log_level: error
+--- request
+GET /t
+--- error_log
+error log
+--- no_error_log
+test: warn log
+test: notice log
+test: info log

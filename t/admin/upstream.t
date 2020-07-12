@@ -235,7 +235,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: expect object to have at least 1 properties"}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
 
 
 
@@ -244,7 +244,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/invalid_id',
+            local code, body = t('/apisix/admin/upstreams/invalid_id$',
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
@@ -374,7 +374,7 @@ GET /t
             local code, body = t('/apisix/admin/upstreams',
                  ngx.HTTP_PUT,
                  [[{
-                    "id": "invalid_id",
+                    "id": "invalid_id$",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
@@ -523,7 +523,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): wrong type: expected integer, got string"}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -553,7 +553,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate 127.0.0.1:8080 (matching \".*\"): expected -100 to be greater than 0"}
+{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]
 
@@ -652,7 +652,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "nodes": {
@@ -694,9 +694,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/desc',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
-                '"new 21 upstream"',
+                [[{
+                    "desc": "new 21 upstream"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -730,16 +732,19 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/nodes',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
-                    "127.0.0.1:8081": 3,
-                    "127.0.0.1:8082": 4
+                    "nodes": {
+                        "127.0.0.1:8081": 3,
+                        "127.0.0.1:8082": 4
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "nodes": {
+                                "127.0.0.1:8080": 1,
                                 "127.0.0.1:8081": 3,
                                 "127.0.0.1:8082": 4
                             },
@@ -768,18 +773,20 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1/nodes',
+            local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
-                    "127.0.0.1:8081": 0,
-                    "127.0.0.1:8082": 4
+                    "nodes": {
+                        "127.0.0.1:8081": 3,
+                        "127.0.0.1:8082": 0
+                    }
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "nodes": {
-                                "127.0.0.1:8081": 0,
-                                "127.0.0.1:8082": 4
+                                "127.0.0.1:8081": 3,
+                                "127.0.0.1:8082": 0
                             },
                             "type": "roundrobin",
                             "desc": "new 21 upstream"
@@ -1140,7 +1147,7 @@ GET /t
 
 
 
-=== TEST 35: type chash, hash_on: consumer, don't need upstream key
+=== TEST 35: type chash, hash_on: consumer, do not need upstream key
 --- config
     location /t {
         content_by_lua_block {
@@ -1228,5 +1235,129 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches non of the enum values"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: set upstream(id: 1 + name: test name)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "name": "test upstream name"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "name": "test upstream name"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: string id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/a-b-c-ABC_0123',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: string id(delete)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/a-b-c-ABC_0123',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: invalid string id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/*invalid',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the requireds"}
 --- no_error_log
 [error]

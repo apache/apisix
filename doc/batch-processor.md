@@ -23,7 +23,6 @@ The batch processor can be used to aggregate entries(logs/any data) and process 
 When the batch_max_size is set to zero the processor will execute each entry immediately. Setting the batch max size more
 than 1 will start aggregating the entries until it reaches the max size or the timeout expires.
 
-
 ## Configurations
 
 The only mandatory parameter to create a batch processor is a function. The function will be executed when the batch reaches the max size
@@ -38,10 +37,8 @@ or when the buffer duration exceeds.
 |max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
 |retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
 
-
 The following code shows an example of how to use a batch processor. The batch processor takes a function to be executed as the first
 argument and the batch configuration as the second parameter.
-
 
 ```lua
 local bp = require("apisix.plugins.batch-processor")

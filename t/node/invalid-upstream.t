@@ -38,7 +38,7 @@ __DATA__
             end
 
             ngx.print(core.json.encode(res.body))
-            ngx.sleep(0.5)
+            ngx.sleep(1)
         }
     }
 --- request

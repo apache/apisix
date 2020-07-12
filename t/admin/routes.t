@@ -434,7 +434,7 @@ GET /t
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "service_id": "invalid_id",
+                        "service_id": "invalid_id$",
                         "uri": "/index.html"
                 }]]
                 )
@@ -569,7 +569,7 @@ GET /t
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "upstream_id": "invalid",
+                    "upstream_id": "invalid$",
                     "uri": "/index.html"
                 }]]
                 )
@@ -993,9 +993,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/methods',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
-                '["GET"]',
+                [[{
+                    "methods": ["GET", null, null, null, null, null, null, null, null]
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -1027,9 +1029,11 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/uri',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
-                '"/patch_test"',
+                [[{
+                    "uri": "/patch_test"
+                }]],
                 [[{
                     "node": {
                         "value": {
@@ -1054,23 +1058,22 @@ passed
 
 
 
-=== TEST 30: patch route(whole)
+=== TEST 30: patch route(multi)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1/',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 [[{
                     "methods": ["GET"],
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin"
+                            "127.0.0.1:8080": null,
+                            "127.0.0.2:8080": 1
+                        }
                     },
-                    "desc": "new route",
-                    "uri": "/index.html"
+                    "desc": "new route"
                 }]],
                 [[{
                     "node": {
@@ -1078,11 +1081,11 @@ passed
                             "methods": [
                                 "GET"
                             ],
-                            "uri": "/index.html",
+                            "uri": "/patch_test",
                             "desc": "new route",
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:8080": 1
+                                    "127.0.0.2:8080": 1
                                 },
                                 "type": "roundrobin"
                             }
@@ -1727,3 +1730,158 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 47: set route(id: 1 + name: test name)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "name": "test name",
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "name": "test name"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 48: string id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/a-b-c-ABC_0123',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 49: string id(delete)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/a-b-c-ABC_0123',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 50: invalid string id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/*invalid',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 51: Verify Response Content-Type=applciation/json
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            httpc:set_timeout(500)
+            httpc:connect(ngx.var.server_addr, ngx.var.server_port)
+            local res, err = httpc:request(
+                {
+                    path = '/apisix/admin/routes/1?ttl=1',
+                    method = "GET",
+                }
+            )
+
+            ngx.header["Content-Type"] = res.headers["Content-Type"]
+            ngx.status = 200
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t   
+--- response_headers
+Content-Type: application/json

@@ -83,4 +83,4 @@ qr/502 Bad Gateway|500 Internal Server Error/
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
-qr/failed to pick server: missing upstream configuration while connecting to upstream/
+qr/missing upstream configuration in Route or Service/
