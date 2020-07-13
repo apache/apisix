@@ -392,15 +392,15 @@ function _M.http_access_phase()
                 end
 
                 if not parsed_upstream then
-                    route, err = parse_domain_in_up(upstream, api_ctx)
+                    parsed_upstream, err = parse_domain_in_up(upstream, api_ctx)
                     if err then
                         core.log.error("failed to reolve domain in upstream: ",
                                        err)
                         return core.response.exit(500)
                     end
 
-                    route = resolved_domain(route, api_ctx.conf_version,
-                                        return_direct, route)
+                    resolved_domain(upstream, api_ctx.conf_version,
+                                    return_direct, parsed_upstream)
                 end
 
             end
@@ -426,8 +426,8 @@ function _M.http_access_phase()
                     return core.response.exit(500)
                 end
 
-                route = resolved_domain(route, api_ctx.conf_version,
-                                      return_direct, route)
+                resolved_domain(route, api_ctx.conf_version,
+                                return_direct, route)
             end
         end
 
