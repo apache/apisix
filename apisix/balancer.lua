@@ -255,6 +255,7 @@ function _M.run(route, ctx)
         return core.response.exit(502)
     end
 
+    core.log.info("proxy to ", server.host, ":", server.port)
     local ok, err = balancer.set_current_peer(server.host, server.port)
     if not ok then
         core.log.error("failed to set server peer [", server.host, ":",
