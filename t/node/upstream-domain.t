@@ -160,8 +160,8 @@ GET /t
 status: 500
 status: 500
 --- error_log
-failed to parse domain in upstream: server returned error code
-failed to parse domain in upstream: server returned error code
+failed to parse domain: httpbin.orgx
+failed to parse domain: httpbin.orgx
 --- timeout: 10
 
 
