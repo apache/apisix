@@ -379,6 +379,11 @@ function _M.http_access_phase()
             end
 
             if upstream.has_domain then
+                -- try to fetch the resolved domain, if we got `nil`,
+                -- it means we need to create the cache by handle.
+                -- the `api_ctx.conf_version` is different after we called
+                -- `parse_domain_in_up`, need to recreate the cache by new
+                -- `api_ctx.conf_version`
                 local parsed_upstream, err = resolved_domain(upstream,
                             api_ctx.conf_version, return_direct, nil)
                 if err then
