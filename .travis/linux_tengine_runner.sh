@@ -118,6 +118,11 @@ tengine_install() {
     wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-delete_unused_variable.patch
     wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-keepalive_post_request_status.patch
     wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-tolerate_backslash_zero_in_uri.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-avoid-limit_req_zone-directive-in-multiple-variables.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-segmentation-fault-in-master-process.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-support-dtls-offload.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-support-prometheus-to-upstream_check_module.patch
+    wget -P patches https://raw.githubusercontent.com/totemofwolf/tengine/feature/patches/tengine-2.3.2-vnswrr-adaptated-to-dynamic_resolve.patch
 
     cd bundle/tengine-2.3.2
     patch -p1 < ../../patches/nginx-1.17.4-always_enable_cc_feature_tests.patch
@@ -148,6 +153,11 @@ tengine_install() {
     patch -p1 < ../../patches/tengine-2.3.2-delete_unused_variable.patch
     patch -p1 < ../../patches/tengine-2.3.2-keepalive_post_request_status.patch
     patch -p1 < ../../patches/tengine-2.3.2-tolerate_backslash_zero_in_uri.patch
+    patch -p1 < ../../patches/tengine-2.3.2-avoid-limit_req_zone-directive-in-multiple-variables.patch
+    patch -p1 < ../../patches/tengine-2.3.2-segmentation-fault-in-master-process.patch
+    patch -p1 < ../../patches/tengine-2.3.2-support-dtls-offload.patch
+    patch -p1 < ../../patches/tengine-2.3.2-support-prometheus-to-upstream_check_module.patch
+    patch -p1 < ../../patches/tengine-2.3.2-vnswrr-adaptated-to-dynamic_resolve.patch
 
     cd -
     # patching end
