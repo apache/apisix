@@ -235,7 +235,7 @@ local function parse_domain_in_up(up, api_ctx)
         return nil, err
     end
 
-    local old_dns_value = up.dns_value and up.dns_value.upstream.nodes
+    local old_dns_value = up.dns_value and up.dns_value.nodes
     local ok = compare_upstream_node(old_dns_value, new_nodes)
     if ok then
         return up
@@ -245,11 +245,10 @@ local function parse_domain_in_up(up, api_ctx)
         up.modifiedIndex_org = up.modifiedIndex
     end
     up.modifiedIndex = up.modifiedIndex_org .. "#" .. ngx_now()
-    api_ctx.conf_version = up.modifiedIndex
 
     up.dns_value = core.table.clone(up.value)
     up.dns_value.nodes = new_nodes
-    core.log.info("parse upstream which contain domain: ",
+    core.log.info("resolve upstream which contain domain: ",
                   core.json.delay_encode(up))
     return up
 end
@@ -385,21 +384,21 @@ function _M.http_access_phase()
                 -- `parse_domain_in_up`, need to recreate the cache by new
                 -- `api_ctx.conf_version`
                 local parsed_upstream, err = resolved_domain(upstream,
-                            api_ctx.conf_version, return_direct, nil)
+                                upstream.modifiedIndex, return_direct, nil)
                 if err then
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
                 end
 
                 if not parsed_upstream then
-                    parsed_upstream, err = parse_domain_in_up(upstream, api_ctx)
+                    parsed_upstream, err = parse_domain_in_up(upstream)
                     if err then
                         core.log.error("failed to reolve domain in upstream: ",
                                        err)
                         return core.response.exit(500)
                     end
 
-                    resolved_domain(upstream, api_ctx.conf_version,
+                    resolved_domain(upstream, upstream.modifiedIndex,
                                     return_direct, parsed_upstream)
                 end
 

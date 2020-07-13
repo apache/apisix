@@ -49,7 +49,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: route with one upstream node
 --- config
     location /t {
         content_by_lua_block {
@@ -82,7 +82,7 @@ passed
 
 
 
-=== TEST 2: hit route, parse upstream node address by DNS
+=== TEST 2: hit route, resolve upstream node to "127.0.0.2" always
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -106,7 +106,7 @@ hello world
 
 
 
-=== TEST 3: dns cached expired, reparse the domain in upstream node
+=== TEST 3: hit route, resolve upstream node to different values
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -161,7 +161,7 @@ proxy to 127.0.0.3:1980
 
 
 
-=== TEST 4: set route, two upstream nodes with host
+=== TEST 4: set route with two upstream nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -195,7 +195,7 @@ passed
 
 
 
-=== TEST 5: hit route, parse upstream node address by DNS
+=== TEST 5: hit route, resolve the upstream node to "127.0.0.2"
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -219,7 +219,7 @@ hello world
 
 
 
-=== TEST 6: dns cached expired, reparse the domain in upstream node
+=== TEST 6: hit route, resolve upstream node to different values
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -278,3 +278,361 @@ call /hello
 dns resolver domain: test2.com to 127.0.0.5
 dns resolver domain: test.com to 127.0.0.6
 proxy to 127.0.0.5:1980
+
+
+
+=== TEST 7: upstream with one upstream node
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "test.com:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: set route with upstream_id 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: hit route, resolve upstream node to different values
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    local count = 0
+    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+        count = count + 1
+
+        if domain == "test.com" then
+            return {address = "127.0.0." .. count}
+        end
+
+        error("unkown domain: " .. domain)
+    end
+
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+    }
+}
+
+--- request
+GET /t
+--- grep_error_log eval
+qr/dns resolver domain: test.com to 127.0.0.\d|call \/hello|proxy to 127.0.0.\d:1980/
+--- grep_error_log_out
+call /hello
+dns resolver domain: test.com to 127.0.0.1
+proxy to 127.0.0.1:1980
+call /hello
+dns resolver domain: test.com to 127.0.0.2
+proxy to 127.0.0.2:1980
+proxy to 127.0.0.2:1980
+call /hello
+dns resolver domain: test.com to 127.0.0.3
+proxy to 127.0.0.3:1980
+
+
+
+=== TEST 10: two upstream nodes in upstream object
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "test.com:1980": 1,
+                        "test2.com:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit route, resolve upstream node to different values
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    local count = 0
+    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+        count = count + 1
+
+        if domain == "test.com" or domain == "test2.com" then
+            return {address = "127.0.0." .. count}
+        end
+
+        error("unkown domain: " .. domain)
+    end
+
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+    }
+}
+
+--- request
+GET /t
+--- grep_error_log eval
+qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy to 127.0.0.\d:1980/
+--- grep_error_log_out
+call /hello
+dns resolver domain: test2.com to 127.0.0.1
+dns resolver domain: test.com to 127.0.0.2
+proxy to 127.0.0.1:1980
+call /hello
+dns resolver domain: test2.com to 127.0.0.3
+dns resolver domain: test.com to 127.0.0.4
+proxy to 127.0.0.3:1980
+proxy to 127.0.0.4:1980
+proxy to 127.0.0.3:1980
+proxy to 127.0.0.4:1980
+call /hello
+dns resolver domain: test2.com to 127.0.0.5
+dns resolver domain: test.com to 127.0.0.6
+proxy to 127.0.0.5:1980
+
+
+
+=== TEST 12: dns cached expired, resolve the domain always with same value
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    local count = 1
+    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+        if domain == "test.com" or domain == "test2.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        error("unkown domain: " .. domain)
+    end
+
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+    }
+}
+
+--- request
+GET /t
+--- grep_error_log eval
+qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy to 127.0.0.\d:1980/
+--- grep_error_log_out
+call /hello
+dns resolver domain: test2.com to 127.0.0.1
+dns resolver domain: test.com to 127.0.0.1
+proxy to 127.0.0.1:1980
+call /hello
+dns resolver domain: test2.com to 127.0.0.1
+dns resolver domain: test.com to 127.0.0.1
+proxy to 127.0.0.1:1980
+proxy to 127.0.0.1:1980
+proxy to 127.0.0.1:1980
+proxy to 127.0.0.1:1980
+call /hello
+dns resolver domain: test2.com to 127.0.0.1
+dns resolver domain: test.com to 127.0.0.1
+proxy to 127.0.0.1:1980
+
+
+
+=== TEST 13: two upstream nodes in upstream object (one host + one IP)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "test.com:1980": 1,
+                        "127.0.0.5:1981": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: dns cached expired, resolve the domain with different values
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    local count = 0
+    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+        count = count + 1
+        if domain == "test.com" or domain == "test2.com" then
+            return {address = "127.0.0." .. count}
+        end
+
+        error("unkown domain: " .. domain)
+    end
+
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+        local code, body = t('/hello', ngx.HTTP_GET)
+
+        ngx.sleep(1.1)  -- cache expired
+        core.log.info("call /hello")
+        local code, body = t('/hello', ngx.HTTP_GET)
+    }
+}
+
+--- request
+GET /t
+--- grep_error_log eval
+qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy to 127.0.0.\d:198\d/
+--- grep_error_log_out
+call /hello
+dns resolver domain: test.com to 127.0.0.1
+proxy to 127.0.0.1:1980
+call /hello
+dns resolver domain: test.com to 127.0.0.2
+proxy to 127.0.0.2:1980
+proxy to 127.0.0.5:1981
+proxy to 127.0.0.2:1980
+proxy to 127.0.0.5:1981
+call /hello
+dns resolver domain: test.com to 127.0.0.3
+proxy to 127.0.0.3:1980
