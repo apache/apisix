@@ -36,7 +36,7 @@ local ngx_now       = ngx.now
 local load_balancer
 
 local dns_resolver
-local resolved_domain
+local lru_resolved_domain
 
 
 local function parse_args(args)
@@ -101,7 +101,7 @@ function _M.http_init_worker()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
-    resolved_domain = core.lrucache.new({
+    lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
 end
@@ -383,7 +383,7 @@ function _M.http_access_phase()
                 -- the `api_ctx.conf_version` is different after we called
                 -- `parse_domain_in_up`, need to recreate the cache by new
                 -- `api_ctx.conf_version`
-                local parsed_upstream, err = resolved_domain(upstream,
+                local parsed_upstream, err = lru_resolved_domain(upstream,
                                 upstream.modifiedIndex, return_direct, nil)
                 if err then
                     core.log.error("failed to get resolved upstream: ", err)
@@ -398,7 +398,7 @@ function _M.http_access_phase()
                         return core.response.exit(500)
                     end
 
-                    resolved_domain(upstream, upstream.modifiedIndex,
+                    lru_resolved_domain(upstream, upstream.modifiedIndex,
                                     return_direct, parsed_upstream)
                 end
 
@@ -411,7 +411,7 @@ function _M.http_access_phase()
 
     else
         if route.has_domain then
-            local parsed_route, err = resolved_domain(route, api_ctx.conf_version,
+            local parsed_route, err = lru_resolved_domain(route, api_ctx.conf_version,
                                         return_direct, nil)
             if err then
                 core.log.error("failed to get resolved route: ", err)
@@ -425,7 +425,7 @@ function _M.http_access_phase()
                     return core.response.exit(500)
                 end
 
-                resolved_domain(route, api_ctx.conf_version,
+                lru_resolved_domain(route, api_ctx.conf_version,
                                 return_direct, route)
             end
         end
@@ -653,7 +653,7 @@ function _M.stream_init_worker()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
-    resolved_domain = core.lrucache.new({
+    lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
 end
