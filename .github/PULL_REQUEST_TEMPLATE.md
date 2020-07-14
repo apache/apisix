@@ -1,17 +1,8 @@
-NOTE: Please read the Contributing.md guidelines before submitting your patch:
+### Pre-submission checklist:
 
-https://github.com/apache/incubator-apisix/blob/master/Contributing.md#how-to-add-a-new-feature-or-change-an-existing-one
+*Please answer each of these after submitting your pull request:*
 
-### Summary
-
-SUMMARY_HERE
-
-### Full changelog
-
-* [Implement ...]
-* [Add related tests]
-* ...
-
-### Issues resolved
-
-Fix #XXX
+* [ ] Did you explain what problem does this PR solve? Or what new features have been added?
+* [ ] Have you added corresponding test cases?
+* [ ] Have you modified the corresponding document?
+* [ ] Is this PR backward compatible?
