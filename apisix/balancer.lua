@@ -161,6 +161,7 @@ local function pick_server(route, ctx)
             return nil, "discovery is uninitialized"
         end
         up_conf.nodes = discovery.nodes(up_conf.service_name)
+        up_conf.checks = nil
     end
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
@@ -219,8 +220,13 @@ local function pick_server(route, ctx)
         version = version .. "#" .. checker.status_ver
     end
 
-    local server_picker = lrucache_server_picker(key, version,
-                            create_server_picker, up_conf, checker)
+    local server_picker
+    if up_conf.service_name then
+        server_picker = create_server_picker(up_conf, nil)
+    else
+        server_picker = lrucache_server_picker(key, version, create_server_picker, up_conf, checker)
+    end
+
     if not server_picker then
         return nil, "failed to fetch server picker"
     end
