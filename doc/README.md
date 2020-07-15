@@ -33,7 +33,7 @@ Reference Documentation
 * [Stream Proxy](stream-proxy.md)
 * [Admin API](admin-api.md)
 * [Changelog](../CHANGELOG.md)
-* [Code Style](../CODE_STYLE.md)
+* [Code Style](https://github.com/luarocks/lua-style-guide)
 * [FAQ](../FAQ.md)
 
 Plugins
