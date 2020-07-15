@@ -112,10 +112,6 @@ function _M.mock_skywalking_v2_instance_register()
     ngx.say(json_encode(ret))
 end
 
-function _M.mock_skywalking_v2_instance_heartbeat()
-    ngx.say('skywalking heartbeat ok')
-end
-
 function _M.mock_skywalking_v2_segments()
     ngx.say('skywalking segments ok')
 end
