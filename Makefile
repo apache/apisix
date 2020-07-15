@@ -176,7 +176,7 @@ install: default
 
 ### test:             Run the test case
 test:
-	prove -I../test-nginx/lib -I./ -r -s t/
+	TEST_NGINX_BINARY=`which openresty` prove -I../test-nginx/lib -I../test-nginx/inc -I./ -r -s t/
 
 ### license-check:    Check Lua source code for Apache License
 .PHONY: license-check
