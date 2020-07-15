@@ -75,7 +75,6 @@ my $ssl_key = read_file("conf/cert/apisix.key");
 my $test2_crt = read_file("conf/cert/test2.crt");
 my $test2_key = read_file("conf/cert/test2.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
 $yaml_config =~ s/admin_key:/disable_admin_key:/;
 

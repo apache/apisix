@@ -33,7 +33,6 @@ sub read_file($) {
 
 our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/http: 'radixtree_uri'/http: 'radixtree_host_uri'/;
 $yaml_config =~ s/admin_key:/disable_admin_key:/;
 
