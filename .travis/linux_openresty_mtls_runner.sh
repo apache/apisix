@@ -91,7 +91,12 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
-    sudo service etcd start
+    sudo service etcd stop
+    mkdir -p ~/etcd-data
+    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcd --version
+    sleep 5
+
 
     # enable mTLS
     sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
