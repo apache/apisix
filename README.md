@@ -69,7 +69,8 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Hash-based Load Balancing: Load balance with consistent hashing sessions.
     - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
     - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
-
+- [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+    
 - **Fine-grained routing**
     - [Supports full path matching and prefix matching](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
     - [Support all Nginx built-in variables as conditions for routing](/doc/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), so you can use `cookie`,` args`, etc. as routing conditions to implement canary release, A/B testing, etc.
