@@ -21,7 +21,8 @@ local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
-
+local sub_str     = string.sub
+local find_str    = string.find
 
 local schema = {
     type = "object",
@@ -153,10 +154,20 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    upstream_uri = core.utils.uri_safe_encode(upstream_uri)
+    local index = find_str(upstream_uri, "?", 1, true)
+    if index then
+        upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index-1)) ..
+                       sub_str(upstream_uri, index)
+    else
+        upstream_uri = core.utils.uri_safe_encode(upstream_uri)
+    end
 
     if ctx.var.is_args == "?" then
-        ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
+        if index then
+            ctx.var.upstream_uri = upstream_uri .. "&" .. (ctx.var.args or "")
+        else
+            ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
+        end
     else
         ctx.var.upstream_uri = upstream_uri
     end

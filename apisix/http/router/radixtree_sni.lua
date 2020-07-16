@@ -25,6 +25,7 @@ local error            = error
 local str_find         = string.find
 local aes              = require "resty.aes"
 local assert           = assert
+local str_gsub         = string.gsub
 local ngx_decode_base64 = ngx.decode_base64
 local ssl_certificates
 local radixtree_router
@@ -80,7 +81,6 @@ local function create_router(ssl_items)
                 end
             end
 
-            local
             idx = idx + 1
             route_items[idx] = {
                 paths = sni,
@@ -96,6 +96,10 @@ local function create_router(ssl_items)
     end
 
     core.log.info("route items: ", core.json.delay_encode(route_items, true))
+    -- for testing
+    if #route_items > 1 then
+        core.log.info("we have more than 1 ssl certs now")
+    end
     local router, err = radixtree_new(route_items)
     if not router then
         return nil, err
@@ -151,7 +155,7 @@ function _M.match_and_set(api_ctx)
     local sni
     sni, err = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        return false, "failed to fetch SNI: " .. (err or "not found")
+        return false, "failed to fetch SSL certificate: " .. (err or "not found")
     end
 
     core.log.debug("sni: ", sni)
@@ -159,7 +163,7 @@ function _M.match_and_set(api_ctx)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
-        core.log.warn("not found any valid sni configuration")
+        core.log.warn("failed to find any SSL certificate by SNI: ", sni)
         return false
     end
 
@@ -172,14 +176,19 @@ function _M.match_and_set(api_ctx)
             end
         end
         if not matched then
-            core.log.warn("not found any valid sni configuration, matched sni: ",
-                          core.json.delay_encode(api_ctx.matched_sni, true), " current sni: ", sni)
+            local log_snis = core.json.encode(api_ctx.matched_sni, true)
+            if log_snis ~= nil then
+                log_snis = str_gsub(log_snis:reverse(), "%[", "%]")
+                log_snis = str_gsub(log_snis, "%]", "%[", 1)
+            end
+            core.log.warn("failed to find any SSL certificate by SNI: ",
+                          sni, " matched SNIs: ", log_snis)
             return false
         end
     else
         if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
-            core.log.warn("not found any valid sni configuration, matched sni: ",
-                          api_ctx.matched_sni:reverse(), " current sni: ", sni)
+            core.log.warn("failed to find any SSL certificate by SNI: ",
+                          sni, " matched SNI: ", api_ctx.matched_sni:reverse())
             return false
         end
     end

@@ -1858,3 +1858,30 @@ GET /t
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 51: Verify Response Content-Type=applciation/json
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            httpc:set_timeout(500)
+            httpc:connect(ngx.var.server_addr, ngx.var.server_port)
+            local res, err = httpc:request(
+                {
+                    path = '/apisix/admin/routes/1?ttl=1',
+                    method = "GET",
+                }
+            )
+
+            ngx.header["Content-Type"] = res.headers["Content-Type"]
+            ngx.status = 200
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t   
+--- response_headers
+Content-Type: application/json

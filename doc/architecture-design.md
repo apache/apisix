@@ -351,7 +351,7 @@ Here are some examples of configurations using different `hash_on` types:
 Create a consumer object:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d `
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -359,7 +359,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
             "key": "auth-jack"
         }
     }
-}`
+}'
 ```
 
 Create route object and enable `key-auth` plugin authentication:

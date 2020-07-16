@@ -19,8 +19,6 @@
 
 # Table of Contents
 
-===
-
 * [Route](#route)
 * [Service](#service)
 * [Consumer](#consumer)
@@ -385,14 +383,14 @@ Example：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
-> {
->     "type": "roundrobin",
->     "nodes": {
->         "127.0.0.1:80": 1,
->         "127.0.0.2:80": 2,
->         "foo.com:80": 3
->     }
-> }'
+{
+    "type":"roundrobin",
+    "nodes":{
+        "127.0.0.1:80":1,
+        "127.0.0.2:80":2,
+        "foo.com:80":3
+    }
+}'
 HTTP/1.1 201 Created
 Date: Thu, 26 Dec 2019 04:19:34 GMT
 Content-Type: text/plain

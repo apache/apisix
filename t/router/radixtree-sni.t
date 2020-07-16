@@ -207,7 +207,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
-not found any valid sni configuration
+failed to find any SSL certificate by SNI
 
 
 
@@ -561,7 +561,7 @@ connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
-not found any valid sni configuration, matched sni: *.test2.com current sni: aa.bb.test2.com
+failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNI: *.test2.com
 --- no_error_log
 [error]
 [alert]
@@ -856,7 +856,7 @@ connected: 1
 failed to do SSL handshake: certificate host mismatch
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
-not found any valid sni configuration, matched sni: ["moc.2tset","moc.2tset.*"] current sni: aa.bb.test2.com
+failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["*.test2.com","test2.com"]
 --- no_error_log
 [error]
 [alert]
@@ -904,7 +904,6 @@ passed
 === TEST 20: client request: test2.com
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
 location /t {
     content_by_lua_block {
         -- etcd sync

@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local balancer = require("ngx.balancer")
+local upstream = require("apisix.upstream")
 
 local schema = {
     type = "object",
@@ -60,25 +60,27 @@ end
 function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
     -- return 200, {message = "hit example plugin"}
-end
-
-
-function _M.balancer(conf, ctx)
-    core.log.warn("plugin balancer phase, conf: ", core.json.encode(conf))
 
     if not conf.ip then
         return
     end
 
-    -- NOTE: update `ctx.balancer_name` is important, APISIX will skip other
-    -- balancer handler.
-    ctx.balancer_name = plugin_name
+    local up_conf = {
+        type = "roundrobin",
+        nodes = {
+            {host = conf.ip, port = conf.port, weight = 1}
+        }
+    }
 
-    local ok, err = balancer.set_current_peer(conf.ip, conf.port)
+    local ok, err = upstream.check_schema(up_conf)
     if not ok then
-        core.log.error("failed to set server peer: ", err)
-        return core.response.exit(502)
+        return 500, err
     end
+
+    local matched_route = ctx.matched_route
+    upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
+                 ctx.conf_version, up_conf, matched_route)
+    return
 end
 
 

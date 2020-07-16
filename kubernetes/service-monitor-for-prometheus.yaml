@@ -15,29 +15,25 @@
 # limitations under the License.
 #
 
-apiVersion: v1
-kind: Service
+# when using prometheus-operator, you can apply this into k8s.
+# Mention: ServiceMonitor should be the same namespace with prometheus-operator.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
 metadata:
-  name: apisix-gw-lb
-  # namespace: default
+  name: apisix-gw
   labels:
-    app: apisix-gw   # useful for service discovery, for example, prometheus-operator.
-spec:
-  ports:
-  - name: http
-    port: 9080
-    protocol: TCP
-    targetPort: 9080
-  - name: https
-    port: 9443
-    protocol: TCP
-    targetPort: 9443
-  # - name: admin-port
-  #   port: 9180
-  #   protocol: TCP
-  #   targetPort: 9180
-  selector:
     app: apisix-gw
-  type: NodePort
-  externalTrafficPolicy: Local
-  # sessionAffinity: None
+spec:
+  endpoints:
+    - interval: 10s
+      honorLabels: true
+      port: http
+      path: /apisix/prometheus/metrics
+      scheme: http
+  selector:
+    matchLabels:
+      app: apisix-gw
+  namespaceSelector:
+    any: true
+

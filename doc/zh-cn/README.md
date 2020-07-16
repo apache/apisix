@@ -18,7 +18,7 @@
 -->
 [English](../README.md)
 
-Reference document
+参考文档
 ==================
 
 * [APISIX 说明](../../README_CN.md)
@@ -26,9 +26,7 @@ Reference document
 * [压力测试](benchmark.md)
 * [如何构建 Apache APISIX](how-to-build.md)
 * [健康检查](health-check.md): 支持对上游节点的主动和被动健康检查，在负载均衡时自动过滤掉不健康的节点。
-* Router(路由)
-    * [radixtree](../router-radixtree.md)
-    * [r3](router-r3.md)
+* [路由 radixtree](../router-radixtree.md)
 * [独立运行模型](stand-alone.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy.md)
 * [管理 API](admin-api.md)
@@ -61,9 +59,25 @@ Reference document
 * [fault-injection](plugins/fault-injection.md)：故障注入，可以返回指定的响应体、响应码和响应时间，从而提供了不同的失败场景下处理的能力，例如服务失败、服务过载、服务高延时等。
 * [proxy-cache](plugins/proxy-cache.md)：代理缓存插件提供缓存后端响应数据的能力。
 * [proxy-mirror](plugins/proxy-mirror.md)：代理镜像插件提供镜像客户端请求的能力。
-* [udp-logger](plugins/udp-logger.md): 将请求记录到UDP服务器
-* [tcp-logger](plugins/tcp-logger.md): 将请求记录到TCP服务器
-* [kafka-logger](plugins/kafka-logger.md): 将请求记录到外部Kafka服务器。
+* [udp-logger](plugins/udp-logger.md): 将请求记录到 UDP 服务器
+* [tcp-logger](plugins/tcp-logger.md): 将请求记录到 TCP 服务器
+* [kafka-logger](plugins/kafka-logger.md): 将请求记录到外部 Kafka 服务器。
 * [cors](plugins/cors.md): 为你的API启用 CORS
 * [batch-requests](plugins/batch-requests.md): 以 **http pipeline** 的方式在网关一次性发起多个 `http` 请求。
 * [authz-keycloak](plugins/authz-keycloak-cn.md): 支持 Keycloak 身份认证服务器
+* [uri-blocker](plugins/uri-blocker.md): 根据 URI 拦截用户请求。
+* [oauth](plugins/oauth.md): 提供 OAuth 2 身份验证和自省。
+
+部署
+=======
+
+### AWS
+
+推荐的方法是在 [AWS Fargate](https://aws.amazon.com/fargate/) 上使用  [AWS CDK](https://aws.amazon.com/cdk/) 部署 APISIX，这有助于将 APISIX 层和上游层分离到具有自动缩放功能的完全托管和安全的无服务器容器计算环境之上。
+
+请参阅 [Pahud Hsieh](https://github.com/pahud) 撰写的[指南](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md)，了解如何在 AWS CDK 中 100％ 配置推荐的架构。
+
+### Kubernetes
+
+请参阅[指南](../../kubernetes/README.md)并了解如何在 Kubernetes 中部署 APISIX。
+
