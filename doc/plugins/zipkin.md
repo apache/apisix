@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](zipkin-cn.md)
+[Chinese](../zh-cn/plugins/zipkin.md)
 
 # Summary
 - [**Name**](#name)

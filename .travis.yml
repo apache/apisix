@@ -1,7 +1,9 @@
-dist: xenial
+dist: bionic
 sudo: required
 
 matrix:
+  allow_failures:
+    - os: osx
   include:
     - os: linux
       services:

@@ -81,7 +81,12 @@ done
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                "body":"hello upstream"
+                                "body":"hello upstream",
+                                 "headers": {
+                                    "Location":"https://www.iresty.com",
+                                    "Authorization": "userpass"
+                                 },
+                                 "auth_value" : "userpass"
                             }
                         },
                         "upstream": {
@@ -98,8 +103,12 @@ done
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                "body":"hello upstream"
-                                }
+                                "body":"hello upstream",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                 },
+                                 "auth_value" : "userpass"
+                               }
                             },
                             "upstream": {
                                 "nodes": {
@@ -133,8 +142,13 @@ passed
 === TEST 4: access
 --- request
 GET /hello
+--- more_headers
+Authorization: userpass
 --- response_body chomp
 before the body modification hello upstream
+--- response_headers
+Location: https://www.iresty.com
+Authorization: userpass
 --- no_error_log
 [error]
 --- wait: 0.2
@@ -151,7 +165,11 @@ before the body modification hello upstream
                  [[{
                         "plugins": {
                             "echo": {
-                                "before_body": "before the body modification "
+                                "before_body": "before the body modification ",
+                                "auth_value" : "userpass",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
                             }
                         },
                         "upstream": {
@@ -167,8 +185,12 @@ before the body modification hello upstream
                         "value": {
                             "plugins": {
                                "echo": {
-                                "before_body": "before the body modification "
+                                "before_body": "before the body modification ",
+                                 "auth_value" : "userpass",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
                                 }
+                               }
                             },
                             "upstream": {
                                 "nodes": {
@@ -202,8 +224,246 @@ passed
 === TEST 6: access without upstream body change
 --- request
 GET /hello
+--- more_headers
+Authorization: userpass
 --- response_body
 before the body modification hello world
+--- response_headers
+Location: https://www.iresty.com
+--- wait: 0.2
 --- no_error_log
 [error]
 --- wait: 0.2
+
+
+
+=== TEST 7: update plugin back
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_value" : "userpasswrd",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                               "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_value" : "userpasswrd",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                               }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: access with wrong value in auth header value throws 401
+--- request
+GET /hello
+--- more_headers
+Authorization: userpass
+--- error_code: 401
+--- response_body chomp
+before the body modification unauthorized body
+--- response_headers
+Location: https://www.iresty.com
+
+
+
+=== TEST 9: update plugin back
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "before_body": "before the body modification ",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                               "echo": {
+                                "before_body": "before the body modification ",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                               }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: access with no auth header and value throws 401
+--- request
+GET /hello
+--- more_headers
+Authorization: userpass
+--- error_code: 401
+--- response_body chomp
+before the body modification unauthorized body
+--- response_headers
+Location: https://www.iresty.com
+
+
+
+=== TEST 11: update plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_value" : "userpass",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                               "echo": {
+                                "before_body": "before the body modification ",
+                                 "auth_value" : "userpass",
+                                "headers": {
+                                    "Location":"https://www.iresty.com"
+                                }
+                               }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: access without authorization as a header should throws 401
+--- request
+GET /hello
+--- error_code: 401
+--- response_body chomp
+before the body modification unauthorized body
+--- response_headers
+Location: https://www.iresty.com

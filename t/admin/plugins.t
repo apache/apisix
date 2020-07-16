@@ -30,7 +30,7 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["limit-req","limit-count","limit-conn","key-auth","basic-auth","prometheus","node-status","jwt-auth","zipkin","ip-restriction","grpc-transcode","serverless-pre-function","serverless-post-function","openid-connect","proxy-rewrite","redirect","response-rewrite","fault-injection","udp-logger","wolf-rbac","proxy-cache","tcp-logger","proxy-mirror","kafka-logger","cors","consumer-restriction","syslog","batch-requests","http-logger","skywalking","echo","request-validation"\]/
+qr/\["fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","uri-blocker","openid-connect","wolf-rbac","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","tcp-logger","kafka-logger","syslog","udp-logger","zipkin","skywalking","serverless-post-function"\]/
 --- no_error_log
 [error]
 
@@ -63,14 +63,4 @@ GET /apisix/admin/plugins/node-status
 --- response_body
 {"additionalProperties":false,"type":"object"}
 --- no_error_log
-[error]
-
-
-
-=== TEST 5: get plugin heartbeat schema
---- request
-GET /apisix/admin/plugins/heartbeat
---- response_body
-{"additionalProperties":false,"type":"object"}
---- no_error_log
-[error]
+[error] 

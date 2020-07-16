@@ -105,9 +105,8 @@ events {
 }
 
 worker_rlimit_core  {* worker_rlimit_core *};
-working_directory   /tmp/apisix_cores/;
 
-worker_shutdown_timeout 3;
+worker_shutdown_timeout {* worker_shutdown_timeout *};
 
 env APISIX_PROFILE;
 
@@ -230,7 +229,7 @@ http {
 
     log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
 
-    access_log {* http.access_log *} main buffer=16384 flush=1;
+    access_log {* http.access_log *} main buffer=16384 flush=3;
     open_file_cache  max=1000 inactive=60;
     client_max_body_size 0;
     keepalive_timeout {* http.keepalive_timeout *};
@@ -292,7 +291,7 @@ http {
         listen {* port_admin *} ssl;
         ssl_certificate      cert/apisix_admin_ssl.crt;
         ssl_certificate_key  cert/apisix_admin_ssl.key;
-        ssl_session_cache    shared:SSL:1m;
+        ssl_session_cache    shared:SSL:20m;
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
@@ -324,10 +323,10 @@ http {
 
             alias dashboard/;
 
-            try_files $uri $uri/index.html /index.html;
+            try_files $uri $uri/index.html /index.html =404;
         }
 
-        location /robots.txt {
+        location =/robots.txt {
             return 200 'User-agent: *\nDisallow: /';
         }
     }
@@ -355,7 +354,8 @@ http {
 
         ssl_certificate      cert/apisix.crt;
         ssl_certificate_key  cert/apisix.key;
-        ssl_session_cache    shared:SSL:1m;
+        ssl_session_cache    shared:SSL:20m;
+        ssl_session_timeout 10m;
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
@@ -394,7 +394,7 @@ http {
 
             alias dashboard/;
 
-            try_files $uri $uri/index.html /index.html;
+            try_files $uri $uri/index.html /index.html =404;
         }
         {% end %}
 

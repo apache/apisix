@@ -75,9 +75,16 @@ my $ssl_key = read_file("conf/cert/apisix.key");
 my $test2_crt = read_file("conf/cert/test2.crt");
 my $test2_key = read_file("conf/cert/test2.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
 $yaml_config =~ s/admin_key:/disable_admin_key:/;
+
+my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
+
+if ($etcd_enable_auth eq "true") {
+    $yaml_config =~ s/  # user:/  user:/;
+    $yaml_config =~ s/  # password:/  password:/;
+}
+
 
 my $profile = $ENV{"APISIX_PROFILE"};
 
@@ -102,7 +109,7 @@ add_block_preprocessor(sub {
 
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
-working_directory   $apisix_home;
+env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 _EOC_
 

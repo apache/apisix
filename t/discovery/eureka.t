@@ -32,7 +32,6 @@ sub read_file($) {
 
 our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/config_center: etcd/config_center: yaml/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
@@ -57,7 +56,6 @@ _EOC_
 run_tests();
 
 __DATA__
-
 
 === TEST 1: get APISIX-EUREKA info from EUREKA
 --- yaml_config eval: $::yaml_config
@@ -84,6 +82,7 @@ connect_timeout:1500, send_timeout:1500, read_timeout:1500.
 [error]
 
 
+
 === TEST 2: error service_name name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -100,6 +99,7 @@ GET /eureka/apps/APISIX-EUREKA
 --- error_code: 502
 --- error_log eval
 qr/.*failed to pick server: no valid upstream node.*/
+
 
 
 === TEST 3: with proxy-rewrite
@@ -128,4 +128,3 @@ eureka uri:http://127.0.0.1:8761/eureka/.
 connect_timeout:1500, send_timeout:1500, read_timeout:1500.
 --- no_error_log
 [error]
-

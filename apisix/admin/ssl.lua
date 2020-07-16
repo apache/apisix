@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core              = require("apisix.core")
-local schema_plugin     = require("apisix.admin.plugins").check_schema
 local tostring          = tostring
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
@@ -46,52 +45,13 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "wrong ssl id"}
     end
 
+    conf.id = id
+
     core.log.info("schema: ", core.json.delay_encode(core.schema.ssl))
     core.log.info("conf  : ", core.json.delay_encode(conf))
     local ok, err = core.schema.check(core.schema.ssl, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
-    end
-
-    local upstream_id = conf.upstream_id
-    if upstream_id then
-        local key = "/upstreams/" .. upstream_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return nil, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return nil, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
-    end
-
-    local service_id = conf.service_id
-    if service_id then
-        local key = "/services/" .. service_id
-        local res, err = core.etcd.get(key)
-        if not res then
-            return nil, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "]: "
-                                     .. err}
-        end
-
-        if res.status ~= 200 then
-            return nil, {error_msg = "failed to fetch service info by "
-                                     .. "service id [" .. service_id .. "], "
-                                     .. "response code: " .. res.status}
-        end
-    end
-
-    if conf.plugins then
-        local ok, err = schema_plugin(conf.plugins)
-        if not ok then
-            return nil, {error_msg = err}
-        end
     end
 
     return need_id and id or true
