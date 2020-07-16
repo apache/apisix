@@ -49,7 +49,7 @@ end
 function _M.rewrite(conf)
     local headers = ngx.req.get_headers()
 
-    if conf.body_schema.properties.header_schema then
+    if conf.header_schema then
         local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
@@ -57,7 +57,7 @@ function _M.rewrite(conf)
         end
     end
 
-    if not conf.body_schema.properties.body_schema then
+    if conf.body_schema then
         ngx.req.read_body()
         local body = ngx.req.get_body_data()
 

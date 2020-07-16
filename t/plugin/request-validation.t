@@ -228,3 +228,133 @@ GET /t
 --- response_body
 hello1 world
 --- no_error_log
+
+
+=== TEST 6: Add plugin with header_schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-validation": {
+                                "header_schema": {
+                                    "type": "object",
+                                    "required": ["required_payload"],
+                                    "properties": {
+                                        "required_payload": {"type": "string"},
+                                        "boolean_payload": {"type": "boolean"},
+                                        "timeouts": {
+                                           "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 254,
+                                            "default": 3
+                                        },
+                                        "req_headers": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                            "request-validation": {
+                                "header_schema": {
+                                    "type": "object",
+                                    "required": ["required_payload"],
+                                    "properties": {
+                                        "required_payload": {"type": "string"},
+                                        "boolean_payload": {"type": "boolean"},
+                                        "timeouts": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 254,
+                                            "default": 3
+                                        },
+                                        "req_headers": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/opentracing"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: required header payload missing
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+            local res, err = httpc:request_uri(uri,
+                {
+                    method = "GET",
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+
+            if res.status == 400 then
+                ngx.say("required field missing")
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+required field missing
+--- error_log
+property "required_payload" is required
+
+

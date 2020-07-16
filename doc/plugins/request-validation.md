@@ -51,12 +51,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 {
     "uri": "/get",
     "plugins": {
-        "body_schema": {
-            "type": "object",
-            "required": ["required_payload"],
-            "properties": {
-                "required_payload": {"type": "string"},
-                "boolean_payload": {"type": "boolean"}
+        "request-validation": {
+            "body_schema": {
+                "type": "object",
+                "required": ["required_payload"],
+                "properties": {
+                    "required_payload": {"type": "string"},
+                    "boolean_payload": {"type": "boolean"}
+                }
             }
         }
     },
