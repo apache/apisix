@@ -63,14 +63,4 @@ GET /apisix/admin/plugins/node-status
 --- response_body
 {"additionalProperties":false,"type":"object"}
 --- no_error_log
-[error]
-
-
-
-=== TEST 5: get plugin heartbeat schema
---- request
-GET /apisix/admin/plugins/heartbeat
---- response_body
-{"additionalProperties":false,"type":"object"}
---- no_error_log
-[error]
+[error] 
