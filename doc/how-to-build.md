@@ -117,10 +117,21 @@ Makefile rules:
 
 ### Troubleshoot
 
-If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+**Set Nginx Path**
+
+- If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
 make sure to set openresty as default nginx. And export the path as below.
 
-* export PATH=/usr/local/openresty/nginx/sbin:$PATH
+    - Linux default installation path:
+        * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+    - OSx default installation path via homebrew:
+        * export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
+
+**Run Individual Test Cases**
+
+- Use the following command to run test cases constratined to a file:
+    - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
+
 
 ## 5. Update Admin API token to protect Apache APISIX
 
