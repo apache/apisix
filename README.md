@@ -191,21 +191,21 @@ etcd --enable-v2=true &
 
 2. Getting start
 
-    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started] (doc/getting-started.md).
+    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started](doc/getting-started.md).
 
-     Further, you can follow the documentation to try more [plugins] (doc/README.md#Plugins).
+     Further, you can follow the documentation to try more [plugins](doc/README.md#Plugins).
 
 3. Admin API
 
-    Apache APISIX provides [REST Admin API] (doc/admin-api.md) to dynamic control the Apache APISIX cluster.
+    Apache APISIX provides [REST Admin API](doc/admin-api.md) to dynamic control the Apache APISIX cluster.
 
 4. Plugin development
 
-    You can refer to [plugin development guide] (doc/plugin-develop.md), and [sample plugin `echo`] (doc/plugins/echo.md) documentation and code implementation.
+    You can refer to [plugin development guide](doc/plugin-develop.md), and [sample plugin `echo`](doc/plugins/echo.md) documentation and code implementation.
 
      Please note that Apache APISIX plugins' added, updated, deleted, etc. are hot loaded, without restarting the service.
 
-For more documents, please refer to [Apache APISIX Document Index] (doc/README.md)
+For more documents, please refer to [Apache APISIX Document Index](doc/README.md)
 
 ## Dashboard
 APISIX has built-in support for Dashboard,
