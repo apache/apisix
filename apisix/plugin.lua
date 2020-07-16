@@ -99,10 +99,6 @@ local function load()
         return nil, "failed to read plugin list from local file"
     end
 
-    if local_conf.apisix and local_conf.apisix.enable_heartbeat then
-        core.table.insert(plugin_names, "heartbeat")
-    end
-
     local processed = {}
     for _, name in ipairs(plugin_names) do
         if processed[name] == nil then

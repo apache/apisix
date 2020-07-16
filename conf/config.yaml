@@ -16,7 +16,6 @@
 #
 apisix:
   node_listen: 9080              # APISIX listening port
-  enable_heartbeat: true
   enable_admin: true
   enable_admin_cors: true         # Admin API support CORS response headers.
   enable_debug: false
