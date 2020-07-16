@@ -302,7 +302,7 @@ http {
         ssl_certificate      cert/apisix_admin_ssl.crt;
         ssl_certificate_key  cert/apisix_admin_ssl.key;
         {%end%}
-        
+
         ssl_session_cache    shared:SSL:20m;
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
