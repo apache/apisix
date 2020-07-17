@@ -54,6 +54,8 @@ _M.set = set_directly
 
 function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
+        core.log.warn("upstream node has been specified, ",
+                      "cannot be set repeatedly")
         return true
     end
 
