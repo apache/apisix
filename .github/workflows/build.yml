@@ -22,7 +22,7 @@ jobs:
       SERVER_NAME: ${{ matrix.os_name }}
 
 
-    steps:        
+    steps:
       - name: Check out code
         uses: actions/checkout@v2
 
