@@ -234,7 +234,7 @@ local function pick_server(route, ctx)
     local res, err = lrucache_addr(server, nil, parse_addr, server)
     ctx.balancer_ip = res.host
     ctx.balancer_port = res.port
-    -- core.log.info("proxy to ", host, ":", port)
+    -- core.log.info("cached balancer peer host: ", host, ":", port)
     if err then
         core.log.error("failed to parse server addr: ", server, " err: ", err)
         return core.response.exit(502)
@@ -255,6 +255,7 @@ function _M.run(route, ctx)
         return core.response.exit(502)
     end
 
+    core.log.info("proxy request to ", server.host, ":", server.port)
     local ok, err = balancer.set_current_peer(server.host, server.port)
     if not ok then
         core.log.error("failed to set server peer [", server.host, ":",
