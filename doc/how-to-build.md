@@ -34,14 +34,14 @@ You can install Apache APISIX in a variety of ways, including source code packag
 You need to download the Apache source release first:
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.4.1/apache-apisix-1.4.1-incubating-src.tar.gz
-tar zxvf apache-apisix-1.4.1-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/1.4.1/apache-apisix-1.4.1-src.tar.gz
+tar zxvf apache-apisix-1.4.1-src.tar.gz
 ```
 
 Install the Lua libraries that the runtime depends on:
 
 ```shell
-cd apache-apisix-1.4.1-incubating
+cd apache-apisix-1.4.1
 make deps
 ```
 

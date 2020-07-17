@@ -34,13 +34,13 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 你需要先下载 Apache Release 源码包：
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.4.1/apache-apisix-1.4.1-incubating-src.tar.gz
-tar zxvf apache-apisix-1.4.1-incubating-src.tar.gz
+wget http://www.apache.org/dist/incubator/apisix/1.4.1/apache-apisix-1.4.1-src.tar.gz
+tar zxvf apache-apisix-1.4.1-src.tar.gz
 ```
 
 安装运行时依赖的 Lua 库：
 ```
-cd apache-apisix-1.4.1-incubating
+cd apache-apisix-1.4.1
 make deps
 ```
 
