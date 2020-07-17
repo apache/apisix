@@ -17,6 +17,7 @@
 local core          = require("apisix.core")
 local plugin_name   = "request-validation"
 local ngx           = ngx
+local io           = io
 
 local schema = {
     type = "object",
