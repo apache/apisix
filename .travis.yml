@@ -5,8 +5,6 @@ matrix:
   allow_failures:
     - os: osx
   include:
-    - os: linux
-      env: OSNAME=linux_openresty_mtls 
     - os: osx
       env: OSNAME=osx_openresty
       cache:
@@ -28,8 +26,6 @@ addons:
       - etcd
   homebrew:
     update: true
-  hosts:
-    - admin.apisix.dev
 
 
 cache:
