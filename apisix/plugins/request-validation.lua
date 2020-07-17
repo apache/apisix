@@ -59,29 +59,38 @@ function _M.rewrite(conf)
 
     if conf.body_schema then
         ngx.req.read_body()
+        local req_body, error
         local body = ngx.req.get_body_data()
 
-        if headers["content-type"] then
-            if headers["content-type"] == "application/json" then
-                local data, error = json_decode(body)
+        if not body then
+            local filename = ngx.req.get_body_file()
+            if not filename then
+                return core.response.exit(500)
+            end
+            local fd = io.open(filename, 'rb')
+            if not fd then
+                return core.response.exit(500)
+            end
+            body = fd:read('*a')
+        end
 
-                if not data then
-                  core.log.error('failed to decode the req body', error)
-                  core.response.exit(400)
-                  return
-                end
+        if headers["content-type"] == "application/x-www-form-urlencoded" then
+            req_body, err = ngx.decode_args(body)
+        else -- JSON as default
+            req_body, error = core.json.decode(body)
+        end
 
-                local ok, err = core.schema.check(conf.body_schema, data)
-                if not ok then
-                  core.log.error("req schema validation failed", err)
-                  core.response.exit(400, err)
-                end
-              end
-        else
-          core.response.exit(400)
+        if not req_body then
+          core.log.error('failed to decode the req body', error)
+          return core.response.exit(400, error)
+        end
+
+        local ok, err = core.schema.check(conf.body_schema, req_body)
+        if not ok then
+          core.log.error("req schema validation failed", err)
+          return core.response.exit(400, err)
         end
     end
 end
-
 
 return _M
