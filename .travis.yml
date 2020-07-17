@@ -6,29 +6,13 @@ matrix:
     - os: osx
   include:
     - os: linux
-      services:
-        - docker
-      env: OSNAME=linux_openresty
-    - os: linux
-      env: OSNAME=linux_openresty_mtls
+      env: OSNAME=linux_openresty_mtls 
     - os: osx
       env: OSNAME=osx_openresty
       cache:
         directories:
           - $HOME/Library/Caches/Homebrew
           - /usr/local/Homebrew
-    - os: linux
-      services:
-        - docker
-      env: OSNAME=linux_tengine
-    - os: linux
-      services:
-        - docker
-      env: OSNAME=linux_apisix_master_luarocks
-    - os: linux
-      services:
-        - docker
-      env: OSNAME=linux_apisix_current_luarocks
 
 language: c
 
@@ -46,6 +30,7 @@ addons:
     update: true
   hosts:
     - admin.apisix.dev
+
 
 cache:
   directories:

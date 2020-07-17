@@ -69,6 +69,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Hash-based Load Balancing: Load balance with consistent hashing sessions.
     - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
     - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
+    - [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 
 - **Fine-grained routing**
     - [Supports full path matching and prefix matching](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
@@ -191,21 +192,21 @@ etcd --enable-v2=true &
 
 2. Getting start
 
-    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started] (doc/getting-started.md).
+    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started](doc/getting-started.md).
 
-     Further, you can follow the documentation to try more [plugins] (doc/README.md#Plugins).
+     Further, you can follow the documentation to try more [plugins](doc/README.md#Plugins).
 
 3. Admin API
 
-    Apache APISIX provides [REST Admin API] (doc/admin-api.md) to dynamic control the Apache APISIX cluster.
+    Apache APISIX provides [REST Admin API](doc/admin-api.md) to dynamic control the Apache APISIX cluster.
 
 4. Plugin development
 
-    You can refer to [plugin development guide] (doc/plugin-develop.md), and [sample plugin `echo`] (doc/plugins/echo.md) documentation and code implementation.
+    You can refer to [plugin development guide](doc/plugin-develop.md), and [sample plugin `echo`](doc/plugins/echo.md) documentation and code implementation.
 
      Please note that Apache APISIX plugins' added, updated, deleted, etc. are hot loaded, without restarting the service.
 
-For more documents, please refer to [Apache APISIX Document Index] (doc/README.md)
+For more documents, please refer to [Apache APISIX Document Index](doc/README.md)
 
 ## Dashboard
 APISIX has built-in support for Dashboard,
