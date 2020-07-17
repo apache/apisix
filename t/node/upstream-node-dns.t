@@ -146,18 +146,18 @@ location /t {
 --- request
 GET /t
 --- grep_error_log eval
-qr/dns resolver domain: test.com to 127.0.0.\d|call \/hello|proxy request to127.0.0.\d:1980/
+qr/dns resolver domain: test.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
 --- grep_error_log_out
 call /hello
 dns resolver domain: test.com to 127.0.0.1
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 call /hello
 dns resolver domain: test.com to 127.0.0.2
-proxy request to127.0.0.2:1980
-proxy request to127.0.0.2:1980
+proxy request to 127.0.0.2:1980
+proxy request to 127.0.0.2:1980
 call /hello
 dns resolver domain: test.com to 127.0.0.3
-proxy request to127.0.0.3:1980
+proxy request to 127.0.0.3:1980
 
 
 
@@ -263,21 +263,21 @@ location /t {
 --- request
 GET /t
 --- grep_error_log eval
-qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to127.0.0.\d:1980/
+qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
 --- grep_error_log_out
 call /hello
 dns resolver domain: test2.com to 127.0.0.1
 dns resolver domain: test.com to 127.0.0.2
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 call /hello
 dns resolver domain: test2.com to 127.0.0.3
 dns resolver domain: test.com to 127.0.0.4
-proxy request to127.0.0.3:1980
-proxy request to127.0.0.4:1980
+proxy request to 127.0.0.3:1980
+proxy request to 127.0.0.4:1980
 call /hello
 dns resolver domain: test2.com to 127.0.0.5
 dns resolver domain: test.com to 127.0.0.6
-proxy request to127.0.0.5:1980
+proxy request to 127.0.0.5:1980
 
 
 
@@ -380,18 +380,18 @@ location /t {
 --- request
 GET /t
 --- grep_error_log eval
-qr/dns resolver domain: test.com to 127.0.0.\d|call \/hello|proxy request to127.0.0.\d:1980/
+qr/dns resolver domain: test.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
 --- grep_error_log_out
 call /hello
 dns resolver domain: test.com to 127.0.0.1
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 call /hello
 dns resolver domain: test.com to 127.0.0.2
-proxy request to127.0.0.2:1980
-proxy request to127.0.0.2:1980
+proxy request to 127.0.0.2:1980
+proxy request to 127.0.0.2:1980
 call /hello
 dns resolver domain: test.com to 127.0.0.3
-proxy request to127.0.0.3:1980
+proxy request to 127.0.0.3:1980
 
 
 
@@ -469,23 +469,23 @@ location /t {
 --- request
 GET /t
 --- grep_error_log eval
-qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to127.0.0.\d:1980/
+qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
 --- grep_error_log_out
 call /hello
 dns resolver domain: test2.com to 127.0.0.1
 dns resolver domain: test.com to 127.0.0.2
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 call /hello
 dns resolver domain: test2.com to 127.0.0.3
 dns resolver domain: test.com to 127.0.0.4
-proxy request to127.0.0.3:1980
-proxy request to127.0.0.4:1980
-proxy request to127.0.0.3:1980
-proxy request to127.0.0.4:1980
+proxy request to 127.0.0.3:1980
+proxy request to 127.0.0.4:1980
+proxy request to 127.0.0.3:1980
+proxy request to 127.0.0.4:1980
 call /hello
 dns resolver domain: test2.com to 127.0.0.5
 dns resolver domain: test.com to 127.0.0.6
-proxy request to127.0.0.5:1980
+proxy request to 127.0.0.5:1980
 
 
 
@@ -529,23 +529,23 @@ location /t {
 --- request
 GET /t
 --- grep_error_log eval
-qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to127.0.0.\d:1980/
+qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
 --- grep_error_log_out
 call /hello
 dns resolver domain: test2.com to 127.0.0.1
 dns resolver domain: test.com to 127.0.0.1
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 call /hello
 dns resolver domain: test2.com to 127.0.0.1
 dns resolver domain: test.com to 127.0.0.1
-proxy request to127.0.0.1:1980
-proxy request to127.0.0.1:1980
-proxy request to127.0.0.1:1980
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
+proxy request to 127.0.0.1:1980
+proxy request to 127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 call /hello
 dns resolver domain: test2.com to 127.0.0.1
 dns resolver domain: test.com to 127.0.0.1
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 
 
 
@@ -622,17 +622,17 @@ location /t {
 --- request
 GET /t
 --- grep_error_log eval
-qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to127.0.0.\d:198\d/
+qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:198\d/
 --- grep_error_log_out
 call /hello
 dns resolver domain: test.com to 127.0.0.1
-proxy request to127.0.0.1:1980
+proxy request to 127.0.0.1:1980
 call /hello
 dns resolver domain: test.com to 127.0.0.2
-proxy request to127.0.0.2:1980
-proxy request to127.0.0.5:1981
-proxy request to127.0.0.2:1980
-proxy request to127.0.0.5:1981
+proxy request to 127.0.0.2:1980
+proxy request to 127.0.0.5:1981
+proxy request to 127.0.0.2:1980
+proxy request to 127.0.0.5:1981
 call /hello
 dns resolver domain: test.com to 127.0.0.3
-proxy request to127.0.0.3:1980
+proxy request to 127.0.0.3:1980
