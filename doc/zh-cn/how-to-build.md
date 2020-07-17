@@ -34,7 +34,7 @@ Apache APISIX 的运行环境需要 Nginx 和 etcd，
 你需要先下载 Apache Release 源码包：
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.4.1/apache-apisix-1.4.1-src.tar.gz
+wget http://www.apache.org/dist/apisix/1.4.1/apache-apisix-1.4.1-src.tar.gz
 tar zxvf apache-apisix-1.4.1-src.tar.gz
 ```
 
