@@ -157,4 +157,4 @@ passed
 GET /server_port
 --- error_code: 500
 --- error_log
-failed to parse domain in route: server returned error code: 3: name error
+failed to parse domain: xxxx.invalid
