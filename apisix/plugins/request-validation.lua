@@ -16,7 +16,6 @@
 --
 local core          = require("apisix.core")
 local plugin_name   = "request-validation"
-local json_decode   = require("cjson").decode
 local ngx           = ngx
 
 local schema = {
@@ -75,7 +74,7 @@ function _M.rewrite(conf)
         end
 
         if headers["content-type"] == "application/x-www-form-urlencoded" then
-            req_body, err = ngx.decode_args(body)
+            req_body, error = ngx.decode_args(body)
         else -- JSON as default
             req_body, error = core.json.decode(body)
         end
