@@ -1882,6 +1882,180 @@ GET /t
         }
     }
 --- request
-GET /t   
+GET /t
 --- response_headers
 Content-Type: application/json
+
+
+
+=== TEST 52: set route with size 42k
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local core = require("apisix.core")
+            local uris = {}
+            for i = 1, 1000 do
+                uris[i] = "/api/o2/open/pre_auqz/mmmm_auqz" .. i
+            end
+            local req_body = [[{
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uris": ]] .. core.json.encode(uris) .. [[
+            }]]
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT, req_body)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say("req size: ", #req_body)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+req size: 42121
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 53: set route with size 106k
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local core = require("apisix.core")
+            local uris = {}
+            for i = 1, 1000 * 2.5 do
+                uris[i] = "/api/o2/open/pre_auqz/mmmm_auqz" .. i
+            end
+            local req_body = [[{
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uris": ]] .. core.json.encode(uris) .. [[
+            }]]
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT, req_body)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say("req size: ", #req_body)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+req size: 106621
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 54: set route with size 160k
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local core = require("apisix.core")
+            local uris = {}
+            for i = 1, 1000 * 2.5 * 1.5 do
+                uris[i] = "/api/o2/open/pre_auqz/mmmm_auqz" .. i
+            end
+            local req_body = [[{
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uris": ]] .. core.json.encode(uris) .. [[
+            }]]
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT, req_body,
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say("req size: ", #req_body)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+req size: 160371
+passed
+--- no_error_log
+[error]
+--- timeout: 10
+
+
+
+=== TEST 55: route size more than 1.5mb
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local s = string.rep( "a", 1024 * 1024 * 1.6 )
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "]] .. s .. [[",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"request body is too large"}
+--- error_log
+maximum request body is 1.5mb, but got 1678025

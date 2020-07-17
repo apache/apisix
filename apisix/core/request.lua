@@ -20,8 +20,13 @@ local tonumber = tonumber
 local error    = error
 local type     = type
 local str_fmt  = string.format
+local io_open  = io.open
+local req_read_body = ngx.req.read_body
+local req_get_body_data = ngx.req.get_body_data
+local req_get_body_file = ngx.req.get_body_file
 
-local _M = {version = 0.1}
+
+local _M = {}
 
 
 local function _headers(ctx)
@@ -94,7 +99,36 @@ function _M.get_remote_client_port(ctx)
         ctx = ngx.ctx.api_ctx
     end
     return tonumber(ctx.var.remote_port)
-  end
+end
+
+
+local function get_file(file_name)
+    local f = io_open(file_name, 'r')
+    if f then
+        local req_body = f:read("*all")
+        f:close()
+        return req_body
+    end
+
+    return
+end
+
+
+function _M.get_body()
+    req_read_body()
+
+    local req_body = req_get_body_data()
+    if req_body then
+        return req_body
+    end
+
+    local file_name = req_get_body_file()
+    if file_name then
+        req_body = get_file(file_name)
+    end
+
+    return req_body
+end
 
 
 return _M
