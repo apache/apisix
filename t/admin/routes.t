@@ -1888,7 +1888,7 @@ Content-Type: application/json
 
 
 
-=== TEST 52: set route with size 42k
+=== TEST 52: set route with size 35k
 --- config
     location /t {
         content_by_lua_block {
@@ -1896,8 +1896,8 @@ Content-Type: application/json
 
             local core = require("apisix.core")
             local uris = {}
-            for i = 1, 1000 do
-                uris[i] = "/api/o2/open/pre_auqz/mmmm_auqz" .. i
+            for i = 1, 1000 * 4 do
+                uris[i] = "/" .. i
             end
             local req_body = [[{
                 "upstream": {
@@ -1923,112 +1923,15 @@ Content-Type: application/json
 --- request
 GET /t
 --- response_body
-req size: 42121
+req size: 35121
 passed
---- no_error_log
-[error]
-
-
-
-=== TEST 53: set route with size 106k
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local core = require("apisix.core")
-            local uris = {}
-            for i = 1, 1000 * 2.5 do
-                uris[i] = "/api/o2/open/pre_auqz/mmmm_auqz" .. i
-            end
-            local req_body = [[{
-                "upstream": {
-                    "nodes": {
-                        "127.0.0.1:8080": 1
-                    },
-                    "type": "roundrobin"
-                },
-                "uris": ]] .. core.json.encode(uris) .. [[
-            }]]
-
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT, req_body)
-
-            if code >= 300 then
-                ngx.status = code
-            end
-
-            ngx.say("req size: ", #req_body)
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-req size: 106621
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 54: set route with size 160k
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local core = require("apisix.core")
-            local uris = {}
-            for i = 1, 1000 * 2.5 * 1.5 do
-                uris[i] = "/api/o2/open/pre_auqz/mmmm_auqz" .. i
-            end
-            local req_body = [[{
-                "upstream": {
-                    "nodes": {
-                        "127.0.0.1:8080": 1
-                    },
-                    "type": "roundrobin"
-                },
-                "uris": ]] .. core.json.encode(uris) .. [[
-            }]]
-
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT, req_body,
-                [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-
-            ngx.say("req size: ", #req_body)
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-req size: 160371
-passed
---- no_error_log
-[error]
+--- error_log
+a client request body is buffered to a temporary file
 --- timeout: 10
 
 
 
-=== TEST 55: route size more than 1.5mb
+=== TEST 53: route size more than 1.5mb
 --- config
     location /t {
         content_by_lua_block {
