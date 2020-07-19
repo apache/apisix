@@ -1,0 +1,4 @@
+# Use goreman to run `go get github.com/mattn/goreman`
+etcd0: etcd
+etcd1: etcd --name infra1 --listen-client-urls http://127.0.0.1:2379 --advertise-client-urls http://127.0.0.1:2379 --listen-peer-urls http://127.0.0.1:2380 --initial-advertise-peer-urls http://127.0.0.1:2380 --initial-cluster-token etcd-cluster-1 --initial-cluster 'infra1=http://127.0.0.1:2380' --initial-cluster-state new
+# A learner node can be started using Procfile.learner
