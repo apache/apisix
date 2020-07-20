@@ -61,10 +61,13 @@ local function fetch_health_nodes(upstream, checker)
         return new_nodes
     end
 
-    local host = upstream.checks and upstream.checks.host
+    local checks_active = upstream.checks and upstream.checks.active
+    if not checks_active then
+        checks_active = core.table.new(0, 0)
+    end
     local up_nodes = core.table.new(0, #nodes)
     for _, node in ipairs(nodes) do
-        local ok = checker:get_target_status(node.host, node.port, host)
+        local ok = checker:get_target_status(node.host, node.port, checks_active.host)
         if ok then
             -- TODO filter with metadata
             up_nodes[node.host .. ":" .. node.port] = node.weight
@@ -91,8 +94,13 @@ local function create_checker(upstream, healthcheck_parent)
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
     })
+
+    local checks_active = upstream.checks and upstream.checks.active
+    if not checks_active then
+        checks_active = core.table.new(0, 0)
+    end
     for _, node in ipairs(upstream.nodes) do
-        local ok, err = checker:add_target(node.host, node.port, upstream.checks.host)
+        local ok, err = checker:add_target(node.host, node.port, checks_active.host)
         if not ok then
             core.log.error("failed to add new health check target: ", node.host, ":", node.port,
                     " err: ", err)
@@ -192,18 +200,22 @@ local function pick_server(route, ctx)
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
     if checker and ctx.balancer_try_count > 1 then
         local state, code = get_last_failure()
+        local checks_active = up_conf.checks and up_conf.checks.active
+        if not checks_active then
+            checks_active = core.table.new(0, 0)
+        end
         if state == "failed" then
             if code == 504 then
                 checker:report_timeout(ctx.balancer_ip, ctx.balancer_port,
-                                       up_conf.checks.host)
+                                       checks_active.host)
             else
                 checker:report_tcp_failure(ctx.balancer_ip,
-                    ctx.balancer_port, up_conf.checks.host)
+                    ctx.balancer_port, checks_active.host)
             end
 
         else
             checker:report_http_status(ctx.balancer_ip, ctx.balancer_port,
-                                       up_conf.checks.host, code)
+                                       checks_active.host, code)
         end
     end
 
