@@ -22,6 +22,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
+local set_upstream = require("apisix.upstream").set_by_route
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -30,10 +31,12 @@ local math          = math
 local error         = error
 local ipairs        = ipairs
 local tostring      = tostring
+local type          = type
+local ngx_now       = ngx.now
 local load_balancer
 
 local dns_resolver
-local parsed_domain
+local lru_resolved_domain
 
 
 local function parse_args(args)
@@ -60,7 +63,7 @@ function _M.http_init(args)
     local seed, err = core.utils.get_seed_from_urandom()
     if not seed then
         core.log.warn('failed to get seed from urandom: ', err)
-        seed = ngx.now() * 1000 + ngx.worker.pid()
+        seed = ngx_now() * 1000 + ngx.worker.pid()
     end
     math.randomseed(seed)
     parse_args(args)
@@ -92,12 +95,13 @@ function _M.http_init_worker()
     end
 
     require("apisix.debug").init_worker()
+    require("apisix.upstream").init_worker()
 
     local local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
-    parsed_domain = core.lrucache.new({
+    lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
 end
@@ -110,30 +114,7 @@ local function run_plugin(phase, plugins, api_ctx)
     end
 
     plugins = plugins or api_ctx.plugins
-    if not plugins then
-        return api_ctx
-    end
-
-    if phase == "balancer" then
-        local balancer_name = api_ctx.balancer_name
-        local balancer_plugin = api_ctx.balancer_plugin
-        if balancer_name and balancer_plugin then
-            local phase_fun = balancer_plugin[phase]
-            phase_fun(balancer_plugin, api_ctx)
-            return api_ctx
-        end
-
-        for i = 1, #plugins, 2 do
-            local phase_fun = plugins[i][phase]
-            if phase_fun and
-               (not balancer_name or balancer_name == plugins[i].name) then
-                phase_fun(plugins[i + 1], api_ctx)
-                if api_ctx.balancer_name == plugins[i].name then
-                    api_ctx.balancer_plugin = plugins[i]
-                    return api_ctx
-                end
-            end
-        end
+    if not plugins or #plugins == 0 then
         return api_ctx
     end
 
@@ -185,7 +166,7 @@ end
 local function parse_domain(host)
     local ip_info, err = core.utils.dns_parse(dns_resolver, host)
     if not ip_info then
-        core.log.error("failed to parse domain for ", host, ", error:",err)
+        core.log.error("failed to parse domain: ", host, ", error: ",err)
         return nil, err
     end
 
@@ -224,30 +205,84 @@ local function parse_domain_for_nodes(nodes)
     return new_nodes
 end
 
+local function compare_upstream_node(old_t, new_t)
+    if type(old_t) ~= "table" then
+        return false
+    end
 
-local function parse_domain_in_up(up, ver)
+    if #new_t ~= #old_t then
+        return false
+    end
+
+    for i = 1, #new_t do
+        local new_node = new_t[i]
+        local old_node = old_t[i]
+        for _, name in ipairs({"host", "port", "weight"}) do
+            if new_node[name] ~= old_node[name] then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+
+local function parse_domain_in_up(up, api_ctx)
     local nodes = up.value.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
+
+    local old_dns_value = up.dns_value and up.dns_value.nodes
+    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    if ok then
+        return up
+    end
+
+    if not up.modifiedIndex_org then
+        up.modifiedIndex_org = up.modifiedIndex
+    end
+    up.modifiedIndex = up.modifiedIndex_org .. "#" .. ngx_now()
+
     up.dns_value = core.table.clone(up.value)
     up.dns_value.nodes = new_nodes
-    core.log.info("parse upstream which contain domain: ", core.json.delay_encode(up))
+    core.log.info("resolve upstream which contain domain: ",
+                  core.json.delay_encode(up))
     return up
 end
 
 
-local function parse_domain_in_route(route, ver)
+local function parse_domain_in_route(route, api_ctx)
     local nodes = route.value.upstream.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
+
+    local old_dns_value = route.dns_value and route.dns_value.upstream.nodes
+    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    if ok then
+        return route
+    end
+
+    if not route.modifiedIndex_org then
+        route.modifiedIndex_org = route.modifiedIndex
+    end
+    route.modifiedIndex = route.modifiedIndex_org .. "#" .. ngx_now()
+    api_ctx.conf_version = route.modifiedIndex
+
     route.dns_value = core.table.deepcopy(route.value)
     route.dns_value.upstream.nodes = new_nodes
-    core.log.info("parse route which contain domain: ", core.json.delay_encode(route))
+    core.log.info("parse route which contain domain: ",
+                  core.json.delay_encode(route))
     return route
+end
+
+
+local function return_direct(...)
+    return ...
 end
 
 
@@ -283,6 +318,8 @@ function _M.http_access_phase()
         api_ctx.conf_type = nil
         api_ctx.conf_version = nil
         api_ctx.conf_id = nil
+
+        api_ctx.global_rules = router.global_rules
     end
 
     router.router_http.match(api_ctx)
@@ -332,16 +369,39 @@ function _M.http_access_phase()
     local enable_websocket
     local up_id = route.value.upstream_id
     if up_id then
-        local upstreams_etcd = core.config.fetch_created_obj("/upstreams")
-        if upstreams_etcd then
-            local upstream = upstreams_etcd:get(tostring(up_id))
+        local upstreams = core.config.fetch_created_obj("/upstreams")
+        if upstreams then
+            local upstream = upstreams:get(tostring(up_id))
+            if not upstream then
+                core.log.error("failed to find upstream by id: " .. up_id)
+                return core.response.exit(500)
+            end
+
             if upstream.has_domain then
-                local _, err = parsed_domain(upstream, api_ctx.conf_version,
-                                             parse_domain_in_up, upstream)
+                -- try to fetch the resolved domain, if we got `nil`,
+                -- it means we need to create the cache by handle.
+                -- the `api_ctx.conf_version` is different after we called
+                -- `parse_domain_in_up`, need to recreate the cache by new
+                -- `api_ctx.conf_version`
+                local parsed_upstream, err = lru_resolved_domain(upstream,
+                                upstream.modifiedIndex, return_direct, nil)
                 if err then
-                    core.log.error("failed to parse domain in upstream: ", err)
+                    core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
                 end
+
+                if not parsed_upstream then
+                    parsed_upstream, err = parse_domain_in_up(upstream)
+                    if err then
+                        core.log.error("failed to reolve domain in upstream: ",
+                                       err)
+                        return core.response.exit(500)
+                    end
+
+                    lru_resolved_domain(upstream, upstream.modifiedIndex,
+                                    return_direct, parsed_upstream)
+                end
+
             end
 
             if upstream.value.enable_websocket then
@@ -351,12 +411,22 @@ function _M.http_access_phase()
 
     else
         if route.has_domain then
-            local err
-            route, err = parsed_domain(route, api_ctx.conf_version,
-                                       parse_domain_in_route, route)
+            local parsed_route, err = lru_resolved_domain(route, api_ctx.conf_version,
+                                        return_direct, nil)
             if err then
-                core.log.error("failed to parse domain in route: ", err)
+                core.log.error("failed to get resolved route: ", err)
                 return core.response.exit(500)
+            end
+
+            if not parsed_route then
+                route, err = parse_domain_in_route(route, api_ctx)
+                if err then
+                    core.log.error("failed to reolve domain in route: ", err)
+                    return core.response.exit(500)
+                end
+
+                lru_resolved_domain(route, api_ctx.conf_version,
+                                return_direct, route)
             end
         end
 
@@ -383,6 +453,12 @@ function _M.http_access_phase()
         end
     end
     run_plugin("access", plugins, api_ctx)
+
+    local ok, err = set_upstream(route, api_ctx)
+    if not ok then
+        core.log.error("failed to parse upstream: ", err)
+        core.response.exit(500)
+    end
 end
 
 
@@ -443,28 +519,29 @@ function _M.grpc_access_phase()
 
     run_plugin("rewrite", plugins, api_ctx)
     run_plugin("access", plugins, api_ctx)
+
+    set_upstream(route, api_ctx)
 end
 
 
-local function common_phase(plugin_name)
+local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         return
     end
 
-    if router.global_rules and router.global_rules.values
-            and #router.global_rules.values > 0
-    then
+    if api_ctx.global_rules then
         local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = router.global_rules.values
+        local values = api_ctx.global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
-            run_plugin(plugin_name, plugins, api_ctx)
+            run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
     end
-    run_plugin(plugin_name, nil, api_ctx)
+
+    run_plugin(phase_name, nil, api_ctx)
     return api_ctx
 end
 
@@ -503,19 +580,6 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    -- first time
-    if not api_ctx.balancer_name then
-        run_plugin("balancer", nil, api_ctx)
-        if api_ctx.balancer_name then
-            return
-        end
-    end
-
-    if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
-        return run_plugin("balancer", nil, api_ctx)
-    end
-
-    api_ctx.balancer_name = "default"
     load_balancer(api_ctx.matched_route, api_ctx)
 end
 
@@ -545,6 +609,10 @@ local function cors_admin()
                             "Access-Control-Max-Age", "3600")
 end
 
+local function add_content_type()
+    core.response.set_header("Content-Type", "application/json")
+end
+
 do
     local router
 
@@ -555,6 +623,9 @@ function _M.http_admin()
 
     -- add cors rsp header
     cors_admin()
+
+    -- add content type to rsp header
+    add_content_type()
 
     -- core.log.info("uri: ", get_var("uri"), " method: ", get_method())
     local ok = router:dispatch(get_var("uri"), {method = get_method()})
@@ -582,7 +653,7 @@ function _M.stream_init_worker()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
-    parsed_domain = core.lrucache.new({
+    lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
 end
@@ -615,7 +686,13 @@ function _M.stream_preread_phase()
     api_ctx.plugins = plugin.stream_filter(matched_route, plugins)
     -- core.log.info("valid plugins: ", core.json.delay_encode(plugins, true))
 
+    api_ctx.conf_type = "stream/route"
+    api_ctx.conf_version = matched_route.modifiedIndex
+    api_ctx.conf_id = matched_route.value.id
+
     run_plugin("preread", plugins, api_ctx)
+
+    set_upstream(matched_route, api_ctx)
 end
 
 
@@ -627,19 +704,6 @@ function _M.stream_balancer_phase()
         return ngx_exit(1)
     end
 
-    -- first time
-    if not api_ctx.balancer_name then
-        run_plugin("balancer", nil, api_ctx)
-        if api_ctx.balancer_name then
-            return
-        end
-    end
-
-    if api_ctx.balancer_name and api_ctx.balancer_name ~= "default" then
-        return run_plugin("balancer", nil, api_ctx)
-    end
-
-    api_ctx.balancer_name = "default"
     load_balancer(api_ctx.matched_route, api_ctx)
 end
 

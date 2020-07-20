@@ -15,7 +15,10 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local pairs       = pairs
+local type        = type
 local ngx         = ngx
+
 
 local schema = {
     type = "object",
@@ -30,6 +33,15 @@ local schema = {
         },
         after_body = {
             description = "body after the modification of filter phase.",
+            type = "string"
+        },
+        headers = {
+            description = "new headers for repsonse",
+            type = "object",
+            minProperties = 1,
+        },
+        auth_value = {
+            description = "auth value",
             type = "string"
         }
     },
@@ -50,8 +62,24 @@ local _M = {
     schema = schema,
 }
 
-
 function _M.check_schema(conf)
+    if conf.headers then
+        conf.headers_arr = {}
+
+        for field, value in pairs(conf.headers) do
+            if type(field) == 'string'
+                    and (type(value) == 'string' or type(value) == 'number') then
+                if #field == 0 then
+                    return false, 'invalid field length in header'
+                end
+                core.table.insert(conf.headers_arr, field)
+                core.table.insert(conf.headers_arr, value)
+            else
+                return false, 'invalid type as header value'
+            end
+        end
+    end
+
     return core.schema.check(schema, conf)
 end
 
@@ -68,6 +96,24 @@ function _M.body_filter(conf, ctx)
         ngx.arg[1] = ngx.arg[1] .. conf.after_body
     end
     ngx.arg[2] = true
+end
+
+function _M.access(conf, ctx)
+    local value = core.request.header(ctx, "Authorization")
+
+    if value ~= conf.auth_value then
+        return 401, "unauthorized body"
+    end
+
+end
+
+function _M.header_filter(conf, ctx)
+    if conf.headers_arr then
+        local field_cnt = #conf.headers_arr
+        for i = 1, field_cnt, 2 do
+            ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
+        end
+    end
 end
 
 return _M

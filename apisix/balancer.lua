@@ -19,15 +19,11 @@ local require     = require
 local discovery   = require("apisix.discovery.init").discovery
 local balancer    = require("ngx.balancer")
 local core        = require("apisix.core")
-local error       = error
-local pairs       = pairs
 local ipairs      = ipairs
 local tostring    = tostring
-
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
-local upstreams_etcd
 
 
 local module_name = "balancer"
@@ -42,6 +38,9 @@ local lrucache_server_picker = core.lrucache.new({
 })
 local lrucache_checker = core.lrucache.new({
     ttl = 300, count = 256
+})
+local lrucache_addr = core.lrucache.new({
+    ttl = 300, count = 1024 * 4
 })
 
 
@@ -147,53 +146,47 @@ local function create_server_picker(upstream, checker)
 end
 
 
+local function parse_addr(addr)
+    local host, port, err = core.utils.parse_addr(addr)
+    return {host = host, port = port}, err
+end
+
+
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
-    local healthcheck_parent = route
-    local up_id = route.value.upstream_id
-    local up_conf = (route.dns_value and route.dns_value.upstream)
-                    or route.value.upstream
-    if not up_id and not up_conf then
-        return nil, nil, "missing upstream configuration"
-    end
-
-    local version
-    local key
-
-    if up_id then
-        if not upstreams_etcd then
-            return nil, nil, "need to create a etcd instance for fetching "
-                             .. "upstream information"
-        end
-
-        local up_obj = upstreams_etcd:get(tostring(up_id))
-        if not up_obj then
-            return nil, nil, "failed to find upstream by id: " .. up_id
-        end
-        core.log.info("upstream: ", core.json.delay_encode(up_obj))
-
-        healthcheck_parent = up_obj
-        up_conf = up_obj.dns_value or up_obj.value
-        version = up_obj.modifiedIndex
-        key = up_conf.type .. "#upstream_" .. up_id
-
-    else
-        version = ctx.conf_version
-        key = up_conf.type .. "#route_" .. route.value.id
-    end
-
+    local up_conf = ctx.upstream_conf
     if up_conf.service_name then
         if not discovery then
-            return nil, nil, "discovery is uninitialized"
+            return nil, "discovery is uninitialized"
         end
         up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
 
-    if not up_conf.nodes or #up_conf.nodes == 0 then
-        return nil, nil, "no valid upstream node"
+    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
+    if nodes_count == 0 then
+        return nil, "no valid upstream node"
     end
 
+    if up_conf.timeout then
+        local timeout = up_conf.timeout
+        local ok, err = set_timeouts(timeout.connect, timeout.send,
+                                     timeout.read)
+        if not ok then
+            core.log.error("could not set upstream timeouts: ", err)
+        end
+    end
+
+    if nodes_count == 1 then
+        local node = up_conf.nodes[1]
+        ctx.balancer_ip = node.host
+        ctx.balancer_port = node.port
+        return node
+    end
+
+    local healthcheck_parent = ctx.upstream_healthcheck_parent
+    local version = ctx.upstream_version
+    local key = ctx.upstream_key
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
@@ -229,28 +222,25 @@ local function pick_server(route, ctx)
     local server_picker = lrucache_server_picker(key, version,
                             create_server_picker, up_conf, checker)
     if not server_picker then
-        return nil, nil, "failed to fetch server picker"
+        return nil, "failed to fetch server picker"
     end
 
     local server, err = server_picker.get(ctx)
     if not server then
         err = err or "no valid upstream node"
-        return nil, nil, "failed to find valid upstream server, " .. err
+        return nil, "failed to find valid upstream server, " .. err
     end
 
-    if up_conf.timeout then
-        local timeout = up_conf.timeout
-        local ok, err = set_timeouts(timeout.connect, timeout.send, timeout.read)
-        if not ok then
-            core.log.error("could not set upstream timeouts: ", err)
-        end
+    local res, err = lrucache_addr(server, nil, parse_addr, server)
+    ctx.balancer_ip = res.host
+    ctx.balancer_port = res.port
+    -- core.log.info("cached balancer peer host: ", host, ":", port)
+    if err then
+        core.log.error("failed to parse server addr: ", server, " err: ", err)
+        return core.response.exit(502)
     end
 
-    local ip, port, err = core.utils.parse_addr(server)
-    ctx.balancer_ip = ip
-    ctx.balancer_port = port
-    core.log.info("proxy to ", ip, ":", port)
-    return ip, port, err
+    return res
 end
 
 
@@ -259,16 +249,17 @@ _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
-    local ip, port, err = pick_server(route, ctx)
-    if err then
+    local server, err = pick_server(route, ctx)
+    if not server then
         core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
 
-    local ok, err = balancer.set_current_peer(ip, port)
+    core.log.info("proxy request to ", server.host, ":", server.port)
+    local ok, err = balancer.set_current_peer(server.host, server.port)
     if not ok then
-        core.log.error("failed to set server peer [", ip, ":", port,
-                       "] err: ", err)
+        core.log.error("failed to set server peer [", server.host, ":",
+                       server.port, "] err: ", err)
         return core.response.exit(502)
     end
 
@@ -277,59 +268,6 @@ end
 
 
 function _M.init_worker()
-    local err
-    upstreams_etcd, err = core.config.new("/upstreams", {
-            automatic = true,
-            item_schema = core.schema.upstream,
-            filter = function(upstream)
-                upstream.has_domain = false
-                if not upstream.value or not upstream.value.nodes then
-                    return
-                end
-
-                local nodes = upstream.value.nodes
-                if core.table.isarray(nodes) then
-                    for _, node in ipairs(nodes) do
-                        local host = node.host
-                        if not core.utils.parse_ipv4(host) and
-                                not core.utils.parse_ipv6(host) then
-                            upstream.has_domain = true
-                            break
-                        end
-                    end
-                else
-                    local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
-                    for addr, weight in pairs(nodes) do
-                        local host, port = core.utils.parse_addr(addr)
-                        if not core.utils.parse_ipv4(host) and
-                                not core.utils.parse_ipv6(host) then
-                            upstream.has_domain = true
-                        end
-                        local node = {
-                            host = host,
-                            port = port,
-                            weight = weight,
-                        }
-                        core.table.insert(new_nodes, node)
-                    end
-                    upstream.value.nodes = new_nodes
-                end
-
-                core.log.info("filter upstream: ", core.json.delay_encode(upstream))
-            end,
-        })
-    if not upstreams_etcd then
-        error("failed to create etcd instance for fetching upstream: " .. err)
-        return
-    end
-end
-
-function _M.upstreams()
-    if not upstreams_etcd then
-        return nil, nil
-    end
-
-    return upstreams_etcd.values, upstreams_etcd.conf_version
 end
 
 return _M

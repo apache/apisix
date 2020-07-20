@@ -23,6 +23,10 @@ export_or_prefix() {
 }
 
 before_install() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis@3.2
     brew upgrade go
 
@@ -36,6 +40,10 @@ before_install() {
 }
 
 do_install() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     export_or_prefix
 
     make deps
@@ -52,6 +60,10 @@ do_install() {
 }
 
 script() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
@@ -78,6 +90,10 @@ script() {
 }
 
 after_success() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     $PWD/deps/bin/luacov-coveralls
 }
 
