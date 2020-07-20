@@ -19,6 +19,8 @@
 
 # Table of Contents
 
+
+- [1.4.1](#141)
 - [1.4.0](#140)
 - [1.3.0](#130)
 - [1.2.0](#120)
@@ -28,6 +30,13 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+
+## 1.4.1
+
+### Bugfix
+- Fix: multiple SSL certificates are configured, but only one certificate working fine. [1818](https://github.com/apache/incubator-apisix/pull/1818)
+
 
 ## 1.4.0
 
