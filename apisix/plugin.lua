@@ -124,6 +124,7 @@ local function load()
 
     _M.load_times = _M.load_times + 1
     core.log.info("load plugin times: ", _M.load_times)
+    core.config.init_plugins(local_plugins_hash, false)
     return true
 end
 
@@ -165,6 +166,7 @@ local function load_stream()
     core.log.info("stream plugins: ",
                   core.json.delay_encode(stream_local_plugins, true))
     core.log.info("load stream plugin times: ", _M.stream_load_times)
+    core.config.init_plugins(stream_local_plugins_hash, true)
     return true
 end
 
