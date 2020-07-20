@@ -25,7 +25,7 @@ source = {
 }
 
 description = {
-    summary = "Apache APISIX(incubating) is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.",
+    summary = "Apache APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.",
     homepage = "https://github.com/apache/incubator-apisix",
     license = "Apache License 2.0",
 }
