@@ -55,9 +55,18 @@ local mt = {
     end
 }
 
+local disable_schema = {
+    type = "object",
+    properties = {
+        disable = {type = "boolean", enum={true}}
+    },
+    required = {"disable"}
+}
+local local_plugins
+local stream_local_plugins
 
-    local apisix_yaml
-    local apisix_yaml_ctime
+local apisix_yaml
+local apisix_yaml_ctime
 local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
@@ -357,5 +366,12 @@ function _M.init_worker()
     ngx.timer.every(1, read_apisix_yaml)
 end
 
+function _M.init_plugins(plugins, is_stream)
+    if is_stream then
+        stream_local_plugins = plugins
+    else
+        local_plugins = plugins
+    end
+end
 
 return _M
