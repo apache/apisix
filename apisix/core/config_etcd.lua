@@ -49,6 +49,16 @@ local mt = {
     end
 }
 
+local disable_schema = {
+    type = "object",
+    properties = {
+        disable = {type = "boolean", enum={true}}
+    },
+    required = {"disable"}
+}
+local local_plugins
+local stream_local_plugins
+
 local function readdir(etcd_cli, key)
     if not etcd_cli then
         return nil, nil, "not inited"
@@ -164,6 +174,39 @@ local function sync_data(self)
                 log.error("invalid item data of [", self.key .. "/" .. key,
                           "], val: ", tostring(item.value),
                           ", it shoud be a object")
+            end
+
+            -- check plugins schema
+            local plugins_conf = item.plugins
+            if plugins_conf then
+                for name, plugin_conf in pairs(plugins_conf) do
+                    local plugin_obj = local_plugins[name]
+                    if plugin_obj then
+                        log.info("check plugin scheme, name: ", name, ", configurations: ",
+                            json.delay_encode(plugin_conf, true))
+                    else
+                        plugin_obj = stream_local_plugins[name]
+                        if plugin_obj then
+                            log.info("check stream plugin scheme, name: ", name,
+                                ": ", json.delay_encode(plugin_conf, true))
+                        else
+                            log.error("unknown plugin [" .. name .. "]")
+                            return false
+                        end
+                    end
+
+                    if plugin_obj.check_schema then
+                        local ok = check_schema(disable_schema, plugin_conf)
+                        if not ok then
+                            local ok, err = plugin_obj.check_schema(plugin_conf)
+                            if not ok then
+                                log.error("failed to check the configuration of plugin "
+                                        .. name .. " err: " .. err)
+                                return false
+                            end
+                        end
+                    end
+                end
             end
 
             if data_valid and self.item_schema then
@@ -466,5 +509,12 @@ function _M.server_version(self)
     return read_etcd_version(self.etcd_cli)
 end
 
+function _M.init_plugins(plugins, is_stream)
+    if is_stream then
+        stream_local_plugins = plugins
+    else
+        local_plugins = plugins
+    end
+end
 
 return _M

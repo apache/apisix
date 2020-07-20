@@ -162,6 +162,39 @@ local function sync_data(self)
                         ", it shoud be a object")
         end
 
+        -- check plugins schema
+        local plugins_conf = item.plugins
+        if plugins_conf then
+            for name, plugin_conf in pairs(plugins_conf) do
+                local plugin_obj = local_plugins[name]
+                if plugin_obj then
+                    log.info("check plugin scheme, name: ", name, ", configurations: ",
+                        json.delay_encode(plugin_conf, true))
+                else
+                    plugin_obj = stream_local_plugins[name]
+                    if plugin_obj then
+                        log.info("check stream plugin scheme, name: ", name,
+                            ": ", json.delay_encode(plugin_conf, true))
+                    else
+                        log.error("unknown plugin [" .. name .. "]")
+                        return false
+                    end
+                end
+
+                if plugin_obj.check_schema then
+                    local ok = check_schema(disable_schema, plugin_conf)
+                    if not ok then
+                        local ok, err = plugin_obj.check_schema(plugin_conf)
+                        if not ok then
+                            log.error("failed to check the configuration of plugin "
+                                    .. name .. " err: " .. err)
+                            return false
+                        end
+                    end
+                end
+            end
+        end
+
         local key = item.id or "arr_" .. i
         local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
                            key = "/" .. self.key .. "/" .. key}
