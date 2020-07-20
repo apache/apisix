@@ -83,5 +83,8 @@ routes:
             "127.0.0.1:1980": 1
         type: roundrobin
 #END
+--- request
+GET /hello
+--- error_code: 404
 --- error_log
-failed to check the configuration of plugin proxy-rewrite err: property "headers" validation failed: expect object to have at least 1 properties
+failed to check the configuration of plugin proxy-rewrite err: invalid type as header value, context: ngx.timer
