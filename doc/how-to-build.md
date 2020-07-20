@@ -34,21 +34,21 @@ You can install Apache APISIX in a variety of ways, including source code packag
 You need to download the Apache source release first:
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.4/apache-apisix-1.4-incubating-src.tar.gz
-tar zxvf apache-apisix-1.4-incubating-src.tar.gz
+wget http://www.apache.org/dist/apisix/1.4.1/apache-apisix-1.4.1-src.tar.gz
+tar zxvf apache-apisix-1.4.1-src.tar.gz
 ```
 
 Install the Lua libraries that the runtime depends on:
 
 ```shell
-cd apache-apisix-1.4-incubating
+cd apache-apisix-1.4.1
 make deps
 ```
 
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4/apisix-1.4-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4.1/apisix-1.4.1-0.el7.noarch.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)
@@ -64,11 +64,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > Install the specified version via Luarocks:
 
 ```shell
-# Install version 1.4
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.4
+# Install version 1.4.1
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.4.1
 
 # old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 1.4
+sudo luarocks install apisix 1.4.1
 ```
 
 ## 3. Manage (start/stop) APISIX Server
