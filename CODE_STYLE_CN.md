@@ -17,7 +17,7 @@
 #
 -->
 
-# APISIX Lua 编码风格指南 
+# APISIX Lua 编码风格指南
 
 ## 缩进
 
