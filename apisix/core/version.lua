@@ -15,5 +15,6 @@
 -- limitations under the License.
 --
 return {
-    VERSION = "1.4"
+
+    VERSION = "1.4.1"
 }

@@ -31,10 +31,12 @@ local math          = math
 local error         = error
 local ipairs        = ipairs
 local tostring      = tostring
+local type          = type
+local ngx_now       = ngx.now
 local load_balancer
 
 local dns_resolver
-local parsed_domain
+local lru_resolved_domain
 
 
 local function parse_args(args)
@@ -61,7 +63,7 @@ function _M.http_init(args)
     local seed, err = core.utils.get_seed_from_urandom()
     if not seed then
         core.log.warn('failed to get seed from urandom: ', err)
-        seed = ngx.now() * 1000 + ngx.worker.pid()
+        seed = ngx_now() * 1000 + ngx.worker.pid()
     end
     math.randomseed(seed)
     parse_args(args)
@@ -99,7 +101,7 @@ function _M.http_init_worker()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
-    parsed_domain = core.lrucache.new({
+    lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
 end
@@ -164,7 +166,7 @@ end
 local function parse_domain(host)
     local ip_info, err = core.utils.dns_parse(dns_resolver, host)
     if not ip_info then
-        core.log.error("failed to parse domain for ", host, ", error:",err)
+        core.log.error("failed to parse domain: ", host, ", error: ",err)
         return nil, err
     end
 
@@ -203,30 +205,84 @@ local function parse_domain_for_nodes(nodes)
     return new_nodes
 end
 
+local function compare_upstream_node(old_t, new_t)
+    if type(old_t) ~= "table" then
+        return false
+    end
 
-local function parse_domain_in_up(up, ver)
+    if #new_t ~= #old_t then
+        return false
+    end
+
+    for i = 1, #new_t do
+        local new_node = new_t[i]
+        local old_node = old_t[i]
+        for _, name in ipairs({"host", "port", "weight"}) do
+            if new_node[name] ~= old_node[name] then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+
+local function parse_domain_in_up(up, api_ctx)
     local nodes = up.value.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
+
+    local old_dns_value = up.dns_value and up.dns_value.nodes
+    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    if ok then
+        return up
+    end
+
+    if not up.modifiedIndex_org then
+        up.modifiedIndex_org = up.modifiedIndex
+    end
+    up.modifiedIndex = up.modifiedIndex_org .. "#" .. ngx_now()
+
     up.dns_value = core.table.clone(up.value)
     up.dns_value.nodes = new_nodes
-    core.log.info("parse upstream which contain domain: ", core.json.delay_encode(up))
+    core.log.info("resolve upstream which contain domain: ",
+                  core.json.delay_encode(up))
     return up
 end
 
 
-local function parse_domain_in_route(route, ver)
+local function parse_domain_in_route(route, api_ctx)
     local nodes = route.value.upstream.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
+
+    local old_dns_value = route.dns_value and route.dns_value.upstream.nodes
+    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    if ok then
+        return route
+    end
+
+    if not route.modifiedIndex_org then
+        route.modifiedIndex_org = route.modifiedIndex
+    end
+    route.modifiedIndex = route.modifiedIndex_org .. "#" .. ngx_now()
+    api_ctx.conf_version = route.modifiedIndex
+
     route.dns_value = core.table.deepcopy(route.value)
     route.dns_value.upstream.nodes = new_nodes
-    core.log.info("parse route which contain domain: ", core.json.delay_encode(route))
+    core.log.info("parse route which contain domain: ",
+                  core.json.delay_encode(route))
     return route
+end
+
+
+local function return_direct(...)
+    return ...
 end
 
 
@@ -322,12 +378,30 @@ function _M.http_access_phase()
             end
 
             if upstream.has_domain then
-                local _, err = parsed_domain(upstream, api_ctx.conf_version,
-                                             parse_domain_in_up, upstream)
+                -- try to fetch the resolved domain, if we got `nil`,
+                -- it means we need to create the cache by handle.
+                -- the `api_ctx.conf_version` is different after we called
+                -- `parse_domain_in_up`, need to recreate the cache by new
+                -- `api_ctx.conf_version`
+                local parsed_upstream, err = lru_resolved_domain(upstream,
+                                upstream.modifiedIndex, return_direct, nil)
                 if err then
-                    core.log.error("failed to parse domain in upstream: ", err)
+                    core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
                 end
+
+                if not parsed_upstream then
+                    parsed_upstream, err = parse_domain_in_up(upstream)
+                    if err then
+                        core.log.error("failed to reolve domain in upstream: ",
+                                       err)
+                        return core.response.exit(500)
+                    end
+
+                    lru_resolved_domain(upstream, upstream.modifiedIndex,
+                                    return_direct, parsed_upstream)
+                end
+
             end
 
             if upstream.value.enable_websocket then
@@ -337,12 +411,22 @@ function _M.http_access_phase()
 
     else
         if route.has_domain then
-            local err
-            route, err = parsed_domain(route, api_ctx.conf_version,
-                                       parse_domain_in_route, route)
+            local parsed_route, err = lru_resolved_domain(route, api_ctx.conf_version,
+                                        return_direct, nil)
             if err then
-                core.log.error("failed to parse domain in route: ", err)
+                core.log.error("failed to get resolved route: ", err)
                 return core.response.exit(500)
+            end
+
+            if not parsed_route then
+                route, err = parse_domain_in_route(route, api_ctx)
+                if err then
+                    core.log.error("failed to reolve domain in route: ", err)
+                    return core.response.exit(500)
+                end
+
+                lru_resolved_domain(route, api_ctx.conf_version,
+                                return_direct, route)
             end
         end
 
@@ -569,7 +653,7 @@ function _M.stream_init_worker()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
-    parsed_domain = core.lrucache.new({
+    lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
 end
