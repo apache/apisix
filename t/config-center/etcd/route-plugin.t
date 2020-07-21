@@ -22,6 +22,7 @@ use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
+no_shuffle();
 no_root_location();
 log_level("info");
 
