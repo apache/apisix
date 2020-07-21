@@ -1,0 +1,69 @@
+Certificate:
+    Data:
+        Version: 1 (0x0)
+        Serial Number: 64206 (0xface)
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=cn, ST=GuangDong, L=ZhuHai, O=api7, OU=ops, CN=ca.apisix.dev
+        Validity
+            Not Before: Jun 20 13:14:34 2020 GMT
+            Not After : Jun 18 13:14:34 2030 GMT
+        Subject: C=cn, ST=GuangDong, O=api7, L=ZhuHai, CN=admin.apisix.dev
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:9b:45:2a:e1:c9:6e:a7:af:af:bd:46:5c:5e:5f:
+                    72:66:02:78:69:16:fd:f9:69:8e:47:68:0f:8d:35:
+                    92:c4:14:40:5c:cf:57:3d:41:ea:13:7b:f4:de:c8:
+                    ab:e8:62:56:1e:60:61:f6:38:65:5f:30:b5:91:25:
+                    79:07:12:45:ce:24:31:86:1f:2c:a6:cb:1d:8b:4b:
+                    9e:5f:1f:c7:b6:f3:e8:98:ee:b3:70:c7:9e:5d:10:
+                    ce:29:e4:22:68:69:9e:df:ae:f6:bb:11:e8:b8:f1:
+                    07:bf:2d:d5:57:f2:e4:07:8a:da:d2:7b:8a:53:d1:
+                    b4:f4:42:19:9a:14:98:01:3e:23:27:3a:0f:ad:d0:
+                    1d:c5:31:9a:ee:ae:df:7f:fb:2e:34:0b:51:ca:b4:
+                    8c:59:ae:86:5f:95:69:2b:4a:c6:2d:a5:ae:04:46:
+                    7a:93:09:15:72:0a:78:ef:98:7d:00:b5:b4:b2:f2:
+                    e2:a9:2e:04:fb:de:84:ad:da:8e:a3:31:53:3a:d5:
+                    91:cd:77:f5:b8:ea:eb:14:aa:d9:62:d1:12:79:87:
+                    08:27:6d:c1:b9:e3:7d:f1:07:52:3c:a3:34:6a:c1:
+                    96:cf:a2:84:cc:14:50:49:40:0b:38:3c:3b:1e:df:
+                    57:6f:f2:05:35:92:9b:4f:b1:21:0b:f7:62:3a:2d:
+                    83:c7
+                Exponent: 65537 (0x10001)
+    Signature Algorithm: sha256WithRSAEncryption
+         7a:1c:a3:d8:d4:97:5d:91:d2:c8:31:c4:40:ef:f1:38:ac:5c:
+         b9:74:66:81:94:4f:71:02:38:49:5a:0d:7b:10:17:73:a5:96:
+         3e:de:0e:a4:75:8c:1b:c7:51:f9:f6:eb:9d:f4:bd:4c:1c:92:
+         41:d0:16:c6:73:c1:f9:7c:b6:71:7d:16:53:13:fa:70:90:c0:
+         95:e3:a3:51:30:96:02:f2:32:32:fe:a9:d1:ef:c5:7e:04:58:
+         ca:20:ef:d0:43:8c:52:8d:52:3a:71:ed:0f:87:4e:8b:c6:28:
+         51:56:13:fd:71:81:10:cc:2f:2c:aa:8d:6a:93:d7:52:34:08:
+         23:7b:2b:a7:a4:3e:6b:8f:c3:af:59:b9:1c:b8:d8:6c:a3:88:
+         c7:bd:b5:e1:eb:6b:6a:f2:7d:a3:89:c6:b0:21:f8:1b:9a:dc:
+         bf:ef:d6:21:91:7f:65:99:4d:f4:49:24:ab:46:09:a0:c9:a1:
+         64:14:f4:56:73:ce:1b:22:dd:b7:1f:58:0f:29:ae:6a:6e:41:
+         6e:b4:5c:90:97:4e:59:4e:cf:e3:a1:89:d1:5a:65:a3:68:2f:
+         b9:97:82:6f:4c:21:cb:f6:9b:7d:fd:d8:07:70:14:cd:10:fb:
+         bf:03:70:fa:51:7c:56:4c:1b:a5:87:d3:1b:18:5c:22:87:6f:
+         04:08:59:53
+-----BEGIN CERTIFICATE-----
+MIIDOTCCAiECAwD6zjANBgkqhkiG9w0BAQsFADBnMQswCQYDVQQGEwJjbjESMBAG
+A1UECAwJR3VhbmdEb25nMQ8wDQYDVQQHDAZaaHVIYWkxDTALBgNVBAoMBGFwaTcx
+DDAKBgNVBAsMA29wczEWMBQGA1UEAwwNY2EuYXBpc2l4LmRldjAeFw0yMDA2MjAx
+MzE0MzRaFw0zMDA2MTgxMzE0MzRaMFwxCzAJBgNVBAYTAmNuMRIwEAYDVQQIDAlH
+dWFuZ0RvbmcxDTALBgNVBAoMBGFwaTcxDzANBgNVBAcMBlpodUhhaTEZMBcGA1UE
+AwwQYWRtaW4uYXBpc2l4LmRldjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC
+ggEBAJtFKuHJbqevr71GXF5fcmYCeGkW/flpjkdoD401ksQUQFzPVz1B6hN79N7I
+q+hiVh5gYfY4ZV8wtZEleQcSRc4kMYYfLKbLHYtLnl8fx7bz6Jjus3DHnl0Qzink
+Imhpnt+u9rsR6LjxB78t1Vfy5AeK2tJ7ilPRtPRCGZoUmAE+Iyc6D63QHcUxmu6u
+33/7LjQLUcq0jFmuhl+VaStKxi2lrgRGepMJFXIKeO+YfQC1tLLy4qkuBPvehK3a
+jqMxUzrVkc139bjq6xSq2WLREnmHCCdtwbnjffEHUjyjNGrBls+ihMwUUElACzg8
+Ox7fV2/yBTWSm0+xIQv3Yjotg8cCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAehyj
+2NSXXZHSyDHEQO/xOKxcuXRmgZRPcQI4SVoNexAXc6WWPt4OpHWMG8dR+fbrnfS9
+TBySQdAWxnPB+Xy2cX0WUxP6cJDAleOjUTCWAvIyMv6p0e/FfgRYyiDv0EOMUo1S
+OnHtD4dOi8YoUVYT/XGBEMwvLKqNapPXUjQII3srp6Q+a4/Dr1m5HLjYbKOIx721
+4etravJ9o4nGsCH4G5rcv+/WIZF/ZZlN9Ekkq0YJoMmhZBT0VnPOGyLdtx9YDymu
+am5BbrRckJdOWU7P46GJ0Vplo2gvuZeCb0why/abff3YB3AUzRD7vwNw+lF8Vkwb
+pYfTGxhcIodvBAhZUw==
+-----END CERTIFICATE-----

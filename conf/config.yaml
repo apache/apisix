@@ -54,7 +54,11 @@ apisix:
   #   - "::/64"
   # port_admin: 9180              # use a separate port
   # https_admin: true             # enable HTTPS when use a separate port for Admin API.
-                                  # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
+                                # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
+  admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
+    admin_ssl_cert: ""             # Path of your self-signed server side cert.
+    admin_ssl_cert_key: ""         # Path of your self-signed server side key.
+    admin_ssl_ca_cert: ""          # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
