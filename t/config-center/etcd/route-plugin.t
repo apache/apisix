@@ -49,15 +49,15 @@ __DATA__
                     ["proxy-rewrite"] = {
                         ["uri"] = "/uri/plugin_proxy_rewrite",
                         ["headers"] = {
-                            "X-Api-Version": "v2"
+                            ["X-Api-Version"] = "v2"
                         }
                     }
                 },
                 ["upstream"] = {
                     ["nodes"] = {
-                        ["127.0.0.1:1980"]: 1
+                        ["127.0.0.1:1980"] = 1
                     },
-                    ["type"]: "roundrobin"
+                    ["type"] = "roundrobin"
                 }
             }
             local res, err = core.etcd.push("/routes", conf)
@@ -107,15 +107,15 @@ x-real-ip: 127.0.0.1
                     ["proxy-rewrite"] = {
                         ["uri"] = "/uri/plugin_proxy_rewrite",
                         ["headers"] = {
-                            "": ""
+                            [""] = ""
                         }
                     }
                 },
                 ["upstream"] = {
                     ["nodes"] = {
-                        ["127.0.0.1:1980"]: 1
+                        ["127.0.0.1:1980"] = 1
                     },
-                    ["type"]: "roundrobin"
+                    ["type"] = "roundrobin"
                 }
             }
             local res, err = core.etcd.set(key, conf)
