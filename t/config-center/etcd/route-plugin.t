@@ -43,6 +43,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local conf = {
                 ["uri"] = "/hello",
                 ["plugins"] = {
@@ -96,10 +97,12 @@ x-real-ip: 127.0.0.1
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local sub_str  = string.sub
             local res, err = core.etcd.get("/routes")
             if not res then
                 core.log.error("failed to get route[/routes] from etcd: ", err)
+            end
             local key = sub_str(res.body.node.nodes[1].key, 8)
             local conf = {
                 ["uri"] = "/hello",
