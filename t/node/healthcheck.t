@@ -563,7 +563,8 @@ delete code: 200
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1988": 1
                         },
                         "checks": {
                             "active": {
@@ -604,13 +605,9 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
 
-            do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-                ngx.say(res.status)
-            end
-
-            ngx.sleep(2.5)
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.say(res.status)
         }
     }
 --- request
@@ -620,4 +617,4 @@ GET /t
 --- grep_error_log eval
 qr/^.*?\[warn\].*/
 --- grep_error_log_out eval
-qr/healthy SUCCESS increment.*foo.com/
+qr/unhealthy TCP increment.*foo.com/
