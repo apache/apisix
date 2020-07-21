@@ -23,7 +23,6 @@
 
 微服务领域对 API 网关有新的需求：更高的灵活性、更高的性能要求，以及云原生的贴合。
 
-
 ## APISIX 和其他的 API 网关有什么不同之处？
 
 APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者 MySQL 这类关系型数据库。
@@ -57,7 +56,7 @@ APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均�
 4. 变化通知
 5. 高性能
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和KV数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
+APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://github.com/etcd-io/etcd/blob/master/Documentation/learning/why.md#comparison-chart)，在将来也许会支持其他配置存储方案。
 
 ## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
 
@@ -77,8 +76,8 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 
 比如，`foo.com/product/index.html?id=204&page=2`, 根据 uri 中 query string 中的 `id` 作为条件来灰度发布：
 
-1. A组：id <= 1000
-2. B组：id > 1000
+1. A 组：id <= 1000
+2. B 组：id > 1000
 
 可以这么做：
 
@@ -109,7 +108,6 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
 
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
 https://github.com/iresty/lua-resty-radixtree#operator-list
@@ -197,15 +195,15 @@ Server: APISIX web server
 
 ## 如何修改日志等级
 
-默认的APISIX日志等级为`warn`，如果需要查看`core.log.info`的打印结果需要将日志等级调整为`info`。
+默认的 APISIX 日志等级为`warn`，如果需要查看`core.log.info`的打印结果需要将日志等级调整为`info`。
 
 具体步骤：
 
-1、修改conf/config.yaml中的nginx log配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
+1、修改 conf/config.yaml 中的 nginx log 配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
 
-2、重启APISIX
+2、重启 APISIX
 
-之后便可以在logs/error.log中查看到info的日志了。
+之后便可以在 logs/error.log 中查看到 info 的日志了。
 
 ## 如何加载自己编写的插件
 
@@ -220,3 +218,25 @@ curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 ```shell
 apisix reload
 ```
+
+## 如何格式化中文文档？
+
+中文文档对于格式有很多要求，比如英文单词前后要有空格` `，但每次手动修改都非常繁琐，有没有省时省力的办法解决这个问题？
+
+推荐使用 vscode 的 pangu 插件
+
+**安装方式**
+
+进入 vscode 插件列表，搜索`pangu`，安装`Pangu-Markdown`插件
+
+![pangu](doc/images/pangu-plugin-1.png)
+
+**使用方式**
+
+进入 vscode 命令行模式，选择 `Pangu Format`
+
+![pangu](doc/images/pangu-plugin-2.png)
+
+**注意**
+
+不建议选用 pangu 这个名字的插件，它对 `**` 这种加粗字符支持不友好

@@ -24,7 +24,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/incubator-apisix/blob/master/LICENSE)
 
 - **QQ 交流群**: 552030619
-- 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
+- 邮件列表：发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
 
 ## Apache APISIX 是什么？
@@ -38,14 +38,13 @@ Apache APISIX 的技术架构如下图所示：
 
 ![](doc/images/apisix.png)
 
-
 ## 功能
 你可以把 Apache APISIX 当做流量入口，来处理所有的业务数据，包括动态路由、动态上游、动态证书、
-A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵御恶意攻击、监控报警、服务可观测性、服务治理等。
+A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、抵御恶意攻击、监控报警、服务可观测性、服务治理等。
 
 - **全平台**
-    - 云原生: 平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
-    - 运行环境: OpenResty 和 Tengine 都支持。
+    - 云原生：平台无关，没有供应商锁定，无论裸机还是 Kubernetes，APISIX 都可以运行。
+    - 运行环境：OpenResty 和 Tengine 都支持。
     - 支持 ARM64: 不用担心底层技术的锁定。
 
 - **多协议**
@@ -67,37 +66,37 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
     - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
     - [健康检查](doc/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
-    - 熔断器: 智能跟踪不健康上游服务。
+    - 熔断器：智能跟踪不健康上游服务。
     - [代理镜像](doc/zh-cn/plugins/proxy-mirror.md): 提供镜像客户端请求的能力。
 
 - **精细化路由**
     - [支持全路径匹配和前缀匹配](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
     - [支持使用 Nginx 所有内置变量做为路由的条件](/doc/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable)，所以你可以使用 `cookie`, `args` 等做为路由的条件，来实现灰度发布、A/B 测试等功能
-    - 支持[各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
-    - 支持[自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
+    - 支持 [各类操作符做为路由的判断条件](https://github.com/iresty/lua-resty-radixtree#operator-list)，比如 `{"arg_age", ">", 24}`
+    - 支持 [自定义路由匹配函数](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
     - IPv6：支持使用 IPv6 格式匹配路由
-    - 支持路由的[自动过期(TTL)](doc/zh-cn/admin-api.md#route)
+    - 支持路由的 [自动过期 (TTL)](doc/zh-cn/admin-api.md#route)
     - [支持路由的优先级](doc/router-radixtree.md#3-match-priority)
     - [支持批量 Http 请求](doc/zh-cn/plugins/batch-requests.md)
 
 - **安全防护**
-    - 多种身份认证方式: [key-auth](doc/zh-cn/plugins/key-auth.md), [JWT](doc/zh-cn/plugins/jwt-auth.md), [basic-auth](doc/zh-cn/plugins/basic-auth.md), [wolf-rbac](doc/zh-cn/plugins/wolf-rbac.md)。
+    - 多种身份认证方式：[key-auth](doc/zh-cn/plugins/key-auth.md), [JWT](doc/zh-cn/plugins/jwt-auth.md), [basic-auth](doc/zh-cn/plugins/basic-auth.md), [wolf-rbac](doc/zh-cn/plugins/wolf-rbac.md)。
     - [IP 黑白名单](doc/zh-cn/plugins/ip-restriction.md)
     - [IdP 支持](doc/plugins/oauth.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
     - [限制速率](doc/zh-cn/plugins/limit-req.md)
     - [限制请求数](doc/zh-cn/plugins/limit-count.md)
     - [限制并发](doc/zh-cn/plugins/limit-conn.md)
-    - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
-    - [CORS](doc/zh-cn/plugins/cors.md)：为你的API启用 CORS。
+    - 防御 ReDoS（正则表达式拒绝服务）：内置策略，无需配置即可抵御 ReDoS。
+    - [CORS](doc/zh-cn/plugins/cors.md)：为你的 API 启用 CORS。
     - [uri-blocker](plugins/uri-blocker.md)：根据 URI 拦截用户请求。
 
 - **运维友好**
-    - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
+    - OpenTracing 可观测性：支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
     - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/incubator-apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](doc/zh-cn/discovery.md)。
-    - 监控和指标: [Prometheus](doc/zh-cn/plugins/prometheus.md)
+    - 监控和指标：[Prometheus](doc/zh-cn/plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
-    - 控制台: 内置控制台来操作 APISIX 集群。
+    - 控制台：内置控制台来操作 APISIX 集群。
     - 版本控制：支持操作的多次回滚。
     - CLI: 使用命令行来启动、关闭和重启 APISIX。
     - [单机模式](doc/zh-cn/stand-alone.md): 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
@@ -110,7 +109,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **高度可扩展**
     - [自定义插件](doc/zh-cn/plugin-develop.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。
     - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
-    - 自定义路由: 支持用户自己实现路由算法。
+    - 自定义路由：支持用户自己实现路由算法。
 
 ## 编译和安装
 
@@ -118,9 +117,9 @@ APISIX 在以下操作系统中可顺利安装并做过测试：
 
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-有以下几种方式来安装 APISIX 的 Apache Release 版本:
+有以下几种方式来安装 APISIX 的 Apache Release 版本：
 1. 源码编译（适用所有系统）
-    - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
+    - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考 [依赖安装文档](doc/zh-cn/install-dependencies.md)
     - 下载最新的源码发布包：
         ```shell
         wget http://www.apache.org/dist/incubator/apisix/1.4/apache-apisix-1.4-incubating-src.tar.gz
@@ -135,7 +134,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         ./bin/apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX （请先确保已经启动了 etcd，并打开了 v2 协议）:
         ```shell
         ./bin/apisix start
         ```
@@ -147,10 +146,10 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     docker pull apache/apisix
     ```
 
-    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/incubator-apisix-docker/tree/master/example)来启动一个测试集群。
+    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/incubator-apisix-docker/tree/master/example) 来启动一个测试集群。
 
 3. RPM 包（只适用于 CentOS 7）
-    - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
+    - 安装依赖：OpenResty 和 etcd，参考 [依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
     - 安装 APISIX：
     ```shell
     sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4/apisix-1.4-0.el7.noarch.rpm
@@ -159,7 +158,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX （请先确保已经启动了 etcd，并打开了 v2 协议）:
         ```shell
         apisix start
         ```
@@ -190,9 +189,9 @@ etcd --enable-v2=true &
 
 2. 入门指南
 
-    入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/zh-cn/getting-started.md)的步骤即可。
+    入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/zh-cn/getting-started.md) 的步骤即可。
 
-    更进一步，你可以跟着文档来尝试更多的[插件](doc/zh-cn/README.md#插件)。
+    更进一步，你可以跟着文档来尝试更多的 [插件](doc/zh-cn/README.md#插件)。
 
 3. Admin API
 
@@ -200,7 +199,7 @@ etcd --enable-v2=true &
 
 4. 插件二次开发
 
-    可以参考[插件开发指南](doc/zh-cn/plugin-develop.md)，以及[示例插件 echo](doc/zh-cn/plugins/echo.md) 的文档和代码实现。
+    可以参考 [插件开发指南](doc/zh-cn/plugin-develop.md)，以及 [示例插件 echo](doc/zh-cn/plugins/echo.md) 的文档和代码实现。
 
     请注意，Apache APISIX 的插件新增、更新、删除等都是热加载的，不用重启服务。
 
@@ -217,8 +216,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
 
-[性能测试脚本](benchmark/run.sh)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
-
+[性能测试脚本](benchmark/run.sh)，以及 [测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) 已经开源，欢迎补充。
 
 ## Apache APISIX 和 Kong 的比较
 
@@ -229,7 +227,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 | **动态上游**  | 支持   | 支持   |
 | **动态路由**  | 支持   | 支持   |
 | **健康检查和熔断器**  | 支持   | 支持   |
-| **动态SSL证书**  | 支持   | 支持   |
+| **动态 SSL 证书**  | 支持   | 支持   |
 | **七层和四层代理**  | 支持   | 支持   |
 | **分布式追踪**  | 支持   | 支持   |
 | **自定义插件**  | 支持   | 支持   |
@@ -242,8 +240,8 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 |:----|:----|:----|
 | 项目归属   | Apache 软件基金会   | Kong Inc.   |
 | 技术架构   | Nginx + etcd   | Nginx + postgres   |
-| 交流渠道  | 微信群、QQ群、邮件列表、Github、meetup   | Github、论坛、freenode   |
-| 单核 QPS (开启限流和prometheus插件)   | 18000   | 1700   |
+| 交流渠道  | 微信群、QQ 群、邮件列表、Github、meetup   | Github、论坛、freenode   |
+| 单核 QPS （开启限流和 prometheus 插件）   | 18000   | 1700   |
 | 平均延迟  | 0.2 毫秒   | 2 毫秒   |
 | 支持 Dubbo 代理   | 是   | 否   |
 | 配置回滚   | 是   | 否   |
@@ -253,14 +251,14 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 | resty <--> gRPC 转码   | 是   | 否   |
 | 支持 Tengine 作为运行时   | 是   | 否   |
 | MQTT 协议支持   | 是   | 否   |
-| 配置生效时间   | 事件通知，低于1毫秒更新   | 定期轮询，5 秒   |
+| 配置生效时间   | 事件通知，低于 1 毫秒更新   | 定期轮询，5 秒   |
 | 自带控制台   | 是   | 否   |
 | 对接外部身份认证服务   | 是   | 否   |
-| 配置中心高可用(HA)   | 是   | 否   |
+| 配置中心高可用 (HA)   | 是   | 否   |
 | 指定时间窗口的限速   | 是   | 否   |
 | 支持任何 Nginx 变量做路由条件 | 是   | 否   |
 
-性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
+性能对比测试 [详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
 ## 视频和文章
 - 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
@@ -269,7 +267,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 - 2019.10.30 [Apache APISIX 微服务架构极致性能架构解析](https://www.upyun.com/opentalk/440.html)
 - 2019.9.27 [想把 APISIX 运行在 ARM64 平台上？只要三步](https://zhuanlan.zhihu.com/p/84467919)
 - 2019.8.31 [APISIX 技术选型、测试和持续集成](https://www.upyun.com/opentalk/433.html)
-- 2019.8.31 [APISIX 高性能实战2](https://www.upyun.com/opentalk/437.html)
+- 2019.8.31 [APISIX 高性能实战 2](https://www.upyun.com/opentalk/437.html)
 - 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
 ## 用户实际使用案例
@@ -295,7 +293,7 @@ APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=
 
 ## 参与社区
 
-如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
+如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流：
 
 <img src="doc/images/qq-group.png" width="302" height="302">
 
