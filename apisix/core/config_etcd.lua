@@ -25,6 +25,7 @@ local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
+local pairs        = pairs
 local setmetatable = setmetatable
 local ngx_sleep    = ngx.sleep
 local ngx_timer_at = ngx.timer.at
