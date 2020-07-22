@@ -32,13 +32,6 @@ spec:
       labels:
         app: apisix-gw
     spec:
-      # tolerations:
-      # - key: "group"
-      #   operator: "Equal"
-      #   value: "prod"
-      #   effect: "NoSchedule"
-      # nodeSelector:
-      #   env: prod
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -95,16 +88,6 @@ spec:
           - containerPort: 9443
             name: https
             protocol: TCP
-          # livenessProbe:
-          #   failureThreshold: 3
-          #   httpGet:
-          #     path: /healthz
-          #     port: 10254
-          #     scheme: HTTP
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 10
-          #   successThreshold: 1
-          #   timeoutSeconds: 1
           readinessProbe:
             failureThreshold: 6
             initialDelaySeconds: 10
@@ -113,28 +96,6 @@ spec:
             tcpSocket:
               port: 9080
             timeoutSeconds: 1
-          lifecycle:
-            # For alpine based image
-            # https://k8s.imroc.io/troubleshooting/cases/dns-lookup-5s-delay
-            # postStart:
-            #   exec:
-            #     command:
-            #     - /bin/sh
-            #     - -c
-            #     - "/bin/echo 'options single-request-reopen' >> /etc/resolv.conf"
-            preStop:
-              exec:
-                command:
-                - /bin/sh
-                - -c
-                - "sleep 30"
-          # cpu core(s), 1 == 1000m
-          resources:
-            limits:
-              cpu: '2'
-            requests:
-              cpu: '50m'
-
           volumeMounts:
             - mountPath: /usr/local/apisix/conf/config.yaml
               name: apisix-config-yaml-configmap
@@ -142,13 +103,6 @@ spec:
             - mountPath: /etc/localtime
               name: localtime
               readOnly: true
-            # - mountPath: /usr/local/apisix/conf/nginx.conf
-            #   name: apisix-nginx-conf-configmap
-            #   subPath: nginx.conf
-            # - mountPath: /usr/local/openresty/openssl/ssl/openssl.cnf
-            #   name: apisix-openssl-cnf-configmap
-            #   subPath: openssl.cnf
-
       volumes:
         - configMap:
             name: apisix-gw-config.yaml
@@ -157,9 +111,3 @@ spec:
             path: /etc/localtime
             type: File
           name: localtime
-        # - configMap:
-        #     name: apisix-gw-nginx.conf
-        #   name: apisix-nginx-conf-configmap
-        # - configMap:
-        #     name: apisix-gw-openssl.cnf.conf
-        #   name: apisix-openssl-cnf-configmap
