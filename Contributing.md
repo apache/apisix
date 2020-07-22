@@ -94,7 +94,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 ## Check code style and test case style
 
 * code style
-    * Please take a look at [OpenResty Lua Coding Style Guide](CODE_STYLE.md).
+    * Please take a look at [APISIX Lua Coding Style Guide](CODE_STYLE.md).
     * Use tool to check your code statically by command: `make lint`.
 ```shell
         # install `luacheck` first before run it
