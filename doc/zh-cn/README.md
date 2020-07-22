@@ -31,7 +31,7 @@
 * [TCP/UDP 动态代理](stream-proxy.md)
 * [管理 API](admin-api.md)
 * [变更日志](../../CHANGELOG_CN.md)
-* [代码风格](../CODE_STYLE.md)
+* [代码风格](../../CODE_STYLE_CN.md)
 * [常见问答](../../FAQ_CN.md)
 
 插件
