@@ -551,7 +551,7 @@ delete code: 200
 
 
 
-=== TEST 12: add route (test health check config valid)
+=== TEST 12: add route (test health check config `host` valid)
 --- config
     location /t {
         content_by_lua_block {
@@ -597,7 +597,7 @@ passed
 
 
 
-=== TEST 13: test health check config valid
+=== TEST 13: test health check config `host` valid
 --- config
     location /t {
         content_by_lua_block {
@@ -607,6 +607,9 @@ passed
 
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
+            ngx.sleep(2)
+
             ngx.say(res.status)
         }
     }
