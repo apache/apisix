@@ -17,6 +17,8 @@
 #
 -->
 
+[Chinese](CODE_STYLE_CN.md)
+
 # APISIX Lua Coding Style Guide
 
 ## indentation
