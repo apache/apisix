@@ -23,6 +23,14 @@ local re_gmatch = ngx.re.gmatch
 local tonumber = tonumber
 local select = select
 local prometheus
+local router = require("apisix.router")
+local get_routes = router.http_routes
+local get_ssls   = router.ssls
+local get_services = require("apisix.http.service").services
+local get_consumers = require("apisix.consumer").consumers
+local get_upstreams = require("apisix.upstream").upstreams
+
+
 
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
@@ -64,8 +72,15 @@ function _M.init()
             "Number of HTTP connections",
             {"state"})
 
+    metrics.hostname = prometheus:gauge("node_hostname",
+            "Hostname of APISIX node") 
+
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
+    
+    metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
+            "Etcd modify index for APISIX keys",
+            {"key"})
 
     -- per service
     metrics.status = prometheus:counter("http_status",
@@ -152,7 +167,68 @@ local function nginx_status()
 
         label_values[1] = name
         metrics.connections:set(val[0], label_values)
+
     end
+end
+
+local key_values = {}
+function set_modify_index(key, items, items_ver, global_max_idx)
+    local max_idx = 0
+    
+    if items_ver and items then
+        for _, item in ipairs(items) do
+            if type(item) == "table" and item.modifiedIndex > max_idx then
+                max_idx = item.modifiedIndex
+            end
+        end
+    end
+
+    key_values[1] = key
+    metrics.etcd_modify_indexes:set(max_idx, key_values)
+
+
+    global_max_idx = max_idx > global_max_idx and max_idx or global_max_idx
+
+    return global_max_idx
+end
+local function etcd_modify_index()
+    local global_max_idx = 0
+
+    -- routes
+    local routes, routes_ver = get_routes()
+    global_max_idx = set_modify_index("routes", routes, routes_ver, global_max_idx)
+
+    -- services
+    local services, services_ver = get_services()
+    global_max_idx = set_modify_index("services", services, services_ver, global_max_idx)
+
+    -- ssls
+    local ssls, ssls_ver = get_ssls()
+    global_max_idx = set_modify_index("ssls", ssls, ssls_ver, global_max_idx)
+
+    -- consumers
+    local consumers, consumers_ver = get_consumers()
+    global_max_idx = set_modify_index("consumers", consumers, consumers_ver, global_max_idx)
+
+    -- consumers
+    local consumers, consumers_ver = get_consumers()
+    global_max_idx = set_modify_index("consumers", consumers, consumers_ver, global_max_idx)
+
+    -- global_rules
+    local global_rules = router.global_rules
+    if global_rules then
+        global_max_idx = set_modify_index("global_rules", global_rules.values, 
+            global_rules.conf_version, global_max_idx)
+    end
+
+    -- upstreams
+    local upstreams, upstreams_ver = get_upstreams()
+    global_max_idx = set_modify_index("upstreams", upstreams, upstreams_ver, global_max_idx)
+    
+    -- global max
+    key_values[1] = "max_modify_index"
+    metrics.etcd_modify_indexes:set(global_max_idx, key_values)
+
 end
 
 
@@ -166,6 +242,9 @@ function _M.collect()
     -- across all services
     nginx_status()
 
+    -- etcd modify index
+    etcd_modify_index()
+
     -- config server status
     local config = core.config.new()
     local version, err = config:server_version()
@@ -177,6 +256,9 @@ function _M.collect()
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
     end
+
+    local vars = ngx.var
+    metrics.hostname:set(vars.hostname)
 
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())
