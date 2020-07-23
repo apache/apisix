@@ -78,6 +78,8 @@ contains: `active` or `passive`.
 
 * `active`: To enable active health checks, you need to specify the configuration items under `checks.active` in the Upstream object configuration.
 
+  * `active.timeout`: Socket timeout for active checks (in seconds).
+
   * `active.http_path`: The HTTP GET request path used to detect if the upstream is healthy.
   * `active.host`: The HTTP request host used to detect if the upstream is healthy.
 
