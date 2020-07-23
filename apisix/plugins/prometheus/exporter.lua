@@ -73,9 +73,6 @@ function _M.init()
             "Number of HTTP connections",
             {"state"})
 
-    metrics.hostname = prometheus:gauge("node_hostname",
-            "Hostname of APISIX node")
-
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
 
@@ -257,9 +254,6 @@ function _M.collect()
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
     end
-
-    local vars = ngx.var
-    metrics.hostname:set(vars.hostname)
 
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())

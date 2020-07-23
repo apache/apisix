@@ -620,17 +620,7 @@ qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"00500.0.*/
 
 
 
-=== TEST 30: fetch the prometheus metric data with `hostname`
---- request
-GET /apisix/prometheus/metrics
---- response_body_like
-TYPE apisix_node_hostname gauge
---- no_error_log
-[error]
-
-
-
-=== TEST 31: fetch the prometheus metric data with `modify_indexes`
+=== TEST 30: fetch the prometheus metric data with `modify_indexes`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like
@@ -640,7 +630,7 @@ TYPE apisix_etcd_modify_indexes gauge
 
 
 
-=== TEST 32: delete route 4
+=== TEST 31: delete route 4
 --- config
     location /t {
         content_by_lua_block {
@@ -663,7 +653,7 @@ passed
 
 
 
-=== TEST 33: delete service 3
+=== TEST 32: delete service 3
 --- config
     location /t {
         content_by_lua_block {
