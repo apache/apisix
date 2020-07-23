@@ -75,7 +75,7 @@ local health_checker = {
                     enum = {"http", "https", "tcp"},
                     default = "http"
                 },
-                timeout = {type = "integer", default = 1},
+                timeout = {type = "number", default = 1},
                 concurrency = {type = "integer", default = 10},
                 host = host_def,
                 http_path = {type = "string", default = "/"},
