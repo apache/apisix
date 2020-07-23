@@ -22,6 +22,7 @@ local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
 local tonumber = tonumber
 local select = select
+local type = type
 local prometheus
 local router = require("apisix.router")
 local get_routes = router.http_routes
@@ -73,11 +74,11 @@ function _M.init()
             {"state"})
 
     metrics.hostname = prometheus:gauge("node_hostname",
-            "Hostname of APISIX node") 
+            "Hostname of APISIX node")
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
-    
+
     metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
             "Etcd modify index for APISIX keys",
             {"key"})
@@ -172,9 +173,9 @@ local function nginx_status()
 end
 
 local key_values = {}
-function set_modify_index(key, items, items_ver, global_max_idx)
+local function set_modify_index(key, items, items_ver, global_max_index)
     local max_idx = 0
-    
+
     if items_ver and items then
         for _, item in ipairs(items) do
             if type(item) == "table" and item.modifiedIndex > max_idx then
@@ -187,9 +188,9 @@ function set_modify_index(key, items, items_ver, global_max_idx)
     metrics.etcd_modify_indexes:set(max_idx, key_values)
 
 
-    global_max_idx = max_idx > global_max_idx and max_idx or global_max_idx
+    global_max_index = max_idx > global_max_index and max_idx or global_max_index
 
-    return global_max_idx
+    return global_max_index
 end
 local function etcd_modify_index()
     local global_max_idx = 0
@@ -217,14 +218,14 @@ local function etcd_modify_index()
     -- global_rules
     local global_rules = router.global_rules
     if global_rules then
-        global_max_idx = set_modify_index("global_rules", global_rules.values, 
+        global_max_idx = set_modify_index("global_rules", global_rules.values,
             global_rules.conf_version, global_max_idx)
     end
 
     -- upstreams
     local upstreams, upstreams_ver = get_upstreams()
     global_max_idx = set_modify_index("upstreams", upstreams, upstreams_ver, global_max_idx)
-    
+
     -- global max
     key_values[1] = "max_modify_index"
     metrics.etcd_modify_indexes:set(global_max_idx, key_values)
