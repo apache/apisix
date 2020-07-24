@@ -149,3 +149,15 @@ fi
 set -ex
 
 echo "passed: rollback to the default admin config"
+
+# check the 'worker_shutdown_timeout' in 'nginx.conf' .
+
+make init
+
+grep -E "worker_shutdown_timeout 240s" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: worker_shutdown_timeout in nginx.conf is required 240s"
+    exit 1
+fi
+
+echo "passed: worker_shutdown_timeout in nginx.conf is ok"

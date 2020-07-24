@@ -104,7 +104,7 @@ nginx_config:                     # config for render the template to genarate n
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
-  worker_shutdown_timeout: 3s     # timeout for a graceful shutdown of worker processes
+  worker_shutdown_timeout: 240s     # timeout for a graceful shutdown of worker processes
   event:
     worker_connections: 10620
   http:
