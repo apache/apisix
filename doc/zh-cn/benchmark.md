@@ -45,7 +45,7 @@
 
 火焰图的采样结果:
 
-<img src="../doc/images/flamegraph-1.jpg">
+<img src="../../doc/images/flamegraph-1.jpg">
 
 ### 测试反向代理，开启 2 个插件
 
