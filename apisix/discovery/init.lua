@@ -15,22 +15,26 @@
 -- limitations under the License.
 --
 
-local local_conf   = require("apisix.core.config_local").local_conf()
 
+local local_conf   = require("apisix.core.config_local").local_conf()
 
 local discovery_type = local_conf.apisix.discovery
 local discovery = {
     schema = {}
 }
 
-for i = 1, #(discovery_type) do
-    discovery[discovery_type[i]] = require("apisix.discovery." .. discovery_type[i])
-    discovery.schema[discovery_type[i]] = discovery[discovery_type[i]].schema
+if discovery_type then
+    for i = 1, #(discovery_type) do
+        discovery[discovery_type[i]] = require("apisix.discovery." .. discovery_type[i])
+        discovery.schema[discovery_type[i]] = discovery[discovery_type[i]].schema
+    end
 end
 
 function discovery.init_worker()
-    for i = 1, #(discovery_type) do
-        discovery[discovery_type[i]].init_worker()
+    if discovery_type then
+        for i = 1, #(discovery_type) do
+            discovery[discovery_type[i]].init_worker()
+        end
     end
 end
 
