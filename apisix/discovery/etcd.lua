@@ -15,34 +15,45 @@
 -- limitations under the License.
 --
 
+local etcd = require('apisix.core.etcd')
+local ngx_timer_at       = ngx.timer.at
+local ngx_timer_every    = ngx.timer.every
 
-local local_conf   = require("apisix.core.config_local").local_conf()
+local applications
+local discovery_key = "service_dicovery"
 
-local discovery_type
-local discovery = {
-    schema = {}
+local schema = {
+    type = "object",
+    properties = {
+        service_name = { type = "string", maxLength = 256 }
+    },
+    anyOf = {
+        { require = { 'service_name' }}
+    },
 }
 
-if local_conf.apisix then
-    discovery_type = local_conf.apisix.discovery
-end
-
-if discovery_type then
-    for i = 1, #(discovery_type) do
-        discovery[discovery_type[i]] = require("apisix.discovery." .. discovery_type[i])
-        discovery.schema[discovery_type[i]] = discovery[discovery_type[i]].schema
-    end
-end
-
-function discovery.init_worker()
-    if discovery_type then
-        for i = 1, #(discovery_type) do
-            discovery[discovery_type[i]].init_worker()
-        end
-    end
-end
-
-return {
+local _M = {
     version = 0.1,
-    discovery = discovery
+    schema = schema,
 }
+
+local function fetch_full_registry(premature)
+
+    if premature then
+        return
+    end
+
+    local res = etcd.get(discovery_key)
+    applications = res.body.node.value
+end
+
+function _M.nodes(up_conf)
+    return { [1] = applications[up_conf.etcd.service_name]}
+end
+
+function _M.init_worker()
+    ngx_timer_at(0, fetch_full_registry)
+    ngx_timer_every(30, fetch_full_registry)
+end
+
+return _M

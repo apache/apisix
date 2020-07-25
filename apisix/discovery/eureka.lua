@@ -220,13 +220,18 @@ local function fetch_full_registry(premature)
 end
 
 
-function _M.nodes(service_name)
-    if not applications then
-        log.error("failed to fetch nodes for : ", service_name)
+function _M.nodes(up_conf)
+
+    if not up_conf.service_name then
         return
     end
 
-    return applications[service_name]
+    if not applications then
+        log.error("failed to fetch nodes for : ", up_conf.service_name)
+        return
+    end
+
+    return applications[up_conf.service_name]
 end
 
 

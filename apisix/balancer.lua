@@ -156,11 +156,26 @@ local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local up_conf = ctx.upstream_conf
+
+    -- adapt to old business
     if up_conf.service_name then
-        if not discovery then
+        local dis = discovery.eureka
+        if not dis then
             return nil, "discovery is uninitialized"
         end
-        up_conf.nodes = discovery.nodes(up_conf.service_name)
+        up_conf.nodes = dis.nodes(up_conf)
+    end
+
+    if up_conf.type == "discovery" then
+        if not up_conf.discovery_type then
+            return nil, "discovery server need appoint"
+        end
+
+        local dis = discovery[up_conf.discovery_type]
+        if not dis then
+            return nil, "discovery is uninitialized"
+        end
+        up_conf.nodes = dis.nodes(up_conf)
     end
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
