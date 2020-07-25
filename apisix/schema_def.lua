@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local discovery = require('apisix.discovery').discovery
 local schema    = require('apisix.core.schema')
 local setmetatable = setmetatable
 local error     = error
@@ -306,7 +307,7 @@ local upstream_schema = {
         type = {
             description = "algorithms of load balancing",
             type = "string",
-            enum = {"chash", "roundrobin"}
+            enum = {"chash", "roundrobin","discovery"}
         },
         checks = health_checker,
         hash_on = {
@@ -327,6 +328,10 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        discovery_type = {
+            description = "discovery type",
+            type = "string",
+        },
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         service_name = {type = "string", maxLength = 50},
@@ -335,10 +340,14 @@ local upstream_schema = {
     anyOf = {
         {required = {"type", "nodes"}},
         {required = {"type", "k8s_deployment_info"}},
-        {required = {"type", "service_name"}},
+        {required = {"type", "discovery_type"}},
     },
     additionalProperties = false,
 }
+
+for name, v in pairs(discovery.schema) do
+    upstream_schema.properties[name] = v
+end
 
 -- TODO: add more nginx variable support
 _M.upstream_hash_vars_schema = {

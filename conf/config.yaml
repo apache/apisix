@@ -99,7 +99,8 @@ apisix:
     key_encrypt_salt: "edd1c9f0985e76a2"    #  If not set, will save origin ssl key into etcd.
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
-#  discovery: eureka               # service discovery center
+  # discovery:                # service discovery center(需导入插件代码依赖)
+  #   - etcd
 nginx_config:                     # config for render the template to genarate nginx.conf
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
