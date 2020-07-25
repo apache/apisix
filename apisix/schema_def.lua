@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local discovery = require('apisix.discovery').discovery
 local schema    = require('apisix.core.schema')
 local setmetatable = setmetatable
 local error     = error
