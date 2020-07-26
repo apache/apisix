@@ -49,12 +49,12 @@ local mt = {
     end
 }
 
-local function readdir(etcd_cli, key)
+local function readdir(etcd_cli, key, opts)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:readdir(key, true)
+    local res, err = etcd_cli:readdir(key, opts)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, nil, err
@@ -67,12 +67,12 @@ local function readdir(etcd_cli, key)
     return res
 end
 
-local function waitdir(etcd_cli, key, modified_index)
+local function watchdir(etcd_cli, key, opts)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:waitdir(key, modified_index)
+    local res, err = etcd_cli:watchdir(key, opts)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
@@ -123,19 +123,19 @@ local function sync_data(self)
             return false, err
         end
 
-        local dir_res, headers = res.body.node, res.headers
+        local dir_res, headers = res.body.kvs, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then
             return false, err
         end
 
-        if not dir_res.dir then
-            return false, self.key .. " is not a dir"
-        end
+        -- if not dir_res.dir then
+        --     return false, self.key .. " is not a dir"
+        -- end
 
-        if not dir_res.nodes then
-            dir_res.nodes = {}
+        if not dir_res.kvs then
+            dir_res.kvs = {}
         end
 
         if self.values then
@@ -152,11 +152,11 @@ local function sync_data(self)
             self.values_hash = nil
         end
 
-        self.values = new_tab(#dir_res.nodes, 0)
-        self.values_hash = new_tab(0, #dir_res.nodes)
+        self.values = new_tab(#dir_res.kvs, 0)
+        self.values_hash = new_tab(0, #dir_res.kvs)
 
         local changed = false
-        for _, item in ipairs(dir_res.nodes) do
+        for _, item in ipairs(dir_res.kvs) do
             local key = short_key(self, item.key)
             local data_valid = true
             if type(item.value) ~= "table" then
@@ -186,7 +186,7 @@ local function sync_data(self)
                 end
             end
 
-            self:upgrade_version(item.modifiedIndex)
+            self:upgrade_version(item.mod_revision)
         end
 
         if headers then
@@ -201,20 +201,21 @@ local function sync_data(self)
         return true
     end
 
-    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
-    log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
+    local dir_res, err = watchdir(self.etcd_cli, self.key, {start_revision = self.prev_index + 1})
+    log.info("watchdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
     if not dir_res then
         return false, err
     end
 
     local res = dir_res.body.node
+    -- would be effected when compact in v3
     local err_msg = dir_res.body.message
     if err_msg then
         if err_msg == "The event in requested index is outdated and cleared"
            and dir_res.body.errorCode == 401 then
             self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err_msg,
+            log.warn("watchdir [", self.key, "] err: ", err_msg,
                      ", need to fully reload")
             return false
         end
@@ -224,7 +225,7 @@ local function sync_data(self)
     if not res then
         if err == "The event in requested index is outdated and cleared" then
             self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err,
+            log.warn("watchdir [", self.key, "] err: ", err,
                      ", need to fully reload")
             return false
         end

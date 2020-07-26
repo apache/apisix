@@ -16,25 +16,52 @@
 #
 use t::APISIX 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $init_by_lua_block = <<_EOC_;
+    fetch_local_conf = require("apisix.core.config_local").local_conf
+
+    function check_version()
+        local local_conf, err = fetch_local_conf()
+            if not local_conf then
+            return nil, nil, err
+        end
+        return local_conf.etcd.version
+    end
+
+    function check_val(res)
+        local ver = check_version()
+        if ver == "v3" then
+            ngx.say(res.body.kvs[1].value)
+        else
+            ngx.say(res.body.node.value)
+        end
+    end
+_EOC_
+    $block->set_value("init_by_lua_block", $init_by_lua_block);
+});
 
 run_tests;
 
 __DATA__
 
-=== TEST 1: Set and Get a value pass with authentication
+
+=== TEST 1: Set and Get a value
 --- config
     location /t {
         content_by_lua_block {
+            local json         = require("apisix.core.json")
             local core = require("apisix.core")
             local key = "/test_key"
             local val = "test_value"
-            core.etcd.set(key, val)
+            core.etcd.set(key, val, {prev_kv=true})
             local res, err = core.etcd.get(key)
             local inspect = require("inspect")
-            ngx.say(inspect(res))
-            ngx.say(res.body.node.value)
+            ngx.say(inspect(json.delay_encode(dir_res)))
             core.etcd.delete(val)
         }
     }

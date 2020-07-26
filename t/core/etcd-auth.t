@@ -15,7 +15,8 @@
 # limitations under the License.
 #
 BEGIN {
-    $ENV{"ETCD_ENABLE_AUTH"} = "true"
+    $ENV{"ETCD_ENABLE_AUTH"} = "false";
+    $ENV{"ETCDCTL_API"} = "2"
 }
 
 use t::APISIX 'no_plan';
@@ -25,16 +26,42 @@ no_long_string();
 no_root_location();
 log_level("info");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $init_by_lua_block = <<_EOC_;
+    fetch_local_conf = require("apisix.core.config_local").local_conf
+
+    function check_val(res)
+        local local_conf, err = fetch_local_conf()
+            if not local_conf then
+            return nil, nil, err
+        end
+        ver = local_conf.etcd.version
+        local inspect = require("inspect")
+        ngx.say(inspect(local_conf.etcd))
+
+        if ver == "v3" then
+            ngx.say(res.body.kvs[1].value)
+        else
+            ngx.say(res.body.node.value)
+        end
+    end
+_EOC_
+    $block->set_value("init_by_lua_block", $init_by_lua_block);
+});
+
 # Authentication is enabled at etcd and credentials are set
 system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
 system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
+system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke guest -path "/*" -readwrite');
 
 run_tests;
 
 # Authentication is disabled at etcd & guest access is granted
 system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
+system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant guest -path "/*" -readwrite');
+
 
 __DATA__
 
@@ -47,7 +74,9 @@ __DATA__
             local val = "test_value"
             core.etcd.set(key, val)
             local res, err = core.etcd.get(key)
-            ngx.say(res.body.node.value)
+            local inspect = require("inspect")
+            -- ngx.say(inspect(err))
+            check_val(res)
             core.etcd.delete(val)
         }
     }
