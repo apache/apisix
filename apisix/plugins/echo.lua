@@ -122,11 +122,9 @@ function _M.header_filter(conf, ctx)
         end
     end
 
-    if conf.headers_arr then
-        local field_cnt = #conf.headers_arr
-        for i = 1, field_cnt, 2 do
-            ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
-        end
+    local field_cnt = #conf.headers_arr
+    for i = 1, field_cnt, 2 do
+        ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
     end
 end
 
