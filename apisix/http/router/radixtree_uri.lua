@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require = require
+local schema_plugin = require("apisix.admin.plugins").check_schema
 local router = require("resty.radixtree")
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
@@ -126,11 +127,22 @@ function _M.routes()
 end
 
 
+local function _plugin_schema(conf)
+    if not conf.plugins then
+        return true
+    end
+
+    local ok, err = schema_plugin(conf.plugins)
+    return ok, err
+end
+
+
 function _M.init_worker(filter)
     local err
     user_routes, err = core.config.new("/routes", {
             automatic = true,
             item_schema = core.schema.route,
+            func_schema = _plugin_schema,
             filter = filter,
         })
     if not user_routes then

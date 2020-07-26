@@ -43,14 +43,15 @@ local schema = {
         auth_value = {
             description = "auth value",
             type = "string"
-        }
+        },
     },
     anyOf = {
         {required = {"before_body"}},
         {required = {"body"}},
         {required = {"after_body"}}
     },
-    minProperties = 1
+    minProperties = 1,
+    additionalProperties = false,
 }
 
 local plugin_name = "echo"
@@ -63,6 +64,11 @@ local _M = {
 }
 
 function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
     if conf.headers then
         conf.headers_arr = {}
 
@@ -80,7 +86,7 @@ function _M.check_schema(conf)
         end
     end
 
-    return core.schema.check(schema, conf)
+    return true
 end
 
 function _M.body_filter(conf, ctx)

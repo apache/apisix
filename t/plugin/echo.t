@@ -467,3 +467,43 @@ GET /hello
 before the body modification unauthorized body
 --- response_headers
 Location: https://www.iresty.com
+
+
+
+=== TEST 13: print the `conf` in etcd, no dirty data
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code, _, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "echo": {
+                            "before_body": "before the body modification ",
+                            "auth_value" : "userpass",
+                            "headers": {
+                                "Location":"https://www.iresty.com"
+                            }
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local resp_data = core.json.decode(body)
+            ngx.say(core.json.sort_encode(resp_data.node.value.plugins))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"echo":{"auth_value":"userpass","before_body":"before the body modification ","headers":{"Location":"https://www.iresty.com"}}}
+--- no_error_log
+[error]
