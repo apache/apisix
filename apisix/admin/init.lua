@@ -117,13 +117,13 @@ local function run()
         core.response.exit(404)
     end
 
-    local req_body = core.request.get_body()
-    if req_body then
-        if #req_body > 1024 * 1024 * 1.5 then
-            core.log.error("maximum request body is 1.5mb, but got ", #req_body)
-            core.response.exit(400, {error_msg = "request body is too large"})
-        end
+    local req_body, err = core.request.get_body(1024 * 1024 * 1.5)
+    if err then
+        core.log.error("failed to get request body: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
 
+    if req_body then
         local data, err = core.json.decode(req_body)
         if not data then
             core.log.error("invalid request body: ", req_body, " err: ", err)

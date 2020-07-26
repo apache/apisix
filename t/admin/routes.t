@@ -1888,25 +1888,22 @@ Content-Type: application/json
 
 
 
-=== TEST 52: set route with size 35k
+=== TEST 52: set route with size 36k (temporary file to store request body)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
             local core = require("apisix.core")
-            local uris = {}
-            for i = 1, 1000 * 4 do
-                uris[i] = "/" .. i
-            end
+            local s = string.rep("a", 1024 * 35)
             local req_body = [[{
                 "upstream": {
                     "nodes": {
-                        "127.0.0.1:8080": 1
+                        "]] .. s .. [[": 1
                     },
                     "type": "roundrobin"
                 },
-                "uris": ]] .. core.json.encode(uris) .. [[
+                "uri": "/index.html"
             }]]
 
             local code, body = t('/apisix/admin/routes/1',
@@ -1923,11 +1920,10 @@ Content-Type: application/json
 --- request
 GET /t
 --- response_body
-req size: 35121
+req size: 36066
 passed
 --- error_log
 a client request body is buffered to a temporary file
---- timeout: 10
 
 
 
@@ -1959,6 +1955,6 @@ a client request body is buffered to a temporary file
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"request body is too large"}
+{"error_msg":"invalid request body: request size 1678025 is greater than the maximum size 1572864 allowed"}
 --- error_log
-maximum request body is 1.5mb, but got 1678025
+failed to get request body: request size 1678025 is greater than the maximum size 1572864 allowed

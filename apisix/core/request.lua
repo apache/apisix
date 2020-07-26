@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local lfs = require("lfs")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local tonumber = tonumber
@@ -103,18 +105,18 @@ end
 
 
 local function get_file(file_name)
-    local f = io_open(file_name, 'r')
-    if f then
-        local req_body = f:read("*all")
-        f:close()
-        return req_body
+    local f, err = io_open(file_name, 'r')
+    if not f then
+        return nil, err
     end
 
-    return
+    local req_body = f:read("*all")
+    f:close()
+    return req_body
 end
 
 
-function _M.get_body()
+function _M.get_body(max_size)
     req_read_body()
 
     local req_body = req_get_body_data()
@@ -123,11 +125,24 @@ function _M.get_body()
     end
 
     local file_name = req_get_body_file()
-    if file_name then
-        req_body = get_file(file_name)
+    if not file_name then
+        return nil
     end
 
-    return req_body
+    if max_size then
+        local size, err = lfs.attributes (file_name, "size")
+        if not size then
+            return nil, err
+        end
+
+        if size > max_size then
+            return nil, "request size " .. size .. " is greater than the "
+                        .. "maximum size " .. max_size .. " allowed"
+        end
+    end
+
+    local req_body, err = get_file(file_name)
+    return req_body, err
 end
 
 
