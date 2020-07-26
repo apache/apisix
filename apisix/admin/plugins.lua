@@ -40,7 +40,7 @@ local disable_schema = {
 }
 
 
-function _M.check_schema(plugins_conf, keep_original)
+function _M.check_schema(plugins_conf)
     for name, plugin_conf in pairs(plugins_conf) do
         core.log.info("check plugin scheme, name: ", name, ", configurations: ",
                       core.json.delay_encode(plugin_conf, true))
@@ -50,14 +50,9 @@ function _M.check_schema(plugins_conf, keep_original)
         end
 
         if plugin_obj.check_schema then
-            local clone_plugin_conf = plugin_conf
-            if keep_original then
-                clone_plugin_conf = core.table.deepcopy(plugin_conf)
-            end
-
-            local ok = core.schema.check(disable_schema, clone_plugin_conf)
+            local ok = core.schema.check(disable_schema, plugin_conf)
             if not ok then
-                local ok, err = plugin_obj.check_schema(clone_plugin_conf)
+                local ok, err = plugin_obj.check_schema(plugin_conf)
                 if not ok then
                     return false, "failed to check the configuration of plugin "
                                   .. name .. " err: " .. err

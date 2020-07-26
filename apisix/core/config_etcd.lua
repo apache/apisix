@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -169,14 +168,6 @@ local function sync_data(self)
 
             if data_valid and self.item_schema then
                 data_valid, err = check_schema(self.item_schema, item.value)
-                if not data_valid then
-                    log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.encode(item.value))
-                end
-            end
-
-            if data_valid and self.func_schema then
-                data_valid, err = self.func_schema(item.value)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.encode(item.value))
@@ -404,14 +395,12 @@ function _M.new(key, opts)
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
-    local func_schema = opts and opts.func_schema
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
         key = key and prefix .. key,
         automatic = automatic,
         item_schema = item_schema,
-        func_schema = func_schema,
         sync_times = 0,
         running = true,
         conf_version = 0,

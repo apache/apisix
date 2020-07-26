@@ -106,7 +106,7 @@ local function check_conf(id, conf, need_id)
     end
 
     if conf.plugins then
-        local ok, err = schema_plugin(conf.plugins, true)
+        local ok, err = schema_plugin(conf.plugins)
         if not ok then
             return nil, {error_msg = err}
         end
