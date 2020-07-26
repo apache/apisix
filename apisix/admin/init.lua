@@ -26,6 +26,7 @@ local require = require
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local events
+local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
 
 
 local viewer_methods = {
@@ -117,9 +118,9 @@ local function run()
         core.response.exit(404)
     end
 
-    local req_body, err = core.request.get_body(1024 * 1024 * 1.5)
+    local req_body, err = core.request.get_body(MAX_REQ_BODY)
     if err then
-        core.log.error("failed to get request body: ", err)
+        core.log.error("failed to read request body: ", err)
         core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
