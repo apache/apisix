@@ -507,3 +507,31 @@ GET /t
 {"echo":{"auth_value":"userpass","before_body":"before the body modification ","headers":{"Location":"https://www.iresty.com"}}}
 --- no_error_log
 [error]
+
+
+
+=== TEST 14:  additional property
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.echo")
+            local ok, err = plugin.check_schema({
+                before_body = "body before",
+                body = "body to attach" ,
+                after_body = "body to attach",
+                invalid_att = "invalid",
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+additional properties forbidden, found invalid_att
+--- no_error_log
+[error]
