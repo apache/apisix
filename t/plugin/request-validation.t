@@ -230,6 +230,7 @@ hello1 world
 --- no_error_log
 
 
+
 === TEST 6: Add plugin with header_schema
 --- config
     location /t {
