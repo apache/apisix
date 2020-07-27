@@ -27,7 +27,6 @@ local cached_tab = {}
 local _M = {
     version = 0.1,
     decode = require("cjson.safe").decode,
-    sort_encode = require("apisix.core.json_sort").encode,
 }
 
 

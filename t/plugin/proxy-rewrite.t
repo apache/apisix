@@ -1060,6 +1060,7 @@ a: iresty
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
+            local encode_with_keys_sorted = require("lib.json_sort").encode
 
             local code, _, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -1087,7 +1088,7 @@ a: iresty
             end
 
             local resp_data = core.json.decode(body)
-            ngx.say(core.json.sort_encode(resp_data.node.value.plugins))
+            ngx.say(encode_with_keys_sorted(resp_data.node.value.plugins))
         }
     }
 --- request
