@@ -88,7 +88,7 @@ $ make stop
 $ make help
 Makefile rules:
 
-    help:             Show Makefile rules.
+    help:             Show Makefile rules
     deps:             Installation dependencies
     utils:            Installation tools
     lint:             Lint Lua source code

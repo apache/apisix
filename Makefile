@@ -36,7 +36,7 @@ endif
 
 LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit
 
-### help:             Show Makefile rules.
+### help:             Show Makefile rules
 .PHONY: help
 help: default
 	@echo Makefile rules:
