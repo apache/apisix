@@ -21,13 +21,12 @@
 There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
-- Install etcd , and set env `etcd_url` in config.sh
+- Install etcd , and set env `etcd_url` in `config.sh`
 
-- Run `config.sh` to generate apisix-gw-config-cm.yaml from the latest `config.yaml`
+- Run `config.sh` to generate `apisix-gw-config-cm.yaml` from the latest `config.yaml`
 
 ```
-# if config.sh have no permission to execute
-# chmod +x config.sh
+# if config.sh have no permission to executethen, then execute `chmod +x config.sh`
 # Generate apisix-gw-config-cm.yaml
 # sh config.sh
 ```
@@ -66,7 +65,7 @@ or
 $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
 
-##### Note: you should check etcd addr in config file `apisix-gw-config-cm.yaml` or `../conf/config.yaml` first, make sure the etcd addresses are right.
+##### Note: you should check etcd addr in config file `apisix-gw-config-cm.yaml` or `../conf/config.yaml` first, make sure the etcd addresses are correct.
 
 ```
 etcd:

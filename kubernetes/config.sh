@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export etcd_url='http://here_is_you_etcd_IP:2379'
+export etcd_url='http://$ETCD_IP_ADDRESS:2379'
 
 wget https://raw.githubusercontent.com/apache/incubator-apisix/master/conf/config.yaml
 
