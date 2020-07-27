@@ -98,8 +98,8 @@ local function create_checker(upstream, healthcheck_parent)
     for _, node in ipairs(upstream.nodes) do
         local ok, err = checker:add_target(node.host, port or node.port, host)
         if not ok then
-            core.log.error("failed to add new health check target: ", node.host, ":", port or node.port,
-                    " err: ", err)
+            core.log.error("failed to add new health check target: ", node.host, ":",
+                    port or node.port, " err: ", err)
         end
     end
 
