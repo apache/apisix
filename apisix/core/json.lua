@@ -14,7 +14,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
 local json_encode = require("cjson.safe").encode
 local clear_tab = require("table.clear")
 local ngx = ngx
