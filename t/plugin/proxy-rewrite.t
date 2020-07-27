@@ -1051,3 +1051,77 @@ q: apisix
 a: iresty
 --- no_error_log
 [error]
+
+
+
+=== TEST 36: print the plugin `conf` in etcd, no dirty data
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local encode_with_keys_sorted = require("lib.json_sort").encode
+
+            local code, _, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/uri/plugin_proxy_rewrite",
+                            "headers": {
+                                "X-Api": "v2"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local resp_data = core.json.decode(body)
+            ngx.say(encode_with_keys_sorted(resp_data.node.value.plugins))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"proxy-rewrite":{"headers":{"X-Api":"v2"},"uri":"/uri/plugin_proxy_rewrite"}}
+--- no_error_log
+[error]
+
+
+
+=== TEST 37:  additional property
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.proxy-rewrite")
+            local ok, err = plugin.check_schema({
+                uri = '/apisix/home',
+                host = 'apisix.iresty.com',
+                scheme = 'http',
+                invalid_att = "invalid",
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+additional properties forbidden, found invalid_att
+--- no_error_log
+[error]
