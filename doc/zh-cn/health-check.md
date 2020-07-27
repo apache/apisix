@@ -46,6 +46,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "retries": 2,
         "checks": {
             "active": {
+                "timeout": 5,
                 "http_path": "/status",
                 "host": "foo.com",
                 "healthy": {
@@ -77,6 +78,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 监控检查的配置内容在`checks`中，`checks`包含两个类型：`active` 和 `passive`，详情如下
 
 * `active`: 要启动探活健康检查，需要在upstream配置中的 `checks.active` 添加如下配置项。
+
+    * `active.timeout`: 主动健康检查 socket 超时时间（秒为单位），支持小数点。比如 `1.01` 代表 `1010` 毫秒，`2` 代表 `2000` 毫秒。
 
     * `active.http_path`: 用于发现upstream节点健康可用的HTTP GET请求路径。
     * `active.host`: 用于发现upstream节点健康可用的HTTP请求主机名。
