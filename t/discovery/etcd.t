@@ -35,6 +35,7 @@ $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/config_center: etcd/config_center: yaml/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
+$yaml_config =~ s/  discovery:/#  discovery:/;
 $yaml_config =~ s/error_log_level: "warn"/error_log_level: "info"/;
 
 
@@ -52,7 +53,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local etcd = require('apisix.core.etcd')
-            etcd.set(discovery_key, { test_service_name = { host = "127.0.0.1", port = 9080} })
+            etcd.set("service_dicovery", { test_service_name = { host = "127.0.0.1", port = 9080} })
         }
     }
 --- request
