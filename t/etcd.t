@@ -31,7 +31,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local res, err = core.etcd.set("/test_key", "test")
+            local res, err = core.etcd.set("/services/1", [[mexxxxxxxxxxxxxxx]])
 
             if res.status >= 300 then
                 ngx.status = code
@@ -39,6 +39,7 @@ __DATA__
             end
 
             ngx.print(core.json.encode(res.body))
+            core.etcd.delete("/services/1")
             ngx.sleep(1)
         }
     }
@@ -47,6 +48,4 @@ GET /t
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
-qr{invalid item data of \[/apisix/test\], val: 123xxxx, it shoud be a object}
---- response_body_like eval
-qr/"value":"123xxxx"/
+qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud be a object}

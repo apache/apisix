@@ -49,12 +49,12 @@ local mt = {
     end
 }
 
-local function readdir(etcd_cli, key, opts)
+local function readdir(etcd_cli, key)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:readdir(key, opts)
+    local res, err = etcd_cli:readdir(key, true)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, nil, err
@@ -67,12 +67,12 @@ local function readdir(etcd_cli, key, opts)
     return res
 end
 
-local function watchdir(etcd_cli, key, opts)
+local function waitdir(etcd_cli, key, modified_index)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:watchdir(key, opts)
+    local res, err = etcd_cli:waitdir(key, modified_index)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
@@ -122,20 +122,22 @@ local function sync_data(self)
         if not res then
             return false, err
         end
-
-        local dir_res, headers = res.body.kvs, res.headers
+        -- node to kvs, headers seems move to under body
+        local dir_res, headers = res.body.node, res.headers
         log.debug("readdir key: ", self.key, " res: ",
+                  json.delay_encode(dir_res))
+        log.error("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then
             return false, err
         end
 
-        -- if not dir_res.dir then
-        --     return false, self.key .. " is not a dir"
-        -- end
-
-        if not dir_res.kvs then
-            dir_res.kvs = {}
+        if not dir_res.dir then
+            return false, self.key .. " is not a dir"
+        end
+        -- nodes to ?
+        if not dir_res.nodes then
+            dir_res.nodes = {}
         end
 
         if self.values then
@@ -152,11 +154,11 @@ local function sync_data(self)
             self.values_hash = nil
         end
 
-        self.values = new_tab(#dir_res.kvs, 0)
-        self.values_hash = new_tab(0, #dir_res.kvs)
+        self.values = new_tab(#dir_res.nodes, 0)
+        self.values_hash = new_tab(0, #dir_res.nodes)
 
         local changed = false
-        for _, item in ipairs(dir_res.kvs) do
+        for _, item in ipairs(dir_res.nodes) do
             local key = short_key(self, item.key)
             local data_valid = true
             if type(item.value) ~= "table" then
@@ -186,7 +188,7 @@ local function sync_data(self)
                 end
             end
 
-            self:upgrade_version(item.mod_revision)
+            self:upgrade_version(item.modifiedIndex)
         end
 
         if headers then
@@ -200,35 +202,33 @@ local function sync_data(self)
         self.need_reload = false
         return true
     end
-    -- no timeout as input?
-    local dir_res_fun, err = watchdir(self.etcd_cli, self.key, {start_revision = self.prev_index + 1})
-    local dir_res, err = dir_res_fun()  --get the first change
-    log.info("watchdir key: ", self.key, " prev_index: ", self.prev_index + 1)
+    -- waitdir
+    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
+    log.error("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
+    log.error("res: ", json.delay_encode(dir_res, true))
     if not dir_res then
         return false, err
     end
 
-    local res = dir_res.result.events.kv
-    -- TODO: would be effected when compact in v3
-    --[[
+    local res = dir_res.body.node
     local err_msg = dir_res.body.message
     if err_msg then
         if err_msg == "The event in requested index is outdated and cleared"
            and dir_res.body.errorCode == 401 then
             self.need_reload = true
-            log.warn("watchdir [", self.key, "] err: ", err_msg,
+            log.warn("waitdir [", self.key, "] err: ", err_msg,
                      ", need to fully reload")
             return false
         end
         return false, err
     end
-    ]]--
 
     if not res then
         if err == "The event in requested index is outdated and cleared" then
             self.need_reload = true
-            log.warn("watchdir [", self.key, "] err: ", err,
+            log.warn("waitdir [", self.key, "] err: ", err,
                      ", need to fully reload")
             return false
         end
@@ -238,7 +238,7 @@ local function sync_data(self)
 
     local key = short_key(self, res.key)
     if res.value and type(res.value) ~= "table" then
-        self:upgrade_version(res.mod_revision)
+        self:upgrade_version(res.modifiedIndex)
         return false, "invalid item data of [" .. self.key .. "/" .. key
                       .. "], val: " .. tostring(res.value)
                       .. ", it shoud be a object"
@@ -247,16 +247,15 @@ local function sync_data(self)
     if res.value and self.item_schema then
         local ok, err = check_schema(self.item_schema, res.value)
         if not ok then
-            self:upgrade_version(res.mod_revision)
+            self:upgrade_version(res.modifiedIndex)
 
             return false, "failed to check item data of ["
                           .. self.key .. "] err:" .. err
         end
     end
 
-    self:upgrade_version(res.mod_revision)
-    -- no dir
-    --[[
+    self:upgrade_version(res.modifiedIndex)
+
     if res.dir then
         if res.value then
             return false, "todo: support for parsing `dir` response "
@@ -264,12 +263,11 @@ local function sync_data(self)
         end
         return false
     end
-    ]]--
 
     if self.filter then
         self.filter(res)
     end
-    -- ?clean_handlers
+
     local pre_index = self.values_hash[key]
     if pre_index then
         local pre_val = self.values[pre_index]
@@ -391,8 +389,6 @@ function _M.new(key, opts)
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil
-    etcd_conf.protocol = etcd_conf.version
-    etcd_conf.version = nil
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
