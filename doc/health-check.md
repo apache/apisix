@@ -45,6 +45,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "retries": 2,
         "checks": {
             "active": {
+                "timeout": 5,
                 "http_path": "/status",
                 "host": "foo.com",
                 "healthy": {
@@ -77,6 +78,8 @@ The configures in `checks` are belong to health check, the type of `checks`
 contains: `active` or `passive`.
 
 * `active`: To enable active health checks, you need to specify the configuration items under `checks.active` in the Upstream object configuration.
+
+  * `active.timeout`: Socket timeout for active checks (in seconds), support decimals. For example `1.01` means `1010` milliseconds, `2` means `2000` milliseconds.
 
   * `active.http_path`: The HTTP GET request path used to detect if the upstream is healthy.
   * `active.host`: The HTTP request host used to detect if the upstream is healthy.
