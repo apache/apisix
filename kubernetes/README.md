@@ -21,7 +21,7 @@
 There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
-- Install etcd , and set env `etcd_url` in `config.sh`
+- use `etcd` , if there is no `etcd` service, please install and set env `etcd_url` in `config.sh`
 
 - Run `config.sh` to generate `apisix-gw-config-cm.yaml` from the latest `config.yaml`
 
