@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 BEGIN {
-    $ENV{"ETCD_ENABLE_AUTH"} = "false";
+    $ENV{"ETCD_ENABLE_AUTH"} = "true";
     $ENV{"ETCDCTL_API"} = "3"
 }
 

@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 BEGIN {
-    $ENV{"ETCD_ENABLE_AUTH"} = "false";
+    $ENV{"ETCD_ENABLE_AUTH"} = "true";
     $ENV{"ETCDCTL_API"} = "2"
 }
 
@@ -38,8 +38,6 @@ add_block_preprocessor(sub {
             return nil, nil, err
         end
         ver = local_conf.etcd.version
-        local inspect = require("inspect")
-        ngx.say(inspect(local_conf.etcd))
 
         if ver == "v3" then
             ngx.say(res.body.kvs[1].value)
@@ -74,9 +72,8 @@ __DATA__
             local val = "test_value"
             core.etcd.set(key, val)
             local res, err = core.etcd.get(key)
-            local inspect = require("inspect")
-            -- ngx.say(inspect(err))
             check_val(res)
+            -- delete key?
             core.etcd.delete(val)
         }
     }
