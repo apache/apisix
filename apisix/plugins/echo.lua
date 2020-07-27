@@ -43,14 +43,15 @@ local schema = {
         auth_value = {
             description = "auth value",
             type = "string"
-        }
+        },
     },
     anyOf = {
         {required = {"before_body"}},
         {required = {"body"}},
         {required = {"after_body"}}
     },
-    minProperties = 1
+    minProperties = 1,
+    additionalProperties = false,
 }
 
 local plugin_name = "echo"
@@ -62,26 +63,16 @@ local _M = {
     schema = schema,
 }
 
-function _M.check_schema(conf)
-    if conf.headers then
-        conf.headers_arr = {}
 
-        for field, value in pairs(conf.headers) do
-            if type(field) == 'string'
-                    and (type(value) == 'string' or type(value) == 'number') then
-                if #field == 0 then
-                    return false, 'invalid field length in header'
-                end
-                core.table.insert(conf.headers_arr, field)
-                core.table.insert(conf.headers_arr, value)
-            else
-                return false, 'invalid type as header value'
-            end
-        end
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
     end
 
-    return core.schema.check(schema, conf)
+    return true
 end
+
 
 function _M.body_filter(conf, ctx)
     if conf.body then
@@ -98,6 +89,7 @@ function _M.body_filter(conf, ctx)
     ngx.arg[2] = true
 end
 
+
 function _M.access(conf, ctx)
     local value = core.request.header(ctx, "Authorization")
 
@@ -107,12 +99,32 @@ function _M.access(conf, ctx)
 
 end
 
+
 function _M.header_filter(conf, ctx)
-    if conf.headers_arr then
-        local field_cnt = #conf.headers_arr
-        for i = 1, field_cnt, 2 do
-            ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
+    if not conf.headers then
+        return
+    end
+
+    if not conf.headers_arr then
+        conf.headers_arr = {}
+
+        for field, value in pairs(conf.headers) do
+            if type(field) == 'string'
+                    and (type(value) == 'string' or type(value) == 'number') then
+                if #field == 0 then
+                    return false, 'invalid field length in header'
+                end
+                core.table.insert(conf.headers_arr, field)
+                core.table.insert(conf.headers_arr, value)
+            else
+                return false, 'invalid type as header value'
+            end
         end
+    end
+
+    local field_cnt = #conf.headers_arr
+    for i = 1, field_cnt, 2 do
+        ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
     end
 end
 
