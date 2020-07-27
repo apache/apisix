@@ -427,3 +427,74 @@ GET /t
 invalid base64 content
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: print the plugin `conf` in etcd, no dirty data
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local encode_with_keys_sorted = require("lib.json_sort").encode
+
+            local code, _, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers" : {
+                                "X-Server-id": 3,
+                                "X-Server-status": "on",
+                                "Content-Type": ""
+                            },
+                            "body": "new body\n"
+                        }
+                    },
+                    "uri": "/with_header"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local resp_data = core.json.decode(body)
+            ngx.say(encode_with_keys_sorted(resp_data.node.value.plugins))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"response-rewrite":{"body":"new body\n","headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16:  additional property
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                body = 'Hello world',
+                headers = {
+                    ["X-Server-id"] = 3
+                },
+                invalid_att = "invalid",
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+additional properties forbidden, found invalid_att
+--- no_error_log
+[error]
