@@ -273,7 +273,7 @@ local upstream_schema = {
         nodes = nodes_schema,
         retries = {
             type = "integer",
-            minimum = 1,
+            minimum = 0,
         },
         timeout = {
             type = "object",
