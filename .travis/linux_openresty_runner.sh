@@ -149,7 +149,7 @@ script() {
     fi
 
     #kill apisix
-    sudo kill -s 9 `ps aux | grep apisix | awk '{print $2}'`
+    sudo kill -s 9 `ps aux | grep apisix | grep nginx | awk '{print $2}'`
 
     #start -> ok
     res=`./bin/apisix start`
