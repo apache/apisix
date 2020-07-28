@@ -209,7 +209,7 @@ local function pick_server(route, ctx)
     if ctx.balancer_try_count == 1 then
         local retries = up_conf.retries
         if not retries or retries < 0 then
-            retries = #up_conf.nodes
+            retries = #up_conf.nodes - 1
         end
 
         if retries > 0 then
