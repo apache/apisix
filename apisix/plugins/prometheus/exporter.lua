@@ -265,6 +265,15 @@ function _M.collect()
                        "processing metrics endpoint: ", err)
     end
 
+    local res, err = config:getkey("/routes")
+    core.log.error("err:", err)
+    if res and res.headers then
+        clear_tab(key_values)
+        -- global max
+        key_values[1] = "x_etcd_index"
+        metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
+    end
+
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())
 end

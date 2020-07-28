@@ -49,6 +49,26 @@ local mt = {
     end
 }
 
+
+local function getkey(etcd_cli, key)
+    if not etcd_cli then
+        return nil, "not inited"
+    end
+
+    local res, err = etcd_cli:get(key)
+    if not res then
+        -- log.error("failed to get key from etcd: ", err)
+        return nil, err
+    end
+
+    if type(res.body) ~= "table" then
+        return nil, "failed to get key from etcd"
+    end
+
+    return res
+end
+
+
 local function readdir(etcd_cli, key)
     if not etcd_cli then
         return nil, nil, "not inited"
@@ -327,6 +347,15 @@ function _M.get(self, key)
     end
 
     return self.values[arr_idx]
+end
+
+
+function _M.getkey(self, key)
+    if not self.running then
+        return nil, "stoped"
+    end
+
+    return getkey(self.etcd_cli, key)
 end
 
 
