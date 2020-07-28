@@ -858,8 +858,12 @@ function _M.start(...)
     local pid_path = apisix_home .. "/logs/nginx.pid"
     local pid, err = read_file(pid_path)
     if pid then
-        print("APISIX is running...")
-        return nil
+        local hd = io.popen("lsof -p " .. pid)
+        local res = hd:read("*a")
+        if res and res ~= "" then
+            print("APISIX is running...")
+            return nil
+        end
     end
 
     init(...)
@@ -868,7 +872,6 @@ function _M.start(...)
     local cmd = openresty_args
     -- print(cmd)
     os.execute(cmd)
-
 end
 
 function _M.stop()

@@ -141,12 +141,22 @@ script() {
     ./bin/apisix init_etcd
     ./bin/apisix start
 
-    #start again
+    #start again  --> fial
     res=`./bin/apisix start`
     if [ "$res" != "APISIX is running..." ]; then
         echo "failed: APISIX runs repeatedly"
         exit 1
     fi
+
+    #kill apisix
+    sudo kill -s 9 `ps aux | grep apisix | awk '{print $2}'`
+
+    #start -> ok
+    res=`./bin/apisix start`
+    if [ "$res" != "APISIX is running..." ]; then
+        echo "failed: APISIX runs repeatedly"
+        exit 1
+    fi    
 
     sleep 1
     cat logs/error.log
