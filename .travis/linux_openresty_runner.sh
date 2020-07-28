@@ -153,8 +153,8 @@ script() {
 
     #start -> ok
     res=`./bin/apisix start`
-    if [ "$res" != "APISIX is running..." ]; then
-        echo "failed: APISIX runs repeatedly"
+    if [ "$res" == "APISIX is running..." ]; then
+        echo "failed: shouldn't stop APISIX running after kill the old process."
         exit 1
     fi
 
