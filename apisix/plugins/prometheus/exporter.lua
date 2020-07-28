@@ -218,7 +218,7 @@ local function etcd_modify_index()
     local global_rules = router.global_rules
     if global_rules then
         global_max_idx = set_modify_index("global_rules", global_rules.values,
-            global_rules.conf_version, global_max_idx)      
+            global_rules.conf_version, global_max_idx)
     end
 
     -- upstreams
@@ -227,7 +227,8 @@ local function etcd_modify_index()
 
     -- stream_routes
     local stream_routes, stream_routes_ver = get_stream_routes()
-    global_max_idx = set_modify_index("stream_routes", stream_routes, stream_routes_ver, global_max_idx)
+    global_max_idx = set_modify_index("stream_routes", stream_routes,
+        stream_routes_ver, global_max_idx)
 
     -- proto
     local protos, protos_ver = get_protos()
