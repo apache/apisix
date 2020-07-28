@@ -400,7 +400,7 @@ function _M.new(key, opts)
     etcd_conf.prefix = nil
     etcd_conf.protocol = etcd_conf.version
     etcd_conf.version = nil
-    etcd_conf.api_prefix = "/v3alpha"
+    etcd_conf.api_prefix = "/v3"
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
