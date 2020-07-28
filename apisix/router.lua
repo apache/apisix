@@ -111,6 +111,14 @@ function _M.http_routes()
     return _M.router_http.routes()
 end
 
+function _M.stream_routes()
+    -- maybe it's not inited.
+    if not _M.router_stream then
+        return nil, nil
+    end
+    return _M.router_stream.routes()
+end
+
 
 -- for test
 _M.filter_test = filter
