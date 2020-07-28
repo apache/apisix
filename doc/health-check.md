@@ -83,6 +83,7 @@ contains: `active` or `passive`.
 
   * `active.http_path`: The HTTP GET request path used to detect if the upstream is healthy.
   * `active.host`: The HTTP request host used to detect if the upstream is healthy.
+  * `active.port`: The customize health check host port (optional), this will override the port in the `upstream` node.
 
   The threshold fields of `healthy` are:
   * `active.healthy.interval`: Interval between health checks for healthy targets (in seconds), the minimum is 1.
