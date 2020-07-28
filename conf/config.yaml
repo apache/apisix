@@ -100,6 +100,7 @@ apisix:
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
 #  discovery: eureka               # service discovery center
+#  discovery: nacos               # enable nacos discovery
 nginx_config:                     # config for render the template to genarate nginx.conf
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
@@ -138,6 +139,19 @@ etcd:
 #    connect: 2000                 # default 2000ms
 #    send: 2000                    # default 2000ms
 #    read: 5000                    # default 5000ms
+
+#nacos:
+#  host:
+#    - "http://nacos:nacos@127.0.0.1:8848"
+#  prefix: "/nacos/"
+#  namespace: public
+#  group: DEFAULT_GROUP
+#  fetch_interval: 30
+#  weight: 100
+#  timeout:
+#    connect: 2000
+#    send: 2000
+#    read: 5000
 
 plugins:                          # plugin list
   - example-plugin
