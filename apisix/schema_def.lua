@@ -80,7 +80,7 @@ local health_checker = {
                 host = host_def,
                 port = {
                     type = "integer",
-                    minimum = 1000,
+                    minimum = 1,
                     maximum = 65535
                 },
                 http_path = {type = "string", default = "/"},
