@@ -165,7 +165,7 @@ local function fetch_instance(service)
     local json_str = res.body
     local data, err = core.json.decode(json_str)
     if not data then
-        log.error("get instance from nacos for " .. service  .. ", invalid response body: ", json_str, " err: ", err)
+        log.error("get instance for "..service..",invalid response body: ",json_str, " err: ", err)
         return
     end
 
@@ -206,13 +206,13 @@ local function fetch_all_instance(premature)
     if not request_uri then
         return
     end
-	
+
     local namespace = local_conf.nacos.namespace or "public"
     local group = local_conf.nacos.group or "DEFAULT_GROUP"
 
     -- get all service
-    local getAllServiceQuery="pageNo=1&pageSize=1000" .. "&groupName=" .. group .. "&namespaceId=" .. namespace
-    local res, err = request(request_uri, basic_auth, "GET", "v1/ns/service/list", getAllServiceQuery)
+    local getServiceQuery="pageNo=1&pageSize=1000".."&groupName="..group.."&namespaceId="..namespace
+    local res, err = request(request_uri, basic_auth, "GET", "v1/ns/service/list", getServiceQuery)
     if not res then
         log.error("failed to fetch services ", err)
         return
@@ -252,7 +252,6 @@ function _M.nodes(service_name)
         log.error("failed to fetch nodes for: ", service_name)
         return
     end
-    
     return applications[service_name]
 end
 
