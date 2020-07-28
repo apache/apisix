@@ -64,7 +64,7 @@ We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
-Puts this uri address into prometheus, and it will automatically fetch
+Puts this URL address into prometheus, and it will automatically fetch
 these metric data.
 
 For example like this:

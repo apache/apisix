@@ -76,7 +76,7 @@ Config Example:
 {
     "id": "1",                  # id, unnecessary.
     "uri": "/release/a",        # uri
-    "uris": ["/a","/b"],        # A set of uri, uri and uris need only have a non-empty one.
+    "uris": ["/a","/b"],        # A set of uri, URL and uris need only have a non-empty one.
     "methods": ["GET","POST"],  # Can fill multiple methods
     "host": "aa.com",           # host
     "hosts": ["a.com","b.com"], # A set of host. Host and hosts only need to be non-empty one.
