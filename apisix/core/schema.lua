@@ -41,7 +41,7 @@ local function get_validator(schema)
                                 create_validator, schema)
 
     if not validator then
-        return false, err
+        return nil, err
     end
 
     return validator, nil

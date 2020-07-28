@@ -44,23 +44,21 @@ local _M = {
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
-        return nil, err
+        return false, err
     end
 
     if conf.body_schema then
         ok, err = core.schema.valid(conf.body_schema)
-    end
-
-    if not ok then
-        return nil, err
+        if not ok then
+            return false, err
+        end
     end
 
     if conf.header_schema then
         ok, err = core.schema.valid(conf.header_schema)
-    end
-
-    if not ok then
-        return nil, err
+        if not ok then
+            return false, err
+        end
     end
 
     return true, nil
