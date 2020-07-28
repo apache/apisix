@@ -83,6 +83,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
     * `active.http_path`: 用于发现upstream节点健康可用的HTTP GET请求路径。
     * `active.host`: 用于发现upstream节点健康可用的HTTP请求主机名。
+    * `active.port`: 用于发现upstream节点健康可用的自定义主机端口（可选），配置此项会覆盖 `upstream` 节点中的端口。
 
     `healthy`的阀值字段：
     * `active.healthy.interval`: 健康的目标节点的健康检查间隔时间（以秒为单位），最小值为1。

@@ -78,6 +78,11 @@ local health_checker = {
                 timeout = {type = "number", default = 1},
                 concurrency = {type = "integer", default = 10},
                 host = host_def,
+                port = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 65535
+                },
                 http_path = {type = "string", default = "/"},
                 https_verify_certificate = {type = "boolean", default = true},
                 healthy = {
