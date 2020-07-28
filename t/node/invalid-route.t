@@ -47,8 +47,6 @@ GET /t
 qr/\[error\].*/
 --- grep_error_log_out eval
 qr{invalid item data of \[/apisix/routes/1\], val: mexxxxxxxxxxxxxxx, it shoud be a object}
---- response_body_like eval
-qr/"value":"mexxxxxxxxxxxxxxx"/
 
 
 

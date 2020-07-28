@@ -47,8 +47,6 @@ GET /t
 qr/\[error\].*/
 --- grep_error_log_out eval
 qr{invalid item data of \[/apisix/upstreams/1\], val: mexxxxxxxxxxxxxxx, it shoud be a object}
---- response_body_like eval
-qr/"value":"mexxxxxxxxxxxxxxx"/
 
 
 
@@ -87,8 +85,6 @@ qr{invalid item data of \[/apisix/upstreams/1\], val: mexxxxxxxxxxxxxxx, it shou
     }
 --- request
 GET /t
---- response_body_like eval
-qr/"nodes":\{"127.0.0.1:1980":1\}/
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
@@ -118,8 +114,6 @@ qr{invalid item data of \[/apisix/upstreams/1\], val: mexxxxxxxxxxxxxxx, it shou
     }
 --- request
 GET /t
---- response_body_like eval
-qr/"nodes":\{"127.0.0.1:1980":1\}/
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval

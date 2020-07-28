@@ -37,6 +37,7 @@ before_cache:
 before_install:
   - echo $OSNAME
   - $PWD/.travis/${OSNAME}_runner.sh before_install
+  - echo $(etcdctl --version)
 
 install:
   - $PWD/.travis/${OSNAME}_runner.sh do_install

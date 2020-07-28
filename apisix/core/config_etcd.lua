@@ -72,13 +72,16 @@ local function watchdir(etcd_cli, key, opts)
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:watchdir(key, opts)
+    local res_fun, err = etcd_cli:watchdir(key, opts)
+    res_fun() -- skip create info
+    local res, err = res_fun()
+
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
     end
 
-    if type(res.body) ~= "table" then
+    if type(res.result) ~= "table" then
         return nil, "failed to read etcd dir"
     end
 
@@ -119,13 +122,15 @@ local function sync_data(self)
 
     if self.need_reload then
         local res, err = readdir(self.etcd_cli, self.key)
-        -- local res, err = self.etcd_cli:get(self.key)
+        local inspect = require("inspect")
+        -- log.error("wtf: ",inspect(res))
         if not res then
             return false, err
         end
+        if res.body.error then
+            return res, err
+        end
 
-        local inspect = require("inspect")
-        -- log.error(inspect(res))
         local dir_res, header = res.body, res.body.header
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
@@ -138,9 +143,9 @@ local function sync_data(self)
         -- end
 
         if not dir_res.kvs then
-            dir_res.kvs = {{}}
+            dir_res.kvs = {}
             -- not return k-v initially, not like v2
-            dir_res.kvs[1].key = self.key
+            dir_res.kvs.key = self.key
         end
         
         if self.values then
@@ -159,7 +164,6 @@ local function sync_data(self)
 
         self.values = new_tab(#dir_res.kvs, 0)
         self.values_hash = new_tab(0, #dir_res.kvs)
-        -- log.error("test here: ", inspect(dir_res.kvs))
 
         local changed = false
         
@@ -195,7 +199,6 @@ local function sync_data(self)
 
             self:upgrade_version(item.mod_revision)
         end
-
         if header then
             self:upgrade_version(header.revision)
         end
@@ -207,16 +210,15 @@ local function sync_data(self)
         self.need_reload = false
         return true
     end
-    -- no timeout as input?
-    local dir_res_fun, err = watchdir(self.etcd_cli, self.key, {start_revision = self.prev_index + 1})
-    local dir_res, err = dir_res_fun()  --get the first change
+    -- get the first change
+    local dir_res, err = watchdir(self.etcd_cli, self.key, {start_revision = self.prev_index + 1, progress_notify = true})
     log.info("watchdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
     if not dir_res then
         return false, err
     end
 
-    local res = dir_res.result.events.kv
+    local res = dir_res.result.events[1].kv
     -- TODO: would be effected when compact in v3
     --[[
     local err_msg = dir_res.body.message
@@ -400,8 +402,7 @@ function _M.new(key, opts)
     etcd_conf.prefix = nil
     etcd_conf.protocol = etcd_conf.version
     etcd_conf.version = nil
-
-    
+    etcd_conf.api_prefix = "/v3alpha"
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)

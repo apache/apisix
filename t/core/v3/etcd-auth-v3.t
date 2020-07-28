@@ -70,8 +70,7 @@ __DATA__
             local val = "test_value"
             core.etcd.set(key, val)
             local res, err = core.etcd.get(key)
-            ngx.say(res.body.error)
-            -- check_val(res)
+            check_val(res)
             core.etcd.delete(val)
         }
     }

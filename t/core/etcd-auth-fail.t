@@ -16,10 +16,12 @@
 #
 BEGIN {
     $ENV{"ETCD_ENABLE_AUTH"} = "false";
-    $ENV{"ETCDCTL_API"} = "2"
+    # $ENV{"ETCDCTL_API"} = "2"
 }
 
-use t::APISIX 'no_plan';
+use t::APISIX;
+
+plan(skip_all => "etcd is too old, skip v3 protocol");
 
 repeat_each(1);
 no_long_string();

@@ -113,6 +113,9 @@ end
 
 
 local function sync_data(self)
+    math.randomseed(tostring(os.time()))
+    local inspect = require("inspect")
+    local ii = math.random(100)
     if not self.key then
         return nil, "missing 'key' arguments"
     end
@@ -126,7 +129,7 @@ local function sync_data(self)
         local dir_res, headers = res.body.node, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
-        log.error("readdir key: ", self.key, " res: ",
+        log.error(ii, ": readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then
             return false, err
@@ -203,11 +206,12 @@ local function sync_data(self)
         return true
     end
     -- waitdir
+    log.error(ii, ": waitdir key: ", self.key)
     local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
-    log.error("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
+    --log.error(ii, ": waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
-    log.error("res: ", json.delay_encode(dir_res, true))
+    --log.error(ii, ": res: ", inspect(dir_res))
     if not dir_res then
         return false, err
     end
