@@ -72,7 +72,7 @@ function _M.push(key, value, opts)
     if not etcd_cli then
         return nil, err
     end
-
+    -- use pseudo_key (a key that might never be used) to get current revision, to simulate push in v2
     local pseudo_key = "/5tHkHhY/kjr6cQY"
 
     local res, err = etcd_cli:set(pseudo_key, nil, {prev_kv = true})

@@ -16,7 +16,6 @@
 --
 local require = require
 local router = require("resty.radixtree")
-local log          = require("apisix.core.log")
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local ipairs = ipairs
@@ -126,8 +125,6 @@ local function create_radixtree_router(routes)
             })
         end
     end
-    local inspect = require("inspect")
-    log.error("test: ", inspect(only_uri_routes))
     only_uri_router = router.new(only_uri_routes)
     return true
 end

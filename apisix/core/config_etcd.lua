@@ -122,8 +122,6 @@ local function sync_data(self)
 
     if self.need_reload then
         local res, err = readdir(self.etcd_cli, self.key)
-        local inspect = require("inspect")
-        -- log.error("wtf: ",inspect(res))
         if not res then
             return false, err
         end
