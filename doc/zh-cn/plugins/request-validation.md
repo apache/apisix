@@ -17,34 +17,34 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/request-validation.md)
+[English](../../plugins/request-validation.md)
 
-# Summary
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-- [**Examples**](#examples)
+# 目录
+- [**名字**](#名字)
+- [**属性**](#属性)
+- [**如何启用**](#如何启用)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
+- [**示例**](#示例)
+
+## 名字
+
+`request-validation` 插件用于提前验证请求向上游转发请求，可以验证请求的 `body` 及 `header` 数据。
+
+该插件使用 `Json Schema` 进行数据验证，有关 `Json Schema` 的更多信息，请参阅 [JSON schema](https://github.com/api7/jsonschema) 。 
 
 
-## Name
+## 属性
 
-`request-validation` plugin validates the requests before forwarding to an upstream service. The validation plugin uses
-json-schema to validate the schema. The plugin can be used to validate the headers and body data.
-
-For more information on schema, refer to [JSON schema](https://github.com/api7/jsonschema) for more information.
-
-## Attributes
-
-|Name           |Requirement    |Description|
+|名称           |必选项          |描述|
 |---------      |--------       |-----------|
-| header_schema |optional       |schema for the header data|
-| body_schema   |optional       |schema for the body data|
+| header_schema |可选           |`header` 数据的 `schema` 数据结构|
+| body_schema   |可选           |`body` 数据的 `schema` 数据结构|
 
-## How To Enable
 
-Create a route and enable the request-validation plugin on the route:
+## 如何启用
+
+创建一条路由并在该路由上启用 `request-validation` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -71,7 +71,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-## Test Plugin
+
+## 测试插件
 
 ```shell
 curl --header "Content-Type: application/json" \
@@ -80,12 +81,12 @@ curl --header "Content-Type: application/json" \
   http://127.0.0.1:9080/get
 ```
 
-If the schema is violated the plugin will yield a `400` bad request.
+如果 `Schema` 验证失败，将返回 `400 bad request` 错误。
 
-## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `request-validation`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+## 禁用插件
+
+在路由 `plugins` 配置块中删除 `request-validation` 配置，即可禁用该插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -103,9 +104,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 
-## Examples:
+## 示例
 
-**Using ENUMS:**
+**验证 `Enums`:**
 
 ```shell
 "body_schema": {
@@ -121,8 +122,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
-**JSON with multiple levels:**
+**验证 多级`Json`:**
 
 ```shell
 "body_schema": {
