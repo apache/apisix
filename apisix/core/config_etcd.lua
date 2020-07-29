@@ -228,7 +228,7 @@ local function sync_data(self)
 
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
-    if not dir_res then
+    if err and err == "timeout" then
         if key_res and key_res.headers then
             local key_index = key_res.headers["X-Etcd-Index"]
             local key_idx = key_index and tonumber(key_index) or 0
@@ -238,7 +238,9 @@ local function sync_data(self)
                 self:upgrade_version(key_index)
             end
         end
+    end
 
+    if not dir_res then
         return false, err
     end
 

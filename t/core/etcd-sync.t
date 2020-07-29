@@ -72,7 +72,7 @@ prev_index updated
 		            item_schema = core.schema.consumer
 		        })
 
-		    ngx.sleep(0.5)
+		    ngx.sleep(0.2)
 		    local idx = consumers.prev_index
 
 		    core.log.error("idx:", idx)
@@ -81,7 +81,7 @@ prev_index updated
             local val = "test_value"
             core.etcd.set(key, val)
 
-            ngx.sleep(2)
+            ngx.sleep(1)
 
             local new_idx = consumers.prev_index
             core.log.error("new_idx:", new_idx)
@@ -98,6 +98,3 @@ GET /t
 --- response_body
 prev_index not update
 --- timeout: 3
-
-
-
