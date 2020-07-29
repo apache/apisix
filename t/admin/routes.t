@@ -1882,6 +1882,79 @@ GET /t
         }
     }
 --- request
-GET /t   
+GET /t
 --- response_headers
 Content-Type: application/json
+
+
+
+=== TEST 52: set route with size 36k (temporary file to store request body)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local core = require("apisix.core")
+            local s = string.rep("a", 1024 * 35)
+            local req_body = [[{
+                "upstream": {
+                    "nodes": {
+                        "]] .. s .. [[": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/index.html"
+            }]]
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT, req_body)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say("req size: ", #req_body)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+req size: 36066
+passed
+--- error_log
+a client request body is buffered to a temporary file
+
+
+
+=== TEST 53: route size more than 1.5 MiB
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local s = string.rep( "a", 1024 * 1024 * 1.6 )
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "]] .. s .. [[",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid request body: request size 1678025 is greater than the maximum size 1572864 allowed"}
+--- error_log
+failed to read request body: request size 1678025 is greater than the maximum size 1572864 allowed
