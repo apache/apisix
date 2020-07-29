@@ -353,7 +353,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
 |key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](../health-check.md)||
-|retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制||
+|retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制||
 |timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
 |enable_websocket     |可选 |辅助|是否允许启用 websocket 能力||
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
@@ -365,7 +365,7 @@ upstream 对象 json 配置内容：
 ```shell
 {
     "id": "1",                  # id
-    "retries": 0,               # 请求重试次数
+    "retries": 1,               # 请求重试次数
     "timeout": {                # 设置连接、发送消息、接收消息的超时时间
         "connect":15,
         "send":15,
