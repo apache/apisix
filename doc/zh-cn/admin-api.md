@@ -139,6 +139,86 @@ HTTP/1.1 201 Created
 Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
+
+# 给路由增加一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 1
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给路由更新一个 upstream node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 10
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给路由删除一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.215:80": null
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换路由的 upstream nodes
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
+
+
+# 替换路由的 methods
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1/methods -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '["POST", "DELETE", "PATCH"]'
+HTTP/1.1 200 OK
+...
+
+执行成功后，methods 将不保留原来的数据，整个更新为：
+["POST", "DELETE", "PATCH"]
+
+
 ```
 
 > 应答参数
@@ -244,17 +324,78 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
 # 返回结果
 
 HTTP/1.1 201 Created
-Date: Thu, 26 Dec 2019 03:48:47 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Credentials: true
-Access-Control-Expose-Headers: *
-Access-Control-Max-Age: 3600
-Server: APISIX web server
+...
 
-{"node":{"value":{"upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"},"plugins":{"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":60,"key":"\/apisix\/services\/201","modifiedIndex":60},"action":"set"}
+
+# 给 Service 增加一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 1
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给 Service 更新一个 upstream node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 10
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给 Service 删除一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.215:80": null
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换 Service 的 upstream nodes
+$ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
+
 ```
 
 > 应答参数
@@ -409,11 +550,71 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
     }
 }'
 HTTP/1.1 201 Created
-Date: Thu, 26 Dec 2019 04:19:34 GMT
-Content-Type: text/plain
 ...
 
-{"node":{"value":{"nodes":{"127.0.0.1:80":1,"foo.com:80":3,"127.0.0.2:80":2},"type":"roundrobin"},"createdIndex":61,"key":"\/apisix\/upstreams\/100","modifiedIndex":61},"action":"set"}
+
+# 给 Upstream 增加一个 node
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.216:80": 1
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给 Upstream 更新一个 node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.216:80": 10
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给 Upstream 删除一个 node
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.215:80": null
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换 Upstream 的  nodes
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
 
 ```
 
