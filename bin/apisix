@@ -109,6 +109,12 @@ worker_rlimit_core  {* worker_rlimit_core *};
 worker_shutdown_timeout {* worker_shutdown_timeout *};
 
 env APISIX_PROFILE;
+# for custom environment variable
+{% if http.environment then %}
+{% for env_key, env_value in pairs(http.environment) do %}
+env {*env_key*}{% if tostring(env_value)~="yaml.null" then %}={*env_value*}{% end %};
+{% end %}
+{% end %}
 
 {% if stream_proxy then %}
 stream {
