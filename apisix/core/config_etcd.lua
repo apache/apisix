@@ -232,7 +232,8 @@ local function sync_data(self)
             local key_index = key_res.headers["X-Etcd-Index"]
             local key_idx = key_index and tonumber(key_index) or 0
             if key_idx and key_idx > self.prev_index then
-                -- Avoid the index to exceed 1000 by updating other keys that will causing a full reload
+                -- Avoid the index to exceed 1000 by updating other keys
+                -- that will causing a full reload
                 self:upgrade_version(key_index)
             end
         end
