@@ -87,12 +87,12 @@ local function readdir(etcd_cli, key)
     return res
 end
 
-local function waitdir(etcd_cli, key, modified_index)
+local function waitdir(etcd_cli, key, modified_index, timeout)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:waitdir(key, modified_index)
+    local res, err = etcd_cli:waitdir(key, modified_index, timeout)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
@@ -221,10 +221,22 @@ local function sync_data(self)
         return true
     end
 
-    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1)
+    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
+
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
     if not dir_res then
+        -- for fetch the last etcd index
+        local key_res, _ = getkey(self.etcd_cli, self.key)
+        if key_res and key_res.headers then
+            local key_index = key_res.headers["X-Etcd-Index"]
+            local key_idx = key_index and tonumber(key_index) or 0
+            if key_idx and key_idx > self.prev_index then
+                -- Avoid the index to exceed 1000 by updating other keys that will causing a full reload
+                self:upgrade_version(key_index)
+            end
+        end
+
         return false, err
     end
 
@@ -424,6 +436,7 @@ function _M.new(key, opts)
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
+    local timeout = opts and opts.timeout
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
@@ -439,6 +452,7 @@ function _M.new(key, opts)
         prev_index = nil,
         last_err = nil,
         last_err_time = nil,
+        timeout = timeout,
         filter = filter_fun,
     }, mt)
 
