@@ -73,7 +73,7 @@ If using a proxy doesn't solve this problem, you can add `--verbose` option duri
 
 ## How to support gray release via APISIX?
 
-An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in uri as a condition：
+An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in URL as a condition：
 
 1. Group A：id <= 1000
 2. Group B：id > 1000
