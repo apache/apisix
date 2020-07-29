@@ -74,6 +74,8 @@ apisix:
       name: "viewer"
       key: 4054f7cf07e344346cd3f287985e76a2
       role: viewer
+
+  delete_uri_tail_slash: false    # delete the '/' at the end of the URI
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
