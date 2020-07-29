@@ -219,6 +219,11 @@ local function etcd_modify_index()
     if global_rules then
         global_max_idx = set_modify_index("global_rules", global_rules.values,
             global_rules.conf_version, global_max_idx)
+
+        -- prev_index
+        key_values[1] = "prev_index"
+        metrics.etcd_modify_indexes:set(global_rules.prev_index, key_values)
+
     else
         global_max_idx = set_modify_index("global_rules", nil, nil, global_max_idx)
     end

@@ -756,11 +756,20 @@ qr/apisix_etcd_modify_indexes\{key="upstreams"\} \d+/
 
 
 
-=== TEST 41: fetch the prometheus metric data with `modify_indexes x_etcd_index`
+=== TEST 41: fetch the prometheus metric data with `modify_indexes prev_index`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="prev_index"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: fetch the prometheus metric data with `modify_indexes x_etcd_index`
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
 --- no_error_log
 [error]
-
