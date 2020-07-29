@@ -71,7 +71,8 @@ function _M.incoming(self, key)
     local remaining
     key = self.plugin_name .. tostring(key)
 
-    local ret = red:ttl(key)
+    -- todo: test case
+    local ret = red:ttl(key) or -2
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
     if ret < 0 then
         -- todo: test case
