@@ -389,3 +389,1132 @@ GET /t
 hello1 world
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: add route (test request validation `body_schema`)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "required": ["required_payload"],
+                                "properties": {
+                                    "required_payload": {"type": "string"},
+                                    "boolean_payload": {"type": "boolean"},
+                                    "timeouts": {
+                                       "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 254,
+                                        "default": 3
+                                    },
+                                    "req_headers": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: add route (test request validation `body_schema.type` is object)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: add route (test request validation `body_schema.type` is array)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "array"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: add route (test request validation `body_schema.type` is string)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: add route (test request validation `body_schema.type` is number)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: add route (test request validation `body_schema.type` is integer)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: add route (test request validation `body_schema.type` is table)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "table"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: add route (test request validation `body_schema.type` is function)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "function"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: add route (test request validation `body_schema.type` failure)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "test"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/invalid JSON type: test/
+--- error_code chomp
+400
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: add route (test request validation `body_schema.enum` failure)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "string",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": "test-enum"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/table expected, got string/
+--- error_code chomp
+400
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: add route (test request validation `body_schema.enum` success)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "string",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: add route (test request validation `body_schema.required` failure)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": "test-required"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/table expected, got string/
+--- error_code chomp
+400
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: add route (test request validation `body_schema.required` success)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": ["test"]
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+
+=== TEST 22: add route (test request validation `header_schema`)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "object",
+                                "required": ["required_payload"],
+                                "properties": {
+                                    "required_payload": {"type": "string"},
+                                    "boolean_payload": {"type": "boolean"},
+                                    "timeouts": {
+                                       "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 254,
+                                        "default": 3
+                                    },
+                                    "req_headers": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: add route (test request validation `header_schema.type` is object)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: add route (test request validation `header_schema.type` is array)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "array"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: add route (test request validation `header_schema.type` is string)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: add route (test request validation `header_schema.type` is number)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: add route (test request validation `header_schema.type` is integer)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: add route (test request validation `header_schema.type` is table)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "table"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: add route (test request validation `header_schema.type` is function)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "function"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: add route (test request validation `header_schema.type` failure)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "test"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/invalid JSON type: test/
+--- error_code chomp
+400
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: add route (test request validation `header_schema.enum` failure)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "string",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": "test-enum"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/table expected, got string/
+--- error_code chomp
+400
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: add route (test request validation `header_schema.enum` success)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "string",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: add route (test request validation `header_schema.required` failure)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": "test-required"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/table expected, got string/
+--- error_code chomp
+400
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: add route (test request validation `header_schema.required` success)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "header_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "test": {
+                                        "type": "string",
+                                        "enum": ["a", "b", "c"]
+                                    }
+                                },
+                                "required": ["test"]
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/plugin/request/validation"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code chomp
+200
+--- no_error_log
+[error]
