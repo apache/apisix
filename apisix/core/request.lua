@@ -14,14 +14,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local lfs = require("lfs")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local tonumber = tonumber
 local error    = error
 local type     = type
 local str_fmt  = string.format
+local io_open  = io.open
+local req_read_body = ngx.req.read_body
+local req_get_body_data = ngx.req.get_body_data
+local req_get_body_file = ngx.req.get_body_file
 
-local _M = {version = 0.1}
+
+local _M = {}
 
 
 local function _headers(ctx)
@@ -94,7 +101,49 @@ function _M.get_remote_client_port(ctx)
         ctx = ngx.ctx.api_ctx
     end
     return tonumber(ctx.var.remote_port)
-  end
+end
+
+
+local function get_file(file_name)
+    local f, err = io_open(file_name, 'r')
+    if not f then
+        return nil, err
+    end
+
+    local req_body = f:read("*all")
+    f:close()
+    return req_body
+end
+
+
+function _M.get_body(max_size)
+    req_read_body()
+
+    local req_body = req_get_body_data()
+    if req_body then
+        return req_body
+    end
+
+    local file_name = req_get_body_file()
+    if not file_name then
+        return nil
+    end
+
+    if max_size then
+        local size, err = lfs.attributes (file_name, "size")
+        if not size then
+            return nil, err
+        end
+
+        if size > max_size then
+            return nil, "request size " .. size .. " is greater than the "
+                        .. "maximum size " .. max_size .. " allowed"
+        end
+    end
+
+    local req_body, err = get_file(file_name)
+    return req_body, err
+end
 
 
 return _M
