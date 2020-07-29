@@ -221,13 +221,14 @@ local function sync_data(self)
         return true
     end
 
+    -- for fetch the etcd index
+    local key_res, _ = getkey(self.etcd_cli, self.key)
+
     local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
 
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
     if not dir_res then
-        -- for fetch the last etcd index
-        local key_res, _ = getkey(self.etcd_cli, self.key)
         if key_res and key_res.headers then
             local key_index = key_res.headers["X-Etcd-Index"]
             local key_idx = key_index and tonumber(key_index) or 0
