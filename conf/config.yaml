@@ -127,7 +127,7 @@ etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
     - "http://127.0.0.1:2379"     # multiple etcd address
   prefix: "/apisix"               # apisix configurations prefix
-  timeout: 30                     # 3 seconds
+  timeout: 30                     # 30 seconds
   # user: root                     # root username for etcd
   # password: 5tHkHhYkjr6cQY        # root password for etcd
 #eureka:
