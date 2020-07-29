@@ -120,9 +120,9 @@ nginx_config:                     # config for render the template to genarate n
       - 'unix:'
     #lua_shared_dicts:              # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m        # custom shared cache, format: `cache-key: cache-size`
-    environment:                   # add custom environment variable to nginx.conf
-      TNS_ADMIN:                     # environment variable format: `env-key: [env-value]`
-      DATACENTER_ID: 1
+    #environment:                   # add custom environment variable to nginx.conf
+    #  TNS_ADMIN:                     # environment variable format: `env-key: [env-value]`
+    #  DATACENTER_ID: 1
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
