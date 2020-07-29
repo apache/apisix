@@ -219,6 +219,8 @@ local function etcd_modify_index()
     if global_rules then
         global_max_idx = set_modify_index("global_rules", global_rules.values,
             global_rules.conf_version, global_max_idx)
+    else
+        global_max_idx = set_modify_index("global_rules", nil, nil, global_max_idx)
     end
 
     -- upstreams
@@ -266,8 +268,7 @@ function _M.collect()
                        "processing metrics endpoint: ", err)
     end
 
-    local res, err = config:getkey("/routes")
-    core.log.error("err:", err)
+    local res, _ = config:getkey("/routes")
     if res and res.headers then
         clear_tab(key_values)
         -- global max
