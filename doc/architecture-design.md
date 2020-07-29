@@ -80,7 +80,7 @@ We configure all the parameters directly in the Route, it's easy to set up, and 
 
 The shortcomings mentioned above are independently abstracted in APISIX by the two concepts [Service](#service) and [Upstream](#upstream).
 
-The route example created below is to proxy the request with uri `/index.html` to the Upstream service with the address `39.97.63.215:80`:
+The route example created below is to proxy the request with URL `/index.html` to the Upstream service with the address `39.97.63.215:80`:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -453,8 +453,8 @@ Set the route that best suits your business needs in the local configuration `co
         * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
-        * `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as uri request parameters, request headers, cookies, and so on.
-    * `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and uri for the current request.
+        * `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
+    * `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and URL for the current request.
 
 * `apisix.router.ssl`: SSL loads the matching route.
     * `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).

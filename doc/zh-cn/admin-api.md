@@ -42,7 +42,7 @@
 |DELETE   |/apisix/admin/routes/{id}|无|删除资源|
 |PATCH    |/apisix/admin/routes/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
 
-> uri 请求参数：
+> URL 请求参数：
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
@@ -80,8 +80,8 @@ route 对象 json 配置内容：
 ```shell
 {
     "id": "1",                  # id，非必填
-    "uri": "/release/a",        # uri 路径
-    "uris": ["/a","/b"],        # 一组 uri 路径， uri 与 uris 只需要有一个非空即可
+    "uri": "/release/a",        # URL 路径
+    "uris": ["/a","/b"],        # 一组 URL 路径， URL 与 uris 只需要有一个非空即可
     "methods": ["GET","POST"],  # 可以填多个方法
     "host": "aa.com",           # host 域名
     "hosts": ["a.com","b.com"], # 一组 host 域名， host 与 hosts 只需要有一个非空即可

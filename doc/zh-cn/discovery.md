@@ -191,7 +191,7 @@ eureka:
 
 ## upstream 配置
 
-APISIX是通过 `upstream.service_name` 与注册中心的服务名进行关联。下面是将 uri 为 "/user/*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
+APISIX是通过 `upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
