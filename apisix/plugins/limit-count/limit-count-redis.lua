@@ -72,7 +72,11 @@ function _M.incoming(self, key)
     key = self.plugin_name .. tostring(key)
 
     -- todo: test case
-    local ret = red:ttl(key) or -2
+    local ret, err = red:ttl(key)
+    if not ret then
+        return false, "failed to get redis ttl: " .. err
+    end
+
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
     if ret < 0 then
         -- todo: test case
