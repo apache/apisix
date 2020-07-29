@@ -31,10 +31,10 @@ __DATA__
 		    local consumers, _ = core.config.new("/consumers", {
 		            automatic = true,
 		            item_schema = core.schema.consumer,
-		            timeout = 1
+		            timeout = 0.2
 		        })
 
-		    ngx.sleep(0.5)
+		    ngx.sleep(0.2)
 		    local idx = consumers.prev_index
 
 		    core.log.error("idx:", idx)
@@ -43,7 +43,7 @@ __DATA__
             local val = "test_value"
             core.etcd.set(key, val)
 
-            ngx.sleep(2)
+            ngx.sleep(1)
 
             local new_idx = consumers.prev_index
             core.log.error("new_idx:", new_idx)
