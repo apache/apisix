@@ -63,9 +63,9 @@ __DATA__
                                     "successes": 3
                                 },
                                 "unhealthy": {
-                                    "http_statuses": [500],
-                                    "http_failures": 3,
-                                    "tcp_failures": 3
+                                    "http_statuses": [502],
+                                    "http_failures": 1,
+                                    "tcp_failures": 1
                                 }
                             }
                         }
@@ -97,7 +97,7 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
 
             local ports_count = {}
-            for i = 1, 4 do
+            for i = 1, 6 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
@@ -116,4 +116,6 @@ passed
 --- request
 GET /t
 --- response_body
-{"502":4}
+{"200":5,"502":1}
+--- error_log
+(upstream#/apisix/routes/1) unhealthy HTTP increment (1/1)
