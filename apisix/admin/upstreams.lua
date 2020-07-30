@@ -20,7 +20,6 @@ local get_services = require("apisix.http.service").services
 local tostring = tostring
 local ipairs = ipairs
 local type = type
-local table_util = require("apisix.utils.table-util")
 
 
 local _M = {
@@ -243,7 +242,7 @@ function _M.patch(id, conf, sub_path)
     local new_value = res_old.body.node.value
 
     if sub_path and sub_path ~= "" then
-        local code, err, node_val = table_util.patch(new_value, sub_path, conf);
+        local code, err, node_val = core.table.patch(new_value, sub_path, conf);
         new_value = node_val
         if code then
             return code, err
