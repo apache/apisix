@@ -35,10 +35,8 @@ __DATA__
 		        })
 
 		    ngx.sleep(0.2)
+            
 		    local idx = consumers.prev_index
-
-		    core.log.error("idx:", idx)
-
             local key = "/test_key"
             local val = "test_value"
             core.etcd.set(key, val)
@@ -46,7 +44,6 @@ __DATA__
             ngx.sleep(1)
 
             local new_idx = consumers.prev_index
-            core.log.error("new_idx:", new_idx)
 
             if new_idx > idx then
             	ngx.say("prev_index updated")
@@ -57,7 +54,8 @@ __DATA__
 GET /t
 --- response_body
 prev_index updated
---- timeout: 3
+--- no_error_log
+[error]
 
 
 
@@ -75,8 +73,6 @@ prev_index updated
 		    ngx.sleep(0.2)
 		    local idx = consumers.prev_index
 
-		    core.log.error("idx:", idx)
-
             local key = "/test_key"
             local val = "test_value"
             core.etcd.set(key, val)
@@ -84,7 +80,6 @@ prev_index updated
             ngx.sleep(1)
 
             local new_idx = consumers.prev_index
-            core.log.error("new_idx:", new_idx)
 
             if new_idx > idx then
             	ngx.say("prev_index updated")
@@ -97,4 +92,5 @@ prev_index updated
 GET /t
 --- response_body
 prev_index not update
---- timeout: 3
+--- no_error_log
+[error]
