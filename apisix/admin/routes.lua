@@ -231,7 +231,7 @@ function _M.patch(id, conf, sub_path, args)
     local node_value = res_old.body.node.value
 
     if sub_path and sub_path ~= "" then
-        local code, err, node_val = core.table.patch(node_value, sub_path, conf);
+        local code, err, node_val = core.table.patch(node_value, sub_path, conf)
         node_value = node_val
         if code then
             return code, err

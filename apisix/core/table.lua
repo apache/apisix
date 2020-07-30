@@ -107,14 +107,9 @@ end
 _M.merge = merge
 
 
-local function split_uri(uri)
-    return ngx_re.split(uri, "/")
-end
-
-
 local function patch(node_value, sub_path, conf)
     local sub_value = node_value
-    local sub_paths = split_uri(sub_path)
+    local sub_paths = ngx_re.split(sub_path, "/")
     for i = 1, #sub_paths - 1 do
         local sub_name = sub_paths[i]
         if sub_value[sub_name] == nil then
