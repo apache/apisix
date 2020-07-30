@@ -107,15 +107,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **Using ENUMS:**
 
-```shell
-"body_schema": {
-    "type": "object",
-    "required": ["required_payload"],
-    "properties": {
-            "emum_payload": {
-            "type": "string",
-            enum: ["enum_string_1", "enum_string_2"]
-            default = "enum_string_1"
+```json
+{
+    "body_schema": {
+        "type": "object",
+        "required": ["required_payload"],
+        "properties": {
+                "emum_payload": {
+                "type": "string",
+                "enum": ["enum_string_1", "enum_string_2"],
+                "default": "enum_string_1"
+            }
         }
     }
 }
@@ -124,25 +126,27 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **JSON with multiple levels:**
 
-```shell
-"body_schema": {
-    "type": "object",
-    "required": ["required_payload"],
-    "properties": {
-        "boolean_payload": {"type": "boolean"},
-        "child_element_name": {
-            "type": "object",
-            "properties": {
-                "http_statuses": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer",
-                        "minimum": 200,
-                        "maximum": 599
-                    },
-                    "uniqueItems": true,
-                    "default": [200, 201, 202, 203]
+```json
+{
+    "body_schema": {
+        "type": "object",
+        "required": ["required_payload"],
+        "properties": {
+            "boolean_payload": {"type": "boolean"},
+            "child_element_name": {
+                "type": "object",
+                "properties": {
+                    "http_statuses": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "type": "integer",
+                            "minimum": 200,
+                            "maximum": 599
+                        },
+                        "uniqueItems": true,
+                        "default": [200, 201, 202, 203]
+                    }
                 }
             }
         }
