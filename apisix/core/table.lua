@@ -91,7 +91,7 @@ local function merge(origin, extend)
     for k,v in pairs(extend) do
         if type(v) == "table" then
             if type(origin[k] or false) == "table" then
-                if table.nkeys(origin[k]) ~= #origin[k] then
+                if _M.nkeys(origin[k]) ~= #origin[k] then
                     merge(origin[k] or {}, extend[k] or {})
                 else
                     origin[k] = v
