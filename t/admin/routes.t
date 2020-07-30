@@ -1078,6 +1078,74 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "methods": ["GET", "DELETE", "PATCH", "POST", "PUT"]
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": ["GET", "DELETE", "PATCH", "POST", "PUT"]
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: patch route(minus methods)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "methods": ["GET", "POST"]
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": ["GET", "POST"]
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: patch route(new methods - sub path way)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1/methods',
                 ngx.HTTP_PATCH,
                 '["POST"]',
@@ -1107,7 +1175,7 @@ passed
 
 
 
-=== TEST 31: patch route(new uri)
+=== TEST 33: patch route(new uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -1139,7 +1207,7 @@ passed
 
 
 
-=== TEST 32: patch route(whole)
+=== TEST 34: patch route(whole)
 --- config
     location /t {
         content_by_lua_block {
@@ -1191,7 +1259,7 @@ passed
 
 
 
-=== TEST 33: multiple hosts
+=== TEST 35: multiple hosts
 --- config
     location /t {
         content_by_lua_block {
@@ -1231,7 +1299,7 @@ passed
 
 
 
-=== TEST 34: enable hosts and host together
+=== TEST 36: enable hosts and host together
 --- config
     location /t {
         content_by_lua_block {
@@ -1266,7 +1334,7 @@ GET /t
 
 
 
-=== TEST 35: multiple remote_addrs
+=== TEST 37: multiple remote_addrs
 --- config
     location /t {
         content_by_lua_block {
@@ -1306,7 +1374,7 @@ passed
 
 
 
-=== TEST 36: multiple vars
+=== TEST 38: multiple vars
 --- config
     location /t {
         content_by_lua_block {
@@ -1346,7 +1414,7 @@ passed
 
 
 
-=== TEST 37: filter function
+=== TEST 39: filter function
 --- config
     location /t {
         content_by_lua_block {
@@ -1385,7 +1453,7 @@ passed
 
 
 
-=== TEST 38: filter function (invalid)
+=== TEST 40: filter function (invalid)
 --- config
     location /t {
         content_by_lua_block {
@@ -1418,7 +1486,7 @@ GET /t
 
 
 
-=== TEST 39: Support for multiple URIs
+=== TEST 41: Support for multiple URIs
 --- config
     location /t {
         content_by_lua_block {
@@ -1449,7 +1517,7 @@ passed
 
 
 
-=== TEST 40: set route with ttl
+=== TEST 42: set route with ttl
 --- config
 location /t {
     content_by_lua_block {
@@ -1513,7 +1581,7 @@ message: Key not found
 
 
 
-=== TEST 41: post route with ttl
+=== TEST 43: post route with ttl
 --- config
 location /t {
     content_by_lua_block {
@@ -1563,7 +1631,7 @@ message: Key not found
 
 
 
-=== TEST 42: invalid argument: ttl
+=== TEST 44: invalid argument: ttl
 --- config
 location /t {
     content_by_lua_block {
@@ -1600,7 +1668,7 @@ GET /t
 
 
 
-=== TEST 43: set route(id: 1, check priority)
+=== TEST 45: set route(id: 1, check priority)
 --- config
     location /t {
         content_by_lua_block {
@@ -1642,7 +1710,7 @@ passed
 
 
 
-=== TEST 44: set route(id: 1 + priority: 0)
+=== TEST 46: set route(id: 1 + priority: 0)
 --- config
     location /t {
         content_by_lua_block {
@@ -1685,7 +1753,7 @@ passed
 
 
 
-=== TEST 45: set route(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
+=== TEST 47: set route(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -1717,7 +1785,7 @@ GET /t
 
 
 
-=== TEST 46: set route(id: 1) and upstream(type:chash, hash_on: header, missing key)
+=== TEST 48: set route(id: 1) and upstream(type:chash, hash_on: header, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -1750,7 +1818,7 @@ GET /t
 
 
 
-=== TEST 47: set route(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
+=== TEST 49: set route(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -1783,7 +1851,7 @@ GET /t
 
 
 
-=== TEST 48: set route(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
+=== TEST 50: set route(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
 --- config
     location /t {
         content_by_lua_block {
@@ -1815,7 +1883,7 @@ passed
 
 
 
-=== TEST 49: set route(id: 1 + name: test name)
+=== TEST 51: set route(id: 1 + name: test name)
 --- config
     location /t {
         content_by_lua_block {
@@ -1857,7 +1925,7 @@ passed
 
 
 
-=== TEST 50: string id
+=== TEST 52: string id
 --- config
     location /t {
         content_by_lua_block {
@@ -1889,7 +1957,7 @@ passed
 
 
 
-=== TEST 51: string id(delete)
+=== TEST 53: string id(delete)
 --- config
     location /t {
         content_by_lua_block {
@@ -1912,7 +1980,7 @@ passed
 
 
 
-=== TEST 52: invalid string id
+=== TEST 54: invalid string id
 --- config
     location /t {
         content_by_lua_block {
@@ -1943,7 +2011,7 @@ GET /t
 
 
 
-=== TEST 53: Verify Response Content-Type=applciation/json
+=== TEST 55: Verify Response Content-Type=applciation/json
 --- config
     location /t {
         content_by_lua_block {

@@ -206,7 +206,7 @@ passed
 
 
 
-=== TEST 5: PATCH global rules (sub_path)
+=== TEST 5: PATCH global rules (sub path)
 --- config
     location /t {
         content_by_lua_block {
