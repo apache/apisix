@@ -68,7 +68,7 @@
 - 文档：修正 `architecture-design` 文档中错别字。[1938](https://github.com/apache/incubator-apisix/pull/1938)
 - 文档：添加 `how-to-build` 文档中在 `Linux` 和 `macOS` 系统中单元测试 `Nginx` 的默认引入路径。[1936](https://github.com/apache/incubator-apisix/pull/1936)
 - 文档：添加 `request-validation` 插件中文文档。[1932](https://github.com/apache/incubator-apisix/pull/1932)
-- 文档：修正 `README` 中 `gRPC transcoding` 文档路径。[1945](https://github.com/apache/incubator-apisix/pull/1945) 
+- 文档：修正 `README` 中 `gRPC transcoding` 文档路径。[1945](https://github.com/apache/incubator-apisix/pull/1945)
 
 
 ## 1.4.1
