@@ -113,12 +113,23 @@ Makefile rules:
     * 直接运行：`make test`
     * 指定 nginx 二进制路径：`TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
 
-### 疑难排解
+### 疑难排解测试
+
+**配置 Nginx 路径**
 
 如果遇到问题 `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
 确保将openresty设置为默认的nginx并按如下所示导出路径。
 
 * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+  * Linux 默认安装路径：
+    * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+  * OSx 通过homebrew默认安装路径：
+    * export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
+
+**运行单个测试用例**
+
+- 使用以下命令运行指定的测试用例：
+  - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 
 ## 5. 更新 Admin API 的 token ，保护 Apache APISIX
 
