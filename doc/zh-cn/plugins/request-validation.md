@@ -130,7 +130,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "required": ["bool_payload"],
     "properties": {
         "bool_payload": {
-            type = "boolean", 
+            type = "boolean",
             default = true
         }
     }
@@ -161,8 +161,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "required": ["string_payload"],
     "properties": {
         "string_payload": {
-            type = "string", 
-            minLength = 1, 
+            type = "string",
+            minLength = 1,
             maxLength = 32
         }
     }
@@ -177,8 +177,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "required": ["regex_payload"],
     "properties": {
         "regex_payload": {
-            type = "string", 
-            minLength = 1, 
+            type = "string",
+            minLength = 1,
             maxLength = 32,
             pattern = [[^[a-zA-Z0-9_]+$]]
         }
@@ -231,8 +231,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             default = {200, 302}
         },
         "regex_payload": {
-            type = "string", 
-            minLength = 1, 
+            type = "string",
+            minLength = 1,
             maxLength = 32,
             pattern = [[^[a-zA-Z0-9_]+$]]
         }
