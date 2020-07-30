@@ -26,17 +26,17 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-        	local core = require("apisix.core")
+            local core = require("apisix.core")
 
-		    local consumers, _ = core.config.new("/consumers", {
-		            automatic = true,
-		            item_schema = core.schema.consumer,
-		            timeout = 0.2
-		        })
+            local consumers, _ = core.config.new("/consumers", {
+                automatic = true,
+                item_schema = core.schema.consumer,
+                timeout = 0.2
+            })
 
-		    ngx.sleep(0.6)
+            ngx.sleep(0.6)
 
-		    local idx = consumers.prev_index
+            local idx = consumers.prev_index
             local key = "/test_key"
             local val = "test_value"
             core.etcd.set(key, val)
@@ -46,7 +46,7 @@ __DATA__
             local new_idx = consumers.prev_index
 
             if new_idx > idx then
-            	ngx.say("prev_index updated")
+                ngx.say("prev_index updated")
             end
         }
     }
@@ -63,15 +63,15 @@ prev_index updated
 --- config
     location /t {
         content_by_lua_block {
-        	local core = require("apisix.core")
+            local core = require("apisix.core")
 
-		    local consumers, _ = core.config.new("/consumers", {
-		            automatic = true,
-		            item_schema = core.schema.consumer
-		        })
+            local consumers, _ = core.config.new("/consumers", {
+                automatic = true,
+                item_schema = core.schema.consumer
+            })
 
-		    ngx.sleep(0.6)
-		    local idx = consumers.prev_index
+            ngx.sleep(0.6)
+            local idx = consumers.prev_index
 
             local key = "/test_key"
             local val = "test_value"
@@ -82,7 +82,7 @@ prev_index updated
             local new_idx = consumers.prev_index
 
             if new_idx > idx then
-            	ngx.say("prev_index updated")
+                ngx.say("prev_index updated")
             else
                 ngx.say("prev_index not update")
             end
