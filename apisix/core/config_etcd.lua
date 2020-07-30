@@ -384,7 +384,7 @@ local function sync_data(self)
     -- for fetch the etcd index
     local key_res, _ = getkey(self.etcd_protocol, self.etcd_cli, self.key)
 
-    local dir_res, err = waitdir(self.etcd_protocol, self.self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
+    local dir_res, err = waitdir(self.etcd_protocol, self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
 
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
