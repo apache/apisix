@@ -163,7 +163,6 @@ fi
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
 # check custom environment variable in nginx.conf
-make stop
 
 sed  -i 's/#environment:/environment:\n      TNS_ADMIN:\n      DATACENTER_ID: 1/'  conf/config.yaml
 
