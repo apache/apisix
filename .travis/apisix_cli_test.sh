@@ -169,7 +169,7 @@ sed  -i 's/#environment:/environment:\n      TNS_ADMIN:\n      DATACENTER_ID: 1/
 make init
 
 set +ex
-ed ":a;N;s/\n//g;ta" conf/nginx.conf |grep -E "env TNS_ADMIN;env DATACENTER_ID=1;" > /dev/null
+sed ":a;N;s/\n//g;ta" conf/nginx.conf |grep -E "env TNS_ADMIN;env DATACENTER_ID=1;" > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: custom environment variable in nginx.conf is not expect"
     exit 1
