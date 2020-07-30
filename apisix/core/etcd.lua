@@ -25,7 +25,6 @@ local tonumber = tonumber
 
 local _M = {version = 0.2}
 
-local function repeats(s, n) return n > 0 and s .. repeats(s, n-1) or "" end
 
 local function new()
     local local_conf, err = fetch_local_conf()
@@ -183,7 +182,7 @@ function _M.push(key, value, ttl, opts)
 
         if last_id > 0 then
             local last_id_len = string.len(tostring(last_id))
-            key =  key .. "/" .. repeats("0", max_id_len - last_id_len) .. last_id
+            key =  key .. "/" .. string.format("%020d", last_id)
             res, err = etcd_cli:set(prefix .. key, value, ttl, opts)
             res.body = {
                 node = {
