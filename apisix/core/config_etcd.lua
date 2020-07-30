@@ -29,7 +29,7 @@ local setmetatable = setmetatable
 local ngx_sleep    = ngx.sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
-local sub_str      = string.sub
+local string       = string
 local tostring     = tostring
 local tonumber     = tonumber
 local pcall        = pcall
@@ -37,7 +37,7 @@ local created_obj  = {}
 
 
 local _M = {
-    version = 0.3,
+    version = 0.4,
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
 }
@@ -50,12 +50,76 @@ local mt = {
 }
 
 
-local function getkey(etcd_cli, key)
+local function getkey(etcd_protocol, etcd_cli, key)
     if not etcd_cli then
         return nil, "not inited"
     end
 
-    local res, err = etcd_cli:get(key)
+    local res, err
+    if etcd_protocol == "v2" then
+        res, err = etcd_cli:get(key)
+    else
+        res, err = etcd_cli:readdir(key, opts)
+        local rtrim_key = string.match(key, [[^(.-)/*$]])
+        local etcd_obj = {
+            node = {},
+            action = "get"
+        }
+
+        local nodes_inx = 1
+        local is_dir = false
+
+        if type(res.body.kvs) == "table" and #res.body.kvs > 0  then
+            for _, node in ipairs(res.body.kvs) do
+                local node_key = string.gsub(node.key, key, "")
+                node_key = string.match(node_key, [[^/*(.-)$]])
+                if node.value == ngx.null or is_dir then
+                    etcd_obj.node.createdIndex = node.create_revision
+                    etcd_obj.node.modifiedIndex = node.mod_revision
+                    etcd_obj.node.dir = true
+                elseif node_key == ""  then
+                    etcd_obj.node.createdIndex = node.create_revision
+                    etcd_obj.node.modifiedIndex = node.mod_revision
+                    etcd_obj.node.key = node.key
+                    etcd_obj.node.value = node.value
+                end
+
+                if node_key ~= "" then
+                    local sep_inx = string.find(node_key, "/")
+                    if sep_inx then
+                        node_key = string.sub(node_key, 1, sep_inx - 1)
+                        etcd_obj.node.nodes = etcd_obj.node.nodes or {}
+                        is_dir = true
+
+                        etcd_obj.node.nodes[nodes_inx] =  {
+                            key = rtrim_key .. "/" .. node_key,
+                            modifiedIndex = node.mod_revision,
+                            createdIndex = node.create_revision,
+                            dir = true
+                        }
+                    else
+                        etcd_obj.node.nodes = etcd_obj.node.nodes or {}
+                        etcd_obj.node.nodes[nodes_inx] =  {
+                            key = rtrim_key .. "/" .. node_key,
+                            modifiedIndex = node.mod_revision,
+                            createdIndex = node.create_revision,
+                            value = node.value
+                        }
+                    end
+                    nodes_inx = nodes_inx + 1
+                end
+            end
+        else
+            etcd_obj = {
+                cause = key,
+                index = res.body.header.revision,
+                errorCode = 100,
+                message = "Key not found"
+            }
+        end
+        res.body = etcd_obj
+    end
+
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
@@ -69,12 +133,18 @@ local function getkey(etcd_cli, key)
 end
 
 
-local function readdir(etcd_cli, key)
+local function readdir(etcd_protocol, etcd_cli, key)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:readdir(key, true)
+    local res, err
+    if etcd_protocol == "v2" then
+        res, err = etcd_cli:readdir(key, true)
+    else
+        res, err = etcd_cli:readdir(key)
+    end
+
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, nil, err
@@ -84,18 +154,108 @@ local function readdir(etcd_cli, key)
         return nil, "failed to read etcd dir"
     end
 
+    if etcd_protocol == "v3"  then
+        local rtrim_key = string.match(key, [[^(.-)/*$]])
+        local etcd_obj = {
+            node = {},
+            action = "get"
+        }
+
+        local nodes_inx = 1
+        local is_dir = false
+
+        if type(res.body.kvs) == "table" then
+            for _, node in ipairs(res.body.kvs) do
+                local node_key = string.gsub(node.key, key, "")
+                node_key = string.match(node_key, [[^/*(.-)$]])
+                local sep_inx = string.find(node_key, "/")
+
+                if node.value == ngx.null or is_dir then
+                    etcd_obj.node.createdIndex = node.create_revision
+                    etcd_obj.node.modifiedIndex = node.mod_revision
+                    etcd_obj.node.key = node.key
+                    etcd_obj.node.dir = true
+                elseif node_key == "" then
+                    etcd_obj.node.createdIndex = node.create_revision
+                    etcd_obj.node.modifiedIndex = node.mod_revision
+                    etcd_obj.node.key = node.key
+                    etcd_obj.node.value = node.value
+                end
+
+                if node_key ~= "" then
+                    local sep_inx = string.find(node_key, "/")
+                    if sep_inx then
+                        node_key = string.sub(node_key, 1, sep_inx - 1)
+                        etcd_obj.node.nodes = etcd_obj.node.nodes or {}
+                        is_dir = true
+
+                        etcd_obj.node.nodes[nodes_inx] =  {
+                            key = rtrim_key .. "/" .. node_key,
+                            modifiedIndex = node.mod_revision,
+                            createdIndex = node.create_revision,
+                            dir = true
+                        }
+                    else
+                        etcd_obj.node.nodes = etcd_obj.node.nodes or {}
+                        etcd_obj.node.nodes[nodes_inx] =  {
+                            key = rtrim_key .. "/" .. node_key,
+                            modifiedIndex = node.mod_revision,
+                            createdIndex = node.create_revision,
+                            value = node.value
+                        }
+                    end
+                    nodes_inx = nodes_inx + 1
+                end
+            end
+        else
+            etcd_obj = {
+                cause = key,
+                index = res.body.header.revision,
+                errorCode = 100,
+                message = "Key not found"
+            }
+        end
+        res.headers["X-Etcd-Index"] = res.body.header.revision
+        res.body.header = nil
+        res.body = etcd_obj
+    end
+
     return res
 end
 
-local function waitdir(etcd_cli, key, modified_index, timeout)
+local function waitdir(etcd_protocol, etcd_cli, key, modified_index, timeout)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:waitdir(key, modified_index, timeout)
+    local res, err
+    if etcd_protocol == "v2" then
+        res, err = etcd_cli:waitdir(key, modified_index, timeout)
+    else
+        local callback_fun, err = etcd_cli:watchdir(key, {start_revision=modified_index, timeout=timeout})
+        res = callback_fun()
+    end
+
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
+    end
+
+
+    if etcd_protocol == "v3" then
+        if res.result and res.result.events then
+            res.body = {
+                node={
+                    key = res.result.events.kv.key,
+                    value = res.result.events.kv.value,
+                    createdIndex= res.result.events.kv.create_revision,
+                    modifiedIndex = res.result.events.kv.mod_revision
+                },
+                action = "get"
+            }
+        else
+            res.body = { action = "get" };
+        end
     end
 
     if type(res.body) ~= "table" then
@@ -107,7 +267,7 @@ end
 
 
 local function short_key(self, str)
-    return sub_str(str, #self.key + 2)
+    return string.sub(str, #self.key + 2)
 end
 
 
@@ -138,7 +298,7 @@ local function sync_data(self)
     end
 
     if self.need_reload then
-        local res, err = readdir(self.etcd_cli, self.key)
+        local res, err = readdir(self.etcd_protocol, self.etcd_cli, self.key)
         if not res then
             return false, err
         end
@@ -222,9 +382,9 @@ local function sync_data(self)
     end
 
     -- for fetch the etcd index
-    local key_res, _ = getkey(self.etcd_cli, self.key)
+    local key_res, _ = getkey(self.etcd_protocol, self.etcd_cli, self.key)
 
-    local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
+    local dir_res, err = waitdir(self.etcd_protocol, self.self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
 
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
@@ -371,7 +531,7 @@ function _M.getkey(self, key)
         return nil, "stoped"
     end
 
-    return getkey(self.etcd_cli, key)
+    return getkey(self.etcd_protocol, self.etcd_cli, key)
 end
 
 
@@ -444,6 +604,7 @@ function _M.new(key, opts)
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
+        etcd_protocol = etcd_conf.protocol or "v2",
         key = key and prefix .. key,
         automatic = automatic,
         item_schema = item_schema,
