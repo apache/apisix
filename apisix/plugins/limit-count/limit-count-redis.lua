@@ -74,7 +74,7 @@ function _M.incoming(self, key)
     -- todo: test case
     local ret, err = red:ttl(key)
     if not ret then
-        return false, "failed to get redis ttl: " .. err
+        return false, "failed to get redis `" .. key .."` ttl: " .. err
     end
 
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
