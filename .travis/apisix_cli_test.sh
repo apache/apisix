@@ -161,3 +161,21 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
+
+# check custom environment variable in nginx.conf
+make stop
+
+sed  -i 's/#environment:/environment:\n      TNS_ADMIN:\n      DATACENTER_ID: 1/'  conf/config.yaml
+
+make init
+
+set +ex
+ed ":a;N;s/\n//g;ta" conf/nginx.conf |grep -E "env TNS_ADMIN;env DATACENTER_ID=1;" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: custom environment variable in nginx.conf is not expect"
+    exit 1
+fi
+
+set -ex
+
+echo "passed: custom environment variable in nginx.conf is ok"
