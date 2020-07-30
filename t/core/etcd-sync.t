@@ -34,14 +34,14 @@ __DATA__
 		            timeout = 0.2
 		        })
 
-		    ngx.sleep(0.2)
-            
+		    ngx.sleep(0.6)
+
 		    local idx = consumers.prev_index
             local key = "/test_key"
             local val = "test_value"
             core.etcd.set(key, val)
 
-            ngx.sleep(1)
+            ngx.sleep(2)
 
             local new_idx = consumers.prev_index
 
@@ -70,14 +70,14 @@ prev_index updated
 		            item_schema = core.schema.consumer
 		        })
 
-		    ngx.sleep(0.2)
+		    ngx.sleep(0.6)
 		    local idx = consumers.prev_index
 
             local key = "/test_key"
             local val = "test_value"
             core.etcd.set(key, val)
 
-            ngx.sleep(1)
+            ngx.sleep(2)
 
             local new_idx = consumers.prev_index
 
