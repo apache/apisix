@@ -663,3 +663,113 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 32: fetch the prometheus metric data with `modify_indexes consumers`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="consumers"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: fetch the prometheus metric data with `modify_indexes global_rules`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="global_rules"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: fetch the prometheus metric data with `modify_indexes max_modify_index`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="max_modify_index"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: fetch the prometheus metric data with `modify_indexes protos`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="protos"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: fetch the prometheus metric data with `modify_indexes routes`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="routes"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: fetch the prometheus metric data with `modify_indexes services`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="services"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: fetch the prometheus metric data with `modify_indexes ssls`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="ssls"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: fetch the prometheus metric data with `modify_indexes stream_routes`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="stream_routes"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: fetch the prometheus metric data with `modify_indexes upstreams`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="upstreams"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: fetch the prometheus metric data with `modify_indexes prev_index`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="prev_index"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: fetch the prometheus metric data with `modify_indexes x_etcd_index`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
+--- no_error_log
+[error]
