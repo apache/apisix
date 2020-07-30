@@ -106,14 +106,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 示例
 
-**验证 `Enums`:**
+**枚举（Enums）验证:**
 
 ```shell
 "body_schema": {
     "type": "object",
-    "required": ["required_payload"],
+    "required": ["emum_payload"],
     "properties": {
-            "emum_payload": {
+        "emum_payload": {
             "type": "string",
             enum: ["enum_string_1", "enum_string_2"]
             default = "enum_string_1"
@@ -122,29 +122,119 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**验证 多级`Json`:**
+**布尔（Boolean）验证:**
 
 ```shell
 "body_schema": {
     "type": "object",
-    "required": ["required_payload"],
+    "required": ["bool_payload"],
     "properties": {
-        "boolean_payload": {"type": "boolean"},
-        "child_element_name": {
-            "type": "object",
-            "properties": {
-                "http_statuses": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer",
-                        "minimum": 200,
-                        "maximum": 599
-                    },
-                    "uniqueItems": true,
-                    "default": [200, 201, 202, 203]
-                }
-            }
+        "bool_payload": {
+            type = "boolean", 
+            default = true
+        }
+    }
+}
+```
+
+**数字范围（Number or Integer）验证:**
+
+```shell
+"body_schema": {
+    "type": "object",
+    "required": ["integer_payload"],
+    "properties": {
+        "integer_payload": {
+            type = "integer",
+            minimum = 1,
+            maximum = 65535
+        }
+    }
+}
+```
+
+**字符串长度（String）验证:**
+
+```shell
+"body_schema": {
+    "type": "object",
+    "required": ["string_payload"],
+    "properties": {
+        "string_payload": {
+            type = "string", 
+            minLength = 1, 
+            maxLength = 32
+        }
+    }
+}
+```
+
+**正则表达式（Regex）验证:**
+
+```shell
+"body_schema": {
+    "type": "object",
+    "required": ["regex_payload"],
+    "properties": {
+        "regex_payload": {
+            type = "string", 
+            minLength = 1, 
+            maxLength = 32,
+            pattern = [[^[a-zA-Z0-9_]+$]]
+        }
+    }
+}
+```
+
+
+**数组（Array）验证:**
+
+```shell
+"body_schema": {
+    "type": "object",
+    "required": ["array_payload"],
+    "properties": {
+        "array_payload": {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "integer",
+                minimum = 200,
+                maximum = 599
+            },
+            uniqueItems = true,
+            default = {200, 302}
+        }
+    }
+}
+```
+
+**多字段组合（Multiple Fields）验证:**
+
+```shell
+"body_schema": {
+    "type": "object",
+    "required": ["boolean_payload", "array_payload", "regex_payload"],
+    "properties": {
+        "boolean_payload": {
+            "type": "boolean"
+        },
+        "array_payload": {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "integer",
+                minimum = 200,
+                maximum = 599
+            },
+            uniqueItems = true,
+            default = {200, 302}
+        },
+        "regex_payload": {
+            type = "string", 
+            minLength = 1, 
+            maxLength = 32,
+            pattern = [[^[a-zA-Z0-9_]+$]]
         }
     }
 }
