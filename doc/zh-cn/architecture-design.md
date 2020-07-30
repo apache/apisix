@@ -464,7 +464,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
         * `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
         * `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
         * `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。
-        * `任意过滤属性`：允许指定任何 Ningx 内置变量作为过滤条件，比如 URL 请求参数、请求头、cookie 等。
+        * `任意过滤属性`：允许指定任何 Nginx 内置变量作为过滤条件，比如 URL 请求参数、请求头、cookie 等。
     * `radixtree_host_uri`: 使用 `host + uri` 作为主索引（基于 `radixtree` 引擎），对当前请求会同时匹配 host 和 uri，支持的匹配条件与 `radixtree_uri` 基本一致。
 
 * `apisix.router.ssl`: SSL 加载匹配路由。
