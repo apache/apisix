@@ -31,7 +31,7 @@
 
 `request-validation` 插件用于提前验证请求向上游转发请求，可以验证请求的 `body` 及 `header` 数据。
 
-该插件使用 `Json Schema` 进行数据验证，有关 `Json Schema` 的更多信息，请参阅 [JSON schema](https://github.com/api7/jsonschema) 。 
+该插件使用 `Json Schema` 进行数据验证，有关 `Json Schema` 的更多信息，请参阅 [JSON schema](https://github.com/api7/jsonschema)。
 
 
 ## 属性
