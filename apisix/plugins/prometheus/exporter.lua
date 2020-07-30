@@ -22,7 +22,19 @@ local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
 local tonumber = tonumber
 local select = select
+local type = type
 local prometheus
+local router = require("apisix.router")
+local get_routes = router.http_routes
+local get_ssls   = router.ssls
+local get_services = require("apisix.http.service").services
+local get_consumers = require("apisix.consumer").consumers
+local get_upstreams = require("apisix.upstream").upstreams
+local clear_tab = core.table.clear
+local get_stream_routes = router.stream_routes
+local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
+
+
 
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
@@ -34,7 +46,6 @@ local metrics = {}
 
 
     local inner_tab_arr = {}
-    local clear_tab = core.table.clear
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
 
@@ -56,7 +67,7 @@ function _M.init()
         return
     end
 
-    core.table.clear(metrics)
+    clear_tab(metrics)
 
     -- across all services
     prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
@@ -66,6 +77,10 @@ function _M.init()
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
+
+    metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
+            "Etcd modify index for APISIX keys",
+            {"key"})
 
     -- per service
     metrics.status = prometheus:counter("http_status",
@@ -152,19 +167,99 @@ local function nginx_status()
 
         label_values[1] = name
         metrics.connections:set(val[0], label_values)
+
     end
+end
+
+
+local key_values = {}
+local function set_modify_index(key, items, items_ver, global_max_index)
+    clear_tab(key_values)
+    local max_idx = 0
+    if items_ver and items then
+        for _, item in ipairs(items) do
+            if type(item) == "table" and item.modifiedIndex > max_idx then
+                max_idx = item.modifiedIndex
+            end
+        end
+    end
+
+    key_values[1] = key
+    metrics.etcd_modify_indexes:set(max_idx, key_values)
+
+
+    global_max_index = max_idx > global_max_index and max_idx or global_max_index
+
+    return global_max_index
+end
+
+
+local function etcd_modify_index()
+    clear_tab(key_values)
+    local global_max_idx = 0
+
+    -- routes
+    local routes, routes_ver = get_routes()
+    global_max_idx = set_modify_index("routes", routes, routes_ver, global_max_idx)
+
+    -- services
+    local services, services_ver = get_services()
+    global_max_idx = set_modify_index("services", services, services_ver, global_max_idx)
+
+    -- ssls
+    local ssls, ssls_ver = get_ssls()
+    global_max_idx = set_modify_index("ssls", ssls, ssls_ver, global_max_idx)
+
+    -- consumers
+    local consumers, consumers_ver = get_consumers()
+    global_max_idx = set_modify_index("consumers", consumers, consumers_ver, global_max_idx)
+
+    -- global_rules
+    local global_rules = router.global_rules
+    if global_rules then
+        global_max_idx = set_modify_index("global_rules", global_rules.values,
+            global_rules.conf_version, global_max_idx)
+
+        -- prev_index
+        key_values[1] = "prev_index"
+        metrics.etcd_modify_indexes:set(global_rules.prev_index, key_values)
+
+    else
+        global_max_idx = set_modify_index("global_rules", nil, nil, global_max_idx)
+    end
+
+    -- upstreams
+    local upstreams, upstreams_ver = get_upstreams()
+    global_max_idx = set_modify_index("upstreams", upstreams, upstreams_ver, global_max_idx)
+
+    -- stream_routes
+    local stream_routes, stream_routes_ver = get_stream_routes()
+    global_max_idx = set_modify_index("stream_routes", stream_routes,
+        stream_routes_ver, global_max_idx)
+
+    -- proto
+    local protos, protos_ver = get_protos()
+    global_max_idx = set_modify_index("protos", protos, protos_ver, global_max_idx)
+
+    -- global max
+    key_values[1] = "max_modify_index"
+    metrics.etcd_modify_indexes:set(global_max_idx, key_values)
+
 end
 
 
 function _M.collect()
     if not prometheus or not metrics then
-        core.log.err("prometheus: plugin is not initialized, please make sure ",
+        core.log.error("prometheus: plugin is not initialized, please make sure ",
                      " 'prometheus_metrics' shared dict is present in nginx template")
         return 500, {message = "An unexpected error occurred"}
     end
 
     -- across all services
     nginx_status()
+
+    -- etcd modify index
+    etcd_modify_index()
 
     -- config server status
     local config = core.config.new()
@@ -176,6 +271,14 @@ function _M.collect()
         metrics.etcd_reachable:set(0)
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
+    end
+
+    local res, _ = config:getkey("/routes")
+    if res and res.headers then
+        clear_tab(key_values)
+        -- global max
+        key_values[1] = "x_etcd_index"
+        metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
     end
 
     core.response.set_header("content_type", "text/plain")

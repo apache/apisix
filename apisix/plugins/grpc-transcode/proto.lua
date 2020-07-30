@@ -63,6 +63,15 @@ function _M.fetch(proto_id)
 end
 
 
+function _M.protos()
+    if not protos then
+        return nil, nil
+    end
+
+    return protos.values, protos.conf_version
+end
+
+
 function _M.init()
     local err
     protos, err = core.config.new("/proto", {
