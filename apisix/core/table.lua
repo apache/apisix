@@ -22,7 +22,6 @@ local new_tab      = require("table.new")
 local nkeys        = require("table.nkeys")
 local pairs        = pairs
 local type         = type
-local utils        = require("apisix.core.utils")
 
 
 local _M = {
@@ -86,7 +85,6 @@ local function deepcopy(orig)
 end
 _M.deepcopy = deepcopy
 
-
 local ngx_null = ngx.null
 local function merge(origin, extend)
     for k,v in pairs(extend) do
@@ -106,38 +104,5 @@ local function merge(origin, extend)
     return origin
 end
 _M.merge = merge
-
-
-function _M.patch_sub_path(node_value, sub_path, conf)
-    local sub_value = node_value
-    local sub_paths = utils.split_uri(sub_path)
-    for i = 1, #sub_paths - 1 do
-      local sub_name = sub_paths[i]
-      if sub_value[sub_name] == nil then
-          sub_value[sub_name] = {}
-      end
-
-      sub_value = sub_value[sub_name]
-
-      if type(sub_value) ~= "table" then
-          return 400, "invalid sub-path: /"
-                      .. _M.concat(sub_paths, 1, i)
-      end
-    end
-
-    if type(sub_value) ~= "table" then
-      return 400, "invalid sub-path: /" .. sub_path
-    end
-
-    local sub_name = sub_paths[#sub_paths]
-    if sub_name and sub_name ~= "" then
-      sub_value[sub_name] = conf
-    else
-      node_value = conf
-    end
-
-    return nil, nil, node_value
-end
-
 
 return _M

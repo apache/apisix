@@ -20,6 +20,7 @@ local upstreams = require("apisix.admin.upstreams")
 local tostring = tostring
 local type = type
 local loadstring = loadstring
+local table_util = require("apisix.utils.table-util")
 
 
 local _M = {
@@ -231,7 +232,7 @@ function _M.patch(id, conf, sub_path, args)
     local node_value = res_old.body.node.value
 
     if sub_path and sub_path ~= "" then
-        local code, err, node_val = core.table.patch_sub_path(node_value, sub_path, conf);
+        local code, err, node_val = table_util.patch(node_value, sub_path, conf);
         node_value = node_val
         if code then
             return code, err
