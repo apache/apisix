@@ -104,7 +104,7 @@ apisix:
 #  discovery: eureka               # service discovery center
 nginx_config:                     # config for render the template to genarate nginx.conf
   error_log: "logs/error.log"
-  error_log_level: "warn"         # warn,error
+  error_log_level: "error"         # warn,error
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s     # timeout for a graceful shutdown of worker processes
   event:
@@ -127,7 +127,9 @@ etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
     - "http://127.0.0.1:2379"     # multiple etcd address
   prefix: "/apisix"               # apisix configurations prefix
-  timeout: 30                     # 30 seconds
+  timeout: 30                     # 3 seconds
+  protocol : "v3"
+  api_prefix : "/v3alpha"
   # user: root                     # root username for etcd
   # password: 5tHkHhYkjr6cQY        # root password for etcd
 #eureka:
