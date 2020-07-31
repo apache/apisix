@@ -57,6 +57,15 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    for i, re_rule in ipairs(conf.block_rules) do
+        local ok, err = re_compile(re_rule, "j")
+        -- core.log.warn("ok: ", tostring(ok), " err: ", tostring(err),
+        --               " re_rule: ", re_rule)
+        if not ok then
+            return false, err
+        end
+    end
+
     return true
 end
 
@@ -68,12 +77,6 @@ function _M.rewrite(conf, ctx)
     if not conf.block_rules_concat then
         local block_rules = {}
         for i, re_rule in ipairs(conf.block_rules) do
-            local ok, err = re_compile(re_rule, "j")
-            -- core.log.warn("ok: ", tostring(ok), " err: ", tostring(err),
-            --               " re_rule: ", re_rule)
-            if not ok then
-                return false, err
-            end
             block_rules[i] = re_rule
         end
 
