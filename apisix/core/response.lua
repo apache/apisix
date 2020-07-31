@@ -100,6 +100,7 @@ function _M.set_header(...)
         for k, v in pairs(headers) do
             ngx_header[k] = v
         end
+        ngx_header['server'] = ("APISIX/" .. core.version)
 
         return
     end
@@ -107,6 +108,8 @@ function _M.set_header(...)
     for i = 1, count, 2 do
         ngx_header[select(i, ...)] = select(i + 1, ...)
     end
+    ngx_header['server'] = ("APISIX/" .. core.version)
+
 end
 
 
