@@ -81,8 +81,8 @@ local function report2endpoint(premature, reporter)
 end
 
 
-function _M.rewrite(conf, ctx)
-
+function _M.rewrite(plugin_conf, ctx)
+    local conf = core.table.clone(plugin_conf)
     -- once the server started, server_addr and server_port won't change, so we can cache it.
     conf.server_port = tonumber(ctx.var['server_port'])
 
