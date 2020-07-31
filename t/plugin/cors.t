@@ -568,6 +568,7 @@ Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRA
 [error]
 
 
+
 === TEST 20: overwrite upstream(Access-Control-Allow-Headers)
 --- request
 GET /headers?Access-Control-Allow-Headers=a-headers HTTP/1.1
@@ -579,6 +580,7 @@ Origin: https://sub.domain.com
 Access-Control-Allow-Headers: *
 --- no_error_log
 [error]
+
 
 
 === TEST 21: overwrite upstream(Access-Control-Expose-Headers)
@@ -606,6 +608,7 @@ Origin: https://sub.domain.com
 Access-Control-Max-Age: 5
 --- no_error_log
 [error]
+
 
 
 === TEST 23: not overwrite upstream(Access-Control-Allow-Credentials)
