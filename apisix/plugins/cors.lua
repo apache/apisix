@@ -65,6 +65,10 @@ local schema = {
             type = "boolean",
             default = false
         },
+        is_overwrite_upstream = {
+            type = "boolean",
+            default = false
+        },
     }
 }
 
@@ -108,23 +112,35 @@ function _M.check_schema(conf)
     return true
 end
 
+local function set_header_by_conf(conf, key, value)
+    if conf.is_overwrite_upstream then
+        core.log.error('test')
+        core.response.set_header(key, value)
+        return
+    end
+
+    if not ngx.header[key] then
+        core.response.set_header(key, value)
+    end
+end
+
 local function set_cors_headers(conf, ctx)
     local allow_methods = conf.allow_methods
     if allow_methods == "**" then
         allow_methods = "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE"
     end
 
-    ngx.header["Access-Control-Allow-Origin"] = ctx.cors_allow_origins
-    ngx.header["Access-Control-Allow-Methods"] = allow_methods
-    ngx.header["Access-Control-Allow-Headers"] = conf.allow_headers
-    ngx.header["Access-Control-Max-Age"] = conf.max_age
+    set_header_by_conf(conf, "Access-Control-Allow-Origin", ctx.cors_allow_origins)
+    set_header_by_conf(conf, "Access-Control-Allow-Methods", allow_methods)
+    set_header_by_conf(conf, "Access-Control-Allow-Headers", conf.allow_headers)
+    set_header_by_conf(conf, "Access-Control-Max-Age", conf.max_age)
+    set_header_by_conf(conf, "Access-Control-Expose-Headers", conf.expose_headers)
     if conf.allow_credential then
-        ngx.header["Access-Control-Allow-Credentials"] = true
+        set_header_by_conf(conf, "Access-Control-Allow-Credentials", true)
     end
-    ngx.header["Access-Control-Expose-Headers"] = conf.expose_headers
 end
 
-function _M.rewrite(conf, ctx)
+local function set_cors(conf, ctx)
     local allow_origins = conf.allow_origins
     local req_origin = core.request.header(ctx, "Origin")
     if allow_origins == "**" then
@@ -146,10 +162,22 @@ function _M.rewrite(conf, ctx)
 
     ctx.cors_allow_origins = allow_origins
     set_cors_headers(conf, ctx)
+end
 
-    if ctx.var.request_method == "OPTIONS" then
-        return 200
+function _M.rewrite(conf, ctx)
+    if ctx.var.request_method ~= "OPTIONS" then
+        return
     end
+
+    local code, msg = set_cors(conf, ctx)
+    if code then
+        return code, msg
+    end
+    return 200
+end
+
+function _M.header_filter(conf, ctx)
+    set_cors(conf, ctx)
 end
 
 return _M
