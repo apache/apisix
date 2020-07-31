@@ -196,7 +196,7 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf, args)
+function _M.patch(id, conf, sub_path, args)
     if not id then
         return 400, {error_msg = "missing route id"}
     end
@@ -205,8 +205,10 @@ function _M.patch(id, conf, args)
         return 400, {error_msg = "missing new configuration"}
     end
 
-    if type(conf) ~= "table"  then
-        return 400, {error_msg = "invalid configuration"}
+    if not sub_path or sub_path == "" then
+        if type(conf) ~= "table"  then
+            return 400, {error_msg = "invalid configuration"}
+        end
     end
 
     local key = "/routes"
@@ -226,10 +228,17 @@ function _M.patch(id, conf, args)
     core.log.info("key: ", key, " old value: ",
                   core.json.delay_encode(res_old, true))
 
-
     local node_value = res_old.body.node.value
 
-    node_value = core.table.merge(node_value, conf);
+    if sub_path and sub_path ~= "" then
+        local code, err, node_val = core.table.patch(node_value, sub_path, conf)
+        node_value = node_val
+        if code then
+            return code, err
+        end
+    else
+        node_value = core.table.merge(node_value, conf);
+    end
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
