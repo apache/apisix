@@ -808,7 +808,161 @@ passed
 
 
 
-=== TEST 24: set upstream(type: chash)
+=== TEST 24: patch upstream(whole - sub path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/',
+                ngx.HTTP_PATCH,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream 24"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "desc": "new upstream 24"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: patch upstream(new desc - sub path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/desc',
+                ngx.HTTP_PATCH,
+                '"new 25 upstream"',
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "desc": "new 25 upstream"
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: patch upstream(new nodes)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/nodes',
+                ngx.HTTP_PATCH,
+                [[{
+                    "127.0.0.6:8081": 3,
+                    "127.0.0.7:8082": 4
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.6:8081": 3,
+                                "127.0.0.7:8082": 4
+                            },
+                            "type": "roundrobin",
+                            "desc": "new 25 upstream"
+                        }
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: patch upstream(weight is 0 - sub path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1/nodes',
+                ngx.HTTP_PATCH,
+                [[{
+                    "127.0.0.7:8081": 0,
+                    "127.0.0.8:8082": 4
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.7:8081": 0,
+                                "127.0.0.8:8082": 4
+                            },
+                            "type": "roundrobin",
+                            "desc": "new 25 upstream"
+                        }
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: set upstream(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -837,7 +991,7 @@ passed
 
 
 
-=== TEST 25:  wrong upstream key, hash_on default vars
+=== TEST 29:  wrong upstream key, hash_on default vars
 --- config
     location /t {
         content_by_lua_block {
@@ -869,7 +1023,7 @@ GET /t
 
 
 
-=== TEST 26: set upstream with args(type: chash)
+=== TEST 30: set upstream with args(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -899,7 +1053,7 @@ passed
 
 
 
-=== TEST 27: set upstream(type: chash)
+=== TEST 31: set upstream(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -928,7 +1082,7 @@ passed
 
 
 
-=== TEST 28:  wrong upstream key, hash_on default vars
+=== TEST 32:  wrong upstream key, hash_on default vars
 --- config
     location /t {
         content_by_lua_block {
@@ -960,7 +1114,7 @@ GET /t
 
 
 
-=== TEST 29: set upstream with args(type: chash)
+=== TEST 33: set upstream with args(type: chash)
 --- config
     location /t {
         content_by_lua_block {
@@ -990,7 +1144,7 @@ passed
 
 
 
-=== TEST 30: type chash, hash_on: vars
+=== TEST 34: type chash, hash_on: vars
 --- config
     location /t {
         content_by_lua_block {
@@ -1021,7 +1175,7 @@ passed
 
 
 
-=== TEST 31: type chash, hash_on: header, header name with '_', underscores_in_headers on
+=== TEST 35: type chash, hash_on: header, header name with '_', underscores_in_headers on
 --- config
     location /t {
         content_by_lua_block {
@@ -1052,7 +1206,7 @@ passed
 
 
 
-=== TEST 32: type chash, hash_on: header, header name with invalid character
+=== TEST 36: type chash, hash_on: header, header name with invalid character
 --- config
     location /t {
         content_by_lua_block {
@@ -1084,7 +1238,7 @@ GET /t
 
 
 
-=== TEST 33: type chash, hash_on: cookie
+=== TEST 37: type chash, hash_on: cookie
 --- config
     location /t {
         content_by_lua_block {
@@ -1115,7 +1269,7 @@ passed
 
 
 
-=== TEST 34: type chash, hash_on: cookie, cookie name with invalid character
+=== TEST 38: type chash, hash_on: cookie, cookie name with invalid character
 --- config
     location /t {
         content_by_lua_block {
@@ -1147,7 +1301,7 @@ GET /t
 
 
 
-=== TEST 35: type chash, hash_on: consumer, do not need upstream key
+=== TEST 39: type chash, hash_on: consumer, do not need upstream key
 --- config
     location /t {
         content_by_lua_block {
@@ -1177,7 +1331,7 @@ passed
 
 
 
-=== TEST 36: type chash, hash_on: consumer, set key but invalid
+=== TEST 40: type chash, hash_on: consumer, set key but invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -1208,7 +1362,7 @@ passed
 
 
 
-=== TEST 37: type chash, invalid hash_on type
+=== TEST 41: type chash, invalid hash_on type
 --- config
     location /t {
         content_by_lua_block {
@@ -1240,7 +1394,7 @@ GET /t
 
 
 
-=== TEST 38: set upstream(id: 1 + name: test name)
+=== TEST 42: set upstream(id: 1 + name: test name)
 --- config
     location /t {
         content_by_lua_block {
@@ -1282,7 +1436,7 @@ passed
 
 
 
-=== TEST 39: string id
+=== TEST 43: string id
 --- config
     location /t {
         content_by_lua_block {
@@ -1311,7 +1465,7 @@ passed
 
 
 
-=== TEST 40: string id(delete)
+=== TEST 44: string id(delete)
 --- config
     location /t {
         content_by_lua_block {
@@ -1334,7 +1488,7 @@ passed
 
 
 
-=== TEST 41: invalid string id
+=== TEST 45: invalid string id
 --- config
     location /t {
         content_by_lua_block {
