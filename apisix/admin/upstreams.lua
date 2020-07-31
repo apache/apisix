@@ -211,7 +211,7 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf)
+function _M.patch(id, conf, sub_path)
     if not id then
         return 400, {error_msg = "missing upstream id"}
     end
@@ -220,8 +220,10 @@ function _M.patch(id, conf)
         return 400, {error_msg = "missing new configuration"}
     end
 
-    if type(conf) ~= "table"  then
-        return 400, {error_msg = "invalid configuration"}
+    if not sub_path or sub_path == "" then
+        if type(conf) ~= "table"  then
+            return 400, {error_msg = "invalid configuration"}
+        end
     end
 
     local key = "/upstreams" .. "/" .. id
@@ -239,7 +241,15 @@ function _M.patch(id, conf)
 
     local new_value = res_old.body.node.value
 
-    new_value = core.table.merge(new_value, conf);
+    if sub_path and sub_path ~= "" then
+        local code, err, node_val = core.table.patch(new_value, sub_path, conf)
+        new_value = node_val
+        if code then
+            return code, err
+        end
+    else
+        new_value = core.table.merge(new_value, conf);
+    end
 
     core.log.info("new value ", core.json.delay_encode(new_value, true))
 

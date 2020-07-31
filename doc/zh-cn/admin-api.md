@@ -40,7 +40,10 @@
 |PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/routes     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/routes/{id}|无|删除资源|
-|PATCH    |/apisix/admin/routes/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
+|PATCH    |/apisix/admin/routes/{id}|{...}|标准 PATCH ，修改已有 Route 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/routes/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。两种 PATCH 的区别可以参考后面的示例|
+
+
 
 > URL 请求参数：
 
@@ -136,6 +139,97 @@ HTTP/1.1 201 Created
 Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
+
+# 给路由增加一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 1
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给路由更新一个 upstream node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 10
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给路由删除一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.215:80": null
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换路由的 methods -- 数组
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+    "methods": ["GET", "POST"]
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，methods 将不保留原来的数据，整个更新为：
+["GET", "POST"]
+
+
+# 替换路由的 upstream nodes -- sub path
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
+
+
+# 替换路由的 methods  -- sub path
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1/methods -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '["POST", "DELETE", "PATCH"]'
+HTTP/1.1 200 OK
+...
+
+执行成功后，methods 将不保留原来的数据，整个更新为：
+["POST", "DELETE", "PATCH"]
+
+
 ```
 
 > 应答参数
@@ -189,7 +283,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/services/{id}|无|删除资源|
-|PATCH    |/apisix/admin/services/{id}|{...}|修改已有 Service 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
+|PATCH    |/apisix/admin/services/{id}|{...}|标准 PATCH ，修改已有 Service 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/services/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Service 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留|
+
 
 > body 请求参数：
 
@@ -239,17 +335,78 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
 # 返回结果
 
 HTTP/1.1 201 Created
-Date: Thu, 26 Dec 2019 03:48:47 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Credentials: true
-Access-Control-Expose-Headers: *
-Access-Control-Max-Age: 3600
-Server: APISIX web server
+...
 
-{"node":{"value":{"upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"},"plugins":{"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":60,"key":"\/apisix\/services\/201","modifiedIndex":60},"action":"set"}
+
+# 给 Service 增加一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 1
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给 Service 更新一个 upstream node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 10
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给 Service 删除一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.215:80": null
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换 Service 的 upstream nodes
+$ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
+
 ```
 
 > 应答参数
@@ -340,7 +497,8 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 |PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/upstreams/{id}|无|删除资源|
-|PATCH    |/apisix/admin/upstreams/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
+|PATCH    |/apisix/admin/upstreams/{id}|{...}|标准 PATCH ，修改已有 Upstream 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/upstreams/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Upstream 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。|
 
 > body 请求参数：
 
@@ -403,11 +561,71 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
     }
 }'
 HTTP/1.1 201 Created
-Date: Thu, 26 Dec 2019 04:19:34 GMT
-Content-Type: text/plain
 ...
 
-{"node":{"value":{"nodes":{"127.0.0.1:80":1,"foo.com:80":3,"127.0.0.2:80":2},"type":"roundrobin"},"createdIndex":61,"key":"\/apisix\/upstreams\/100","modifiedIndex":61},"action":"set"}
+
+# 给 Upstream 增加一个 node
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.216:80": 1
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给 Upstream 更新一个 node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.216:80": 10
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给 Upstream 删除一个 node
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.215:80": null
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换 Upstream 的  nodes
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
 
 ```
 
