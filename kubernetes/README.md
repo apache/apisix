@@ -21,7 +21,16 @@
 There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
-- Install etcd
+- use `etcd` , if there is no `etcd` service, please install and set env `etcd_url` in `config.sh`
+
+- Run `config.sh` to generate `apisix-gw-config-cm.yaml` from the latest `config.yaml`
+
+```
+# if config.sh have no permission to executethen, then execute `chmod +x config.sh`
+# Generate apisix-gw-config-cm.yaml
+# sh config.sh
+```
+
 
 #### when using etcd-operator
 when using etcd-operator, you need to change apisix-gw-config-cm.yaml:
@@ -56,7 +65,7 @@ or
 $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
 
-##### Note: you should modify etcd addr in config file `apisix-gw-config-cm.yaml` or `../conf/config.yaml` first
+##### Note: you should check etcd addr in config file `apisix-gw-config-cm.yaml` or `../conf/config.yaml` first, make sure the etcd addresses are correct.
 
 ```
 etcd:
@@ -74,12 +83,6 @@ $ kubectl apply -f deployment.yaml
 
 ```
 $ kubectl apply -f service.yaml
-```
-
-#### Create service for apache incubator-apisix (when using Aliyun SLB)
-
-```
-$ kubectl apply -f service-aliyun-slb.yaml
 ```
 
 #### Scale apache incubator-apisix
