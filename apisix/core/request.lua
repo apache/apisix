@@ -118,9 +118,7 @@ function _M.get_port(ctx)
 end
 
 function _M.get_http_version()
-
     return ngx.req.http_version()
-
 end
 
 
