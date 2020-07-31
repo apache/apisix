@@ -75,6 +75,7 @@ local _M = {
     schema = schema,
 }
 
+
 local function create_mutiple_origin_cache(conf)
     if not str_find(conf.allow_origins, ",", 1, true) then
         return nil
@@ -99,6 +100,7 @@ local function create_mutiple_origin_cache(conf)
     return origin_cache
 end
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -107,6 +109,7 @@ function _M.check_schema(conf)
 
     return true
 end
+
 
 local function set_cors_headers(conf, ctx)
     local allow_methods = conf.allow_methods
@@ -124,7 +127,15 @@ local function set_cors_headers(conf, ctx)
     end
 end
 
-local function set_cors(conf, ctx)
+
+function _M.rewrite(conf, ctx)
+    if ctx.var.request_method == "OPTIONS" then
+        return 200
+    end
+end
+
+
+function _M.header_filter(conf, ctx)
     local allow_origins = conf.allow_origins
     local req_origin = core.request.header(ctx, "Origin")
     if allow_origins == "**" then
@@ -146,16 +157,6 @@ local function set_cors(conf, ctx)
 
     ctx.cors_allow_origins = allow_origins
     set_cors_headers(conf, ctx)
-end
-
-function _M.rewrite(conf, ctx)
-    if ctx.var.request_method == "OPTIONS" then
-        return 200
-    end
-end
-
-function _M.header_filter(conf, ctx)
-    set_cors(conf, ctx)
 end
 
 return _M
