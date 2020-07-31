@@ -94,7 +94,34 @@ function _M.get_remote_client_port(ctx)
         ctx = ngx.ctx.api_ctx
     end
     return tonumber(ctx.var.remote_port)
-  end
+end
+
+function _M.get_scheme(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+    return ctx.var.scheme or ''
+end
+
+function _M.get_host(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+    return ctx.var.host or ''
+end
+
+function _M.get_port(ctx)
+    if not ctx then
+        ctx = ngx.ctx.api_ctx
+    end
+    return tonumber(ctx.var.server_port)
+end
+
+function _M.get_http_version()
+
+    return ngx.req.http_version()
+
+end
 
 
 return _M

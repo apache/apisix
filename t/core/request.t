@@ -206,3 +206,151 @@ X-Forwarded-For: 10.0.0.1
 10.0.0.1
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: get_host
+--- config
+    location = /hello {
+        real_ip_header X-Real-IP;
+
+        set_real_ip_from 0.0.0.0/0;
+        set_real_ip_from ::/0;
+        set_real_ip_from unix:;
+
+        access_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+        }
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local host = core.request.get_host(ngx.ctx.api_ctx)
+            ngx.say(host)
+        }
+    }
+--- request
+GET /hello
+--- more_headers
+X-Real-IP: 10.0.0.1
+--- response_body
+localhost
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: get_scheme
+--- config
+    location = /hello {
+        real_ip_header X-Real-IP;
+
+        set_real_ip_from 0.0.0.0/0;
+        set_real_ip_from ::/0;
+        set_real_ip_from unix:;
+
+        access_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+        }
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local scheme = core.request.get_scheme(ngx.ctx.api_ctx)
+            ngx.say(scheme)
+        }
+    }
+--- request
+GET /hello
+--- more_headers
+X-Real-IP: 10.0.0.1
+--- response_body
+http
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: get_port
+--- config
+    location = /hello {
+        real_ip_header X-Real-IP;
+
+        set_real_ip_from 0.0.0.0/0;
+        set_real_ip_from ::/0;
+        set_real_ip_from unix:;
+
+        access_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+        }
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local port = core.request.get_port(ngx.ctx.api_ctx)
+            ngx.say(port)
+        }
+    }
+--- request
+GET /hello
+--- more_headers
+X-Real-IP: 10.0.0.1
+--- response_body
+1984
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: get_http_version
+--- config
+    location = /hello {
+        real_ip_header X-Real-IP;
+
+        set_real_ip_from 0.0.0.0/0;
+        set_real_ip_from ::/0;
+        set_real_ip_from unix:;
+
+        access_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+        }
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local http_version = core.request.get_http_version()
+            ngx.say(http_version)
+        }
+    }
+--- request
+GET /hello
+--- more_headers
+X-Real-IP: 10.0.0.1
+--- response_body
+1.1
+--- no_error_log
+[error]
