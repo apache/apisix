@@ -126,21 +126,25 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
+    local ret_code = conf.ret_code
+    local uri = conf.uri
     if conf.http_to_https and ctx.var.scheme == "http" then
-        conf.uri = "https://$host$request_uri"
-        conf.ret_code = 301
+        uri = "https://$host$request_uri"
+        ret_code = 301
+        core.log.warn("xxxx")
     end
 
-    if conf.uri and conf.ret_code then
-        local new_uri, err = concat_new_uri(conf.uri, ctx)
+    if uri and ret_code then
+        local new_uri, err = concat_new_uri(uri, ctx)
         if not new_uri then
-            core.log.error("failed to generate new uri by: ", conf.uri, " error: ",
-                        err)
+            core.log.error("failed to generate new uri by: ", uri, " error: ",
+                           err)
             core.response.exit(500)
         end
 
+        core.log.warn("yyyy")
         core.response.set_header("Location", new_uri)
-        core.response.exit(conf.ret_code)
+        core.response.exit(ret_code)
     end
 end
 
