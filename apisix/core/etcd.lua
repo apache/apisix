@@ -170,7 +170,6 @@ function _M.push(key, value, ttl, opts)
         res, err = etcd_cli:push(prefix .. key, value, ttl, opts)
     else
         local last_id = 0
-        local max_id_len = 20
         res, err = etcd_cli:readdir(prefix .. key, {count_only=true})
         if err ~= nil then
             return nil, err
@@ -181,7 +180,6 @@ function _M.push(key, value, ttl, opts)
         end
 
         if last_id > 0 then
-            local last_id_len = string.len(tostring(last_id))
             key =  key .. "/" .. string.format("%020d", last_id)
             res, err = etcd_cli:set(prefix .. key, value, ttl, opts)
             res.body = {
