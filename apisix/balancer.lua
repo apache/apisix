@@ -192,6 +192,7 @@ local function pick_server(route, ctx)
     local version = ctx.upstream_version
     local key = ctx.upstream_key
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
+    ctx.up_checker = checker
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
     if checker and ctx.balancer_try_count > 1 then
