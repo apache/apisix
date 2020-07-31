@@ -493,11 +493,6 @@ Access-Control-Allow-Credentials:
 [error]
 
 
-Access-Control-Expose-Headers: e-headers
---- no_error_log
-[error]
-
-
 
 === TEST 17: set route(overwrite upstream)
 --- config
