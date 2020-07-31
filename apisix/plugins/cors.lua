@@ -163,27 +163,14 @@ local function set_cors(conf, ctx)
     set_cors_headers(conf, ctx)
 end
 
--- function _M.rewrite(conf, ctx)
---     if ctx.var.request_method ~= "OPTIONS" then
---         return
---     end
-
---     local code, msg = set_cors(conf, ctx)
---     if code then
---         return code, msg
---     end
---     return 200
--- end
-
-function _M.header_filter(conf, ctx)
-    local code, msg = set_cors(conf, ctx)
-    if code then
-        return code, msg
-    end
-
+function _M.rewrite(conf, ctx)
     if ctx.var.request_method == "OPTIONS" then
         return 200
     end
+end
+
+function _M.header_filter(conf, ctx)
+    set_cors(conf, ctx)
 end
 
 return _M
