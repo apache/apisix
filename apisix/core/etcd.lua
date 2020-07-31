@@ -170,7 +170,6 @@ function _M.push(key, value, ttl, opts)
         res, err = etcd_cli:push(prefix .. key, value, ttl, opts)
     else
         local last_id = 0
-        local max_id_len = 20
         res, err = etcd_cli:readdir(prefix .. key, {count_only=true})
         if err ~= nil then
             return nil, err
