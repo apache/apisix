@@ -128,10 +128,12 @@ function _M.rewrite(conf, ctx)
 
     local ret_code = conf.ret_code
     local uri = conf.uri
+
     if conf.http_to_https and ctx.var.scheme == "http" then
+        -- TODO： add test case
+        -- PR: https://github.com/apache/incubator-apisix/pull/1958
         uri = "https://$host$request_uri"
         ret_code = 301
-        core.log.warn("xxxx")
     end
 
     if uri and ret_code then
@@ -142,7 +144,6 @@ function _M.rewrite(conf, ctx)
             core.response.exit(500)
         end
 
-        core.log.warn("yyyy")
         core.response.set_header("Location", new_uri)
         core.response.exit(ret_code)
     end
