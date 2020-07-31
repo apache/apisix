@@ -517,7 +517,7 @@ Access-Control-Allow-Credentials:
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/add-header"
+                    "uri": "/headers"
                 }]]
                 )
 
@@ -536,35 +536,91 @@ passed
 
 
 
-=== TEST 18: not overwrite upstream
---- config
-    location = /add-header {
-        content_by_lua_block {
-            ngx.status = 200
-            ngx.header["Access-Control-Allow-Origin"] = "*"
-            ngx.header["Access-Control-Allow-Methods"] = "GET"
-            ngx.header["Access-Control-Max-Age"] = "10"
-            ngx.header["Access-Control-Allow-Headers"] = "header1,header2"
-            ngx.header["Access-Control-Allow-Credentials"] = true
-            ngx.header["Access-Control-Expose-Headers"] = "ex-header1,ex-header2"
-        }
-    }
+=== TEST 18: not overwrite upstream(Access-Control-Allow-Origin)
 --- request
-GET /add-header HTTP/1.1
+GET /headers?Access-Control-Allow-Origin=origin HTTP/1.1
 --- more_headers
 Origin: https://sub.domain.com
 --- response_body
+/headers
 --- response_headers
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET
-Access-Control-Allow-Headers: header1,header2
-Access-Control-Expose-Headers: ex-header1,ex-header2
-Access-Control-Max-Age: 10
-Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin: origin
 --- no_error_log
 [error]
 
-=== TEST 19: set route(overwrite upstream)
+
+
+=== TEST 19: not overwrite upstream(Access-Control-Allow-Methods)
+--- request
+GET /headers?Access-Control-Allow-Methods=methods HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Methods: methods
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: not overwrite upstream(Access-Control-Allow-Headers)
+--- request
+GET /headers?Access-Control-Allow-Headers=a-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Headers: a-headers
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: not overwrite upstream(Access-Control-Expose-Headers)
+--- request
+GET /headers?Access-Control-Expose-Headers=e-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Expose-Headers: e-headers
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: not overwrite upstream(Access-Control-Max-Age)
+--- request
+GET /headers?Access-Control-Max-Age=10 HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Max-Age: 10
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: not overwrite upstream(Access-Control-Allow-Credentials)
+--- request
+GET /headers?Access-Control-Allow-Credentials=false HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Credentials: false
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: set route(overwrite upstream)
 --- config
     location /t {
         content_by_lua_block {
@@ -588,7 +644,7 @@ Access-Control-Allow-Credentials: true
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/add-header"
+                    "uri": "/headers"
                 }]]
                 )
 
@@ -607,30 +663,84 @@ passed
 
 
 
-=== TEST 20: overwrite upstream
---- config
-    location = /add-header {
-        content_by_lua_block {
-            ngx.status = 200
-            ngx.header["Access-Control-Allow-Origin"] = "*"
-            ngx.header["Access-Control-Allow-Methods"] = "GET"
-            ngx.header["Access-Control-Max-Age"] = "10"
-            ngx.header["Access-Control-Allow-Headers"] = "header1,header2"
-            ngx.header["Access-Control-Allow-Credentials"] = true
-            ngx.header["Access-Control-Expose-Headers"] = "ex-header1,ex-header2"
-        }
-    }
+=== TEST 25: overwrite upstream
 --- request
-GET /add-header HTTP/1.1
+GET /headers?Access-Control-Allow-Origin=https://sub.domain.com HTTP/1.1
 --- more_headers
 Origin: https://sub.domain.com
 --- response_body
+/headers
 --- response_headers
 Access-Control-Allow-Origin: https://sub.domain.com
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: overwrite upstream(Access-Control-Allow-Methods)
+--- request
+GET /headers?Access-Control-Allow-Methods=methods HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
 Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: overwrite upstream(Access-Control-Allow-Headers)
+--- request
+GET /headers?Access-Control-Allow-Headers=a-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
 Access-Control-Allow-Headers: *
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: overwrite upstream(Access-Control-Expose-Headers)
+--- request
+GET /headers?Access-Control-Expose-Headers=e-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
 Access-Control-Expose-Headers: *
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: overwrite upstream(Access-Control-Max-Age)
+--- request
+GET /headers?Access-Control-Max-Age=10 HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
 Access-Control-Max-Age: 5
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: not overwrite upstream(Access-Control-Allow-Credentials)
+--- request
+GET /headers?Access-Control-Allow-Credentials=false HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
 Access-Control-Allow-Credentials: true
 --- no_error_log
 [error]

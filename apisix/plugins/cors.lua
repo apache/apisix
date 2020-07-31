@@ -114,7 +114,6 @@ end
 
 local function set_header_by_conf(conf, key, value)
     if conf.is_overwrite_upstream then
-        core.log.error('test')
         core.response.set_header(key, value)
         return
     end
@@ -164,20 +163,27 @@ local function set_cors(conf, ctx)
     set_cors_headers(conf, ctx)
 end
 
-function _M.rewrite(conf, ctx)
-    if ctx.var.request_method ~= "OPTIONS" then
-        return
-    end
+-- function _M.rewrite(conf, ctx)
+--     if ctx.var.request_method ~= "OPTIONS" then
+--         return
+--     end
 
+--     local code, msg = set_cors(conf, ctx)
+--     if code then
+--         return code, msg
+--     end
+--     return 200
+-- end
+
+function _M.header_filter(conf, ctx)
     local code, msg = set_cors(conf, ctx)
     if code then
         return code, msg
     end
-    return 200
-end
 
-function _M.header_filter(conf, ctx)
-    set_cors(conf, ctx)
+    if ctx.var.request_method == "OPTIONS" then
+        return 200
+    end
 end
 
 return _M
