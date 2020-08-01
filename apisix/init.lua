@@ -631,7 +631,7 @@ function _M.http_log_phase()
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins ~= core.empty_tab then
+    if not api_ctx.plugins and api_ctx.plugins ~= core.empty_tab then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
