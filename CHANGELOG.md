@@ -52,6 +52,7 @@
 - change: add comments for Makefile `install` command. [1912](https://github.com/apache/incubator-apisix/pull/1912)
 - change: update comment for config.yaml `etcd.timeout` configuration. [1929](https://github.com/apache/incubator-apisix/pull/1929)
 - change: add more prometheus metrics. [1888](https://github.com/apache/incubator-apisix/pull/1888)
+- change: add more configuration options for `cors` plugin. [1963](https://github.com/apache/incubator-apisix/pull/1963)
 
 ### Bugfix
 - fixed: failed to get `host` in health check configuration. [1871](https://github.com/apache/incubator-apisix/pull/1871)
@@ -60,6 +61,9 @@
 - fixed: read the request body from the temporary file if it was cached. [1863](https://github.com/apache/incubator-apisix/pull/1863)
 - fixed: batch processor name and error return type. [1927](https://github.com/apache/incubator-apisix/pull/1927)
 - fixed: failed to read redis.ttl in `limit-count` plugin. [1928](https://github.com/apache/incubator-apisix/pull/1928)
+- fixed: passive health check seems never provide a healthy report. [1918](https://github.com/apache/incubator-apisix/pull/1918)
+- fixed: avoid to modify the original plugin conf. [1958](https://github.com/apache/incubator-apisix/pull/1958)
+- fixed: the test case of `invalid-upstream` is unstable and sometimes fails to run. [1925](https://github.com/apache/incubator-apisix/pull/1925) 
 
 ### Doc
 - doc: added APISIX Lua Coding Style Guide. [1874](https://github.com/apache/incubator-apisix/pull/1874)
@@ -72,6 +76,8 @@
 - doc: add `request-validation` plugin chinese document. [1932](https://github.com/apache/incubator-apisix/pull/1932)
 - doc: fixed file path of `gRPC transcoding` in `README`. [1945](https://github.com/apache/incubator-apisix/pull/1945)
 - doc: fixed `uri-blocker` plugin path error in `README`. [1950](https://github.com/apache/incubator-apisix/pull/1950)
+- doc: fixed `grpc-transcode` plugin path error in `README`. [1946](https://github.com/apache/incubator-apisix/pull/1946)
+- doc: removed unnecessary configurations for `k8s` document. [1891](https://github.com/apache/incubator-apisix/pull/1891)
 
 
 ## 1.4.1

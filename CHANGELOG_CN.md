@@ -51,6 +51,7 @@
 - 变更：为 Makefile `install` 命令添加注释。[1912](https://github.com/apache/incubator-apisix/pull/1912)
 - 变更：更新 config.yaml `etcd.timeout` 默认配置的注释。[1929](https://github.com/apache/incubator-apisix/pull/1929)
 - 变更：为 `prometheus` 添加更多度量指标，以更好地了解 `APISIX` 节点的情况。[1888](https://github.com/apache/incubator-apisix/pull/1888)
+- 变更：为 `cors` 插件添加更多配置选项。[1963](https://github.com/apache/incubator-apisix/pull/1963)
 
 ### Bugfix
 - 修复：`healthcheck` 获取 `host` 配置失败。 [1871](https://github.com/apache/incubator-apisix/pull/1871)
@@ -59,6 +60,9 @@
 - 修复：从临时文件读取请求正文（如果已缓存）。[1863](https://github.com/apache/incubator-apisix/pull/1863)
 - 修复：批处理器名称和错误返回类型。[1927](https://github.com/apache/incubator-apisix/pull/1927)
 - 修复：`limit-count` 插件 `redis.ttl` 读取异常。[1928](https://github.com/apache/incubator-apisix/pull/1928)
+- 修复：被动健康检查不能提供健康报告。[1918](https://github.com/apache/incubator-apisix/pull/1918)
+- 修复：避免插件中直接修改或使用原始配置数据。[1958](https://github.com/apache/incubator-apisix/pull/1958)
+- 修复：`invalid-upstream` 测试用例稳定性问题。[1925](https://github.com/apache/incubator-apisix/pull/1925)
 
 ### Doc
 - 文档：添加 `APISIX Lua` 代码风格指南。[1874](https://github.com/apache/incubator-apisix/pull/1874)
@@ -71,6 +75,8 @@
 - 文档：添加 `request-validation` 插件中文文档。[1932](https://github.com/apache/incubator-apisix/pull/1932)
 - 文档：修正 `README` 中 `gRPC transcoding` 文档路径。[1945](https://github.com/apache/incubator-apisix/pull/1945)
 - 文档：修正 `README` 中 `uri-blocker` 文档路径。[1950](https://github.com/apache/incubator-apisix/pull/1950)
+- 文档：修正 `README` 中 `grpc-transcode` 文档路径。[1946](https://github.com/apache/incubator-apisix/pull/1946)
+- 文档: 删除 `k8s` 文档中不必要的配置。[1891](https://github.com/apache/incubator-apisix/pull/1891)
 
 
 ## 1.4.1
