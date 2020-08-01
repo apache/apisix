@@ -32,9 +32,6 @@ local function new()
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil
-    etcd_conf.protocol = etcd_conf.version
-    etcd_conf.version = nil
-    etcd_conf.api_prefix = "/v3"
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
@@ -47,57 +44,47 @@ end
 _M.new = new
 
 
-function _M.get(key, opts)
+function _M.get(key)
     local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
     end
 
-    return etcd_cli:get(prefix .. key, opts)
+    return etcd_cli:get(prefix .. key)
 end
 
-
-function _M.set(key, value, opts)
+-- ttl to timeout in opts
+function _M.set(key, value, ttl)
     local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
     end
 
-    return etcd_cli:set(prefix .. key, value, opts)
+    return etcd_cli:set(prefix .. key, value, ttl)
 end
 
 
-function _M.push(key, value, opts)
-    local etcd_cli, prefix, err = new()
-    if not etcd_cli then
-        return nil, err
-    end
-    -- use pseudo_key (a key that might never be used) to get current revision, to simulate push in v2
-    local pseudo_key = "/5tHkHhY/kjr6cQY"
-
-    local res, err = etcd_cli:set(pseudo_key, nil, {prev_kv = true})
-    if not res then
-        return nil, err
-    end
-
-    local index = res.body.prev_kv.mod_revision
-    index = string.format("%020d", index)
-
-    return etcd_cli:set(prefix .. key .. "/" .. index, value, opts)
-end
-
-
-function _M.delete(key, opts)
+function _M.push(key, value, ttl)
     local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
     end
 
-    return etcd_cli:delete(prefix .. key, opts)
+    return etcd_cli:push(prefix .. key, value, ttl)
 end
 
 
-function _M.server_version()
+function _M.delete(key)
+    local etcd_cli, prefix, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return etcd_cli:delete(prefix .. key)
+end
+
+
+function _M.server_version(key)
     local etcd_cli, err = new()
     if not etcd_cli then
         return nil, err
