@@ -63,7 +63,7 @@
 - fixed: failed to read redis.ttl in `limit-count` plugin. [1928](https://github.com/apache/incubator-apisix/pull/1928)
 - fixed: passive health check seems never provide a healthy report. [1918](https://github.com/apache/incubator-apisix/pull/1918)
 - fixed: avoid to modify the original plugin conf. [1958](https://github.com/apache/incubator-apisix/pull/1958)
-- fixed: the test case of `invalid-upstream` is unstable and sometimes fails to run. [1925](https://github.com/apache/incubator-apisix/pull/1925) 
+- fixed: the test case of `invalid-upstream` is unstable and sometimes fails to run. [1925](https://github.com/apache/incubator-apisix/pull/1925)
 
 ### Doc
 - doc: added APISIX Lua Coding Style Guide. [1874](https://github.com/apache/incubator-apisix/pull/1874)
