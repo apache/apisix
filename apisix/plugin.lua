@@ -229,16 +229,16 @@ end
 
 
 function _M.filter(user_route, plugins)
-    plugins = plugins or core.table.new(#local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
         if local_conf and local_conf.apisix.enable_debug then
             core.response.set_header("Apisix-Plugins", "no plugin")
         end
-        return plugins
+        return core.empty_tab
     end
 
+    plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
