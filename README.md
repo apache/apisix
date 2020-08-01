@@ -125,12 +125,12 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
     - Download the latest source code release package:
         ```shell
-        wget http://www.apache.org/dist/incubator/apisix/1.5/apache-apisix-1.5-incubating-src.tar.gz
-        tar zxvf apache-apisix-1.5-incubating-src.tar.gz
+        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
+        tar zxvf apache-apisix-1.5-src.tar.gz
         ```
     - Install the dependencies：
         ```shell
-        cd apache-apisix-1.5-incubating
+        cd apache-apisix-1.5
         make deps
         ```
     - check version of APISIX:
@@ -155,7 +155,7 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
     - install APISIX：
     ```shell
-    sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
+    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
     ```
     - check version of APISIX:
         ```shell

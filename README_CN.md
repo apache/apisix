@@ -124,12 +124,12 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
     - 下载最新的源码发布包：
         ```shell
-        wget http://www.apache.org/dist/incubator/apisix/1.5/apache-apisix-1.5-incubating-src.tar.gz
-        tar zxvf apache-apisix-1.5-incubating-src.tar.gz
+        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
+        tar zxvf apache-apisix-1.5-src.tar.gz
         ```
     - 安装运行时依赖的 Lua 库：
         ```shell
-        cd apache-apisix-1.5-incubating
+        cd apache-apisix-1.5
         make deps
         ```
     - 检查 APISIX 的版本号：
@@ -154,7 +154,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
     - 安装 APISIX：
     ```shell
-    sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
+    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
     ```
     - 检查 APISIX 的版本号：
         ```shell
