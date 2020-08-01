@@ -38,13 +38,10 @@ __DATA__
                      "desc": "new consumer"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer"
-                        }
-                    },
-                    "action": "set"
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer"
+                    }
                 }]]
                 )
 
@@ -78,18 +75,15 @@ passed
                         }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -115,18 +109,15 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -152,9 +143,8 @@ passed
             local code, body = t('/apisix/admin/consumers/jack',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
-
             ngx.status = code
             ngx.say(body)
         }
@@ -176,9 +166,7 @@ passed
             local code = t('/apisix/admin/consumers/not_found',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{
-                    "action": "delete"
-                }]]
+                 nil
                 )
             ngx.say("[delete] code: ", code)
         }
@@ -203,12 +191,9 @@ GET /t
                      "id":"jack"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "id": "jack"
-                        }
-                    },
-                    "action": "set"
+                    "value": {
+                        "id": "jack"
+                    }
                 }]]
                 )
 

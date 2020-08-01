@@ -53,6 +53,15 @@ function _M.get(key)
     return etcd_cli:get(prefix .. key)
 end
 
+function _M.readdir(key)
+    local etcd_cli, prefix, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return etcd_cli:readdir(prefix .. key)
+end
+
 -- ttl to timeout in opts
 function _M.set(key, value, ttl)
     local etcd_cli, prefix, err = new()

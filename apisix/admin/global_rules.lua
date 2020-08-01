@@ -18,6 +18,8 @@ local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local type = type
 local tostring = tostring
+local local_conf = require("apisix.core.config_local").local_conf()
+local etcd_version = local_conf.etcd.version or "v2"
 
 
 local _M = {
@@ -83,7 +85,7 @@ function _M.get(id)
     if id then
         key = key .. "/" .. id
     end
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.readdir(key)
     if not res then
         core.log.error("failed to get global rule[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -134,7 +136,7 @@ function _M.patch(id, conf, sub_path)
     core.log.info("key: ", key, " old value: ",
                   core.json.delay_encode(res_old, true))
 
-    local node_value = res_old.body.node.value
+    local node_value = etcd_version == "v3" and res_old.body.kvs[1].value or res_old.body.node.value
 
     if sub_path and sub_path ~= "" then
         local code, err, node_val = core.table.patch(node_value, sub_path, conf)

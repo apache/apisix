@@ -33,6 +33,7 @@ local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
+local local_conf = require("apisix.core.config_local").local_conf()
 
 
 
@@ -274,11 +275,21 @@ function _M.collect()
     end
 
     local res, _ = config:getkey("/routes")
-    if res and res.headers then
-        clear_tab(key_values)
-        -- global max
-        key_values[1] = "x_etcd_index"
-        metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
+    --TODO: refactor for multiversion etcd
+    if local_conf.etcd.version == "v3" then 
+        if res and res.body.header then
+            clear_tab(key_values)
+            -- global max
+            key_values[1] = "x_etcd_index"
+            metrics.etcd_modify_indexes:set(res.body.header.version, key_values)
+        end
+    else
+        if res and res.headers then
+            clear_tab(key_values)
+            -- global max
+            key_values[1] = "x_etcd_index"
+            metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
+        end
     end
 
     core.response.set_header("content_type", "text/plain")

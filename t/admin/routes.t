@@ -45,23 +45,20 @@ __DATA__
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -87,23 +84,20 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
                     },
-                    "action": "get"
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -128,9 +122,7 @@ passed
             local code, message = t('/apisix/admin/routes/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{
-                    "action": "delete"
-                }]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -152,9 +144,7 @@ GET /t
             local code = t('/apisix/admin/routes/not_found',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{
-                    "action": "delete"
-                }]]
+                 nil
                 )
             ngx.say("[delete] code: ", code)
         }
@@ -186,21 +176,18 @@ GET /t
                         "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -212,7 +199,7 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
+            local id = string.sub(res.key, #"/apisix/routes/" + 1)
             code, message = t('/apisix/admin/routes/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -251,18 +238,15 @@ GET /t
                         "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -304,20 +288,17 @@ GET /t
                         "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/index.html",
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "uri": "/index.html",
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 

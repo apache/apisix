@@ -56,6 +56,15 @@ function _M.get(key, opts)
     return etcd_cli:get(prefix .. key, opts)
 end
 
+function _M.readdir(key, opts)
+    local etcd_cli, prefix, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    return etcd_cli:readdir(prefix .. key, opts)
+end
+
 
 function _M.set(key, value, opts)
     local etcd_cli, prefix, err = new()

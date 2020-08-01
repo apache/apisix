@@ -49,6 +49,25 @@ local mt = {
     end
 }
 
+
+local function getkey(etcd_cli, key)
+    if not etcd_cli then
+        return nil, "not inited"
+    end
+
+    local res, err = etcd_cli:get(key)
+    if not res then
+        -- log.error("failed to get key from etcd: ", err)
+        return nil, err
+    end
+
+    if type(res.body) ~= "table" then
+        return nil, "failed to get key from etcd"
+    end
+
+    return res
+end
+
 local function readdir(etcd_cli, key, opts)
     if not etcd_cli then
         return nil, nil, "not inited"
@@ -208,10 +227,27 @@ local function sync_data(self)
         self.need_reload = false
         return true
     end
+
+    -- for fetch the etcd index
+    local key_res, _ = getkey(self.etcd_cli, self.key)
+
     -- get the first change
-    local dir_res, err = watchdir(self.etcd_cli, self.key, {start_revision = self.prev_index + 1, progress_notify = true})
+    local dir_res, err = watchdir(self.etcd_cli, self.key, {start_revision = self.prev_index + 1, timeout = self.timeout, progress_notify = true})
     log.info("watchdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
+    -- TODO: would be effected when compact in v3
+    if err == "timeout" then
+        if key_res and key_res.body.header then
+            local key_index = key_res.body.header.revision
+            local key_idx = key_index and tonumber(key_index) or 0
+            if key_idx and key_idx > self.prev_index then
+                -- Avoid the index to exceed 1000 by updating other keys
+                -- that will causing a full reload
+                self:upgrade_version(key_index)
+            end
+        end
+    end
+
     if not dir_res then
         return false, err
     end
@@ -343,6 +379,15 @@ function _M.get(self, key)
 end
 
 
+function _M.getkey(self, key)
+    if not self.running then
+        return nil, "stoped"
+    end
+
+    return getkey(self.etcd_cli, key)
+end
+
+
 local function _automatic_fetch(premature, self)
     if premature then
         return
@@ -411,6 +456,7 @@ function _M.new(key, opts)
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
+    local timeout = opts and opts.timeout
 
     local obj = setmetatable({
         etcd_cli = etcd_cli,
@@ -426,6 +472,7 @@ function _M.new(key, opts)
         prev_index = nil,
         last_err = nil,
         last_err_time = nil,
+        timeout = timeout,
         filter = filter_fun,
     }, mt)
 

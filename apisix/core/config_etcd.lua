@@ -149,8 +149,6 @@ local function sync_data(self)
         local dir_res, headers = res.body.node, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
-        log.error(ii, ": readdir key: ", self.key, " res: ",
-                  json.delay_encode(dir_res))
         if not dir_res then
             return false, err
         end

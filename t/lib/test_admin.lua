@@ -20,6 +20,8 @@ local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
 local str_find          = string.find
 local dir_names         = {}
+local local_conf = require("apisix.core.config_local").local_conf()
+local etcd_version = local_conf.etcd.version or "v2"
 
 
 local _M = {}
@@ -163,11 +165,40 @@ function _M.test(uri, method, body, pattern, headers)
         return res.status, res.body
     end
 
-    if pattern == nil then
-        return res.status, "passed", res.body
+    local res_data = json.decode(res.body)
+
+    if etcd_version == "v3" then
+        -- set would not return kv anymore in etcd v3
+        if method == "PUT" or method == "PATCH" then
+            -- need `res.body` for admin/plugins-reload.t
+            return 200, "passed", res_data
+        end
+
+        -- v3 return num of deleted k-v
+        if method == "DELETE" then
+            if not res_data.deleted then
+                return 404, "Key not found", res_data
+            else
+                return 200, "passed", res_data
+            end
+        end
+        -- to achieve compatibility with v2 in test file, we need some tricky selection
+        -- Since in v3, all k-v pairs are under key `kvs`, and multiple pairs would under `kvs`
+        -- While in v2, if not as dir pairs are under key `node`
+        --   but if as dir, pairs would be unber key `nodes` inside `node`
+        --   and multiple pairs would be under `nodes`
+        res_data = res_data.kvs
+        res_data = #res_data == 1 and res_data[1] or res_data
+    else
+        if pattern == nil then
+            return res.status, "passed", res.body
+        end
+        res_data = res_data.node and res_data.node or res_data
+        res_data = res_data.nodes and res_data.nodes or res_data
+        res_data = #res_data == 1 and res_data[1] or res_data
     end
 
-    local res_data = json.decode(res.body)
+
     local ok, err = _M.comp_tab(pattern, res_data)
     if not ok then
         return 500, "failed, " .. err, res_data

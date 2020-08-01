@@ -78,7 +78,7 @@ __DATA__
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -125,7 +125,7 @@ passed
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -341,7 +341,7 @@ GET /t
                     "req_headers": ["User-Agent: curl/7.29.0"]
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -379,7 +379,7 @@ passed
                     "req_headers": ["User-Agent: curl/7.29.0", "Accept: */*"]
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -417,7 +417,7 @@ passed
                     "req_headers": ["User-Agent: curl/7.29.0", 2233]
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -457,7 +457,7 @@ GET /t
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -500,7 +500,7 @@ GET /t
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,

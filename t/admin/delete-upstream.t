@@ -37,16 +37,13 @@ __DATA__
                     "type": "roundrobin"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
+                        "type": "roundrobin"
                     },
-                    "action": "set"
+                    "key": "/apisix/upstreams/1"
                 }]]
                 )
 
@@ -74,13 +71,10 @@ passed
                     "upstream_id": 1
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream_id": 1
-                        },
-                        "key": "/apisix/services/1"
+                    "value": {
+                        "upstream_id": 1
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
                 )
 
@@ -109,14 +103,11 @@ passed
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream_id": 1,
-                            "uri": "/index.html"
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "upstream_id": 1,
+                        "uri": "/index.html"
                     },
-                    "action": "set"
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -142,7 +133,7 @@ passed
             local code, message = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
             ngx.print("[delete] code: ", code, " message: ", message)
         }
@@ -165,7 +156,7 @@ GET /t
             local code, message = t('/apisix/admin/routes/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -188,7 +179,7 @@ GET /t
             local code, message = t('/apisix/admin/services/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -211,7 +202,7 @@ GET /t
             local code, message = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }

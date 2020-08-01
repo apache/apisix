@@ -39,21 +39,17 @@ __DATA__
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/services/1"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
                 )
-
             ngx.status = code
             ngx.say(body)
         }
@@ -79,14 +75,11 @@ passed
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "service_id": 1,
-                            "uri": "/index.html"
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "service_id": 1,
+                        "uri": "/index.html"
                     },
-                    "action": "set"
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -112,7 +105,7 @@ passed
             local code, message = t('/apisix/admin/services/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
             ngx.print("[delete] code: ", code, " message: ", message)
         }
@@ -135,7 +128,7 @@ GET /t
             local code, message = t('/apisix/admin/routes/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -158,7 +151,7 @@ GET /t
             local code, message = t('/apisix/admin/services/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{"action": "delete"}]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
