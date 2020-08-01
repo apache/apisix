@@ -141,6 +141,23 @@ script() {
     ./bin/apisix init_etcd
     ./bin/apisix start
 
+    #start again  --> fial
+    res=`./bin/apisix start`
+    if [ "$res" != "APISIX is running..." ]; then
+        echo "failed: APISIX runs repeatedly"
+        exit 1
+    fi
+
+    #kill apisix
+    sudo kill -9 `ps aux | grep apisix | grep nginx | awk '{print $2}'`
+
+    #start -> ok
+    res=`./bin/apisix start`
+    if [ "$res" == "APISIX is running..." ]; then
+        echo "failed: shouldn't stop APISIX running after kill the old process."
+        exit 1
+    fi
+
     sleep 1
     cat logs/error.log
 

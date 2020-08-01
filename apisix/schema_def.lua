@@ -75,9 +75,14 @@ local health_checker = {
                     enum = {"http", "https", "tcp"},
                     default = "http"
                 },
-                timeout = {type = "integer", default = 1},
+                timeout = {type = "number", default = 1},
                 concurrency = {type = "integer", default = 10},
                 host = host_def,
+                port = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 65535
+                },
                 http_path = {type = "string", default = "/"},
                 https_verify_certificate = {type = "boolean", default = true},
                 healthy = {
@@ -273,7 +278,7 @@ local upstream_schema = {
         nodes = nodes_schema,
         retries = {
             type = "integer",
-            minimum = 1,
+            minimum = 0,
         },
         timeout = {
             type = "object",
@@ -463,6 +468,7 @@ _M.service = {
 _M.consumer = {
     type = "object",
     properties = {
+        id = id_schema,
         username = {
             type = "string", minLength = 1, maxLength = 32,
             pattern = [[^[a-zA-Z0-9_]+$]]

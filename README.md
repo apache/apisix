@@ -53,7 +53,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
     - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
     - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
-    - [gRPC transcoding](doc/plugins/grpc-transcoding.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
+    - [gRPC transcoding](doc/plugins/grpc-transcode.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
     - Proxy Websocket
     - Proxy Protocol
     - Proxy Dubbo: Dubbo Proxy based on Tengine.
@@ -90,7 +90,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Limit-concurrency](doc/plugins/limit-conn.md)
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
     - [CORS](doc/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
-    - [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
+    - [uri-blocker](doc/plugins/uri-blocker.md): Block client request by URI.
 
 - **OPS friendly**
     - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
@@ -148,7 +148,7 @@ There are several ways to install the Apache Release version of APISIX:
     docker pull apache/apisix
     ```
 
-    The Docker image does not include `etcd`, you can refer to [docker compose example] (https://github.com/apache/incubator-apisix-docker/tree/master/example) to start a test cluster.
+    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/incubator-apisix-docker/tree/master/example) to start a test cluster.
 
 3. RPM package（only for CentOS 7）
     - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)

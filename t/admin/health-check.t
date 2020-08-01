@@ -476,3 +476,45 @@ GET /t
 {"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"checks\" validation failed: object matches none of the requireds: [\"active\"] or [\"active\",\"passive\"]"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: number type timeout
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "http_path": "/status",
+                    "host": "foo.com",
+                    "timeout": 1.01,
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    },
+                    "unhealthy": {
+                        "interval": 1,
+                        "http_failures": 2
+                    }
+                }
+            }]])
+            exp_data.node.value.upstream.checks = req_data.upstream.checks
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

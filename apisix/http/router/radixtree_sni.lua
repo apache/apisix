@@ -204,6 +204,15 @@ function _M.match_and_set(api_ctx)
 end
 
 
+function _M.ssls()
+    if not ssl_certificates then
+        return nil, nil
+    end
+
+    return ssl_certificates.values, ssl_certificates.conf_version
+end
+
+
 function _M.init_worker()
     local err
     ssl_certificates, err = core.config.new("/ssl", {

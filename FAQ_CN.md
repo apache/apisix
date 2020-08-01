@@ -75,7 +75,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 
 ## 如何通过 APISIX 支持灰度发布？
 
-比如，`foo.com/product/index.html?id=204&page=2`, 根据 uri 中 query string 中的 `id` 作为条件来灰度发布：
+比如，`foo.com/product/index.html?id=204&page=2`, 根据 URL 中 query string 中的 `id` 作为条件来灰度发布：
 
 1. A组：id <= 1000
 2. B组：id > 1000

@@ -33,8 +33,10 @@ local ipairs        = ipairs
 local tostring      = tostring
 local type          = type
 local ngx_now       = ngx.now
+local str_byte      = string.byte
+local str_sub       = string.sub
 local load_balancer
-
+local local_conf
 local dns_resolver
 local lru_resolved_domain
 
@@ -97,7 +99,7 @@ function _M.http_init_worker()
     require("apisix.debug").init_worker()
     require("apisix.upstream").init_worker()
 
-    local local_conf = core.config.local_conf()
+    local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
@@ -320,6 +322,15 @@ function _M.http_access_phase()
         api_ctx.conf_id = nil
 
         api_ctx.global_rules = router.global_rules
+    end
+
+    if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
+        local uri = api_ctx.var.uri
+        if str_byte(uri, #uri) == str_byte("/") then
+            api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
+            core.log.info("remove the end of uri '/', current uri: ",
+                          api_ctx.var.uri)
+        end
     end
 
     router.router_http.match(api_ctx)
@@ -556,9 +567,64 @@ function _M.http_body_filter_phase()
 end
 
 
-function _M.http_log_phase()
+local function healcheck_passive(api_ctx)
+    local checker = api_ctx.up_checker
+    if not checker then
+        return
+    end
 
+    local up_conf = api_ctx.upstream_conf
+    local passive = up_conf.checks.passive
+    if not passive then
+        return
+    end
+
+    core.log.info("enabled healthcheck passive")
+    local host = up_conf.checks and up_conf.checks.active
+                 and up_conf.checks.active.host
+    local port = up_conf.checks and up_conf.checks.active
+                 and up_conf.checks.active.port
+
+    local resp_status = ngx.status
+    local http_statuses = passive and passive.healthy and
+                          passive.healthy.http_statuses
+    core.log.info("passive.healthy.http_statuses: ",
+                  core.json.delay_encode(http_statuses))
+    if http_statuses then
+        for i, status in ipairs(http_statuses) do
+            if resp_status == status then
+                checker:report_http_status(api_ctx.balancer_ip,
+                                           port or api_ctx.balancer_port,
+                                           host,
+                                           resp_status)
+            end
+        end
+    end
+
+    local http_statuses = passive and passive.unhealthy and
+                          passive.unhealthy.http_statuses
+    core.log.info("passive.unhealthy.http_statuses: ",
+                  core.json.delay_encode(http_statuses))
+    if not http_statuses then
+        return
+    end
+
+    for i, status in ipairs(http_statuses) do
+        for i, status in ipairs(http_statuses) do
+            if resp_status == status then
+                checker:report_http_status(api_ctx.balancer_ip,
+                                           port or api_ctx.balancer_port,
+                                           host,
+                                           resp_status)
+            end
+        end
+    end
+end
+
+
+function _M.http_log_phase()
     local api_ctx = common_phase("log")
+    healcheck_passive(api_ctx)
 
     if api_ctx.uri_parse_param then
         core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
@@ -585,7 +651,7 @@ end
 
 
 local function cors_admin()
-    local local_conf = core.config.local_conf()
+    local_conf = core.config.local_conf()
     if local_conf.apisix and not local_conf.apisix.enable_admin_cors then
         return
     end
@@ -649,7 +715,7 @@ function _M.stream_init_worker()
 
     load_balancer = require("apisix.balancer").run
 
-    local local_conf = core.config.local_conf()
+    local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
 
