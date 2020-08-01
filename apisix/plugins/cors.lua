@@ -64,7 +64,7 @@ local schema = {
         allow_credential = {
             type = "boolean",
             default = false
-        },
+        }
     }
 }
 
@@ -74,6 +74,7 @@ local _M = {
     name = plugin_name,
     schema = schema,
 }
+
 
 local function create_mutiple_origin_cache(conf)
     if not str_find(conf.allow_origins, ",", 1, true) then
@@ -99,6 +100,7 @@ local function create_mutiple_origin_cache(conf)
     return origin_cache
 end
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -108,23 +110,32 @@ function _M.check_schema(conf)
     return true
 end
 
+
 local function set_cors_headers(conf, ctx)
     local allow_methods = conf.allow_methods
     if allow_methods == "**" then
         allow_methods = "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE"
     end
 
-    ngx.header["Access-Control-Allow-Origin"] = ctx.cors_allow_origins
-    ngx.header["Access-Control-Allow-Methods"] = allow_methods
-    ngx.header["Access-Control-Allow-Headers"] = conf.allow_headers
-    ngx.header["Access-Control-Max-Age"] = conf.max_age
+    core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
+    core.response.set_header("Access-Control-Allow-Methods", allow_methods)
+    core.response.set_header("Access-Control-Allow-Headers", conf.allow_headers)
+    core.response.set_header("Access-Control-Max-Age", conf.max_age)
+    core.response.set_header("Access-Control-Expose-Headers", conf.expose_headers)
     if conf.allow_credential then
-        ngx.header["Access-Control-Allow-Credentials"] = true
+        core.response.set_header("Access-Control-Allow-Credentials", true)
     end
-    ngx.header["Access-Control-Expose-Headers"] = conf.expose_headers
 end
 
+
 function _M.rewrite(conf, ctx)
+    if ctx.var.request_method == "OPTIONS" then
+        return 200
+    end
+end
+
+
+function _M.header_filter(conf, ctx)
     local allow_origins = conf.allow_origins
     local req_origin = core.request.header(ctx, "Origin")
     if allow_origins == "**" then
@@ -146,10 +157,6 @@ function _M.rewrite(conf, ctx)
 
     ctx.cors_allow_origins = allow_origins
     set_cors_headers(conf, ctx)
-
-    if ctx.var.request_method == "OPTIONS" then
-        return 200
-    end
 end
 
 return _M
