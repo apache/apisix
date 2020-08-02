@@ -2038,7 +2038,7 @@ Content-Type: application/json
 
 
 
-=== TEST 52: set route with size 36k (temporary file to store request body)
+=== TEST 56: set route with size 36k (temporary file to store request body)
 --- config
     location /t {
         content_by_lua_block {
@@ -2077,7 +2077,7 @@ a client request body is buffered to a temporary file
 
 
 
-=== TEST 53: route size more than 1.5 MiB
+=== TEST 57: route size more than 1.5 MiB
 --- config
     location /t {
         content_by_lua_block {
