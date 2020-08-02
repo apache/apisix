@@ -142,6 +142,8 @@ etcd:
 #    read: 5000                    # default 5000ms
 
 plugins:                          # plugin list
+  # - proxy-cache
+  # - proxy-mirror
   - example-plugin
   - limit-req
   - limit-count
@@ -163,9 +165,7 @@ plugins:                          # plugin list
   - fault-injection
   - udp-logger
   - wolf-rbac
-  - proxy-cache
   - tcp-logger
-  - proxy-mirror
   - kafka-logger
   - cors
   - consumer-restriction
