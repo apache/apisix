@@ -1518,7 +1518,7 @@ GET /t
 
 
 
-=== TEST 42: retries is 0
+=== TEST 46: retries is 0
 --- config
     location /t {
         content_by_lua_block {
@@ -1549,7 +1549,7 @@ passed
 
 
 
-=== TEST 43: retries is -1 (INVALID)
+=== TEST 47: retries is -1 (INVALID)
 --- config
     location /t {
         content_by_lua_block {
