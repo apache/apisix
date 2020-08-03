@@ -956,7 +956,6 @@ passed
 
 
 
-
 === TEST 22: add route (test request validation `header_schema`)
 --- config
     location /t {

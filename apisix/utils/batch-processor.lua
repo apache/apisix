@@ -21,9 +21,9 @@ local ipairs = ipairs
 local table = table
 local now = ngx.now
 local type = type
-local Batch_Processor = {}
-local Batch_Processor_mt = {
-    __index = Batch_Processor
+local batch_processor = {}
+local batch_processor_mt = {
+    __index = batch_processor
 }
 local execute_func
 local create_buffer_timer
@@ -109,17 +109,17 @@ function create_buffer_timer(self)
 end
 
 
-function Batch_Processor:new(func, config)
+function batch_processor:new(func, config)
     local ok, err = core.schema.check(schema, config)
     if not ok then
-        return err
+        return nil, err
     end
 
     if not(type(func) == "function") then
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
-    local batch_processor = {
+    local processor = {
         func = func,
         buffer_duration = config.buffer_duration,
         inactive_timeout = config.inactive_timeout,
@@ -134,11 +134,11 @@ function Batch_Processor:new(func, config)
         last_entry_t = 0
     }
 
-    return setmetatable(batch_processor, Batch_Processor_mt)
+    return setmetatable(processor, batch_processor_mt)
 end
 
 
-function Batch_Processor:push(entry)
+function batch_processor:push(entry)
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
         local batch = { entries = { entry }, retry_count = 0 }
@@ -166,7 +166,7 @@ function Batch_Processor:push(entry)
 end
 
 
-function Batch_Processor:process_buffer()
+function batch_processor:process_buffer()
     -- If entries are present in the buffer move the entries to processing
     if #self.entry_buffer.entries > 0 then
         core.log.debug("tranferring buffer entries to processing pipe line, ",
@@ -182,4 +182,4 @@ function Batch_Processor:process_buffer()
 end
 
 
-return Batch_Processor
+return batch_processor

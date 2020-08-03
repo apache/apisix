@@ -759,7 +759,133 @@ passed
 
 
 
-=== TEST 22: set service(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
+=== TEST 22: patch service(whole - sub path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1/',
+                ngx.HTTP_PATCH,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new 22 service"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new 22 service"
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: patch service(new desc - sub path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1/desc',
+                ngx.HTTP_PATCH,
+                '"new 23 service"',
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new 23 service"
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: patch service(new nodes - sub path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1/upstream',
+                ngx.HTTP_PATCH,
+                [[{
+                    "nodes": {
+                        "127.0.0.2:8081": 3,
+                        "127.0.0.3:8082": 4
+                    },
+                    "type": "roundrobin"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.2:8081": 3,
+                                    "127.0.0.3:8082": 4
+                                },
+                                "type": "roundrobin"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: set service(id: 1) and upstream(type:chash, default hash_on: vars, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -790,7 +916,7 @@ GET /t
 
 
 
-=== TEST 23: set service(id: 1) and upstream(type:chash, hash_on: header, missing key)
+=== TEST 26: set service(id: 1) and upstream(type:chash, hash_on: header, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -822,7 +948,7 @@ GET /t
 
 
 
-=== TEST 24: set service(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
+=== TEST 27: set service(id: 1) and upstream(type:chash, hash_on: cookie, missing key)
 --- config
     location /t {
         content_by_lua_block {
@@ -854,7 +980,7 @@ GET /t
 
 
 
-=== TEST 25: set service(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
+=== TEST 28: set service(id: 1) and upstream(type:chash, hash_on: consumer, missing key is ok)
 --- config
     location /t {
         content_by_lua_block {
@@ -885,7 +1011,7 @@ GET /t
 
 
 
-=== TEST 26: set service(id: 1 + test service name)
+=== TEST 29: set service(id: 1 + test service name)
 --- config
     location /t {
         content_by_lua_block {
@@ -931,7 +1057,7 @@ passed
 
 
 
-=== TEST 27: invalid string id
+=== TEST 30: invalid string id
 --- config
     location /t {
         content_by_lua_block {

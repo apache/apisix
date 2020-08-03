@@ -103,8 +103,20 @@ function _M.stream_init_worker()
 end
 
 
+function _M.ssls()
+    return _M.router_ssl.ssls()
+end
+
 function _M.http_routes()
     return _M.router_http.routes()
+end
+
+function _M.stream_routes()
+    -- maybe it's not inited.
+    if not _M.router_stream then
+        return nil, nil
+    end
+    return _M.router_stream.routes()
 end
 
 

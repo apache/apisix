@@ -90,19 +90,19 @@ $ make stop
 $ make help
 Makefile rules:
 
-    help:          Show Makefile rules.
-    deps:          Installation dependencies
-    utils:         Installation tools
-    lint:          Lint Lua source code
-    init:          Initialize the runtime environment
-    run:           Start the apisix server
-    stop:          Stop the apisix server
-    verify:        Verify the configuration of apisix server
-    clean:         Remove generated files
-    reload:        Reload the apisix server
-    install:       Install the apisix
-    test:          Run the test case
-    license-check: Check lua souce code for Apache License
+    help:             Show Makefile rules
+    deps:             Installation dependencies
+    utils:            Installation tools
+    lint:             Lint Lua source code
+    init:             Initialize the runtime environment
+    run:              Start the apisix server
+    stop:             Stop the apisix server
+    verify:           Verify the configuration of apisix server
+    clean:            Remove generated files
+    reload:           Reload the apisix server
+    install:          Install the apisix (only for luarocks)
+    test:             Run the test case
+    license-check:    Check Lua source code for Apache License
 ```
 
 ## 4. Test
@@ -115,12 +115,20 @@ Makefile rules:
     * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
 
-### Troubleshoot
+### Troubleshoot Testing
 
-If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+**Set Nginx Path**
+- If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
 make sure to set openresty as default nginx. And export the path as below.
-
 * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+    - Linux default installation path:
+        * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+    - OSx default installation path via homebrew:
+        * export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
+
+**Run Individual Test Cases**
+- Use the following command to run test cases constratined to a file:
+    - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 
 ## 5. Update Admin API token to protect Apache APISIX
 

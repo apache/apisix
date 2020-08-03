@@ -52,7 +52,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [TCP/UDP 代理](doc/zh-cn/stream-proxy.md): 动态 TCP/UDP 代理。
     - [动态 MQTT 代理](doc/zh-cn/plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
     - [gRPC 代理](doc/zh-cn/grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
-    - [gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
+    - [gRPC 协议转换](doc/zh-cn/plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
     - Websocket 代理
     - Proxy Protocol
     - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
@@ -89,7 +89,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [限制并发](doc/zh-cn/plugins/limit-conn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
     - [CORS](doc/zh-cn/plugins/cors.md)：为你的API启用 CORS。
-    - [uri-blocker](plugins/uri-blocker.md)：根据 URI 拦截用户请求。
+    - [uri-blocker](doc/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
 
 - **运维友好**
     - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
