@@ -142,8 +142,6 @@ etcd:
 #    read: 5000                    # default 5000ms
 
 plugins:                          # plugin list
-  # - proxy-cache
-  # - proxy-mirror
   - example-plugin
   - limit-req
   - limit-count
@@ -177,6 +175,8 @@ plugins:                          # plugin list
   - authz-keycloak
   - uri-blocker
   - request-validation
+  # - proxy-cache
+  # - proxy-mirror
 
 stream_plugins:
   - mqtt-proxy
