@@ -9,7 +9,7 @@ local _M = {
 
 function _M.load_script(route, api_ctx)
 	local script = route.value.script
-	if script == nil then
+	if script == nil or script == "" then
 		return nil
 	end
 
