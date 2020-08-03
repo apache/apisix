@@ -22,7 +22,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
-local set_upstream = require("apisix.upstream").set_by_route
+local set_upstream  = require("apisix.upstream").set_by_route
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -39,6 +39,7 @@ local load_balancer
 local local_conf
 local dns_resolver
 local lru_resolved_domain
+local ver_header    = "APISIX/" .. core.version.VERSION
 
 
 local function parse_args(args)
@@ -298,6 +299,8 @@ function _M.http_access_phase()
     end
 
     core.ctx.set_vars_meta(api_ctx)
+
+    core.response.set_header("server", ver_header)
 
     -- load and run global rule
     if router.global_rules and router.global_rules.values
