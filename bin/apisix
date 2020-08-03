@@ -313,7 +313,7 @@ http {
         {%end%}
         log_not_found off;
         location /apisix/admin {
-            {%if allow_admin and #allow_admin > 0 then%}
+            {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
                 {% end %}
@@ -326,7 +326,7 @@ http {
         }
 
         location /apisix/dashboard {
-            {%if allow_admin and #allow_admin > 0 then%}
+            {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
                 {% end %}
@@ -384,7 +384,7 @@ http {
 
         {% if enable_admin and not port_admin then %}
         location /apisix/admin {
-            {%if allow_admin  and #allow_admin > 0 then%}
+            {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
                 {% end %}
@@ -397,7 +397,7 @@ http {
         }
 
         location /apisix/dashboard {
-            {%if allow_admin  and #allow_admin > 0 then%}
+            {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
                 allow {*allow_ip*};
                 {% end %}
@@ -729,6 +729,10 @@ local function init()
         sys_conf["enable_reuseport"] = false
     else
         sys_conf["worker_processes"] = "auto"
+    end
+
+    if sys_conf.allow_admin and #sys_conf.allow_admin == 0 then
+        sys_conf.allow_admin = nil
     end
 
     local dns_resolver = sys_conf["dns_resolver"]
