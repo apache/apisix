@@ -22,7 +22,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
-local set_upstream = require("apisix.upstream").set_by_route
+local set_upstream  = require("apisix.upstream").set_by_route
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -467,7 +467,7 @@ function _M.http_access_phase()
 
     local ok, err = set_upstream(route, api_ctx)
     if not ok then
-        core.log.error("failed to parse upstream: ", err)
+        core.log.error("failed to set upstream: ", err)
         core.response.exit(500)
     end
 end
