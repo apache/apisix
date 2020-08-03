@@ -161,3 +161,30 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
+
+# empty allow_admin in conf/config.yaml
+
+git checkout conf/config.yaml
+
+sed  -i 's/- 127.0.0.0\/24/- 127.0.0.9/'  conf/config.yaml
+
+make init
+
+grep -E "allow 127.0.0.9;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: not found 'allow 127.0.0.9;' in conf/nginx.conf"
+    exit 1
+fi
+
+sed  -i 's/- 127.0.0.9/\# - 127.0.0.9/'  conf/config.yaml
+
+make init
+
+set +ex
+grep "allow 127.0.0.9;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 1 ]; then
+    echo "failed: found allow 127.0.0.9; in conf/nginx.conf"
+    exit 1
+fi
+
+echo "passed: empty allow_admin in conf/config.yaml"
