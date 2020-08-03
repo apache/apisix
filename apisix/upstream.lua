@@ -116,37 +116,37 @@ function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
         core.log.warn("upstream node has been specified, ",
                       "cannot be set repeatedly")
-        return true
+        return
     end
 
     local up_id = route.value.upstream_id
     if up_id then
         if not upstreams then
-            return false, "need to create a etcd instance for fetching "
+            return 500, "need to create a etcd instance for fetching "
                           .. "upstream information"
         end
 
         local up_obj = upstreams:get(tostring(up_id))
         if not up_obj then
-            return false, "failed to find upstream by id: " .. up_id
+            return 500, "failed to find upstream by id: " .. up_id
         end
         core.log.info("upstream: ", core.json.delay_encode(up_obj))
 
         local up_conf = up_obj.dns_value or up_obj.value
         set_directly(api_ctx, up_conf.type .. "#upstream_" .. up_id,
                      up_obj.modifiedIndex, up_conf, up_obj)
-        return true
+        return
     end
 
     local up_conf = (route.dns_value and route.dns_value.upstream)
                     or route.value.upstream
     if not up_conf then
-        return false, "missing upstream configuration in Route or Service"
+        return 500, "missing upstream configuration in Route or Service"
     end
 
     if up_conf.service_name then
         if not discovery then
-            return false, "discovery is uninitialized"
+            return 500, "discovery is uninitialized"
         end
         up_conf.nodes = discovery.nodes(up_conf.service_name)
     end
@@ -156,7 +156,7 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        return false, "no valid upstream node"
+        return 502, "no valid upstream node"
     end
 
     if nodes_count > 1 then
@@ -165,7 +165,7 @@ function _M.set_by_route(route, api_ctx)
         api_ctx.up_checker = checker
     end
 
-    return true
+    return
 end
 
 

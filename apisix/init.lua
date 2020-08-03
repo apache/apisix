@@ -465,10 +465,10 @@ function _M.http_access_phase()
     end
     run_plugin("access", plugins, api_ctx)
 
-    local ok, err = set_upstream(route, api_ctx)
-    if not ok then
+    local code, err = set_upstream(route, api_ctx)
+    if not code then
         core.log.error("failed to set upstream: ", err)
-        core.response.exit(500)
+        core.response.exit(code)
     end
 end
 
