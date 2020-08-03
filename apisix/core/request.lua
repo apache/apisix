@@ -116,41 +116,13 @@ local function get_file(file_name)
 end
 
 
-function _M.get_body(max_size)
-    req_read_body()
-
-    local req_body = req_get_body_data()
-    if req_body then
-        return req_body
-    end
-
-    local file_name = req_get_body_file()
-    if not file_name then
-        return nil
-    end
-
-    if max_size then
-        local size, err = lfs.attributes (file_name, "size")
-        if not size then
-            return nil, err
-        end
-
-        if size > max_size then
-            return nil, "request size " .. size .. " is greater than the "
-                        .. "maximum size " .. max_size .. " allowed"
-        end
-    end
-
-    local req_body, err = get_file(file_name)
-    return req_body, err
-end
-
 function _M.get_scheme(ctx)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
     return ctx.var.scheme or ''
 end
+
 
 function _M.get_host(ctx)
     if not ctx then
@@ -159,12 +131,14 @@ function _M.get_host(ctx)
     return ctx.var.host or ''
 end
 
+
 function _M.get_port(ctx)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
     return tonumber(ctx.var.server_port)
 end
+
 
 function _M.get_http_version()
     return ngx.req.http_version()
