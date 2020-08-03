@@ -52,7 +52,7 @@ if script_path:sub(1, 2) == './' then
         error("failed to fetch current path")
     end
 
-    if string.match(apisix_home, '^/[root][^/]+') then
+    if string.match(apisix_home .. "/", '^/root/') then
             is_root_path = true
     end
 
