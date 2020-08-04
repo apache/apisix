@@ -139,7 +139,8 @@ local function add_user_header(user)
 end
 
 
-function _M.access(conf, ctx)
+function _M.access(plugin_conf, ctx)
+    local conf = core.table.clone(plugin_conf)
     if not conf.redirect_uri then
         conf.redirect_uri = ctx.var.request_uri
     end

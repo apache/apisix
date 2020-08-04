@@ -278,7 +278,7 @@ local upstream_schema = {
         nodes = nodes_schema,
         retries = {
             type = "integer",
-            minimum = 1,
+            minimum = 0,
         },
         timeout = {
             type = "object",
@@ -468,6 +468,7 @@ _M.service = {
 _M.consumer = {
     type = "object",
     properties = {
+        id = id_schema,
         username = {
             type = "string", minLength = 1, maxLength = 32,
             pattern = [[^[a-zA-Z0-9_]+$]]

@@ -36,7 +36,7 @@ endif
 
 LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit
 
-### help:             Show Makefile rules.
+### help:             Show Makefile rules
 .PHONY: help
 help: default
 	@echo Makefile rules:
@@ -112,7 +112,7 @@ reload: default
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
-### install:          Install the apisix
+### install:          Install the apisix (only for luarocks)
 .PHONY: install
 install: default
 	$(INSTALL) -d /usr/local/apisix/
