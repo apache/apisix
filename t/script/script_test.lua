@@ -32,19 +32,13 @@ local _M = {
             key = "remote_addr"
         },
         ["response-rewrite_1"] = {
-            body = {
-                code = "ok",
-                message = "new json body"
-            },
+            body = '{"message":"new json body2","code":"ok"}\n',
             headers = {
                 ["X-limit-status"] = "limited"
             }
         },
         ["response-rewrite_2"] = {
-            body = {
-                code = "ok",
-                message = "new json body2"
-            },
+            body = '{"message":"new json body2","code":"ok"}\n',
             headers = {
                 ["X-limit-status"] = "pass"
             }
@@ -115,7 +109,7 @@ function _M.header_filter(ctx)
         core.log.info("test header phase_fun: ", core.json.delay_encode(phase_fun, true))
         if phase_fun then
             core.log.info("test header filter")
-            local code, body = phase_fun(_M.conf[plugin_conf_name], api_ctx)
+            local code, body = phase_fun(_M.conf[plugin_conf_name], ctx)
             if code or body then
                 -- do we exit here?
                 core.log.info("test header filter2")
@@ -141,7 +135,7 @@ function _M.body_filter(ctx)
 
         if phase_fun then
             core.log.info("test body filter")
-            local code, body = phase_fun(_M.conf[plugin_conf_name], api_ctx)
+            local code, body = phase_fun(_M.conf[plugin_conf_name], ctx)
             if code or body then
                 -- do we exit here?
                 core.log.info("test body filter2")
@@ -160,7 +154,7 @@ function _M.log(ctx)
         local plugin_obj = plugin.get(plugin_name)
         local phase_fun = plugin_obj["log"]
         if phase_fun then
-            local code, body = phase_fun(_M.conf[plugin_conf_name], api_ctx)
+            local code, body = phase_fun(_M.conf[plugin_conf_name], ctx)
             if code or body then
                 -- do we exit here?
                 core.response.exit(code, body)

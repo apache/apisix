@@ -31,8 +31,8 @@ __DATA__
 
             local script = t.read_file("t/script/script_test.lua")
             local data = {
-                script = script, 
-                uri = "/hello", 
+                script = script,
+                uri = "/hello",
                 upstream = {
                     nodes = {
                         ["127.0.0.1:1980"] = 1
@@ -66,7 +66,7 @@ passed
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- response_body
-hello world
+{"message":"new json body2","code":"ok"}
 --- response_headers
 X-limit-status: pass
 --- no_error_log

@@ -16,11 +16,10 @@
 --
 local require    = require
 local core       = require("apisix.core")
-local pcall      = pcall
 local loadstring = loadstring
 
-local _M = {
-}
+
+local _M = {}
 
 
 function _M.load_script(route, api_ctx)
@@ -29,14 +28,14 @@ function _M.load_script(route, api_ctx)
 		return nil
 	end
 
-	local loadfun = loadstring(script)
+	local loadfun = loadstring(script, "route#" .. route.value.id)
 
 	api_ctx.script_obj = loadfun()
 end
 
 
 function _M.run_script(phase, api_ctx)
-    local obj = api_ctx and api_ctx.script_obj or nil
+    local obj = api_ctx and api_ctx.script_obj
 
     if not obj then
         return api_ctx
@@ -46,7 +45,7 @@ function _M.run_script(phase, api_ctx)
 
     local phase_fun = obj[phase]
     if phase_fun then
-        pcall(phase_fun, api_ctx)
+        phase_fun(api_ctx)
     end
 
     return api_ctx
