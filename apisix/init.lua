@@ -451,8 +451,8 @@ function _M.http_access_phase()
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
     end
 
-    local plugins = core.tablepool.fetch("plugins", 32, 0)
-    api_ctx.plugins = plugin.filter(route, plugins)
+    local plugins = plugin.filter(route)
+    api_ctx.plugins = plugins
 
     run_plugin("rewrite", plugins, api_ctx)
     if api_ctx.consumer then
@@ -631,7 +631,7 @@ function _M.http_log_phase()
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins then
+    if api_ctx.plugins and api_ctx.plugins ~= core.empty_tab then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
