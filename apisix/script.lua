@@ -23,14 +23,13 @@ local _M = {}
 
 
 function _M.load(route, api_ctx)
-	local script = route.value.script
-	if script == nil or script == "" then
-		return nil
-	end
+    local script = route.value.script
+    if script == nil or script == "" then
+        return nil
+    end
 
-	local loadfun = loadstring(script, "route#" .. route.value.id)
-
-	api_ctx.script_obj = loadfun()
+    local loadfun = loadstring(script, "route#" .. route.value.id)
+    api_ctx.script_obj = loadfun()
 end
 
 
