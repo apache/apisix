@@ -77,6 +77,8 @@ my $test2_key = read_file("conf/cert/test2.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
 $yaml_config =~ s/admin_key:/disable_admin_key:/;
+$yaml_config =~ s/  # - proxy-cache/  - proxy-cache/;
+$yaml_config =~ s/  # - proxy-mirror/  - proxy-mirror/;
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
 

@@ -163,9 +163,7 @@ plugins:                          # plugin list
   - fault-injection
   - udp-logger
   - wolf-rbac
-  - proxy-cache
   - tcp-logger
-  - proxy-mirror
   - kafka-logger
   - cors
   - consumer-restriction
@@ -177,6 +175,8 @@ plugins:                          # plugin list
   - authz-keycloak
   - uri-blocker
   - request-validation
+  # - proxy-cache
+  # - proxy-mirror
 
 stream_plugins:
   - mqtt-proxy
