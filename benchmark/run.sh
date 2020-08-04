@@ -26,17 +26,22 @@ fi
 mkdir -p benchmark/server/logs
 mkdir -p benchmark/fake-apisix/logs
 
-sudo openresty -p $PWD/benchmark/server || exit 1
-
-make init
-
 trap 'onCtrlC' INT
 function onCtrlC () {
-    sudo killall wrk
-    sudo killall openresty
-    sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
-    sudo openresty -p $PWD/benchmark/server -s stop || exit 1
+    killall wrk
+    killall openresty
+    openresty -p $PWD/benchmark/fake-apisix -s stop
+    openresty -p $PWD/benchmark/server -s stop
 }
+
+function run_wrk() {
+    connections=`expr $worker_cnt \* 18`
+    wrk -d 5 -t $worker_cnt -c ${connections} http://127.0.0.1:9080/hello
+}
+
+openresty -p $PWD/benchmark/server || exit 1
+
+make init
 
 if [[ "$(uname)" == "Darwin" ]]; then
     sed  -i "" "s/worker_processes .*/worker_processes $worker_cnt;/g" conf/nginx.conf
@@ -54,8 +59,6 @@ echo -e "\n\napisix: $worker_cnt worker + 1 upstream + no plugin"
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
-    "plugins": {
-    },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -66,11 +69,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 sleep 1
 
-wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+run_wrk
 
 sleep 1
 
-wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+run_wrk
 
 sleep 1
 
@@ -99,11 +102,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 sleep 3
 
-wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+run_wrk
 
 sleep 1
 
-wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+run_wrk
 
 sleep 1
 
@@ -115,16 +118,16 @@ echo -e "\n\nfake empty apisix server: $worker_cnt worker"
 sleep 1
 
 sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
-sudo openresty -p $PWD/benchmark/fake-apisix || exit 1
+openresty -p $PWD/benchmark/fake-apisix || exit 1
 
 sleep 1
 
-wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+run_wrk
 
 sleep 1
 
-wrk -d 5 -c 16 http://127.0.0.1:9080/hello
+run_wrk
 
-sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
+openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
 
-sudo openresty -p $PWD/benchmark/server -s stop || exit 1
+openresty -p $PWD/benchmark/server -s stop || exit 1
