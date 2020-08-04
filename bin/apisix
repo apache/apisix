@@ -194,14 +194,14 @@ http {
     {% end %}
     {% end %}
 
-    {% if proxy_cache then %}
+    {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
     proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *};
     {% end %}
     {% end %}
 
-    {% if proxy_cache then %}
+    {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     map $upstream_cache_zone $upstream_cache_zone_info {
     {% for _, cache in ipairs(proxy_cache.zones) do %}
@@ -459,7 +459,7 @@ http {
             proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
 
-            {% if proxy_cache then %}
+            {% if enabled_plugins["proxy-cache"] then %}
             ###  the following configuration is to cache response content from upstream server
 
             set $upstream_cache_zone            off;
@@ -487,7 +487,10 @@ http {
             {% end %}
 
             proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
+
+            {% if enabled_plugins["proxy-mirror"] then %}
             mirror          /proxy_mirror;
+            {% end %}
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -525,6 +528,7 @@ http {
             }
         }
 
+        {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
             internal;
 
@@ -534,6 +538,7 @@ http {
 
             proxy_pass $upstream_mirror_host$request_uri;
         }
+        {% end %}
     }
 }
 ]=]
@@ -686,6 +691,15 @@ local function init()
         with_module_status = false
     end
 
+    local enabled_plugins = {}
+    for i, name in ipairs(yaml_conf.plugins) do
+        enabled_plugins[name] = true
+    end
+
+    if enabled_plugins["proxy-cache"] and not yaml_conf.apisix.proxy_cache then
+        error("missing apisix.proxy_cache for plugin proxy-cache")
+    end
+
     -- Using template.render
     local sys_conf = {
         lua_path = pkg_path_org,
@@ -694,6 +708,7 @@ local function init()
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
+        enabled_plugins = enabled_plugins,
     }
 
     if not yaml_conf.apisix then
