@@ -452,9 +452,9 @@ function _M.http_access_phase()
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
     end
 
-    script.load_script(route, api_ctx)
-    if api_ctx.script_obj then
-        script.run_script("access", api_ctx)
+    if route.value.script then
+        script.load(route, api_ctx)
+        script.run("access", api_ctx)
     else
         local plugins = plugin.filter(route)
         api_ctx.plugins = plugins
@@ -560,7 +560,7 @@ local function common_phase(phase_name)
     end
 
     if api_ctx.script_obj then
-        script.run_script(phase_name, api_ctx)
+        script.run(phase_name, api_ctx)
     else
         run_plugin(phase_name, nil, api_ctx)
     end

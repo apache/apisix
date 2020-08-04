@@ -22,7 +22,7 @@ local loadstring = loadstring
 local _M = {}
 
 
-function _M.load_script(route, api_ctx)
+function _M.load(route, api_ctx)
 	local script = route.value.script
 	if script == nil or script == "" then
 		return nil
@@ -34,7 +34,7 @@ function _M.load_script(route, api_ctx)
 end
 
 
-function _M.run_script(phase, api_ctx)
+function _M.run(phase, api_ctx)
     local obj = api_ctx and api_ctx.script_obj
 
     if not obj then
