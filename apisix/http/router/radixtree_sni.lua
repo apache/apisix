@@ -163,7 +163,7 @@ function _M.match_and_set(api_ctx)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
-        core.log.warn("failed to find any SSL certificate by SNI: ", sni)
+        core.log.error("failed to find any SSL certificate by SNI: ", sni)
         return false
     end
 

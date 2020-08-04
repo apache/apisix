@@ -205,7 +205,7 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 failed to find any SSL certificate by SNI
 
@@ -558,12 +558,11 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
 failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNI: *.test2.com
 --- no_error_log
-[error]
 [alert]
 
 
@@ -641,11 +640,10 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 lua ssl server name: "www.test2.com"
 --- no_error_log
-[error]
 [alert]
 
 
@@ -853,12 +851,11 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
 failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["*.test2.com","test2.com"]
 --- no_error_log
-[error]
 [alert]
 
 
