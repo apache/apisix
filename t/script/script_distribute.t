@@ -16,8 +16,11 @@
 #
 use t::APISIX 'no_plan';
 
+repeat_each(1);
 no_root_location();
 no_shuffle();
+
+
 run_tests;
 
 __DATA__
@@ -66,17 +69,13 @@ passed
 GET /hello
 --- yaml_config eval: $::yaml_config
 --- response_body
-{"message":"new json body2","code":"ok"}
---- response_headers
-X-limit-status: pass
+hello world
 --- no_error_log
 [error]
-
-
-=== TEST 3: up the limit
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
---- response_headers eval
-["X-limit-status: pass", "X-limit-status: pass", "X-limit-status: limited", "X-limit-status: limited"]
---- no_error_log
-[error]
+--- error_log
+string "route#1"
+phase_fun(): hit access phase
+phase_fun(): hit header_filter phase
+phase_fun(): hit body_filter phase
+phase_fun(): hit body_filter phase
+phase_fun(): hit log phase while
