@@ -159,8 +159,9 @@ function _M.http_ssl_phase()
     local ok, err = router.router_ssl.match_and_set(api_ctx)
     if not ok then
         if err then
-            core.log.warn("failed to fetch ssl config: ", err)
+            core.log.error("failed to fetch ssl config: ", err)
         end
+        ngx_exit(-1)
     end
 end
 
