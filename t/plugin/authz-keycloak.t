@@ -351,3 +351,197 @@ GET /t
 true
 --- error_log
 {"error":"access_denied","error_description":"not_authorized"}
+
+
+
+=== TEST 9: Add htttps endpoint with ssl_verify true (default)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource#delete"],
+                                "audience": "course_management",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "authz-keycloak": {
+                                    "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                    "permissions": ["course_resource#delete"],
+                                    "audience": "course_management",
+                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                    "timeout": 3000
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello1"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: TEST with fake token and https endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+
+            if res.status == 200 then
+                ngx.say(true)
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+false
+--- error_log
+error while sending authz request to [127.0.0.1] port[8443] 18: self signed certificate
+
+
+
+=== TEST 11: Add htttps endpoint with ssl_verify false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource#delete"],
+                                "audience": "course_management",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000,
+                                "ssl_verify": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "authz-keycloak": {
+                                    "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                    "permissions": ["course_resource#delete"],
+                                    "audience": "course_management",
+                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                    "timeout": 3000,
+                                    "ssl_verify": false
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello1"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: TEST for https based token verification with ssl_verify false
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+
+            if res.status == 200 then
+                ngx.say(true)
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+false
+--- error_log
+status code: 401 msg: {"error":"HTTP 401 Unauthorized"}

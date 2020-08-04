@@ -40,7 +40,7 @@ before_install() {
     docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
     docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
     # Runs Keycloak version 10.0.2 with inbuilt policies for unit tests
-    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 sshniro/keycloak-apisix
+    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 -p 8443:8443 sshniro/keycloak-apisix
     # spin up kafka cluster for tests (1 zookeper and 1 kafka instance)
     docker pull bitnami/zookeeper:3.6.0
     docker pull bitnami/kafka:latest
