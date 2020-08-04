@@ -89,7 +89,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [限制并发](doc/zh-cn/plugins/limit-conn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
     - [CORS](doc/zh-cn/plugins/cors.md)：为你的API启用 CORS。
-    - [uri-blocker](doc/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
+    - [uri-blocker](doc/zh-cn/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
 
 - **运维友好**
     - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
