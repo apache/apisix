@@ -26,6 +26,7 @@
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Plugin**](#plugin)
+- [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer)
@@ -215,6 +216,25 @@ Not all plugins have specific configuration items. For example, there is no spec
 [APISIX supported plugin list](README.md#plugins)
 
 [Back to top](#Table-of-contents)
+
+## Script
+
+`Script` represents a script that will be executed during the `HTTP` request/response life cycle.
+
+The `Script` configuration can be directly bound to the `Route`.
+
+`Script` and `Plugin` are mutually exclusive, and `Script` is executed first. This means that after configuring `Script`, the `Plugin` configured on `Route` will not be executed.
+
+In theory, you can write arbitrary Lua code in `Script`, or you can directly call existing plugins to reuse existing code.
+
+`Script` also has the concept of execution phase, supporting `access`, `header_filer`, `body_filter` and `log` stages. The system will automatically execute the code of the corresponding stage in the `Script` script in the corresponding stage.
+
+```json
+{
+    ...
+    "plugins": "local core = require(\"apisix.core\")\nlocal _M = {}\nfunction _M.access(api_ctx)\n core.log.warn(\"hit access phase\")\nend \nfunction _M.header_filter(ctx)\n core.log.warn(\"hit header_filter phase\")\nend\nfunction _M.body_filter(ctx)\n core.log.warn(\"hit body_filter phase\") \nend\nfunction _M.log(ctx)\n core.log.warn(\"hit log phase\")\nend\nreturn _M"
+}
+```
 
 ## Upstream
 

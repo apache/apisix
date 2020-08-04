@@ -57,10 +57,11 @@
 |---------|---------|----|-----------|----|
 |uri      |与 `uris` 二选一 |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](architecture-design.md#router) 还允许更高级匹配，更多见 [Router](architecture-design.md#router)。|"/hello"|
 |uris     |与 `uri` 二选一 |匹配规则|数组形式，可以匹配多个 `uri`|["/hello", "/world"]|
-|plugins  |`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Plugin|详见 [Plugin](architecture-design.md#plugin) ||
-|upstream |`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
-|upstream_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
-|service_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
+|plugins  |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Plugin|详见 [Plugin](architecture-design.md#plugin) ||
+|script  |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Script|详见 [Script](architecture-design.md#script) ||
+|upstream |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
+|upstream_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
+|service_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
 |service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
 |name     |可选 |辅助   |标识路由名称|route-xxxx|
 |desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
@@ -75,7 +76,7 @@
 
 有两点需要特别注意：
 
-* 除了 `uri`/`uris` 是必选的之外，`plugins`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
+* 除了 `uri`/`uris` 是必选的之外，`plugins`、`script`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
 * 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
 
 route 对象 json 配置内容：
