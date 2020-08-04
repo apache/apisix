@@ -250,5 +250,14 @@ function _M.go()
     return _M[action]()
 end
 
+function _M.headers()
+    local args = ngx.req.get_uri_args()
+    for name, val in pairs(args) do
+        ngx.header[name] = nil
+        ngx.header[name] = val
+    end
+
+    ngx.say("/headers")
+end
 
 return _M

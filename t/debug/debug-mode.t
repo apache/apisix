@@ -32,6 +32,8 @@ sub read_file($) {
 our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/enable_debug: false/enable_debug: true/;
+$yaml_config =~ s/  # - proxy-cache/  - proxy-cache/;
+$yaml_config =~ s/  # - proxy-mirror/  - proxy-mirror/;
 
 
 run_tests;

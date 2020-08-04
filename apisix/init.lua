@@ -456,8 +456,8 @@ function _M.http_access_phase()
     if api_ctx.script_obj then
         script.run_script("access", api_ctx)
     else
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
-        api_ctx.plugins = plugin.filter(route, plugins)
+        local plugins = plugin.filter(route)
+        api_ctx.plugins = plugins
 
         run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
@@ -579,16 +579,71 @@ function _M.http_body_filter_phase()
 end
 
 
-function _M.http_log_phase()
+local function healcheck_passive(api_ctx)
+    local checker = api_ctx.up_checker
+    if not checker then
+        return
+    end
 
+    local up_conf = api_ctx.upstream_conf
+    local passive = up_conf.checks.passive
+    if not passive then
+        return
+    end
+
+    core.log.info("enabled healthcheck passive")
+    local host = up_conf.checks and up_conf.checks.active
+                 and up_conf.checks.active.host
+    local port = up_conf.checks and up_conf.checks.active
+                 and up_conf.checks.active.port
+
+    local resp_status = ngx.status
+    local http_statuses = passive and passive.healthy and
+                          passive.healthy.http_statuses
+    core.log.info("passive.healthy.http_statuses: ",
+                  core.json.delay_encode(http_statuses))
+    if http_statuses then
+        for i, status in ipairs(http_statuses) do
+            if resp_status == status then
+                checker:report_http_status(api_ctx.balancer_ip,
+                                           port or api_ctx.balancer_port,
+                                           host,
+                                           resp_status)
+            end
+        end
+    end
+
+    local http_statuses = passive and passive.unhealthy and
+                          passive.unhealthy.http_statuses
+    core.log.info("passive.unhealthy.http_statuses: ",
+                  core.json.delay_encode(http_statuses))
+    if not http_statuses then
+        return
+    end
+
+    for i, status in ipairs(http_statuses) do
+        for i, status in ipairs(http_statuses) do
+            if resp_status == status then
+                checker:report_http_status(api_ctx.balancer_ip,
+                                           port or api_ctx.balancer_port,
+                                           host,
+                                           resp_status)
+            end
+        end
+    end
+end
+
+
+function _M.http_log_phase()
     local api_ctx = common_phase("log")
+    healcheck_passive(api_ctx)
 
     if api_ctx.uri_parse_param then
         core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
     end
 
     core.ctx.release_vars(api_ctx)
-    if api_ctx.plugins then
+    if api_ctx.plugins and api_ctx.plugins ~= core.empty_tab then
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
