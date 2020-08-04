@@ -175,8 +175,8 @@ plugins:                          # plugin list
   - authz-keycloak
   - uri-blocker
   - request-validation
-  # - proxy-cache
-  # - proxy-mirror
+  - proxy-cache
+  - proxy-mirror
 
 stream_plugins:
   - mqtt-proxy
