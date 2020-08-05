@@ -227,12 +227,12 @@ The `Script` configuration can be directly bound to the `Route`.
 
 In theory, you can write arbitrary Lua code in `Script`, or you can directly call existing plugins to reuse existing code.
 
-`Script` also has the concept of execution phase, supporting `access`, `header_filer`, `body_filter` and `log` stages. The system will automatically execute the code of the corresponding stage in the `Script` script in the corresponding stage.
+`Script` also has the concept of execution phase, supporting `access`, `header_filer`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
 
 ```json
 {
     ...
-    "plugins": "local core = require(\"apisix.core\")\nlocal _M = {}\nfunction _M.access(api_ctx)\n core.log.warn(\"hit access phase\")\nend \nfunction _M.header_filter(ctx)\n core.log.warn(\"hit header_filter phase\")\nend\nfunction _M.body_filter(ctx)\n core.log.warn(\"hit body_filter phase\") \nend\nfunction _M.log(ctx)\n core.log.warn(\"hit log phase\")\nend\nreturn _M"
+    "script": "local _M = {} \n function _M.access(api_ctx) \n ngx.log(ngx.INFO,\"hit access phase\") \n end \nreturn _M"
 }
 ```
 

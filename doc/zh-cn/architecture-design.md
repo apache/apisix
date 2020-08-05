@@ -236,7 +236,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 ```json
 {
     ...
-    "plugins": "local core   = require(\"apisix.core\")\nlocal _M = {}\nfunction _M.access(api_ctx)\n    core.log.warn(\"hit access phase\")\nend\nfunction _M.header_filter(ctx)\n    core.log.warn(\"hit header_filter phase\")\nend\nfunction _M.body_filter(ctx)\n    core.log.warn(\"hit body_filter phase\")\nend\nfunction _M.log(ctx)\n    core.log.warn(\"hit log phase\")\nend\nreturn _M"
+    "script": "local _M = {} \n function _M.access(api_ctx) \n ngx.log(ngx.INFO,\"hit access phase\") \n end \nreturn _M"
 }
 ```
 
