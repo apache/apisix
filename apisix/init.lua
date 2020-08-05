@@ -300,7 +300,7 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
-    core.response.set_header("server", ver_header)
+    core.response.set_header("Server", ver_header)
 
     -- load and run global rule
     if router.global_rules and router.global_rules.values
