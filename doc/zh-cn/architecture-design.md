@@ -24,6 +24,7 @@
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Plugin**](#plugin)
+- [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer)
@@ -217,6 +218,27 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 标识即可。
 
 [查看 APISIX 已支持插件列表](plugins.md)
+
+[返回目录](#目录)
+
+## Script
+
+`Script` 表示将在 `HTTP` 请求/响应生命周期期间执行的脚本。
+
+`Script` 配置可直接绑定在 `Route` 上。
+
+`Script` 与 `Plugin` 互斥，且优先执行 `Script` ，这意味着配置 `Script` 后，`Route` 上配置的 `Plugin` 将不被执行。
+
+理论上，在 `Script` 中可以写任意 lua 代码，也可以直接调用已有插件以重用已有的代码。
+
+`Script` 也有执行阶段概念，支持 `access`、`header_filer`、`body_filter` 和 `log` 阶段。系统会在相应阶段中自动执行 `Script` 脚本中对应阶段的代码。
+
+```json
+{
+    ...
+    "script": "local _M = {} \n function _M.access(api_ctx) \n ngx.log(ngx.INFO,\"hit access phase\") \n end \nreturn _M"
+}
+```
 
 [返回目录](#目录)
 
