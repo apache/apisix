@@ -25,18 +25,23 @@ local _M = {}
 function _M.load(route, api_ctx)
     local script = route.value.script
     if script == nil or script == "" then
+        core.log.error("fail to load empty script")
         return nil
     end
 
     local loadfun = loadstring(script, "route#" .. route.value.id)
+    if not loadfun then
+        core.log.error("fail to load script:", script)
+        return nil
+    end
     api_ctx.script_obj = loadfun()
 end
 
 
 function _M.run(phase, api_ctx)
     local obj = api_ctx and api_ctx.script_obj
-
     if not obj then
+        core.log.error("have no script object to run")
         return api_ctx
     end
 

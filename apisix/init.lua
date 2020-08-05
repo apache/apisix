@@ -471,7 +471,6 @@ function _M.http_access_phase()
         run_plugin("access", plugins, api_ctx)
     end
 
-
     local ok, err = set_upstream(route, api_ctx)
     if not ok then
         core.log.error("failed to parse upstream: ", err)
