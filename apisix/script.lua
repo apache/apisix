@@ -17,6 +17,7 @@
 local require    = require
 local core       = require("apisix.core")
 local loadstring = loadstring
+local error      = error
 
 
 local _M = {}
@@ -25,13 +26,12 @@ local _M = {}
 function _M.load(route, api_ctx)
     local script = route.value.script
     if script == nil or script == "" then
-        core.log.error("fail to load empty script")
-        return nil
+        error("missing valid script")
     end
 
-    local loadfun = loadstring(script, "route#" .. route.value.id)
+    local loadfun, err = loadstring(script, "route#" .. route.value.id)
     if not loadfun then
-        core.log.error("fail to load script:", script)
+        error("failed to load script: " .. err .. " script: " .. script)
         return nil
     end
     api_ctx.script_obj = loadfun()
@@ -41,11 +41,11 @@ end
 function _M.run(phase, api_ctx)
     local obj = api_ctx and api_ctx.script_obj
     if not obj then
-        core.log.error("have no script object to run")
+        core.log.error("missing loaded script object")
         return api_ctx
     end
 
-    core.log.info("script_obj", core.json.delay_encode(obj, true))
+    core.log.info("loaded script_obj: ", core.json.delay_encode(obj, true))
 
     local phase_fun = obj[phase]
     if phase_fun then
