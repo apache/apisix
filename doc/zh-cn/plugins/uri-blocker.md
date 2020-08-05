@@ -17,30 +17,30 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/uri-blocker.md)
+[English](../../plugins/uri-blocker.md)
 
-# Summary
+# 目录
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+- [**定义**](#定义)
+- [**属性列表**](#属性列表)
+- [**启用方式**](#启用方式)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
 
-## Name
+## 定义
 
-The plugin helps we intercept user requests, we only need to indicate the `block_rules`.
+该插件可帮助我们拦截用户请求，只需要指定`block_rules`即可。
 
-## Attributes
+## 属性列表
 
 |Name          |Requirement  |Description|
 |---------     |--------|-----------|
-|block_rules  |required|Regular filter rule array. Each of these items is a regular rule. If the current request URI hits any one of them, set the response code to rejected_code to exit the current user request. Example: `["root.exe", "root.m+"]`.|
-|rejected_code |optional|The HTTP status code returned when the request URI hit any of `filter_rule`, default `403`.|
+|block_rules  |必须|正则过滤数组。它们都是正则规则，如果当前请求 URI 命中任何一个，请将响应代码设置为 rejected_code 以退出当前用户请求。例如: `["root.exe", "root.m+"]`。|
+|rejected_code |可选|当请求 URI 命中`block_rules`中的任何一个时，将返回的 HTTP 状态代码，默认为 `403`。|
 
-## How To Enable
+## 启用方式
 
-Here's an example, enable the `uri blocker` plugin on the specified route:
+这是一个示例，在指定的路由上启用`uri blocker`插件：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -60,7 +60,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-## Test Plugin
+## 测试插件
 
 ```shell
 $ curl -i http://127.0.0.1:9080/root.exe?a=a
@@ -74,11 +74,9 @@ Server: APISIX web server
 ... ...
 ```
 
-## Disable Plugin
+## 禁用插件
 
-When you want to disable the `uri blocker` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+当想禁用`uri blocker`插件时，非常简单，只需要在插件配置中删除相应的 json 配置，无需重启服务，即可立即生效：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -93,4 +91,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The `uri blocker` plugin has been disabled now. It works for other plugins.
+ `uri blocker` 插件现在已被禁用，它也适用于其他插件。
