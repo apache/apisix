@@ -475,6 +475,10 @@ _M.route = {
         service_protocol = {
             enum = {"grpc", "http"}
         },
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean"
+        },
         id = id_schema,
     },
     anyOf = {

@@ -387,6 +387,7 @@ function _M.http_access_phase()
         return ngx.exec("@grpc_pass")
     end
 
+    local enable_websocket = route.value.enable_websocket
     if route.value.service_id then
         local service = service_fetch(route.value.service_id)
         if not service then
@@ -401,6 +402,11 @@ function _M.http_access_phase()
         api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
         api_ctx.conf_id = route.value.id .. "&" .. service.value.id
         api_ctx.service_id = service.value.id
+
+        if enable_websocket == nil then
+            enable_websocket = service.value.enable_websocket
+        end
+
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
@@ -408,7 +414,6 @@ function _M.http_access_phase()
     end
     api_ctx.route_id = route.value.id
 
-    local enable_websocket
     local up_id = route.value.upstream_id
     if up_id then
         local upstreams = core.config.fetch_created_obj("/upstreams")

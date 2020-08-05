@@ -91,6 +91,7 @@ Route 中主要包含三部分内容：匹配规则(比如 uri、host、remote_a
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -304,7 +305,6 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335
 {
     "type": "chash",
     "key": "remote_addr",
-    "enable_websocket": true,
     "nodes": {
         "127.0.0.1:80": 1,
         "foo.com:80": 2
