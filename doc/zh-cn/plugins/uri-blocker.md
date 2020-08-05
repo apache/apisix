@@ -35,8 +35,8 @@
 
 |Name          |Requirement  |Description|
 |---------     |--------|-----------|
-|block_rules  |必须|正则过滤数组。这些都是常规规则，如果当前请求 URI 命中任何一个，请将响应代码设置为rejected_code以退出当前用户请求。例如: `["root.exe", "root.m+"]`。|
-|rejected_code |可选|The HTTP status code returned when the request URI hit any of `filter_rule`, default `403`.当请求 URI 命中`block_rules`中的任何一个时，将返回的 HTTP 状态代码，默认为 `403`。|
+|block_rules  |必须|正则过滤数组。它们都是正则规则，如果当前请求 URI 命中任何一个，请将响应代码设置为 rejected_code 以退出当前用户请求。例如: `["root.exe", "root.m+"]`。|
+|rejected_code |可选|当请求 URI 命中`block_rules`中的任何一个时，将返回的 HTTP 状态代码，默认为 `403`。|
 
 ## 启用方式
 
