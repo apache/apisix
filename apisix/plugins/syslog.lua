@@ -73,6 +73,8 @@ function _M.flush_syslog(logger)
     if not ok then
         core.log.error("failed to flush message:", err)
     end
+
+    return ok
 end
 
 
