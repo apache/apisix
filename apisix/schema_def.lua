@@ -446,6 +446,11 @@ _M.route = {
         {required = {"script", "uri"}},
         {required = {"script", "uris"}},
     },
+    ["not"] = {
+        anyOf = {
+            {required = {"script", "plugins"}}
+        }
+    },
     additionalProperties = false,
 }
 
