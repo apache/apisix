@@ -74,6 +74,15 @@ function _M.plugin(plugin_name)
 end
 
 
+function _M.consumers()
+    if not consumers then
+        return nil, nil
+    end
+
+    return consumers.values, consumers.conf_version
+end
+
+
 function _M.init_worker()
     local err
     consumers, err = core.config.new("/consumers", {

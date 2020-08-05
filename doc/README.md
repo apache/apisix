@@ -16,19 +16,19 @@
 # limitations under the License.
 #
 -->
-[Chinese](README_CN.md)
+
+[Chinese](./zh-cn/README.md)
 
 Reference Documentation
 ==================
 
-* [APISIX Readme](../README.md)
+* [APISIX Readme](./README.md)
 * [Architecture Design](architecture-design.md)
 * [Benchmark](benchmark.md)
 * [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
-* Router
-    * [radixtree](router-radixtree.md)
+* [Router radixtree](router-radixtree.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 * [Stream Proxy](stream-proxy.md)
 * [Admin API](admin-api.md)
@@ -51,7 +51,7 @@ Plugins
 * [proxy-rewrite](plugins/proxy-rewrite.md): Rewrite upstream request information.
 * [prometheus](plugins/prometheus.md): Expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
 * [OpenTracing](plugins/zipkin.md): Supports Zikpin and Apache SkyWalking.
-* [grpc-transcode](plugins/grpc-transcoding.md): REST <--> gRPC transcoding.
+* [grpc-transcode](plugins/grpc-transcode.md): REST <--> gRPC transcoding.
 * [serverless](plugins/serverless.md)：Allows to dynamically run Lua code at *different* phase in APISIX.
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
 * [openid-connect](plugins/oauth.md)
@@ -64,11 +64,21 @@ Plugins
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
+* [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
+* [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.
+* [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
+* [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
 
-Deploy to the Cloud
+Deploy
 =======
+
 ### AWS
 
 The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
 
 See [this guide](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md) by [Pahud Hsieh](https://github.com/pahud) and learn how to provision the recommended architecture 100% in AWS CDK.
+
+### Kubernetes
+
+See [this guide](../kubernetes/README.md) and learn how to deploy apisix in Kubernetes.
+

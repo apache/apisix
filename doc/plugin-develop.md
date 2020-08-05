@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 -->
-[中文](plugin-develop-cn.md)
+[中文](zh-cn/plugin-develop.md)
 
 # table of contents
 
@@ -97,6 +97,12 @@ plugins:                          # plugin list
 ```
 
 Note : the order of the plugins is not related to the order of execution.
+
+If your plugin has a new code directory of its own, you will need to modify the `Makefile` to create directory, such as:
+```
+$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
+$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
+```
 
 ## schema and check
 

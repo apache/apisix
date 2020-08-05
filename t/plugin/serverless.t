@@ -568,3 +568,62 @@ passed
 GET /hello
 --- error_log
 serverless pre function:2
+
+
+
+=== TEST 19: http -> https redirect
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "functions" : ["return function() if ngx.var.scheme == \"http\" and ngx.var.host == \"foo.com\" then ngx.header[\"Location\"] = \"https://foo.com\" .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
+                        }
+                    },
+                    "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "serverless-pre-function": {
+                                    "functions" : ["return function() if ngx.var.scheme == \"http\" and ngx.var.host == \"foo.com\" then ngx.header[\"Location\"] = \"https://foo.com\" .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
+                                }
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- more_headers
+Host: foo.com
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: check plugin
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello

@@ -426,3 +426,194 @@ OPTIONS /hello HTTP/1.1
 
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: set route(auth plugins faills)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "key-auth": {},
+                        "cors": {
+                            "allow_origins": "**",
+                            "allow_methods": "**",
+                            "allow_headers": "*",
+                            "expose_headers": "*"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: auth failed still work
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+ExternalHeader1: val
+ExternalHeader2: val
+ExternalHeader3: val
+--- response_body
+{"message":"Missing API key found in request"}
+--- error_code: 401
+--- response_headers
+Access-Control-Allow-Origin: https://sub.domain.com
+Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
+Access-Control-Allow-Headers: *
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 5
+Access-Control-Allow-Credentials:
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: set route(overwrite upstream)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "**",
+                            "allow_methods": "**",
+                            "allow_headers": "*",
+                            "expose_headers": "*",
+                            "allow_credential": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/headers"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: overwrite upstream
+--- request
+GET /headers?Access-Control-Allow-Origin=https://sub.domain.com HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Origin: https://sub.domain.com
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: overwrite upstream(Access-Control-Allow-Methods)
+--- request
+GET /headers?Access-Control-Allow-Methods=methods HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: overwrite upstream(Access-Control-Allow-Headers)
+--- request
+GET /headers?Access-Control-Allow-Headers=a-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Headers: *
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: overwrite upstream(Access-Control-Expose-Headers)
+--- request
+GET /headers?Access-Control-Expose-Headers=e-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Expose-Headers: *
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: overwrite upstream(Access-Control-Max-Age)
+--- request
+GET /headers?Access-Control-Max-Age=10 HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Max-Age: 5
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: not overwrite upstream(Access-Control-Allow-Credentials)
+--- request
+GET /headers?Access-Control-Allow-Credentials=false HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Credentials: true
+--- no_error_log
+[error]

@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](limit-req-cn.md)
+# [Chinese](../zh-cn/plugins/limit-req.md)
 
 # Summary
 
@@ -37,8 +37,10 @@ limit request rate using the "leaky bucket" method.
 |---------     |--------|-----------|
 |rate          |required|is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.|
 |burst         |required|is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.|
-|rejected_code |required|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
 | key          |required|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
+|rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
+
+**Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
 ## How To Enable
 

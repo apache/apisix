@@ -116,11 +116,12 @@ local function introspect(ctx, conf)
             end
         else
             res, err = openidc.introspect(conf)
-            if res then
+            if err then
+                return ngx.HTTP_UNAUTHORIZED, err
+            else
                 return res
             end
         end
-
         if conf.bearer_only then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm
                                              .. '",error="' .. err .. '"'
@@ -138,7 +139,8 @@ local function add_user_header(user)
 end
 
 
-function _M.access(conf, ctx)
+function _M.access(plugin_conf, ctx)
+    local conf = core.table.clone(plugin_conf)
     if not conf.redirect_uri then
         conf.redirect_uri = ctx.var.request_uri
     end

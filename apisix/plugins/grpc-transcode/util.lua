@@ -51,7 +51,7 @@ local function get_from_request(name, kind)
     local request_table
     if ngx.req.get_method() == "POST" then
         if string.find(ngx.req.get_headers()["Content-Type"] or "",
-                       "application/json", true) then
+                       "application/json", 1, true) then
             request_table = json.decode(ngx.req.get_body_data())
         else
             request_table = ngx.req.get_post_args()

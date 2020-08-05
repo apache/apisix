@@ -1,17 +1,10 @@
-NOTE: Please read the Contributing.md guidelines before submitting your patch:
+### What this PR does / why we need it:
+<!--- Why is this change required? What problem does it solve? -->
+<!--- If it fixes an open issue, please link to the issue here. -->
 
-https://github.com/apache/incubator-apisix/blob/master/Contributing.md#how-to-add-a-new-feature-or-change-an-existing-one
+### Pre-submission checklist:
 
-### Summary
-
-SUMMARY_HERE
-
-### Full changelog
-
-* [Implement ...]
-* [Add related tests]
-* ...
-
-### Issues resolved
-
-Fix #XXX
+* [ ] Did you explain what problem does this PR solve? Or what new features have been added?
+* [ ] Have you added corresponding test cases?
+* [ ] Have you modified the corresponding document?
+* [ ] Is this PR backward compatible?

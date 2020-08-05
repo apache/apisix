@@ -297,3 +297,89 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: string id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/a-b-c-ABC_0123',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: string id(delete)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/a-b-c-ABC_0123',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: invalid string id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/*invalid',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- no_error_log
+[error]

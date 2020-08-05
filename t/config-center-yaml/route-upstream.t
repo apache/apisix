@@ -32,7 +32,6 @@ sub read_file($) {
 
 our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/config_center: etcd/config_center: yaml/;
 $yaml_config =~ s/enable_admin: true/enable_admin: false/;
 
@@ -137,5 +136,27 @@ upstreams:
 GET /hello
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: upstream domain
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    -
+        uri: /get
+        upstream_id: 1
+upstreams:
+    -
+        id: 1
+        nodes:
+            "httpbin.org:80": 1
+        type: roundrobin
+#END
+--- request
+GET /get
+--- error_code: 200
 --- no_error_log
 [error]

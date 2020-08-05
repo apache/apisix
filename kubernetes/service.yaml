@@ -20,6 +20,8 @@ kind: Service
 metadata:
   name: apisix-gw-lb
   # namespace: default
+  labels:
+    app: apisix-gw   # useful for service discovery, for example, prometheus-operator.
 spec:
   ports:
   - name: http

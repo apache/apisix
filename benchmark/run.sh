@@ -28,6 +28,8 @@ mkdir -p benchmark/fake-apisix/logs
 
 sudo openresty -p $PWD/benchmark/server || exit 1
 
+make init
+
 trap 'onCtrlC' INT
 function onCtrlC () {
     sudo killall wrk
@@ -36,7 +38,12 @@ function onCtrlC () {
     sudo openresty -p $PWD/benchmark/server -s stop || exit 1
 }
 
-sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" conf/nginx.conf
+if [[ "$(uname)" == "Darwin" ]]; then
+    sed  -i "" "s/worker_processes .*/worker_processes $worker_cnt;/g" conf/nginx.conf
+else
+    sed  -i "s/worker_processes .*/worker_processes $worker_cnt;/g" conf/nginx.conf
+fi
+
 make run
 
 sleep 3
@@ -52,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -85,7 +92,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'

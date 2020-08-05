@@ -30,7 +30,7 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["limit-req","limit-count","limit-conn","key-auth","basic-auth","prometheus","node-status","jwt-auth","zipkin","ip-restriction","grpc-transcode","serverless-pre-function","serverless-post-function","openid-connect","proxy-rewrite","redirect","response-rewrite","fault-injection","udp-logger","wolf-rbac","proxy-cache","tcp-logger","proxy-mirror","kafka-logger","cors"\]/
+qr/\["fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","tcp-logger","kafka-logger","syslog","udp-logger","zipkin","skywalking","serverless-post-function"\]/
 --- no_error_log
 [error]
 
@@ -51,7 +51,7 @@ GET /apisix/admin/plugins
 --- request
 GET /apisix/admin/plugins/limit-req
 --- response_body
-{"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for"],"type":"string"},"rejected_code":{"minimum":200,"type":"integer"}},"required":["rate","burst","key","rejected_code"],"type":"object"}
+{"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200}},"required":["rate","burst","key"],"type":"object"}
 --- no_error_log
 [error]
 
@@ -63,14 +63,4 @@ GET /apisix/admin/plugins/node-status
 --- response_body
 {"additionalProperties":false,"type":"object"}
 --- no_error_log
-[error]
-
-
-
-=== TEST 5: get plugin heartbeat schema
---- request
-GET /apisix/admin/plugins/heartbeat
---- response_body
-{"additionalProperties":false,"type":"object"}
---- no_error_log
-[error]
+[error] 

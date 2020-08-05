@@ -110,7 +110,7 @@ function _M.check_schema(conf)
 end
 
 
-local function create_ip_mather(ip_list)
+local function create_ip_matcher(ip_list)
     local ip, err = ipmatcher.new(ip_list)
     if not ip then
         core.log.error("failed to create ip matcher: ", err,
@@ -128,7 +128,7 @@ function _M.access(conf, ctx)
 
     if conf.blacklist and #conf.blacklist > 0 then
         local matcher = lrucache(conf.blacklist, nil,
-                                 create_ip_mather, conf.blacklist)
+                                 create_ip_matcher, conf.blacklist)
         if matcher then
             block = matcher:match(remote_addr)
         end
@@ -136,7 +136,7 @@ function _M.access(conf, ctx)
 
     if conf.whitelist and #conf.whitelist > 0 then
         local matcher = lrucache(conf.whitelist, nil,
-                                 create_ip_mather, conf.whitelist)
+                                 create_ip_matcher, conf.whitelist)
         if matcher then
             block = not matcher:match(remote_addr)
         end

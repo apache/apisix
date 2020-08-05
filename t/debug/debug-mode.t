@@ -31,9 +31,7 @@ sub read_file($) {
 
 our $yaml_config = read_file("conf/config.yaml");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/enable_debug: false/enable_debug: true/;
-
 
 run_tests;
 
@@ -57,13 +55,18 @@ qr/loaded plugin and sort by priority: [-\d]+ name: [\w-]+/
 --- grep_error_log_out
 loaded plugin and sort by priority: 11000 name: fault-injection
 loaded plugin and sort by priority: 10000 name: serverless-pre-function
+loaded plugin and sort by priority: 4010 name: batch-requests
 loaded plugin and sort by priority: 4000 name: cors
 loaded plugin and sort by priority: 3000 name: ip-restriction
+loaded plugin and sort by priority: 2900 name: uri-blocker
+loaded plugin and sort by priority: 2800 name: request-validation
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2555 name: wolf-rbac
 loaded plugin and sort by priority: 2520 name: basic-auth
 loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth
+loaded plugin and sort by priority: 2400 name: consumer-restriction
+loaded plugin and sort by priority: 2000 name: authz-keycloak
 loaded plugin and sort by priority: 1010 name: proxy-mirror
 loaded plugin and sort by priority: 1009 name: proxy-cache
 loaded plugin and sort by priority: 1008 name: proxy-rewrite
@@ -75,13 +78,16 @@ loaded plugin and sort by priority: 900 name: redirect
 loaded plugin and sort by priority: 899 name: response-rewrite
 loaded plugin and sort by priority: 506 name: grpc-transcode
 loaded plugin and sort by priority: 500 name: prometheus
+loaded plugin and sort by priority: 412 name: echo
+loaded plugin and sort by priority: 410 name: http-logger
 loaded plugin and sort by priority: 405 name: tcp-logger
 loaded plugin and sort by priority: 403 name: kafka-logger
+loaded plugin and sort by priority: 401 name: syslog
 loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
 loaded plugin and sort by priority: -1000 name: zipkin
+loaded plugin and sort by priority: -1100 name: skywalking
 loaded plugin and sort by priority: -2000 name: serverless-post-function
-
 
 
 

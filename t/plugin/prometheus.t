@@ -524,3 +524,252 @@ GET /apisix/prometheus/metrics
 qr/apisix_http_status\{code="404",route="3",service="",node="127.0.0.1"\} 2/
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: fetch the prometheus metric data with `overhead`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/.*apisix_http_overhead_bucket.*/
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: add service 3 to distinguish other services
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1981": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: add a route 4 to redirect /sleep1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": 3,
+                    "uri": "/sleep1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: request from client to /sleep1 ( all hit)
+--- pipelined_requests eval
+["GET /sleep1", "GET /sleep1", "GET /sleep1"]
+--- error_code eval
+[200, 200, 200]
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: fetch the prometheus metric data with `overhead`(the overhead < 1s)
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_overhead_bucket.*service=\"3\".*le=\"00500.0.*/
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: delete route 4
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: delete service 3
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/3',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: fetch the prometheus metric data with `modify_indexes consumers`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="consumers"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: fetch the prometheus metric data with `modify_indexes global_rules`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="global_rules"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: fetch the prometheus metric data with `modify_indexes max_modify_index`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="max_modify_index"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: fetch the prometheus metric data with `modify_indexes protos`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="protos"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: fetch the prometheus metric data with `modify_indexes routes`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="routes"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: fetch the prometheus metric data with `modify_indexes services`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="services"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: fetch the prometheus metric data with `modify_indexes ssls`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="ssls"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: fetch the prometheus metric data with `modify_indexes stream_routes`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="stream_routes"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: fetch the prometheus metric data with `modify_indexes upstreams`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="upstreams"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: fetch the prometheus metric data with `modify_indexes prev_index`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="prev_index"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: fetch the prometheus metric data with `modify_indexes x_etcd_index`
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
+--- no_error_log
+[error]

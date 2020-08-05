@@ -72,10 +72,19 @@ if ($enable_local_dns) {
 my $yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
+my $test2_crt = read_file("conf/cert/test2.crt");
+my $test2_key = read_file("conf/cert/test2.key");
 $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
 $yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
 $yaml_config =~ s/admin_key:/disable_admin_key:/;
+
+my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
+
+if ($etcd_enable_auth eq "true") {
+    $yaml_config =~ s/  # user:/  user:/;
+    $yaml_config =~ s/  # password:/  password:/;
+}
+
 
 my $profile = $ENV{"APISIX_PROFILE"};
 
@@ -100,7 +109,7 @@ add_block_preprocessor(sub {
 
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
-working_directory   $apisix_home;
+env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 _EOC_
 
@@ -199,6 +208,7 @@ _EOC_
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
+    lua_shared_dict skywalking-tracing-buffer    100m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -417,6 +427,10 @@ $user_yaml_config
 $ssl_crt
 >>> ../conf/cert/apisix.key
 $ssl_key
+>>> ../conf/cert/test2.crt
+$test2_crt
+>>> ../conf/cert/test2.key
+$test2_key
 $user_apisix_yaml
 _EOC_
 

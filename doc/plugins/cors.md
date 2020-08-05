@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](cors-cn.md)
+# [Chinese](../zh-cn/plugins/cors.md)
 
 # Summary
 

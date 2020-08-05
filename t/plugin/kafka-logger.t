@@ -195,7 +195,8 @@ hello world
                                         "127.0.0.1":9093
                                       },
                                     "kafka_topic" : "test2",
-                                    "key" : "key1"
+                                    "key" : "key1",
+                                    "batch_max_size": 1
                              }
                         },
                         "upstream": {
@@ -217,7 +218,8 @@ hello world
                                         "127.0.0.1":9093
                                       },
                                     "kafka_topic" : "test2",
-                                    "key" : "key1"
+                                    "key" : "key1",
+                                    "batch_max_size": 1
                                 }
                             },
                             "upstream": {
@@ -248,4 +250,4 @@ GET /t
 --- error_log
 failed to send data to Kafka topic
 [error]
---- wait: 0.2
+--- wait: 1

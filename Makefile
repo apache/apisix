@@ -36,7 +36,7 @@ endif
 
 LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit
 
-### help:             Show Makefile rules.
+### help:             Show Makefile rules
 .PHONY: help
 help: default
 	@echo Makefile rules:
@@ -79,9 +79,13 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
+ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
 	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
+else
+	@echo "APISIX is running..."
+endif
 
 
 ### stop:             Stop the apisix server
@@ -108,9 +112,9 @@ reload: default
 	$(OR_EXEC) -p $$PWD/  -c $$PWD/conf/nginx.conf -s reload
 
 
-### install:          Install the apisix
+### install:          Install the apisix (only for luarocks)
 .PHONY: install
-install:
+install: default
 	$(INSTALL) -d /usr/local/apisix/
 	$(INSTALL) -d /usr/local/apisix/logs/
 	$(INSTALL) -d /usr/local/apisix/conf/cert
@@ -124,6 +128,9 @@ install:
 	$(INSTALL) -d $(INST_LUADIR)/apisix/admin
 	$(INSTALL) apisix/admin/*.lua $(INST_LUADIR)/apisix/admin/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/balancer
+	$(INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
 
@@ -132,6 +139,9 @@ install:
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/http/router
 	$(INSTALL) apisix/http/router/*.lua $(INST_LUADIR)/apisix/http/router/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
+	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins
 	$(INSTALL) apisix/plugins/*.lua $(INST_LUADIR)/apisix/plugins/
@@ -147,6 +157,9 @@ install:
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
 	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
+	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/stream/plugins
 	$(INSTALL) apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/stream/plugins/

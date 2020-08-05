@@ -27,19 +27,16 @@
 - Mail list: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mail list.
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
 
-APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
+## What's Apache APISIX?
+Apache APISIX is a dynamic, real-time, high-performance API gateway, based on the Nginx library and etcd.
 
-APISIX is based on Nginx and etcd. Compared with traditional API gateways, APISIX has dynamic routing and plug-in hot loading, which is especially suitable for API management under micro-service system.
+APISIX provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
-## Why APISIX?
+You can use Apache APISIX to handle traditional north-south traffic,
+as well as east-west traffic between services.
+It can also be used as a k8s ingress controller.
 
-If you are building a website, mobile device or IoT (Internet of Things) application, you may need to use an API gateway to handle interface traffic.
-
-APISIX is a cloud-based microservices API gateway that handles traditional north-south traffic and handles east-west traffic between services, and can also be used as a k8s ingress controller.
-
-APISIX provides dynamic load balancing, authentication, rate limiting, other plugins through plugin mechanisms, and supports plugins you develop yourself.
-
-For more detailed information, see the [White Paper](https://www.iresty.com/download/Choosing%20the%20Right%20Microservice%20API%20Gateway%20for%20the%20Enterprise%20User.pdf).
+The technical architecture of Apache APISIX:
 
 ![](doc/images/apisix.png)
 
@@ -50,13 +47,13 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **All platforms**
     - Cloud-Native: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
     - Run Environment: Both OpenResty and Tengine are supported.
-    - Supports [ARM64](https://zhuanlan.zhihu.com/p/84467919): Don't worry about the lock-in of the infra technology.
+    - Supports ARM64: Don't worry about the lock-in of the infra technology.
 
 - **Multi protocols**
     - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
     - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
     - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
-    - [gRPC transcoding](doc/plugins/grpc-transcoding.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
+    - [gRPC transcoding](doc/plugins/grpc-transcode.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
     - Proxy Websocket
     - Proxy Protocol
     - Proxy Dubbo: Dubbo Proxy based on Tengine.
@@ -72,6 +69,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Hash-based Load Balancing: Load balance with consistent hashing sessions.
     - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
     - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
+    - [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 
 - **Fine-grained routing**
     - [Supports full path matching and prefix matching](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
@@ -79,8 +77,9 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Support [various operators as judgment conditions for routing](https://github.com/iresty/lua-resty-radixtree#operator-list), for example `{"arg_age", ">", 24}`
     - Support [custom route matching function](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
     - IPv6: Use IPv6 to match route.
-    - Support [TTL](doc/admin-api-cn.md#route)
+    - Support [TTL](doc/admin-api.md#route)
     - [Support priority](doc/router-radixtree.md#3-match-priority)
+    - [Support Batch Http Requests](doc/plugins/batch-requests.md)
 
 - **Security**
     - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md), [wolf-rbac](doc/plugins/wolf-rbac.md)
@@ -90,10 +89,12 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Limit-count](doc/plugins/limit-count.md)
     - [Limit-concurrency](doc/plugins/limit-conn.md)
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
-    - [CORS](doc/plugins/cors.md)
+    - [CORS](doc/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
+    - [uri-blocker](doc/plugins/uri-blocker.md): Block client request by URI.
 
 - **OPS friendly**
-    - OpenTracing: [support Apache Skywalking and Zipkin](doc/plugins/zipkin.md)
+    - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
+    - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/incubator-apisix/issues/1731#issuecomment-646392129), and [Eureka](doc/discovery.md)
     - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
     - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
     - High availability: support to configure multiple etcd addresses in the same cluster.
@@ -105,7 +106,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - High performance: The single-core QPS reaches 18k with an average delay of less than 0.2 milliseconds.
     - [Fault Injection](doc/plugins/fault-injection.md)
     - [REST Admin API](doc/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
-    - [Python SDK](https://github.com/api7/apache-apisix-python-sdk)
     - External Loggers: Export access logs to external log management tools. ([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
 
 - **Highly scalable**
@@ -113,64 +113,111 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
     - Custom routing: Support users to implement routing algorithms themselves.
 
-## Installation
+## Configure and Installation
 
-APISIX Installed and tested in the following systems(OpenResty MUST >= 1.15.8.1, or Tengine >= 2.3.2):
+APISIX Installed and tested in the following systems:
 
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-Steps to install APISIX:
-1. Installation runtime dependencies: OpenResty and etcd, refer to [documentation](doc/install-dependencies.md)
-2. There are several ways to install Apache APISIX:
-    - [Source Release](doc/how-to-build.md#installation-via-source-release)
-    - [RPM package](doc/how-to-build.md#installation-via-rpm-package-centos-7) for CentOS 7
-    - [Luarocks](doc/how-to-build.md#installation-via-luarocks-macos-not-supported)
-    - [Docker](https://github.com/apache/incubator-apisix-docker)
+There are several ways to install the Apache Release version of APISIX:
+1. Source code compilation (applicable to all systems)
+    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
+    - Download the latest source code release package:
+        ```shell
+        wget http://www.apache.org/dist/incubator/apisix/1.4/apache-apisix-1.4-incubating-src.tar.gz
+        tar zxvf apache-apisix-1.4-incubating-src.tar.gz
+        ```
+    - Install the dependencies：
+        ```shell
+        cd apache-apisix-1.4-incubating
+        make deps
+        ```
+    - check version of APISIX:
+        ```shell
+        ./bin/apisix version
+        ```
+    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+        ```shell
+        ./bin/apisix start
+        ```
+2. [Docker image](https://hub.docker.com/r/apache/apisix) （applicable to all systems）
 
-## Quickstart
+    By default, the latest Apache release package will be pulled:
 
-1. start server:
+    ```shell
+    docker pull apache/apisix
+    ```
 
+    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/incubator-apisix-docker/tree/master/example) to start a test cluster.
+
+3. RPM package（only for CentOS 7）
+    - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
+    - install APISIX：
+    ```shell
+    sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4/apisix-1.4-0.el7.noarch.rpm
+    ```
+    - check version of APISIX:
+        ```shell
+        apisix version
+        ```
+    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+        ```shell
+        apisix start
+        ```
+
+**Note**: Apache APISIX does not yet support the v3 protocol of etcd, so you need to enable v2 protocol when starting etcd.
+We are doing support for etcd v3 protocol.
 ```shell
-sudo apisix start
+etcd --enable-v2=true &
 ```
 
-2. Try the getting started guide
+## For Developer
 
-The getting-started guide is a good way to learn the basics of APISIX. Follow the [getting started guide](doc/getting-started.md).
+1. For developers, you can use the latest master branch to experience more features
 
-Then you can try more [plugins](doc/README.md#plugins).
+    - build from source code
+    ```shell
+    git clone git@github.com:apache/incubator-apisix.git
+    cd incubator-apisix
+    make deps
+    ```
+
+   - Docker image
+    ```shell
+    git clone https://github.com/apache/incubator-apisix-docker.git
+    cd incubator-apisix-docker
+    sudo docker build -f alpine-dev/Dockerfile .
+    ```
+
+
+2. Getting start
+
+    The getting started guide is a great way to learn the basics of APISIX, just follow the steps in [Getting Started](doc/getting-started.md).
+
+     Further, you can follow the documentation to try more [plugins](doc/README.md#Plugins).
+
+3. Admin API
+
+    Apache APISIX provides [REST Admin API](doc/admin-api.md) to dynamic control the Apache APISIX cluster.
+
+4. Plugin development
+
+    You can refer to [plugin development guide](doc/plugin-develop.md), and [sample plugin `echo`](doc/plugins/echo.md) documentation and code implementation.
+
+     Please note that Apache APISIX plugins' added, updated, deleted, etc. are hot loaded, without restarting the service.
+
+For more documents, please refer to [Apache APISIX Document Index](doc/README.md)
 
 ## Dashboard
-APISIX has built-in support for Dashboard, as follows:
-
-1. Please make sure your machine has the latest Node.js(10 or higher), or there will occur build issues.
-
-2. Download the source codes of [Dashboard](https://github.com/apache/incubator-apisix-dashboard):
-```
-git clone https://github.com/apache/incubator-apisix-dashboard.git
-```
-
-3. Install [yarn](https://yarnpkg.com/en/docs/install)
-
-4. Install dependencies then run build command:
-```
-git checkout <v1.0> #The tag version same to apisix.
-yarn && yarn build:prod
-```
-
-5. Integration with APISIX
-Copy the compiled files under `/dist` directory to the `apisix/dashboard` directory,
-open `http://127.0.0.1:9080/apisix/dashboard/` in the browser.
-Do not need to fill the user name and password, log in directly.
+APISIX has built-in support for Dashboard,
 
 The dashboard only allows 127.0.0.1 by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
-
-We provide an online dashboard [demo version](http://apisix.iresty.com), make it easier for you to understand APISIX.
 
 ## Benchmark
 
 Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
+
+[benckmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
 
 ## Document
 [Document Indexing for Apache APISIX](doc/README.md)
@@ -214,6 +261,8 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | Configuration Center HA   | Yes   | No   |
 | Speed limit for a specified time window   | Yes   | No   |
 | Support any Nginx variable as routing condition  | Yes   | No   |
+
+Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
 ## Videos And Articles
 - [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)

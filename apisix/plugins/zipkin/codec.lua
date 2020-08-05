@@ -17,6 +17,10 @@
 local core = require("apisix.core")
 local to_hex = require "resty.string".to_hex
 local new_span_context = require("opentracing.span_context").new
+local ngx    = ngx
+local string = string
+local pairs = pairs
+local tonumber = tonumber
 
 local function hex_to_char(c)
     return string.char(tonumber(c, 16))

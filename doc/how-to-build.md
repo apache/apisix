@@ -34,21 +34,21 @@ You can install Apache APISIX in a variety of ways, including source code packag
 You need to download the Apache source release first:
 
 ```shell
-wget http://www.apache.org/dist/incubator/apisix/1.2/apache-apisix-1.2-incubating-src.tar.gz
-tar zxvf apache-apisix-1.2-incubating-src.tar.gz
+wget http://www.apache.org/dist/apisix/1.4.1/apache-apisix-1.4.1-src.tar.gz
+tar zxvf apache-apisix-1.4.1-src.tar.gz
 ```
 
 Install the Lua libraries that the runtime depends on:
 
 ```shell
-cd apache-apisix-1.2-incubating
+cd apache-apisix-1.4.1
 make deps
 ```
 
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.2/apisix-1.2-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4.1/apisix-1.4.1-0.el7.noarch.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)
@@ -64,11 +64,11 @@ sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apis
 > Install the specified version via Luarocks:
 
 ```shell
-# Install version 1.2
-sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.2
+# Install version 1.4.1
+sudo luarocks install --lua-dir=/path/openresty/luajit apisix 1.4.1
 
 # old luarocks not support the `lua-dir` parameter, you can remove this option
-sudo luarocks install apisix 1.2
+sudo luarocks install apisix 1.4.1
 ```
 
 ## 3. Manage (start/stop) APISIX Server
@@ -90,19 +90,19 @@ $ make stop
 $ make help
 Makefile rules:
 
-    help:          Show Makefile rules.
-    deps:          Installation dependencies
-    utils:         Installation tools
-    lint:          Lint Lua source code
-    init:          Initialize the runtime environment
-    run:           Start the apisix server
-    stop:          Stop the apisix server
-    verify:        Verify the configuration of apisix server
-    clean:         Remove generated files
-    reload:        Reload the apisix server
-    install:       Install the apisix
-    test:          Run the test case
-    license-check: Check lua souce code for Apache License
+    help:             Show Makefile rules
+    deps:             Installation dependencies
+    utils:            Installation tools
+    lint:             Lint Lua source code
+    init:             Initialize the runtime environment
+    run:              Start the apisix server
+    stop:             Stop the apisix server
+    verify:           Verify the configuration of apisix server
+    clean:            Remove generated files
+    reload:           Reload the apisix server
+    install:          Install the apisix (only for luarocks)
+    test:             Run the test case
+    license-check:    Check Lua source code for Apache License
 ```
 
 ## 4. Test
@@ -115,12 +115,20 @@ Makefile rules:
     * Run the test cases: `make test`
     * To set the path of nginx to run the test cases: `TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t`
 
-### Troubleshoot
+### Troubleshoot Testing
 
-If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+**Set Nginx Path**
+- If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
 make sure to set openresty as default nginx. And export the path as below.
-
 * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+    - Linux default installation path:
+        * export PATH=/usr/local/openresty/nginx/sbin:$PATH
+    - OSx default installation path via homebrew:
+        * export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
+
+**Run Individual Test Cases**
+- Use the following command to run test cases constratined to a file:
+    - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 
 ## 5. Update Admin API token to protect Apache APISIX
 

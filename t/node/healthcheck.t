@@ -14,15 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
-
-    } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
-    }
-}
 
 use t::APISIX 'no_plan';
 
@@ -498,3 +489,307 @@ qr{.*http://127.0.0.1:1960/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*}
 --- timeout: 10
+
+
+
+=== TEST 11: add new routh with healthcheck attribute
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i = 1, 3 do
+                t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "uri": "/server_port",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "checks": {
+                                "active": {
+                                    "http_path": "/status",
+                                    "host": "foo.com",
+                                    "healthy": {
+                                        "interval": 1,
+                                        "successes": 1
+                                    },
+                                    "unhealthy": {
+                                        "interval": 1,
+                                        "http_failures": 2
+                                    }
+                                }
+                            }
+                        }
+                    }]]
+                )
+
+                ngx.sleep(0.1)
+
+                local code, body = t('/server_port', ngx.HTTP_GET)
+                ngx.say("code: ", code, " body: ", body)
+
+                code, body = t('/apisix/admin/routes/' .. i, ngx.HTTP_DELETE)
+                ngx.say("delete code: ", code)
+
+                ngx.sleep(0.1)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+code: 200 body: passed
+delete code: 200
+code: 200 body: passed
+delete code: 200
+code: 200 body: passed
+delete code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: add route (test health check config `host` valid)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1988": 1
+                        },
+                        "checks": {
+                            "active": {
+                                "http_path": "/status",
+                                "host": "foo.com",
+                                "healthy": {
+                                    "interval": 1,
+                                    "successes": 1
+                                },
+                                "unhealthy": {
+                                    "interval": 1,
+                                    "http_failures": 2
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 13: test health check config `host` valid
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
+            ngx.sleep(2)
+
+            ngx.say(res.status)
+        }
+    }
+--- request
+GET /t
+--- response_body
+200
+--- grep_error_log eval
+qr/^.*?\[warn\].*/
+--- grep_error_log_out eval
+qr/unhealthy TCP increment.*foo.com/
+
+
+
+=== TEST 14: add route (test health check customized `port`)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1981": 1
+                        },
+                        "checks": {
+                            "active": {
+                                "http_path": "/status",
+                                "port": 1988,
+                                "host": "foo.com",
+                                "healthy": {
+                                    "interval": 1,
+                                    "successes": 1
+                                },
+                                "unhealthy": {
+                                    "interval": 1,
+                                    "http_failures": 2
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: test health check customized `port`
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
+            ngx.sleep(2)
+
+            ngx.say(res.status)
+        }
+    }
+--- request
+GET /t
+--- response_body
+200
+--- grep_error_log eval
+qr/^.*?\[warn\].*/
+--- grep_error_log_out eval
+qr/unhealthy TCP increment.*foo.com.*127.0.0.1:1988/
+
+
+
+=== TEST 16: add route (test health check customized `port` out of minimum range)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1981": 1
+                        },
+                        "checks": {
+                            "active": {
+                                "http_path": "/status",
+                                "port": 0,
+                                "host": "foo.com",
+                                "healthy": {
+                                    "interval": 1,
+                                    "successes": 1
+                                },
+                                "unhealthy": {
+                                    "interval": 1,
+                                    "http_failures": 2
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/expected 0 to be greater than 1/
+--- error_code chomp
+400
+
+
+
+=== TEST 17: add route (test health check customized `port` out of maximum range)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1981": 1
+                        },
+                        "checks": {
+                            "active": {
+                                "http_path": "/status",
+                                "port": 65536,
+                                "host": "foo.com",
+                                "healthy": {
+                                    "interval": 1,
+                                    "successes": 1
+                                },
+                                "unhealthy": {
+                                    "interval": 1,
+                                    "http_failures": 2
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/expected 65536 to be smaller than 65535/
+--- error_code chomp
+400

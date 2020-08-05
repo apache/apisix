@@ -21,15 +21,7 @@ set -ex
 
 luacheck -q apisix
 
-./utils/lj-releng \
-    apisix/*.lua \
-    apisix/admin/*.lua \
-    apisix/core/*.lua \
-    apisix/http/*.lua \
-    apisix/http/router/*.lua \
-    apisix/plugins/*.lua \
-    apisix/plugins/grpc-transcode/*.lua \
-    apisix/plugins/limit-count/*.lua > \
+find apisix -name '*.lua' -exec ./utils/lj-releng {} + > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
 grep -E "ERROR.*.lua:" /tmp/check.log > /tmp/error.log | true
