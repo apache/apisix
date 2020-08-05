@@ -422,6 +422,8 @@ _M.route = {
             pattern = [[^function]],
         },
 
+        script = {type = "string", minLength = 10, maxLength = 102400},
+
         plugins = plugins_schema,
         upstream = upstream_schema,
 
@@ -441,6 +443,13 @@ _M.route = {
         {required = {"upstream", "uris"}},
         {required = {"upstream_id", "uris"}},
         {required = {"service_id", "uris"}},
+        {required = {"script", "uri"}},
+        {required = {"script", "uris"}},
+    },
+    ["not"] = {
+        anyOf = {
+            {required = {"script", "plugins"}}
+        }
     },
     additionalProperties = false,
 }
@@ -455,11 +464,13 @@ _M.service = {
         upstream_id = id_schema,
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
+        script = {type = "string", minLength = 10, maxLength = 102400},
     },
     anyOf = {
         {required = {"upstream"}},
         {required = {"upstream_id"}},
         {required = {"plugins"}},
+        {required = {"script"}},
     },
     additionalProperties = false,
 }

@@ -124,6 +124,18 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    if conf.script then
+        local obj, err = loadstring(conf.script)
+        if not obj then
+            return nil, {error_msg = "failed to load 'script' string: "
+                                     .. err}
+        end
+
+        if type(obj()) ~= "table" then
+            return nil, {error_msg = "'script' should be a Lua object"}
+        end
+    end
+
     return need_id and id or true
 end
 

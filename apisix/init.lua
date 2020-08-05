@@ -18,6 +18,7 @@ local require       = require
 local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
 local plugin        = require("apisix.plugin")
+local script        = require("apisix.script")
 local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
@@ -452,19 +453,24 @@ function _M.http_access_phase()
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
     end
 
-    local plugins = plugin.filter(route)
-    api_ctx.plugins = plugins
+    if route.value.script then
+        script.load(route, api_ctx)
+        script.run("access", api_ctx)
+    else
+        local plugins = plugin.filter(route)
+        api_ctx.plugins = plugins
 
-    run_plugin("rewrite", plugins, api_ctx)
-    if api_ctx.consumer then
-        local changed
-        route, changed = plugin.merge_consumer_route(route, api_ctx.consumer)
-        if changed then
-            core.table.clear(api_ctx.plugins)
-            api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+        run_plugin("rewrite", plugins, api_ctx)
+        if api_ctx.consumer then
+            local changed
+            route, changed = plugin.merge_consumer_route(route, api_ctx.consumer)
+            if changed then
+                core.table.clear(api_ctx.plugins)
+                api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
+            end
         end
+        run_plugin("access", plugins, api_ctx)
     end
-    run_plugin("access", plugins, api_ctx)
 
     local ok, err = set_upstream(route, api_ctx)
     if not ok then
@@ -553,7 +559,12 @@ local function common_phase(phase_name)
         core.tablepool.release("plugins", plugins)
     end
 
-    run_plugin(phase_name, nil, api_ctx)
+    if api_ctx.script_obj then
+        script.run(phase_name, api_ctx)
+    else
+        run_plugin(phase_name, nil, api_ctx)
+    end
+
     return api_ctx
 end
 
