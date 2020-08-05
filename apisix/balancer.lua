@@ -32,7 +32,6 @@ local pickers = {
     chash = require("apisix.balancer.chash"),
     ewma = require("apisix.balancer.ewma")
 }
-local SYNC_INTERVAL = 1
 
 local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
