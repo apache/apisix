@@ -638,6 +638,10 @@ function _M.http_log_phase()
     local api_ctx = common_phase("log")
     healcheck_passive(api_ctx)
 
+    if api_ctx.server_picker and api_ctx.server_picker.after_balance then
+        api_ctx.server_picker.after_balance()    
+    end
+
     if api_ctx.uri_parse_param then
         core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
     end
