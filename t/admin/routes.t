@@ -2038,7 +2038,7 @@ Content-Type: application/json
 
 
 
-=== TEST 52: set route with size 36k (temporary file to store request body)
+=== TEST 56: set route with size 36k (temporary file to store request body)
 --- config
     location /t {
         content_by_lua_block {
@@ -2077,7 +2077,7 @@ a client request body is buffered to a temporary file
 
 
 
-=== TEST 53: route size more than 1.5 MiB
+=== TEST 57: route size more than 1.5 MiB
 --- config
     location /t {
         content_by_lua_block {
@@ -2108,3 +2108,42 @@ GET /t
 {"error_msg":"invalid request body: request size 1678025 is greater than the maximum size 1572864 allowed"}
 --- error_log
 failed to read request body: request size 1678025 is greater than the maximum size 1572864 allowed
+
+
+
+=== TEST 58: uri + plugins + script  failed
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "script": "local _M = {} \n function _M.access(api_ctx) \n ngx.log(ngx.INFO,\"hit access phase\") \n end \nreturn _M",
+                        "uri": "/index.html"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like
+{"error_msg":"invalid configuration: value wasn't supposed to match schema"}
+--- no_error_log
+[error]
