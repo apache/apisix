@@ -22,7 +22,7 @@
 This page documents an alphabetical list of institutions that are using APISIX for research and production,
 or providing commercial products including APISIX.
 
-Users are encouraged to add themselves to this page, [issue](https://github.com/apache/incubator-apisix/issues/487) and PR are welcomed.
+Users are encouraged to add themselves to this page, [issue](https://github.com/apache/apisix/issues/487) and PR are welcomed.
 
 1. <a href="https://www.360.cn/" rel="nofollow">360 奇虎</a>
 1. <a href="https://www.chaolian360.com/" rel="nofollow">chaolian 超链云商</a>

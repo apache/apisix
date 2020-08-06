@@ -20,8 +20,8 @@
 [English](README.md)
 ## APISIX
 
-[![Build Status](https://travis-ci.org/apache/incubator-apisix.svg?branch=master)](https://travis-ci.org/apache/incubator-apisix)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/incubator-apisix/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
 - **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
@@ -94,7 +94,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 - **运维友好**
     - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
-    - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/incubator-apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](doc/zh-cn/discovery.md)。
+    - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](doc/zh-cn/discovery.md)。
     - 监控和指标: [Prometheus](doc/zh-cn/plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
@@ -148,7 +148,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     docker pull apache/apisix
     ```
 
-    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/incubator-apisix-docker/tree/master/example)来启动一个测试集群。
+    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/apisix-docker/tree/master/example)来启动一个测试集群。
 
 3. RPM 包（只适用于 CentOS 7）
     - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
@@ -177,15 +177,15 @@ etcd --enable-v2=true &
 
     - 源码编译
     ```shell
-    git clone git@github.com:apache/incubator-apisix.git
-    cd incubator-apisix
+    git clone git@github.com:apache/apisix.git
+    cd apisix
     make deps
     ```
 
    - Docker 镜像
     ```shell
-    git clone https://github.com/apache/incubator-apisix-docker.git
-    cd incubator-apisix-docker
+    git clone https://github.com/apache/apisix-docker.git
+    cd apisix-docker
     sudo docker build -f alpine-dev/Dockerfile .
     ```
 
@@ -209,7 +209,7 @@ etcd --enable-v2=true &
 
 ## 控制台
 
-APISIX 提供了 [Dashboard 项目](https://github.com/apache/incubator-apisix-dashboard)，
+APISIX 提供了 [Dashboard 项目](https://github.com/apache/apisix-dashboard)，
 可以使用 docker compose 直接部署和体验。
 
 Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
