@@ -47,9 +47,9 @@ function _M.run(phase, api_ctx)
 
     core.log.info("loaded script_obj: ", core.json.delay_encode(obj, true))
 
-    local phase_fun = obj[phase]
-    if phase_fun then
-        phase_fun(api_ctx)
+    local phase_func = obj[phase]
+    if phase_func then
+        phase_func(api_ctx)
     end
 
     return api_ctx
