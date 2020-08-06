@@ -140,30 +140,30 @@ local function pick_and_score(peers, k)
 end
 
 
--- slow_start_ewma is something we use to avoid sending too many requests
--- to the newly introduced endpoints. We currently use average ewma values
--- of existing endpoints.
-local function calculate_slow_start_ewma(self)
-    local total_ewma = 0
-    local endpoints_count = 0
+-- -- slow_start_ewma is something we use to avoid sending too many requests
+-- -- to the newly introduced endpoints. We currently use average ewma values
+-- -- of existing endpoints.
+-- local function calculate_slow_start_ewma(self)
+--     local total_ewma = 0
+--     local endpoints_count = 0
 
-    for _, endpoint in pairs(self.peers) do
-        local endpoint_string = endpoint.address .. ":" .. endpoint.port
-        local ewma = shm_ewma:get(endpoint_string)
+--     for _, endpoint in pairs(self.peers) do
+--         local endpoint_string = endpoint.address .. ":" .. endpoint.port
+--         local ewma = shm_ewma:get(endpoint_string)
 
-        if ewma then
-            endpoints_count = endpoints_count + 1
-            total_ewma = total_ewma + ewma
-        end
-    end
+--         if ewma then
+--             endpoints_count = endpoints_count + 1
+--             total_ewma = total_ewma + ewma
+--         end
+--     end
 
-    if endpoints_count == 0 then
-        ngx.log(ngx.INFO, "no ewma value exists for the endpoints")
-        return nil
-    end
+--     if endpoints_count == 0 then
+--         ngx.log(ngx.INFO, "no ewma value exists for the endpoints")
+--         return nil
+--     end
 
-    return total_ewma / endpoints_count
-end
+--     return total_ewma / endpoints_count
+-- end
 
 
 local function _trans_format(t1)
@@ -173,7 +173,6 @@ local function _trans_format(t1)
     -- [{"address":"1.2.3.4","port":"80"},{"address":"5.6.7.8","port":"8080"}]
     local t2 = {}
     local addr, port, err
-    local k,_
 
     for k,_ in pairs(t1) do
         addr, port, err = core.utils.parse_addr(k)
@@ -189,11 +188,12 @@ end
 
 local function _ewma_find(up_nodes)
     local peers
-    local endpoint, ewma_score
+    local endpoint
     local err
 
     if not ewma_lock then
-        ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks", {timeout = 0, exptime = 0.1})
+        ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks",
+                                                  {timeout = 0, exptime = 0.1})
     end
     if not ewma_lock then
         return nil, ewma_lock_err
@@ -203,12 +203,11 @@ local function _ewma_find(up_nodes)
         err = 'up_nodes error'
         return nil, err
     end
-    endpoint, ewma_score = peers[1]
+    endpoint = peers[1]
     if #peers > 1 then
         local k = (#peers < PICK_SET_SIZE) and #peers or PICK_SET_SIZE
-        endpoint, ewma_score = pick_and_score(peers, k)
+        endpoint = pick_and_score(peers, k)
     end
-    --ngx.var.balancer_ewma_score = ewma_score
 
     return endpoint.address .. ":" .. endpoint.port
 end
@@ -222,7 +221,8 @@ local function _ewma_after_balance()
     local err
 
     if not ewma_lock then
-        ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks", {timeout = 0, exptime = 0.1})
+        ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks",
+                                                  {timeout = 0, exptime = 0.1})
     end
     if not ewma_lock then
         return nil, ewma_lock
