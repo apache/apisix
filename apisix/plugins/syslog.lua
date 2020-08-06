@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local batch_processor = require("apisix.utils.batch-processor")
@@ -25,6 +26,7 @@ local ipairs   = ipairs
 local stale_timer_running = false;
 local timer_at = ngx.timer.at
 local tostring = tostring
+
 
 local schema = {
     type = "object",
@@ -47,9 +49,11 @@ local schema = {
     required = {"host", "port"}
 }
 
+
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+
 
 local _M = {
     version = 0.1,
@@ -58,30 +62,30 @@ local _M = {
     schema = schema,
 }
 
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
+
 
 function _M.flush_syslog(logger)
     local ok, err = logger:flush(logger)
     if not ok then
         core.log.error("failed to flush message:", err)
     end
+
+    return ok
 end
 
-local function send_syslog_data(conf, log_message)
+
+local function send_syslog_data(conf, log_message, api_ctx)
     local err_msg
     local res = true
 
-    -- fetch api_ctx
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        core.log.error("invalid api_ctx cannot proceed with sys logger plugin")
-        return core.response.exit(500)
-    end
-
     -- fetch it from lrucache
-    local logger, err =  lrucache(api_ctx.conf_type .. "#" .. api_ctx.conf_id, api_ctx.conf_version,
+    local logger, err =  lrucache(
+        api_ctx.conf_type .. "#" .. api_ctx.conf_id,
+        api_ctx.conf_version,
         logger_socket.new, logger_socket, {
             host = conf.host,
             port = conf.port,
@@ -93,7 +97,8 @@ local function send_syslog_data(conf, log_message)
             retry_interval = conf.retry_interval,
             pool_size = conf.pool_size,
             tls = conf.tls,
-        })
+        }
+    )
 
     if not logger then
         res = false
@@ -109,6 +114,7 @@ local function send_syslog_data(conf, log_message)
 
     return res, err_msg
 end
+
 
 -- remove stale objects from the memory after timer expires
 local function remove_stale_objects(premature)
@@ -126,8 +132,9 @@ local function remove_stale_objects(premature)
     stale_timer_running = false
 end
 
+
 -- log phase in APISIX
-function _M.log(conf)
+function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
 
     if not entry.route_id then
@@ -149,6 +156,7 @@ function _M.log(conf)
     end
 
     -- Generate a function to be executed by the batch processor
+    local cp_ctx = core.table.clone(ctx)
     local func = function(entries, batch_max_size)
         local data, err
         if batch_max_size == 1 then
@@ -161,7 +169,7 @@ function _M.log(conf)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        return send_syslog_data(conf, data)
+        return send_syslog_data(conf, data, cp_ctx)
     end
 
     local config = {
@@ -185,5 +193,6 @@ function _M.log(conf)
     log_buffer:push(entry)
 
 end
+
 
 return _M
