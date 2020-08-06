@@ -126,9 +126,9 @@ local function run_plugin(phase, plugins, api_ctx)
         and phase ~= "body_filter"
     then
         for i = 1, #plugins, 2 do
-            local phase_fun = plugins[i][phase]
-            if phase_fun then
-                local code, body = phase_fun(plugins[i + 1], api_ctx)
+            local phase_func = plugins[i][phase]
+            if phase_func then
+                local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
                     core.response.exit(code, body)
                 end
@@ -138,9 +138,9 @@ local function run_plugin(phase, plugins, api_ctx)
     end
 
     for i = 1, #plugins, 2 do
-        local phase_fun = plugins[i][phase]
-        if phase_fun then
-            phase_fun(plugins[i + 1], api_ctx)
+        local phase_func = plugins[i][phase]
+        if phase_func then
+            phase_func(plugins[i + 1], api_ctx)
         end
     end
 
