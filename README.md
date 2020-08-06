@@ -91,6 +91,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
     - [CORS](doc/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
     - [uri-blocker](doc/plugins/uri-blocker.md): Block client request by URI.
+    - [Request Validator](doc/plugins/request-validation.md)
 
 - **OPS friendly**
     - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
@@ -124,12 +125,12 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
     - Download the latest source code release package:
         ```shell
-        wget http://www.apache.org/dist/incubator/apisix/1.4/apache-apisix-1.4-incubating-src.tar.gz
-        tar zxvf apache-apisix-1.4-incubating-src.tar.gz
+        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
+        tar zxvf apache-apisix-1.5-src.tar.gz
         ```
     - Install the dependencies：
         ```shell
-        cd apache-apisix-1.4-incubating
+        cd apache-apisix-1.5
         make deps
         ```
     - check version of APISIX:
@@ -154,7 +155,7 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
     - install APISIX：
     ```shell
-    sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4/apisix-1.4-0.el7.noarch.rpm
+    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
     ```
     - check version of APISIX:
         ```shell
