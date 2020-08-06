@@ -17,7 +17,13 @@
 
 local resty_lock = require("resty.lock")
 local core = require("apisix.core")
+local ngx = ngx
 local ngx_shared = ngx.shared
+local tostring = tostring
+local math = math
+local pairs = pairs
+local next = next
+local tonumber = tonumber
 
 local _M = {}
 local DECAY_TIME = 10 -- this value is in seconds
