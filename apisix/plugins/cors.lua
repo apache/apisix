@@ -42,6 +42,7 @@ local schema = {
         allow_headers = {
             description =
                 "you can use '*' to allow all header when no credentials," ..
+                "'**' to allow forcefully(it will bring some security risks, be carefully)," ..
                 "multiple header use ',' to split. default: *.",
             type = "string",
             default = "*"
@@ -62,6 +63,9 @@ local schema = {
             default = 5
         },
         allow_credential = {
+            description =
+                "allow client append crendential. according to CORS specification," ..
+                "if you set this option to 'true', you can not use '*' for other options.",
             type = "boolean",
             default = false
         }
@@ -106,6 +110,12 @@ function _M.check_schema(conf)
     if not ok then
         return false, err
     end
+    if conf.allow_credential then
+        if conf.allow_origins == "*" or conf.allow_methods == "*" or
+            conf.allow_headers == "*" or conf.expose_headers == "*" then
+            return false, "you can not set '*' for other option when 'allow_credential' is true"
+        end
+    end
 
     return true
 end
@@ -119,9 +129,14 @@ local function set_cors_headers(conf, ctx)
 
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
     core.response.set_header("Access-Control-Allow-Methods", allow_methods)
-    core.response.set_header("Access-Control-Allow-Headers", conf.allow_headers)
     core.response.set_header("Access-Control-Max-Age", conf.max_age)
     core.response.set_header("Access-Control-Expose-Headers", conf.expose_headers)
+    if conf.allow_headers == "**" then
+        core.response.set_header("Access-Control-Allow-Headers",
+            core.request.header(ctx, "Access-Control-Request-Headers"))
+    else
+        core.response.set_header("Access-Control-Allow-Headers", conf.allow_headers)
+    end
     if conf.allow_credential then
         core.response.set_header("Access-Control-Allow-Credentials", true)
     end
