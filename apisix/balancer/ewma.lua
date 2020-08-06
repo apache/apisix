@@ -19,6 +19,7 @@ local resty_lock = require("resty.lock")
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_shared = ngx.shared
+local ngx_now = ngx.now
 local tostring = tostring
 local math = math
 local pairs = pairs
@@ -33,14 +34,16 @@ local ewma_lock, ewma_lock_err
 local shm_ewma = ngx_shared.balancer_ewma
 local shm_last_touched_at= ngx_shared.balancer_ewma_last_touched_at
 
+
 local function lock(upstream)
     local _, err = ewma_lock:lock(upstream .. LOCK_KEY)
     if err then
         if err ~= "timeout" then
-            core.log.error("EWMA Balancer failed to lock:", tostring(err))
+            core.log.error("EWMA Balancer failed to lock:", err)
         end
         return false, err
     end
+
     return true
 end
 
@@ -48,16 +51,17 @@ end
 local function unlock()
     local ok, err = ewma_lock:unlock()
     if not ok then
-        core.log.error("EWMA Balancer failed to unlock:", tostring(err))
+        core.log.error("EWMA Balancer failed to unlock:", err)
         return false, err
     end
+
     return true
 end
 
 
 local function decay_ewma(ewma, last_touched_at, rtt, now)
     local td = now - last_touched_at
-    td = (td > 0) and td or 0
+    td =  math.max(td, 0)
     local weight = math.exp(-td / DECAY_TIME)
 
     ewma = ewma * weight + rtt * (1.0 - weight)
@@ -68,7 +72,7 @@ end
 local function store_stats(upstream, ewma, now)
     local success, err, forcible = shm_last_touched_at:set(upstream, now)
     if not success then
-        core.log.warn("balancer_ewma_last_touched_at:set failed ", err)
+        core.log.error("balancer_ewma_last_touched_at:set failed ", err)
     end
     if forcible then
         core.log.warn("balancer_ewma_last_touched_at:set valid items forcibly overwritten")
@@ -76,7 +80,7 @@ local function store_stats(upstream, ewma, now)
 
     success, err, forcible = shm_ewma:set(upstream, ewma)
     if not success then
-        core.log.warn("balancer_ewma:set failed ", err)
+        core.log.error("balancer_ewma:set failed ", err)
     end
     if forcible then
         core.log.warn("balancer_ewma:set valid items forcibly overwritten")
@@ -94,7 +98,7 @@ local function get_or_update_ewma(upstream, rtt, update)
         return ewma, err
     end
 
-    local now = ngx.now()
+    local now = ngx_now()
     local last_touched_at = shm_last_touched_at:get(upstream) or 0
     ewma = decay_ewma(ewma, last_touched_at, rtt, now)
 
@@ -128,7 +132,6 @@ local function shuffle_peers(peers, k)
         local rand_index = math.random(i, #peers)
         peers[i], peers[rand_index] = peers[rand_index], peers[i]
     end
-    -- peers[1 .. k] will now contain a randomly selected k from #peers
 end
 
 
@@ -142,34 +145,9 @@ local function pick_and_score(peers, k)
             lowest_score_index, lowest_score = i, new_score
         end
     end
+
     return peers[lowest_score_index], lowest_score
 end
-
-
--- -- slow_start_ewma is something we use to avoid sending too many requests
--- -- to the newly introduced endpoints. We currently use average ewma values
--- -- of existing endpoints.
--- local function calculate_slow_start_ewma(self)
---     local total_ewma = 0
---     local endpoints_count = 0
-
---     for _, endpoint in pairs(self.peers) do
---         local endpoint_string = endpoint.address .. ":" .. endpoint.port
---         local ewma = shm_ewma:get(endpoint_string)
-
---         if ewma then
---             endpoints_count = endpoints_count + 1
---             total_ewma = total_ewma + ewma
---         end
---     end
-
---     if endpoints_count == 0 then
---         ngx.log(ngx.INFO, "no ewma value exists for the endpoints")
---         return nil
---     end
-
---     return total_ewma / endpoints_count
--- end
 
 
 local function _trans_format(t1)
@@ -183,11 +161,12 @@ local function _trans_format(t1)
     for k,_ in pairs(t1) do
         addr, port, err = core.utils.parse_addr(k)
         if not err then
-            t2[#t2+1] = {address = addr, port = tostring(port)}
+            core.table.insert(t2, {address = addr, port = tostring(port)})
         else
-            core.log.error('parse_addr error: ',k,err)
+            core.log.error('parse_addr error: ', k, err)
         end
     end
+
     return next(t2) and t2 or nil
 end
 
@@ -219,12 +198,11 @@ local function _ewma_find(up_nodes)
 end
 
 
-local function _ewma_after_balance()
-    local response_time = tonumber(ngx.var.upstream_response_time) or 0
-    local connect_time = tonumber(ngx.var.upstream_connect_time) or 0
+local function _ewma_after_balance(ctx)
+    local response_time = tonumber(ctx.var.upstream_response_time) or 0
+    local connect_time = tonumber(ctx.var.upstream_connect_time) or 0
     local rtt = connect_time + response_time
-    local upstream = ngx.var.upstream_addr
-    local err
+    local upstream = ctx.var.upstream_addr
 
     if not ewma_lock then
         ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks",
@@ -234,9 +212,9 @@ local function _ewma_after_balance()
         return nil, ewma_lock
     end
     if not upstream then
-        err = "no upstream addr found"
-        return nil, err
+        return nil, "no upstream addr found"
     end
+
     return get_or_update_ewma(upstream, rtt, true)
 end
 
@@ -252,8 +230,8 @@ function _M.new(up_nodes, upstream)
         get = function ()
             return _ewma_find(up_nodes)
         end,
-        after_balance = function()
-            return _ewma_after_balance()
+        after_balance = function(ctx)
+            return _ewma_after_balance(ctx)
         end
     }
 end
