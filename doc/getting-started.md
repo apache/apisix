@@ -46,13 +46,13 @@ Let's deconstruct the above URL.
 ## Step 1: Install APISIX
 
 APISIX is available to install in multiple operating environments. The [following document](how-to-build.md#installation-via-source-release) shows the installation steps in multiple platforms.
-For the quick start let's use the docker based set up. To start the APISIX server, clone the following [repository](https://github.com/apache/incubator-apisix-docker) and navigate to the example folder and execute the following commands.
+For the quick start let's use the docker based set up. To start the APISIX server, clone the following [repository](https://github.com/apache/apisix-docker) and navigate to the example folder and execute the following commands.
 
 This command will start the APISIX server and the admin API will be available in 9080 port (HTTPS port: 9443).
 
 ```bash
-$ git clone https://github.com/apache/incubator-apisix-docker.git
-$ cd example
+$ git clone https://github.com/apache/apisix-docker.git
+$ cd apisix-docker/example
 $ docker-compose -p docker-apisix up -d
 ```
 
@@ -79,7 +79,7 @@ The following will be the response from the Admin API.
 
 ## Step 2: Create a Route in APISIX
 
-APISIX provides a powerful Admin API and a [dashboard](https://github.com/apache/incubator-apisix-dashboard) for configuring the routes/services/plugins.
+APISIX provides a powerful Admin API and a [dashboard](https://github.com/apache/apisix-dashboard) for configuring the routes/services/plugins.
 The quickstart guide will use the Admin API for configuring the routes.
 
 A micro-service can be configured via APISIX through the relationship between several entities such as routes, services, upstream, and plugins.
@@ -244,7 +244,7 @@ curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H '
 
 As of now the API calls to the APISIX has been orchestrated by using the Admin API. However, APISIX also provides
 a web application to perform the similar. The dashboard is available in the following
-[repository](https://github.com/apache/incubator-apisix). The dashboard is intuitive and you can orchestrate the
+[repository](https://github.com/apache/apisix). The dashboard is intuitive and you can orchestrate the
 same route configurations via the dashboard as well.
 
 ![Dashboard](images/dashboard.png)
