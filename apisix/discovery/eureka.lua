@@ -197,26 +197,24 @@ local function fetch_full_registry(premature)
     for _, app in ipairs(apps) do
         for _, instance in ipairs(app.instance) do
             local ip, port, metadata = parse_instance(instance)
-        
             if ip and port then
                 local nodes = up_apps[app.name]
                 if not nodes then
                     nodes = core.table.new(#app.instance, 0)
                     up_apps[app.name] = nodes
                 end
-                local tmp_weight = default_weight
+                local weight = default_weight
                 if metadata and metadata.weight then
-                    tmp_weight = tonumber(metadata.weight)
+                    weight = tonumber(metadata.weight)
                 else
                     metadata.weight = nil
                 end
                 core.table.insert(nodes, {
                     host = ip,
                     port = port,
-                    weight = tmp_weight,
+                    weight = weight,
                     metadata = metadata,
                 })
-               
             end
         end
     end
