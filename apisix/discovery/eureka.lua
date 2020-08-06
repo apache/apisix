@@ -21,6 +21,7 @@ local core               = require("apisix.core")
 local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
 local tostring           = tostring
+local tonumber           = tonumber
 local type               = type
 local math_random        = math.random
 local error              = error
@@ -33,6 +34,8 @@ local log                = core.log
 
 local default_weight
 local applications
+
+
 
 local schema = {
     type = "object",
