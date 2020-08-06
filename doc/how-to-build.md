@@ -58,7 +58,7 @@ Execute the following command in the terminal to complete the installation of AP
 > Install the code for the master branch via a script
 
 ```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/utils/install-apisix.sh)"
 ```
 
 > Install the specified version via Luarocks:
@@ -118,7 +118,7 @@ Makefile rules:
 ### Troubleshoot Testing
 
 **Set Nginx Path**
-- If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+- If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf`
 make sure to set openresty as default nginx. And export the path as below.
 * export PATH=/usr/local/openresty/nginx/sbin:$PATH
     - Linux default installation path:
