@@ -55,7 +55,7 @@ etcd:
 
 ### Usage
 
-#### Create configmap for apache incubator-apisix
+#### Create configmap for apache apisix
 
 ```
 $ kubectl apply -f apisix-gw-config-cm.yaml
@@ -73,19 +73,19 @@ etcd:
     - "http://127.0.0.1:2379"     # multiple etcd address
 ```
 
-#### Create deployment for apache incubator-apisix
+#### Create deployment for apache apisix
 
 ```
 $ kubectl apply -f deployment.yaml
 ```
 
-#### Create service for apache incubator-apisix
+#### Create service for apache apisix
 
 ```
 $ kubectl apply -f service.yaml
 ```
 
-#### Scale apache incubator-apisix
+#### Scale apache apisix
 
 ```
 $ kubectl scale deployment apisix-gw-deployment --replicas=4

@@ -131,7 +131,7 @@ function _M.rewrite(conf, ctx)
 
     if conf.http_to_https and ctx.var.scheme == "http" then
         -- TODO： add test case
-        -- PR: https://github.com/apache/incubator-apisix/pull/1958
+        -- PR: https://github.com/apache/apisix/pull/1958
         uri = "https://$host$request_uri"
         ret_code = 301
     end
