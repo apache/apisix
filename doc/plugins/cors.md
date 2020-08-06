@@ -33,12 +33,17 @@
 
 ## Attributes
 
-- `allow_origins`: `optional`, Which Origins is allowed to enable CORS, format as：`scheme`://`host`:`port`, for example: https://somehost.com:8081. Multiple origin use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any origin. you alse can allow all any origins forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
-- `allow_methods`: `optional`, Which Method is allowed to enable CORS, such as: `GET`, `POST` etc. Multiple method use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any method. You alse can allow all any method forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
-- `allow_headers`: `optional`, Which headers are allowed to set in requst when access cross-origin resource. Multiple value use `,` to split. Default value: `*`.
+- `allow_origins`: `optional`, Which Origins is allowed to enable CORS, format as：`scheme`://`host`:`port`, for example: https://somehost.com:8081. Multiple origin use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow any origin. you alse can allow all any origins forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
+- `allow_methods`: `optional`, Which Method is allowed to enable CORS, such as: `GET`, `POST` etc. Multiple method use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any method. You alse can allow any method forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
+- `allow_headers`: `optional`, Which headers are allowed to set in requst when access cross-origin resource. Multiple value use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all request headers. You alse can allow any header forcefully using `**` even already enable `allow_credential`, but it will bring some securiy risks. Default value: `*`.
 - `expose_headers`: `optional`, Which headers are allowed to set in response when access cross-origin resource. Multiple value use `,` to split. Default value: `*`.
 - `max_age`: `optional`, Maximum number of seconds the results can be cached.. Within this time range, the browser will reuse the last check result. `-1` means no cache. Please note that the maximum value is depended on browser, please refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for details.Default value: `5`.
-- `allow_credential`: Enable request include credentia (such as Cookie etc.), Default avlue: `false`.
+- `allow_credential`: Enable request include credentia (such as Cookie etc.), Default avlue: `false`.According to CORS specification, if you set this option to `true`, you can not use '*' for other options.
+
+> **Tips**
+>
+> Please note that `allow_credential` is a very sensitive option, so choose to enable it carefully. After set it be `true`, the default `*` of other parameters will be invalid, you must specify their values ​​explicitly.
+> When using `**`, you must fully understand that it introduces some security risks, such as CSRF, so make sure that this securiy level meets your expectations before using it。
 
 ## How To Enable
 
