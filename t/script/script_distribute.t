@@ -74,11 +74,11 @@ hello world
 [error]
 --- error_log
 string "route#1"
-phase_fun(): hit access phase
-phase_fun(): hit header_filter phase
-phase_fun(): hit body_filter phase
-phase_fun(): hit body_filter phase
-phase_fun(): hit log phase while
+phase_func(): hit access phase
+phase_func(): hit header_filter phase
+phase_func(): hit body_filter phase
+phase_func(): hit body_filter phase
+phase_func(): hit log phase while
 
 
 
