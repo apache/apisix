@@ -16,7 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
-repeat_each(3);
+repeat_each(1);
 #no_long_string();
 no_root_location();
 log_level('info');
@@ -38,24 +38,24 @@ lua_shared_dict balancer_ewma_locks 1m;
                  [[{
                         "upstream": {
                             "nodes": {
-                                "10.12.7.103:28002": 100,
-                                "10.12.7.103:29002": 100
+                                "127.0.0.1:1980": 100,
+                                "127.0.0.1:1981": 100
                             },
                             "type": "ewma"
                         },
-                        "uri": "/delay"
+                        "uri": "/ewma"
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "upstream": {
                                 "nodes": {
-                                    "10.12.7.103:28002": 100,
-                                    "10.12.7.103:29002": 100
+                                    "127.0.0.1:1980": 100,
+                                    "127.0.0.1:1981": 100
                                 },
                                 "type": "ewma"
                             },
-                            "uri": "/delay"
+                            "uri": "/ewma"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -83,8 +83,44 @@ passed
 lua_shared_dict balancer_ewma 1m;
 lua_shared_dict balancer_ewma_last_touched_at 1m;
 lua_shared_dict balancer_ewma_locks 1m;
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/ewma"
+
+            local ports_count = {}
+            for i = 1, 12 do
+                local httpc = http.new()
+                httpc:set_timeout(1000)
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+
+                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+            end
+
+            local ports_arr = {}
+            for port, count in pairs(ports_count) do
+                table.insert(ports_arr, {port = port, count = count})
+            end
+
+            local function cmd(a, b)
+                return a.port > b.port
+            end
+            table.sort(ports_arr, cmd)
+
+            ngx.say(require("cjson").encode(ports_arr))
+            ngx.exit(200)
+        }
+    }
 --- request
-GET /delay
+GET /t
+--- response_body
+[{"count":1,"port":"1981"},{"count":11,"port":"1980"}]
 --- error_code: 200
 --- no_error_log
 [error]
