@@ -20,8 +20,8 @@
 [Chinese](README_CN.md)
 ## APISIX
 
-[![Build Status](https://travis-ci.org/apache/incubator-apisix.svg?branch=master)](https://travis-ci.org/apache/incubator-apisix)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/incubator-apisix/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
 - **QQ group**: 552030619
 - Mail list: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mail list.
@@ -95,7 +95,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **OPS friendly**
     - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
-    - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/incubator-apisix/issues/1731#issuecomment-646392129), and [Eureka](doc/discovery.md)
+    - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), and [Eureka](doc/discovery.md)
     - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
     - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
     - High availability: support to configure multiple etcd addresses in the same cluster.
@@ -149,7 +149,7 @@ There are several ways to install the Apache Release version of APISIX:
     docker pull apache/apisix
     ```
 
-    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/incubator-apisix-docker/tree/master/example) to start a test cluster.
+    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
 
 3. RPM package（only for CentOS 7）
     - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
@@ -178,15 +178,15 @@ etcd --enable-v2=true &
 
     - build from source code
     ```shell
-    git clone git@github.com:apache/incubator-apisix.git
-    cd incubator-apisix
+    git clone git@github.com:apache/apisix.git
+    cd apisix
     make deps
     ```
 
    - Docker image
     ```shell
-    git clone https://github.com/apache/incubator-apisix-docker.git
-    cd incubator-apisix-docker
+    git clone https://github.com/apache/apisix-docker.git
+    cd apisix-docker
     sudo docker build -f alpine-dev/Dockerfile .
     ```
 

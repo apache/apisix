@@ -20,13 +20,13 @@ version = "master-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
-    url = "git://github.com/apache/incubator-apisix",
+    url = "git://github.com/apache/apisix",
     branch = "master",
 }
 
 description = {
     summary = "Apache APISIX is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.",
-    homepage = "https://github.com/apache/incubator-apisix",
+    homepage = "https://github.com/apache/apisix",
     license = "Apache License 2.0",
 }
 
@@ -41,7 +41,7 @@ dependencies = {
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.0",
+    "lua-resty-radixtree = 2.1",
     "lua-protobuf = 0.3.1",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
