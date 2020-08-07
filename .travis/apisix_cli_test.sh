@@ -47,7 +47,11 @@ fi
 echo "passed: nginx.conf file contains reuseport configuration"
 
 # check default ssl port
-sed  -i 's/listen_port: 9443/listen_port: 8443/g'  conf/config.yaml
+echo "
+apisix:
+    ssl:
+        listen_port: 8443
+" > conf/config.yaml
 
 make init
 
@@ -66,8 +70,7 @@ fi
 echo "passed: change default ssl port"
 
 # check nameserver imported
-
-sed -i '/dns_resolver:/,+4s/^/#/'  conf/config.yaml
+git checkout conf/config.yaml
 
 make init
 
@@ -82,11 +85,15 @@ do
   fi
 done
 
-sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"
 
 # enable enable_dev_mode
-sed  -i 's/enable_dev_mode: false/enable_dev_mode: true/g'  conf/config.yaml
+git checkout conf/config.yaml
+
+echo "
+apisix:
+    enable_dev_mode: true
+" > conf/config.yaml
 
 make init
 
@@ -102,9 +109,11 @@ if [ $count -ne 0 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+echo "passed: enable enable_dev_mode"
 
-# check whether the 'worker_cpu_affinity' is in nginx.conf .
+# check whether the 'worker_cpu_affinity' is in nginx.conf
+
+git checkout conf/config.yaml
 
 make init
 
@@ -118,8 +127,13 @@ echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
 
 # check admin https enabled
 
-sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
-sed  -i 's/\# https_admin: true/https_admin: true/'  conf/config.yaml
+git checkout conf/config.yaml
+
+echo "
+apisix:
+    port_admin: 9180
+    https_admin: true
+" > conf/config.yaml
 
 make init
 
@@ -137,14 +151,13 @@ if [ ! $code -eq 200 ]; then
     exit 1
 fi
 
+make stop
+
 echo "passed: admin https enabled"
 
 # rollback to the default
 
-make stop
-
-sed  -i 's/port_admin: 9180/\# port_admin: 9180/'  conf/config.yaml
-sed  -i 's/https_admin: true/\# https_admin: true/'  conf/config.yaml
+git checkout conf/config.yaml
 
 make init
 
@@ -174,7 +187,12 @@ echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
 # check worker processes number is configurable.
 
-sed -i 's/worker_processes: auto/worker_processes: 2/'  conf/config.yaml
+git checkout conf/config.yaml
+
+echo "
+nginx_config:
+    worker_processes: 2
+" > conf/config.yaml
 
 make init
 

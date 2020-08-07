@@ -565,16 +565,76 @@ local function read_file(file_path)
 end
 
 
+local function is_empty_yaml_line(line)
+    return line == '' or string.find(line, '^%s*$') or
+           string.find(line, '^%s*#')
+end
+
+
+local function tab_is_array(t)
+    local count = 0
+    for k,v in pairs(t) do
+        count = count + 1
+    end
+
+    return #t == count
+end
+
+
+local function merge_conf(base, new_tab)
+    for key, val in pairs(new_tab) do
+        if type(val) == "table" then
+            if tab_is_array(val) then
+                base[key] = val
+            else
+                merge_conf(base[key], val)
+            end
+        else
+            base[key] = val
+        end
+    end
+    return base
+end
+
+
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
     profile.apisix_home = apisix_home .. "/"
-    local local_conf_path = profile:yaml_path("config")
-    local ymal_conf, err = read_file(local_conf_path)
-    if not ymal_conf then
+    local local_conf_path = profile:yaml_path("config-default")
+    local default_conf_yaml, err = read_file(local_conf_path)
+    if not default_conf_yaml then
         return nil, err
     end
 
-    return yaml.parse(ymal_conf)
+    local default_conf = yaml.parse(default_conf_yaml)
+    if not default_conf then
+        return nil, "invalid config-default.yaml file"
+    end
+
+    local_conf_path = profile:yaml_path("config")
+    local user_conf_yaml, err = read_file(local_conf_path)
+    if not user_conf_yaml then
+        return nil, err
+    end
+
+    local is_empty_file = true
+    for line in string.gmatch(user_conf_yaml .. '\n', '(.-)\r?\n') do
+        if not is_empty_yaml_line(line) then
+            is_empty_file = false
+            break
+        end
+    end
+
+    if not is_empty_file then
+        local user_conf = yaml.parse(user_conf_yaml)
+        if not user_conf then
+            return nil, "invalid config.yaml file"
+        end
+
+        merge_conf(default_conf, user_conf)
+    end
+
+    return default_conf
 end
 
 local function get_openresty_version()

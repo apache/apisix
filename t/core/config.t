@@ -46,7 +46,7 @@ first plugin: "example-plugin"
 --- config
     location /t {
         content_by_lua_block {
-            local encode_json = require "cjson.safe" .encode
+            local encode_json = require "lib.json_sort" .encode
             local config = require("apisix.core").config.local_conf()
 
             ngx.say("etcd host: ", config.etcd.host)
@@ -56,7 +56,8 @@ first plugin: "example-plugin"
     }
 --- yaml_config
 etcd:
-  host: "http://127.0.0.1:2379" # etcd address
+  host:
+    - "http://127.0.0.1:2379" # etcd address
   prefix: "/apisix"             # apisix configurations prefix
   timeout: 1
 
@@ -298,4 +299,4 @@ GET /t
 --- response_body
 etcd host: http://127.0.0.1:2379
 first plugin: "example-plugin"
-seq: {"Flow style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"],"Block style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"]}
+seq: {"Block style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"],"Flow style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"]}

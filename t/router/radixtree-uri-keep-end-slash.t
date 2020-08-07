@@ -22,20 +22,12 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_heartbeat: true/enable_heartbeat: false/;
-$yaml_config =~ s/admin_key:/disable_admin_key:/;
-$yaml_config =~ s/delete_uri_tail_slash: false/delete_uri_tail_slash: true/;
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    delete_uri_tail_slash: true
+    admin_key: null
+_EOC_
 
 run_tests();
 
