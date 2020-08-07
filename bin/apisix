@@ -742,7 +742,7 @@ local function init()
     if(sys_conf["enable_dev_mode"] == true) then
         sys_conf["worker_processes"] = 1
         sys_conf["enable_reuseport"] = false
-    else
+    elseif tonumber(sys_conf["worker_processes"]) == nil then
         sys_conf["worker_processes"] = "auto"
     end
 
