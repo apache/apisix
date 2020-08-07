@@ -161,3 +161,18 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
+
+# check worker processes number is configurable.
+
+sed -i 's/worker_processes: auto/worker_processes: 2/'  conf/config.yaml
+
+make init
+
+grep "worker_processes 2;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: worker_processes in nginx.conf doesn't change"
+    exit 1
+fi
+
+sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
+echo "passed: worker_processes number is configurable"
