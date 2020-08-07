@@ -36,7 +36,6 @@ local default_weight
 local applications
 
 
-
 local schema = {
     type = "object",
     properties = {
