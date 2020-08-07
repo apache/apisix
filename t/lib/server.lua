@@ -70,7 +70,9 @@ end
 
 function _M.ewma()
     if ngx.var.server_port == "1981" then
-        ngx.sleep(0.1)
+        ngx.sleep(0.005)
+    else
+        ngx.sleep(0.001)
     end
     ngx.print(ngx.var.server_port)
 end

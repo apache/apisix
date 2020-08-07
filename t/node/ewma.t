@@ -25,10 +25,6 @@ run_tests;
 __DATA__
 
 === TEST 1: add upstream
---- http_config
-lua_shared_dict balancer_ewma 1m;
-lua_shared_dict balancer_ewma_last_touched_at 1m;
-lua_shared_dict balancer_ewma_locks 1m;
 --- config
     location /t {
         content_by_lua_block {
@@ -79,10 +75,6 @@ passed
 
 
 === TEST 2: access
---- http_config
-lua_shared_dict balancer_ewma 1m;
-lua_shared_dict balancer_ewma_last_touched_at 1m;
-lua_shared_dict balancer_ewma_locks 1m;
 --- config
     location /t {
         content_by_lua_block {
