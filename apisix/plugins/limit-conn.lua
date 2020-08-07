@@ -82,9 +82,11 @@ function _M.access(conf, ctx)
     end
 
     if lim:is_committed() then
-        ctx.limit_conn = lim
-        ctx.limit_conn_key = key
-        ctx.limit_conn_delay = delay
+        if not ctx.limit_conn then
+            ctx.limit_conn = core.tablepool.fetch("plugin#limit-conn", 0, 6)
+        else
+            core.table.insert_tail(ctx.limit_conn, lim, key, delay)
+        end
     end
 
     if delay >= 0.001 then
@@ -94,23 +96,33 @@ end
 
 
 function _M.log(conf, ctx)
-    local lim = ctx.limit_conn
-    if lim then
+    local limit_conn = ctx.limit_conn
+    if not limit_conn then
+        return
+    end
+
+    for i = 1, #limit_conn, 3 do
+        local lim = limit_conn[i]
+        local key = limit_conn[i + 1]
+        local delay = limit_conn[i + 2]
+
         local latency
         if ctx.proxy_passed then
             latency = ctx.var.upstream_response_time
         else
-            latency = ctx.var.request_time - ctx.limit_conn_delay
+            latency = ctx.var.request_time - delay
         end
 
-        local key = ctx.limit_conn_key
         local conn, err = lim:leaving(key, latency)
         if not conn then
             core.log.error("failed to record the connection leaving request: ",
                            err)
-            return
+            break
         end
     end
+
+    core.tablepool.release("plugin#limit-conn", limit_conn)
+    return
 end
 
 
