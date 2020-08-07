@@ -54,7 +54,7 @@ Plugins
 * [grpc-transcode](plugins/grpc-transcode.md): REST <--> gRPC transcoding.
 * [serverless](plugins/serverless.md)：Allows to dynamically run Lua code at *different* phase in APISIX.
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
-* [openid-connect](plugins/oauth.md)
+* [openid-connect](plugins/openid-connect.md)
 * [redirect](plugins/redirect.md): URI redirect.
 * [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
 * [fault-injection](plugins/fault-injection.md): The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
@@ -67,7 +67,7 @@ Plugins
 * [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
 * [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.
 * [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
-* [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
+* [oauth](plugins/openid-connect.md): Provides OAuth 2 authentication and introspection.
 
 Deploy
 =======
