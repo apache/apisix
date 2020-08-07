@@ -61,7 +61,7 @@ end
 
 local function decay_ewma(ewma, last_touched_at, rtt, now)
     local td = now - last_touched_at
-    td =  math.max(td, 0)
+    td = math.max(td, 0)
     local weight = math.exp(-td / DECAY_TIME)
 
     ewma = ewma * weight + rtt * (1.0 - weight)
