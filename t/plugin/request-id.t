@@ -333,7 +333,3 @@ GET /t
 request header not present
 --- no_error_log
 [error]
-
-
-
-
