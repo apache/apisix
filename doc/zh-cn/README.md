@@ -53,7 +53,7 @@
 * [grpc-transcode](plugins/grpc-transcode.md)：REST <--> gRPC 转码。
 * [serverless](plugins/serverless.md)：允许在 APISIX 中的不同阶段动态运行 Lua 代码。
 * [ip-restriction](plugins/ip-restriction.md): IP 黑白名单。
-* [openid-connect](plugins/oauth.md)
+* [openid-connect](plugins/openid-connect.md)
 * [redirect](plugins/redirect.md): URI 重定向。
 * [response-rewrite](plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
 * [fault-injection](plugins/fault-injection.md)：故障注入，可以返回指定的响应体、响应码和响应时间，从而提供了不同的失败场景下处理的能力，例如服务失败、服务过载、服务高延时等。
@@ -66,7 +66,7 @@
 * [batch-requests](plugins/batch-requests.md): 以 **http pipeline** 的方式在网关一次性发起多个 `http` 请求。
 * [authz-keycloak](plugins/authz-keycloak.md): 支持 Keycloak 身份认证服务器
 * [uri-blocker](plugins/uri-blocker.md): 根据 URI 拦截用户请求。
-* [oauth](plugins/oauth.md): 提供 OAuth 2 身份验证和自省。
+* [oauth](plugins/openid-connect.md): 提供 OAuth 2 身份验证和自省。
 
 部署
 =======
