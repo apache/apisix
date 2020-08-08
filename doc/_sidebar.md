@@ -54,7 +54,7 @@
     - [Key Auth](plugins/key-auth.md)
     - [Basic Auth](plugins/basic-auth.md)
     - [JWT Auth](plugins/jwt-auth.md)
-    - [Opend ID Connect](plugins/oauth.md)
+    - [Opend ID Connect](plugins/openid-connect.md)
 
   - General
 
