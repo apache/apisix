@@ -207,7 +207,7 @@ local function fetch_full_registry(premature)
                 end
                 local weight = default_weight
                 if metadata and metadata.weight then
-                    weight = tonumber(metadata.weight)
+                    weight = tonumber(metadata.weight) or default_weight
                 else
                     metadata.weight = nil
                 end
