@@ -521,7 +521,11 @@ _M.service = {
             maxProperties = 16
         },
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
     },
     additionalProperties = false,
 }

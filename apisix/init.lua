@@ -485,6 +485,7 @@ function _M.http_access_phase()
     if enable_websocket then
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
+        core.log.info("enabled websocket for route: ", route.value.id)
     end
 
     if route.value.script then
