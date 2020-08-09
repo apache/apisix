@@ -132,5 +132,5 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## Do you have questions about the source code?
 
-- **QQ group**: 552030619
+- **QQ Group**: 552030619
 - [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
