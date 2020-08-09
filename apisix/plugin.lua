@@ -228,13 +228,33 @@ function _M.api_routes()
 end
 
 
-function _M.filter(user_route, plugins)
+local function set_response_header_by_debug_flag(plugins, dry_run)
+    if dry_run then
+        return
+    end
+
+    if not local_conf or not local_conf.apisix.enable_debug then
+        return
+    end
+
+    if #plugins == 0 then
+        core.response.set_header("Apisix-Plugins", "no plugin")
+    end
+
+    local t = {}
+    for i = 1, #plugins, 2 do
+        core.table.insert(t, plugins[i].name)
+    end
+    core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
+end
+
+
+function _M.filter(user_route, plugins, dry_run)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
-       core.table.nkeys(user_plugin_conf) == 0 then
-        if local_conf and local_conf.apisix.enable_debug then
-            core.response.set_header("Apisix-Plugins", "no plugin")
-        end
+       core.table.nkeys(user_plugin_conf) == 0
+    then
+        set_response_header_by_debug_flag(core.empty_tab, dry_run)
         return core.empty_tab
     end
 
@@ -249,14 +269,7 @@ function _M.filter(user_route, plugins)
         end
     end
 
-    if local_conf.apisix.enable_debug then
-        local t = {}
-        for i = 1, #plugins, 2 do
-            core.table.insert(t, plugins[i].name)
-        end
-        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
-    end
-
+    set_response_header_by_debug_flag(plugins, dry_run)
     return plugins
 end
 

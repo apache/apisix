@@ -312,7 +312,7 @@ function _M.http_access_phase()
             api_ctx.conf_id = global_rule.value.id
 
             core.table.clear(plugins)
-            api_ctx.plugins = plugin.filter(global_rule, plugins)
+            api_ctx.plugins = plugin.filter(global_rule, plugins, true)
             run_plugin("rewrite", plugins, api_ctx)
             run_plugin("access", plugins, api_ctx)
         end
@@ -552,8 +552,7 @@ local function common_phase(phase_name)
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = api_ctx.global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
-            core.table.clear(plugins)
-            plugins = plugin.filter(global_rule, plugins)
+            plugins = plugin.filter(global_rule, plugins, true)
             run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
