@@ -463,7 +463,11 @@ function _M.http_access_phase()
         run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
-            route, changed = plugin.merge_consumer_route(route, api_ctx.consumer)
+            route, changed = plugin.merge_consumer_route(
+                route,
+                api_ctx.consumer,
+                api_ctx
+            )
             if changed then
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
