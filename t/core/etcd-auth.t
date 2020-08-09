@@ -52,7 +52,7 @@ __DATA__
             core.etcd.set(key, val)
             local res, err = core.etcd.get(key)
             ngx.say(res.body.node.value)
-            core.etcd.delete(val)
+            core.etcd.delete(key)
         }
     }
 --- request

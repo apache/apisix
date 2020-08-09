@@ -796,35 +796,51 @@ local function init_etcd(show_output)
 
     local host_count = #(yaml_conf.etcd.host)
 
-    -- check whether the user has enabled etcd v2 protocol
-    for index, host in ipairs(yaml_conf.etcd.host) do
-        uri = host .. "/v2/keys"
-        local cmd = "curl -i -m ".. timeout * 2 .. " -o /dev/null -s -w %{http_code} " .. uri
-        local res = excute_cmd(cmd)
-        if res == "404" then
-            io.stderr:write(string.format("failed: please make sure that you have enabled the v2 protocol of etcd on %s.\n", host))
-            return
+    -- check whether the user has enabled etcd v2 protocol for v2 API
+    local etcd_version = etcd_conf.version or "v2"
+    if etcd_version == "v2" then
+        for index, host in ipairs(yaml_conf.etcd.host) do
+            uri = host .. "/v2/keys"
+            local cmd = "curl -i -m ".. timeout * 2 .. " -o /dev/null -s -w %{http_code} " .. uri
+            local res = excute_cmd(cmd)
+            if res == "404" then
+                io.stderr:write(string.format("failed: please make sure that you have enabled the v2 protocol of etcd on %s.\n", host))
+                return
+            end
         end
     end
 
+    local base64 = require("base64")
     local etcd_ok = false
     for index, host in ipairs(yaml_conf.etcd.host) do
 
         local is_success = true
-        uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
+        local cmd
 
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                    "/plugins", "/consumers", "/node_status",
                                    "/ssl", "/global_rules", "/stream_routes",
                                    "/proto"}) do
-            local cmd = "curl " .. uri .. dir_name
-                    .. "?prev_exist=false -X PUT -d dir=true "
-                    .. "--connect-timeout " .. timeout
-                    .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
+            if etcd_version == "v3" then
+                uri = host .. "/v3/kv/put"
+                local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
+                local post_json = '{"value":"' .. base64.encode("null") ..  '", "key":"' .. base64.encode(key) .. '"}'
+                cmd = "curl " .. uri
+                        .. " -X POST -d '" .. post_json
+                        .. "' --connect-timeout " .. timeout
+                        .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
+                -- cmd = "etcdctl " .. uri
+            else
+                uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
+                cmd = "curl " .. uri .. dir_name
+                        .. "?prev_exist=false -X PUT -d dir=true "
+                        .. "--connect-timeout " .. timeout
+                        .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
+            end
 
             local res = excute_cmd(cmd)
-            if not res:find("index", 1, true)
-                    and not res:find("createdIndex", 1, true) then
+            if (etcd_version == "v2" and not res:find("index", 1, true) and not res:find("createdIndex", 1, true))
+                    or (etcd_version == "v3" and not res:find("revision", 1, true)) then
                 is_success = false
                 if (index == host_count) then
                     error(cmd .. "\n" .. res)

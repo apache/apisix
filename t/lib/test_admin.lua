@@ -145,6 +145,7 @@ function _M.test(uri, method, body, pattern, headers)
     end
 
     local httpc = http.new()
+    local key = uri
     -- https://github.com/ledgetech/lua-resty-http
     uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
           .. ":" .. ngx.var.server_port .. uri
@@ -169,10 +170,10 @@ function _M.test(uri, method, body, pattern, headers)
 
     if etcd_version == "v3" then
         -- set would not return kv anymore in etcd v3
-        if method == "PUT" or method == "PATCH" then
+        --if method == "PATCH" then
             -- need `res.body` for admin/plugins-reload.t
-            return 200, "passed", res_data
-        end
+        --    return 200, "passed", res_data
+        --end
 
         -- v3 return num of deleted k-v
         if method == "DELETE" then
@@ -187,6 +188,12 @@ function _M.test(uri, method, body, pattern, headers)
         -- While in v2, if not as dir pairs are under key `node`
         --   but if as dir, pairs would be unber key `nodes` inside `node`
         --   and multiple pairs would be under `nodes`
+        if not res_data.kvs then
+            return 404, "Key not found, " .. key, res_data
+        end
+        if pattern == nil then
+            return res.status, "passed", res.body
+        end
         res_data = res_data.kvs
         res_data = #res_data == 1 and res_data[1] or res_data
     else
@@ -197,7 +204,6 @@ function _M.test(uri, method, body, pattern, headers)
         res_data = res_data.nodes and res_data.nodes or res_data
         res_data = #res_data == 1 and res_data[1] or res_data
     end
-
 
     local ok, err = _M.comp_tab(pattern, res_data)
     if not ok then

@@ -133,9 +133,6 @@ end
 
 
 local function sync_data(self)
-    math.randomseed(tostring(os.time()))
-    local inspect = require("inspect")
-    local ii = math.random(100)
     if not self.key then
         return nil, "missing 'key' arguments"
     end
@@ -487,6 +484,17 @@ end
 
 function _M.fetch_created_obj(key)
     return created_obj[key]
+end
+
+function _M.getkv(res)
+    if type(res) ~= "table" then
+        log.error("fail to get kv" .. json.encode(res))
+    end
+    
+    if res.body then
+        res = res.body
+    end
+    return res.nodes
 end
 
 

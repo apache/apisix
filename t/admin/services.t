@@ -43,19 +43,16 @@ __DATA__
                     "desc": "new service"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new service"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
+                        "desc": "new service"
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
                 )
 
@@ -81,19 +78,16 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new service"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
+                        "desc": "new service"
                     },
-                    "action": "get"
+                    "key": "/apisix/services/1"
                 }]]
                 )
 
@@ -118,9 +112,7 @@ passed
             local code, message = t('/apisix/admin/services/1',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{
-                    "action": "delete"
-                }]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -142,9 +134,7 @@ GET /t
             local code = t('/apisix/admin/services/not_found',
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{
-                    "action": "delete"
-                }]]
+                 nil
                 )
 
             ngx.say("[delete] code: ", code)
@@ -175,17 +165,14 @@ GET /t
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -197,13 +184,12 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/services/" + 1)
+            -- to compatible with etcd v3
+            local id = string.sub(res.key, #"/apisix/services/" + 1)
             code, message = t('/apisix/admin/services/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
-                 [[{
-                    "action": "delete"
-                }]]
+                 nil
                 )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -235,17 +221,14 @@ GET /t
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -286,19 +269,16 @@ GET /t
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -417,13 +397,10 @@ GET /t
                     "plugins": {}
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {}
-                        },
-                        "key": "/apisix/services/1"
+                    "value": {
+                        "plugins": {}
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
                 )
 
@@ -645,19 +622,16 @@ GET /t
                     "desc": "new 20 service"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new 20 service"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
+                        "desc": "new 20 service"
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
             )
 
@@ -685,19 +659,16 @@ passed
                     "desc": "new 19 service"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new 19 service"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
+                        "desc": "new 19 service"
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
             )
 
@@ -731,16 +702,14 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1,
-                                    "127.0.0.1:8081": 3,
-                                    "127.0.0.1:8082": 4
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1,
+                                "127.0.0.1:8081": 3,
+                                "127.0.0.1:8082": 4
+                            },
+                            "type": "roundrobin"
                         }
                     }
                 }]]
@@ -776,19 +745,16 @@ passed
                     "desc": "new 22 service"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new 22 service"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
+                        "desc": "new 22 service"
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
             )
 
@@ -814,19 +780,16 @@ passed
                 ngx.HTTP_PATCH,
                 '"new 23 service"',
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new 23 service"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
+                        "desc": "new 23 service"
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
             )
 
@@ -858,15 +821,13 @@ passed
                     "type": "roundrobin"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.2:8081": 3,
-                                    "127.0.0.3:8082": 4
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.2:8081": 3,
+                                "127.0.0.3:8082": 4
+                            },
+                            "type": "roundrobin"
                         }
                     }
                 }]]
@@ -1028,19 +989,16 @@ GET /t
                     "name": "test service name"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "name": "test service name"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
+                        "name": "test service name"
                     },
-                    "action": "set"
+                    "key": "/apisix/services/1"
                 }]]
                 )
 

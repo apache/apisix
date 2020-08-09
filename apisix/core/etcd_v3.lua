@@ -62,7 +62,19 @@ function _M.readdir(key, opts)
         return nil, err
     end
 
-    return etcd_cli:readdir(prefix .. key, opts)
+    local res, err = etcd_cli:readdir(prefix .. key, opts)
+    if not res then
+        return nil, err
+    end
+    if res.body.kvs then
+        for i=#res.body.kvs,1,-1 do
+            local type_value = type(res.body.kvs[i].value)
+            if type_value ~= "string" and type_value ~= "table" then
+                table.remove(res.body.kvs, i)
+            end
+        end
+    end
+    return res, err
 end
 
 

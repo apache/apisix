@@ -22,6 +22,8 @@ local tostring = tostring
 local ipairs = ipairs
 local type = type
 
+local local_conf = require("apisix.core.config_local").local_conf()
+local etcd_version = local_conf.etcd.version or "v2"
 
 local _M = {
     version = 0.3,
@@ -81,6 +83,13 @@ local function check_conf(id, conf, need_id)
             return nil, {error_msg = "failed to fetch upstream info by "
                                      .. "upstream id [" .. upstream_id .. "], "
                                      .. "response code: " .. res.status}
+        end
+
+        -- etcd v3 would not return `Key not found anymore`
+        if etcd_version == "v3" and not res.body.kvs then
+            return nil, {error_msg = "failed to fetch upstream info by "
+                                     .. "upstream id [" .. upstream_id .. "], "
+                                     .. "response code: " .. 404}
         end
     end
 
@@ -205,7 +214,7 @@ function _M.patch(id, conf, sub_path)
     core.log.info("key: ", key, " old value: ",
                   core.json.delay_encode(res_old, true))
 
-    local node_value = res_old.body.node.value
+    local node_value = core.config.getkv(res_old).value
 
     if sub_path and sub_path ~= "" then
         local code, err, node_val = core.table.patch(node_value, sub_path, conf)

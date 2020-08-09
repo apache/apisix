@@ -68,7 +68,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body, res = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                     "service_id": 1,
@@ -93,7 +93,6 @@ GET /t
 passed
 --- no_error_log
 [error]
-
 
 
 === TEST 3: delete service(id: 1)

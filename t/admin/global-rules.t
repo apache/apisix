@@ -116,21 +116,20 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                        "key": "/apisix/global_rules/1",
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "time_window": 60,
-                                    "policy": "local",
-                                    "count": 2,
-                                    "key": "remote_addr",
-                                    "rejected_code": 503
-                                }
+                    "key": "/apisix/global_rules/1",
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "time_window": 60,
+                                "policy": "local",
+                                "count": 2,
+                                "key": "remote_addr",
+                                "rejected_code": 503
                             }
                         }
+                    }
                 }]]
                 )
-
             ngx.status = code
             ngx.say(body)
         }

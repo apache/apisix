@@ -71,7 +71,7 @@ __DATA__
             core.etcd.set(key, val)
             local res, err = core.etcd.get(key)
             check_val(res)
-            core.etcd.delete(val)
+            core.etcd.delete(key)
         }
     }
 --- request

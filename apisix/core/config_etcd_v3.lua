@@ -185,37 +185,44 @@ local function sync_data(self)
         local changed = false
         
         for _, item in ipairs(dir_res.kvs) do
-            local key = short_key(self, item.key)
-            local data_valid = true
-            if type(item.value) ~= "table" then
-                data_valid = false
-                log.error("invalid item data of [", self.key .. "/" .. key,
-                          "], val: ", tostring(item.value),
-                          ", it shoud be a object")
-            end
-
-            if data_valid and self.item_schema then
-                data_valid, err = check_schema(self.item_schema, item.value)
-                if not data_valid then
-                    log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.encode(item.value))
+            -- init create kv without value, like dir in v2
+            -- since kvs contains multi kv pair, check inside loop
+            local type_value = type(item.value)
+            if type_value == "string" or type_value == "table" then
+                local key = short_key(self, item.key)
+                local data_valid = true
+                if type(item.value) ~= "table" then
+                    data_valid = false
+                    log.error("invalid item data of [", self.key .. "/" .. key,
+                            "], val: ", tostring(item.value),
+                            ", it shoud be a object")
                 end
-            end
 
-            if data_valid then
-                changed = true
-                insert_tab(self.values, item)
-                self.values_hash[key] = #self.values
-                item.value.id = key
-                item.clean_handlers = {}
+                if data_valid and self.item_schema then
+                    data_valid, err = check_schema(self.item_schema, item.value)
+                    if not data_valid then
+                        log.error("failed to check item data of [", self.key,
+                                "] err:", err, " ,val: ", json.encode(item.value))
+                    end
+                end
 
-                if self.filter then
-                    self.filter(item)
+                if data_valid then
+                    changed = true
+                    insert_tab(self.values, item)
+                    self.values_hash[key] = #self.values
+                    item.value.id = key
+                    item.clean_handlers = {}
+                    
+                    if self.filter then
+                        self.filter(item)
+                    end
                 end
             end
 
             self:upgrade_version(item.mod_revision)
         end
+        
+
         if header then
             self:upgrade_version(header.revision)
         end
@@ -499,6 +506,17 @@ end
 
 function _M.fetch_created_obj(key)
     return created_obj[key]
+end
+
+function _M.getkv(res)
+    if type(res) ~= "table" then
+        log.error("fail to get kv" .. json.encode(res))
+    end
+    
+    if res.body then
+        res = res.body
+    end
+    return res.kvs[1]
 end
 
 
