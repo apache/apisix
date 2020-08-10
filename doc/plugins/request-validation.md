@@ -105,7 +105,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Examples:
 
-**Using ENUMS:**
+**`Enum` validate:**
 
 ```json
 {
@@ -124,30 +124,130 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 
-**JSON with multiple levels:**
+**`Boolean` validate:**
 
 ```json
 {
     "body_schema": {
         "type": "object",
-        "required": ["required_payload"],
+        "required": ["bool_payload"],
         "properties": {
-            "boolean_payload": {"type": "boolean"},
-            "child_element_name": {
-                "type": "object",
-                "properties": {
-                    "http_statuses": {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                            "type": "integer",
-                            "minimum": 200,
-                            "maximum": 599
-                        },
-                        "uniqueItems": true,
-                        "default": [200, 201, 202, 203]
-                    }
-                }
+            "bool_payload": {
+                "type": "boolean",
+                "default": true
+            }
+        }
+    }
+}
+```
+
+**`Number` or `Integer` validate:**
+
+```json
+{
+    "body_schema": {
+        "type": "object",
+        "required": ["integer_payload"],
+        "properties": {
+            "integer_payload": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
+            }
+        }
+    }
+}
+```
+
+**`String` validate:**
+
+```json
+{
+    "body_schema": {
+        "type": "object",
+        "required": ["string_payload"],
+        "properties": {
+            "string_payload": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32
+            }
+        }
+    }
+}
+```
+
+**`Regex` validate:**
+
+```json
+{
+    "body_schema": {
+        "type": "object",
+        "required": ["regex_payload"],
+        "properties": {
+            "regex_payload": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "[[^[a-zA-Z0-9_]+$]]"
+            }
+        }
+    }
+}
+```
+
+
+**`Array` validate:**
+
+```json
+{
+    "body_schema": {
+        "type": "object",
+        "required": ["array_payload"],
+        "properties": {
+            "array_payload": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "integer",
+                    "minimum": 200,
+                    "maximum": 599
+                },
+                "uniqueItems": true,
+                "default": [200, 302]
+            }
+        }
+    }
+}
+```
+
+**Multi-field combination verification:**
+
+```json
+{
+    "body_schema": {
+        "type": "object",
+        "required": ["boolean_payload", "array_payload", "regex_payload"],
+        "properties": {
+            "boolean_payload": {
+                "type": "boolean"
+            },
+            "array_payload": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "integer",
+                    "minimum": 200,
+                    "maximum": 599
+                },
+                "uniqueItems": true,
+                "default": [200, 302]
+            },
+            "regex_payload": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "[[^[a-zA-Z0-9_]+$]]"
             }
         }
     }
