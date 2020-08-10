@@ -86,7 +86,7 @@ function _M.postget(res, realkey)
 
     res.body.node = kvs2node(res.body.kvs[1])
     -- kvs.value = nil, so key is root
-    if type(res.body.kvs[1].value) == "userdata" then
+    if type(res.body.kvs[1].value) == "userdata" or not res.body.kvs[1].value then
         -- remove last "/" when necesary
         if string.sub(res.body.node.key, -1, -1) == "/" then
             res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
