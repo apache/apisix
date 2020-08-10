@@ -1,26 +1,13 @@
---
--- Licensed to the Apache Software Foundation (ASF) under one or more
--- contributor license agreements.  See the NOTICE file distributed with
--- this work for additional information regarding copyright ownership.
--- The ASF licenses this file to You under the Apache License, Version 2.0
--- (the "License"); you may not use this file except in compliance with
--- the License.  You may obtain a copy of the License at
---
---     http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
---
+-- Original Authors: Shiv Nagarajan & Scott Francis
+-- Accessed: March 12, 2018
+-- Inspiration drawn from:
+-- https://github.com/twitter/finagle/blob/1bc837c4feafc0096e43c0e98516a8e1c50c4421
+--   /finagle-core/src/main/scala/com/twitter/finagle/loadbalancer/PeakEwma.scala
 
-local resty_lock = require("resty.lock")
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_shared = ngx.shared
 local ngx_now = ngx.now
-local tostring = tostring
 local math = math
 local pairs = pairs
 local next = next
@@ -28,35 +15,16 @@ local tonumber = tonumber
 
 local _M = {}
 local DECAY_TIME = 10 -- this value is in seconds
-local LOCK_KEY = ":ewma_key"
-local PICK_SET_SIZE = 2
-local ewma_lock, ewma_lock_err
+
 local shm_ewma = ngx_shared.balancer_ewma
 local shm_last_touched_at= ngx_shared.balancer_ewma_last_touched_at
 
-
-local function lock(upstream)
-    local _, err = ewma_lock:lock(upstream .. LOCK_KEY)
-    if err then
-        if err ~= "timeout" then
-            core.log.error("EWMA Balancer failed to lock:", err)
-        end
-        return false, err
-    end
-
-    return true
-end
-
-
-local function unlock()
-    local ok, err = ewma_lock:unlock()
-    if not ok then
-        core.log.error("EWMA Balancer failed to unlock:", err)
-        return false, err
-    end
-
-    return true
-end
+local lrucache_addr = core.lrucache.new({
+    ttl = 300, count = 1024
+})
+local lrucache_trans_format = core.lrucache.new({
+    ttl = 300, count = 256
+})
 
 
 local function decay_ewma(ewma, last_touched_at, rtt, now)
@@ -89,15 +57,7 @@ end
 
 
 local function get_or_update_ewma(upstream, rtt, update)
-    local lock_ok, err = nil
-    if update then
-        lock_ok, err = lock(upstream)
-    end
     local ewma = shm_ewma:get(upstream) or 0
-    if not lock_ok then
-        return ewma, err
-    end
-
     local now = ngx_now()
     local last_touched_at = shm_last_touched_at:get(upstream) or 0
     ewma = decay_ewma(ewma, last_touched_at, rtt, now)
@@ -108,38 +68,22 @@ local function get_or_update_ewma(upstream, rtt, update)
 
     store_stats(upstream, ewma, now)
 
-    unlock()
-
     return ewma
 end
 
 
 local function score(upstream)
     -- Original implementation used names
-    -- Endpoints don't have names, so passing in IP:Port as key instead
-    local upstream_name = upstream.address .. ":" .. upstream.port
+    -- Endpoints don't have names, so passing in host:Port as key instead
+    local upstream_name = upstream.host .. ":" .. upstream.port
     return get_or_update_ewma(upstream_name, 0, false)
 end
 
 
--- implementation similar to https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
--- or https://en.wikipedia.org/wiki/Random_permutation
--- loop from 1 .. k
--- pick a random value r from the remaining set of unpicked values (i .. n)
--- swap the value at position i with the value at position r
-local function shuffle_peers(peers, k)
-    for i = 1, k do
-        local rand_index = math.random(i, #peers)
-        peers[i], peers[rand_index] = peers[rand_index], peers[i]
-    end
-end
-
-
-local function pick_and_score(peers, k)
-    shuffle_peers(peers, k)
+local function pick_and_score(peers)
     local lowest_score_index = 1
     local lowest_score = score(peers[lowest_score_index])
-    for i = 2, k do
+    for i = 2, #peers do
         local new_score = score(peers[i])
         if new_score < lowest_score then
             lowest_score_index, lowest_score = i, new_score
@@ -150,51 +94,55 @@ local function pick_and_score(peers, k)
 end
 
 
-local function _trans_format(t1)
-    -- trans
-    --{"1.2.3.4:80":100,"5.6.7.8:8080":100}
-    -- into
-    -- [{"address":"1.2.3.4","port":"80"},{"address":"5.6.7.8","port":"8080"}]
-    local t2 = {}
-    local addr, port, err
-
-    for k,_ in pairs(t1) do
-        addr, port, err = core.utils.parse_addr(k)
-        if not err then
-            core.table.insert(t2, {address = addr, port = tostring(port)})
-        else
-            core.log.error('parse_addr error: ', k, err)
-        end
-    end
-
-    return next(t2) and t2 or nil
+local function parse_addr(addr)
+    local host, port, err = core.utils.parse_addr(addr)
+    return {host = host, port = port}, err
 end
 
 
-local function _ewma_find(up_nodes)
+local function _trans_format(up_nodes)
+    -- trans
+    --{"1.2.3.4:80":100,"5.6.7.8:8080":100}
+    -- into
+    -- [{"host":"1.2.3.4","port":"80"},{"host":"5.6.7.8","port":"8080"}]
+    local peers = {}
+    local res, err
+
+    for addr, _ in pairs(up_nodes) do
+        res, err = lrucache_addr(addr, nil, parse_addr, addr)
+        if not err then
+            core.table.insert(peers, res)
+        else
+            core.log.error('parse_addr error: ', addr, err)
+        end
+    end
+
+    return next(peers) and peers or nil
+end
+
+
+local function _ewma_find(ctx, up_nodes)
     local peers
     local endpoint
-    local err
 
-    if not ewma_lock then
-        ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks",
-                                                  {timeout = 0, exptime = 0.1})
+    if not up_nodes
+       or core.table.nkeys(up_nodes) == 0 then
+        return nil, 'up_nodes empty'
     end
-    if not ewma_lock then
-        return nil, ewma_lock_err
-    end
-    peers = _trans_format(up_nodes)
+
+    peers = lrucache_trans_format(ctx.upstream_key, ctx.upstream_version,
+                                  _trans_format, up_nodes)
     if not peers then
-        err = 'up_nodes error'
-        return nil, err
-    end
-    endpoint = peers[1]
-    if #peers > 1 then
-        local k = (#peers < PICK_SET_SIZE) and #peers or PICK_SET_SIZE
-        endpoint = pick_and_score(peers, k)
+        return nil, 'up_nodes trans error'
     end
 
-    return endpoint.address .. ":" .. endpoint.port
+    if #peers > 1 then
+        endpoint = pick_and_score(peers)
+    else
+        endpoint = peers[1]
+    end
+
+    return endpoint.host .. ":" .. endpoint.port
 end
 
 
@@ -204,13 +152,6 @@ local function _ewma_after_balance(ctx)
     local rtt = connect_time + response_time
     local upstream = ctx.var.upstream_addr
 
-    if not ewma_lock then
-        ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks",
-                                                  {timeout = 0, exptime = 0.1})
-    end
-    if not ewma_lock then
-        return nil, ewma_lock
-    end
     if not upstream then
         return nil, "no upstream addr found"
     end
@@ -227,8 +168,8 @@ function _M.new(up_nodes, upstream)
 
     return {
         upstream = upstream,
-        get = function ()
-            return _ewma_find(up_nodes)
+        get = function (ctx)
+            return _ewma_find(ctx, up_nodes)
         end,
         after_balance = function(ctx)
             return _ewma_after_balance(ctx)
