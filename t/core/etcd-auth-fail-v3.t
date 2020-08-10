@@ -15,10 +15,10 @@
 # limitations under the License.
 #
 BEGIN {
-    $ENV{"ETCD_ENABLE_AUTH"} = "true"
+    $ENV{"ETCD_ENABLE_AUTH"} = "false";
 }
 
-use t::APISIX 'no_plan';
+use t::APISIX;
 use Cwd qw(cwd);
 
 repeat_each(1);
@@ -39,6 +39,7 @@ sub read_file($) {
 
 my $yaml_config = read_file("conf/config.yaml");
 if ($yaml_config =~ /  version: "v3"/) {
+    plan 'no_plan';
     # Authentication is enabled at etcd and credentials are set
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth enable');
@@ -48,37 +49,24 @@ if ($yaml_config =~ /  version: "v3"/) {
     # Authentication is disabled at etcd & guest access is granted
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
 } else {
-    # Authentication is enabled at etcd and credentials are set
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
-
-    run_tests;
-
-    # Authentication is disabled at etcd & guest access is granted
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
+    plan(skip_all => "skip for v3 protocol");
 }
-
 
 __DATA__
 
-=== TEST 1: Set and Get a value pass with authentication
+=== TEST 1: Set and Get a value pass
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local key = "/test_key"
             local val = "test_value"
-            core.etcd.set(key, val)
-            local res, err = core.etcd.get(key)
-            ngx.say(res.body.node.value)
-            core.etcd.delete(val)
+            local res, err = core.etcd.set(key, val)
+            ngx.say(err)
         }
     }
 --- request
 GET /t
---- response_body
-test_value
---- no_error_log
-[error]
+--- error_code: 500
+--- error_log eval
+qr /insufficient credentials code: 401/

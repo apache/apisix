@@ -129,6 +129,7 @@ etcd:
     - "http://127.0.0.1:2379"     # multiple etcd address
   prefix: "/apisix"               # apisix configurations prefix
   timeout: 30                     # 30 seconds
+  version: "v3"                   # etcd version: v2/v3
   # user: root                     # root username for etcd
   # password: 5tHkHhYkjr6cQY        # root password for etcd
 #eureka:

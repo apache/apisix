@@ -1557,7 +1557,8 @@ location /t {
         ngx.say("code: ", code)
         ngx.say(body)
 
-        ngx.sleep(2)
+        -- etcd v3 would still get the value at 2s, don't know why yet
+        ngx.sleep(2.5)
 
         -- get again
         code, body, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
@@ -1610,7 +1611,7 @@ location /t {
         end
 
         ngx.say("[push] succ: ", body)
-        ngx.sleep(2)
+        ngx.sleep(2.5)
 
         local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
         code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_GET)

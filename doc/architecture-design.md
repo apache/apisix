@@ -55,6 +55,7 @@ etcd:
   host: "http://127.0.0.1:2379" # etcd address
   prefix: "apisix"              # apisix configurations prefix
   timeout: 60
+  version: "v3"                 # etcd version: v2/v3
 
 plugins:                        # plugin name list
   - example-plugin
@@ -593,7 +594,7 @@ HTTP/1.1 403
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
 
-```shell
+​```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \

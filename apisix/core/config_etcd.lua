@@ -17,6 +17,7 @@
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
+local etcd_v3      = require("apisix.core.etcd_v3")
 local etcd         = require("resty.etcd")
 local new_tab      = require("table.new")
 local clone_tab    = require("table.clone")
@@ -48,6 +49,7 @@ local mt = {
         return " etcd key: " .. self.key
     end
 }
+local etcd_version = _M.local_conf().etcd.version or "v2"
 
 
 local function getkey(etcd_cli, key)
@@ -55,7 +57,7 @@ local function getkey(etcd_cli, key)
         return nil, "not inited"
     end
 
-    local res, err = etcd_cli:get(key)
+    local res, err = etcd_cli:readdir(key)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
@@ -63,6 +65,13 @@ local function getkey(etcd_cli, key)
 
     if type(res.body) ~= "table" then
         return nil, "failed to get key from etcd"
+    end
+
+    if(etcd_version == "v3") then
+        res, err = etcd_v3.postget(res, key)
+        if not res then
+            return nil, err
+        end
     end
 
     return res
@@ -73,8 +82,7 @@ local function readdir(etcd_cli, key)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
-
-    local res, err = etcd_cli:readdir(key, true)
+    local res, err = etcd_cli:readdir(key)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, nil, err
@@ -82,6 +90,13 @@ local function readdir(etcd_cli, key)
 
     if type(res.body) ~= "table" then
         return nil, "failed to read etcd dir"
+    end
+
+    if(etcd_version == "v3") then
+        res, err = etcd_v3.postget(res, key .. "/")
+        if not res then
+            return nil, err
+        end
     end
 
     return res
@@ -92,10 +107,31 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
         return nil, nil, "not inited"
     end
 
-    local res, err = etcd_cli:waitdir(key, modified_index, timeout)
+    local res, err
+    if etcd_version == "v3" then
+        local opts = {}
+        opts.start_revision = modified_index
+        opts.timeout = timeout
+        local res_fun, fun_err = etcd_cli:watchdir(key, opts)
+        if not res_fun then
+            return nil, fun_err
+        end
+        res_fun() -- skip create info
+        res, err = res_fun()
+    else
+        res, err = etcd_cli:waitdir(key, modified_index, timeout)
+    end
+
     if not res then
         -- log.error("failed to get key from etcd: ", err)
         return nil, err
+    end
+
+    if etcd_version == "v3" then
+        if type(res.result) ~= "table" then
+            return nil, "failed to read etcd dir"
+        end
+        return etcd_v3.postwatch(res)
     end
 
     if type(res.body) ~= "table" then
@@ -430,6 +466,9 @@ function _M.new(key, opts)
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil
+    etcd_conf.protocol = etcd_conf.version
+    etcd_conf.version = nil
+    etcd_conf.api_prefix = "/v3"
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)

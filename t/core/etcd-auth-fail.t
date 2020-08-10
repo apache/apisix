@@ -18,24 +18,42 @@ BEGIN {
     $ENV{"ETCD_ENABLE_AUTH"} = "false"
 }
 
-use t::APISIX 'no_plan';
+use t::APISIX;
+use Cwd qw(cwd);
 
 repeat_each(1);
 no_long_string();
 no_root_location();
 log_level("info");
 
-# Authentication is enabled at etcd and credentials are set
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
+my $apisix_home = $ENV{APISIX_HOME} || cwd();
 
-run_tests;
+sub read_file($) {
+    my $infile = shift;
+    open my $in, "$apisix_home/$infile"
+        or die "cannot open $infile for reading: $!";
+    my $data = do { local $/; <$in> };
+    close $in;
+    $data;
+}
 
-# Authentication is disabled at etcd & guest access is granted
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
+my $yaml_config = read_file("conf/config.yaml");
+if ($yaml_config =~ /  version: "v3"/) {
+    plan(skip_all => "skip for v2 protocol");
+} else {
+    plan 'no_plan';
 
+    # Authentication is enabled at etcd and credentials are set
+    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
+
+    run_tests;
+
+    # Authentication is disabled at etcd & guest access is granted
+    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
+}
 
 __DATA__
 
