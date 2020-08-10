@@ -82,6 +82,7 @@ local function readdir(etcd_cli, key)
     if not etcd_cli then
         return nil, nil, "not inited"
     end
+
     local res, err = etcd_cli:readdir(key)
     if not res then
         -- log.error("failed to get key from etcd: ", err)
