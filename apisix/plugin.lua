@@ -239,6 +239,7 @@ local function set_response_header_by_debug_flag(plugins, dry_run)
 
     if #plugins == 0 then
         core.response.set_header("Apisix-Plugins", "no plugin")
+        return
     end
 
     local t = {}
