@@ -23,7 +23,7 @@ local schema = {
     type = "object",
     properties = {
         header_name = {type = "string", default = "X-Request-Id"},
-        include_in_response = {type = "boolean", default = false}
+        include_in_response = {type = "boolean", default = true}
     }
 }
 
@@ -41,26 +41,27 @@ function _M.check_schema(conf)
 end
 
 
-function _M.rewrite(conf)
+function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
-    uuid.seed()
     local uuid_val = uuid()
     if not headers[conf.header_name] then
         core.request.set_header(conf.header_name, uuid_val)
     end
 
     if conf.include_in_response then
-        ngx.ctx.api_ctx.x_request_id = uuid_val
+        ctx.x_request_id = uuid_val
     end
 end
 
 
 function _M.header_filter(conf, ctx)
-    if conf.include_in_response then
-        local headers = ngx.resp.get_headers()
-        if not headers[conf.header_name] then
-            core.response.set_header(conf.header_name, ngx.ctx.api_ctx.x_request_id)
-        end
+    if not conf.include_in_response then
+        return
+    end
+
+    local headers = ngx.resp.get_headers()
+    if not headers[conf.header_name] then
+        core.response.set_header(conf.header_name, ctx.x_request_id)
     end
 end
 

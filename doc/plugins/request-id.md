@@ -38,7 +38,7 @@ API request. The plugin will not add a request id if the `header_name` is alread
 |Name           |Requirement    |Description|
 |---------      |--------       |-----------|
 | header_name   |optional       |Request ID header name (default: X-Request-Id)|
-| include_in_response   |optional       |Option to include the unique request ID in the response header (default: false)|
+| include_in_response   |optional       |Option to include the unique request ID in the response header (default: true)|
 
 ## How To Enable
 

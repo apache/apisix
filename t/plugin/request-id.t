@@ -69,7 +69,7 @@ done
 
 
 
-=== TEST 3: add plugin with include_in_response true
+=== TEST 3: add plugin with include_in_response true (default true)
 --- config
     location /t {
         content_by_lua_block {
@@ -79,7 +79,6 @@ done
                  [[{
                         "plugins": {
                             "request-id": {
-                                "include_in_response": true
                             }
                         },
                         "upstream": {
@@ -95,7 +94,6 @@ done
                         "value": {
                             "plugins": {
                             "request-id": {
-                                "include_in_response": true
                             }
                         },
                             "upstream": {
@@ -168,8 +166,7 @@ request header present
                  [[{
                         "plugins": {
                             "request-id": {
-                                "header_name": "Custom-Header-Name",
-                                "include_in_response": true
+                                "header_name": "Custom-Header-Name"
                             }
                         },
                         "upstream": {
@@ -249,7 +246,7 @@ request header present
 
 
 
-=== TEST 7: add plugin with include_in_response false (default value)
+=== TEST 7: add plugin with include_in_response false (default true)
 --- config
     location /t {
         content_by_lua_block {
@@ -259,6 +256,7 @@ request header present
                  [[{
                         "plugins": {
                             "request-id": {
+                                "include_in_response": false
                             }
                         },
                         "upstream": {
@@ -274,6 +272,7 @@ request header present
                         "value": {
                             "plugins": {
                             "request-id": {
+                                "include_in_response": false
                             }
                         },
                             "upstream": {
