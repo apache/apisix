@@ -844,7 +844,7 @@ local function init_etcd(show_output)
                 --        .. " -X POST -d '" .. post_json
                 --        .. "' --connect-timeout " .. timeout
                 --        .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
-                cmd = "etcdctl --endpoints=" .. host .. " put " .. key .. " init_dir" 
+                cmd = "etcdctl --endpoints=" .. host .. " put " .. key .. " init_dir"
             else
                 uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
                 cmd = "curl " .. uri .. dir_name
