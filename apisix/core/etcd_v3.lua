@@ -51,8 +51,8 @@ local function kvs2node(kvs)
     local node = {}
     node.key = kvs.key
     node.value = kvs.value
-    node.createdIndex = kvs.create_revision
-    node.modifiedIndex = kvs.mod_revision
+    node.createdIndex = tonumber(kvs.create_revision)
+    node.modifiedIndex = tonumber(kvs.mod_revision)
     return node
 end
 
@@ -171,6 +171,7 @@ local function set(key, value, ttl)
     res.body.node.key = prefix .. key
     res.body.node.value = value
     res.body.kvs = nil
+    res.code = 201
 
     return res, nil
 end
