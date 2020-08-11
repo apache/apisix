@@ -155,9 +155,9 @@ local function set(key, value, ttl)
         if not data then
             return nil, grant_err
         end
-        res, err = etcd_cli:set(prefix .. key, value, {lease = data.body.ID})
+        res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true, lease = data.body.ID})
     else
-        res, err = etcd_cli:set(prefix .. key, value)
+        res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true})
     end
     if not res then
         return nil, err
@@ -170,8 +170,11 @@ local function set(key, value, ttl)
     res.body.node = {}
     res.body.node.key = prefix .. key
     res.body.node.value = value
-    res.body.kvs = nil
     res.status = 201
+    if res.body.prev_kv then
+        res.status = 200
+        res.body.prev_kv = nil
+    end
 
     return res, nil
 end
