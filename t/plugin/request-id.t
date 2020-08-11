@@ -183,16 +183,16 @@ request header present
             -- ngx.say("res1: ", res1.headers["X-Request-Id"])
             -- ngx.say("res2: ", res2.headers["X-Request-Id"])
             if res1.headers["X-Request-Id"] == res2.headers["X-Request-Id"] then
-                ngx.say("unique request id")
+                ngx.say("ids not unique")
             else
-                ngx.say("failed")
+                ngx.say("true")
             end
         }
     }
 --- request
 GET /t
 --- response_body
-failed
+true
 --- no_error_log
 [error]
 
