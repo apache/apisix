@@ -162,7 +162,7 @@ request header present
         content_by_lua_block {
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
             local res1, err1 = httpc:request_uri(uri,
                 {
                     method = "GET",
