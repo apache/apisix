@@ -171,7 +171,7 @@ local function set(key, value, ttl)
     res.body.node.key = prefix .. key
     res.body.node.value = value
     res.body.kvs = nil
-    res.code = 201
+    res.status = 201
 
     return res, nil
 end
