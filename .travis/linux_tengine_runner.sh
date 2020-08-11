@@ -245,6 +245,7 @@ do_install() {
     rm -rf luarocks-2.4.4
 
     export GO111MOUDULE=on
+    export ETCDCTL_API=3
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -280,6 +281,7 @@ do_install() {
 script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+    export ETCDCTL_API=3
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data

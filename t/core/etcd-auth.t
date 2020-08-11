@@ -18,7 +18,7 @@ BEGIN {
     $ENV{"ETCD_ENABLE_AUTH"} = "true"
 }
 
-use t::APISIX 'no_plan';
+use t::APISIX;
 use Cwd qw(cwd);
 
 repeat_each(1);
@@ -38,7 +38,14 @@ sub read_file($) {
 }
 
 my $yaml_config = read_file("conf/config.yaml");
-if ($yaml_config =~ /  version: "v3"/) {
+my $etcd_version = `etcdctl version`;
+if ($etcd_version =~ /No help topic for 'version'/) {
+    $etcd_version = `etcdctl --version`;
+}
+if ($etcd_version =~ /etcdctl version: 3.2/) {
+    plan(skip_all => "skip for etcd version v3.2");
+} elsif ($yaml_config =~ /  version: "v3"/) {
+    plan 'no_plan';
     # Authentication is enabled at etcd and credentials are set
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth enable');
@@ -48,6 +55,7 @@ if ($yaml_config =~ /  version: "v3"/) {
     # Authentication is disabled at etcd & guest access is granted
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
 } else {
+    plan 'no_plan';
     # Authentication is enabled at etcd and credentials are set
     system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
     system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');

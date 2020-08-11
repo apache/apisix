@@ -36,7 +36,6 @@ local function new()
     etcd_conf.prefix = nil
     etcd_conf.protocol = etcd_conf.version
     etcd_conf.version = nil
-    etcd_conf.api_prefix = "/v3"
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
@@ -80,7 +79,11 @@ function _M.postget(res, realkey)
         res.body.node.dir = true
         res.body.node.nodes = {}
         for i=start_index, #res.body.kvs do
-            res.body.node.nodes[i-1] = kvs2node(res.body.kvs[i])
+            if start_index == 1 then
+                res.body.node.nodes[i] = kvs2node(res.body.kvs[i])
+            else
+                res.body.node.nodes[i-1] = kvs2node(res.body.kvs[i])
+            end
         end
     end
 
