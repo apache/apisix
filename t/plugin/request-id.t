@@ -156,7 +156,49 @@ request header present
 
 
 
-=== TEST 5: add plugin with custom header name
+=== TEST 5: check for unique id
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res1, err1 = httpc:request_uri(uri,
+                {
+                    method = "GET",
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                    }
+                }
+            )
+            local res2, err2 = httpc:request_uri(uri,
+                {
+                    method = "GET",
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                    }
+                }
+            )
+
+            -- ngx.say("res1: ", res1.headers["X-Request-Id"])
+            -- ngx.say("res2: ", res2.headers["X-Request-Id"])
+            if res1.headers["X-Request-Id"] == res2.headers["X-Request-Id"] then
+                ngx.say("unique request id")
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+failed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: add plugin with custom header name
 --- config
     location /t {
         content_by_lua_block {
@@ -215,7 +257,7 @@ passed
 
 
 
-=== TEST 6: check for request id in response header (custom header name)
+=== TEST 7: check for request id in response header (custom header name)
 --- config
     location /t {
         content_by_lua_block {
@@ -246,7 +288,7 @@ request header present
 
 
 
-=== TEST 7: add plugin with include_in_response false (default true)
+=== TEST 8: add plugin with include_in_response false (default true)
 --- config
     location /t {
         content_by_lua_block {
@@ -304,7 +346,7 @@ passed
 
 
 
-=== TEST 8: check for request id is not present in the response header
+=== TEST 9: check for request id is not present in the response header
 --- config
     location /t {
         content_by_lua_block {
