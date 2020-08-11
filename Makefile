@@ -72,6 +72,7 @@ lint: utils
 ### init:             Initialize the runtime environment
 .PHONY: init
 init: default
+	export ETCDCTL_API=3
 	./bin/apisix init
 	./bin/apisix init_etcd
 
