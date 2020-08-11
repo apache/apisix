@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/prometheus.md)
+- [English](../../plugins/prometheus.md)
 
 # prometheus
 

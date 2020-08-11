@@ -17,6 +17,8 @@
 #
 -->
 
+- [中文](../zh-cn/plugins/echo.md)
+
 # Summary
 - [**Name**](#name)
 - [**Attributes**](#attributes)

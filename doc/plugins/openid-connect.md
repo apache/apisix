@@ -17,6 +17,8 @@
 #
 -->
 
+- [中文](../zh-cn/plugins/openid-connect.md)
+
 # Summary
 
 - [**Name**](#name)

@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/ip-restriction.md)
+- [中文](../zh-cn/plugins/ip-restriction.md)
 
 # Summary
 - [**Name**](#name)

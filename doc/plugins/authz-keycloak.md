@@ -17,7 +17,7 @@
 #
 -->
 
-[中文](../zh-cn/plugins/authz-keycloak.md)
+- [中文](../zh-cn/plugins/authz-keycloak.md)
 
 # Summary
 - [**Name**](#name)
