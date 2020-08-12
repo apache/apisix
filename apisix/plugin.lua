@@ -339,33 +339,39 @@ end
 
 
 local function merge_consumer_route(route_conf, consumer_conf)
-    local new_route_conf
+    if not consumer_conf.plugins or
+       core.table.nkeys(consumer_conf.plugins) == 0
+    then
+        core.log.info("consumer no plugins")
+        return route_conf
+    end
 
-    if consumer_conf.plugins then
-        for name, conf in pairs(consumer_conf.plugins) do
-            if not new_route_conf then
-                new_route_conf = core.table.deepcopy(route_conf)
-            end
-            if not new_route_conf.value.plugins then
-                new_route_conf.value.plugins = {}
-            end
-
-            new_route_conf.value.plugins[name] = conf
+    local new_route_conf = core.table.deepcopy(route_conf)
+    for name, conf in pairs(consumer_conf.plugins) do
+        if not new_route_conf.value.plugins then
+            new_route_conf.value.plugins = {}
         end
+
+        new_route_conf.value.plugins[name] = conf
     end
 
     core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
-    return new_route_conf or route_conf
+    return new_route_conf
 end
 
 
-function _M.merge_consumer_route(route_conf, consumer_conf)
+function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
     core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
 
     local flag = tostring(route_conf) .. tostring(consumer_conf)
     local new_conf = merged_route(flag, nil,
                         merge_consumer_route, route_conf, consumer_conf)
+
+    api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
+    api_ctx.conf_version = api_ctx.conf_version .. "&" ..
+                           api_ctx.consumer_ver
+    api_ctx.conf_id = api_ctx.conf_id .. "&" .. api_ctx.consumer_id
 
     return new_conf, new_conf ~= route_conf
 end

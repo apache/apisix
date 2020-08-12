@@ -97,7 +97,7 @@ passed
                     },
                     "uri": "/hello"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -220,5 +220,72 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"require one auth plugin"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: use the new configuration after the consumer's configuration is updated
+--- config
+    location /t {
+        content_by_lua_block {
+            local function test()
+                local json_encode = require("lib.json_sort").encode
+                local http = require "resty.http"
+                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+                local status_count = {}
+                for i = 1, 5 do
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri,
+                        {
+                            method = "GET",
+                            headers = {
+                                apikey = "auth-one",
+                            }
+                        }
+                    )
+                    if not res then
+                        ngx.say(err)
+                        return
+                    end
+
+                    local status = tostring(res.status)
+                    status_count[status] = (status_count[status] or 0) + 1
+                end
+                ngx.say(json_encode(status_count))
+            end
+
+            test()
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 4,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        },
+                        "key-auth": {
+                            "key": "auth-one"
+                        }
+                    }
+                }]]
+            )
+
+            ngx.sleep(0.1)
+
+            test()
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"200":2,"503":3}
+{"200":4,"503":1}
 --- no_error_log
 [error]
