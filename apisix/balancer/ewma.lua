@@ -1,8 +1,3 @@
--- Original Authors: Shiv Nagarajan & Scott Francis
--- Accessed: March 12, 2018
--- Inspiration drawn from:
--- https://github.com/twitter/finagle/blob/1bc837c4feafc0096e43c0e98516a8e1c50c4421
---   /finagle-core/src/main/scala/com/twitter/finagle/loadbalancer/PeakEwma.scala
 --
 -- Licensed to the Apache Software Foundation (ASF) under one or more
 -- contributor license agreements.  See the NOTICE file distributed with
