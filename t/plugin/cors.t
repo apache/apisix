@@ -244,6 +244,7 @@ GET /hello HTTP/1.1
 hello world
 --- response_headers
 Access-Control-Allow-Origin: *
+Vary:
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
@@ -306,6 +307,7 @@ Origin: http://sub2.domain.com
 hello world
 --- response_headers
 Access-Control-Allow-Origin: http://sub2.domain.com
+Vary: Origin
 Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2
@@ -389,6 +391,7 @@ Access-Control-Request-Headers: req-header1,req-header2
 hello world
 --- response_headers
 Access-Control-Allow-Origin: https://sub.domain.com
+Vary: Origin
 Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
 Access-Control-Allow-Headers: req-header1,req-header2
 Access-Control-Expose-Headers: *
