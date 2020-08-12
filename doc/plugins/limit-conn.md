@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/limit-conn.md)
+- [中文](../zh-cn/plugins/limit-conn.md)
 
 # Summary
 - [**Name**](#name)

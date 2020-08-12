@@ -17,7 +17,7 @@
 #
 -->
 
-# [Chinese](../zh-cn/plugins/grpc-transcode.md)
+- [中文](../zh-cn/plugins/grpc-transcode.md)
 
 ## Name
 

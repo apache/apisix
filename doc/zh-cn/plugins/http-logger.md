@@ -17,6 +17,8 @@
 #
 -->
 
+- [English](../../plugins/http-logger.md)
+
 # 目录
 
 - [**定义**](#name)

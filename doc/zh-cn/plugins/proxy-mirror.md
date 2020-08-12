@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/proxy-mirror.md)
+- [English](../../plugins/proxy-mirror.md)
 
 # proxy-mirror
 
