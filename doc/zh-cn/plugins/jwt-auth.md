@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/jwt-auth.md)
+- [English](../../plugins/jwt-auth.md)
 
 # 目录
 - [**名字**](#名字)

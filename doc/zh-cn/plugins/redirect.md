@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/redirect.md)
+- [English](../../plugins/redirect.md)
 
 # redirect
 

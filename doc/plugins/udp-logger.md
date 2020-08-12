@@ -17,6 +17,8 @@
 #
 -->
 
+- [中文](../zh-cn/plugins/udp-logger.md)
+
 # Summary
 
 - [**Name**](#name)

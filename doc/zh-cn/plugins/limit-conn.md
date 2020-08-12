@@ -17,7 +17,8 @@
 #
 -->
 
-[English](../../plugins/limit-conn.md)
+- [English](../../plugins/limit-conn.md)
+
 # limit-conn
 
 限制并发请求（或并发连接）插件。

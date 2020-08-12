@@ -17,6 +17,8 @@
 #
 -->
 
+- [中文](../zh-cn/plugins/syslog.md)
+
 # Summary
 - [**Name**](#name)
 - [**Attributes**](#attributes)
