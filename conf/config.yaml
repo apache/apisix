@@ -178,6 +178,7 @@ plugins:                          # plugin list
   - request-validation
   - proxy-cache
   - proxy-mirror
+  - request-id
 
 stream_plugins:
   - mqtt-proxy
