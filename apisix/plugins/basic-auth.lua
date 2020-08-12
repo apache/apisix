@@ -150,6 +150,7 @@ function _M.access(conf, ctx)
 
     ctx.consumer = cur_consumer
     ctx.consumer_id = cur_consumer.consumer_id
+    ctx.consumer_ver = consumer_conf.conf_version
 
     core.log.info("hit basic-auth access")
 end
