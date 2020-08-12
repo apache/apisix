@@ -17,7 +17,8 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/prometheus.md)
+- [中文](../zh-cn/plugins/prometheus.md)
+
 # prometheus
 
 This plugin exposes metrics in Prometheus Exposition format.

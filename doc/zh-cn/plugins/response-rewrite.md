@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/response-rewrite.md)
+- [English](../../plugins/response-rewrite.md)
 
 # response-rewrite
 

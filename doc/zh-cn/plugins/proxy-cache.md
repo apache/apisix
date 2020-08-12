@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/proxy-cache.md)
+- [English](../../plugins/proxy-cache.md)
 
 # proxy-cache
 

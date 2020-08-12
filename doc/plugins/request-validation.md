@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/request-validation.md)
+- [中文](../zh-cn/plugins/request-validation.md)
 
 # Summary
 - [**Name**](#name)
