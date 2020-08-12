@@ -128,6 +128,10 @@ local function set_cors_headers(conf, ctx)
     end
 
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
+    if ctx.cors_allow_origins ~= "*" then
+        core.response.set_header("Vary", "Origin")
+    end
+
     core.response.set_header("Access-Control-Allow-Methods", allow_methods)
     core.response.set_header("Access-Control-Max-Age", conf.max_age)
     core.response.set_header("Access-Control-Expose-Headers", conf.expose_headers)
