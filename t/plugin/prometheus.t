@@ -120,8 +120,8 @@ passed
 === TEST 4: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
---- response_body_like
-apisix_etcd_reachable 1
+--- response_body eval
+qr/apisix_etcd_reachable\{hostname=".*"\} \d+/
 --- no_error_log
 [error]
 

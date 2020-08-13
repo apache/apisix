@@ -76,7 +76,8 @@ function _M.init()
             {"state"})
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
-            "Config server etcd reachable from APISIX, 0 is unreachable")
+            "Config server etcd reachable from APISIX, 0 is unreachable",
+            {"hostname"})
 
     metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
             "Etcd modify index for APISIX keys",
@@ -98,6 +99,7 @@ function _M.init()
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
             {"type", "route", "service", "node"})
+
 end
 
 
@@ -265,13 +267,15 @@ function _M.collect()
     etcd_modify_index()
 
     -- config server status
+    local vars = ngx.var or {}
+    local hostname = vars.hostname or ""
     local config = core.config.new()
     local version, err = config:server_version()
     if version then
-        metrics.etcd_reachable:set(1)
+        metrics.etcd_reachable:set(1, gen_arr(hostname))
 
     else
-        metrics.etcd_reachable:set(0)
+        metrics.etcd_reachable:set(0, gen_arr(hostname))
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
     end
