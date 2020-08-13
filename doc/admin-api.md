@@ -98,6 +98,7 @@ Config Example:
     "upstream_id": "1",         # upstream id, recommended
     "upstream": {},             # upstream, not recommended
     "filter_func": "",          # User-defined filtering function
+    "enable_websocket": true,   # enable the websocket, default:false.
 }
 ```
 
@@ -294,7 +295,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
 |name     |False |Auxiliary   |Identifies service names.|customer-xxxx|
 |desc     |False |Auxiliary   |service usage scenarios, and more.|customer xxxx|
+<<<<<<< HEAD
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+=======
+|enable_websocket|False | enable `websocket`(boolean), default `false`.|
+>>>>>>> update admin-api.md
 
 Config Example:
 
@@ -306,6 +311,7 @@ Config Example:
     "upstream": {},     # upstream, not recommended
     "name": "service-test",
     "desc": "hello world",
+    "enable_websocket": true,   # enable the websocket, default:false.
 }
 ```
 
@@ -322,6 +328,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
             "key": "remote_addr"
         }
     },
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
