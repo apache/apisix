@@ -238,7 +238,6 @@ http {
     send_timeout {* http.send_timeout *};
 
     server_tokens off;
-    more_set_headers 'Server: APISIX web server';
 
     include mime.types;
     charset utf-8;
