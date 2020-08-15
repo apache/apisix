@@ -25,6 +25,16 @@ set -ex
 
 git checkout conf/config.yaml
 
+# check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
+make init
+
+if grep "Server: APISIX" conf/nginx.conf > /dev/null; then
+    echo "failed: 'Server: APISIX' should not be added twice"
+    exit 1
+fi
+
+echo "passed: 'Server: APISIX' not in nginx.conf"
+
 # check whether the 'reuseport' is in nginx.conf .
 make init
 
