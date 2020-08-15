@@ -120,8 +120,8 @@ passed
 === TEST 4: fetch the prometheus metric data
 --- request
 GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_etcd_reachable\{hostname=".*"\} \d+/
+--- response_body_like
+apisix_etcd_reachable 1
 --- no_error_log
 [error]
 
@@ -771,5 +771,15 @@ qr/apisix_etcd_modify_indexes\{key="prev_index"\} \d+/
 GET /apisix/prometheus/metrics
 --- response_body_like eval
 qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: fetch the prometheus metric data -- hostname
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_node_info\{hostname=".*"\} 1/
 --- no_error_log
 [error]

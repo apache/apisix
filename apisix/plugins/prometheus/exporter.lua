@@ -76,7 +76,11 @@ function _M.init()
             {"state"})
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
-            "Config server etcd reachable from APISIX, 0 is unreachable",
+            "Config server etcd reachable from APISIX, 0 is unreachable")
+
+
+    metrics.node_info = prometheus:gauge("node_info",
+            "Info of APISIX node",
             {"hostname"})
 
     metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
@@ -272,13 +276,15 @@ function _M.collect()
     local config = core.config.new()
     local version, err = config:server_version()
     if version then
-        metrics.etcd_reachable:set(1, gen_arr(hostname))
+        metrics.etcd_reachable:set(1)
 
     else
-        metrics.etcd_reachable:set(0, gen_arr(hostname))
+        metrics.etcd_reachable:set(0)
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
     end
+
+    metrics.node_info:set(1, gen_arr(hostname))
 
     local res, _ = config:getkey("/routes")
     if res and res.headers then
