@@ -126,3 +126,73 @@ GET /name/json/bar
 qr/404 Not Found/
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: set route，uri=/:name/foo
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/:name/foo"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/:name/foo",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: /json/foo
+--- request
+GET /json/foo
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: /json/bbb/foo
+--- request
+GET /json/bbb/foo
+--- error_code: 404
+--- response_body
+{"error_msg":"failed to match any routes"}
+--- no_error_log
+[error]
