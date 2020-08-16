@@ -773,3 +773,13 @@ GET /apisix/prometheus/metrics
 qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
 --- no_error_log
 [error]
+
+
+
+=== TEST 43: fetch the prometheus metric data -- hostname
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_node_info\{hostname=".*"\} 1/
+--- no_error_log
+[error]
