@@ -114,11 +114,13 @@ function _M.postwatch(v3res)
         ["X-Etcd-Index"] = v3res.result.header.revision
     }
     v2res.body = {
-        node = kvs2node(v3res.result.events[1].kv)
+        node = {}
     }
-
-    if v3res.result.events[1].type == "DELETE" then
-        v2res.body.action = "delete"
+    for i, ev in ipairs(v3res.result.events) do
+        v2res.body.node[i] = kvs2node(ev.kv)
+        if ev.type == "DELETE" then
+            v2res.body.action = "delete"
+        end
     end
 
     return v2res
