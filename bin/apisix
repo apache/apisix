@@ -825,7 +825,6 @@ local function init_etcd(show_output)
         end
     end
 
-    --local base64 = require("base64")
     local etcd_ok = false
     for index, host in ipairs(yaml_conf.etcd.host) do
 
@@ -837,8 +836,10 @@ local function init_etcd(show_output)
                                    "/ssl", "/global_rules", "/stream_routes",
                                    "/proto"}) do
             if etcd_version == "v3" then
-                --uri = host .. "/v3/kv/put"
                 local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
+                -- use suggested v3 ctl `etcdctl` and avoid base64 conversion
+                --local base64 = require("base64")
+                --uri = host .. "/v3/kv/put"
                 --local post_json = '{"value":"' .. base64.encode("null") ..  '", "key":"' .. base64.encode(key) .. '"}'
                 --cmd = "curl " .. uri
                 --        .. " -X POST -d '" .. post_json
