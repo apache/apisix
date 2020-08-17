@@ -836,6 +836,7 @@ local function init_etcd(show_output)
                                    "/ssl", "/global_rules", "/stream_routes",
                                    "/proto"}) do
             if etcd_version == "v3" then
+                local res = require("posix.stdlib").setenv("ETCDCTL_API", 3)
                 local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
                 -- use suggested v3 ctl `etcdctl` and avoid base64 conversion
                 --local base64 = require("base64")

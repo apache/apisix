@@ -52,6 +52,7 @@ dependencies = {
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
     "skywalking-nginx-lua-plugin = 1.0-0",
+    "luaposix = 35.0-1",
 }
 
 build = {
