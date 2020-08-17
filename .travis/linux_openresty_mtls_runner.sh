@@ -95,6 +95,7 @@ script() {
     mkdir -p ~/etcd-data
     /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
     etcdctl --version
+    export ETCDCTL_API=3
     sleep 5
 
 
