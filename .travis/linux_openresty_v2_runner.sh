@@ -134,7 +134,6 @@ script() {
     etcd --version
     sleep 5
 
-    
     # enable etcd v2
     sed  -i 's/  version: "v3"/  version: "v2"/'  conf/config.yaml
 
