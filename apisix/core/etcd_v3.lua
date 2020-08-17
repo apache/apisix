@@ -117,9 +117,9 @@ function _M.postwatch(v3res)
     v2res.body = {
         node = {}
     }
-    for i, ev in ipairs(v3res.result.events) do
-        v2res.body.node[i] = kvs2node(ev.kv)
-        if ev.type == "DELETE" then
+    for i, event in ipairs(v3res.result.events) do
+        v2res.body.node[i] = kvs2node(event.kv)
+        if event.type == "DELETE" then
             v2res.body.action = "delete"
         end
     end
