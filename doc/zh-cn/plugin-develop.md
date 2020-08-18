@@ -54,7 +54,7 @@
 
 ## 插件命名与配置
 
-给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
+给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config-default.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
 需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/key-auth.lua__ 文件中可以看到：
 
 ```lua
@@ -71,7 +71,7 @@
 
 注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。另外，优先级( priority )值大的插件，会优先执行，比如 `basic-auth` 的优先级是 2520 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `basic-auth` 插件。
 
-在 __conf/config.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
+在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
 ```yaml
 plugins:                          # plugin list
