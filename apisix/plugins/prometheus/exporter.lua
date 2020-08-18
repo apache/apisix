@@ -69,6 +69,14 @@ function _M.init()
 
     clear_tab(metrics)
 
+    -- Newly added metrics should follow the naming best pratices described in
+    -- https://prometheus.io/docs/practices/naming/#metric-names
+    -- For example,
+    -- 1. Add unit as the suffix
+    -- 2. Add `_total` as the suffix if the metric type is counter
+    -- 3. Use base unit
+    -- We keep the old metric names for the compatibility.
+
     -- across all services
     prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
@@ -93,11 +101,12 @@ function _M.init()
             {"code", "route", "service", "node"})
 
     metrics.latency = prometheus:histogram("http_latency",
-        "HTTP request latency per service in APISIX",
+        "HTTP request latency in milliseconds per service in APISIX",
         {"type", "service", "node"}, DEFAULT_BUCKETS)
 
     metrics.overhead = prometheus:histogram("http_overhead",
-        "HTTP request overhead per service in APISIX",
+        "HTTP request overhead added by APISIX in milliseconds per service " ..
+        "in APISIX",
         {"type", "service", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
