@@ -22,19 +22,6 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/admin_key:/disable_admin_key:/;
-
 run_tests();
 
 __DATA__
@@ -63,7 +50,6 @@ __DATA__
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -97,7 +83,6 @@ passed
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -131,7 +116,6 @@ passed
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -144,7 +128,6 @@ passed
 === TEST 4: /not_found
 --- request
 GET /not_found
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body
 {"error_msg":"failed to match any routes"}
@@ -156,7 +139,6 @@ GET /not_found
 === TEST 5: hit route 1
 --- request
 GET /server_port
---- yaml_config eval: $::yaml_config
 --- response_body eval
 qr/1980/
 --- no_error_log
@@ -167,7 +149,6 @@ qr/1980/
 === TEST 6: hit route 2
 --- request
 GET /server_port/route2
---- yaml_config eval: $::yaml_config
 --- response_body eval
 qr/1981/
 --- no_error_log
@@ -178,7 +159,6 @@ qr/1981/
 === TEST 7: hit route 3
 --- request
 GET /server_port/hello
---- yaml_config eval: $::yaml_config
 --- response_body eval
 qr/1982/
 --- no_error_log
@@ -201,7 +181,6 @@ qr/1982/
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -226,7 +205,6 @@ passed
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body

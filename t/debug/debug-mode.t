@@ -20,18 +20,11 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/enable_debug: false/enable_debug: true/;
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    enable_debug: true
+_EOC_
 
 run_tests;
 

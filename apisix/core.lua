@@ -15,7 +15,10 @@
 -- limitations under the License.
 --
 local log = require("apisix.core.log")
-local local_conf = require("apisix.core.config_local").local_conf()
+local local_conf, err = require("apisix.core.config_local").local_conf()
+if not local_conf then
+    error("failed to parse yaml config: " .. err)
+end
 
 local config_center = local_conf.apisix and local_conf.apisix.config_center
                       or "etcd"

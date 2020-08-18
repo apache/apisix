@@ -164,7 +164,8 @@ GET /t
 plugin name: example-plugin priority: 0
 --- yaml_config
 etcd:
-  host: "http://127.0.0.1:2379" # etcd address
+  host:
+    - "http://127.0.0.1:2379" # etcd address
   prefix: "/apisix"             # apisix configurations prefix
   timeout: 1
 
