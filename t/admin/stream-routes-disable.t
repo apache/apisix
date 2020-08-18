@@ -23,25 +23,16 @@ no_root_location();
 no_shuffle();
 log_level("info");
 
-my $apisix_home = $ENV{APISIX_HOME} || cwd();
-
-sub read_file($) {
-    my $infile = shift;
-    open my $in, "$apisix_home/$infile"
-        or die "cannot open $infile for reading: $!";
-    my $data = do { local $/; <$in> };
-    close $in;
-    $data;
-}
-
-my $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/admin_key:/disable_admin_key:/;
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    $block->set_value("yaml_config", $yaml_config);
+    my $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    admin_key: null
+_EOC_
+
+    $block->set_value("yaml_config", $user_yaml_config);
 });
 
 run_tests;

@@ -22,19 +22,6 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/admin_key:/disable_admin_key:/;
-
 run_tests();
 
 __DATA__
@@ -65,7 +52,6 @@ __DATA__
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -78,7 +64,6 @@ passed
 === TEST 2: /not_found
 --- request
 GET /not_found
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body
 {"error_msg":"failed to match any routes"}
@@ -90,7 +75,6 @@ GET /not_found
 === TEST 3: /not_found
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- no_error_log
 [error]
@@ -100,7 +84,6 @@ GET /hello
 === TEST 4: /not_found
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: not_found.com
 --- error_code: 404
@@ -112,7 +95,6 @@ Host: not_found.com
 === TEST 5: hit routes (www.foo.com)
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: www.foo.com
 --- response_body
@@ -125,7 +107,6 @@ hello world
 === TEST 6: hit routes (user.foo.com)
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: user.foo.com
 --- response_body
@@ -161,7 +142,6 @@ hello world
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -174,7 +154,6 @@ passed
 === TEST 8: /not_found
 --- request
 GET /not_found
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body
 {"error_msg":"failed to match any routes"}
@@ -186,7 +165,6 @@ GET /not_found
 === TEST 9: /not_found
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- no_error_log
 [error]
@@ -196,7 +174,6 @@ GET /hello
 === TEST 10: /not_found
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: www.foo.com
 --- error_code: 404
@@ -208,7 +185,6 @@ Host: www.foo.com
 === TEST 11: hit routes (foo.com)
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: foo.com
 --- response_body

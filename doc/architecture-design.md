@@ -45,25 +45,27 @@
 
 ## APISIX Config
 
-We can start using APISIX just by modifying `conf/config.yaml` file.
+For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
 
 ```yaml
 apisix:
-  node_listen: 9080             # APISIX listening port
-
-etcd:
-  host: "http://127.0.0.1:2379" # etcd address
-  prefix: "apisix"              # apisix configurations prefix
-  timeout: 60
-
-plugins:                        # plugin name list
-  - example-plugin
-  - limit-req
-  - limit-count
-  - ...
+  node_listen: 8000             # APISIX listening port
 ```
 
-*Note* `apisix` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* that file.
+Set the default listening port of APISIX to 8000, set the `etcd` address to `http://foo:2379`,
+and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+
+```yaml
+apisix:
+  node_listen: 8000             # APISIX listening port
+
+etcd:
+  host: "http://foo:2379"       # etcd address
+```
+
+Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `conf/config.yaml` file.
+
+**Note** `APISIX` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* `conf/nginx.conf` file too.
 
 [Back to top](#Table-of-contents)
 
