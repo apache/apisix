@@ -70,6 +70,15 @@ script() {
 
     ./grpc_server_example &
 
+    cat > conf/config.yaml <<EOF
+apisix:
+  admin_key:
+    -
+      name: "admin"
+      key: YOUR_API_KEY
+      role: admin
+EOF
+
     make help
     make init
     sudo make run

@@ -42,7 +42,7 @@
 下面是一个示例，在指定的 route 上开启了 `ip-restriction` 插件:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -86,7 +86,7 @@ HTTP/1.1 403 Forbidden
 当你想去掉 `ip-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: ******' -X PUT -d value='
 {
     "uri": "/index.html",
     "plugins": {},

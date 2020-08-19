@@ -40,7 +40,7 @@ GET /t
 --- response_body
 node_listen: 1984
 stream_proxy: {"tcp":[9100]}
-admin_key: null
+admin_key: [{"key":"TEST_API_KEY","name":"admin","role":"admin"}]
 
 
 

@@ -56,7 +56,7 @@ local function check_token(ctx)
     local local_conf = core.config.local_conf()
     if not local_conf or not local_conf.apisix
        or not local_conf.apisix.admin_key then
-        return true
+        return false, "missing apisix.admin_key in the main configuration file"
     end
 
     local req_token = ctx.var.arg_api_key or ctx.var.http_x_api_key

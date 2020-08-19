@@ -53,7 +53,7 @@
 1. 下面例子展示了如何为指定路由开启 `sys-logger` 插件的。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: ******' -X PUT -d '
 {
     "username": "foo",
     "plugins": {
@@ -92,7 +92,7 @@ hello, world
 想要禁用“sys-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",

@@ -22,6 +22,15 @@ no_root_location();
 no_shuffle();
 log_level("info");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $more_headers = <<_EOC_;
+X-API-KEY: TEST_API_KEY
+_EOC_
+    $block->set_value("more_headers", $more_headers);
+});
+
 run_tests;
 
 __DATA__

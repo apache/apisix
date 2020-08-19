@@ -29,6 +29,11 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
+  admin_key:
+    -
+      name: "admin"
+      key: TEST_KEY_TOKEN
+      role: admin
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);
@@ -117,7 +122,7 @@ GET /t
                     },
                     "uri": "/index.html"
                 }]],
-                {x_api_key = "edd1c9f034335f136f87ad84b625c8f1"}
+                {x_api_key = "TEST_KEY_TOKEN"}
                 )
 
             if res.status > 299 then
@@ -155,7 +160,7 @@ PUT /apisix/admin/plugins/reload
 
 === TEST 6: reload plugins with api key(arguments)
 --- request
-PUT /apisix/admin/plugins/reload?api_key=edd1c9f034335f136f87ad84b625c8f1
+PUT /apisix/admin/plugins/reload?api_key=TEST_KEY_TOKEN
 --- error_code: 200
 --- no_error_log
 [error]
@@ -166,7 +171,7 @@ PUT /apisix/admin/plugins/reload?api_key=edd1c9f034335f136f87ad84b625c8f1
 --- request
 PUT /apisix/admin/plugins/reload
 --- more_headers
-X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-API-KEY: TEST_KEY_TOKEN
 --- error_code: 200
 --- no_error_log
 [error]

@@ -50,7 +50,7 @@
 创建 `Route` 或 `Service` 对象，并配置 `cors` 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -84,7 +84,7 @@ curl http://127.0.0.1:9080/hello -v
 
 从配置中移除`cors`插件即可。
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

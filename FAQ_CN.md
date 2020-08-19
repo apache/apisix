@@ -83,7 +83,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 可以这么做：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -96,7 +96,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -121,7 +121,7 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 有几种不同的方法来实现：
 1. 直接使用 `redirect` 插件的 `http_to_https` 功能：
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -136,7 +136,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. 结合高级路由规则 `vars` 和 `redirect` 插件一起使用：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -159,7 +159,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. 使用`serverless`插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -212,7 +212,7 @@ Server: APISIX web server
 Apache APISIX 的插件支持热加载，如果你的 APISIX 节点打开了 Admin API，那么对于新增/删除/修改插件等场景，均可以通过调用 HTTP 接口的方式热加载插件，不需要重启服务。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: ******' -X PUT
 ```
 
 如果你的 APISIX 节点并没有打开 Admin API，那么你可以通过手动 reload APISIX 的方式加载插件。

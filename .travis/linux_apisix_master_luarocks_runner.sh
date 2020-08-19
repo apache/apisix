@@ -62,6 +62,14 @@ script() {
     sudo mkdir -p /usr/local/apisix/deps
     sudo PATH=$PATH ./utils/install-apisix.sh install > build.log 2>&1 || (cat build.log && exit 1)
 
+    cat > /usr/local/apisix/conf/config.yaml <<EOF
+apisix:
+  admin_key:
+    -
+      name: "admin"
+      key: YOUR_API_KEY
+      role: admin
+EOF
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start

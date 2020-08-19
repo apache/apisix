@@ -21,3 +21,13 @@
 #     host:
 #       - "http://127.0.0.1:2379"
 #
+#
+# If you want specify the Admin API token, this is an example:
+#
+# apisix:
+#     admin_key:
+#         -
+#             name: "admin"
+#             key:  ******    # <-- replace with a random key
+#             role: admin
+#
