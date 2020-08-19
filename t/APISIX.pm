@@ -83,7 +83,11 @@ apisix:
   stream_proxy:
     tcp:
       - 9100
-  admin_key: null
+  admin_key:
+    -
+      name: "admin"
+      key: TEST_API_KEY
+      role: admin
 _EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";

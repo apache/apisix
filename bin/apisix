@@ -637,6 +637,45 @@ local function read_yaml_conf()
         merge_conf(default_conf, user_conf)
     end
 
+    -- check the Admin API token
+    if default_conf.apisix.enable_admin then
+        local help = [[
+ERROR: missing valid apisix.admin_key
+
+Needs to set Admin API key in file `conf/config.yaml` . Here is an example:
+
+#############################
+apisix:
+    admin_key:
+        -
+            name: "admin"
+            key:  ******    # <-- replace with a random key
+            role: admin
+#############################
+
+Then you can use it to access Admin API.
+eg: $ curl -i http://127.0.0.1:]] .. default_conf.apisix.node_listen .. [[/apisix/admin/routes/1 -H 'X-API-KEY: YOUR-KEY'
+]]
+        if type(default_conf.apisix.admin_key) ~= "table" or
+           #default_conf.apisix.admin_key == 0
+        then
+            io.stderr:write(help, "\n")
+            os.exit(1)
+        end
+
+        for _, admin in ipairs(default_conf.apisix.admin_key) do
+            if type(admin.key) == "table" then
+                admin.key = ""
+            else
+                admin.key = tostring(admin.key)
+            end
+
+            if admin.key == "" or admin.key:gsub("*", "") == "" then
+                io.stderr:write(help, "\n")
+                os.exit(1)
+            end
+        end
+    end
     return default_conf
 end
 

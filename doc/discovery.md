@@ -186,7 +186,7 @@ eureka:
 Here is an example of routing a request with a URL of "/user/*" to a service which named "user-service"  in the registry :
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -i -d '
 {
     "uri": "/user/*",
     "upstream": {
@@ -208,7 +208,7 @@ Server: APISIX web server
 Because the upstream interface URL may have conflict, usually in the gateway by prefix to distinguish:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -i -d '
 {
     "uri": "/a/*",
     "plugins": {
@@ -222,7 +222,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: ******' -X PUT -i -d '
 {
     "uri": "/b/*",
     "plugins": {

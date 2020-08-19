@@ -286,6 +286,15 @@ script() {
 
     ./build-cache/grpc_server_example &
 
+    cat > conf/config.yaml <<EOF
+apisix:
+  admin_key:
+    -
+      name: "admin"
+      key: YOUR_API_KEY
+      role: admin
+EOF
+
     ./bin/apisix help
     ./bin/apisix init
     ./bin/apisix init_etcd

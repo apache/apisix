@@ -27,7 +27,11 @@ apisix:
     node_listen: 1984
     router:
         http: 'radixtree_host_uri'
-    admin_key: null
+    admin_key:
+        -
+            name: "admin"
+            key: TEST_API_KEY
+            role: admin
 _EOC_
 
 run_tests();

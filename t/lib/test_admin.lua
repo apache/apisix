@@ -128,6 +128,7 @@ function _M.test(uri, method, body, pattern, headers)
     end
     if not headers["Content-Type"] then
         headers["Content-Type"] = "application/x-www-form-urlencoded"
+        headers["X-API-KEY"] = "TEST_API_KEY"
     end
 
     if type(body) == "table" then

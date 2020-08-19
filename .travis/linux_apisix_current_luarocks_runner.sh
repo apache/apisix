@@ -61,6 +61,15 @@ script() {
     # show install file
     luarocks show apisix
 
+    cat > /usr/local/apisix/conf/config.yaml <<EOF
+apisix:
+  admin_key:
+    -
+      name: "admin"
+      key: YOUR_API_KEY
+      role: admin
+EOF
+
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start

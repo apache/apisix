@@ -23,7 +23,14 @@
 
 set -ex
 
-git checkout conf/config.yaml
+cat > conf/config.yaml <<EOF
+apisix:
+  admin_key:
+    -
+      name: admin
+      key: ADMIN_API_KEY
+      role: admin
+EOF
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
 make init
@@ -56,11 +63,16 @@ fi
 echo "passed: nginx.conf file contains reuseport configuration"
 
 # check default ssl port
-echo "
+cat > conf/config.yaml <<EOF
 apisix:
     ssl:
         listen_port: 8443
-" > conf/config.yaml
+    admin_key:
+        -
+            name: admin
+            key: ADMIN_API_KEY
+            role: admin
+EOF
 
 make init
 
@@ -79,7 +91,14 @@ fi
 echo "passed: change default ssl port"
 
 # check nameserver imported
-git checkout conf/config.yaml
+cat > conf/config.yaml <<EOF
+apisix:
+  admin_key:
+    -
+      name: admin
+      key: ADMIN_API_KEY
+      role: admin
+EOF
 
 make init
 
@@ -97,12 +116,16 @@ done
 echo "passed: system nameserver imported"
 
 # enable enable_dev_mode
-git checkout conf/config.yaml
 
-echo "
+cat > conf/config.yaml <<EOF
 apisix:
     enable_dev_mode: true
-" > conf/config.yaml
+    admin_key:
+        -
+        name: admin
+        key: ADMIN_API_KEY
+        role: admin
+EOF
 
 make init
 
@@ -122,7 +145,15 @@ echo "passed: enable enable_dev_mode"
 
 # check whether the 'worker_cpu_affinity' is in nginx.conf
 
-git checkout conf/config.yaml
+cat > conf/config.yaml <<EOF
+apisix:
+    enable_dev_mode: true
+    admin_key:
+        -
+        name: admin
+        key: ADMIN_API_KEY
+        role: admin
+EOF
 
 make init
 
@@ -136,13 +167,16 @@ echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
 
 # check admin https enabled
 
-git checkout conf/config.yaml
-
-echo "
+cat > conf/config.yaml <<EOF
 apisix:
     port_admin: 9180
     https_admin: true
-" > conf/config.yaml
+    admin_key:
+        -
+            name: admin
+            key: ADMIN_API_KEY
+            role: admin
+EOF
 
 make init
 
@@ -154,7 +188,7 @@ fi
 
 make run
 
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: ADMIN_API_KEY')
 if [ ! $code -eq 200 ]; then
     echo "failed: failed to enabled https for admin"
     exit 1
@@ -166,7 +200,14 @@ echo "passed: admin https enabled"
 
 # rollback to the default
 
-git checkout conf/config.yaml
+cat > conf/config.yaml <<EOF
+apisix:
+    admin_key:
+        -
+        name: admin
+        key: ADMIN_API_KEY
+        role: admin
+EOF
 
 make init
 
@@ -196,12 +237,16 @@ echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
 # check worker processes number is configurable.
 
-git checkout conf/config.yaml
-
-echo "
+cat > conf/config.yaml <<EOF
+apisix:
+    admin_key:
+        -
+        name: admin
+        key: ADMIN_API_KEY
+        role: admin
 nginx_config:
     worker_processes: 2
-" > conf/config.yaml
+EOF
 
 make init
 

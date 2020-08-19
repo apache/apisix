@@ -2023,6 +2023,9 @@ GET /t
                 {
                     path = '/apisix/admin/routes/1?ttl=1',
                     method = "GET",
+                    headers = {
+                        ["X-API-KEY"] = "TEST_API_KEY"
+                    }
                 }
             )
 

@@ -24,14 +24,24 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    admin_key: ~
     dns_resolver_valid: 1
+    admin_key:
+        -
+        name: "admin"
+        key: TEST_API_KEY
+        role: admin
 _EOC_
 
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     $block->set_value("yaml_config", $yaml_config);
+
+    my $more_headers = <<_EOC_;
+X-API-KEY: TEST_API_KEY
+_EOC_
+    $block->set_value("more_headers", $more_headers);
+
 });
 
 run_tests();

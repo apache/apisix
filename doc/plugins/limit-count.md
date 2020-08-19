@@ -53,7 +53,7 @@ Limit request rate by a fixed number of requests in a given time window.
 Here's an example, enable the `limit count` plugin on the specified route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -84,7 +84,7 @@ If you need a cluster-level precision traffic limit, then we can do it with the 
 Here is the example:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -157,7 +157,7 @@ When you want to disable the `limit count` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

@@ -57,7 +57,7 @@ The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more
 1. set a consumer and config the value of the `wolf-rbac`。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: ******' -X PUT -d '
 {
   "username":"wolf_rbac",
   "plugins":{
@@ -81,7 +81,7 @@ Notes: The `appid` filled in above needs to already exist in the wolf system.
 1. Add a `Route` or `Service` and enable the wolf-rbac plugin.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
@@ -232,7 +232,7 @@ When you want to disable the `wolf-rbac` plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
