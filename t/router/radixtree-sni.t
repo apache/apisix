@@ -960,7 +960,7 @@ location /t {
             key = ssl_key,
             certs = { ssl_ecc_cert },
             keys = { ssl_ecc_key },
-            sni = "test3.com",
+            sni = "test.com",
         }
 
         local code, body = t.test('/apisix/admin/ssl/1',
@@ -969,7 +969,7 @@ location /t {
             [[{
                 "node": {
                     "value": {
-                        "sni": "test3.com"
+                        "sni": "test.com"
                     },
                     "key": "/apisix/ssl/1"
                 },
@@ -1012,7 +1012,7 @@ location /t {
 
             ngx.say("connected: ", ok)
 
-            local sess, err = sock:sslhandshake(nil, "test3.com", false)
+            local sess, err = sock:sslhandshake(nil, "test.com", false)
             if not sess then
                 ngx.say("failed to do SSL handshake: ", err)
                 return
@@ -1055,7 +1055,7 @@ location /t {
 
             ngx.say("connected: ", ok)
 
-            local sess, err = sock:sslhandshake(nil, "test3.com", false)
+            local sess, err = sock:sslhandshake(nil, "test.com", false)
             if not sess then
                 ngx.say("failed to do SSL handshake: ", err)
                 return
