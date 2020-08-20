@@ -34,11 +34,14 @@ local schema = {
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
                     "http_x_forwarded_for"},
         },
-        rejected_code = {type = "integer", minimum = 200, maximum = 600,
-                         default = 503},
+        rejected_code = {
+            type = "integer", minimum = 200, maximum = 600,
+            default = 503
+        },
         policy = {
             type = "string",
             enum = {"local", "redis"},
+            default = "local",
         },
         redis_host = {
             type = "string", minLength = 2
@@ -70,10 +73,6 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
-    end
-
-    if not conf.policy then
-        conf.policy = "local"
     end
 
     if conf.policy == "redis" then
