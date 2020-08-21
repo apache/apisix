@@ -52,8 +52,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
-            "headers":["x-api-key"],
-            "parameters":["a"]
+            "key": "remote_addr"
         }
     },
     "upstream": {
@@ -78,7 +77,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 上述配置限制了每秒请求速率为 1，大于 1 小于 3 的会被加上延时，速率超过 3 就会被拒绝：
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html?a=xxx
+curl -i http://127.0.0.1:9080/index.html
 ```
 
 当你超过，就会收到包含 503 返回码的响应头：

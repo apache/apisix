@@ -58,9 +58,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
-            "key": "remote_addr",
-            "headers":["x-api-key"],
-            "parameters":["a"]
+            "key": "remote_addr"
         }
     },
     "upstream": {
@@ -85,7 +83,7 @@ Then add limit-req plugin:
 The above configuration limits the request rate to 1 per second. If it is greater than 1 and less than 3, the delay will be added. If the rate exceeds 3, it will be rejected:
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html?a=xxxx
+curl -i http://127.0.0.1:9080/index.html
 ```
 
 When you exceed, you will receive a response header with a 503 return code:
