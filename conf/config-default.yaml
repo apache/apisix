@@ -187,3 +187,8 @@ plugins:                          # plugin list
 
 stream_plugins:
   - mqtt-proxy
+
+plugin_attr:
+  log-rotate:
+    interval: 3600    # an hour
+    max_kept: 168     # 7 days
