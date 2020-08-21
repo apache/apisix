@@ -29,10 +29,13 @@
 |---------     |--------|-----------|
 |rate          |必选|指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。|
 |burst         |必选|请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。|
-| key          |必选|是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。|
+|key           |可选|是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。|
+|headers       |可选|是用来做请求计数的依据，主要使用场景：比如需要根据不同的客户端进行限流（app_key）等等.
+|parameters    |可选|是用来做请求计数的依据，主要使用场景：热点参数限流，支持与 headers 同时使用。
+
 |rejected_code |可选|当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认 503。|
 
-**key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
+**key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑，headers 与 parameters优先级低于key，如果设置key 则优先使用key限流. *
 
 ## 示例
 
@@ -50,7 +53,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
-            "key": "remote_addr"
+            "headers":["x-api-key"],
+            "parameters":["a"]
         }
     },
     "upstream": {
@@ -75,7 +79,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 上述配置限制了每秒请求速率为 1，大于 1 小于 3 的会被加上延时，速率超过 3 就会被拒绝：
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
+curl -i http://127.0.0.1:9080/index.html?a=xxx
 ```
 
 当你超过，就会收到包含 503 返回码的响应头：

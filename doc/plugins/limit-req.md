@@ -37,7 +37,9 @@ limit request rate using the "leaky bucket" method.
 |---------     |--------|-----------|
 |rate          |required|is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.|
 |burst         |required|is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.|
-| key          |required|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
+|key           |optional|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
+|headers       |optional|is the user specified key to limit the rate，main use scenarios: the need to limit req according to different clients (app_key) and so on..
+|parameters    |optional|is the user specified key to limit the rate，main use scenarios: hot spot parameters to limit req, while supporting the use of headers。
 |rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
@@ -56,7 +58,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "rate": 1,
             "burst": 2,
             "rejected_code": 503,
-            "key": "remote_addr"
+            "key": "remote_addr",
+            "headers":["x-api-key"],
+            "parameters":["a"]
         }
     },
     "upstream": {
@@ -81,7 +85,7 @@ Then add limit-req plugin:
 The above configuration limits the request rate to 1 per second. If it is greater than 1 and less than 3, the delay will be added. If the rate exceeds 3, it will be rejected:
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
+curl -i http://127.0.0.1:9080/index.html?a=xxxx
 ```
 
 When you exceed, you will receive a response header with a 503 return code:
