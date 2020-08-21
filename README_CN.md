@@ -89,11 +89,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [限制并发](doc/zh-cn/plugins/limit-conn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
     - [CORS](doc/zh-cn/plugins/cors.md)：为你的API启用 CORS。
-<<<<<<< HEAD
-    - [uri-blocker](doc/zh-cn/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
-=======
     - [URI拦截器](doc/zh-cn/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
->>>>>>> 36bb0a8d3ebe12d9425e33e273371770450d3e60
     - [请求验证器](doc/zh-cn/plugins/request-validation.md)。
 
 - **运维友好**

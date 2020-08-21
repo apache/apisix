@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](README_CN.md)
+[Chinese](../../../Desktop/README_CN.md)
 ## APISIX
 
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
@@ -90,11 +90,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Limit-concurrency](doc/plugins/limit-conn.md)
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
     - [CORS](doc/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
-<<<<<<< HEAD
-    - [uri-blocker](doc/plugins/uri-blocker.md): Block client request by URI.
-=======
     - [URI Blocker](doc/plugins/uri-blocker.md): Block client request by URI.
->>>>>>> 36bb0a8d3ebe12d9425e33e273371770450d3e60
     - [Request Validator](doc/plugins/request-validation.md)
 
 - **OPS friendly**
