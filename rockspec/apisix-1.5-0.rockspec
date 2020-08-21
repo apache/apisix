@@ -21,11 +21,8 @@ supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-<<<<<<< HEAD
     branch = "1.5",
-=======
     tag = "1.5",
->>>>>>> 36bb0a8d3ebe12d9425e33e273371770450d3e60
 }
 
 description = {
