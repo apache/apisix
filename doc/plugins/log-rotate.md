@@ -19,19 +19,22 @@
 
 - [English](../../plugins/log-rotate.md)
 
-# api7-log-rotate
+# Name
 
-本插件可自动完成 logs 目录下的 access 和 error 日志的定期切分。
-通过配置参数可以设置每间隔多久切分一次日志，以及最近保留多少份日志（超过指定数量后，自动删除老文件）。
+The plug-in can automatically rotate access and error log files in the log directory at regular intervals.
 
-## 参数
+Specify how often logs are rotated every interval and how many logs have been kept recently.
+When the number of log files exceeds the remaining number, the old files are automatically deleted.
 
-|名称           |可选项  |说明|
+## Attributes
+
+|Name          |Requirement  |Description|
 |---------     |--------|-----------|
-|interval      |必选    |每间隔多长时间切分一次日志，秒为单位，默认值为 3600秒 = 1 小时|
-|max_kept      |必选    |最多保留多少份历史日志，超过指定数量后，自动删除老文件，默认值为 168 个。比如 `max_kept: 168` 代表 access 和 error 日志各自最多保留 168 份|
+|interval      |required    |How often to rotate the log every second, the default value is 3600 seconds = 1 hour.|
+|max_kept      |required    |How many historical logs can be kept at most. When this number is exceeded, old files will be deleted automatically. The default value is 168.|
 
-开启该插件后，就会按照参数自动切分日志文件了。比如下面的例子是根据 `interval: 10` 和 `max_kept: 10` 得到的样本。
+After this plug-in is enabled, the log file will be automatically rotated according to the configuration.
+For example, the following example is a sample based on `interval: 10` and `max_kept: 10`.
 
 ```shell
 $ ll logs
@@ -60,11 +63,14 @@ total 44K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
-### 示例
+### Example
 
-#### 开启插件
+#### Enable plugin
 
-在 `conf/config.yaml` 中启用插件 `log-rotate` 即可，不需要在任何 route 或 service 中绑定。
+Enable the plug-in `log-rotate` in `conf/config.yaml`, then this plugin can work fine.
+It does not need to be bound in any route or service.
+
+Here is an example of `conf/config.yaml`:
 
 ```yaml
 plugins:
@@ -77,6 +83,6 @@ plugin_attr:
         max_kept: 168     -- 7 days
 ```
 
-#### 禁用插件
+#### Disable plugin
 
-在 `conf/config.yaml` 中禁用插件 `log-rotate` 即可。
+Remove the plugin `log-rotate` from `conf/config.yaml`.
