@@ -177,7 +177,6 @@ plugins:                          # plugin list
   - request-validation
   - proxy-cache
   - proxy-mirror
-  - wosai-console
 
 stream_plugins:
   - mqtt-proxy
