@@ -72,9 +72,9 @@ function _M.access(conf, ctx)
     end
 
     local prefix = plugin_name .. ctx.conf_type .. ctx.conf_version
-    local keyValue = ctx.var[conf.key]
-    if not keyValue then
-        keyValue = ""
+
+    local keyValue = ""
+    if not conf.key then
         for _, header in ipairs(conf.headers) do
             local headerValue = ctx.var[header]
             if headerValue then
@@ -91,9 +91,13 @@ function _M.access(conf, ctx)
                 end
             end
         end
+    else
+        if ctx.var[conf.key] then
+            keyValue = ctx.var[conf.key]
+        end
     end
 
-    local key = prefix + keyValue
+    local key = prefix .. keyValue
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
