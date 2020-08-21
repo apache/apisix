@@ -18,30 +18,30 @@ local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
 local plugin_name = "limit-req"
 local sleep = ngx.sleep
-
+local ipairs = ipairs
 
 local schema = {
     type = "object",
     properties = {
-        rate = {type = "number", minimum = 0},
-        burst = {type = "number",  minimum = 0},
-        key = {type = "string",
-            enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for"},
+        rate = { type = "number", minimum = 0 },
+        burst = { type = "number", minimum = 0 },
+        key = { type = "string",
+                enum = { "remote_addr", "server_addr", "http_x_real_ip",
+                         "http_x_forwarded_for" },
         },
-        rejected_code = {type = "integer", minimum = 200, default = 503},
+        headers = { type = "table" },
+        parameters = { type = "table" },
+        rejected_code = { type = "integer", minimum = 200, default = 503 },
     },
-    required = {"rate", "burst", "key"}
+    required = { "rate", "burst" }
 }
-
 
 local _M = {
     version = 0.1,
-    priority = 1001,        -- TODO: add a type field, may be a good idea
+    priority = 1001, -- TODO: add a type field, may be a good idea
     name = plugin_name,
     schema = schema,
 }
-
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -49,25 +49,51 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    if not conf.key then
+        -- 优先使用key进行限流，如果key不存在则使用 headers 与 parameters 方式进行组合限流
+        if (not conf.headers or #conf.headers <= 0) and (not conf.parameters or #conf.parameters) then
+            return false, error("key or headers or parameters can not be null")
+        end
+    end
     return true
 end
-
 
 local function create_limit_obj(conf)
     core.log.info("create new limit-req plugin instance")
     return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
 end
 
-
 function _M.access(conf, ctx)
     local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
-                                               create_limit_obj, conf)
+            create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    local prefix = plugin_name .. ctx.conf_type .. ctx.conf_version
+    local keyValue = ctx.var[conf.key]
+    if not keyValue then
+        keyValue = ""
+        for _, header in ipairs(conf.headers) do
+            local headerValue = ctx.var[header]
+            if headerValue then
+                keyValue = keyValue .. headerValue
+            end
+        end
+
+        local args = ngx.req.get_uri_args()
+        if args then
+            for _, parameter in ipairs(conf.parameters) do
+                local parameterValue = args[parameter]
+                if parameterValue then
+                    keyValue = keyValue .. parameterValue
+                end
+            end
+        end
+    end
+
+    local key = prefix + keyValue
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
