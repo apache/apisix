@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/ip-restriction.md)
+- [English](../../plugins/ip-restriction.md)
 
 # 目录
 - [**名字**](#名字)

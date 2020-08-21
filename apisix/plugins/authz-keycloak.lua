@@ -51,7 +51,7 @@ local schema = {
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
-
+        ssl_verify = {type = "boolean", default = true},
     },
     required = {"token_endpoint"}
 }
@@ -107,6 +107,7 @@ local function evaluate_permissions(conf, token)
             response_mode = "decision",
             permission = conf.permissions
         }),
+        ssl_verify = conf.ssl_verify,
         headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded",
             ["Authorization"] = token

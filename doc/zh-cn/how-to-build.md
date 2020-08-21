@@ -57,7 +57,7 @@ sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisi
 > 通过脚本安装 master 分支的代码
 
 ```shell
-sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/incubator-apisix/master/utils/install-apisix.sh)"
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/utils/install-apisix.sh)"
 ```
 
 > 通过 Luarocks 安装指定的版本:
@@ -117,7 +117,7 @@ Makefile rules:
 
 **配置 Nginx 路径**
 
-如果遇到问题 `Error unknown directive "lua_package_path" in /API_ASPIX/incubator-apisix/t/servroot/conf/nginx.conf`
+如果遇到问题 `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf`
 确保将openresty设置为默认的nginx并按如下所示导出路径。
 
 * export PATH=/usr/local/openresty/nginx/sbin:$PATH

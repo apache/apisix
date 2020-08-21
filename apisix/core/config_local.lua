@@ -14,19 +14,24 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local log = require("apisix.core.log")
 local profile = require("apisix.core.profile")
 local yaml = require("tinyyaml")
 local io_open = io.open
 local type = type
+local str_gmatch = string.gmatch
+local string = string
+local pairs = pairs
+local getmetatable = getmetatable
 
+
+local local_default_conf_path = profile:yaml_path("config-default")
 local local_conf_path = profile:yaml_path("config")
 local config_data
 
 
-local _M = {
-    version = 0.2,
-}
+local _M = {}
 
 
 local function read_file(path)
@@ -46,17 +51,106 @@ function _M.clear_cache()
 end
 
 
+local function is_empty_yaml_line(line)
+    return line == '' or string.find(line, '^%s*$') or
+           string.find(line, '^%s*#')
+end
+
+
+local function tab_is_array(t)
+    local count = 0
+    for k,v in pairs(t) do
+        count = count + 1
+    end
+
+    return #t == count
+end
+
+
+local function tinyyaml_type(t)
+    local mt = getmetatable(t)
+    if mt then
+        log.debug("table type: ", mt.__type)
+        return mt.__type
+    end
+end
+
+
+local function merge_conf(base, new_tab, ppath)
+    ppath = ppath or ""
+
+    for key, val in pairs(new_tab) do
+        if type(val) == "table" then
+            if tinyyaml_type(val) == "null" then
+                base[key] = nil
+
+            elseif tab_is_array(val) then
+                base[key] = val
+
+            else
+                if base[key] == nil then
+                    base[key] = {}
+                end
+
+                local ok, err = merge_conf(
+                    base[key],
+                    val,
+                    ppath == "" and key or ppath .. "->" .. key
+                )
+                if not ok then
+                    return nil, err
+                end
+            end
+        else
+            if base[key] == nil then
+                base[key] = val
+            elseif type(base[key]) ~= type(val) then
+                return false, "failed to merge, path[" ..
+                              (ppath == "" and key or ppath .. "->" .. key) ..
+                              "] expect: " ..
+                              type(base[key]) .. ", but got: " .. type(val)
+            else
+                base[key] = val
+            end
+        end
+    end
+
+    return base
+end
+
+
 function _M.local_conf(force)
     if not force and config_data then
         return config_data
     end
 
-    local yaml_config, err = read_file(local_conf_path)
-    if type(yaml_config) ~= "string" then
-        return nil, "failed to read config file:" .. err
+    local default_conf_yaml, err = read_file(local_default_conf_path)
+    if type(default_conf_yaml) ~= "string" then
+        return nil, "failed to read config-default file:" .. err
+    end
+    config_data = yaml.parse(default_conf_yaml)
+
+    local user_conf_yaml = read_file(local_conf_path) or ""
+    local is_empty_file = true
+    for line in str_gmatch(user_conf_yaml .. '\n', '(.-)\r?\n') do
+        if not is_empty_yaml_line(line) then
+            is_empty_file = false
+            break
+        end
     end
 
-    config_data = yaml.parse(yaml_config)
+    if not is_empty_file then
+        local user_conf = yaml.parse(user_conf_yaml)
+        if not user_conf then
+            return nil, "invalid config.yaml file"
+        end
+
+        config_data, err = merge_conf(config_data, user_conf)
+        if err then
+            return nil, err
+        end
+    end
+
     return config_data
 end
 

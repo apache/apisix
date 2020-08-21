@@ -39,35 +39,53 @@ Reference Documentation
 Plugins
 =======
 
+**General**
+* [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
 * [hot reload](plugins.md): Hot reload without reload service.
+* [HTTPS/TLS](https.md): Dynamic load the SSL Certificate by Server Name Indication (SNI).
+* [serverless](plugins/serverless.md)：Allows to dynamically run Lua code at *different* phase in APISIX.
+* [redirect](plugins/redirect.md): URI redirect.
+
+**Transformation**
+* [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
+* [proxy-rewrite](plugins/proxy-rewrite.md): Rewrite upstream request information.
+* [grpc-transcode](plugins/grpc-transcode.md): REST <--> gRPC transcoding.
+* [fault-injection](plugins/fault-injection.md): The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
+
+**Authentication**
 * [key-auth](plugins/key-auth.md): User authentication based on Key Authentication.
 * [JWT-auth](plugins/jwt-auth.md): User authentication based on [JWT](https://jwt.io/) (JSON Web Tokens) Authentication.
 * [basic-auth](plugins/basic-auth.md): User authentication based on Basic Authentication.
+* [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
+
+**Authorization**
+* [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.
 * [wolf-rbac](plugins/wolf-rbac.md) User Authentication and Authorization based on *RBAC*.
-* [HTTPS/TLS](https.md): Dynamic load the SSL Certificate by Server Name Indication (SNI).
-* [limit-count](plugins/limit-count.md): Rate limiting based on a "fixed window" implementation.
+
+**Security**
+* [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
+* [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
+* [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
+
+**Traffic**
 * [limit-req](plugins/limit-req.md): Request rate limiting and adjustment based on the "leaky bucket" method.
 * [limit-conn](plugins/limit-conn.md): Limite request concurrency (or concurrent connections).
-* [proxy-rewrite](plugins/proxy-rewrite.md): Rewrite upstream request information.
+* [limit-count](plugins/limit-count.md): Rate limiting based on a "fixed window" implementation.
+* [proxy-cache](plugins/proxy-cache.md): Provides the ability to cache upstream response data.
+* [request-validation](plugins/request-validation.md): Validates requests before forwarding to upstream.
+* [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+
+**Monitoring**
 * [prometheus](plugins/prometheus.md): Expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
 * [OpenTracing](plugins/zipkin.md): Supports Zikpin and Apache SkyWalking.
-* [grpc-transcode](plugins/grpc-transcode.md): REST <--> gRPC transcoding.
-* [serverless](plugins/serverless.md)：Allows to dynamically run Lua code at *different* phase in APISIX.
-* [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
-* [openid-connect](plugins/oauth.md)
-* [redirect](plugins/redirect.md): URI redirect.
-* [response-rewrite](plugins/response-rewrite.md): Set customized response status code, body and header to the client.
-* [fault-injection](plugins/fault-injection.md): The specified response body, response code, and response time can be returned, which provides processing capabilities in different failure scenarios, such as service failure, service overload, and high service delay.
-* [proxy-cache](plugins/proxy-cache.md): Provides the ability to cache upstream response data.
+* [Skywalking](plugins/skywalking.md): Supports Apache SkyWalking.
+
+**Loggers**
+* [http-logger](plugins/http-logger.md): Log requests to http servers.
 * [tcp-logger](plugins/tcp-logger.md): Log requests to TCP servers.
-* [udp-logger](plugins/udp-logger.md): Log requests to UDP servers.
-* [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
-* [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
-* [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
-* [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.
-* [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
-* [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
+* [udp-logger](plugins/udp-logger.md): Log requests to UDP servers.
+* [sys-log](plugins/syslog.md): Log requests to Syslog.
 
 Deploy
 =======

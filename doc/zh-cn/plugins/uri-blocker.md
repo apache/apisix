@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/uri-blocker.md)
+- [English](../../plugins/uri-blocker.md)
 
 # 目录
 

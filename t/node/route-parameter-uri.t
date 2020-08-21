@@ -22,12 +22,11 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
-
 run_tests();
 
 __DATA__
 
-=== TEST 1: set route(id: 1 + priority: 2)
+=== TEST 1: set route
 --- config
     location /t {
         content_by_lua_block {
@@ -35,15 +34,30 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/server_port*",
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "priority": 2
-                }]])
+                    "uri": "/name/:name/bar"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/name/:name/bar",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
 
             if code >= 300 then
                 ngx.status = code
@@ -60,76 +74,93 @@ passed
 
 
 
-=== TEST 2: hit routes
+=== TEST 2: /not_found
 --- request
-GET /server_port/aa
---- response_body eval
-1980
+GET /not_found
+--- error_code: 404
+--- response_body
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 3: set route(id: 2 + priority： 1)
+=== TEST 3: /name/json/foo
+--- request
+GET /name/json2/foo
+--- error_code: 404
+--- response_body
+{"error_msg":"failed to match any routes"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: /name/json/
+--- request
+GET /name/json/
+--- error_code: 404
+--- response_body
+{"error_msg":"failed to match any routes"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: /name//bar
+--- request
+GET /name//bar
+--- error_code: 404
+--- response_body
+{"error_msg":"failed to match any routes"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: hit route: /name/json/bar
+--- request
+GET /name/json/bar
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: set route，uri=/:name/foo
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/server_port*",
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1981": 1
+                            "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "priority": 1
-                }]])
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 4: hit routes
---- request
-GET /server_port/aa
---- response_body eval
-1980
---- no_error_log
-[error]
-
-
-
-=== TEST 5: set route(id: 2 + priority: 3)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                ngx.HTTP_PUT,
+                    "uri": "/:name/foo"
+                }]],
                 [[{
-                    "uri": "/server_port*",
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1981": 1
+                    "node": {
+                        "value": {
+                            "uri": "/:name/foo",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            }
                         },
-                        "type": "roundrobin"
+                        "key": "/apisix/routes/1"
                     },
-                    "priority": 3
-                }]])
+                    "action": "set"
+                }]]
+                )
 
             if code >= 300 then
                 ngx.status = code
@@ -146,33 +177,22 @@ passed
 
 
 
-=== TEST 6: hit routes
+=== TEST 8: /json/foo
 --- request
-GET /server_port/aa
+GET /json/foo
+--- error_code: 404
 --- response_body eval
-1981
+qr/404 Not Found/
 --- no_error_log
 [error]
 
 
 
-=== TEST 7: set route(id: 2 + priority: 3)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                ngx.HTTP_DELETE)
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
+=== TEST 9: /json/bbb/foo
 --- request
-GET /t
+GET /json/bbb/foo
+--- error_code: 404
 --- response_body
-passed
+{"error_msg":"failed to match any routes"}
 --- no_error_log
 [error]

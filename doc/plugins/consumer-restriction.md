@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/consumer-restriction.md)
+- [中文](../zh-cn/plugins/consumer-restriction.md)
 
 # Summary
 - [**Name**](#name)

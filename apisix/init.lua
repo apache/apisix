@@ -23,7 +23,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
-local set_upstream = require("apisix.upstream").set_by_route
+local set_upstream  = require("apisix.upstream").set_by_route
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -40,6 +40,7 @@ local load_balancer
 local local_conf
 local dns_resolver
 local lru_resolved_domain
+local ver_header    = "APISIX/" .. core.version.VERSION
 
 
 local function parse_args(args)
@@ -126,9 +127,9 @@ local function run_plugin(phase, plugins, api_ctx)
         and phase ~= "body_filter"
     then
         for i = 1, #plugins, 2 do
-            local phase_fun = plugins[i][phase]
-            if phase_fun then
-                local code, body = phase_fun(plugins[i + 1], api_ctx)
+            local phase_func = plugins[i][phase]
+            if phase_func then
+                local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
                     core.response.exit(code, body)
                 end
@@ -138,9 +139,9 @@ local function run_plugin(phase, plugins, api_ctx)
     end
 
     for i = 1, #plugins, 2 do
-        local phase_fun = plugins[i][phase]
-        if phase_fun then
-            phase_fun(plugins[i + 1], api_ctx)
+        local phase_func = plugins[i][phase]
+        if phase_func then
+            phase_func(plugins[i + 1], api_ctx)
         end
     end
 
@@ -300,6 +301,8 @@ function _M.http_access_phase()
     end
 
     core.ctx.set_vars_meta(api_ctx)
+
+    core.response.set_header("Server", ver_header)
 
     -- load and run global rule
     if router.global_rules and router.global_rules.values
@@ -463,7 +466,11 @@ function _M.http_access_phase()
         run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
-            route, changed = plugin.merge_consumer_route(route, api_ctx.consumer)
+            route, changed = plugin.merge_consumer_route(
+                route,
+                api_ctx.consumer,
+                api_ctx
+            )
             if changed then
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)

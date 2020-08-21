@@ -17,7 +17,7 @@
 #
 -->
 
-- [中文](../zh-cn/plugins/echo.md)
+[Chinese](../zh-cn/plugins/request-validation.md)
 
 # Summary
 - [**Name**](#name)
@@ -25,73 +25,66 @@
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
+- [**Examples**](#examples)
 
 
 ## Name
 
-`echo` is a a useful plugin to help users understand as fully as possible how to develop an APISIX plugin.
-
-This plugin addresses the corresponding functionality in the common phases such as init, rewrite, access, balancer
-, header filer, body filter and log.
+`request-id` plugin adds a unique ID (UUID) to each request proxied through APISIX. This plugin can be used to track an
+API request. The plugin will not add a request id if the `header_name` is already present in the request.
 
 ## Attributes
 
 |Name           |Requirement    |Description|
 |---------      |--------       |-----------|
-| before_body   |optional       | Body before the filter phase.|
-| body   |optional       | Body to replace upstream response.|
-| after_body       |optional       |Body after the modification of filter phase.|
-
+| header_name   |optional       |Request ID header name (default: X-Request-Id)|
+| include_in_response   |optional       |Option to include the unique request ID in the response header (default: true)|
 
 ## How To Enable
 
-The following is an example on how to enable the echo plugin for a specific route.
+Create a route and enable the request-id plugin on the route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
+    "uri": "/get",
     "plugins": {
-        "echo": {
-            "before_body": "before the body modification "
+        "request-id": {
+            "include_in_response": true
         }
     },
     "upstream": {
-        "nodes": {
-            "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-    },
-    "uri": "/hello"
-}'
+    	"type": "roundrobin",
+    	"nodes": {
+        	"127.0.0.1:8080": 1
+    	}
+    }
+}
 ```
 
 ## Test Plugin
 
-* success:
-
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
-...
-before the body modification hello world
 ```
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `echo`.
+Remove the corresponding json configuration in the plugin configuration to disable the `request-validation`.
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
+    "uri": "/get",
+    "plugins": {
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+    	"type": "roundrobin",
+    	"nodes": {
+        	"127.0.0.1:8080": 1
+    	}
     }
-}'
+}
 ```

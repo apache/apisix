@@ -69,6 +69,14 @@ function _M.init()
 
     clear_tab(metrics)
 
+    -- Newly added metrics should follow the naming best pratices described in
+    -- https://prometheus.io/docs/practices/naming/#metric-names
+    -- For example,
+    -- 1. Add unit as the suffix
+    -- 2. Add `_total` as the suffix if the metric type is counter
+    -- 3. Use base unit
+    -- We keep the old metric names for the compatibility.
+
     -- across all services
     prometheus = base_prometheus.init("prometheus-metrics", "apisix_")
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
@@ -77,6 +85,11 @@ function _M.init()
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
+
+
+    metrics.node_info = prometheus:gauge("node_info",
+            "Info of APISIX node",
+            {"hostname"})
 
     metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
             "Etcd modify index for APISIX keys",
@@ -88,16 +101,18 @@ function _M.init()
             {"code", "route", "service", "node"})
 
     metrics.latency = prometheus:histogram("http_latency",
-        "HTTP request latency per service in APISIX",
+        "HTTP request latency in milliseconds per service in APISIX",
         {"type", "service", "node"}, DEFAULT_BUCKETS)
 
     metrics.overhead = prometheus:histogram("http_overhead",
-        "HTTP request overhead per service in APISIX",
+        "HTTP request overhead added by APISIX in milliseconds per service " ..
+        "in APISIX",
         {"type", "service", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
             {"type", "route", "service", "node"})
+
 end
 
 
@@ -178,8 +193,11 @@ local function set_modify_index(key, items, items_ver, global_max_index)
     local max_idx = 0
     if items_ver and items then
         for _, item in ipairs(items) do
-            if type(item) == "table" and item.modifiedIndex > max_idx then
-                max_idx = item.modifiedIndex
+            if type(item) == "table" then
+                local modify_index = item.modifiedIndex_org or item.modifiedIndex
+                if modify_index > max_idx then
+                    max_idx = modify_index
+                end
             end
         end
     end
@@ -262,6 +280,8 @@ function _M.collect()
     etcd_modify_index()
 
     -- config server status
+    local vars = ngx.var or {}
+    local hostname = vars.hostname or ""
     local config = core.config.new()
     local version, err = config:server_version()
     if version then
@@ -272,6 +292,8 @@ function _M.collect()
         core.log.error("prometheus: failed to reach config server while ",
                        "processing metrics endpoint: ", err)
     end
+
+    metrics.node_info:set(1, gen_arr(hostname))
 
     local res, _ = config:getkey("/routes")
     if res and res.headers then

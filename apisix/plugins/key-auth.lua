@@ -83,6 +83,7 @@ function _M.rewrite(conf, ctx)
 
     ctx.consumer = consumer
     ctx.consumer_id = consumer.consumer_id
+    ctx.consumer_ver = consumer_conf.conf_version
     core.log.info("hit key-auth rewrite")
 end
 

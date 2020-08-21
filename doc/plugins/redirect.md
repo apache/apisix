@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/redirect.md)
+- [中文](../zh-cn/plugins/redirect.md)
 
 # Summary
 - [**Name**](#name)
