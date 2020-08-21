@@ -50,7 +50,7 @@ function _M.check_schema(conf)
     end
 
     if not conf.key then
-        -- 优先使用key进行限流，如果key不存在则使用 headers 与 parameters 方式进行组合限流
+        -- Use key as a priority for current limiting, and if key does not exist, use headers and parameters to combine current limiting.
         if (not conf.headers or #conf.headers <= 0) and (not conf.parameters or #conf.parameters) then
             return false, error("key or headers or parameters can not be null")
         end
