@@ -38,8 +38,8 @@ limit request rate using the "leaky bucket" method.
 |rate          |required|is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.|
 |burst         |required|is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.|
 |key           |optional|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
-|headers       |optional|is the user specified key to limit the rate，main use scenarios: the need to limit req according to different clients (app_key) and so on..
-|parameters    |optional|is the user specified key to limit the rate，main use scenarios: hot spot parameters to limit req, while supporting the use of headers。
+|headers       |optional|is the user specified key to limit the rate，main use scenarios: the need to limit req according to different clients (app_key) and so on.|
+|parameters    |optional|is the user specified key to limit the rate，main use scenarios: hot spot parameters to limit req, while supporting the use of headers.|
 |rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
