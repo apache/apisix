@@ -906,7 +906,7 @@ local function init_etcd(show_output)
                 break
             end
 
-            if show_output then
+            if show_output and show_output ~= "-c" then
                 print(cmd)
                 print(res)
             end
@@ -953,7 +953,7 @@ function _M.start(...)
 
     if customed_yaml then
         local cmd = "cp " .. customed_yaml .. " " .. local_conf_path
-        excute_cmd(cmd)
+        os.execute(cmd)
     end
 
     init(...)
