@@ -43,9 +43,9 @@
 
 ## APISIX Config
 
-通过修改本地 `conf/config.yaml` 文件完成对 APISIX 服务本身的基本配置。
+通过修改本地 `conf/config.yaml` 文件，或者在启动 APISIX 时添加文件路径参数 `apisix start -c /opts/apisix/config.yaml`，完成对 APISIX 服务本身的基本配置。
 
-比如修改 APISIX 默认监听端口为 8000，其他配置保持默认，在 `conf/config.yaml` 中只需这样配置：
+比如修改 APISIX 默认监听端口为 8000，其他配置保持默认，在 `config.yaml` 中只需这样配置：
 
 ```yaml
 apisix:
@@ -64,7 +64,7 @@ etcd:
 ```
 
 其他默认配置，可以在 `conf/config-default.yaml` 文件中看到，该文件是与 APISIX 源码强绑定，
-**永远不要**手工修改 `conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `conf/config.yaml` 文件中完成。
+**永远不要**手工修改 `conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `config.yaml` 文件中完成。
 
 *注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。

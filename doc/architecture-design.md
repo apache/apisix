@@ -45,7 +45,9 @@
 
 ## APISIX Config
 
-For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument when start APISIX like `apisix start -c /opts/apisix/config.yaml`
+
+For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -53,7 +55,7 @@ apisix:
 ```
 
 Set the default listening port of APISIX to 8000, set the `etcd` address to `http://foo:2379`,
-and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+and keep other configurations as default. The configuration in config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -63,7 +65,7 @@ etcd:
   host: "http://foo:2379"       # etcd address
 ```
 
-Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `conf/config.yaml` file.
+Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `config.yaml` file.
 
 **Note** `APISIX` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* `conf/nginx.conf` file too.
 
@@ -595,7 +597,7 @@ HTTP/1.1 403
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
 
-```shell
+​```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
