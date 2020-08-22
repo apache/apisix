@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](../../plugins/cors.md)
+- [English](../../plugins/cors.md)
 
 # 目录
 

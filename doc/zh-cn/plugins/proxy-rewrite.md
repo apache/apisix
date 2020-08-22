@@ -17,7 +17,8 @@
 #
 -->
 
-[English](../../plugins/proxy-rewrite.md)
+- [English](../../plugins/proxy-rewrite.md)
+
 # proxy-rewrite
 
 上游代理信息重写插件。

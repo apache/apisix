@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/limit-count.md)
+- [English](../../plugins/limit-count.md)
 
 # limit-count
 

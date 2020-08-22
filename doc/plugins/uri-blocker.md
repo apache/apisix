@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/uri-blocker.md)
+- [中文](../zh-cn/plugins/uri-blocker.md)
 
 # Summary
 

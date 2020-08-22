@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/skywalking.md)
+- [中文](../zh-cn/plugins/skywalking.md)
 
 # Summary
 - [**Summary**](#Summary)

@@ -90,7 +90,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - [Limit-concurrency](doc/plugins/limit-conn.md)
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
     - [CORS](doc/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
-    - [uri-blocker](doc/plugins/uri-blocker.md): Block client request by URI.
+    - [URI Blocker](doc/plugins/uri-blocker.md): Block client request by URI.
     - [Request Validator](doc/plugins/request-validation.md)
 
 - **OPS friendly**

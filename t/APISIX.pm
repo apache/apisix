@@ -69,20 +69,29 @@ if ($enable_local_dns) {
 }
 
 
-my $yaml_config = read_file("conf/config.yaml");
+my $default_yaml_config = read_file("conf/config-default.yaml");
+my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
 my $test2_crt = read_file("conf/cert/test2.crt");
 my $test2_key = read_file("conf/cert/test2.key");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
-$yaml_config =~ s/admin_key:/disable_admin_key:/;
+$user_yaml_config = <<_EOC_;
+apisix:
+  node_listen: 1984
+  stream_proxy:
+    tcp:
+      - 9100
+  admin_key: null
+_EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
 
 if ($etcd_enable_auth eq "true") {
-    $yaml_config =~ s/  # user:/  user:/;
-    $yaml_config =~ s/  # password:/  password:/;
+    $user_yaml_config .= <<_EOC_;
+etcd:
+  user: root
+  password: 5tHkHhYkjr6cQY
+_EOC_
 }
 
 
@@ -414,15 +423,17 @@ $user_apisix_yaml
 _EOC_
     }
 
-    my $user_yaml_config = $block->yaml_config // $yaml_config;
+    my $yaml_config = $block->yaml_config // $user_yaml_config;
     my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;
 >>> ../conf/$debug_file
 $user_debug_config
+>>> ../conf/config-default.yaml
+$default_yaml_config
 >>> ../conf/$config_file
-$user_yaml_config
+$yaml_config
 >>> ../conf/cert/apisix.crt
 $ssl_crt
 >>> ../conf/cert/apisix.key
