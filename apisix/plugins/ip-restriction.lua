@@ -33,7 +33,7 @@ local schema = {
             properties = {
                 whitelist = {
                     type = "array",
-                    items = {type = "string", anyOf = core.schema.ip_def},
+                    items = {anyOf = core.schema.ip_def},
                     minItems = 1
                 },
             },
@@ -45,7 +45,7 @@ local schema = {
             properties = {
                 blacklist = {
                     type = "array",
-                    items = {type = "string", anyOf = core.schema.ip_def},
+                    items = {anyOf = core.schema.ip_def},
                     minItems = 1
                 }
             },
