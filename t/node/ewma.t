@@ -166,7 +166,7 @@ GET /t
 
             ngx.sleep(12)
             --keep the node 1980 hot
-            for i = 1, 2 do
+            for i = 1, 12 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
