@@ -245,7 +245,6 @@ do_install() {
     rm -rf luarocks-2.4.4
 
     export GO111MOUDULE=on
-    export ETCDCTL_API=3
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps

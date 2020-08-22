@@ -19,7 +19,6 @@ BEGIN {
 }
 
 use t::APISIX;
-use Cwd qw(cwd);
 
 repeat_each(1);
 no_long_string();

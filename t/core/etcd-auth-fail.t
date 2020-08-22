@@ -15,11 +15,10 @@
 # limitations under the License.
 #
 BEGIN {
-    $ENV{"ETCD_ENABLE_AUTH"} = "false";
+    $ENV{"ETCD_ENABLE_AUTH"} = "false"
 }
 
 use t::APISIX;
-use Cwd qw(cwd);
 
 repeat_each(1);
 no_long_string();
