@@ -63,4 +63,14 @@ GET /apisix/admin/plugins/node-status
 --- response_body
 {"additionalProperties":false,"type":"object"}
 --- no_error_log
-[error] 
+[error]
+
+
+
+=== TEST 5: get plugin prometheus schema
+--- request
+GET /apisix/admin/plugins/prometheus
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
