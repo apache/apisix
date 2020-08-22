@@ -204,3 +204,26 @@ fi
 
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
+
+# check customed config.yaml is copied.
+
+git checkout conf/config.yaml
+
+echo "
+nginx_config:
+    worker_processes: 2
+" > conf/customed_config.yaml
+
+make default
+./bin/apisix init
+./bin/apisix init_etcd
+./bin/apisix start -c conf/customed_config.yaml
+
+grep "worker_processes 2;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: customed config.yaml copied failed"
+    exit 1
+fi
+
+sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
+echo "passed: customed config.yaml copied succeeded"

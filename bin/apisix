@@ -940,6 +940,22 @@ function _M.start(...)
         end
     end
 
+    local argparse = require "argparse"
+    local parser = argparse()
+    parser:argument("_", "Placeholder")
+    parser:option("-c --config", "location of customed config.yaml")
+    local args = parser:parse()
+    local customed_yaml = args["config"]
+
+    local profile = require("apisix.core.profile")
+    profile.apisix_home = apisix_home .. "/"
+    local local_conf_path = profile:yaml_path("config")
+
+    if customed_yaml then
+        local cmd = "cp " .. customed_yaml .. " " .. local_conf_path
+        excute_cmd(cmd)
+    end
+
     init(...)
     init_etcd(...)
 
