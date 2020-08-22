@@ -61,7 +61,7 @@ GET /apisix/admin/plugins/limit-req
 --- request
 GET /apisix/admin/plugins/node-status
 --- response_body
-{"additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]
 
