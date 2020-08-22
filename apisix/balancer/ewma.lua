@@ -183,9 +183,7 @@ function _M.new(up_nodes, upstream)
         get = function (ctx)
             return _ewma_find(ctx, up_nodes)
         end,
-        after_balance = function(ctx)
-            return _ewma_after_balance(ctx)
-        end
+        after_balance = _ewma_after_balance
     }
 end
 

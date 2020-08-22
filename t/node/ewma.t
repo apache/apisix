@@ -74,10 +74,12 @@ passed
 
 
 
-=== TEST 2: access
+=== TEST 2: about latency
 --- config
     location /t {
         content_by_lua_block {
+            --node: "127.0.0.1:1980": latency is  0.001
+            --node: "127.0.0.1:1981": latency is  0.005
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/ewma"
@@ -116,3 +118,99 @@ GET /t
 --- error_code: 200
 --- no_error_log
 [error]
+
+
+=== TEST 3: about frequency
+--- timeout: 30
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/ewma"
+
+            --node: "127.0.0.1:1980": latency is  0.001
+            --node: "127.0.0.1:1981": latency is  0.005
+            local ports_count = {}
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+            end
+
+            --remove the 1981 node,
+            --add the 1982 node
+            --keep two nodes for triggering ewma logic in server_picker function of balancer phase
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 100,
+                                "127.0.0.1:1982": 100
+                            },
+                            "type": "ewma"
+                        },
+                        "uri": "/ewma"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.say("update route failed")
+                return
+            end
+
+            ngx.sleep(12)
+            --keep the node 1980 hot
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+            end
+
+            --recover the 1981 node
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 100,
+                                "127.0.0.1:1981": 100
+                            },
+                            "type": "ewma"
+                        },
+                        "uri": "/ewma"
+                }]]
+                )
+
+            if code ~= 200 then
+                ngx.say("update route failed")
+                return
+            end
+
+            --should select the 1981 node,because it is idle
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(require("cjson").encode({port = res.body, count = 1}))
+            ngx.exit(200)
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"count":1,"port":"1981"}
+--- error_code: 200
+--- no_error_log
+[error]
+
