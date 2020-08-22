@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 BEGIN {
-    $ENV{"ETCD_ENABLE_AUTH"} = "false"
+    $ENV{"ETCD_ENABLE_AUTH"} = "false";
 }
 
 use t::APISIX;
@@ -26,33 +26,19 @@ no_long_string();
 no_root_location();
 log_level("info");
 
-my $apisix_home = $ENV{APISIX_HOME} || cwd();
-
-sub read_file($) {
-    my $infile = shift;
-    open my $in, "$apisix_home/$infile"
-        or die "cannot open $infile for reading: $!";
-    my $data = do { local $/; <$in> };
-    close $in;
-    $data;
-}
-
-my $yaml_config = read_file("conf/config.yaml");
-if ($yaml_config =~ /  version: "v3"/) {
-    plan(skip_all => "skip for v2 protocol");
+my $etcd_version = `etcdctl version`;
+if ($etcd_version =~ /etcdctl version: 3.2/) {
+    plan(skip_all => "skip for etcd version v3.2");
 } else {
     plan 'no_plan';
-
     # Authentication is enabled at etcd and credentials are set
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth enable');
 
     run_tests;
 
     # Authentication is disabled at etcd & guest access is granted
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
 }
 
 __DATA__
@@ -70,5 +56,6 @@ __DATA__
     }
 --- request
 GET /t
---- response_body
-insufficient credentials code: 401
+--- error_code: 500
+--- error_log eval
+qr /insufficient credentials code: 401/

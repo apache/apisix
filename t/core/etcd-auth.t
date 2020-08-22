@@ -26,25 +26,10 @@ no_long_string();
 no_root_location();
 log_level("info");
 
-my $apisix_home = $ENV{APISIX_HOME} || cwd();
-
-sub read_file($) {
-    my $infile = shift;
-    open my $in, "$apisix_home/$infile"
-        or die "cannot open $infile for reading: $!";
-    my $data = do { local $/; <$in> };
-    close $in;
-    $data;
-}
-
-my $yaml_config = read_file("conf/config.yaml");
 my $etcd_version = `etcdctl version`;
-if ($etcd_version =~ /No help topic for 'version'/) {
-    $etcd_version = `etcdctl --version`;
-}
 if ($etcd_version =~ /etcdctl version: 3.2/) {
     plan(skip_all => "skip for etcd version v3.2");
-} elsif ($yaml_config =~ /  version: "v3"/) {
+} else {
     plan 'no_plan';
     # Authentication is enabled at etcd and credentials are set
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
@@ -54,18 +39,6 @@ if ($etcd_version =~ /etcdctl version: 3.2/) {
 
     # Authentication is disabled at etcd & guest access is granted
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
-} else {
-    plan 'no_plan';
-    # Authentication is enabled at etcd and credentials are set
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
-
-    run_tests;
-
-    # Authentication is disabled at etcd & guest access is granted
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
 }
 
 

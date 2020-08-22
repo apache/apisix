@@ -19,9 +19,7 @@ local local_conf = require("apisix.core.config_local").local_conf()
 
 local config_center = local_conf.apisix and local_conf.apisix.config_center
                       or "etcd"
-local etcd_version = local_conf.etcd.version == "v3" and "_v3" or ""
 log.info("use config_center: ", config_center)
-log.info("etcd version: ", etcd_version)
 
 return {
     version  = require("apisix.core.version"),
@@ -37,7 +35,7 @@ return {
     timer    = require("apisix.core.timer"),
     id       = require("apisix.core.id"),
     utils    = require("apisix.core.utils"),
-    etcd     = require("apisix.core.etcd" .. etcd_version),
+    etcd     = require("apisix.core.etcd"),
     http     = require("apisix.core.http"),
     tablepool= require("tablepool"),
     empty_tab= {},

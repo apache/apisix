@@ -78,24 +78,6 @@ $yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
 $yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
 $yaml_config =~ s/admin_key:/disable_admin_key:/;
 
-# only test for etcdctl version > 3.1
-# currently not use due to certain reason
-if ($yaml_config =~ /  version: "v3"/) {
-    my $etcd_version = `etcdctl version`;
-    if ($etcd_version =~ /No help topic for 'version'/) {
-        $etcd_version = `etcdctl --version`;
-    }
-    if ($etcd_version =~ /API version: 2/) {
-        system "export ETCDCTL_API=3";
-    }
-    if ($etcd_version =~ /etcdctl version: 3.2/) {
-        $yaml_config =~ s/  api_prefix: "\/v3"/  api_prefix: "\/v3alpha"/;
-    }
-    if ($etcd_version =~ /etcdctl version: 3.3/) {
-        $yaml_config =~ s/  api_prefix: "\/v3"/  api_prefix: "\/v3beta"/;
-    }
-}
-
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
 
 if ($etcd_enable_auth eq "true") {
