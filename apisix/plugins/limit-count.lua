@@ -42,22 +42,44 @@ local schema = {
             type = "string",
             enum = {"local", "redis"},
             default = "local",
-        },
-        redis_host = {
-            type = "string", minLength = 2
-        },
-        redis_port = {
-            type = "integer", minimum = 1
-        },
-        redis_password = {
-            type = "string", minLength = 0
-        },
-        redis_timeout = {
-            type = "integer", minimum = 1
-        },
+        }
     },
     additionalProperties = false,
     required = {"count", "time_window", "key"},
+    dependencies = {
+        policy = {
+            oneOf = {
+                {
+                    properties = {
+                        policy = {
+                            enum = {"local"},
+                        },
+                    }
+                },
+                {
+                    properties = {
+                        policy = {
+                            enum = {"redis"},
+                        },
+                        redis_host = {
+                            type = "string", minLength = 2
+                        },
+                        redis_port = {
+                            type = "integer", minimum = 1
+                        },
+                        redis_password = {
+                            type = "string", minLength = 0
+                        },
+                        redis_timeout = {
+                            type = "integer", minimum = 1
+                        },
+                    },
+                    required = {"redis_host", "redis_port", "redis_password",
+                                "redis_timeout"},
+                }
+            }
+        }
+    }
 }
 
 
