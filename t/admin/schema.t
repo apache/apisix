@@ -243,3 +243,23 @@ GET /apisix/admin/schema/plugins/grpc-transcode
 qr/"proto_id".*additionalProperties/
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: get plugin prometheus schema
+--- request
+GET /apisix/admin/schema/plugins/prometheus
+--- response_body eval
+qr/"disable":\{"type":"boolean"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: get plugin node-status schema
+--- request
+GET /apisix/admin/schema/plugins/node-status
+--- response_body eval
+qr/"disable":\{"type":"boolean"\}/
+--- no_error_log
+[error]

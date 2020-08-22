@@ -78,6 +78,14 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         return
     end
 
+    if plugin.schema and plugin.schema.type == "object" then
+        if not plugin.schema.properties or
+           core.table.nkeys(plugin.schema.properties) == 0
+        then
+            plugin.schema.properties = core.schema.plugin_disable_schema
+        end
+    end
+
     plugin.name = name
     core.table.insert(plugins_list, plugin)
 
