@@ -26,13 +26,21 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    properties = {
-        username = { type = "string" },
-        password = { type = "string" },
-    },
     oneOf = {
-        {required = {"username", "password"}},
-        {required = {}}
+        {
+            title = "work with route or service object",
+            properties = {
+                username = { type = "string" },
+                password = { type = "string" },
+            },
+            required = {"username", "password"},
+            additionalProperties = false,
+        },
+        {
+            title = "work with consumer object",
+            properties = {},
+            additionalProperties = false,
+        }
     }
 }
 
