@@ -28,7 +28,7 @@
 
 Note
 ====
-- Since v2.0, Apache APISIX would not support the v2 protocol storage to etcd anymore. If etcd version is below 3.4, the default protocol is still v2 and you need to turn on v3 protocol mannually.
+- Apache APISIX would not support the v2 protocol storage to etcd anymore. If etcd version is below 3.4, the default protocol is still v2 and you need to turn on v3 protocol mannually.
 
 You need to add `ETCDCTL_API=3` to the environmental variables to enable the v3 protocol.
 
@@ -127,6 +127,6 @@ Mac OSX
 # install OpenResty, etcd and some compilation tools
 brew install openresty/brew/openresty etcd luarocks curl git
 
-# start etcd server with v2 protocol
+# start etcd server
 etcd &
 ```

@@ -27,7 +27,7 @@
 
 注意
 ====
-- 从v2.0开始，Apache APISIX 不再支持 `v2` 版本的 etcd。在 etcd 版本低于 3.4 时，默认 API 协议仍为 v2，因此需要添加 `ETCDCTL_API=3` 至环境变量以启动 v3 协议。
+- Apache APISIX 不再支持 `v2` 版本的 etcd。在 etcd 版本低于 3.4 时，默认 API 协议仍为 v2，因此需要添加 `ETCDCTL_API=3` 至环境变量以启动 v3 协议。
 
 ```shell
 export ETCDCTL_API=3
@@ -59,14 +59,14 @@ Fedora 31 & 32
 ==============
 
 ```shell
-# add OpenResty source
+# 添加 OpenResty 源
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
 
-# install OpenResty, etcd and some compilation tools
+# 安装 OpenResty, etcd 和 编译工具
 sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
 
-# start etcd server
+# 开启 etcd server
 sudo etcd &
 ```
 
@@ -124,6 +124,6 @@ Mac OSX
 # 安装 OpenResty, etcd 和 编译工具
 brew install openresty/brew/openresty etcd luarocks curl git
 
-# 开启 etcd server 并启用 v2 的功能
+# 开启 etcd server
 etcd &
 ```

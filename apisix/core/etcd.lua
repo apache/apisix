@@ -31,6 +31,8 @@ local prefix_v3 = {
     ["3.3"] = "/v3beta",
     ["3.2"] = "/v3alpha",
 }
+
+
 -- TODO: Default lua-resty-etcd version auto-detection is broken, so directly get version from cmd
 --          we don't need to call this so many times, need to save it in some place
 local function etcd_version_from_cmd()
@@ -70,6 +72,7 @@ local function new()
 end
 _M.new = new
 
+
 local function kvs2node(kvs)
     local node = {}
     node.key = kvs.key
@@ -79,12 +82,14 @@ local function kvs2node(kvs)
     return node
 end
 
+
 local function notfound(res)
     res.body.message = "Key not found"
     res.reason = "Not found"
     res.status = 404
     return res
 end
+
 
 function _M.postget(res, realkey)
     if res.body.error == "etcdserver: user name is empty" then
@@ -130,6 +135,7 @@ function _M.postget(res, realkey)
     res.body.kvs = nil
     return res, nil
 end
+
 
 function _M.postwatch(v3res)
     local v2res = {}

@@ -43,6 +43,7 @@ local _M = {
     clear_local_cache = config_local.clear_cache,
 }
 
+
 local mt = {
     __index = _M,
     __tostring = function(self)
@@ -97,6 +98,7 @@ local function readdir(etcd_cli, key)
 
     return res
 end
+
 
 local function waitdir(etcd_cli, key, modified_index, timeout)
     if not etcd_cli then
