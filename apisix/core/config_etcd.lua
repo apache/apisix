@@ -532,6 +532,7 @@ local function read_etcd_version(etcd_cli)
     return body
 end
 
+
 function _M.server_version(self)
     if not self.running then
         return nil, "stoped"
