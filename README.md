@@ -293,7 +293,7 @@ CNCF API Gateway Landscape.</a>
 
 ## Contributing
 
-See [CONTRIBUTING](Contributing.md) for details on submitting patches and the contribution workflow.
+See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
 ## Acknowledgments
 
