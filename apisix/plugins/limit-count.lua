@@ -44,7 +44,6 @@ local schema = {
             default = "local",
         }
     },
-    additionalProperties = false,
     required = {"count", "time_window", "key"},
     dependencies = {
         policy = {
@@ -54,7 +53,7 @@ local schema = {
                         policy = {
                             enum = {"local"},
                         },
-                    }
+                    },
                 },
                 {
                     properties = {
@@ -65,17 +64,17 @@ local schema = {
                             type = "string", minLength = 2
                         },
                         redis_port = {
-                            type = "integer", minimum = 1
+                            type = "integer", minimum = 1, default = 6379,
                         },
                         redis_password = {
-                            type = "string", minLength = 0
+                            type = "string", minLength = 0,
                         },
                         redis_timeout = {
-                            type = "integer", minimum = 1
+                            type = "integer", minimum = 1,
+                            default = 1000,
                         },
                     },
-                    required = {"redis_host", "redis_port", "redis_password",
-                                "redis_timeout"},
+                    required = {"redis_host"},
                 }
             }
         }
@@ -101,9 +100,6 @@ function _M.check_schema(conf)
         if not conf.redis_host then
             return false, "missing valid redis option host"
         end
-
-        conf.redis_port = conf.redis_port or 6379
-        conf.redis_timeout = conf.redis_timeout or 1000
     end
 
     return true
