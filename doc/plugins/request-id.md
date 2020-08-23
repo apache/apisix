@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/request-validation.md)
+[Chinese](../zh-cn/plugins/request-id.md)
 
 # Summary
 - [**Name**](#name)
@@ -71,7 +71,7 @@ HTTP/1.1 200 OK
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `request-validation`.
+Remove the corresponding json configuration in the plugin configuration to disable the `request-id`.
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
