@@ -203,7 +203,7 @@ local function sync_data(self)
             if type(item.value) ~= "table" then
                 data_valid = false
                 log.error("invalid item data of [", self.key .. "/" .. key,
-                          "], val: ", tostring(item.value),
+                          "], val: ", item.value,
                           ", it shoud be a object")
             end
 
@@ -295,8 +295,8 @@ local function sync_data(self)
         if res.value and type(res.value) ~= "table" then
             self:upgrade_version(res.modifiedIndex)
             return false, "invalid item data of [" .. self.key .. "/" .. key
-                        .. "], val: " .. tostring(res.value)
-                        .. ", it shoud be a object"
+                          .. "], val: " .. res.value
+                          .. ", it shoud be a object"
         end
 
         if res.value and self.item_schema then
@@ -305,7 +305,7 @@ local function sync_data(self)
                 self:upgrade_version(res.modifiedIndex)
 
                 return false, "failed to check item data of ["
-                            .. self.key .. "] err:" .. err
+                              .. self.key .. "] err:" .. err
             end
         end
 
@@ -314,7 +314,7 @@ local function sync_data(self)
         if res.dir then
             if res.value then
                 return false, "todo: support for parsing `dir` response "
-                            .. "structures. " .. json.encode(res)
+                              .. "structures. " .. json.encode(res)
             end
             return false
         end

@@ -881,19 +881,10 @@ local function init_etcd(show_output)
                                    "/proto"}) do
             local res = require("posix.stdlib").setenv("ETCDCTL_API", 3)
             local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
-            -- use suggested v3 ctl `etcdctl` and avoid base64 conversion
-            --local base64 = require("base64")
-            --uri = host .. "/v3/kv/put"
-            --local post_json = '{"value":"' .. base64.encode("null") ..  '", "key":"' .. base64.encode(key) .. '"}'
-            --cmd = "curl " .. uri
-            --        .. " -X POST -d '" .. post_json
-            --        .. "' --connect-timeout " .. timeout
-            --        .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
             local cmd = "etcdctl --endpoints=" .. host .. " put " .. key .. " init_dir"
 
             local res = excute_cmd(cmd)
             if (etcd_version == "v3" and not res:find("OK", 1, true)) then
-                --  (etcd_version == "v3" and not res:find("revision", 1, true)) then
                 is_success = false
                 if (index == host_count) then
                     error(cmd .. "\n" .. res)
