@@ -69,7 +69,8 @@ function _M.sleep1()
 end
 
 function _M.ewma()
-    if ngx.var.server_port == "1981" then
+    if ngx.var.server_port == "1981"
+       or ngx.var.server_port == "1982" then
         ngx.sleep(0.020)
     else
         ngx.sleep(0.010)
