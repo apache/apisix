@@ -441,3 +441,92 @@ GET /t
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: set ssl with multicerts(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
+            local ssl_ecc_key = t.read_file("conf/cert/apisix_ecc.key")
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "test.com",
+                certs = {ssl_ecc_cert},
+                keys = {ssl_ecc_key}
+            }
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com"
+                        },
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+              )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: mismatched certs and keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
+
+            local data = {
+                sni = "test.com",
+                certs = { ssl_ecc_cert },
+                keys = {},
+            }
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com"
+                        },
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: value should match only one schema, but matches none"}
+--- no_error_log
+[error]

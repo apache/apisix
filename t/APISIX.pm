@@ -73,6 +73,8 @@ my $default_yaml_config = read_file("conf/config-default.yaml");
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
 my $ssl_key = read_file("t/certs/apisix.key");
+my $ssl_ecc_crt = read_file("t/certs/apisix_ecc.crt");
+my $ssl_ecc_key = read_file("t/certs/apisix_ecc.key");
 my $test2_crt = read_file("t/certs/test2.crt");
 my $test2_key = read_file("t/certs/test2.key");
 $user_yaml_config = <<_EOC_;
@@ -438,6 +440,10 @@ $yaml_config
 $ssl_crt
 >>> ../t/certs/apisix.key
 $ssl_key
+>>> ../t/certs/apisix_ecc.crt
+$ssl_ecc_crt
+>>> ../t/certs/apisix_ecc.key
+$ssl_ecc_key
 >>> ../t/certs/test2.crt
 $test2_crt
 >>> ../t/certs/test2.key
