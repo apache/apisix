@@ -41,7 +41,7 @@ filtercode () {
 
 for file in apisix/plugins/*.lua
 do
-    if test -f $file 
+    if test -f $file
     then
         echo $file
         content=$(cat $file)
