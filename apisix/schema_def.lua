@@ -49,10 +49,10 @@ local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
 local ipv6_def = "([a-fA-F0-9]{0,4}:){0,8}(:[a-fA-F0-9]{0,4}){0,8}"
                  .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
-    {pattern = "^" .. ipv4_def .. "$"},
-    {pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
-    {pattern = "^" .. ipv6_def .. "$"},
-    {pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
+    {title = "IPv4", type = "string", pattern = "^" .. ipv4_def .. "$"},
+    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
+    {title = "IPv6", type = "string", pattern = "^" .. ipv6_def .. "$"},
+    {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
 _M.ip_def = ip_def
 
