@@ -940,3 +940,134 @@ connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
 decrypt ssl key failed.
+
+
+
+=== TEST 21 set ssl with multiple certificates.
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("conf/cert/apisix.crt")
+        local ssl_key = t.read_file("conf/cert/apisix.key")
+        local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
+        local ssl_ecc_key = t.read_file("conf/cert/apisix_ecc.key")
+
+        local data = {
+            cert = ssl_cert,
+            key = ssl_key,
+            certs = { ssl_ecc_cert },
+            keys = { ssl_ecc_key },
+            sni = "test.com",
+        }
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+        )
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: client request using ECC certificate
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+location /t {
+    lua_ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384;
+    content_by_lua_block {
+        -- etcd sync
+
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "test.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", type(sess))
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+ssl handshake: userdata
+
+
+
+=== TEST 23: client request using RSA certificate
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    lua_ssl_ciphers ECDHE-RSA-AES256-SHA384;
+    content_by_lua_block {
+        -- etcd sync
+
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "test.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", type(sess))
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+ssl handshake: userdata
