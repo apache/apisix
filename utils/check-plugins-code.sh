@@ -17,12 +17,14 @@
 # limitations under the License.
 #
 
+
 function checkfunc(){
     funccontent=$1
     [[ $funccontent =~ "core.response.exit" ]] && echo "can't exit in rewrite or access phase !" && exit 1
     [[ $funccontent =~ "ngx.exit" ]] && echo "can't exit in rewrite or access phase !" && exit 1
     echo "passed."
 }
+
 
 function filtercode(){
     content=$1
@@ -44,7 +46,12 @@ do
         arr=(${arr[*]} $file)
         echo $file
         content=$(cat $file)
-        filtercode "$content";
+        filtercode "$content"
     fi
 done
 
+# test case for check
+content=$(cat t/fake-plugin-exit.lua)
+filtercode "$content" > test.log 2>&1 || (cat test.log && exit 1)
+
+echo "done."
