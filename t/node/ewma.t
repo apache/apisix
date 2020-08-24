@@ -75,6 +75,7 @@ passed
 
 
 === TEST 2: about latency
+--- timeout: 5
 --- config
     location /t {
         content_by_lua_block {
@@ -164,7 +165,7 @@ GET /t
                 return
             end
 
-            ngx.sleep(12)
+            ngx.sleep(20)
             --keep the node 1980 hot
             for i = 1, 12 do
                 local httpc = http.new()
