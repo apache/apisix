@@ -71,10 +71,10 @@ if ($enable_local_dns) {
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
 my $user_yaml_config = read_file("conf/config.yaml");
-my $ssl_crt = read_file("conf/cert/apisix.crt");
-my $ssl_key = read_file("conf/cert/apisix.key");
-my $test2_crt = read_file("conf/cert/test2.crt");
-my $test2_key = read_file("conf/cert/test2.key");
+my $ssl_crt = read_file("t/certs/apisix.crt");
+my $ssl_key = read_file("t/certs/apisix.key");
+my $test2_crt = read_file("t/certs/test2.crt");
+my $test2_key = read_file("t/certs/test2.key");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
@@ -434,13 +434,13 @@ $user_debug_config
 $default_yaml_config
 >>> ../conf/$config_file
 $yaml_config
->>> ../conf/cert/apisix.crt
+>>> ../t/certs/apisix.crt
 $ssl_crt
->>> ../conf/cert/apisix.key
+>>> ../t/certs/apisix.key
 $ssl_key
->>> ../conf/cert/test2.crt
+>>> ../t/certs/test2.crt
 $test2_crt
->>> ../conf/cert/test2.key
+>>> ../t/certs/test2.key
 $test2_key
 $user_apisix_yaml
 _EOC_
