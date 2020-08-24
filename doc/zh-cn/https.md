@@ -104,3 +104,13 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 如果一个 SSL 证书包含多个独立域名，比如`www.test.com`和`mail.test.com`，通配符方式又会导致匹配不严谨。
 所以针对不同域名，设置不同 SSL 证书对象即可。
+
+### 单域名多证书的情况
+
+如果你期望为一个域名配置多张证书，例如以此来同时支持使用 ECC 和 RSA
+的密钥交换算法，那么你可以将额外的证书和私钥（第一张证书和其私钥依然使用 `cert` 和 `key`）配置在 `certs` 和 `keys` 中。
+
+* `certs`：PEM 格式的 SSL 证书列表
+* `keys`：PEM 格式的 SSL 证书私钥列表
+
+`APISIX` 会将相同下标的证书和私钥配对使用，因此 `certs` 和 `keys` 列表的长度必须一致。

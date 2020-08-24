@@ -516,6 +516,22 @@ _M.ssl = {
                 pattern = [[^\*?[0-9a-zA-Z-.]+$]],
             }
         },
+        certs = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 128,
+                maxLength = 64*1024,
+            }
+        },
+        keys = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 128,
+                maxLength = 64*1024,
+            }
+        },
         exptime = {
             type = "integer",
             minimum = 1588262400,  -- 2020/5/1 0:0:0
