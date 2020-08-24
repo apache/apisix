@@ -18,7 +18,7 @@
 #
 
 
-function checkfunc(){
+function checkfunc {
     funccontent=$1
     [[ $funccontent =~ "core.response.exit" ]] && echo "can't exit in rewrite or access phase !" && exit 1
     [[ $funccontent =~ "ngx.exit" ]] && echo "can't exit in rewrite or access phase !" && exit 1
@@ -26,7 +26,7 @@ function checkfunc(){
 }
 
 
-function filtercode(){
+function filtercode {
     content=$1
 
     rcontent=${content##*_M.rewrite}
