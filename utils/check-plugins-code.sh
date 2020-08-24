@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,9 +41,8 @@ filtercode () {
 
 for file in apisix/plugins/*.lua
 do
-    if test -f $file
+    if test -f $file 
     then
-        arr=(${arr[*]} $file)
         echo $file
         content=$(cat $file)
         filtercode "$content"
