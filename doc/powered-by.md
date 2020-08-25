@@ -59,19 +59,19 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 
 # User Cases
 ## NASA JPL
-Using APISIX as a API gateway to deal with north-south and east-west traffic between microservices.
+Using Apache APISIX as a API gateway to deal with north-south and east-west traffic between microservices.
 
 ## ke.com
-Using APISIX as traffic entry gateway
+Using Apache APISIX as traffic entry gateway
 
 ## meizu
-Using APISIX as api gateway (limit, grpc transcode, abtest, dynamic configures ...)
+Using Apache APISIX as api gateway (limit, grpc transcode, abtest, dynamic configures ...)
 
 ## zuzuche.com
-Using APISIX as a gateway, it uses the functions of current limiting, speed limiting, black-and-white list and so on. In the later stage, it also wants to add gRPC protocol, Serverless, custom plug-in, and other functions to meet business needs.
+Using Apache APISIX as a gateway, it uses the functions of current limiting, speed limiting, black-and-white list and so on. In the later stage, it also wants to add gRPC protocol, Serverless, custom plug-in, and other functions to meet business needs.
 
 ## souche.com
-Using APISIX as a Web ACL gateway to deal with backend OA systems traffic.
+Using Apache APISIX as a Web ACL gateway to deal with backend OA systems traffic.
 
 ## HelloTalk, Inc.
-Using APISIX as an API gateway to manage all API and SSL certificates in test\dev\CMS environment.
+Using Apache APISIX as an API gateway to manage all API and SSL certificates in test\dev\CMS environment.
