@@ -19,7 +19,6 @@ local core = require("apisix.core")
 local process = require("ngx.process")
 local signal = require("resty.signal")
 local ngx = ngx
-local prefix = ngx.config.prefix()
 local lfs = require("lfs")
 local io = io
 local os = os
@@ -82,10 +81,16 @@ local function get_log_path_info(file_type)
         local_conf.nginx_config.http.access_log
     end
 
+    local prefix = ngx.config.prefix()
+
     if conf_path then
-        local n = get_last_index(conf_path, "/")
         local root = string.sub(conf_path, 1, 1)
-        if n ~= nil and root == "/" then
+        -- relative path
+        if root ~= "/" then
+            conf_path = prefix .. conf_path
+        end
+        local n = get_last_index(conf_path, "/")
+        if n ~= nil then
             local dir = string.sub(conf_path, 1, n)
             local name = string.sub(conf_path, n + 1)
             return dir, name
@@ -99,6 +104,9 @@ end
 local function rotate_file(date_str, file_type)
     local log_dir, filename = get_log_path_info(file_type)
 
+    core.log.info("rotate log_dir:", log_dir)
+    core.log.info("rotate filename:", filename)
+
     local file_path = log_dir .. date_str .. "__" .. filename
     if file_exists(file_path) then
         core.log.info("file exist: ", file_path)
@@ -106,8 +114,8 @@ local function rotate_file(date_str, file_type)
     end
 
     local file_path_org = log_dir .. filename
-    os.rename(file_path_org, file_path)
-    core.log.info("move file from ", file_path_org, " to ", file_path)
+    local ok, msg = os.rename(file_path_org, file_path)
+    core.log.info("move file from ", file_path_org, " to ", file_path, " res:", ok, " msg:", msg)
     return true
 end
 
