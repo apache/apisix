@@ -26,12 +26,14 @@ local os = os
 local table = table
 local select = select
 local type = type
+local string = string
+local local_conf
 
 
 local timer
 local plugin_name = "log-rotate"
-local INTERVAL = 60 * 60    -- one hour
-local MAX_KEPT = 24 * 7     -- 7 days
+local INTERVAL = 60 * 60    -- rotate interval (unit: second)
+local MAX_KEPT = 24 * 7     -- max number of log files will be kept
 local schema = {
     type = "object",
     properties = {},
@@ -56,16 +58,55 @@ local function file_exists(path)
 end
 
 
+local function get_last_index(str, key)
+    local rev = string.reverse(str)
+    local _, idx = string.find(rev, key)
+    local n
+    if idx then
+        n = string.len(rev) - idx + 1
+    end
+
+    return n
+end
+
+
+local function get_log_path_info(file_type)
+    local_conf = core.config.local_conf()
+    local confpath
+    if file_type == "error.log" then
+        confpath = local_conf and local_conf.nginx_config and
+        local_conf.nginx_config.error_log
+    else
+        confpath = local_conf and local_conf.nginx_config and
+        local_conf.nginx_config.http and
+        local_conf.nginx_config.http.access_log
+    end
+
+    if confpath then
+        local n = get_last_index(confpath, "/")
+        if n ~= nil then
+            local dir = string.sub(confpath, 1, n)
+            local name = string.sub(confpath, n + 1)
+            return dir, name
+        end
+    end
+
+    return prefix .. "logs/", file_type
+end
+
+
 local function rotate_file(date_str, file_type)
-    local file_path = prefix .. "logs/" .. date_str .. "_" .. file_type
+    local log_dir, filename = get_log_path_info(file_type)
+
+    local file_path = log_dir .. date_str .. "__" .. filename
     if file_exists(file_path) then
         core.log.info("file exist: ", file_path)
         return false
     end
 
-    local file_path_org = prefix .. "logs/" .. file_type
+    local file_path_org = log_dir .. filename
     os.rename(file_path_org, file_path)
-    core.log.warn("move file from ", file_path_org, " to ", file_path)
+    core.log.info("move file from ", file_path_org, " to ", file_path)
     return true
 end
 
@@ -74,19 +115,24 @@ local function tab_sort(a, b)
     return a > b
 end
 
-
 local function scan_log_folder()
     local t = {
         access = {},
         error = {},
     }
 
-    for file in lfs.dir(prefix .. "logs/") do
-        local log_type = file:sub(-10)
-        if log_type == "access.log" then
-            table.insert(t.access, file)
-        elseif log_type == "_error.log" then
-            table.insert(t.error, file)
+    local log_dir, access_name = get_log_path_info("access.log")
+    local _, error_name = get_log_path_info("error.log")
+
+    for file in lfs.dir(log_dir) do
+        local n = get_last_index(file, "__")
+        if n ~= nil then
+            local log_type = file:sub(n + 2)
+            if log_type == access_name then
+                table.insert(t.access, file)
+            elseif log_type == error_name then
+                table.insert(t.error, file)
+            end
         end
     end
 
@@ -117,7 +163,7 @@ local function rotate()
     if try_attr(local_conf, "plugin_attr", "log-rotate") then
         local attr = local_conf.plugin_attr["log-rotate"]
         interval = attr.interval or interval
-        max_kept = attr.max_kept or interval
+        max_kept = attr.max_kept or max_kept
     end
 
     local time = ngx.time()
@@ -145,14 +191,15 @@ local function rotate()
 
     -- clean the oldest file
     local log_list = scan_log_folder()
+    local log_dir, _ = get_log_path_info("access.log")
     for i = max_kept + 1, #log_list.error do
-        local path = prefix .. "logs/" .. log_list.error[i]
+        local path = log_dir .. log_list.error[i]
         local ok = os.remove(path)
         core.log.warn("remove old error file: ", path, " ret: ", ok)
     end
 
     for i = max_kept + 1, #log_list.access do
-        local path = prefix .. "logs/" .. log_list.access[i]
+        local path = log_dir .. log_list.access[i]
         local ok = os.remove(path)
         core.log.warn("remove old access file: ", path, " ret: ", ok)
     end
@@ -171,7 +218,7 @@ function _M.init()
     end
 
     local err
-    timer, err = core.timer.new("heartbeat", rotate, {check_interval = 0.5})
+    timer, err = core.timer.new("logrotate", rotate, {check_interval = 0.5})
     if not timer then
         core.log.error("failed to create timer log rotate: ", err)
     else
