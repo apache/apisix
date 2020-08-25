@@ -61,7 +61,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/\_error\.log[\s\S]*\_access\.log/
+qr/\__error\.log[\s\S]*\__access\.log/
 --- no_error_log
 [error]
 
