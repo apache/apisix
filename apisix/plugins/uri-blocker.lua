@@ -86,7 +86,7 @@ function _M.rewrite(conf, ctx)
 
     local from = re_find(ctx.var.request_uri, conf.block_rules_concat, "jo")
     if from then
-        core.response.exit(conf.rejected_code)
+        return conf.rejected_code
     end
 end
 
