@@ -29,13 +29,6 @@ add_block_preprocessor(sub {
 apisix:
   node_listen: 1984
 
-nginx_config:                     # config for render the template to genarate nginx.conf
-  error_log: "/var/log/error.log"
-  event:
-    worker_connections: 10620
-  http:
-    access_log: "/var/log/access.log"  
-
 plugins:                          # plugin list
   - log-rotate
 
