@@ -19,7 +19,7 @@
 
 - [English](../../plugins/log-rotate.md)
 
-# Name
+## Name
 
 The plug-in can automatically rotate access and error log files in the log directory at regular intervals.
 

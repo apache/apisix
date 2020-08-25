@@ -193,9 +193,9 @@ local function rotate()
         return
     end
 
-    core.log.warn("send USER1 signal to master process [", ngx.worker.pid(),
+    core.log.warn("send USER1 signal to master process [", process.get_master_pid(),
                   "] for reopening log file")
-    local ok, err = signal.kill(ngx.worker.pid(), signal.signum("USR1"))
+    local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
     if not ok then
         core.log.error("failed to send USER1 signal for reopening log file: ",
                        err)
