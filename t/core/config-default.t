@@ -44,16 +44,6 @@ admin_key: null
 
 
 
-=== TEST 2: wrong type: expect: number, but got: string
---- yaml_config
-apisix:
-  node_listen: xxxx
---- must_die
---- error_log
-failed to parse yaml config: failed to merge, path[apisix->node_listen] expect: number, but got: string
-
-
-
 === TEST 3: use `null` means delete
 --- yaml_config
 apisix:

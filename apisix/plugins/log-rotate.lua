@@ -166,6 +166,9 @@ local function rotate()
         max_kept = attr.max_kept or max_kept
     end
 
+    core.log.info("rotate interval:", interval)
+    core.log.info("rotate max keep:", max_kept)
+
     local time = ngx.time()
     if time % interval == 0 then
         time = time - interval
