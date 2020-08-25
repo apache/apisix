@@ -139,6 +139,8 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 该插件在 rewrite 、access 阶段执行都可以，项目中是用 rewrite 阶段执行认证逻辑，一般 IP 准入、接口权限是在 access 阶段
 完成的。
 
+**注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。**
+
 ## 编写执行逻辑
 
 在对应的阶段方法里编写功能的逻辑代码。
