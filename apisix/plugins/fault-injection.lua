@@ -66,7 +66,7 @@ function _M.rewrite(conf, ctx)
     end
 
     if conf.abort and conf.abort.http_status ~= nil then
-        core.response.exit(conf.abort.http_status, conf.abort.body)
+        return conf.abort.http_status, conf.abort.body
     end
 end
 
