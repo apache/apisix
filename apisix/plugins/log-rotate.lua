@@ -72,21 +72,22 @@ end
 
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
-    local confpath
+    local conf_path
     if file_type == "error.log" then
-        confpath = local_conf and local_conf.nginx_config and
+        conf_path = local_conf and local_conf.nginx_config and
         local_conf.nginx_config.error_log
     else
-        confpath = local_conf and local_conf.nginx_config and
+        conf_path = local_conf and local_conf.nginx_config and
         local_conf.nginx_config.http and
         local_conf.nginx_config.http.access_log
     end
 
-    if confpath then
-        local n = get_last_index(confpath, "/")
-        if n ~= nil then
-            local dir = string.sub(confpath, 1, n)
-            local name = string.sub(confpath, n + 1)
+    if conf_path then
+        local n = get_last_index(conf_path, "/")
+        local root = string.sub(conf_path, 1, 1)
+        if n ~= nil and root == "/" then
+            local dir = string.sub(conf_path, 1, n)
+            local name = string.sub(conf_path, n + 1)
             return dir, name
         end
     end
