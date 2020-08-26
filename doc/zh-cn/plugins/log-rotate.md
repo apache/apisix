@@ -73,10 +73,10 @@ plugins:
 
 plugin_attr:
     log-rotate:
-        interval: 3600    -- an hour
-        max_kept: 168     -- 7 days
+        interval: 3600    # rotate interval (unit: second)
+        max_kept: 168     # max number of log files will be kept
 ```
 
 #### 禁用插件
 
-在 `conf/config.yaml` 中禁用插件 `log-rotate` 即可。
+在 `conf/config.yaml` 中删除插件 `log-rotate` 即可。
