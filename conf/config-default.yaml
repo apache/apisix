@@ -117,6 +117,7 @@ nginx_config:                     # config for render the template to genarate n
     worker_connections: 10620
   http:
     access_log: "logs/access.log"
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time"
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
     client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
     client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client

@@ -213,3 +213,26 @@ fi
 
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
+
+
+# log format
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
+' > conf/config.yaml
+
+make init
+
+grep "test_access_log_format" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: access_log_format in nginx.conf doesn't change"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
+echo "passed: worker_processes number is configurable"
