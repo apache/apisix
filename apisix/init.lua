@@ -72,6 +72,12 @@ function _M.http_init(args)
     math.randomseed(seed)
     parse_args(args)
     core.id.init()
+
+    local process = require("ngx.process")
+    local ok, err = process.enable_privileged_agent()
+    if not ok then
+        core.log.error("failed to enable privileged_agent: ", err)
+    end
 end
 
 
