@@ -187,3 +187,8 @@ plugins:                          # plugin list
 
 stream_plugins:
   - mqtt-proxy
+
+plugin_attr:
+  log-rotate:
+    interval: 3600    # rotate interval (unit: second)
+    max_kept: 168     # max number of log files will be kept
