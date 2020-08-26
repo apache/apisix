@@ -67,7 +67,7 @@ local function getkey(etcd_cli, key)
         return nil, "failed to get key from etcd"
     end
 
-    res, err = etcd_apisix.postget(res, key)
+    res, err = etcd_apisix.get_res_format(res, key)
     if not res then
         return nil, err
     end
@@ -91,7 +91,7 @@ local function readdir(etcd_cli, key)
         return nil, "failed to read etcd dir"
     end
 
-    res, err = etcd_apisix.postget(res, key .. "/")
+    res, err = etcd_apisix.get_res_format(res, key .. "/")
     if not res then
         return nil, err
     end
@@ -123,7 +123,7 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     if type(res.result) ~= "table" then
         return nil, "failed to read etcd dir"
     end
-    return etcd_apisix.postwatch(res)
+    return etcd_apisix.watch_res_format(res)
 end
 
 

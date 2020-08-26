@@ -56,7 +56,8 @@ local function new()
 
     local etcd_conf = clone_tab(local_conf.etcd)
     local prefix = etcd_conf.prefix
-    local api_prefix, err = etcd_version_from_cmd()
+    local api_prefix
+    api_prefix, err = etcd_version_from_cmd()
     if not api_prefix then
         return nil, nil, err
     end
@@ -64,8 +65,7 @@ local function new()
     etcd_conf.host = nil
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
-    etcd_conf.api_prefix, err = api_prefix
-
+    etcd_conf.api_prefix = api_prefix
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
@@ -78,7 +78,7 @@ end
 _M.new = new
 
 
-local function kvs2node(kvs)
+local function kvs_to_node(kvs)
     local node = {}
     node.key = kvs.key
     node.value = kvs.value
@@ -88,7 +88,7 @@ local function kvs2node(kvs)
 end
 
 
-local function notfound(res)
+local function not_found(res)
     res.body.message = "Key not found"
     res.reason = "Not found"
     res.status = 404
@@ -96,7 +96,7 @@ local function notfound(res)
 end
 
 
-function _M.postget(res, realkey)
+function _M.get_res_format(res, realkey)
     if res.body.error == "etcdserver: user name is empty" then
         return nil, "insufficient credentials code: 401"
     end
@@ -104,37 +104,37 @@ function _M.postget(res, realkey)
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     if not res.body.kvs then
-        return notfound(res)
+        return not_found(res)
     end
     res.body.action = "get"
 
-    local function kvs2nodes(res, start_index)
+    local function kvs_to_nodes(res, start_index)
         res.body.node.dir = true
         res.body.node.nodes = {}
         for i=start_index, #res.body.kvs do
             if start_index == 1 then
-                res.body.node.nodes[i] = kvs2node(res.body.kvs[i])
+                res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
             else
-                res.body.node.nodes[i-1] = kvs2node(res.body.kvs[i])
+                res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
             end
         end
     end
 
-    res.body.node = kvs2node(res.body.kvs[1])
+    res.body.node = kvs_to_node(res.body.kvs[1])
     -- kvs.value = nil, so key is root
     if type(res.body.kvs[1].value) == "userdata" or not res.body.kvs[1].value then
         -- remove last "/" when necesary
         if string.sub(res.body.node.key, -1, -1) == "/" then
             res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
         end
-        kvs2nodes(res, 2)
+        kvs_to_nodes(res, 2)
     -- key not match, so realkey is root
     elseif res.body.kvs[1].key ~= realkey then
         res.body.node.key = realkey
-        kvs2nodes(res, 1)
+        kvs_to_nodes(res, 1)
     -- first is root (in v2, root not contains value), others are nodes
     elseif #res.body.kvs > 1 then
-        kvs2nodes(res, 2)
+        kvs_to_nodes(res, 2)
     end
 
     res.body.kvs = nil
@@ -142,7 +142,7 @@ function _M.postget(res, realkey)
 end
 
 
-function _M.postwatch(v3res)
+function _M.watch_res_format(v3res)
     local v2res = {}
     v2res.headers = {
         ["X-Etcd-Index"] = v3res.result.header.revision
@@ -151,7 +151,7 @@ function _M.postwatch(v3res)
         node = {}
     }
     for i, event in ipairs(v3res.result.events) do
-        v2res.body.node[i] = kvs2node(event.kv)
+        v2res.body.node[i] = kvs_to_node(event.kv)
         if event.type == "DELETE" then
             v2res.body.action = "delete"
         end
@@ -174,7 +174,7 @@ function _M.get(key)
         return nil, err
     end
 
-    return _M.postget(res, prefix .. key)
+    return _M.get_res_format(res, prefix .. key)
 end
 
 
@@ -257,7 +257,7 @@ function _M.delete(key)
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     if not res.body.deleted then
-        return notfound(res), nil
+        return not_found(res), nil
     end
 
     -- etcd v3 set would not return kv info
