@@ -56,11 +56,16 @@ local function new()
 
     local etcd_conf = clone_tab(local_conf.etcd)
     local prefix = etcd_conf.prefix
+    local api_prefix, err = etcd_version_from_cmd()
+    if not api_prefix then
+        return nil, nil, err
+    end
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
-    etcd_conf.api_prefix = etcd_version_from_cmd()
+    etcd_conf.api_prefix, err = api_prefix
+
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
