@@ -256,18 +256,20 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
-sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
-
 
 # log format
 
-git checkout conf/config.yaml
-
 echo '
+apisix:
+    admin_key:
+        -
+        name: admin
+        key: ADMIN_API_KEY
+        role: admin
 nginx_config:
-  http:
-    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
+    http:
+        access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
 ' > conf/config.yaml
 
 make init
@@ -278,6 +280,6 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+echo "passed: support use define access log format"
 
-echo "passed: worker_processes number is configurable"
+git checkout conf/config.yaml
