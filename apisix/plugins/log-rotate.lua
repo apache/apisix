@@ -59,7 +59,7 @@ end
 
 local function get_last_index(str, key)
     local rev = string.reverse(str)
-    local _, idx = string.find(rev, key)
+    local _, idx = string.find(rev, key, 1, true)
     local n
     if idx then
         n = string.len(rev) - idx + 1
@@ -90,7 +90,7 @@ local function get_log_path_info(file_type)
             conf_path = prefix .. conf_path
         end
         local n = get_last_index(conf_path, "/")
-        if n ~= nil then
+        if n ~= nil and n ~= #conf_path then
             local dir = string.sub(conf_path, 1, n)
             local name = string.sub(conf_path, n + 1)
             return dir, name
