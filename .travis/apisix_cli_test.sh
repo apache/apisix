@@ -35,8 +35,17 @@ fi
 
 echo "passed: 'Server: APISIX' not in nginx.conf"
 
+#make init <- no need to re-run since we don't change the config yet.
+
+# check the error_log directive uses warn level by default.
+if ! grep "error_log logs/error.log warn;" conf/nginx.conf > /dev/null; then
+    echo "failed: error_log directive doesn't use warn level by default"
+    exit 1
+fi
+
+echo "passed: error_log directive uses warn level by default"
+
 # check whether the 'reuseport' is in nginx.conf .
-make init
 
 grep -E "listen 9080.*reuseport" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
