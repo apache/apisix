@@ -115,7 +115,8 @@ local function rotate_file(date_str, file_type)
 
     local file_path_org = log_dir .. filename
     local ok, msg = os.rename(file_path_org, file_path)
-    core.log.info("move file from ", file_path_org, " to ", file_path, " res:", ok, " msg:", msg)
+    core.log.info("move file from ", file_path_org, " to ", file_path,
+                  " res:", ok, " msg:", msg)
     return true
 end
 
@@ -193,8 +194,8 @@ local function rotate()
         return
     end
 
-    core.log.warn("send USER1 signal to master process [", process.get_master_pid(),
-                  "] for reopening log file")
+    core.log.warn("send USER1 signal to master process [",
+                  process.get_master_pid(), "] for reopening log file")
     local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
     if not ok then
         core.log.error("failed to send USER1 signal for reopening log file: ",
