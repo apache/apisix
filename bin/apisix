@@ -94,7 +94,7 @@ worker_processes {* worker_processes *};
 worker_cpu_affinity auto;
 {% end %}
 
-error_log {* error_log *} {* error_log_level or "error" *};
+error_log {* error_log *} {* error_log_level or "warn" *};
 pid logs/nginx.pid;
 
 worker_rlimit_nofile {* worker_rlimit_nofile *};
