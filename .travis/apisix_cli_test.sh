@@ -23,10 +23,11 @@
 
 set -ex
 
+random_key=`cat /dev/urandom|head -n 10|md5sum|head -c 16`
 export ADMIN_KEY="admin_key:
         -
         name: admin
-        key: ADMIN_API_KEY
+        key: $random_key
         role: admin
 "
 
@@ -188,7 +189,7 @@ fi
 
 make run
 
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: ADMIN_API_KEY')
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $random_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: failed to enabled https for admin"
     exit 1
@@ -272,7 +273,7 @@ apisix:
     admin_key:
         -
         name: admin
-        key: ADMIN_API_KEY
+        key: test_admin_key
         role: admin
 nginx_config:
     http:
