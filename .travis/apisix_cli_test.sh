@@ -23,13 +23,16 @@
 
 set -ex
 
+export ADMIN_KEY="admin_key:
+        -
+        name: admin
+        key: ADMIN_API_KEY
+        role: admin
+"
+
 cat > conf/config.yaml <<EOF
 apisix:
-  admin_key:
-    -
-      name: admin
-      key: ADMIN_API_KEY
-      role: admin
+    $ADMIN_KEY
 EOF
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
@@ -67,11 +70,7 @@ cat > conf/config.yaml <<EOF
 apisix:
     ssl:
         listen_port: 8443
-    admin_key:
-        -
-            name: admin
-            key: ADMIN_API_KEY
-            role: admin
+    $ADMIN_KEY
 EOF
 
 make init
@@ -110,11 +109,7 @@ echo "passed: change default env"
 # check nameserver imported
 cat > conf/config.yaml <<EOF
 apisix:
-  admin_key:
-    -
-      name: admin
-      key: ADMIN_API_KEY
-      role: admin
+    $ADMIN_KEY
 EOF
 
 make init
@@ -137,11 +132,7 @@ echo "passed: system nameserver imported"
 cat > conf/config.yaml <<EOF
 apisix:
     enable_dev_mode: true
-    admin_key:
-        -
-        name: admin
-        key: ADMIN_API_KEY
-        role: admin
+    $ADMIN_KEY
 EOF
 
 make init
@@ -165,11 +156,7 @@ echo "passed: enable enable_dev_mode"
 cat > conf/config.yaml <<EOF
 apisix:
     enable_dev_mode: true
-    admin_key:
-        -
-        name: admin
-        key: ADMIN_API_KEY
-        role: admin
+    $ADMIN_KEY
 EOF
 
 make init
@@ -188,11 +175,7 @@ cat > conf/config.yaml <<EOF
 apisix:
     port_admin: 9180
     https_admin: true
-    admin_key:
-        -
-            name: admin
-            key: ADMIN_API_KEY
-            role: admin
+    $ADMIN_KEY
 EOF
 
 make init
@@ -219,11 +202,7 @@ echo "passed: admin https enabled"
 
 cat > conf/config.yaml <<EOF
 apisix:
-    admin_key:
-        -
-        name: admin
-        key: ADMIN_API_KEY
-        role: admin
+    $ADMIN_KEY
 EOF
 
 make init
@@ -271,11 +250,7 @@ git checkout conf/config-default.yaml
 
 cat > conf/config.yaml <<EOF
 apisix:
-    admin_key:
-        -
-        name: admin
-        key: ADMIN_API_KEY
-        role: admin
+    $ADMIN_KEY
 nginx_config:
     worker_processes: 2
 EOF
@@ -294,11 +269,7 @@ echo "passed: worker_processes number is configurable"
 
 echo '
 apisix:
-    admin_key:
-        -
-        name: admin
-        key: ADMIN_API_KEY
-        role: admin
+    $ADMIN_KEY
 nginx_config:
     http:
         access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
