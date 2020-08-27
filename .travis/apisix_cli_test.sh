@@ -269,7 +269,11 @@ echo "passed: worker_processes number is configurable"
 
 echo '
 apisix:
-    $ADMIN_KEY
+    admin_key:
+        -
+        name: admin
+        key: ADMIN_API_KEY
+        role: admin
 nginx_config:
     http:
         access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
