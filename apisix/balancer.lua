@@ -254,7 +254,7 @@ _M.pick_server = pick_server
 function _M.run(route, ctx)
     local server = ctx.picked_server
     if not server then
-        core.log.error("failed to pick server: ", err)
+        core.log.error("failed to pick server")
         return core.response.exit(502)
     end
 

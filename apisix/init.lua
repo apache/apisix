@@ -304,10 +304,10 @@ local function set_upstream_host(api_ctx)
     local pass_host = api_ctx.pass_host
     if pass_host and pass_host ~= "pass" then
         local host
-        if pass_host == "node" then 
+        if pass_host == "node" then
             core.log.info("upstream host mod: node")
             local picked_server  = api_ctx.picked_server
-            if picked_server then 
+            if picked_server then
                 if picked_server.domain and #picked_server.domain > 0 then
                     host = picked_server.domain
                 else
@@ -323,7 +323,7 @@ local function set_upstream_host(api_ctx)
             core.log.info("set upstream host: ", host)
             api_ctx.var.upstream_host = host
         end
-    end    
+    end
 end
 
 function _M.http_access_phase()
@@ -531,9 +531,8 @@ function _M.http_access_phase()
 
     local server, _ = pick_server(route, api_ctx)
     api_ctx.picked_server = server
-    
-    set_upstream_host(api_ctx)
 
+    set_upstream_host(api_ctx)
 end
 
 
