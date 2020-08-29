@@ -391,6 +391,7 @@ function _M.http_access_phase()
     local enable_websocket
     local up_id = route.value.upstream_id
     if up_id then
+
         local upstreams = core.config.fetch_created_obj("/upstreams")
         if upstreams then
             local upstream = upstreams:get(tostring(up_id))
@@ -429,6 +430,10 @@ function _M.http_access_phase()
             if upstream.value.enable_websocket then
                 enable_websocket = true
             end
+            if upstream.value.pass_host then
+                api_ctx.pass_host = upstream.value.pass_host
+                api_ctx.upstream_host = upstream.value.upstream_host
+            end
         end
 
     else
@@ -454,6 +459,10 @@ function _M.http_access_phase()
 
         if route.value.upstream and route.value.upstream.enable_websocket then
             enable_websocket = true
+        end
+        if route.value.upstream and route.value.upstream.pass_host then
+            api_ctx.pass_host = route.value.upstream.pass_host
+            api_ctx.upstream_host = route.value.upstream.upstream_host
         end
     end
 
@@ -583,7 +592,31 @@ end
 
 
 function _M.http_header_filter_phase()
+    local ngx_ctx = ngx.ctx
+    local api_ctx = ngx_ctx.api_ctx
+    local pass_host = api_ctx and api_ctx.pass_host
+
+    -- run plugins
     common_phase("header_filter")
+
+    if pass_host and pass_host ~= "pass" then
+        local host
+        if pass_host == "node" then 
+            core.log.info("upstream host mod: node")
+            local picked_server  = api_ctx.picked_server
+            if picked_server and picked_server.host and #picked_server.host > 0 then 
+                host = picked_server.host
+            end
+        elseif pass_host == "rewrite" then
+            core.log.info("upstream host mod: rewrite")
+            host = api_ctx.upstream_host and api_ctx.upstream_host
+        end
+
+        if host then
+            core.log.info("set upstream host: ", host)
+            ngx.req.set_header("host", host)
+        end
+    end
 end
 
 
