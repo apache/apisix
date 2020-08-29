@@ -271,10 +271,10 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
-                        "apisix.apache.org:80": 1
+                        "httpbin.org:80": 1
                     },
                     "type": "roundrobin",
                     "desc": "new upstream",
@@ -303,10 +303,10 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/test.html",
-                        "upstream_id": "1"
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/get",
+                    "upstream_id": "1"
                 }]]
                 )
 
@@ -325,13 +325,14 @@ passed
 
 
 
-=== TEST 13: hit routes
+=== TEST 13: hit route
 --- request
-GET /test.html
---- error_code: 404
+GET /get
 --- error_log
 upstream host mod: node
-set upstream host: apisix.apache.org
+set upstream host: httpbin.org
+--- response_body eval
+qr/"Host": "httpbin.org"/
 --- no_error_log
 [error]
 
@@ -343,15 +344,15 @@ set upstream host: apisix.apache.org
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:1980": 1
                     },
                     "type": "roundrobin",
                     "desc": "new upstream",
                     "pass_host": "rewrite",
-                    "upstream_host": "apache.org"
+                    "upstream_host": "httpbin.org"
                 }]]
                 )
 
@@ -376,10 +377,10 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream_id": "1"
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/uri",
+                    "upstream_id": "1"
                 }]]
                 )
 
@@ -398,11 +399,13 @@ passed
 
 
 
-=== TEST 16: hit routes
+=== TEST 16: hit route
 --- request
-GET /hello
+GET /uri
 --- error_log
 upstream host mod: rewrite
-set upstream host: apache.org
+set upstream host: httpbin.org
+--- response_body eval
+qr/host: httpbin.org/
 --- no_error_log
 [error]
