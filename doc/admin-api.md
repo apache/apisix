@@ -493,7 +493,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 |Name    |Optional|Description|
 |-------         |-----|------|
-|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
+|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash,`ewma` minimum latency ,pick one of them.see https://en.wikipedia.org/wiki/EWMA_chart for details|
 |nodes           |required if `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
 |k8s_deployment_info|required if `nodes` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|

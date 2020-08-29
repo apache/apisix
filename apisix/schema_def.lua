@@ -311,7 +311,7 @@ local upstream_schema = {
         type = {
             description = "algorithms of load balancing",
             type = "string",
-            enum = {"chash", "roundrobin"}
+            enum = {"chash", "roundrobin", "ewma"}
         },
         checks = health_checker,
         hash_on = {
