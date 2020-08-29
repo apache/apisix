@@ -526,7 +526,7 @@ function _M.http_access_phase()
         end
 
         if host then
-            core.log.error("set upstream host: ", host)
+            core.log.info("set upstream host: ", host)
             api_ctx.var.upstream_host = host
         end
     end
