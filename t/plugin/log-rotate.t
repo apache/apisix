@@ -28,6 +28,11 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
+  admin_key:
+    -
+      name: "admin"
+      key: TEST_API_KEY
+      role: admin
 
 plugins:                          # plugin list
   - log-rotate
