@@ -203,6 +203,7 @@ local function parse_domain_for_nodes(nodes)
             if ip then
                 local new_node = core.table.clone(node)
                 new_node.host = ip
+                new_node.domain = host
                 core.table.insert(new_nodes, new_node)
             end
 
@@ -604,8 +605,12 @@ function _M.http_header_filter_phase()
         if pass_host == "node" then 
             core.log.info("upstream host mod: node")
             local picked_server  = api_ctx.picked_server
-            if picked_server and picked_server.host and #picked_server.host > 0 then 
-                host = picked_server.host
+            if picked_server then 
+                if picked_server.domain and #picked_server.domain > 0 then
+                    host = picked_server.domain
+                else
+                    host = picked_server.host
+                end
             end
         elseif pass_host == "rewrite" then
             core.log.info("upstream host mod: rewrite")

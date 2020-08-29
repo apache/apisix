@@ -261,7 +261,7 @@ function _M.run(route, ctx)
         return core.response.exit(502)
     end
 
-    cxt.picked_server = server
+    ctx.picked_server = server
 
     core.log.info("proxy request to ", server.host, ":", server.port)
     local ok, err = balancer.set_current_peer(server.host, server.port)
