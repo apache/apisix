@@ -300,6 +300,32 @@ local function return_direct(...)
 end
 
 
+local function set_upstream_host(api_ctx)
+    local pass_host = api_ctx.pass_host
+    if pass_host and pass_host ~= "pass" then
+        local host
+        if pass_host == "node" then 
+            core.log.info("upstream host mod: node")
+            local picked_server  = api_ctx.picked_server
+            if picked_server then 
+                if picked_server.domain and #picked_server.domain > 0 then
+                    host = picked_server.domain
+                else
+                    host = picked_server.host
+                end
+            end
+        elseif pass_host == "rewrite" then
+            core.log.info("upstream host mod: rewrite")
+            host = api_ctx.upstream_host and api_ctx.upstream_host
+        end
+
+        if host then
+            core.log.info("set upstream host: ", host)
+            api_ctx.var.upstream_host = host
+        end
+    end    
+end
+
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -392,8 +418,6 @@ function _M.http_access_phase()
     end
 
     local enable_websocket
-    local pass_host
-    local upstream_host
     local up_id = route.value.upstream_id
     if up_id then
 
@@ -436,8 +460,8 @@ function _M.http_access_phase()
                 enable_websocket = true
             end
             if upstream.value.pass_host then
-                pass_host = upstream.value.pass_host
-                upstream_host = upstream.value.upstream_host
+                api_ctx.pass_host = upstream.value.pass_host
+                api_ctx.upstream_host = upstream.value.upstream_host
             end
         end
 
@@ -466,8 +490,8 @@ function _M.http_access_phase()
             enable_websocket = true
         end
         if route.value.upstream and route.value.upstream.pass_host then
-            pass_host = route.value.upstream.pass_host
-            upstream_host = route.value.upstream.upstream_host
+            api_ctx.pass_host = route.value.upstream.pass_host
+            api_ctx.upstream_host = route.value.upstream.upstream_host
         end
     end
 
@@ -507,29 +531,8 @@ function _M.http_access_phase()
 
     local server, _ = pick_server(route, api_ctx)
     api_ctx.picked_server = server
-
-    if pass_host and pass_host ~= "pass" then
-        local host
-        if pass_host == "node" then 
-            core.log.info("upstream host mod: node")
-            local picked_server  = api_ctx.picked_server
-            if picked_server then 
-                if picked_server.domain and #picked_server.domain > 0 then
-                    host = picked_server.domain
-                else
-                    host = picked_server.host
-                end
-            end
-        elseif pass_host == "rewrite" then
-            core.log.info("upstream host mod: rewrite")
-            host = upstream_host
-        end
-
-        if host then
-            core.log.info("set upstream host: ", host)
-            api_ctx.var.upstream_host = host
-        end
-    end
+    
+    set_upstream_host(api_ctx)
 
 end
 
