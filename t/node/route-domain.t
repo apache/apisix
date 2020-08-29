@@ -80,3 +80,95 @@ hello world
 [error]
 --- error_log eval
 qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
+
+
+
+=== TEST 4: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin",
+                            "pass_host": "rewrite",
+                            "upstream_host": "apache.org"                            
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: hit routes
+--- request
+GET /hello
+--- error_log
+upstream host mod: rewrite
+set upstream host: apache.org
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "apisix.apache.org:80": 1
+                            },
+                            "type": "roundrobin",
+                            "pass_host": "node"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: hit routes
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+upstream host mod: node
+set upstream host: apisix.apache.org
+--- no_error_log
+[error]

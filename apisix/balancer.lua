@@ -248,20 +248,15 @@ local function pick_server(route, ctx)
 
     return res
 end
-
-
--- for test
 _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
-    local server, err = pick_server(route, ctx)
+    local server = ctx.picked_server
     if not server then
         core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
-
-    ctx.picked_server = server
 
     core.log.info("proxy request to ", server.host, ":", server.port)
     local ok, err = balancer.set_current_peer(server.host, server.port)

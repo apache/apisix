@@ -37,6 +37,7 @@ local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
 local load_balancer
+local pick_server
 local local_conf
 local dns_resolver
 local lru_resolved_domain
@@ -93,6 +94,7 @@ function _M.http_init_worker()
     end
     require("apisix.balancer").init_worker()
     load_balancer = require("apisix.balancer").run
+    pick_server   = require("apisix.balancer").pick_server
     require("apisix.admin.init").init_worker()
 
     router.http_init_worker()
@@ -390,6 +392,8 @@ function _M.http_access_phase()
     end
 
     local enable_websocket
+    local pass_host
+    local upstream_host
     local up_id = route.value.upstream_id
     if up_id then
 
@@ -432,8 +436,8 @@ function _M.http_access_phase()
                 enable_websocket = true
             end
             if upstream.value.pass_host then
-                api_ctx.pass_host = upstream.value.pass_host
-                api_ctx.upstream_host = upstream.value.upstream_host
+                pass_host = upstream.value.pass_host
+                upstream_host = upstream.value.upstream_host
             end
         end
 
@@ -462,8 +466,8 @@ function _M.http_access_phase()
             enable_websocket = true
         end
         if route.value.upstream and route.value.upstream.pass_host then
-            api_ctx.pass_host = route.value.upstream.pass_host
-            api_ctx.upstream_host = route.value.upstream.upstream_host
+            pass_host = route.value.upstream.pass_host
+            upstream_host = route.value.upstream.upstream_host
         end
     end
 
@@ -500,6 +504,33 @@ function _M.http_access_phase()
         core.log.error("failed to parse upstream: ", err)
         core.response.exit(500)
     end
+
+    local server, _ = pick_server(route, api_ctx)
+    api_ctx.picked_server = server
+
+    if pass_host and pass_host ~= "pass" then
+        local host
+        if pass_host == "node" then 
+            core.log.info("upstream host mod: node")
+            local picked_server  = api_ctx.picked_server
+            if picked_server then 
+                if picked_server.domain and #picked_server.domain > 0 then
+                    host = picked_server.domain
+                else
+                    host = picked_server.host
+                end
+            end
+        elseif pass_host == "rewrite" then
+            core.log.info("upstream host mod: rewrite")
+            host = upstream_host
+        end
+
+        if host then
+            core.log.error("set upstream host: ", host)
+            api_ctx.var.upstream_host = host
+        end
+    end
+
 end
 
 
@@ -593,35 +624,7 @@ end
 
 
 function _M.http_header_filter_phase()
-    local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-    local pass_host = api_ctx and api_ctx.pass_host
-
-    -- run plugins
     common_phase("header_filter")
-
-    if pass_host and pass_host ~= "pass" then
-        local host
-        if pass_host == "node" then 
-            core.log.info("upstream host mod: node")
-            local picked_server  = api_ctx.picked_server
-            if picked_server then 
-                if picked_server.domain and #picked_server.domain > 0 then
-                    host = picked_server.domain
-                else
-                    host = picked_server.host
-                end
-            end
-        elseif pass_host == "rewrite" then
-            core.log.info("upstream host mod: rewrite")
-            host = api_ctx.upstream_host and api_ctx.upstream_host
-        end
-
-        if host then
-            core.log.info("set upstream host: ", host)
-            ngx.req.set_header("host", host)
-        end
-    end
 end
 
 
