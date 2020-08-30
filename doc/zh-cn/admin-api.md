@@ -518,6 +518,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
 |name     |可选 |辅助|标识上游服务名称、使用场景等。||
 |desc     |可选 |辅助|上游服务描述、使用场景等。||
+|pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。||
+|upstream_host    |可选|辅助|只在 `pass_host` 配置为 `rewrite` 时有效。||
 
 upstream 对象 json 配置内容：
 

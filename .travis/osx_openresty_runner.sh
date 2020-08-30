@@ -28,12 +28,10 @@ before_install() {
     fi
 
     HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis@3.2
-    brew upgrade go
 
     sudo sed -i "" "s/requirepass/#requirepass/g" /usr/local/etc/redis.conf
     brew services start redis@3.2
 
-    export GO111MOUDULE=on
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     export_or_prefix
     luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls --local --tree=deps
