@@ -265,7 +265,7 @@ GET /t
 
 
 
-=== TEST 11: set upstream(id: 1) nodes
+=== TEST 11: set upstream(id: 1, using `node` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -297,7 +297,7 @@ passed
 
 
 
-=== TEST 12: set route(id: 1)
+=== TEST 12: set route(id: 1, using `node` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -328,9 +328,6 @@ passed
 === TEST 13: hit route
 --- request
 GET /get
---- error_log
-upstream host mod: node
-set upstream host: httpbin.org
 --- response_body eval
 qr/"Host": "httpbin.org"/
 --- no_error_log
@@ -338,7 +335,7 @@ qr/"Host": "httpbin.org"/
 
 
 
-=== TEST 14: set upstream(id: 1) nodes
+=== TEST 14: set upstream(id: 1, using `rewrite` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -371,7 +368,7 @@ passed
 
 
 
-=== TEST 15: set route(id: 1)
+=== TEST 15: set route(id: 1, using `rewrite` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -402,9 +399,6 @@ passed
 === TEST 16: hit route
 --- request
 GET /uri
---- error_log
-upstream host mod: rewrite
-set upstream host: httpbin.org
 --- response_body eval
 qr/host: httpbin.org/
 --- no_error_log

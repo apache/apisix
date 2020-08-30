@@ -83,7 +83,7 @@ qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
 
 
 
-=== TEST 4: set route(id: 1)
+=== TEST 4: set route(id: 1, using `rewrite` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -97,9 +97,9 @@ qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
                             },
                             "type": "roundrobin",
                             "pass_host": "rewrite",
-                            "upstream_host": "apache.org"                            
+                            "upstream_host": "httpbin.org"                        
                         },
-                        "uri": "/hello"
+                        "uri": "/uri"
                 }]]
                 )
 
@@ -118,18 +118,17 @@ passed
 
 
 
-=== TEST 5: hit routes
+=== TEST 5: hit route
 --- request
-GET /hello
---- error_log
-upstream host mod: rewrite
-set upstream host: apache.org
+GET /uri
+--- response_body eval
+qr/host: httpbin.org/
 --- no_error_log
 [error]
 
 
 
-=== TEST 6: set route(id: 1)
+=== TEST 6: set route(id: 1, using `node` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -139,12 +138,13 @@ set upstream host: apache.org
                  [[{
                         "upstream": {
                             "nodes": {
-                                "apisix.apache.org:80": 1
+                                "httpbin.org:80": 1
                             },
                             "type": "roundrobin",
+                            "desc": "new upstream",
                             "pass_host": "node"
                         },
-                        "uri": "/hello"
+                        "uri": "/get"
                 }]]
                 )
 
@@ -163,12 +163,10 @@ passed
 
 
 
-=== TEST 7: hit routes
+=== TEST 7: hit route
 --- request
-GET /hello
---- error_code: 404
---- error_log
-upstream host mod: node
-set upstream host: apisix.apache.org
+GET /get
+--- response_body eval
+qr/"Host": "httpbin.org"/
 --- no_error_log
 [error]

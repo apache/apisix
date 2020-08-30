@@ -299,33 +299,37 @@ end
 
 
 local function set_upstream_host(api_ctx)
-    local pass_host = api_ctx.pass_host
-    if pass_host and pass_host ~= "pass" then
-        local host
-        -- only support single node for `node` mode currently
-        if pass_host == "node" then
-            core.log.info("upstream host mod: node")
-            local up_conf = api_ctx.upstream_conf
-            local nodes_count = up_conf.nodes and #up_conf.nodes or 0
-            if nodes_count == 1 then
-                local node = up_conf.nodes[1]
-                if node.domain and #node.domain > 0 then
-                    host = node.domain
-                else
-                    host = node.host
-                end
-            end
-        elseif pass_host == "rewrite" then
-            core.log.info("upstream host mod: rewrite")
-            host = api_ctx.upstream_host and api_ctx.upstream_host
-        end
+    local pass_host = api_ctx.pass_host or "pass"
+    if pass_host == "pass" then
+        return
+    end
 
+    local host
+    if pass_host == "rewrite" then
+        host = api_ctx.upstream_host and api_ctx.upstream_host
         if host then
-            core.log.info("set upstream host: ", host)
             api_ctx.var.upstream_host = host
+            return
         end
     end
+
+    -- only support single node for `node` mode currently
+    local up_conf = api_ctx.upstream_conf
+    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
+    if nodes_count == 1 then
+        local node = up_conf.nodes[1]
+        if node.domain and #node.domain > 0 then
+            host = node.domain
+        else
+            host = node.host
+        end
+    end
+
+    if host then
+        api_ctx.var.upstream_host = host
+    end
 end
+
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
@@ -421,7 +425,6 @@ function _M.http_access_phase()
     local enable_websocket
     local up_id = route.value.upstream_id
     if up_id then
-
         local upstreams = core.config.fetch_created_obj("/upstreams")
         if upstreams then
             local upstream = upstreams:get(tostring(up_id))
@@ -460,6 +463,7 @@ function _M.http_access_phase()
             if upstream.value.enable_websocket then
                 enable_websocket = true
             end
+
             if upstream.value.pass_host then
                 api_ctx.pass_host = upstream.value.pass_host
                 api_ctx.upstream_host = upstream.value.upstream_host
@@ -490,6 +494,7 @@ function _M.http_access_phase()
         if route.value.upstream and route.value.upstream.enable_websocket then
             enable_websocket = true
         end
+
         if route.value.upstream and route.value.upstream.pass_host then
             api_ctx.pass_host = route.value.upstream.pass_host
             api_ctx.upstream_host = route.value.upstream.upstream_host

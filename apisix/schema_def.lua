@@ -335,7 +335,8 @@ local upstream_schema = {
         pass_host = {
             description = "mod of host passing",
             type = "string",
-            enum = {"pass", "node", "rewrite"}
+            enum = {"pass", "node", "rewrite"},
+            default = "pass"
         },
         upstream_host = host_def,
         name = {type = "string", maxLength = 50},

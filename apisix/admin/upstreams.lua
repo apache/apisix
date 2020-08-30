@@ -80,7 +80,7 @@ local function check_upstream_conf(conf)
 
     -- only support single node for `node` mode currently
     if conf.pass_host == "node" and conf.nodes and #conf.nodes > 1 then
-        return false, "only support single node for `node` mode currently."
+        return false, "only support single node for `node` mode currently"
     end
 
     return true
