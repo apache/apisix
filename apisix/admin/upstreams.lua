@@ -54,6 +54,16 @@ local function check_upstream_conf(conf)
         return false, "invalid configuration: " .. err
     end
 
+    if conf.pass_host == "node" and conf.nodes and
+        core.table.nkeys(conf.nodes) ~= 1 then
+        return false, "only support single node for `node` mode currently"
+    end
+
+    if conf.pass_host == "rewrite" and
+        (conf.upstream_host == nil or conf.upstream_host == "") then
+            return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+    end
+
     if conf.type ~= "chash" then
         return true
     end
@@ -76,11 +86,6 @@ local function check_upstream_conf(conf)
         if not ok then
             return false, "invalid configuration: " .. err
         end
-    end
-
-    -- only support single node for `node` mode currently
-    if conf.pass_host == "node" and conf.nodes and #conf.nodes > 1 then
-        return false, "only support single node for `node` mode currently"
     end
 
     return true
@@ -112,6 +117,7 @@ local function check_conf(id, conf, need_id)
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     local ok, err = check_upstream_conf(conf)
+
     if not ok then
         return nil, {error_msg = err}
     end

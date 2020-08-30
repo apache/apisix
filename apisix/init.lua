@@ -304,16 +304,13 @@ local function set_upstream_host(api_ctx)
         return
     end
 
-    local host
     if pass_host == "rewrite" then
-        host = api_ctx.upstream_host and api_ctx.upstream_host
-        if host then
-            api_ctx.var.upstream_host = host
-            return
-        end
+        api_ctx.var.upstream_host = api_ctx.upstream_host
+        return
     end
 
     -- only support single node for `node` mode currently
+    local host
     local up_conf = api_ctx.upstream_conf
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 1 then
