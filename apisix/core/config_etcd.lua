@@ -34,6 +34,7 @@ local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
 local pcall        = pcall
+local error        = error
 local created_obj  = {}
 
 
@@ -405,6 +406,12 @@ local function _automatic_fetch(premature, self)
         return
     end
 
+    local etcd_cli, err = etcd.new(self.etcd_conf)
+    if not etcd_cli then
+        error("failed to start a etcd instance: " .. err)
+    end
+    self.etcd_cli = etcd_cli
+
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
@@ -456,13 +463,6 @@ function _M.new(key, opts)
     etcd_conf.host = nil
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
-    etcd_conf.api_prefix = etcd_apisix.etcd_version_from_cmd()
-
-    local etcd_cli
-    etcd_cli, err = etcd.new(etcd_conf)
-    if not etcd_cli then
-        return nil, err
-    end
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
@@ -470,7 +470,8 @@ function _M.new(key, opts)
     local timeout = opts and opts.timeout
 
     local obj = setmetatable({
-        etcd_cli = etcd_cli,
+        etcd_cli = nil,
+        etcd_conf = etcd_conf,
         key = key and prefix .. key,
         automatic = automatic,
         item_schema = item_schema,

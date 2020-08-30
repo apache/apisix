@@ -17,35 +17,12 @@
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local etcd             = require("resty.etcd")
 local clone_tab        = require("table.clone")
-local io               = io
 local type             = type
 local ipairs           = ipairs
 local string           = string
 local tonumber         = tonumber
 
-local _M = {version = 0.1}
-
-local prefix_v3 = {
-    ["3.5"] = "/v3",
-    ["3.4"] = "/v3",
-    ["3.3"] = "/v3beta",
-    ["3.2"] = "/v3alpha",
-}
-
-
--- TODO: Default lua-resty-etcd version auto-detection is broken, so directly get version from cmd
---          we don't need to call this so many times, need to save it in some place
-local function etcd_version_from_cmd()
-    local cmd = "export ETCDCTL_API=3 && etcdctl version"
-    local t, err = io.popen(cmd)
-    if not t then
-        return nil, "failed to execute command: " .. cmd .. ", error info:" .. err
-    end
-    local data = t:read("*all")
-    t:close()
-    return prefix_v3[data:sub(-4,-2)]
-end
-_M.etcd_version_from_cmd = etcd_version_from_cmd
+local _M = {}
 
 
 local function new()
@@ -56,16 +33,10 @@ local function new()
 
     local etcd_conf = clone_tab(local_conf.etcd)
     local prefix = etcd_conf.prefix
-    local api_prefix
-    api_prefix, err = etcd_version_from_cmd()
-    if not api_prefix then
-        return nil, nil, err
-    end
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
-    etcd_conf.api_prefix = api_prefix
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)
