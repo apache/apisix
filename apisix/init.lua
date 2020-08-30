@@ -529,6 +529,7 @@ function _M.http_access_phase()
         core.response.exit(500)
     end
 
+    -- balancer pick upstream server
     local server, _ = pick_server(route, api_ctx)
     api_ctx.picked_server = server
 
@@ -595,6 +596,10 @@ function _M.grpc_access_phase()
     run_plugin("access", plugins, api_ctx)
 
     set_upstream(route, api_ctx)
+
+    -- balancer pick upstream server
+    local server, _ = pick_server(route, api_ctx)
+    api_ctx.picked_server = server
 end
 
 
