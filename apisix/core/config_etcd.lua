@@ -494,6 +494,13 @@ function _M.new(key, opts)
         end
 
         ngx_timer_at(0, _automatic_fetch, obj)
+
+    else
+        local etcd_cli, err = etcd.new(etcd_conf)
+        if not etcd_cli then
+            return nil, "failed to start a etcd instance: " .. err
+        end
+        obj.etcd_cli = etcd_cli
     end
 
     if key then
