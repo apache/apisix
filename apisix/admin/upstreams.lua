@@ -55,13 +55,15 @@ local function check_upstream_conf(conf)
     end
 
     if conf.pass_host == "node" and conf.nodes and
-        core.table.nkeys(conf.nodes) ~= 1 then
+        core.table.nkeys(conf.nodes) ~= 1
+    then
         return false, "only support single node for `node` mode currently"
     end
 
     if conf.pass_host == "rewrite" and
-        (conf.upstream_host == nil or conf.upstream_host == "") then
-            return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+        (conf.upstream_host == nil or conf.upstream_host == "")
+    then
+        return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
     end
 
     if conf.type ~= "chash" then
