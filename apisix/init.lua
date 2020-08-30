@@ -787,6 +787,7 @@ function _M.stream_init_worker()
     plugin.init_worker()
 
     load_balancer = require("apisix.balancer").run
+    pick_server   = require("apisix.balancer").pick_server
 
     local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
@@ -832,6 +833,10 @@ function _M.stream_preread_phase()
     run_plugin("preread", plugins, api_ctx)
 
     set_upstream(matched_route, api_ctx)
+
+    -- balancer pick upstream server
+    local server, _ = pick_server(matched_route, api_ctx)
+    api_ctx.picked_server = server
 end
 
 
