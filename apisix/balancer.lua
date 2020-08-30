@@ -248,13 +248,16 @@ local function pick_server(route, ctx)
 
     return res
 end
+
+
+-- for test
 _M.pick_server = pick_server
 
 
 function _M.run(route, ctx)
-    local server = ctx.picked_server
+    local server, err = pick_server(route, ctx)
     if not server then
-        core.log.error("failed to pick server")
+        core.log.error("failed to pick server: ", err)
         return core.response.exit(502)
     end
 

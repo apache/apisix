@@ -37,7 +37,6 @@ local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
 local load_balancer
-local pick_server
 local local_conf
 local dns_resolver
 local lru_resolved_domain
@@ -94,7 +93,6 @@ function _M.http_init_worker()
     end
     require("apisix.balancer").init_worker()
     load_balancer = require("apisix.balancer").run
-    pick_server   = require("apisix.balancer").pick_server
     require("apisix.admin.init").init_worker()
 
     router.http_init_worker()
@@ -304,14 +302,17 @@ local function set_upstream_host(api_ctx)
     local pass_host = api_ctx.pass_host
     if pass_host and pass_host ~= "pass" then
         local host
+        -- only support single node for `node` mode currently
         if pass_host == "node" then
             core.log.info("upstream host mod: node")
-            local picked_server  = api_ctx.picked_server
-            if picked_server then
-                if picked_server.domain and #picked_server.domain > 0 then
-                    host = picked_server.domain
+            local up_conf = api_ctx.upstream_conf
+            local nodes_count = up_conf.nodes and #up_conf.nodes or 0
+            if nodes_count == 1 then
+                local node = up_conf.nodes[1]
+                if node.domain and #node.domain > 0 then
+                    host = node.domain
                 else
-                    host = picked_server.host
+                    host = node.host
                 end
             end
         elseif pass_host == "rewrite" then
@@ -529,10 +530,6 @@ function _M.http_access_phase()
         core.response.exit(500)
     end
 
-    -- balancer pick upstream server
-    local server, _ = pick_server(route, api_ctx)
-    api_ctx.picked_server = server
-
     set_upstream_host(api_ctx)
 end
 
@@ -596,10 +593,6 @@ function _M.grpc_access_phase()
     run_plugin("access", plugins, api_ctx)
 
     set_upstream(route, api_ctx)
-
-    -- balancer pick upstream server
-    local server, _ = pick_server(route, api_ctx)
-    api_ctx.picked_server = server
 end
 
 
@@ -787,7 +780,6 @@ function _M.stream_init_worker()
     plugin.init_worker()
 
     load_balancer = require("apisix.balancer").run
-    pick_server   = require("apisix.balancer").pick_server
 
     local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
@@ -833,10 +825,6 @@ function _M.stream_preread_phase()
     run_plugin("preread", plugins, api_ctx)
 
     set_upstream(matched_route, api_ctx)
-
-    -- balancer pick upstream server
-    local server, _ = pick_server(matched_route, api_ctx)
-    api_ctx.picked_server = server
 end
 
 
