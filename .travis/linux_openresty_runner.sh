@@ -104,6 +104,16 @@ do_install() {
         mv grpc_server_example build-cache/
     fi
 
+    if [ ! -f "build-cache/proto/helloworld.proto" ]; then
+        if [ ! -f "grpc_server_example/main.go" ]; then
+            git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
+        fi
+
+        cd grpc_server_example/
+        mv proto/ ../build-cache/
+        cd ..
+    fi
+
     if [ ! -f "build-cache/grpcurl" ]; then
         wget https://github.com/api7/grpcurl/releases/download/20200314/grpcurl-amd64.tar.gz
         tar -xvf grpcurl-amd64.tar.gz
