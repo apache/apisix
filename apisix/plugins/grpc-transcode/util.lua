@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core     = require("apisix.core")
 local json     = require("apisix.core.json")
 local pb       = require("pb")
 local ngx      = ngx
@@ -75,7 +76,7 @@ local function get_from_request(name, kind)
         end
     end
 
-    return nil
+    return request_table[name]
 end
 
 
