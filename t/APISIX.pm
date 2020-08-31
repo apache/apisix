@@ -220,6 +220,9 @@ _EOC_
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
     lua_shared_dict skywalking-tracing-buffer    100m;
+    lua_shared_dict balancer_ewma         1m;
+    lua_shared_dict balancer_ewma_locks   1m;
+    lua_shared_dict balancer_ewma_last_touched_at  1m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;

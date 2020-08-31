@@ -160,7 +160,7 @@ GET /opentracing
 opentracing
 --- no_error_log
 [error]
---- wait: 0.2
+--- wait: 1
 
 
 

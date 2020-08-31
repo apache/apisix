@@ -273,6 +273,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](../health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
 |enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
+|pass_host            |可选|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。|
+|upstream_host    |可选|只在 `pass_host` 配置为 `rewrite` 时有效。|
 
 `hash_on` 比较复杂，这里专门说明下：
 
