@@ -28,6 +28,6 @@
 #     admin_key:
 #         -
 #             name: "admin"
-#             key:  ******    # <-- replace with a random key
+#             key:            # <-- replace with your Admin Key
 #             role: admin
 #
