@@ -361,7 +361,7 @@ function _M.http_access_phase()
             return core.response.exit(404)
         end
 
-        route= plugin.merge_service_route(service, route)
+        route = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
         api_ctx.conf_type = "route&service"
         api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
