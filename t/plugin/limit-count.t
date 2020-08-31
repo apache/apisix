@@ -638,6 +638,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 21: when the count is changed, check  the limit is correct
 --- config
     location /t1 {
@@ -680,8 +682,7 @@ passed
             end
             ngx.say(body)
         }
-    }   
-    
+    }    
 --- pipelined_requests eval
 ["GET /hello", "GET /hello","GET /hello","GET /t1", "GET /hello","GET /hello"]
 --- error_code eval

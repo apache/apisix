@@ -365,8 +365,7 @@ function _M.http_access_phase()
         api_ctx.matched_route = route
         api_ctx.conf_type = "route&service"
         api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
-        api_ctx.conf_id = route.value.id .. "&"
-                .. service.value.id
+        api_ctx.conf_id = route.value.id .. "&" .. service.value.id
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
