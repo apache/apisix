@@ -572,10 +572,10 @@ passed
 === TEST 20: hit route
 --- request
 POST /grpctest
-{"message":"Hello world", "items": ["a","b","c"]}
+{"name":"apisix", "items": ["a","b","c"]}
 --- more_headers
 Content-Type: application/json
 --- response_body eval
-qr/\{"items":["a","b","c"],"message":"Hello "\}/
+qr/\{"items":\["a","b","c"\],"message":"Hello apisix"\}/
 --- no_error_log
 [error]
