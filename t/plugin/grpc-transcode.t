@@ -51,9 +51,11 @@ __DATA__
                       }
                       message HelloRequest {
                           string name = 1;
+                          repeated string items = 2;
                       }
                       message HelloReply {
                           string message = 1;
+                          repeated string items = 2;
                          }"
                    }]]
                 )
@@ -122,7 +124,7 @@ GET /grpctest?name=world
 qr/\{"message":"Hello world"\}/
 --- no_error_log
 [error]
-
+--- LAST
 
 
 === TEST 4: hit route by post

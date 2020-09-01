@@ -50,8 +50,10 @@ end
 
 local function get_request_table()
     local method = ngx.req.get_method()
-
-    if method == "POST" or method == "PUT" or method == "PATCH" then
+    local content_type = ngx.req.get_headers()["Content-Type"] or ""
+    if string.find(content_type, "application/json", 1, true) and
+        (method == "POST" or method == "PUT" or method == "PATCH")
+    then
         local req_body, _ = core.request.get_body()
         if req_body then
             local data, _ = json.decode(req_body)
@@ -59,6 +61,11 @@ local function get_request_table()
                 return data
             end
         end
+    end
+
+    if method == "POST" then
+        local post_args = ngx.req.get_post_args()
+        return post_args
     end
 
     local args = ngx.req.get_uri_args()

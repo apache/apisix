@@ -99,7 +99,7 @@ do_install() {
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
+        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
     fi
