@@ -64,12 +64,10 @@ local function get_request_table()
     end
 
     if method == "POST" then
-        local post_args = ngx.req.get_post_args()
-        return post_args
+        return ngx.req.get_post_args()
     end
 
-    local args = ngx.req.get_uri_args()
-    return args
+    return ngx.req.get_uri_args()
 end
 
 
