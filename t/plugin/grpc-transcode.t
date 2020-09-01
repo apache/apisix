@@ -51,11 +51,9 @@ __DATA__
                       }
                       message HelloRequest {
                           string name = 1;
-                          repeated string items = 2;
                       }
                       message HelloReply {
                           string message = 1;
-                          repeated string items = 2;
                          }"
                    }]]
                 )
@@ -578,6 +576,6 @@ POST /grpctest
 --- more_headers
 Content-Type: application/json
 --- response_body eval
-qr/\{"message":"Hello world", "items": ["a","b","c"]\}/
+qr/\{"items":["a","b","c"],"message":"Hello "\}/
 --- no_error_log
 [error]
