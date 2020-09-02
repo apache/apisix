@@ -116,8 +116,8 @@ return function(plugin_name, priority)
         call_funcs('balancer', conf, ctx)
     end
 
-    function _M.header_filer(conf, ctx)
-        call_funcs('header_filer', conf, ctx)
+    function _M.header_filter(conf, ctx)
+        call_funcs('header_filter', conf, ctx)
     end
 
     function _M.body_filter(conf, ctx)
