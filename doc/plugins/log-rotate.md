@@ -17,7 +17,7 @@
 #
 -->
 
-- [English](../../plugins/log-rotate.md)
+- [中文](../zh-cn/plugins/log-rotate.md)
 
 ## Name
 
