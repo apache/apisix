@@ -76,6 +76,9 @@ do_install() {
 
     wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
     tar xf etcd-v3.4.0-linux-amd64.tar.gz
+    sudo cp etcd-v3.4.0-linux-amd64/etcd /usr/local/bin/
+    sudo cp etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
+    rm -rf etcd-v3.4.0-linux-amd64
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -126,11 +129,11 @@ do_install() {
 
 script() {
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PWD/etcd-v3.4.0-linux-amd64:$PATH
+    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
     etcd version
     sleep 5
 
