@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -330,20 +332,23 @@ local function sync_data(self)
     -- avoid space waste
     -- todo: need to cover this path, it is important.
     if self.sync_times > 100 then
-        local count = 0
-        for i = 1, #self.values do
+        local count_new = 0
+        local count_org = #self.values
+        for i = 1, count_org do
             local val = self.values[i]
             self.values[i] = nil
             if val then
-                count = count + 1
-                self.values[count] = val
+                count_new = count_new + 1
+                self.values[count_new] = val
             end
         end
 
-        for i = 1, count do
+        table.clear(self.values_hash)
+        for i = 1, count_new do
             key = short_key(self, self.values[i].key)
             self.values_hash[key] = i
         end
+
         self.sync_times = 0
     end
 
