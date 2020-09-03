@@ -821,6 +821,11 @@ local function init()
         sys_conf["dns_resolver"] = dns_addrs
     end
 
+    local env_worker_processes = os.getenv("AS_WORKER_PROCESSES")
+    if env_worker_processes then
+        sys_conf["worker_processes"] = math.floor(tonumber(env_worker_processes))
+    end
+
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
 
