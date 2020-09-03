@@ -575,7 +575,7 @@ POST /grpctest
 {"name":"apisix", "items": ["a","b","c"]}
 --- more_headers
 Content-Type: application/json
---- response_body eval
-qr/\{"items":\["a","b","c"\],"message":"Hello apisix"\}/
+--- response_body
+{"items":["a","b","c"],"message":"Hello apisix"}
 --- no_error_log
 [error]
