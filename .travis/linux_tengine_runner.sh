@@ -259,6 +259,9 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
+    wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
+    tar xf etcd-v3.4.0-linux-amd64.tar.gz
+
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils
 
@@ -276,7 +279,7 @@ do_install() {
 
 script() {
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PWD/etcd-v3.4.0-linux-amd64:$PATH
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data
