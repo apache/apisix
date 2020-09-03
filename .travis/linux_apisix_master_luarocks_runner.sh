@@ -28,7 +28,6 @@ do_install() {
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-    sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
     sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev

@@ -209,7 +209,7 @@ export ETCDCTL_API=3
 For more documents, please refer to [Apache APISIX Document Index](doc/README.md)
 
 ## Dashboard
-APISIX has built-in support for Dashboard,
+APISIX has built-in support for [Dashboard](https://github.com/apache/apisix-dashboard), which could be directly deployed by docker compose.
 
 The dashboard only allows 127.0.0.1 by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
 
@@ -292,7 +292,7 @@ CNCF API Gateway Landscape.</a>
 
 ## Contributing
 
-See [CONTRIBUTING](Contributing.md) for details on submitting patches and the contribution workflow.
+See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
 ## Acknowledgments
 

@@ -267,13 +267,13 @@ local uri_route = {
         handler = run,
     },
     {
-        paths = [[/apisix/admin/stream_routes*]],
+        paths = [[/apisix/admin/stream_routes/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
         handler = run_stream,
     },
     {
         paths = [[/apisix/admin/plugins/list]],
-        methods = {"GET", "PUT", "POST", "DELETE"},
+        methods = {"GET"},
         handler = get_plugins_list,
     },
     {

@@ -54,6 +54,12 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
+    local numcerts = conf.certs and #conf.certs or 0
+    local numkeys = conf.keys and #conf.keys or 0
+    if numcerts ~= numkeys then
+        return nil, {error_msg = "mismatched number of certs and keys"}
+    end
+
     return need_id and id or true
 end
 
