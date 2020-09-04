@@ -19,6 +19,8 @@ local core = require("apisix.core")
 local plugin_name = "limit-req"
 local sleep = ngx.sleep
 local ipairs = ipairs
+local ngx = ngx
+local error = error
 
 local schema = {
     type = "object",
@@ -50,8 +52,8 @@ function _M.check_schema(conf)
     end
 
     if not conf.key then
-        -- Use key as a priority for current limiting, and if key does not exist, use headers and parameters to combine current limiting.
-        if (not conf.headers or #conf.headers <= 0) and (not conf.parameters or #conf.parameters) then
+        if (not conf.headers or #conf.headers <= 0)
+        and (not conf.parameters or #conf.parameters) then
             return false, error("key or headers or parameters can not be null")
         end
     end
