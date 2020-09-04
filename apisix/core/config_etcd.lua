@@ -333,19 +333,18 @@ local function sync_data(self)
     -- avoid space waste
     -- todo: need to cover this path, it is important.
     if self.sync_times > 100 then
-        local count_new = 0
-        local count_org = #self.values
-        for i = 1, count_org do
-            local val = self.values[i]
-            self.values[i] = nil
+        local values_org = table.clone(self.values)
+        table.clear(self.values)
+
+        for i = 1, #values_org do
+            local val = values_org[i]
             if val then
-                count_new = count_new + 1
-                self.values[count_new] = val
+                table.insert(self.values, val)
             end
         end
 
         table.clear(self.values_hash)
-        for i = 1, count_new do
+        for i = 1, #self.values do
             key = short_key(self, self.values[i].key)
             self.values_hash[key] = i
         end
