@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local bit = bit
+local bit = require("bit")
 local table = table
 local band, lshift, rshift = bit.band, bit.lshift, bit.rshift
 
