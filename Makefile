@@ -73,7 +73,7 @@ lint: utils
 .PHONY: init
 init: default
 	./bin/apisix init
-	./bin/apisix init_etcd
+	#./bin/apisix init_etcd
 
 
 ### run:              Start the apisix server

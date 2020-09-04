@@ -117,7 +117,7 @@ apisix:
 
     ./bin/apisix help
     ./bin/apisix init
-    ./bin/apisix init_etcd
+    # ./bin/apisix init_etcd
     ./bin/apisix start
 
     sleep 1

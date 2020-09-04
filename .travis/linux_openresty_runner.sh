@@ -141,7 +141,7 @@ script() {
 
     ./bin/apisix help
     ./bin/apisix init
-    ./bin/apisix init_etcd
+    # ./bin/apisix init_etcd
     ./bin/apisix start
 
     #start again  --> fial

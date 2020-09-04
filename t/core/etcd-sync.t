@@ -31,7 +31,8 @@ __DATA__
             local consumers, _ = core.config.new("/consumers", {
                 automatic = true,
                 item_schema = core.schema.consumer,
-                timeout = 0.2
+                timeout = 0.2,
+                need_reload = false
             })
 
             ngx.sleep(0.6)
@@ -69,7 +70,8 @@ prev_index updated
 
             local consumers, _ = core.config.new("/consumers", {
                 automatic = true,
-                item_schema = core.schema.consumer
+                item_schema = core.schema.consumer,
+                need_reload = false
             })
 
             ngx.sleep(0.6)
