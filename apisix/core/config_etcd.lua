@@ -140,6 +140,11 @@ function _M.upgrade_version(self, new_ver)
     end
 
     local pre_index = self.prev_index
+    if not pre_index then
+        self.prev_index = new_ver
+        return
+    end
+
     if new_ver <= pre_index then
         return
     end
@@ -476,7 +481,7 @@ function _M.new(key, opts)
         values = nil,
         need_reload = true,
         routes_hash = nil,
-        prev_index = 0,
+        prev_index = nil,
         last_err = nil,
         last_err_time = nil,
         timeout = timeout,

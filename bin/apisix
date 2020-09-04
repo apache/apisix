@@ -722,6 +722,7 @@ Usage: apisix [action] <argument>
 
 help:       show this message, then exit
 init:       initialize the local nginx.conf
+init_etcd:  initialize the data of etcd
 start:      start the apisix server
 stop:       stop the apisix server
 restart:    restart the apisix server
@@ -842,6 +843,80 @@ local function init()
 end
 _M.init = init
 
+local function init_etcd(show_output)
+    -- read_yaml_conf
+    local yaml_conf, err = read_yaml_conf()
+    if not yaml_conf then
+        error("failed to read local yaml config of apisix: " .. err)
+    end
+
+    if not yaml_conf.apisix then
+        error("failed to read `apisix` field from yaml file when init etcd")
+    end
+
+    if yaml_conf.apisix.config_center ~= "etcd" then
+        return true
+    end
+
+    if not yaml_conf.etcd then
+        error("failed to read `etcd` field from yaml file when init etcd")
+    end
+
+    local etcd_conf = yaml_conf.etcd
+
+    local timeout = etcd_conf.timeout or 3
+    local uri
+    --convert old single etcd config to multiple etcd config
+    if type(yaml_conf.etcd.host) == "string" then
+        yaml_conf.etcd.host = {yaml_conf.etcd.host}
+    end
+
+    local host_count = #(yaml_conf.etcd.host)
+
+    local etcd_ok = false
+    for index, host in ipairs(yaml_conf.etcd.host) do
+
+        local is_success = true
+
+        for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
+                                   "/plugins", "/consumers", "/node_status",
+                                   "/ssl", "/global_rules", "/stream_routes",
+                                   "/proto"}) do
+            local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
+
+            local base64 = require("basexx").to_base64
+            local uri = host .. "/v3/kv/put"
+            local post_json = '{"value":"' .. base64("init_dir") ..  '", "key":"' .. base64(key) .. '"}'
+            cmd = "curl " .. uri .. " -X POST -d '" .. post_json
+                    .. "' --connect-timeout " .. timeout
+                    .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
+
+            local res = excute_cmd(cmd)
+            if (etcd_version == "v3" and not res:find("OK", 1, true)) then
+                is_success = false
+                if (index == host_count) then
+                    error(cmd .. "\n" .. res)
+                end
+                break
+            end
+
+            if show_output then
+                print(cmd)
+                print(res)
+            end
+        end
+
+        if is_success then
+            etcd_ok = true
+            break
+        end
+    end
+
+    if not etcd_ok then
+        error("none of the configured etcd works well")
+    end
+end
+_M.init_etcd = init_etcd
 
 local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
                        .. apisix_home .. [[/conf/nginx.conf]]
@@ -860,6 +935,7 @@ function _M.start(...)
     end
 
     init(...)
+    init_etcd(...)
 
     local cmd = openresty_args
     -- print(cmd)

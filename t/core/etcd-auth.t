@@ -31,13 +31,19 @@ if ($etcd_version =~ /etcdctl version: 3.2/) {
 } else {
     plan 'no_plan';
     # Authentication is enabled at etcd and credentials are set
-    system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth enable');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" user add root:5tHkHhYkjr6cQY');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" role add root');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" user grant-role root root');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" role list');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" user user list');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" auth enable');
 
     run_tests;
 
-    # Authentication is disabled at etcd & guest access is granted
+    # Authentication is disabled at etcd
     system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" user delete root');
+    system('etcdctl --endpoints="http://127.0.0.1:2379" role delete root');
 }
 
 
