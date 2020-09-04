@@ -68,6 +68,16 @@ function _M.sleep1()
     ngx.say("ok")
 end
 
+function _M.ewma()
+    if ngx.var.server_port == "1981"
+       or ngx.var.server_port == "1982" then
+        ngx.sleep(0.2)
+    else
+        ngx.sleep(0.1)
+    end
+    ngx.print(ngx.var.server_port)
+end
+
 function _M.uri()
     -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)

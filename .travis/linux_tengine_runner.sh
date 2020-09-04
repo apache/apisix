@@ -228,7 +228,6 @@ do_install() {
 
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
-    sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
     sudo apt-get install lua5.1 liblua5.1-0-dev
@@ -243,8 +242,6 @@ do_install() {
     sudo make install > build.log 2>&1 || (cat build.log && exit 1)
     cd ..
     rm -rf luarocks-2.4.4
-
-    export GO111MOUDULE=on
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
