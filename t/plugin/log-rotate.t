@@ -51,17 +51,30 @@ __DATA__
         content_by_lua_block {
             ngx.log(ngx.ERR, "start xxxxxx")
             ngx.sleep(2.5)
-
+            local has_split_access_file = false
+            local has_split_error_file = false
             local lfs = require("lfs")
-            for file in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                ngx.say(file)
+            for fileName in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(fileName, "*_access.log") then
+                    has_split_access_file = true
+                end
+
+                if string.match(fileName, "*_error.log") then
+                    has_split_error_file = true
+                end
             end
+            
+            if not has_split_error_file or not has_split_error_file then 
+               ngx.status = 500
+            else
+               ngx.status = 200
+            end        
         }
     }
 --- request
 GET /t
---- response_body_like eval
-qr/\_error\.log[\s\S]*\_access\.log/
+--- error_code eval
+[200]
 --- no_error_log
 [error]
 
