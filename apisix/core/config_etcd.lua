@@ -320,6 +320,7 @@ local function sync_data(self)
         else
             self.sync_times = self.sync_times + 1
             self.values[pre_index] = false
+            self.values_hash[key] = nil
         end
 
     elseif res.value then
