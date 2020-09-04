@@ -884,9 +884,9 @@ local function init_etcd(show_output)
                                    "/proto"}) do
             local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
 
-            local base64 = require("basexx").to_base64
+            local base64_encode = require("apisix.core.base64").encode
             local uri = host .. "/v3/kv/put"
-            local post_json = '{"value":"' .. base64("init_dir") ..  '", "key":"' .. base64(key) .. '"}'
+            local post_json = '{"value":"' .. base64_encode("init_dir") ..  '", "key":"' .. base64_encode(key) .. '"}'
             cmd = "curl " .. uri .. " -X POST -d '" .. post_json
                     .. "' --connect-timeout " .. timeout
                     .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"

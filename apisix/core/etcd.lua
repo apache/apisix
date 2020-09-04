@@ -58,6 +58,19 @@ local function kvs_to_node(kvs)
     return node
 end
 
+local function kvs_to_nodes(res, start_index)
+    res.body.node.dir = true
+    res.body.node.nodes = {}
+    for i=start_index, #res.body.kvs do
+        if start_index == 1 then
+            res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
+        else
+            res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
+        end
+    end
+    return res
+end
+
 
 local function not_found(res)
     res.body.message = "Key not found"
@@ -67,7 +80,7 @@ local function not_found(res)
 end
 
 
-function _M.get_res_format(res, realkey)
+function _M.get_format(res, realkey)
     if res.body.error == "etcdserver: user name is empty" then
         return nil, "insufficient credentials code: 401"
     end
@@ -79,18 +92,6 @@ function _M.get_res_format(res, realkey)
     end
     res.body.action = "get"
 
-    local function kvs_to_nodes(res, start_index)
-        res.body.node.dir = true
-        res.body.node.nodes = {}
-        for i=start_index, #res.body.kvs do
-            if start_index == 1 then
-                res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
-            else
-                res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
-            end
-        end
-    end
-
     res.body.node = kvs_to_node(res.body.kvs[1])
     -- kvs.value = nil, so key is root
     if type(res.body.kvs[1].value) == "userdata" or not res.body.kvs[1].value then
@@ -98,14 +99,14 @@ function _M.get_res_format(res, realkey)
         if string.sub(res.body.node.key, -1, -1) == "/" then
             res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
         end
-        kvs_to_nodes(res, 2)
+        res = kvs_to_nodes(res, 2)
     -- key not match, so realkey is root
     elseif res.body.kvs[1].key ~= realkey then
         res.body.node.key = realkey
-        kvs_to_nodes(res, 1)
+        res = kvs_to_nodes(res, 1)
     -- first is root (in v2, root not contains value), others are nodes
     elseif #res.body.kvs > 1 then
-        kvs_to_nodes(res, 2)
+        res = kvs_to_nodes(res, 2)
     end
 
     res.body.kvs = nil
@@ -113,7 +114,7 @@ function _M.get_res_format(res, realkey)
 end
 
 
-function _M.watch_res_format(v3res)
+function _M.watch_format(v3res)
     local v2res = {}
     v2res.headers = {
         ["X-Etcd-Index"] = v3res.result.header.revision
@@ -145,7 +146,7 @@ function _M.get(key)
         return nil, err
     end
 
-    return _M.get_res_format(res, prefix .. key)
+    return _M.get_format(res, prefix .. key)
 end
 
 
