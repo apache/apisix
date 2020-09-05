@@ -60,7 +60,7 @@ __DATA__
                 end
 
                 if string.match(file_name, "__error.log$") then
-                    local f = assert(io.open(fileName,'r'))
+                    local f = assert(io.open(file_name, 'r'))
                     local content = f:read('*all')
                     f:close()
                     local index = string.find(content, "start xxxxxx")
