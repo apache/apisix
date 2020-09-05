@@ -60,8 +60,8 @@ __DATA__
                 end
 
                 if string.match(file_name, "__error.log$") then
-                    local f = assert(io.open(file_name, 'r'))
-                    local content = f:read('*all')
+                    local f = assert(io.open(ngx.config.prefix() .. "/logs/" .. file_name, "r"))
+                    local content = f:read("*all")
                     f:close()
                     local index = string.find(content, "start xxxxxx")
                     if index then    
