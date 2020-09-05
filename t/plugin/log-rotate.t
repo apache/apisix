@@ -54,13 +54,19 @@ __DATA__
             local has_split_access_file = false
             local has_split_error_file = false
             local lfs = require("lfs")
-            for fileName in lfs.dir(ngx.config.prefix() .. "/logs/") do
-                if string.match(fileName, "__access.log$") then
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "__access.log$") then
                     has_split_access_file = true
                 end
 
-                if string.match(fileName, "__error.log$") then
-                    has_split_error_file = true
+                if string.match(file_name, "__error.log$") then
+                    local f = assert(io.open(fileName,'r'))
+                    local content = f:read('*all')
+                    f:close()
+                    local index = string.find(content, "start xxxxxx")
+                    if index then    
+                        has_split_error_file = true
+                    end
                 end
             end
             
