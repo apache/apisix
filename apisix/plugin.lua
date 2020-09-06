@@ -297,6 +297,7 @@ local function merge_service_route(service_conf, route_conf)
     local new_conf = core.table.deepcopy(service_conf)
     new_conf.value.service_id = new_conf.value.id
     new_conf.value.id = route_conf.value.id
+    new_conf.modifiedIndex = route_conf.modifiedIndex
 
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
@@ -332,7 +333,8 @@ function _M.merge_service_route(service_conf, route_conf)
     core.log.info("service conf: ", core.json.delay_encode(service_conf))
     core.log.info("  route conf: ", core.json.delay_encode(route_conf))
 
-    return merged_route(route_conf, service_conf,
+    local route_service_key = route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
+    return merged_route(route_service_key, service_conf,
                         merge_service_route,
                         service_conf, route_conf)
 end
