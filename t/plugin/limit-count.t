@@ -637,3 +637,200 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 21: when the count is changed, check  the limit is correct
+--- config
+    location /t1 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 1,
+                                "time_window": 60,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-count": {
+                                    "rejected_code": 503
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }    
+--- pipelined_requests eval
+["GET /hello", "GET /hello","GET /hello","GET /t1", "GET /hello","GET /hello"]
+--- error_code eval
+[200, 200, 503, 200, 200, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: when the count is changed, check  the limit is correct(from 1 to 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-count": {
+                                    "rejected_code": 503
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+    location /t1 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 1,
+                                "time_window": 60,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-count": {
+                                    "rejected_code": 503
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- pipelined_requests eval
+["GET /t1", "GET /hello", "GET /hello", "GET /t", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 200, 200, 200, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: when the count is changed, check  the limit is correct(from 2 to 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "limit-count": {
+                                    "rejected_code": 503
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- pipelined_requests eval
+["GET /t", "GET /hello", "GET /hello", "GET /hello", "GET /t", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 503, 200, 200, 200, 503]
+--- no_error_log
+[error]
