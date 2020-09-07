@@ -78,6 +78,24 @@ fi
 
 echo "passed: change default ssl port"
 
+# check default env
+# check default ssl port
+echo "
+nginx_config:
+    envs:
+        - APISIX_PROFILE
+" > conf/config.yaml
+
+make init
+
+grep "env APISIX_PROFILE;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to update env"
+    exit 1
+fi
+
+echo "passed: change default env"
+
 # check nameserver imported
 git checkout conf/config.yaml
 
