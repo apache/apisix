@@ -35,8 +35,17 @@ fi
 
 echo "passed: 'Server: APISIX' not in nginx.conf"
 
+#make init <- no need to re-run since we don't change the config yet.
+
+# check the error_log directive uses warn level by default.
+if ! grep "error_log logs/error.log warn;" conf/nginx.conf > /dev/null; then
+    echo "failed: error_log directive doesn't use warn level by default"
+    exit 1
+fi
+
+echo "passed: error_log directive uses warn level by default"
+
 # check whether the 'reuseport' is in nginx.conf .
-make init
 
 grep -E "listen 9080.*reuseport" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
@@ -228,3 +237,25 @@ fi
 make stop
 
 echo "passed: customed config.yaml copied succeeded"
+
+# log format
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
+' > conf/config.yaml
+
+make init
+
+grep "test_access_log_format" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: access_log_format in nginx.conf doesn't change"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
+echo "passed: worker_processes number is configurable"

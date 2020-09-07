@@ -72,7 +72,7 @@ function _M.rewrite(conf)
         local ok, err = core.schema.check(conf.header_schema, headers)
         if not ok then
             core.log.error("req schema validation failed", err)
-            core.response.exit(400, err)
+            return 400, err
         end
     end
 
@@ -84,11 +84,11 @@ function _M.rewrite(conf)
         if not body then
             local filename = ngx.req.get_body_file()
             if not filename then
-                return core.response.exit(500)
+                return 500
             end
             local fd = io.open(filename, 'rb')
             if not fd then
-                return core.response.exit(500)
+                return 500
             end
             body = fd:read('*a')
         end
@@ -101,13 +101,13 @@ function _M.rewrite(conf)
 
         if not req_body then
           core.log.error('failed to decode the req body', error)
-          return core.response.exit(400, error)
+          return 400, error
         end
 
         local ok, err = core.schema.check(conf.body_schema, req_body)
         if not ok then
           core.log.error("req schema validation failed", err)
-          return core.response.exit(400, err)
+          return 400, err
         end
     end
 end

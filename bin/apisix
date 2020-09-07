@@ -94,7 +94,7 @@ worker_processes {* worker_processes *};
 worker_cpu_affinity auto;
 {% end %}
 
-error_log {* error_log *} {* error_log_level or "error" *};
+error_log {* error_log *} {* error_log_level or "warn" *};
 pid logs/nginx.pid;
 
 worker_rlimit_nofile {* worker_rlimit_nofile *};
@@ -181,6 +181,9 @@ http {
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
     lua_shared_dict skywalking-tracing-buffer    100m;
+    lua_shared_dict balancer_ewma        10m;
+    lua_shared_dict balancer_ewma_locks  10m;
+    lua_shared_dict balancer_ewma_last_touched_at 10m;
 
     # for openid-connect plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
@@ -227,7 +230,7 @@ http {
     lua_regex_match_limit 100000;
     lua_regex_cache_max_entries 8192;
 
-    log_format main '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time';
+    log_format main '{* http.access_log_format *}';
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
     open_file_cache  max=1000 inactive=60;

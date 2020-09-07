@@ -115,8 +115,6 @@ local function set_pem_ssl_key(cert, pkey)
         return false, "no request found"
     end
 
-    ngx_ssl.clear_certs()
-
     local parse_cert, err = ngx_ssl.parse_pem_cert(cert)
     if parse_cert then
         local ok, err = ngx_ssl.set_cert(parse_cert)
@@ -195,9 +193,25 @@ function _M.match_and_set(api_ctx)
 
     local matched_ssl = api_ctx.matched_ssl
     core.log.info("debug - matched: ", core.json.delay_encode(matched_ssl, true))
+
+    ngx_ssl.clear_certs()
+
     ok, err = set_pem_ssl_key(matched_ssl.value.cert, matched_ssl.value.key)
     if not ok then
         return false, err
+    end
+
+    -- multiple certificates support.
+    if matched_ssl.value.certs then
+        for i = 1, #matched_ssl.value.certs do
+            local cert = matched_ssl.value.certs[i]
+            local key = matched_ssl.value.keys[i]
+
+            ok, err = set_pem_ssl_key(cert, key)
+            if not ok then
+                return false, err
+            end
+        end
     end
 
     return true

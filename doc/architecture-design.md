@@ -55,7 +55,7 @@ apisix:
 ```
 
 Set the default listening port of APISIX to 8000, set the `etcd` address to `http://foo:2379`,
-and keep other configurations as default. The configuration in config.yaml` should be like this:
+and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
 ```yaml
 apisix:
@@ -111,7 +111,7 @@ Server: APISIX web server
 
 When we receive a successful response, it indicates that the route was successfully created.
 
-For specific options of Route, please refer to [Admin API](zh-cn/admin-api.md#route).
+For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
 [Back to top](#Table-of-contents)
 
@@ -267,6 +267,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |enable_websocket|optional| enable `websocket`(boolean), default `false`.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |desc     |optional|Identifies route names, usage scenarios, and more.|
+|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
+|upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
 
 Create an upstream object use case:
 
@@ -561,7 +563,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
-Use the [consumer-restriction](zh-cn/plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
+Use the [consumer-restriction](plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
 
 # Add Jack to the blacklist
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

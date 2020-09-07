@@ -17,32 +17,32 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/request-id.md)
+[English](../plugins/request-id.md)
 
-# Summary
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-- [**Examples**](#examples)
+# 目录
+
+- [**名称**](#名称)
+- [**属性**](#属性)
+- [**如何启用**](#如何启用)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
+- [**示例**](#示例)
 
 
-## Name
+## 名称
 
-`request-id` plugin adds a unique ID (UUID) to each request proxied through APISIX. This plugin can be used to track an
-API request. The plugin will not add a request id if the `header_name` is already present in the request.
+`request-id` 插件通过 APISIX 为每一个请求代理添加唯一 ID（UUID），以用于追踪 API 请求。该插件在 `header_name` 已经在请求中存在时不会为请求添加新的 ID
 
-## Attributes
+## 属性
 
-|Name           |Requirement    |Description|
-|---------      |--------       |-----------|
-| header_name   |optional       |Request ID header name (default: X-Request-Id)|
-| include_in_response   |optional       |Option to include the unique request ID in the response header (default: true)|
+| 名称                | 必选项 | 描述                                        |
+| ------------------- | ------ | ------------------------------------------- |
+| header_name         | 可选   | Request ID header name (默认: X-Request-Id) |
+| include_in_response | 可选   | 是否需要在返回头中包含该唯一ID (默认: true) |
 
-## How To Enable
+## 如何启用
 
-Create a route and enable the request-id plugin on the route:
+创建一条路由并在该路由上启用 `request-id` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -62,17 +62,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-## Test Plugin
+## 测试插件
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
 ```
 
-## Disable Plugin
+## 禁用插件
 
-Remove the corresponding json configuration in the plugin configuration to disable the `request-id`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+在路由 `plugins` 配置块中删除 `request-id 配置，即可禁用该插件，无需重启 APISIX。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

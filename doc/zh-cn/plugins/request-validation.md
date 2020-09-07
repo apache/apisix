@@ -20,14 +20,14 @@
 - [English](../../plugins/request-validation.md)
 
 # 目录
-- [**名字**](#名字)
+- [**名称**](#名称)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 - [**示例**](#示例)
 
-## 名字
+## 名称
 
 `request-validation` 插件用于提前验证请求向上游转发请求，可以验证请求的 `body` 及 `header` 数据。
 
@@ -63,10 +63,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -95,10 +95,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```

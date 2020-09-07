@@ -141,11 +141,11 @@ function _M.rewrite(conf, ctx)
         if not new_uri then
             core.log.error("failed to generate new uri by: ", uri, " error: ",
                            err)
-            core.response.exit(500)
+            return 500
         end
 
         core.response.set_header("Location", new_uri)
-        core.response.exit(ret_code)
+        return ret_code
     end
 end
 

@@ -86,6 +86,7 @@ Plugins
 * [kafka-logger](plugins/kafka-logger.md): Log requests to External Kafka servers.
 * [udp-logger](plugins/udp-logger.md): Log requests to UDP servers.
 * [sys-log](plugins/syslog.md): Log requests to Syslog.
+* [log-rotate](plugins/log-rotate.md): Rotate access/error log files.
 
 Deploy
 =======
