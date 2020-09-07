@@ -398,21 +398,11 @@ function _M.http_access_phase()
             return core.response.exit(404)
         end
 
-        local changed
-        route, changed = plugin.merge_service_route(service, route)
+        route = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
-
-        if changed then
-            api_ctx.conf_type = "route&service"
-            api_ctx.conf_version = route.modifiedIndex .. "&"
-                                   .. service.modifiedIndex
-            api_ctx.conf_id = route.value.id .. "&"
-                              .. service.value.id
-        else
-            api_ctx.conf_type = "service"
-            api_ctx.conf_version = service.modifiedIndex
-            api_ctx.conf_id = service.value.id
-        end
+        api_ctx.conf_type = "route&service"
+        api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
+        api_ctx.conf_id = route.value.id .. "&" .. service.value.id
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex

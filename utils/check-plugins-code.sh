@@ -17,25 +17,29 @@
 # limitations under the License.
 #
 
+RED="\033[1;31m";
+NC="\033[0m"; # No Color
+hit=0
 
 checkfunc () {
     funccontent=$1
-    [[ $funccontent =~ "core.response.exit" ]] && echo "can't exit in rewrite or access phase !" && exit 1
-    [[ $funccontent =~ "ngx.exit" ]] && echo "can't exit in rewrite or access phase !" && exit 1
-    echo "passed."
+    file=$2
+    [[ $funccontent =~ "core.response.exit" ]] && echo -e ${RED}${file}${NC} && echo "    can't exit in rewrite or access phase!" && ((hit++))
+    [[ $funccontent =~ "ngx.exit" ]] && echo -e ${RED}${file}${NC} && echo "    can't exit in rewrite or access phase!" && ((hit++))
 }
 
 
 filtercode () {
     content=$1
+    file=$2
 
     rcontent=${content##*_M.rewrite}
     rewritefunc=${rcontent%%function*}
-    checkfunc "$rewritefunc"
+    checkfunc "$rewritefunc" "$file"
 
     rcontent=${content##*_M.access}
     accessfunc=${rcontent%%function*}
-    checkfunc "$accessfunc"
+    checkfunc "$accessfunc" "$file"
 }
 
 
@@ -43,14 +47,18 @@ for file in apisix/plugins/*.lua
 do
     if test -f $file
     then
-        echo $file
         content=$(cat $file)
-        filtercode "$content"
+        filtercode "$content" "$file"
     fi
 done
+
+if (($hit>0))
+then
+    exit 1
+fi
 
 # test case for check
 content=$(cat t/fake-plugin-exit.lua)
 filtercode "$content" > test.log 2>&1 || (cat test.log && exit 1)
 
-echo "done."
+echo "All passed."

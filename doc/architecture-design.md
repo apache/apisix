@@ -109,7 +109,7 @@ Server: APISIX web server
 
 When we receive a successful response, it indicates that the route was successfully created.
 
-For specific options of Route, please refer to [Admin API](zh-cn/admin-api.md#route).
+For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
 [Back to top](#Table-of-contents)
 
@@ -561,7 +561,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
-Use the [consumer-restriction](zh-cn/plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
+Use the [consumer-restriction](plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
 
 # Add Jack to the blacklist
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
