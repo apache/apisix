@@ -79,7 +79,6 @@ fi
 echo "passed: change default ssl port"
 
 # check default env
-# check default ssl port
 echo "
 nginx_config:
     envs:
