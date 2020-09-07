@@ -116,7 +116,7 @@ nginx_config:                     # config for render the template to genarate n
   event:
     worker_connections: 10620
   envs:
-    - TEST
+    - APISIX_PROFILE
   http:
     access_log: "logs/access.log"
     access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time"
