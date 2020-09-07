@@ -162,6 +162,9 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
+	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/stream/plugins
 	$(INSTALL) apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/stream/plugins/
 
