@@ -16,10 +16,14 @@
 #
 
 apiVersion: v1
-data:
-  config.yaml: |
-    #CONFIG_YAML#
 kind: ConfigMap
 metadata:
   name: apisix-gw-config.yaml
   # namespace: default
+data:
+  config.yaml: |
+  etcd:
+    host:
+      - "http://127.0.0.1:2379" ## you can replace the etcd address here
+
+

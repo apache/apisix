@@ -21,16 +21,7 @@
 There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
-- use `etcd` , if there is no `etcd` service, please install and set env `etcd_url` in `config.sh`
-
-- Run `config.sh` to generate `apisix-gw-config-cm.yaml` from the latest `config.yaml`
-
-```
-# if config.sh have no permission to executethen, then execute `chmod +x config.sh`
-# Generate apisix-gw-config-cm.yaml
-# sh config.sh
-```
-
+- use `etcd` , if there is no `etcd` service, please install and set etcd address in `apisix-gw-config-cm.yaml`
 
 #### when using etcd-operator
 when using etcd-operator, you need to change apisix-gw-config-cm.yaml:
@@ -57,11 +48,15 @@ etcd:
 
 #### Create configmap for apache apisix
 
+you will change some config by use `apisix-gw-config-cm.yaml`
+
 ```
 $ kubectl apply -f apisix-gw-config-cm.yaml
 
-or
+```
 
+or, if you do not need to change any config, and use default config in `../conf/config.yaml`
+```
 $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
 
