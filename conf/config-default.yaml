@@ -65,21 +65,6 @@ apisix:
     admin_ssl_cert_key: ""         # Path of your self-signed server side key.
     admin_ssl_ca_cert: ""          # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
 
-  # Default token when use API to call for Admin API.
-  # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
-  # Disabling this configuration item means that the Admin API does not
-  # require any authentication.
-  # admin_key:
-  #   -
-  #     name: "admin"
-  #     key: YOUR_ADMIN_API_KEY
-  #     role: admin                 # admin: manage all configuration data
-  #                                 # viewer: only can view configuration data
-  #   -
-  #     name: "viewer"
-  #     key: YOUR_VIEWER_API_KEY
-  #     role: viewer
-
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
