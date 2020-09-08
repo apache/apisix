@@ -19,6 +19,7 @@
 set -ex
 
 export_or_prefix() {
+    export RANDOM_ADMIN_KEY=`cat /dev/urandom|head -n 10|md5sum|head -c 16`
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
 }
 
@@ -138,7 +139,7 @@ apisix:
   admin_key:
     -
       name: "admin"
-      key: YOUR_API_KEY
+      key: $RANDOM_ADMIN_KEY
       role: admin
 EOF
     ./bin/apisix help
