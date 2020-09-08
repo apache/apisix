@@ -32,6 +32,7 @@ __DATA__
 
             ngx.say("node_listen: ", config.apisix.node_listen)
             ngx.say("stream_proxy: ", encode_json(config.apisix.stream_proxy))
+            config.apisix.admin_key.key = nil
             ngx.say("admin_key: ", encode_json(config.apisix.admin_key))
         }
     }
@@ -40,7 +41,7 @@ GET /t
 --- response_body
 node_listen: 1984
 stream_proxy: {"tcp":[9100]}
-admin_key: [{"key":"8483108f2b40b827_test_key","name":"admin","role":"admin"}]
+admin_key: [{"name":"admin","role":"admin"}]
 
 
 

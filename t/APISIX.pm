@@ -27,6 +27,8 @@ no_shuffle();
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
+my $admin_api_key = `cat /dev/urandom|head -n 10|md5sum|head -c 16`;
+$ENV{APISIX_API_ADMIN_KEY} = $admin_api_key;
 
 sub read_file($) {
     my $infile = shift;
@@ -86,7 +88,7 @@ apisix:
   admin_key:
     -
       name: "admin"
-      key: TEST_API_KEY
+      key: $admin_api_key
       role: admin
 _EOC_
 
@@ -126,6 +128,7 @@ add_block_preprocessor(sub {
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env APISIX_API_ADMIN_KEY;
 _EOC_
 
     $block->set_value("main_config", $main_config);

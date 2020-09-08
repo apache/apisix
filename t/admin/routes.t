@@ -2024,7 +2024,7 @@ GET /t
                     path = '/apisix/admin/routes/1?ttl=1',
                     method = "GET",
                     headers = {
-                        ["X-API-KEY"] = "8483108f2b40b827_test_key"
+                        ["X-API-KEY"] = os.getenv("APISIX_API_ADMIN_KEY")
                     }
                 }
             )

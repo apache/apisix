@@ -26,7 +26,7 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $more_headers = <<_EOC_;
-X-API-KEY: 8483108f2b40b827_test_key
+X-API-KEY: $ENV{APISIX_API_ADMIN_KEY}
 _EOC_
     $block->set_value("more_headers", $more_headers);
 });
