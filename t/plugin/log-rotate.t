@@ -22,6 +22,8 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+my $admin_api_key = $ENV{APISIX_API_ADMIN_KEY};
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -31,7 +33,7 @@ apisix:
   admin_key:
     -
       name: "admin"
-      key: 8483108f2b40b827_test_key
+      key: $admin_api_key
       role: admin
 
 plugins:                          # plugin list

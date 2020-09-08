@@ -128,7 +128,7 @@ function _M.test(uri, method, body, pattern, headers)
     end
     if not headers["Content-Type"] then
         headers["Content-Type"] = "application/x-www-form-urlencoded"
-        headers["X-API-KEY"] = "8483108f2b40b827_test_key"
+        headers["X-API-KEY"] = os.getenv("APISIX_API_ADMIN_KEY")
     end
 
     if type(body) == "table" then

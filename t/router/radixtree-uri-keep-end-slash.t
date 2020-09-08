@@ -22,6 +22,8 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
+my $admin_api_key = $ENV{APISIX_API_ADMIN_KEY};
+
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
@@ -29,7 +31,7 @@ apisix:
     admin_key:
         -
             name: "admin"
-            key: 8483108f2b40b827_test_key
+            key: $admin_api_key
             role: admin
 _EOC_
 
