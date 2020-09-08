@@ -19,6 +19,7 @@
 set -ex
 
 export_or_prefix() {
+    export RANDOM_ADMIN_KEY=`cat /dev/urandom|head -n 10|md5sum|head -c 16`
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
     export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
 }
@@ -67,7 +68,7 @@ apisix:
   admin_key:
     -
       name: "admin"
-      key: YOUR_API_KEY
+      key: $RANDOM_ADMIN_KEY
       role: admin
 EOF
     sudo PATH=$PATH apisix help
