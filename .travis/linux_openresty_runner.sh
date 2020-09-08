@@ -164,7 +164,7 @@ script() {
     ./bin/apisix stop
     sleep 1
 
-    sudo sh ./utils/check-plugins-code.sh
+    sudo bash ./utils/check-plugins-code.sh
 
     make lint && make license-check || exit 1
     APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
