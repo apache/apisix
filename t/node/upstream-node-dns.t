@@ -28,7 +28,7 @@ apisix:
     admin_key:
         -
         name: "admin"
-        key: TEST_API_KEY
+        key: 8483108f2b40b827_test_key
         role: admin
 _EOC_
 
@@ -38,7 +38,7 @@ add_block_preprocessor(sub {
     $block->set_value("yaml_config", $yaml_config);
 
     my $more_headers = <<_EOC_;
-X-API-KEY: TEST_API_KEY
+X-API-KEY: 8483108f2b40b827_test_key
 _EOC_
     $block->set_value("more_headers", $more_headers);
 

@@ -29,7 +29,7 @@ apisix:
     admin_key:
         -
             name: "admin"
-            key: TEST_API_KEY
+            key: 8483108f2b40b827_test_key
             role: admin
 _EOC_
 
