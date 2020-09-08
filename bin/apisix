@@ -279,6 +279,7 @@ http {
         local dns_resolver = { {% for _, dns_addr in ipairs(dns_resolver or {}) do %} "{*dns_addr*}", {% end %} }
         local args = {
             dns_resolver = dns_resolver,
+            customed_yaml = customed_yaml,
         }
         apisix.http_init(args)
     }
@@ -600,7 +601,7 @@ local function merge_conf(base, new_tab)
 end
 
 
-local function read_yaml_conf()
+local function read_yaml_conf(customed_yaml)
     local profile = require("apisix.core.profile")
     profile.apisix_home = apisix_home .. "/"
     local local_conf_path = profile:yaml_path("config-default")
@@ -614,7 +615,11 @@ local function read_yaml_conf()
         return nil, "invalid config-default.yaml file"
     end
 
-    local_conf_path = profile:yaml_path("config")
+    if customed_yaml then
+        local_conf_path = customed_yaml
+    else
+        local_conf_path = profile:yaml_path("config")
+    end
     local user_conf_yaml, err = read_file(local_conf_path)
     if not user_conf_yaml then
         return nil, err
@@ -731,14 +736,14 @@ version:    print the version of apisix
 ]])
 end
 
-local function init()
+local function init(customed_yaml)
     if is_root_path then
         print('Warning! Running apisix under /root is only suitable for development environments'
             .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
     end
 
     -- read_yaml_conf
-    local yaml_conf, err = read_yaml_conf()
+    local yaml_conf, err = read_yaml_conf(customed_yaml)
     if not yaml_conf then
         error("failed to read local yaml config of apisix: " .. err)
     end
@@ -821,6 +826,8 @@ local function init()
         sys_conf["dns_resolver"] = dns_addrs
     end
 
+    sys_conf["customed_yaml"] = customed_yaml
+
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
 
@@ -843,9 +850,9 @@ local function init()
 end
 _M.init = init
 
-local function init_etcd(show_output)
+local function init_etcd()
     -- read_yaml_conf
-    local yaml_conf, err = read_yaml_conf()
+    local yaml_conf, err = read_yaml_conf(customed_yaml)
     if not yaml_conf then
         error("failed to read local yaml config of apisix: " .. err)
     end
@@ -909,10 +916,6 @@ local function init_etcd(show_output)
                 break
             end
 
-            if show_output and show_output ~= "-c" then
-                print(cmd)
-                print(res)
-            end
         end
 
         if is_success then
@@ -930,7 +933,7 @@ _M.init_etcd = init_etcd
 local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
                        .. apisix_home .. [[/conf/nginx.conf]]
 
-function _M.start(...)
+function _M.start()
     -- check running
     local pid_path = apisix_home .. "/logs/nginx.pid"
     local pid, err = read_file(pid_path)
@@ -955,12 +958,13 @@ function _M.start(...)
     local local_conf_path = profile:yaml_path("config")
 
     if customed_yaml then
-        local cmd = "cp " .. customed_yaml .. " " .. local_conf_path
-        os.execute(cmd)
+        -- local cmd = "cp " .. customed_yaml .. " " .. local_conf_path
+        -- os.execute(cmd)
+        print("Use customed yaml: ", customed_yaml)
     end
 
-    init(...)
-    init_etcd(...)
+    init(customed_yaml)
+    init_etcd(customed_yaml)
 
     local cmd = openresty_args
     -- print(cmd)
