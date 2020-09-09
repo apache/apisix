@@ -32,7 +32,7 @@ __DATA__
 
             ngx.say("node_listen: ", config.apisix.node_listen)
             ngx.say("stream_proxy: ", encode_json(config.apisix.stream_proxy))
-            config.apisix.admin_key.key = nil
+            config.apisix.admin_key[1].key = nil
             ngx.say("admin_key: ", encode_json(config.apisix.admin_key))
         }
     }
