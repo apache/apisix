@@ -59,7 +59,7 @@ function _M.check_schema(conf)
 end
 
 
-local function create_tracer(conf)
+local function create_tracer(conf,ctx)
 
     local headers = core.request.headers(ctx)
 
@@ -109,7 +109,7 @@ function _M.rewrite(plugin_conf, ctx)
     end
 
     local tracer = core.lrucache.plugin_ctx(plugin_name .. '#' .. conf.server_addr, ctx,
-                                            create_tracer, conf)
+                                            create_tracer, conf, ctx)
 
     ctx.opentracing_sample = tracer.sampler:sample()
     if not ctx.opentracing_sample then
