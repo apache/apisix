@@ -29,7 +29,7 @@ return function(plugin_name, priority)
             phase = {
                 type = "string",
                 -- the default phase is access
-                enum = {"rewrite", "access", "header_filer", "body_filter",
+                enum = {"rewrite", "access", "header_filter", "body_filter",
                         "log", "balancer"}
             },
             functions = {
@@ -116,8 +116,8 @@ return function(plugin_name, priority)
         call_funcs('balancer', conf, ctx)
     end
 
-    function _M.header_filer(conf, ctx)
-        call_funcs('header_filer', conf, ctx)
+    function _M.header_filter(conf, ctx)
+        call_funcs('header_filter', conf, ctx)
     end
 
     function _M.body_filter(conf, ctx)
