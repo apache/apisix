@@ -60,6 +60,24 @@ end
 
 
 local function create_tracer(conf)
+
+    local headers = core.request.headers(ctx)
+
+-- X-B3-Sampled: if an upstream decided to sample this request, we do too.
+    local sample = headers["x-b3-sampled"]
+    if sample == "1" or sample == "true" then
+        conf.sample_ratio = 1
+    elseif sample == "0" or sample == "false" then
+        conf.sample_ratio = 0
+    end
+
+-- X-B3-Flags: if it equals '1' then it overrides sampling policy
+-- We still want to warn on invalid sample header, so do this after the above
+    local debug = headers["x-b3-flags"]
+    if debug == "1" then
+        conf.sample_ratio = 1
+    end
+
     local tracer = new_tracer(new_reporter(conf), new_random_sampler(conf))
     tracer:register_injector("http_headers", zipkin_codec.new_injector())
     tracer:register_extractor("http_headers", zipkin_codec.new_extractor())

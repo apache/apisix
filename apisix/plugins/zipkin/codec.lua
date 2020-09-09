@@ -35,26 +35,6 @@ end
 
 local function new_extractor()
     return function(headers)
--- X-B3-Sampled: if an upstream decided to sample this request, we do too.
-        local sample = headers["x-b3-sampled"]
-        if sample == "1" or sample == "true" then
-            sample = true
-        elseif sample == "0" or sample == "false" then
-            sample = false
-        elseif sample ~= nil then
-            core.log.warn("x-b3-sampled header invalid; ignoring.")
-            sample = nil
-        end
-
--- X-B3-Flags: if it equals '1' then it overrides sampling policy
--- We still want to warn on invalid sample header, so do this after the above
-        local debug = headers["x-b3-flags"]
-        if debug == "1" then
-            sample = true
-        elseif debug ~= nil then
-            core.log.warn("x-b3-flags header invalid; ignoring.")
-        end
-
         local had_invalid_id = false
 
         local trace_id = headers["x-b3-traceid"]
