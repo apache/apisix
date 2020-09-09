@@ -29,7 +29,7 @@ return function(plugin_name, priority)
             phase = {
                 type = "string",
                 -- the default phase is access
-                enum = {"rewrite", "access", "header_filer", "body_filter",
+                enum = {"rewrite", "access", "header_filter", "body_filter",
                         "log", "balancer"}
             },
             functions = {
