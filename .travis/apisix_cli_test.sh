@@ -268,17 +268,13 @@ echo "passed: worker_processes number is configurable"
 
 # log format
 
-echo '
+echo "
 apisix:
-    admin_key:
-        -
-        name: admin
-        key: test_admin_key
-        role: admin
+    $ADMIN_KEY
 nginx_config:
     http:
-        access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
-' > conf/config.yaml
+        access_log_format: \"\$remote_addr - \$remote_user [\$time_local] \$http_host test_access_log_format\"
+" > conf/config.yaml
 
 make init
 
