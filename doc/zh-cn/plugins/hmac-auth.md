@@ -1,0 +1,129 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+- [English](../../plugins/hmac-auth.md)
+
+# 目录
+- [**名字**](#名字)
+- [**属性**](#属性)
+- [**如何启用**](#如何启用)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
+
+
+## 名字
+
+`hmac-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+
+添加 HMAC Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其签名添加到请求头以验证其请求。
+
+## 属性
+
+* `access_key`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。
+* `secret_key`: 与 `access_key` 配对使用。
+* `algorithm`：可选字段，加密算法。目前支持 `hmac-sha1`, `hmac-sha256` 和 `hmac-sha512`，如果未指定，则默认使用 `hmac-sha256`。
+* `clock_skew`: 可选字段，签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。
+
+## 如何启用
+
+1. 创建一个 consumer 对象，并设置插件 `hmac-auth` 的值。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "hmac-auth": {
+            "access_key": "user-key",
+            "secret_key": "my-secret-key",
+            "clock_skew": 10
+        }
+    }
+}'
+```
+
+2. 创建 Route 或 Service 对象，并开启 `hmac-auth` 插件。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "hmac-auth": {}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+## Test Plugin
+
+#### 签名生成公式
+
+签名的计算公式为 `signature = HMAC-SHA256-HEX(secret_key, signning_string)`，从公式可以看出，想要获得签名需要得到 secret_key 和 signning_string 两个参数。其中 secret_key 为对应 consumer 所配置的， signning_string 的计算公式为： signning_string = HTTP Method + HTTP URI + CanonicalQueryString + BODY HASH + access_key + timestamp + secret_key
+
+1. HTTP Method
+指HTTP协议中定义的GET、PUT、POST等请求方法，必须使用全大写的形式。
+2. CanonicalURI
+CanonicalURI是对URL中的绝对路径进行编码后的结果，即CanonicalURI = UriEncodeExceptSlash(Path)。要求绝对路径Path必须以“/”开头，不以“/”开头的需要补充上，空路径为“/”。
+
+3. CanonicalQueryString
+CanonicalQueryString是对于URL中的Query String（Query String即URL中“？”后面的“key1 = valve1 & key2 = valve2 ”字符串）进行编码后的结果。
+
+编码步骤如下：
+
+提取URL中的Query String项，即URL中“？”后面的“key1 = valve1 & key2 = valve2 ”字符串。
+将Query String根据&分隔符拆开成若干项，每一项是key=value或者只有key的形式。
+对拆开后的每一项进行编码处理，分以下三种情况。
+
+当该项的key是authorization时，直接忽略该项。
+当该项只有key时，转换公式为UriEncode(key) + "="的形式。
+当该项是key=value的形式时，转换公式为 UriEncode(key) + "=" + UriEncode(value) 的形式。这里value可以是空字符串。
+将每一项转换后的字符串按照字典顺序（ASCII码由小到大）排序，并使用& 符号连接起来，生成相应的CanonicalQueryString。
+
+
+
+#### 使用生成好的签名进行请求尝试
+
+
+
+## 禁用插件
+
+当你想去掉 `hmac-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
+
+```shell
+$ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "id": 1,
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```

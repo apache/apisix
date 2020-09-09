@@ -17,6 +17,8 @@
 local ngx        = ngx
 local type       = type
 local select     = select
+local abs        = math.abs
+local ngx_time   = ngx.time
 local str_fmt    = string.format
 local ngx_req    = ngx.req
 local pairs      = pairs
@@ -27,6 +29,7 @@ local core       = require("apisix.core")
 local hmac       = require("resty.hmac")
 local consumer   = require("apisix.consumer")
 local ngx_decode_base64 = ngx.decode_base64
+
 local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
 local ALGORITHM_KEY = "X-HMAC-ALGORITHM"
 local TIMESTAMP_KEY = "X-HMAC-TIMESTAMP"
@@ -42,7 +45,16 @@ local schema = {
             type = "string",
             enum = {"hmac-sha1", "hmac-sha256", "hmac-sha512"},
             default = "hmac-sha256"
+        },
+        clock_skew = {
+            type = "integer",
+            default = 0
         }
+    },
+    dependencies = {
+        ["access_key"] = {"secret_key"},
+        ["secret_key"] = {"access_key"},
+        ["algorithm"]  = {"secret_key", "access_key"}
     }
 }
 
@@ -55,14 +67,14 @@ local _M = {
 }
 
 local hmac_funcs = {
-    ["hmac-sha1"] = function(secret, message)
-        return hmac_sha1(secret, message)
+    ["hmac-sha1"] = function(secret_key, message)
+        return hmac_sha1(secret_key, message)
     end,
-    ["hmac-sha256"] = function(secret, message)
-        return hmac:new(secret, hmac.ALGOS.SHA256):final(message)
+    ["hmac-sha256"] = function(secret_key, message)
+        return hmac:new(secret_key, hmac.ALGOS.SHA256):final(message)
     end,
-    ["hmac-sha512"] = function(secret, message)
-        return hmac:new(secret, hmac.ALGOS.SHA512):final(message)
+    ["hmac-sha512"] = function(secret_key, message)
+        return hmac:new(secret_key, hmac.ALGOS.SHA512):final(message)
     end,
 }
 
@@ -111,14 +123,14 @@ function _M.check_schema(conf)
 end
 
 
-local function get_secret(access_key)
+local function get_consumer(access_key)
     if not access_key then
-        return nil, nil, {message = "missing access key"}
+        return nil, {message = "missing access key"}
     end
 
     local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
-        return nil, nil, {message = "Missing related consumer"}
+        return nil, {message = "Missing related consumer"}
     end
 
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
@@ -127,20 +139,18 @@ local function get_secret(access_key)
 
     local consumer = consumers[access_key]
     if not consumer then
-        return nil, nil, {message = "Invalid access key"}
+        return nil, {message = "Invalid access key"}
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    local secret = consumer.auth_conf and consumer.auth_conf.secret
-
-    return secret, consumer, nil
+    return consumer, nil
 end
 
 
 local function generate_signature(ctx, secret_key, params)
-    --local canonical_uri = ctx.var.uri
+    local canonical_uri = ctx.var.uri
     local canonical_query_string = ""
-    --local request_method = ngx_req.get_method()
+    local request_method = ngx_req.get_method()
     local args = ngx_req.get_uri_args()
 
     if type(args) == "table" then
@@ -168,30 +178,51 @@ local function generate_signature(ctx, secret_key, params)
         canonical_query_string = core.table.concat(query_tab, "&")
     end
 
-    local signing_string = canonical_query_string .. params.ak ..
-        params.timestamp .. params.secret_key
+    local body_hash = ""
+    if request_method == "PUT" or request_method == "POST" or request_method == "PATCH" then
+        local req_body, _ = core.request.get_body()
+        if req_body then
+            body_hash = ngx.md5(req_body)
+        end
+    end
+
+    local signing_string = request_method .. canonical_uri ..  canonical_query_string ..
+    body_hash .. params.access_key .. params.timestamp .. secret_key
 
     return hmac_funcs[params.algorithm](secret_key, signing_string)
 end
 
 
-local function validate_signature(ctx, params)
-    local local_conf = core.config.local_conf()
-    local access_key = ACCESS_KEY
-
-    if try_attr(local_conf, "plugin_attr", "hmac-auth") then
-        local attr = local_conf.plugin_attr["hmac-auth"]
-        access_key = attr.access_key or access_key
+local function validate(ctx, params)
+    if not params.access_key or not params.signature then
+        return false, nil, {message = "access key or signature missing"}
     end
 
-    local akey = core.request.header(ctx, access_key)
-    local secret_key, consumer, err = get_secret(akey)
+    local consumer, err = get_consumer(params.access_key)
     if err then
         return false, nil, err
     end
 
-    local request_signature = ngx_decode_base64(params.signature)
+    local conf = consumer.auth_conf
+    if conf.algorithm ~= params.algorithm then
+        return false, nil, {message = str_fmt("algorithm %s not supported", params.algorithm)}
+    end
+
+    core.log.info("conf.clock_skew:", conf.clock_skew)
+    if conf.clock_skew and conf.clock_skew > 0 then
+        local diff = abs(ngx_time() - params.timestamp)
+        core.log.info("conf.diff:", diff)
+        if diff > conf.clock_skew then
+          return false, nil, {message = "Invalid timestamp"}
+        end
+    end
+
+    local secret_key          = conf and conf.secret_key
+    local request_signature   = ngx_decode_base64(params.signature)
     local generated_signature = generate_signature(ctx, secret_key, params)
+
+    core.log.info("request_signature:", request_signature)
+    core.log.info("generated_signature:", generated_signature)
 
     return request_signature == generated_signature, consumer
 end
@@ -217,44 +248,31 @@ local function get_params(ctx)
     local algorithm = core.request.header(ctx, algorithm_key)
     local timestamp = core.request.header(ctx, timestamp_key)
 
-    params.ak = ak
-    params.algorithm = algorithm
-    params.signature = signature
-    params.timestamp = timestamp
+    params.access_key = ak
+    params.algorithm  = algorithm
+    params.signature  = signature
+    params.timestamp  = timestamp or 0
 
     return params
 end
 
 
-local function validate_params(params, conf)
-    if not params.ak and params.signature then
-      return false, {message = "access key or signature missing"}
-    end
-
-    if conf.algorithm ~= params.algorithm then
-        return false, {message = str_fmt("algorithm %s not supported", params.algorithm)}
-    end
-
-    return true
-end
-
-
 function _M.rewrite(conf, ctx)
     local params = get_params(ctx)
-    local ok, err = validate_params(params)
-    if not ok then
+    local ok, validated_consumer, err = validate(ctx, params)
+    if err then
         return 401, err
     end
 
-    local ok, consumer, err = validate_signature(ctx, params)
     if not ok then
-        return 401, err
+        return 401, {message = "Invalid signature"}
     end
 
-    ctx.consumer = consumer
-    ctx.consumer_id = consumer.consumer_id
-    ctx.consumer_ver = conf.conf_version
-    core.log.info("hit jwt-auth rewrite")
+    local consumer_conf = consumer.plugin(plugin_name)
+    ctx.consumer = validated_consumer
+    ctx.consumer_id = validated_consumer.consumer_id
+    ctx.consumer_ver = consumer_conf.conf_version
+    core.log.info("hit hmac-auth rewrite")
 end
 
 
