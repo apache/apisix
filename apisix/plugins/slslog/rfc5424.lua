@@ -64,18 +64,28 @@ local Severity = {
     ["DEBUG"] = LOG_DEBUG,
 }
 local os_date = os.date
-local ngx_time = ngx.time
+local ngx = ngx
 local string_format = string.format
-local rfc5424_timestamp_format = "%b %d %H:%M:%S"
-local rfc5424_format = "<%d>%s %s %s[%d]: %s\n"
+local rfc5424_timestamp_format = "!%Y-%m-%dT%H:%M:%S.000Z"
+local rfc5424_format = "<%d>1 %s %s %s %d - [logservice project=\"%s\" logstore=\"%s\" access-key-id=\"%s\" access-key-secret=\"%s\"] %s\n"
 
-local _M = { _VERSION = '0.1.0' }
+local _M = { version = 0.1 }
 
-function _M.encode(facility, severity, hostname, pid, appname, msg)
+function _M.encode(facility, severity, hostname, appname, pid, project, logstore, access_key_id, access_key_secret, msg)
     local pri = (Facility[facility] * 8 + Severity[severity])
-    local t = os_date(rfc5424_timestamp_format, ngx_time())
+    ngx.update_time()
+    local t = os_date(rfc5424_timestamp_format, ngx.now())
 
-    return string_format(rfc5424_format, pri, t, hostname, appname, pid, msg)
+    if not hostname then
+        hostname = "-"
+    end
+
+    if not appname then
+        appname = "-"
+    end
+
+    return string_format(rfc5424_format, pri, t, hostname, appname, pid, project,
+     logstore, access_key_id, access_key_secret, msg)
 end
 
 return _M
