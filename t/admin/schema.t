@@ -157,7 +157,7 @@ location /t {
             [[{
                 "properties": {
                     "phase": {
-                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "enum": ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"],
                         "type": "string"
                     },
                     "functions": {
@@ -197,7 +197,7 @@ location /t {
             [[{
                 "properties": {
                     "phase": {
-                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "enum": ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"],
                         "type": "string"
                     },
                     "functions": {
