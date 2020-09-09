@@ -99,7 +99,7 @@ local function new_extractor()
         request_span_id = from_hex(request_span_id)
 
         return new_span_context(trace_id, request_span_id, parent_span_id,
-                                 sample, baggage)
+                                 baggage)
     end
 end
 
