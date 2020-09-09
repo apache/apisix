@@ -167,7 +167,7 @@ EOF
     sleep 1
     cat logs/error.log
 
-    sudo sh RANDOM_ADMIN_KEY=$RANDOM_ADMIN_KEY ./t/grpc-proxy-test.sh
+    sudo RANDOM_ADMIN_KEY=$RANDOM_ADMIN_KEY sh ./t/grpc-proxy-test.sh
     sleep 1
 
     ./bin/apisix stop
