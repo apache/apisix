@@ -1071,3 +1071,96 @@ GET /t
 --- response_body
 connected: 1
 ssl handshake: userdata
+
+
+
+=== TEST 24: set ssl(sni: *.test2.com) once again
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("conf/cert/test2.crt")
+        local ssl_key =  t.read_file("conf/cert/test2.key")
+        local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "sni": "*.test2.com"
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: caching of parsed certs and pkeys
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        local work = function()
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "www.test2.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            ngx.say("ssl handshake: ", type(sess))
+            local ok, err = sock:close()
+            ngx.say("close: ", ok, " ", err)
+        end  -- do
+
+        work()
+        work()
+
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body eval
+qr{connected: 1
+ssl handshake: userdata
+close: 1 nil
+connected: 1
+ssl handshake: userdata
+close: 1 nil}
+--- grep_error_log eval
+qr/parsing (cert|(priv key)) for sni: www.test2.com/
+--- grep_error_log_out
+parsing cert for sni: www.test2.com
+parsing priv key for sni: www.test2.com
