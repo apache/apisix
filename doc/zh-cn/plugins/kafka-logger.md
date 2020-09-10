@@ -42,9 +42,9 @@
 |---------     |--------|-----------|
 | broker_list |必须| 要推送的 kafka 的 broker 列表。|
 | kafka_topic |必须| 要推送的 topic。|
-| timeout |可选| 发送数据的超时时间。|
 | key |必须| 用于加密消息的密钥。|
-| name |必须| batch processor 的唯一标识。|
+| timeout |可选| 发送数据的超时时间。|
+| name |可选| batch processor 的唯一标识。|
 | batch_max_size |可选| 批量发送的消息最大数量，当到达该阀值后会立即发送消息|
 | inactive_timeout |可选| 不活跃时间，如果在该时间范围内都没有消息写入缓冲区，那么会立即发送到 kafka。默认值： 5(s)|
 | buffer_duration |可选| 缓冲周期，消息停留在缓冲区的最大时间，当超过该时间时会立即发送到 kafka。默认值： 60(s)|
