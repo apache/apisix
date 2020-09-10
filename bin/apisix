@@ -956,7 +956,7 @@ function _M.start(...)
 
     if customed_yaml then
         os.execute("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
-        os.execute("ln -s " .. customed_yaml .. " " .. local_conf_path)
+        os.execute("ln " .. customed_yaml .. " " .. local_conf_path)
         print("Use customed yaml: ", customed_yaml)
     end
 
