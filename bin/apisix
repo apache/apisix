@@ -955,8 +955,8 @@ function _M.start(...)
     local local_conf_path = profile:yaml_path("config")
 
     if customed_yaml then
-        local cmd = "ln " .. customed_yaml .. " " .. local_conf_path
-        os.execute(cmd)
+        os.execute("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
+        os.execute("ln -s " .. customed_yaml .. " " .. local_conf_path)
         print("Use customed yaml: ", customed_yaml)
     end
 
