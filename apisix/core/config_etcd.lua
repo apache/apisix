@@ -320,33 +320,31 @@ local function sync_data(self)
             self.filter(res)
         end
 
-        if self.values_hash then
-            local pre_index = self.values_hash[key]
-            if pre_index then
-                local pre_val = self.values[pre_index]
-                if pre_val and pre_val.clean_handlers then
-                    for _, clean_handler in ipairs(pre_val.clean_handlers) do
-                        clean_handler(pre_val)
-                    end
-                    pre_val.clean_handlers = nil
+        local pre_index = self.values_hash[key]
+        if pre_index then
+            local pre_val = self.values[pre_index]
+            if pre_val and pre_val.clean_handlers then
+                for _, clean_handler in ipairs(pre_val.clean_handlers) do
+                    clean_handler(pre_val)
                 end
-
-                if res.value then
-                    res.value.id = key
-                    self.values[pre_index] = res
-                    res.clean_handlers = {}
-
-                else
-                    self.sync_times = self.sync_times + 1
-                    self.values[pre_index] = false
-                end
-
-            elseif res.value then
-                res.clean_handlers = {}
-                insert_tab(self.values, res)
-                self.values_hash[key] = #self.values
-                res.value.id = key
+                pre_val.clean_handlers = nil
             end
+
+            if res.value then
+                res.value.id = key
+                self.values[pre_index] = res
+                res.clean_handlers = {}
+
+            else
+                self.sync_times = self.sync_times + 1
+                self.values[pre_index] = false
+            end
+
+        elseif res.value then
+            res.clean_handlers = {}
+            insert_tab(self.values, res)
+            self.values_hash[key] = #self.values
+            res.value.id = key
         end
 
         -- avoid space waste
@@ -466,8 +464,6 @@ function _M.new(key, opts)
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
     local timeout = opts and opts.timeout
-    local need_reload = opts and opts.need_reload
-    need_reload = need_reload == nil and true or need_reload
 
     local obj = setmetatable({
         etcd_cli = nil,
@@ -479,7 +475,7 @@ function _M.new(key, opts)
         running = true,
         conf_version = 0,
         values = nil,
-        need_reload = need_reload,
+        need_reload = true,
         routes_hash = nil,
         prev_index = 0,
         last_err = nil,
