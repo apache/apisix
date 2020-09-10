@@ -44,6 +44,7 @@ local function send_tcp_data(route_conf, log_message)
     local err_msg
     local res = true
     local sock, soc_err = tcp()
+    local can_close
 
     if not sock then
         err_msg = "failed to init the socket" .. soc_err
@@ -68,19 +69,29 @@ local function send_tcp_data(route_conf, log_message)
         return false, err_msg
     end
 
-    core.log.warn("sls logger send data ", log_message)
+    core.log.info("sls logger send data ", log_message)
     ok, err = sock:send(log_message)
     if not ok then
         res = false
+        can_close = true
         err_msg = "failed to send data to TCP server: host[" .. route_conf.host
                   .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
         core.log.error(err_msg)
+    else
+        ok, err = sock:setkeepalive(120 * 1000, 20)
+        if not ok then
+            can_close = true
+            core.log.error("failed to set socket keepalive: host[" .. route_conf.host
+            .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err)
+        end
     end
 
-    ok, err = sock:close()
-    if not ok then
-        core.log.error("failed to close the TCP connection, host[",
-        route_conf.host, "] port[", route_conf.port, "] ", err)
+    if  can_close then
+        ok, err = sock:close()
+        if not ok then
+            core.log.error("failed to close the TCP connection, host[",
+            route_conf.host, "] port[", route_conf.port, "] ", err)
+        end
     end
 
     return res, err_msg
