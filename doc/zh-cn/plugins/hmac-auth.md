@@ -35,10 +35,12 @@
 
 ## 属性
 
-* `access_key`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。
-* `secret_key`: 与 `access_key` 配对使用。
-* `algorithm`：可选字段，加密算法。目前支持 `hmac-sha1`, `hmac-sha256` 和 `hmac-sha512`，如果未指定，则默认使用 `hmac-sha256`。
-* `clock_skew`: 可选字段，签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。
+|属性名         |是否可选 |描述|
+|---------     |--------|-----------|
+| `access_key` | 必须 | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。|
+| `secret_key`| 必须 | 与 `access_key` 配对使用。|
+| `algorithm`| 可选 |加密算法。目前支持 `hmac-sha1`, `hmac-sha256` 和 `hmac-sha512`，如果未指定，则默认使用 `hmac-sha256`。|
+| `clock_skew`| 可选 | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。|
 
 ## 如何启用
 
@@ -63,7 +65,6 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "methods": ["GET"],
     "uri": "/index.html",
     "plugins": {
         "hmac-auth": {}
@@ -144,7 +145,6 @@ Accept-Ranges: bytes
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
-    "methods": ["GET"],
     "uri": "/index.html",
     "id": 1,
     "plugins": {},

@@ -40,8 +40,8 @@ local plugin_name   = "hmac-auth"
 local schema = {
     type = "object",
     properties = {
-        access_key = {type = "string"},
-        secret_key = {type = "string"},
+        access_key = {type = "string", minLength = 1, maxLength = 256},
+        secret_key = {type = "string", minLength = 1, maxLength = 256},
         algorithm = {
             type = "string",
             enum = {"hmac-sha1", "hmac-sha256", "hmac-sha512"},
@@ -49,7 +49,7 @@ local schema = {
         },
         clock_skew = {
             type = "integer",
-            default = 0
+            default = 300
         }
     },
     dependencies = {
@@ -94,11 +94,11 @@ local function try_attr(t, ...)
 end
 
 
-local create_consume_cache
+local create_consumer_cache
 do
     local consumer_ids = {}
 
-    function create_consume_cache(consumers)
+    function create_consumer_cache(consumers)
         core.table.clear(consumer_ids)
 
         for _, consumer in ipairs(consumers.nodes) do
@@ -136,7 +136,7 @@ local function get_consumer(access_key)
 
     local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
             consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+            create_consumer_cache, consumer_conf)
 
     local consumer = consumers[access_key]
     if not consumer then

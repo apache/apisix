@@ -38,7 +38,7 @@ The `consumer` then adds its key to request header to verify its request.
 |Name          |Requirement  |Description|
 |---------     |--------|-----------|
 | access_key         |required|Different `consumer` objects should have different values, and it should be unique. If different consumers use the same `access_key`, a request matching exception will occur|
-| secret_key      |optional|Use as a pair with `access_key`|
+| secret_key      |required|Use as a pair with `access_key`|
 | algorithm    |  optional|Encryption algorithm. support `hmac-sha1`, `hmac-sha256` and `hmac-sha512`,`hmac-sha512` is default.|
 | clock_skew  |optional|The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`|
 
@@ -65,7 +65,6 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "methods": ["GET"],
     "uri": "/index.html",
     "plugins": {
         "hmac-auth": {}
@@ -144,7 +143,6 @@ no need to restart the service, it will take effect immediately:
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d '
 {
-    "methods": ["GET"],
     "uri": "/index.html",
     "id": 1,
     "plugins": {},
