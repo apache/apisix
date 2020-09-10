@@ -37,6 +37,9 @@ create_lua_deps() {
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     docker pull redis:3.0-alpine
+    docker pull elcolio/etcd:latest
+    mkdir -p ~/etcd-data
+    docker run --name etcd-v2 -d -p 2379:2379 -v ~/etcd-data:/etcd-data elcolio/etcd:latest -advertise-client-urls http://0.0.0.0:2379 -data-dir /etcd-data
     docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
     docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
     # Runs Keycloak version 10.0.2 with inbuilt policies for unit tests
@@ -278,10 +281,6 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
-    sudo service etcd stop
-    mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcd --version
     sleep 5
 
     ./build-cache/grpc_server_example &
