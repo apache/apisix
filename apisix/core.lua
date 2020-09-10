@@ -34,6 +34,7 @@ return {
     response = require("apisix.core.response"),
     lrucache = require("apisix.core.lrucache"),
     schema   = require("apisix.schema_def"),
+    string   = require("apisix.core.string"),
     ctx      = require("apisix.core.ctx"),
     timer    = require("apisix.core.timer"),
     id       = require("apisix.core.id"),
