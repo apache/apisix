@@ -46,6 +46,7 @@
 | buffer_duration |可选的|必须先处理批次中最旧条目的最长期限（以秒为单位），默认值为 5|
 | max_retry_count |可选的|从处理管道中移除之前的最大重试次数，默认为 0|
 | retry_delay |可选的|如果执行失败，则应延迟执行流程的秒数，默认为 1|
+|include_req_body|可选的| 返回请求 body，默认为 false|
 
 ## 如何开启
 

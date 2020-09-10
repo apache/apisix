@@ -47,6 +47,7 @@ This will provide the ability to send Log data requests as JSON objects.
 |max_retry_times|optional       |Max number of retry times after a connect to a log server failed or send log messages to a log server failed.|
 |retry_interval|optional       |The time delay (in ms) before retry to connect to a log server or retry to send log messages to a log server, default to 100 (0.1s).|
 |pool_size    |optional       |Keepalive pool size used by sock:keepalive. Default to 10.|
+|include_req_body|optional      |Return request body besides head; default is false|
 
 ## How To Enable
 

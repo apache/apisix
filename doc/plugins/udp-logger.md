@@ -49,6 +49,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 |batch_max_size |optional       |Max size of each batch, default is 1000|
 |inactive_timeout|optional      |Maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
 |buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 60|
+|include_req_body|optional      |Return request body besides head; default is false|
 
 ## How To Enable
 

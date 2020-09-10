@@ -45,14 +45,15 @@ For more info on Batch-Processor in Apache APISIX please refer.
 |---------      |--------       |-----------|
 | broker_list   |required       | An array of Kafka brokers.|
 | kafka_topic   |required       | Target topic to push data.|
-| timeout       |optional       |Timeout for the upstream to send data.|
 | key           |required       |Key for the message.|
+| timeout       |optional       |Timeout for the upstream to send data.|
 |name           |optional       |A unique identifier to identity the batch processor|
 |batch_max_size |optional       |Max size of each batch, default is 1000|
 |inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
 |buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
 |max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
 |retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
+|include_req_body|optional      |Return request body besides head; default is false|
 
 ## Info
 

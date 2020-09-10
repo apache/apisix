@@ -45,6 +45,7 @@
 | host |必要的| UDP 服务的IP地址或主机名。|
 | port |必要的| 目标端口。|
 | timeout |可选的|发送数据超时间。|
+|include_req_body|可选的| 返回请求 body。默认值： false|
 
 ## 如何开启
 

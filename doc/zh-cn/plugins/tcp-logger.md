@@ -47,6 +47,7 @@
 | timeout |可选的|发送数据超时间。|
 | tls |可选的|布尔值，用于控制是否执行SSL验证。|
 | tls_options |可选的|TLS 选项|
+|include_req_body|可选的| 返回请求 body。默认值： false|
 
 ## 如何开启
 

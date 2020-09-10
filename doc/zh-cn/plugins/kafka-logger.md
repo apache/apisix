@@ -50,6 +50,7 @@
 | buffer_duration |可选| 缓冲周期，消息停留在缓冲区的最大时间，当超过该时间时会立即发送到 kafka。默认值： 60(s)|
 | max_retry_count |可选| 最大重试次数。默认值： 0|
 | retry_delay |可选| 重试间隔。默认值： 1(s)|
+|include_req_body|可选| 返回请求 body。 默认值： false|
 
 ## 工作原理
 

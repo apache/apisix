@@ -46,6 +46,7 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 |buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
 |max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
 |retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
+|include_req_body|optional      |Return request body besides head; default is false|
 
 
 ## How To Enable

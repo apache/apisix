@@ -47,6 +47,7 @@
 |max_retry_times|可选的       |连接到日志服务器失败或将日志消息发送到日志服务器失败后的最大重试次数。|
 |retry_interval|可选的       |重试连接到日志服务器或重试向日志服务器发送日志消息之前的时间延迟（以毫秒为单位），默认为100（0.1s）。|
 |pool_size    |可选的       |sock：keepalive使用的Keepalive池大小。默认为10。|
+|include_req_body|可选的| 返回请求 body。默认值： false|
 
 ## 如何开启
 
