@@ -115,12 +115,7 @@ end -- do
 function _M.check_schema(conf)
     core.log.info("input conf: ", core.json.delay_encode(conf))
 
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
