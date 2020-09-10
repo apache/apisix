@@ -53,7 +53,7 @@ __DATA__
                                     "access_key": "my-access-key",
                                     "secret_key": "my-secret-key",
                                     "algorithm": "hmac-sha256",
-                                    "clock_skew": 0
+                                    "clock_skew": 300
                                 }
                             }
                         }
@@ -210,7 +210,7 @@ X-APISIX-HMAC-ACCESS-KEY: sdf
 
 
 
-=== TEST 8: verify: invalid algorithm
+=== TEST 8: verify: invalid timestamp
 --- request
 GET /hello
 --- more_headers
@@ -220,7 +220,7 @@ X-APISIX-HMAC-TIMESTAMP: 112
 X-APISIX-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Invalid signature"}
+{"message":"Invalid timestamp"}
 --- no_error_log
 [error]
 

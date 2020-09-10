@@ -53,7 +53,7 @@ __DATA__
                                     "access_key": "my-access-key",
                                     "secret_key": "my-secret-key",
                                     "algorithm": "hmac-sha256",
-                                    "clock_skew": 0
+                                    "clock_skew": 300
                                 }
                             }
                         }
@@ -210,7 +210,7 @@ X-HMAC-ACCESS-KEY: sdf
 
 
 
-=== TEST 8: verify: invalid algorithm
+=== TEST 8: verify: invalid timestamp
 --- request
 GET /hello
 --- more_headers
@@ -220,7 +220,7 @@ X-HMAC-TIMESTAMP: 112
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Invalid signature"}
+{"message":"Invalid timestamp"}
 --- no_error_log
 [error]
 
@@ -270,7 +270,71 @@ passed
 
 
 
-=== TEST 10: update consumer with clock skew
+=== TEST 10: add consumer with 0 clock skew
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "robin",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key3",
+                            "secret_key": "my-secret-key3",
+                            "clock_skew": 0
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "robin",
+                            "plugins": {
+                                "hmac-auth": {
+                                    "access_key": "my-access-key3",
+                                    "secret_key": "my-secret-key3",
+                                    "algorithm": "hmac-sha256",
+                                    "clock_skew": 0
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: verify: invalid signature
+--- request
+GET /hello
+--- more_headers
+X-HMAC-SIGNATURE: asdf
+X-HMAC-ALGORITHM: hmac-sha256
+X-HMAC-TIMESTAMP: 112
+X-HMAC-ACCESS-KEY: my-access-key3
+--- error_code: 401
+--- response_body
+{"message":"Invalid signature"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: add consumer with 1 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -318,7 +382,7 @@ passed
 
 
 
-=== TEST 11: verify: invalid timestamp
+=== TEST 13: verify: invalid timestamp
 --- config
 location /t {
     content_by_lua_block {
@@ -365,7 +429,7 @@ qr/\{"message":"Invalid timestamp"\}/
 
 
 
-=== TEST 12: verify: put ok
+=== TEST 14: verify: put ok
 --- config
 location /t {
     content_by_lua_block {
@@ -413,7 +477,7 @@ passed
 
 
 
-=== TEST 12: verify: put ok (pass auth data by header `Authorization`)
+=== TEST 15: verify: put ok (pass auth data by header `Authorization`)
 --- config
 location /t {
     content_by_lua_block {

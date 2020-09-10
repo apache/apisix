@@ -40,7 +40,7 @@ The `consumer` then adds its key to request header to verify its request.
 | access_key         | required | none |Different `consumer` objects should have different values, and it should be unique. If different consumers use the same `access_key`, a request matching exception will occur|
 | secret_key      | required | none |Use as a pair with `access_key`|
 | algorithm    |  optional| hmac-sha256 |Encryption algorithm. support `hmac-sha1`, `hmac-sha256` and `hmac-sha512`|
-| clock_skew  | optional | 300 |The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`|
+| clock_skew  | optional | 300 |The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking timestamp.|
 
 ## How To Enable
 
