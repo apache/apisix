@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/request-validation.md)
+- [中文](../zh-cn/plugins/request-validation.md)
 
 # Summary
 - [**Name**](#name)
@@ -63,10 +63,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -94,10 +94,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```

@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/serverless.md)
+- [中文](../zh-cn/plugins/serverless.md)
 
 # Summary
 

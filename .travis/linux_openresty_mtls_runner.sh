@@ -44,7 +44,6 @@ do_install() {
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-    sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
     sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
@@ -99,12 +98,17 @@ script() {
 
 
     # enable mTLS
-    sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
-    sed  -i 's/\# https_admin: true/https_admin: true/'  conf/config.yaml
-    sed  -i 's/mtls_enable: false/mtls_enable: true/'  conf/config.yaml
-    sed  -i 's#admin_ssl_ca_cert: ""#admin_ssl_ca_cert: "../t/certs/mtls_ca.crt"#'  conf/config.yaml
-    sed  -i 's#admin_ssl_cert_key: ""#admin_ssl_cert_key: "../t/certs/mtls_server.key"#'  conf/config.yaml
-    sed  -i 's#admin_ssl_cert: ""#admin_ssl_cert: "../t/certs/mtls_server.crt"#'  conf/config.yaml
+    echo "
+apisix:
+    port_admin: 9180
+    https_admin: true
+
+    admin_api_mtls:
+        admin_ssl_cert: "../t/certs/mtls_server.crt"
+        admin_ssl_cert_key: "../t/certs/mtls_server.key"
+        admin_ssl_ca_cert: "../t/certs/mtls_ca.crt"
+
+" > conf/config.yaml
 
     ./bin/apisix help
     ./bin/apisix init

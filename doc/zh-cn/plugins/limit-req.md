@@ -17,7 +17,7 @@
 #
 -->
 
-# [English](../../plugins/limit-req.md)
+- [English](../../plugins/limit-req.md)
 
 # limit-req
 

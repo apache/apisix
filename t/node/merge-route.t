@@ -280,8 +280,7 @@ passed
                     "host": "httpbin.org",
                     "plugins": {
                         "proxy-rewrite": {
-                                "scheme": "https"
-
+                            "scheme": "https"
                         }
                     },
                     "service_id": "1"

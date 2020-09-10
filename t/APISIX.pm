@@ -69,20 +69,31 @@ if ($enable_local_dns) {
 }
 
 
-my $yaml_config = read_file("conf/config.yaml");
+my $default_yaml_config = read_file("conf/config-default.yaml");
+my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
+my $ssl_ecc_crt = read_file("conf/cert/apisix_ecc.crt");
+my $ssl_ecc_key = read_file("conf/cert/apisix_ecc.key");
 my $test2_crt = read_file("conf/cert/test2.crt");
 my $test2_key = read_file("conf/cert/test2.key");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/  # stream_proxy:/  stream_proxy:\n    tcp:\n      - 9100/;
-$yaml_config =~ s/admin_key:/disable_admin_key:/;
+$user_yaml_config = <<_EOC_;
+apisix:
+  node_listen: 1984
+  stream_proxy:
+    tcp:
+      - 9100
+  admin_key: null
+_EOC_
 
 my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
 
 if ($etcd_enable_auth eq "true") {
-    $yaml_config =~ s/  # user:/  user:/;
-    $yaml_config =~ s/  # password:/  password:/;
+    $user_yaml_config .= <<_EOC_;
+etcd:
+  user: root
+  password: 5tHkHhYkjr6cQY
+_EOC_
 }
 
 
@@ -209,6 +220,9 @@ _EOC_
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
     lua_shared_dict skywalking-tracing-buffer    100m;
+    lua_shared_dict balancer_ewma         1m;
+    lua_shared_dict balancer_ewma_locks   1m;
+    lua_shared_dict balancer_ewma_last_touched_at  1m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -414,19 +428,25 @@ $user_apisix_yaml
 _EOC_
     }
 
-    my $user_yaml_config = $block->yaml_config // $yaml_config;
+    my $yaml_config = $block->yaml_config // $user_yaml_config;
     my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;
     $user_files .= <<_EOC_;
 >>> ../conf/$debug_file
 $user_debug_config
+>>> ../conf/config-default.yaml
+$default_yaml_config
 >>> ../conf/$config_file
-$user_yaml_config
+$yaml_config
 >>> ../conf/cert/apisix.crt
 $ssl_crt
 >>> ../conf/cert/apisix.key
 $ssl_key
+>>> ../conf/cert/apisix_ecc.crt
+$ssl_ecc_crt
+>>> ../conf/cert/apisix_ecc.key
+$ssl_ecc_key
 >>> ../conf/cert/test2.crt
 $test2_crt
 >>> ../conf/cert/test2.key
