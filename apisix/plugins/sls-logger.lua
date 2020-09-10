@@ -8,6 +8,8 @@ local stale_timer_running = false;
 local timer_at = ngx.timer.at
 local tcp = ngx.socket.tcp
 local buffers = {}
+local tostring = tostring
+local ipairs = ipairs
 local schema = {
     type = "object",
     properties = {
@@ -115,7 +117,7 @@ end
 
 local function combine_syslog(entries)
     local data
-    for _, entry in pairs(entries) do
+    for _, entry in ipairs(entries) do
         if not data then
            data = entry.data
         end

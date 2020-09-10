@@ -67,11 +67,13 @@ local os_date = os.date
 local ngx = ngx
 local string_format = string.format
 local rfc5424_timestamp_format = "!%Y-%m-%dT%H:%M:%S.000Z"
-local rfc5424_format = "<%d>1 %s %s %s %d - [logservice project=\"%s\" logstore=\"%s\" access-key-id=\"%s\" access-key-secret=\"%s\"] %s\n"
+local rfc5424_format = "<%d>1 %s %s %s %d - [logservice project=\"%s\" logstore=\"%s\"" ..
+                    " access-key-id=\"%s\" access-key-secret=\"%s\"] %s\n"
 
 local _M = { version = 0.1 }
 
-function _M.encode(facility, severity, hostname, appname, pid, project, logstore, access_key_id, access_key_secret, msg)
+function _M.encode(facility, severity, hostname, appname, pid, project,
+    logstore, access_key_id, access_key_secret, msg)
     local pri = (Facility[facility] * 8 + Severity[severity])
     ngx.update_time()
     local t = os_date(rfc5424_timestamp_format, ngx.now())
