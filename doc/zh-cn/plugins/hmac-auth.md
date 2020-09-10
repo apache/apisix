@@ -35,12 +35,12 @@
 
 ## 属性
 
-|属性名         |是否可选 |描述|
-|---------     |--------|-----------|
-| `access_key` | 必须 | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。|
-| `secret_key`| 必须 | 与 `access_key` 配对使用。|
-| `algorithm`| 可选 |加密算法。目前支持 `hmac-sha1`, `hmac-sha256` 和 `hmac-sha512`，如果未指定，则默认使用 `hmac-sha256`。|
-| `clock_skew`| 可选 | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。|
+|属性名         |是否可选 | 默认值 |描述|
+|---------     |--------|-----------|-----------|
+| `access_key` | 必须 | 无 | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。|
+| `secret_key`| 必须 | 无 | 与 `access_key` 配对使用。|
+| `algorithm` | 可选 | hmac-sha256 | 加密算法。目前支持 `hmac-sha1`, `hmac-sha256` 和 `hmac-sha512`。|
+| `clock_skew`| 可选 | 300 | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。|
 
 ## 如何启用
 
@@ -82,7 +82,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 #### 签名生成公式
 
-签名的计算公式为 `signature = HMAC-SHA256-HEX(secret_key, signning_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signning_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signning_string` 的计算公式为： `signning_string = HTTP Method + HTTP URI + CanonicalQueryString + HTTP BODY + access_key + timestamp + secret_key`
+签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signning_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signning_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signning_string` 的计算公式为： `signning_string = HTTP Method + HTTP URI + CanonicalQueryString + HTTP BODY + access_key + timestamp + secret_key`
 
 1. HTTP Method
 指HTTP协议中定义的GET、PUT、POST等请求方法，必须使用全大写的形式。
