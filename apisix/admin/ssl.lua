@@ -18,7 +18,6 @@ local core              = require("apisix.core")
 local tostring          = tostring
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
-local str_find          = string.find
 local type              = type
 local assert            = assert
 
@@ -74,7 +73,7 @@ local function aes_encrypt(origin)
     local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
-    if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
+    if aes_128_cbc_with_iv ~= nil and core.string.has_prefix(origin, "---") then
         local encrypted = aes_128_cbc_with_iv:encrypt(origin)
         if encrypted == nil then
             core.log.error("failed to encrypt key[", origin, "] ")
