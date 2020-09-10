@@ -31,11 +31,35 @@ local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
 
+local cert_cache = core.lrucache.new {
+    ttl = 3600, count = 512,
+}
+
+local pkey_cache = core.lrucache.new {
+    ttl = 3600, count = 512,
+}
+
 
 local _M = {
     version = 0.1,
     server_name = ngx_ssl.server_name,
 }
+
+
+local function parse_pem_cert(sni, cert)
+    core.log.debug("parsing cert for sni: ", sni)
+
+    local parsed, err = ngx_ssl.parse_pem_cert(cert)
+    return parsed, err
+end
+
+
+local function parse_pem_priv_key(sni, pkey)
+    core.log.debug("parsing priv key for sni: ", sni)
+
+    local parsed, err = ngx_ssl.parse_pem_priv_key(pkey)
+    return parsed, err
+end
 
 
 local function create_router(ssl_items)
@@ -109,30 +133,31 @@ local function create_router(ssl_items)
 end
 
 
-local function set_pem_ssl_key(cert, pkey)
+local function set_pem_ssl_key(sni, cert, pkey)
     local r = get_request()
     if r == nil then
         return false, "no request found"
     end
 
-    local parse_cert, err = ngx_ssl.parse_pem_cert(cert)
-    if parse_cert then
-        local ok, err = ngx_ssl.set_cert(parse_cert)
-        if not ok then
-            return false, "failed to set PEM cert: " .. err
-        end
-    else
+    local parsed_cert, err = cert_cache(cert, nil, parse_pem_cert, sni, cert)
+    if not parsed_cert then
         return false, "failed to parse PEM cert: " .. err
     end
 
-    local parse_pkey, err = ngx_ssl.parse_pem_priv_key(pkey)
-    if parse_pkey then
-        local ok, err = ngx_ssl.set_priv_key(parse_pkey)
-        if not ok then
-            return false, "failed to set PEM priv key: " .. err
-        end
-    else
+    local ok, err = ngx_ssl.set_cert(parsed_cert)
+    if not ok then
+        return false, "failed to set PEM cert: " .. err
+    end
+
+    local parsed_pkey, err = pkey_cache(pkey, nil, parse_pem_priv_key, sni,
+                                        pkey)
+    if not parsed_pkey then
         return false, "failed to parse PEM priv key: " .. err
+    end
+
+    ok, err = ngx_ssl.set_priv_key(parsed_pkey)
+    if not ok then
+        return false, "failed to set PEM priv key: " .. err
     end
 
     return true
@@ -196,7 +221,8 @@ function _M.match_and_set(api_ctx)
 
     ngx_ssl.clear_certs()
 
-    ok, err = set_pem_ssl_key(matched_ssl.value.cert, matched_ssl.value.key)
+    ok, err = set_pem_ssl_key(sni, matched_ssl.value.cert,
+                              matched_ssl.value.key)
     if not ok then
         return false, err
     end
@@ -207,7 +233,7 @@ function _M.match_and_set(api_ctx)
             local cert = matched_ssl.value.certs[i]
             local key = matched_ssl.value.keys[i]
 
-            ok, err = set_pem_ssl_key(cert, key)
+            ok, err = set_pem_ssl_key(sni, cert, key)
             if not ok then
                 return false, err
             end

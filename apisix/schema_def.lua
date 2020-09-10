@@ -311,7 +311,7 @@ local upstream_schema = {
         type = {
             description = "algorithms of load balancing",
             type = "string",
-            enum = {"chash", "roundrobin"}
+            enum = {"chash", "roundrobin", "ewma"}
         },
         checks = health_checker,
         hash_on = {
@@ -332,6 +332,13 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        pass_host = {
+            description = "mod of host passing",
+            type = "string",
+            enum = {"pass", "node", "rewrite"},
+            default = "pass"
+        },
+        upstream_host = host_def,
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         service_name = {type = "string", maxLength = 50},
