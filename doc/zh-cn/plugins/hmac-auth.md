@@ -97,10 +97,9 @@ CanonicalQueryString是对于URL中的Query String（Query String即URL中“？
 将Query String根据&分隔符拆开成若干项，每一项是key=value或者只有key的形式。
 对拆开后的每一项进行编码处理，分以下三种情况。
 
-当该项的key是authorization时，直接忽略该项。
 当该项只有key时，转换公式为UriEncode(key) + "="的形式。
 当该项是key=value的形式时，转换公式为 UriEncode(key) + "=" + UriEncode(value) 的形式。这里value可以是空字符串。
-将每一项转换后的字符串按照字典顺序（ASCII码由小到大）排序，并使用& 符号连接起来，生成相应的CanonicalQueryString。
+将每一项转换后，以 key 按照字典顺序（ASCII码由小到大）排序，并使用 & 符号连接起来，生成相应的CanonicalQueryString。
 
 
 

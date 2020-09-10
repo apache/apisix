@@ -252,7 +252,7 @@ location /t {
 
         local code, body = t.test('/hello',
             ngx.HTTP_GET,
-            core.json.encode(data),
+            "",
             nil,
             headers
         )

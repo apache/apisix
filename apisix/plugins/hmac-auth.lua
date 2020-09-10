@@ -20,6 +20,7 @@ local select     = select
 local abs        = math.abs
 local ngx_time   = ngx.time
 local str_fmt    = string.format
+local ngx_re     = require("ngx.re")
 local ngx_req    = ngx.req
 local pairs      = pairs
 local ipairs     = ipairs
@@ -178,16 +179,11 @@ local function generate_signature(ctx, secret_key, params)
         canonical_query_string = core.table.concat(query_tab, "&")
     end
 
-    local body_hash = ""
-    if request_method == "PUT" or request_method == "POST" or request_method == "PATCH" then
-        local req_body, _ = core.request.get_body()
-        if req_body then
-            body_hash = ngx.md5(req_body)
-        end
-    end
+    local req_body, _ = core.request.get_body()
+    req_body = req_body or ""
 
     local signing_string = request_method .. canonical_uri ..  canonical_query_string ..
-    body_hash .. params.access_key .. params.timestamp .. secret_key
+    req_body .. params.access_key .. params.timestamp .. secret_key
 
     return hmac_funcs[params.algorithm](secret_key, signing_string)
 end
@@ -247,6 +243,22 @@ local function get_params(ctx)
     local signature = core.request.header(ctx, signature_key)
     local algorithm = core.request.header(ctx, algorithm_key)
     local timestamp = core.request.header(ctx, timestamp_key)
+
+    -- get params from header `Authorization`
+    if not ak then
+        local auth_string = core.request.header(ctx, "Authorization")
+        core.log.info("auth_string:", auth_string)
+        local auth_data = ngx_re.split(auth_string, "#")
+        core.log.info("#auth_data:", #auth_data)
+        core.log.info("auth_data:", core.json.delay_encode(auth_data))
+        if #auth_data == 5 and auth_data[1] == "hmac-auth-v1" then
+            ak = auth_data[2]
+            signature = auth_data[3]
+            algorithm = auth_data[4]
+            timestamp = auth_data[5]
+        end
+    end
+
 
     params.access_key = ak
     params.algorithm  = algorithm

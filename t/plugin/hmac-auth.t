@@ -252,7 +252,7 @@ location /t {
 
         local code, body = t.test('/hello',
             ngx.HTTP_GET,
-            core.json.encode(data),
+            "",
             nil,
             headers
         )
@@ -377,13 +377,13 @@ location /t {
 
         local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
         local req_body = core.json.encode(data)
-        local body_hash = ngx.md5(req_body)
+        req_body = req_body or ""
 
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local access_key = "my-access-key"
         local signing_string = "PUT" .. "/hello" ..  "" ..
-        body_hash .. access_key .. timestamp .. secret_key
+        req_body .. access_key .. timestamp .. secret_key
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -392,6 +392,53 @@ location /t {
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["X-HMAC-TIMESTAMP"] = timestamp
         headers["X-HMAC-ACCESS-KEY"] = access_key
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_PUT,
+            req_body,
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: verify: put ok (pass auth data by header `Authorization`)
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+        local req_body = core.json.encode(data)
+        req_body = req_body or ""
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local access_key = "my-access-key"
+        local signing_string = "PUT" .. "/hello" ..  "" ..
+        req_body .. access_key .. timestamp .. secret_key
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local auth_string = "hmac-auth-v1#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
+        "hmac-sha256#" .. timestamp
+        local headers = {}
+        headers["Authorization"] = auth_string
 
         local code, body = t.test('/hello',
             ngx.HTTP_PUT,
