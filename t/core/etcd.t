@@ -158,7 +158,7 @@ Host: foo.com
 --- pipelined_requests eval
 ["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /delete", "GET /hello"]
 --- more_headers
-Host: foo-1
+Host: foo-7
 --- error_code eval
 [201, 200, 200, 200, 200, 404]
 --- response_body eval
