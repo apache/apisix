@@ -119,14 +119,11 @@ function _M.watch_format(v3res)
     v2res.headers = {
         ["X-Etcd-Index"] = v3res.result.header.revision
     }
-    v2res.body = {
-        node = {}
-    }
-    for i, event in ipairs(v3res.result.events) do
-        v2res.body.node[i] = kvs_to_node(event.kv)
-        if event.type == "DELETE" then
-            v2res.body.action = "delete"
-        end
+    v2res.body = {}
+    local event = v3res.result.events[1]
+    v2res.body.node = kvs_to_node(event.kv)
+    if event.type == "DELETE" then
+        v2res.body.action = "delete"
     end
 
     return v2res
