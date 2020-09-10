@@ -485,3 +485,97 @@ GET /t
 {"error_msg":"failed to check the configuration of plugin grpc-transcode err: property \"method\" is required"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 18: set proto(id: 1, with array parameter)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "content" : "syntax = \"proto3\";
+                      package helloworld;
+                      service Greeter {
+                          rpc SayHello (HelloRequest) returns (HelloReply) {}
+                      }
+                      message HelloRequest {
+                          string name = 1;
+                          repeated string items = 2;
+                      }
+                      message HelloReply {
+                          string message = 1;
+                          repeated string items = 2;
+                         }"
+                   }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: set routes(id: 1, with array parameter)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET", "POST"],
+                    "uri": "/grpctest",
+                    "service_protocol": "grpc",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "SayHello"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: hit route
+--- request
+POST /grpctest
+{"name":"apisix", "items": ["a","b","c"]}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/\{"items":\["a","b","c"\],"message":"Hello apisix"\}/
+--- no_error_log
+[error]
