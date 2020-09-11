@@ -15,15 +15,12 @@
 # limitations under the License.
 #
 #
-# If you want specify the Admin API token. It is highly recommended to set a
-# high-complexity key to protect APISIX. This is an example:
-#
-# apisix:
-#     admin_key:
-#         -
-#             name: "admin"
-#             key:            # <-- replace with your Admin Key
-#             role: admin
+apisix:
+    admin_key:
+        -
+            name: "admin"
+            key:            # set your Admin API Key
+            role: admin
 #
 #
 # If you want to set the specified configuration value, you can set the new

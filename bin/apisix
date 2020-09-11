@@ -642,19 +642,8 @@ local function read_yaml_conf()
         local help = [[
 ERROR: missing valid apisix.admin_key
 
-Needs to set Admin API key in file `conf/config.yaml` . Here is an example:
-
-#############################
-apisix:
-    admin_key:
-        -
-            name: "admin"
-            key:          # <-- replace with your Admin Key
-            role: admin
-#############################
-
-Then you can use it to access Admin API.
-eg: $ curl -i http://127.0.0.1:]] .. default_conf.apisix.node_listen .. [[/apisix/admin/routes/1 -H 'X-API-KEY: YOUR-KEY'
+You can call `]] .. arg[0] .. [[ gen_admin_key` to generate a new Admin API key or
+manually update the `conf/config.yaml` file.
 ]]
         if type(default_conf.apisix.admin_key) ~= "table" or
            #default_conf.apisix.admin_key == 0
@@ -759,14 +748,15 @@ function _M.help()
     print([[
 Usage: apisix [action] <argument>
 
-help:       show this message, then exit
-init:       initialize the local nginx.conf
-init_etcd:  initialize the data of etcd
-start:      start the apisix server
-stop:       stop the apisix server
-restart:    restart the apisix server
-reload:     reload the apisix server
-version:    print the version of apisix
+help:           show this message, then exit
+init:           initialize the local nginx.conf
+init_etcd:      initialize the data of etcd
+start:          start the apisix server
+stop:           stop the apisix server
+restart:        restart the apisix server
+reload:         reload the apisix server
+gen_admin_key： generate admin api key
+version:        print the version of apisix
 ]])
 end
 
@@ -1022,6 +1012,58 @@ end
 function _M.version()
     local ver = require("apisix.core.version")
     print(ver['VERSION'])
+end
+
+local function gen_random_str(len)
+    local frandom, err = io.open("/dev/urandom", "rb")
+    if not frandom then
+        return nil, 'failed to open /dev/urandom: ' .. err
+    end
+
+    len = len or 8
+
+    local str = frandom:read(len)
+    frandom:close()
+    if not str then
+        return nil, 'failed to read data from /dev/urandom'
+    end
+
+    local seed = ""
+    for i = 1, len do
+        seed = seed .. string.format("%02x", str:byte(i))
+    end
+    return seed
+end
+
+function _M.gen_admin_key()
+    local profile = require("apisix.core.profile")
+    local local_conf_path = profile:yaml_path("config")
+    local user_key = gen_random_str()
+
+    local user_conf_yaml, err = read_file(local_conf_path)
+    if not user_conf_yaml then
+        io.stderr:write("failed to read local config: ", err, "\n")
+        os.exit(1)
+        return
+    end
+
+    local user_conf_yaml_new = user_conf_yaml:gsub(
+                                "(name: \"admin\"%s+)key:%s+# set your Admin API",
+                                "%1key: " .. user_key .. " # set your Admin API")
+    if user_conf_yaml_new == user_conf_yaml then
+        io.stderr:write("You have already set the admin key, do not need to generate it again\n")
+        os.exit(1)
+        return
+    end
+
+    local file, err = io.open(local_conf_path, "w+")
+    if err then
+        error("failed to open file " .. local_conf_path .. ": " .. err)
+    end
+    file:write(user_conf_yaml_new)
+    file:close()
+
+    print("generate admin key successfully")
 end
 
 local cmd_action = arg[1]

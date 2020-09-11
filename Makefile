@@ -76,6 +76,12 @@ init: default
 	./bin/apisix init_etcd
 
 
+### gen_admin_key:     Generate Admin API key
+.PHONY: gen_admin_key
+gen_admin_key: default
+	./bin/apisix gen_admin_key
+
+
 ### run:              Start the apisix server
 .PHONY: run
 run: default

@@ -18,7 +18,7 @@
 local _M = {
     version = 0.1,
     profile = os.getenv("APISIX_PROFILE"),
-    apisix_home = (ngx and ngx.config.prefix()) or ""
+    apisix_home = (ngx and ngx.config.prefix()) or "./"
 }
 
 
