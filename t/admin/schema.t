@@ -35,15 +35,14 @@ qr/"plugins":\{"type":"object"}/
 [error]
 
 
-
 === TEST 2: get service schema
 --- request
 GET /apisix/admin/schema/service
 --- response_body eval
-qr/"required":\["upstream"\]/
+qr/"required".*additionalProperties/
 --- no_error_log
 [error]
-
+--- ONLY
 
 
 === TEST 3: get not exist schema
