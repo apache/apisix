@@ -255,3 +255,22 @@ fi
 echo "passed: support use define access log format"
 
 git checkout conf/config.yaml
+
+# default Admin API key
+
+make init > output.log 2>&1 | true
+
+count=`grep -c "ERROR: missing valid apisix.admin_key" output.log`
+grep -E "ERROR: missing valid apisix.admin_key" output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: missing valid Admin API key should fail to start"
+    exit 1
+fi
+
+make gen_admin_key
+
+make init
+
+echo "pass: default Admin API key"
+
+git checkout conf/config.yaml
