@@ -25,7 +25,27 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add + update + delete
+=== TEST 1: delete if needed
+--- config
+    location /delete {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{
+                    "action": "delete"
+                }]]
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /delete
+--- ignore_response
+
+=== TEST 2: add + update + delete
 --- config
     location /add {
         content_by_lua_block {
@@ -96,7 +116,7 @@ Host: foo.com
 --- no_error_log
 [error]
 
-=== TEST 2: add*10 + update*10 + delete*10
+=== TEST 3: add*10 + update*10 + delete*10
 --- config
     location /add {
         content_by_lua_block {
