@@ -1140,7 +1140,9 @@ function _M.gen_admin_key()
                                 "(name: \"admin\"%s+)key:%s+# set your Admin API",
                                 "%1key: " .. user_key .. " # set your Admin API")
     if user_conf_yaml_new == user_conf_yaml then
-        io.stderr:write("You have already set the admin key, do not need to generate it again\n")
+        io.stderr:write("\nYou have already set the admin key, do not need to ",
+                        "generate it again.\n\n",
+                        "You can set a user-define Admin API key by update the `conf/config.yaml` manually.\n")
         os.exit(1)
         return
     end
