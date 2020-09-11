@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -282,6 +283,7 @@ local function sync_data(self)
         else
             self.sync_times = self.sync_times + 1
             self.values[pre_index] = false
+            self.values_hash[key] = nil
         end
 
     elseif res.value then
@@ -293,20 +295,25 @@ local function sync_data(self)
     -- avoid space waste
     -- todo: need to cover this path, it is important.
     if self.sync_times > 100 then
-        local count = 0
-        for i = 1, #self.values do
-            local val = self.values[i]
-            self.values[i] = nil
+        local values_org = table.clone(self.values)
+        table.clear(self.values)
+
+        for i = 1, #values_org do
+            local val = values_org[i]
             if val then
-                count = count + 1
-                self.values[count] = val
+                table.insert(self.values, val)
             end
         end
 
-        for i = 1, count do
+        table.clear(self.values_hash)
+        log.info("clear stale data in `values_hash` for key: ", key)
+
+        for i = 1, #self.values do
             key = short_key(self, self.values[i].key)
             self.values_hash[key] = i
         end
+
+        self.sync_times = 0
     end
 
     self.conf_version = self.conf_version + 1
