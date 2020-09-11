@@ -1005,7 +1005,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1056,7 +1056,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1090,7 +1090,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1124,7 +1124,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1158,7 +1158,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1190,7 +1190,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1242,7 +1242,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
