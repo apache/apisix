@@ -35,6 +35,7 @@ qr/"plugins":\{"type":"object"}/
 [error]
 
 
+
 === TEST 2: get service schema
 --- request
 GET /apisix/admin/schema/service
@@ -42,6 +43,7 @@ GET /apisix/admin/schema/service
 qr/"required".*additionalProperties/
 --- no_error_log
 [error]
+
 
 
 === TEST 3: get not exist schema
