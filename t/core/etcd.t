@@ -121,13 +121,13 @@ Host: foo.com
     location /add {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local uri = ""
+            local path = ""
             local host = ""
             local code, body
             for i = 1, 10 do
-                uri = '/apisix/admin/routes/' .. tostring(i)
+                path = '/apisix/admin/routes/' .. tostring(i)
                 host = "foo-" .. tostring(i)
-                code, body = t(uri,
+                code, body = t(path,
                     ngx.HTTP_PUT,
                     string.format('{"methods": ["GET"],"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "%s","uri": "/hello"}', host),
                     nil
@@ -140,13 +140,13 @@ Host: foo.com
     location /update {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local uri = ""
+            local path = ""
             local host = ""
             local code, body
             for i = 1, 10 do
-                uri = '/apisix/admin/routes/' .. tostring(i)
+                path = '/apisix/admin/routes/' .. tostring(i)
                 host = "foo-" .. tostring(i)
-                code, body = t(uri,
+                code, body = t(path,
                     ngx.HTTP_PUT,
                     string.format('{"methods": ["GET"],"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "%s","uri": "/hello"}', host),
                     nil
@@ -160,10 +160,12 @@ Host: foo.com
     location /delete {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local path = ""
+            local host = ""
             local code, body
             for i = 1, 10 do
-                uri = '/apisix/admin/routes/' .. tostring(i)
-                code, body = t(uri,
+                path = '/apisix/admin/routes/' .. tostring(i)
+                code, body = t(path,
                     ngx.HTTP_DELETE,
                     nil,
                     [[{

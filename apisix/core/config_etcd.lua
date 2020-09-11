@@ -99,7 +99,6 @@ local function readdir(etcd_cli, key)
 
     return res
 end
-_M.readdir = readdir
 
 local function waitdir(etcd_cli, key, modified_index, timeout)
     if not etcd_cli then
@@ -126,7 +125,6 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     end
     return etcd_apisix.watch_format(res)
 end
-_M.waitdir = waitdir
 
 
 local function short_key(self, str)
@@ -287,86 +285,89 @@ local function sync_data(self)
         return false, err
     end
 
-    local key = short_key(self, res.key)
-    if res.value and type(res.value) ~= "table" then
-        self:upgrade_version(res.modifiedIndex)
-        return false, "invalid item data of [" .. self.key .. "/" .. key
-                        .. "], val: " .. res.value
-                        .. ", it shoud be a object"
-    end
-
-    if res.value and self.item_schema then
-        local ok, err = check_schema(self.item_schema, res.value)
-        if not ok then
+    local res_copy = res
+    for _, res in ipairs(res_copy) do
+        local key = short_key(self, res.key)
+        if res.value and type(res.value) ~= "table" then
             self:upgrade_version(res.modifiedIndex)
-
-            return false, "failed to check item data of ["
-                            .. self.key .. "] err:" .. err
+            return false, "invalid item data of [" .. self.key .. "/" .. key
+                            .. "], val: " .. res.value
+                            .. ", it shoud be a object"
         end
-    end
 
-    self:upgrade_version(res.modifiedIndex)
+        if res.value and self.item_schema then
+            local ok, err = check_schema(self.item_schema, res.value)
+            if not ok then
+                self:upgrade_version(res.modifiedIndex)
 
-    if res.dir then
-        if res.value then
-            return false, "todo: support for parsing `dir` response "
-                            .. "structures. " .. json.encode(res)
-        end
-        return false
-    end
-
-    if self.filter then
-        self.filter(res)
-    end
-
-    local pre_index = self.values_hash[key]
-    if pre_index then
-        local pre_val = self.values[pre_index]
-        if pre_val and pre_val.clean_handlers then
-            for _, clean_handler in ipairs(pre_val.clean_handlers) do
-                clean_handler(pre_val)
+                return false, "failed to check item data of ["
+                                .. self.key .. "] err:" .. err
             end
-            pre_val.clean_handlers = nil
         end
 
-        if res.value then
-            res.value.id = key
-            self.values[pre_index] = res
+        self:upgrade_version(res.modifiedIndex)
+
+        if res.dir then
+            if res.value then
+                return false, "todo: support for parsing `dir` response "
+                                .. "structures. " .. json.encode(res)
+            end
+            return false
+        end
+
+        if self.filter then
+            self.filter(res)
+        end
+
+        local pre_index = self.values_hash[key]
+        if pre_index then
+            local pre_val = self.values[pre_index]
+            if pre_val and pre_val.clean_handlers then
+                for _, clean_handler in ipairs(pre_val.clean_handlers) do
+                    clean_handler(pre_val)
+                end
+                pre_val.clean_handlers = nil
+            end
+
+            if res.value then
+                res.value.id = key
+                self.values[pre_index] = res
+                res.clean_handlers = {}
+
+            else
+                self.sync_times = self.sync_times + 1
+                self.values[pre_index] = false
+            end
+
+        elseif res.value then
             res.clean_handlers = {}
-
-        else
-            self.sync_times = self.sync_times + 1
-            self.values[pre_index] = false
+            insert_tab(self.values, res)
+            self.values_hash[key] = #self.values
+            res.value.id = key
         end
 
-    elseif res.value then
-        res.clean_handlers = {}
-        insert_tab(self.values, res)
-        self.values_hash[key] = #self.values
-        res.value.id = key
-    end
-
-    -- avoid space waste
-    -- todo: need to cover this path, it is important.
-    if self.sync_times > 100 then
-        local count = 0
-        for i = 1, #self.values do
-            local val = self.values[i]
-            self.values[i] = nil
-            if val then
-                count = count + 1
-                self.values[count] = val
+        -- avoid space waste
+        -- todo: need to cover this path, it is important.
+        if self.sync_times > 100 then
+            local count = 0
+            for i = 1, #self.values do
+                local val = self.values[i]
+                self.values[i] = nil
+                if val then
+                    count = count + 1
+                    self.values[count] = val
+                end
             end
+
+            for i = 1, count do
+                key = short_key(self, self.values[i].key)
+                self.values_hash[key] = i
+            end
+            self.sync_times = 0
         end
 
-        for i = 1, count do
-            key = short_key(self, self.values[i].key)
-            self.values_hash[key] = i
-        end
-        self.sync_times = 0
+        self.conf_version = self.conf_version + 1
     end
-
-    self.conf_version = self.conf_version + 1
 
     return self.values
 end
