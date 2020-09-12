@@ -291,11 +291,6 @@ _EOC_
         }
     }
 
-_EOC_
-
-
-    $http_config .= <<_EOC_;
-
     server {
         listen 1999;
         server_tokens off;
@@ -308,6 +303,7 @@ _EOC_
     }
 
 _EOC_
+
 
     $block->set_value("http_config", $http_config);
 
