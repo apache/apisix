@@ -82,12 +82,12 @@ echo "passed: change default ssl port"
 echo "
 nginx_config:
     envs:
-        - APISIX_PROFILE
+        - TEST
 " > conf/config.yaml
 
 make init
 
-grep "env APISIX_PROFILE;" conf/nginx.conf > /dev/null
+grep "env TEST;" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: failed to update env"
     exit 1
