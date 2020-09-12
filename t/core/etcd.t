@@ -25,7 +25,25 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: (add + update + delete) *2 (same uri)
+=== TEST 1: delete test data if exists
+--- config
+    location /delete {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /delete
+--- no_error_log
+[error]
+--- ignore_response
+
+
+
+=== TEST 2: (add + update + delete) *2 (same uri)
 --- config
     location /add {
         content_by_lua_block {
@@ -94,7 +112,7 @@ Host: foo.com
 
 
 
-=== TEST 2: add + update + delete + add + update + delete (different uris)
+=== TEST 3: add + update + delete + add + update + delete (different uris)
 --- config
     location /add {
         content_by_lua_block {
@@ -217,7 +235,7 @@ Host: foo.com
 
 
 
-=== TEST 3: add*50 + update*50 + delete*50
+=== TEST 4: add*50 + update*50 + delete*50
 --- config
     location /add {
         content_by_lua_block {
