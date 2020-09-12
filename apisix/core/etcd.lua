@@ -18,6 +18,7 @@ local fetch_local_conf = require("apisix.core.config_local").local_conf
 local etcd             = require("resty.etcd")
 local clone_tab        = require("table.clone")
 local type             = type
+local ipairs           = ipairs
 local string           = string
 local tonumber         = tonumber
 
