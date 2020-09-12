@@ -14,17 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    $ENV{TEST_NGINX_SLEEP} = 0.1;
-}
-
 use t::APISIX 'no_plan';
 
 repeat_each(1);
 log_level('info');
 no_root_location();
 no_shuffle();
-master_on();
 
 our $yaml_config = <<_EOC_;
 apisix:
