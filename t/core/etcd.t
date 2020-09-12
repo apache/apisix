@@ -25,27 +25,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: delete if needed
---- config
-    location /delete {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /delete
---- ignore_response
-
-=== TEST 2: add + update + delete
+=== TEST 1: (add + update + delete) *2 (same uri)
 --- config
     location /add {
         content_by_lua_block {
@@ -53,7 +33,7 @@ GET /delete
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "methods": ["GET"],
+                    
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -75,7 +55,6 @@ GET /delete
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "methods": ["GET"],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 2
@@ -94,45 +73,184 @@ GET /delete
     location /delete {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
             ngx.status = code
             ngx.say(body)
         }
     }
 --- pipelined_requests eval
-["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /delete", "GET /hello"]
+["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /delete", "GET /hello",
+"GET /add", "GET /hello", "GET /update", "GET /hello", "GET /delete", "GET /hello"]
 --- more_headers
 Host: foo.com
 --- error_code eval
-[201, 200, 200, 200, 200, 404]
+[201, 200, 200, 200, 200, 404, 201, 200, 200, 200, 200, 404]
 --- response_body eval
-["passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
+["passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n",
+"passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
 --- no_error_log
 [error]
+--- timeout: 5
 
-=== TEST 3: add*10 + update*10 + delete*10
+
+
+=== TEST 2: add + update + delete + add + update + delete (different uris)
+--- config
+    location /add {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "host": "foo.com",
+                    "uri": "/hello"
+                }]],
+                nil
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location /update {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 2
+                        },
+                        "type": "roundrobin"
+                    },
+                    "host": "foo.com",
+                    "uri": "/status"
+                }]],
+                nil
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location /delete {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location /add2 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "host": "foo.com",
+                    "uri": "/hello_"
+                }]],
+                nil
+                )
+                ngx.sleep(1)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location /update2 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 2
+                        },
+                        "type": "roundrobin"
+                    },
+                    "host": "foo.com",
+                    "uri": "/hello1"
+                }]],
+                nil
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location /delete2 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- pipelined_requests eval
+["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /status", "GET /delete", "GET /status", 
+"GET /add2", "GET /hello_", "GET /update2", "GET /hello_", "GET /hello1", "GET /delete", "GET /hello1"]
+--- more_headers
+Host: foo.com
+--- error_code eval
+[201, 200, 200, 404, 200, 200, 404, 201, 200, 200, 404, 200, 200, 404]
+--- response_body eval
+["passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", "ok\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", 
+"passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", "hello1 world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
+--- no_error_log
+[error]
+--- timeout: 5
+
+
+
+=== TEST 3: add*50 + update*50 + delete*50
 --- config
     location /add {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local path = ""
-            local host = ""
             local code, body
-            for i = 1, 10 do
+            for i = 1, 25 do
                 path = '/apisix/admin/routes/' .. tostring(i)
-                host = "foo-" .. tostring(i)
                 code, body = t(path,
                     ngx.HTTP_PUT,
-                    string.format('{"methods": ["GET"],"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "%s","uri": "/hello"}', host),
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1999": 1},"type": "roundrobin"},"host": "foo.com","uri": "/hello%s"}', tostring(i)),
                     nil
                     )
             end
+            ngx.sleep(2)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location /add2 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local path = ""
+            local code, body
+            for i = 26, 50 do
+                path = '/apisix/admin/routes/' .. tostring(i)
+                code, body = t(path,
+                    ngx.HTTP_PUT,
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1999": 1},"type": "roundrobin"},"host": "foo.com","uri": "/hello%s"}', tostring(i)),
+                    nil
+                    )
+            end
+            ngx.sleep(2)
             ngx.status = code
             ngx.say(body)
         }
@@ -141,18 +259,34 @@ Host: foo.com
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local path = ""
-            local host = ""
             local code, body
-            for i = 1, 10 do
+            for i = 1, 25 do
                 path = '/apisix/admin/routes/' .. tostring(i)
-                host = "foo-" .. tostring(i)
                 code, body = t(path,
                     ngx.HTTP_PUT,
-                    string.format('{"methods": ["GET"],"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "%s","uri": "/hello"}', host),
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1999": 1},"type": "roundrobin"},"host": "foo.com","uri": "/status%s"}', tostring(i)),
                     nil
                     )
             end
-            
+            ngx.sleep(2)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location /update2 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local path = ""
+            local code, body
+            for i = 26, 50 do
+                path = '/apisix/admin/routes/' .. tostring(i)
+                code, body = t(path,
+                    ngx.HTTP_PUT,
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "foo.com","uri": "/status%s"}', tostring(i)),
+                    nil
+                    )
+            end
+            ngx.sleep(2)
             ngx.status = code
             ngx.say(body)
         }
@@ -161,29 +295,23 @@ Host: foo.com
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local path = ""
-            local host = ""
             local code, body
-            for i = 1, 10 do
+            for i = 1, 50 do
                 path = '/apisix/admin/routes/' .. tostring(i)
-                code, body = t(path,
-                    ngx.HTTP_DELETE,
-                    nil,
-                    [[{
-                        "action": "delete"
-                    }]]
-                    )
+                code, body = t(path, ngx.HTTP_DELETE)
             end
             ngx.status = code
             ngx.say(body)
         }
     }
 --- pipelined_requests eval
-["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /delete", "GET /hello"]
+["GET /add", "GET /hello20", "GET /add2", "GET /hello36", "GET /update", "GET /status12", "GET /delete", "GET /status12"]
 --- more_headers
-Host: foo-7
+Host: foo.com
 --- error_code eval
-[201, 200, 200, 200, 200, 404]
+[201, 200, 201, 200, 200, 200, 200, 404]
 --- response_body eval
-["passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
+["passed\n", "/hello20\n", "passed\n", "/hello36\n", "passed\n", "/status12\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
 --- no_error_log
 [error]
+--- timeout: 20

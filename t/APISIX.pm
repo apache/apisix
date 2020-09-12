@@ -293,6 +293,22 @@ _EOC_
 
 _EOC_
 
+
+    $http_config .= <<_EOC_;
+
+    server {
+        listen 1999;
+        server_tokens off;
+        location / {
+            content_by_lua_block{
+                ngx.say(ngx.var.uri);
+            }
+            more_clear_headers Date;
+        }
+    }
+
+_EOC_
+
     $block->set_value("http_config", $http_config);
 
     my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
