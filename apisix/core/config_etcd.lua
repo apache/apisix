@@ -114,7 +114,7 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     end
 
     -- try twice to skip create info
-    local res, err = res_fun() 
+    local res, err = res_fun()
     if not res or not res.result or not res.result.events then
         res, err = res_fun()
     end
