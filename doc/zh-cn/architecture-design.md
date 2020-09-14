@@ -579,9 +579,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 结合 [consumer-restriction](plugins/consumer-restriction.md) 插件，限制jack对该 route 的访问
 
+```shell
 # 设置黑名单，禁止jack访问该API
 
-```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -613,7 +613,7 @@ HTTP/1.1 403
 ## Global Rule
 
 [Plugin](#Plugin) 只能绑定在 [Service](#Service) 或者 [Route](#Route) 上，如果我们需要一个能作用于所有请求的 [Plugin](#Plugin) 该怎么办呢？
-这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
+这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
 
 ```shell
 curl -X PUT \
