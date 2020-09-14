@@ -94,6 +94,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
 --- no_error_log
 [error]
 
@@ -122,6 +124,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
 --- no_error_log
 [error]
 
@@ -151,6 +155,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
 --- no_error_log
 [error]
 
@@ -180,6 +186,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
 --- no_error_log
 [error]
 
