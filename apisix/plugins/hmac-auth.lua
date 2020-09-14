@@ -256,6 +256,10 @@ local function get_params(ctx)
     -- get params from header `Authorization`
     if not ak then
         local auth_string = core.request.header(ctx, "Authorization")
+        if not auth_string then
+            return params
+        end
+        
         local auth_data = ngx_re.split(auth_string, "#")
         core.log.info("auth_string: ", auth_string, " #auth_data: ",
             #auth_data, " auth_data: ", core.json.delay_encode(auth_data))

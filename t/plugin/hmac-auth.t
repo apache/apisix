@@ -14,10 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    $ENV{"CUSTOM_HMAC_AUTH"} = "false"
-}
-
 use t::APISIX 'no_plan';
 
 repeat_each(2);
@@ -577,5 +573,16 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: hit route without auth info
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"access key or signature missing"}
 --- no_error_log
 [error]
