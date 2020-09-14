@@ -39,23 +39,30 @@ local plugin_name   = "hmac-auth"
 
 local schema = {
     type = "object",
-    properties = {
-        access_key = {type = "string", minLength = 1, maxLength = 256},
-        secret_key = {type = "string", minLength = 1, maxLength = 256},
-        algorithm = {
-            type = "string",
-            enum = {"hmac-sha1", "hmac-sha256", "hmac-sha512"},
-            default = "hmac-sha256"
+    oneOf = {
+        {
+            title = "work with consumer object",
+            properties = {
+                access_key = {type = "string", minLength = 1, maxLength = 256},
+                secret_key = {type = "string", minLength = 1, maxLength = 256},
+                algorithm = {
+                    type = "string",
+                    enum = {"hmac-sha1", "hmac-sha256", "hmac-sha512"},
+                    default = "hmac-sha256"
+                },
+                clock_skew = {
+                    type = "integer",
+                    default = 300
+                }
+            },
+            required = {"access_key", "secret_key"},
+            additionalProperties = false,
         },
-        clock_skew = {
-            type = "integer",
-            default = 300
+        {
+            title = "work with route or service object",
+            properties = {},
+            additionalProperties = false,
         }
-    },
-    dependencies = {
-        ["access_key"] = {"secret_key"},
-        ["secret_key"] = {"access_key"},
-        ["algorithm"]  = {"secret_key", "access_key"}
     }
 }
 
@@ -152,9 +159,8 @@ local function generate_signature(ctx, secret_key, params)
     if type(args) == "table" then
         local keys = {}
         local query_tab = {}
-        local query_tab_size = 1
 
-        for k,v in pairs(args) do
+        for k, v in pairs(args) do
             core.table.insert(keys, k)
         end
         core.table.sort(keys)
@@ -163,22 +169,20 @@ local function generate_signature(ctx, secret_key, params)
             local param = args[key]
             if type(param) == "table" then
                 for _, vval in pairs(param) do
-                    query_tab[query_tab_size] = escape_uri(key) .. "=" .. escape_uri(vval)
-                    query_tab_size = query_tab_size + 1
+                    core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(vval))
                 end
             else
-                query_tab[query_tab_size] = escape_uri(key) .. "=" .. escape_uri(param)
-                query_tab_size = query_tab_size + 1
+                core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(param))
             end
         end
         canonical_query_string = core.table.concat(query_tab, "&")
     end
 
-    local req_body, _ = core.request.get_body()
+    local req_body = core.request.get_body()
     req_body = req_body or ""
 
     local signing_string = request_method .. canonical_uri ..  canonical_query_string ..
-    req_body .. params.access_key .. params.timestamp .. secret_key
+        req_body .. params.access_key .. params.timestamp .. secret_key
 
     return hmac_funcs[params.algorithm](secret_key, signing_string)
 end
@@ -186,17 +190,17 @@ end
 
 local function validate(ctx, params)
     if not params.access_key or not params.signature then
-        return false, nil, {message = "access key or signature missing"}
+        return nil, {message = "access key or signature missing"}
     end
 
     local consumer, err = get_consumer(params.access_key)
     if err then
-        return false, nil, err
+        return nil, err
     end
 
     local conf = consumer.auth_conf
     if conf.algorithm ~= params.algorithm then
-        return false, nil, {message = str_fmt("algorithm %s not supported", params.algorithm)}
+        return nil, {message = str_fmt("algorithm %s not supported", params.algorithm)}
     end
 
     core.log.info("conf.clock_skew:", conf.clock_skew)
@@ -204,7 +208,7 @@ local function validate(ctx, params)
         local diff = abs(ngx_time() - params.timestamp)
         core.log.info("conf.diff:", diff)
         if diff > conf.clock_skew then
-          return false, nil, {message = "Invalid timestamp"}
+          return nil, {message = "Invalid timestamp"}
         end
     end
 
@@ -212,10 +216,14 @@ local function validate(ctx, params)
     local request_signature   = ngx_decode_base64(params.signature)
     local generated_signature = generate_signature(ctx, secret_key, params)
 
-    core.log.info("request_signature:", request_signature)
-    core.log.info("generated_signature:", generated_signature)
+    core.log.info("request_signature: ", request_signature,
+        " generated_signature: ", generated_signature)
 
-    return request_signature == generated_signature, consumer
+    if request_signature ~= generated_signature then
+        return nil, {message = "Invalid signature"}
+    end
+
+    return consumer
 end
 
 local function get_params(ctx)
@@ -254,7 +262,6 @@ local function get_params(ctx)
         end
     end
 
-
     params.access_key = ak
     params.algorithm  = algorithm
     params.signature  = signature
@@ -266,12 +273,12 @@ end
 
 function _M.rewrite(conf, ctx)
     local params = get_params(ctx)
-    local ok, validated_consumer, err = validate(ctx, params)
+    local validated_consumer, err = validate(ctx, params)
     if err then
         return 401, err
     end
 
-    if not ok then
+    if not validated_consumer then
         return 401, {message = "Invalid signature"}
     end
 
