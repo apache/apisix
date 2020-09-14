@@ -87,11 +87,12 @@ local hmac_funcs = {
 
 
 local function try_attr(t, ...)
+    local tbl = t
     local count = select('#', ...)
     for i = 1, count do
         local attr = select(i, ...)
-        t = t[attr]
-        if type(t) ~= "table" then
+        tbl = tbl[attr]
+        if type(tbl) ~= "table" then
             return false
         end
     end
@@ -259,7 +260,7 @@ local function get_params(ctx)
         if not auth_string then
             return params
         end
-        
+
         local auth_data = ngx_re.split(auth_string, "#")
         core.log.info("auth_string: ", auth_string, " #auth_data: ",
             #auth_data, " auth_data: ", core.json.delay_encode(auth_data))
