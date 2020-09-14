@@ -110,7 +110,7 @@ function _M.get_format(res, realkey)
     end
 
     res.body.kvs = nil
-    return res, nil
+    return res
 end
 
 
