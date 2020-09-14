@@ -157,6 +157,10 @@ local function generate_signature(ctx, secret_key, params)
     local request_method = ngx_req.get_method()
     local args = ngx_req.get_uri_args()
 
+    if canonical_uri == "" then
+        canonical_uri = "/"
+    end
+
     if type(args) == "table" then
         local keys = {}
         local query_tab = {}
