@@ -80,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-#### 签名生成公式
+### 签名生成公式
 
 签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signning_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signning_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signning_string` 的计算公式为： `signning_string = HTTP Method + HTTP URI + canonical_query_string + HTTP BODY + access_key + timestamp + secret_key`
 
@@ -92,19 +92,18 @@ HTTP URI 要求必须以“/”开头，不以“/”开头的需要补充上，
 3. canonical_query_string
 canonical_query_string 是对于 URL 中的 query（ query 即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串）进行编码后的结果。
 
-编码步骤如下：
+> 编码步骤如下：
 
-    提取 URL 中的 query 项，即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串。
-    将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
-    对拆开后的每一项进行编码处理，分以下三种情况。
-
-    当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
-    当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
-    将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
-
+* 提取 URL 中的 query 项，即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串。
+* 将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
+* 对拆开后的每一项进行编码处理，分以下三种情况:
+  * 当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
+  * 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
+  * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
 
 
-#### 使用生成好的签名进行请求尝试
+
+### 使用生成好的签名进行请求尝试
 
 **注： ACCESS_KEY,SIGNATURE,ALGORITHM,TIMESTAMP 分别代表对应的变量**
 
