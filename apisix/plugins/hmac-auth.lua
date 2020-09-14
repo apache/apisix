@@ -88,12 +88,11 @@ local hmac_funcs = {
 
 
 local function try_attr(t, ...)
-    local conf
     local count = select('#', ...)
     for i = 1, count do
         local attr = select(i, ...)
-        conf = t[attr]
-        if type(conf) ~= "table" then
+        t = t[attr]
+        if type(t) ~= "table" then
             return false
         end
     end
@@ -251,14 +250,14 @@ local function get_params(ctx)
     local signature = core.request.header(ctx, signature_key)
     local algorithm = core.request.header(ctx, algorithm_key)
     local timestamp = core.request.header(ctx, timestamp_key)
+    core.log.info("signature_key: ", signature_key)
 
     -- get params from header `Authorization`
     if not ak then
         local auth_string = core.request.header(ctx, "Authorization")
-        core.log.info("auth_string:", auth_string)
         local auth_data = ngx_re.split(auth_string, "#")
-        core.log.info("#auth_data:", #auth_data)
-        core.log.info("auth_data:", core.json.delay_encode(auth_data))
+        core.log.info("auth_string: ", auth_string, " #auth_data: ",
+            #auth_data, " auth_data: ", core.json.delay_encode(auth_data))
         if #auth_data == 5 and auth_data[1] == "hmac-auth-v1" then
             ak = auth_data[2]
             signature = auth_data[3]
