@@ -497,7 +497,7 @@ location /t {
         local hmac = require("resty.hmac")
         local ngx_encode_base64 = ngx.encode_base64
 
-        local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+        local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
         local req_body = core.json.encode(data)
         req_body = req_body or ""
 
@@ -505,7 +505,7 @@ location /t {
         local timestamp = ngx_time()
         local access_key = "my-access-key"
         local signing_string = "PUT" .. "/hello" ..  "" ..
-        req_body .. access_key .. timestamp .. secret_key
+            req_body .. access_key .. timestamp .. secret_key
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))

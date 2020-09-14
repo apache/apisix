@@ -19,7 +19,6 @@ local type       = type
 local select     = select
 local abs        = math.abs
 local ngx_time   = ngx.time
-local str_fmt    = string.format
 local ngx_re     = require("ngx.re")
 local ngx_req    = ngx.req
 local pairs      = pairs
@@ -146,7 +145,7 @@ local function get_consumer(access_key)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    return consumer, nil
+    return consumer
 end
 
 
@@ -185,8 +184,10 @@ local function generate_signature(ctx, secret_key, params)
     local req_body = core.request.get_body()
     req_body = req_body or ""
 
-    local signing_string = request_method .. canonical_uri ..  canonical_query_string ..
-        req_body .. params.access_key .. params.timestamp .. secret_key
+    local signing_string = request_method .. canonical_uri
+                            .. canonical_query_string .. req_body
+                            .. params.access_key .. params.timestamp
+                            .. secret_key
 
     return hmac_funcs[params.algorithm](secret_key, signing_string)
 end
@@ -204,13 +205,13 @@ local function validate(ctx, params)
 
     local conf = consumer.auth_conf
     if conf.algorithm ~= params.algorithm then
-        return nil, {message = str_fmt("algorithm %s not supported", params.algorithm)}
+        return nil, {message = "algorithm " .. params.algorithm .. " not supported"}
     end
 
-    core.log.info("conf.clock_skew:", conf.clock_skew)
+    core.log.info("conf.clock_skew: ", conf.clock_skew)
     if conf.clock_skew and conf.clock_skew > 0 then
         local diff = abs(ngx_time() - params.timestamp)
-        core.log.info("conf.diff:", diff)
+        core.log.info("conf.diff: ", diff)
         if diff > conf.clock_skew then
           return nil, {message = "Invalid timestamp"}
         end
