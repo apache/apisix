@@ -172,8 +172,8 @@ local function generate_signature(ctx, secret_key, params)
         for _, key in pairs(keys) do
             local param = args[key]
             if type(param) == "table" then
-                for _, vval in pairs(param) do
-                    core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(vval))
+                for _, val in pairs(param) do
+                    core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(val))
                 end
             else
                 core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(param))
