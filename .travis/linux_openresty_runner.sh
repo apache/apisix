@@ -74,11 +74,7 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
-    wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
-    tar xf etcd-v3.4.0-linux-amd64.tar.gz
-    sudo cp etcd-v3.4.0-linux-amd64/etcd /usr/local/bin/
-    sudo cp etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
-    rm -rf etcd-v3.4.0-linux-amd64
+    ./utils/install-etcd.sh
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
