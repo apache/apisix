@@ -88,11 +88,12 @@ local hmac_funcs = {
 
 
 local function try_attr(t, ...)
+    local conf
     local count = select('#', ...)
     for i = 1, count do
         local attr = select(i, ...)
-        t = t[attr]
-        if type(t) ~= "table" then
+        conf = t[attr]
+        if type(conf) ~= "table" then
             return false
         end
     end
