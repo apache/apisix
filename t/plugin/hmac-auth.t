@@ -83,7 +83,7 @@ passed
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "jack",
+                    "username": "foo",
                     "plugins": {
                         "hmac-auth": {
                             "access_key": "user-key"
@@ -111,7 +111,7 @@ GET /t
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "jack",
+                    "username": "bar",
                     "plugins": {
                         "hmac-auth": {
                             "secret_key": "skey"
@@ -131,7 +131,65 @@ GET /t
 
 
 
-=== TEST 4: enable hmac auth plugin using admin api
+=== TEST 4: add consumer with plugin hmac-auth - access key exceeds the length limit
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "li",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "akeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakey",
+                            "secret_key": "skey"
+                        }
+                    }
+                }]])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: add consumer with plugin hmac-auth - access key exceeds the length limit
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "zhang",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "akey",
+                            "secret_key": "skeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskey"
+                        }
+                    }
+                }]])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: enable hmac auth plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
@@ -167,7 +225,7 @@ passed
 
 
 
-=== TEST 5: verify, missing signature
+=== TEST 7: verify, missing signature
 --- request
 GET /hello
 --- error_code: 401
@@ -178,7 +236,7 @@ GET /hello
 
 
 
-=== TEST 6: verify: invalid access key
+=== TEST 8: verify: invalid access key
 --- request
 GET /hello
 --- more_headers
@@ -194,7 +252,7 @@ X-HMAC-ACCESS-KEY: sdf
 
 
 
-=== TEST 7: verify: invalid algorithm
+=== TEST 9: verify: invalid algorithm
 --- request
 GET /hello
 --- more_headers
@@ -210,7 +268,7 @@ X-HMAC-ACCESS-KEY: sdf
 
 
 
-=== TEST 8: verify: invalid timestamp
+=== TEST 10: verify: invalid timestamp
 --- request
 GET /hello
 --- more_headers
@@ -226,7 +284,7 @@ X-HMAC-ACCESS-KEY: my-access-key
 
 
 
-=== TEST 9: verify: ok
+=== TEST 11: verify: ok
 --- config
 location /t {
     content_by_lua_block {
@@ -270,7 +328,7 @@ passed
 
 
 
-=== TEST 10: add consumer with 0 clock skew
+=== TEST 12: add consumer with 0 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -318,7 +376,7 @@ passed
 
 
 
-=== TEST 11: verify: invalid signature
+=== TEST 13: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
@@ -334,7 +392,7 @@ X-HMAC-ACCESS-KEY: my-access-key3
 
 
 
-=== TEST 12: add consumer with 1 clock skew
+=== TEST 14: add consumer with 1 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -382,7 +440,7 @@ passed
 
 
 
-=== TEST 13: verify: invalid timestamp
+=== TEST 15: verify: invalid timestamp
 --- config
 location /t {
     content_by_lua_block {
@@ -429,7 +487,7 @@ qr/\{"message":"Invalid timestamp"\}/
 
 
 
-=== TEST 14: verify: put ok
+=== TEST 16: verify: put ok
 --- config
 location /t {
     content_by_lua_block {
@@ -477,7 +535,7 @@ passed
 
 
 
-=== TEST 15: verify: put ok (pass auth data by header `Authorization`)
+=== TEST 17: verify: put ok (pass auth data by header `Authorization`)
 --- config
 location /t {
     content_by_lua_block {
