@@ -563,6 +563,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 Use the [consumer-restriction](plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
 
+```shell
 # Add Jack to the blacklist
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -615,7 +616,7 @@ curl -X PUT \
     }'
 ```
 
-Now, the `limit-count` plugin will work on all requets
+Now, the `limit-count` plugin will work on all requests
 
 we can list all `GlobalRule` via admin api as below:
 
