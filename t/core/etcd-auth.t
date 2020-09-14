@@ -18,33 +18,27 @@ BEGIN {
     $ENV{"ETCD_ENABLE_AUTH"} = "true"
 }
 
-use t::APISIX;
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
 no_root_location();
 log_level("info");
 
-my $etcd_version = `etcdctl version`;
-if ($etcd_version =~ /etcdctl version: 3.2/) {
-    plan(skip_all => "skip for etcd version v3.2");
-} else {
-    plan 'no_plan';
-    # Authentication is enabled at etcd and credentials are set
-    system('etcdctl --endpoints="http://127.0.0.1:2379" user add root:5tHkHhYkjr6cQY');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" role add root');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" user grant-role root root');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" role list');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" user user list');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" auth enable');
+# Authentication is enabled at etcd and credentials are set
+system('etcdctl --endpoints="http://127.0.0.1:2379" user add root:5tHkHhYkjr6cQY');
+system('etcdctl --endpoints="http://127.0.0.1:2379" role add root');
+system('etcdctl --endpoints="http://127.0.0.1:2379" user grant-role root root');
+system('etcdctl --endpoints="http://127.0.0.1:2379" role list');
+system('etcdctl --endpoints="http://127.0.0.1:2379" user user list');
+system('etcdctl --endpoints="http://127.0.0.1:2379" auth enable');
 
-    run_tests;
+run_tests;
 
-    # Authentication is disabled at etcd
-    system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" user delete root');
-    system('etcdctl --endpoints="http://127.0.0.1:2379" role delete root');
-}
+# Authentication is disabled at etcd
+system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
+system('etcdctl --endpoints="http://127.0.0.1:2379" user delete root');
+system('etcdctl --endpoints="http://127.0.0.1:2379" role delete root');
 
 
 __DATA__

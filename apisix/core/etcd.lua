@@ -92,19 +92,24 @@ function _M.get_format(res, realkey)
     end
     res.body.action = "get"
 
+    -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
+    -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
+    -- Thus there are three different circumstances for etcd v2-v3 conversion
+    -- First let's assume the first kv in kvs would be the node (the key we asked for)
+    --  1. kvs[1].value = nil, so the first is the node (in v2, only dir would contains no value)
+    --  2. kvs[1].key ~= key asked for, thus the node not created, and first kv would be in nodes
+    --  3. in the rest when #kvs > 1 suggests the first is node and others are nodes
     res.body.node = kvs_to_node(res.body.kvs[1])
-    -- kvs.value = nil, so key is root
     if type(res.body.kvs[1].value) == "userdata" or not res.body.kvs[1].value then
         -- remove last "/" when necesary
         if string.sub(res.body.node.key, -1, -1) == "/" then
             res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
         end
         res = kvs_to_nodes(res, 2)
-    -- key not match, so realkey is root
     elseif res.body.kvs[1].key ~= realkey then
         res.body.node.key = realkey
+        res.body.node.value = nil
         res = kvs_to_nodes(res, 1)
-    -- first is root (in v2, root not contains value), others are nodes
     elseif #res.body.kvs > 1 then
         res = kvs_to_nodes(res, 2)
     end
