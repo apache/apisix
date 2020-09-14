@@ -167,7 +167,7 @@ return limit_conn_new("plugin-limit-conn" .. "plugin-limit-conn"
 ```lua
 --Yes
 return "param1", "plugin-limit-conn"
-                 .. "plugin-limit-conn")
+                 .. "plugin-limit-conn"
 ```
 
 ## Variable
