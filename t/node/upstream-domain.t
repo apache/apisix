@@ -35,7 +35,7 @@ __DATA__
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
-                        "baidu.com:80": 0,
+                        "foo.com:80": 0,
                         "127.0.0.1:1980": 1
                     },
                     "type": "roundrobin",
@@ -105,7 +105,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
 
 
 
@@ -219,3 +219,113 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: set upstream(with domain)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "foo.com:80": 0,
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: set empty service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "desc": "new service",
+                    "plugins": {
+                        "prometheus": {}
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: set route(with upstream)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "foo.com": 0,
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "service_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit routes, parse the domain of upstream node
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log eval
+qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
