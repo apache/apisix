@@ -263,10 +263,10 @@ GET /hello
 X-HMAC-SIGNATURE: asdf
 X-HMAC-ALGORITHM: ljlj
 X-HMAC-TIMESTAMP: 112
-X-HMAC-ACCESS-KEY: sdf
+X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Invalid access key"}
+{"message":"algorithm ljlj not supported"}
 --- no_error_log
 [error]
 
