@@ -37,10 +37,47 @@ qr/"plugins":\{"type":"object"}/
 
 
 === TEST 2: get service schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/schema/service',
+                ngx.HTTP_GET,
+                "",
+                [[{
+                    "anyOf": [
+                        {
+                            "required":[
+                                "upstream"
+                            ]
+                        },
+                        {
+                            "required":[
+                                "upstream_id"
+                            ]
+                        },
+                        {
+                            "required":[
+                                "plugins"
+                            ]
+                        },
+                        {
+                            "required":[
+                                "script"
+                            ]
+                        }
+                    ],
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
 --- request
-GET /apisix/admin/schema/service
---- response_body eval
-qr/"required".*additionalProperties/
+GET /t
+--- error_code 500
 --- no_error_log
 [error]
 
