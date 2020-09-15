@@ -1088,7 +1088,7 @@ GET /t
 
 
 
-=== TEST 31: set service(id: 1)（allow empty `service` object）
+=== TEST 31: set empty service(id: 1)（allow empty `service` object）
 --- config
     location /t {
         content_by_lua_block {
@@ -1096,7 +1096,7 @@ GET /t
             local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "desc": "empty service"
+
                 }]]
                 )
 
@@ -1113,13 +1113,34 @@ passed
 
 
 
-=== TEST 32: get service(id: 1)（allow empty `service` object)
+=== TEST 32: get empty service(id: 1)（allow empty `service` object)
+--- request
+GET /apisix/admin/services/1
+--- response_body eval
+qr/"value":\{"id":"1"}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: add plugins content(id: 1)（allow empty `service` object）
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_GET
+                ngx.HTTP_PUT,
+                [[{
+                    "desc": "empty service",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
                 )
 
             ngx.status = code
@@ -1130,5 +1151,105 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: get plugin content of service (id: 1)（allow empty `service` object)
+--- request
+GET /apisix/admin/services/1
+--- response_body eval
+qr/"plugins":\{"limit-count":\{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"\}\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: add upstream content(id: 1)（allow empty `service` object）
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "desc": "empty service",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:80": 1
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: get upstream service content (id: 1)（allow empty `service` object)
+--- request
+GET /apisix/admin/services/1
+--- response_body eval
+qr/"value":\{"desc":"empty service","upstream":\{"type":"roundrobin","nodes":\{"127.0.0.1:80":1\},"hash_on":"vars","pass_host":"pass"\},"id":"1"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: add upstream and plugin content (id: 1)（allow empty `service` object）
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "desc": "empty service",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:80": 1
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: get upstream and plugin content of service (id: 1)（allow empty `service` object)
+--- request
+GET /apisix/admin/services/1
+--- response_body eval
+qr/"value":\{"desc":"empty service","plugins":\{"limit-count":\{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"\}\},"upstream":\{"type":"roundrobin","nodes":\{"127.0.0.1:80":1\},"hash_on":"vars","pass_host":"pass"\},"id":"1"\}/
 --- no_error_log
 [error]
