@@ -141,7 +141,6 @@ Accept-Ranges: bytes
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
 {
     "uri": "/index.html",
-    "id": 1,
     "plugins": {},
     "upstream": {
         "type": "roundrobin",

@@ -140,7 +140,6 @@ no need to restart the service, it will take effect immediately:
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d '
 {
     "uri": "/index.html",
-    "id": 1,
     "plugins": {},
     "upstream": {
         "type": "roundrobin",
