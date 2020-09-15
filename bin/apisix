@@ -892,11 +892,11 @@ local function init_etcd(show_output)
         -- check if etcd version above 3.4
         cmd = "curl " .. host .. "/version 2>&1"
         local res = excute_cmd(cmd)
-        local etcd_cluster_ver = str_split(res, "\"")[4]
-        local dot_pos = etcd_cluster_ver:find("%.")
-        dot_pos = etcd_cluster_ver:find("%.", dot_pos+1)
-        if tonumber(etcd_cluster_ver:sub(1, dot_pos-1)) < 3.4 then
-            error("etcd version should be above 3.4.0, currently: " .. etcd_cluster_ver)
+        local op_ver = str_split(res, "\"")[4]
+        local need_ver = "1.15.8"
+        if not check_or_version(op_ver, need_ver) then
+            io.stderr:write("etcd version must >=", need_ver, " current ", op_ver, "\n")
+            return
         end
 
         local is_success = true
