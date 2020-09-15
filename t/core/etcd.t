@@ -51,7 +51,7 @@ GET /delete
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    
+
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -120,7 +120,7 @@ Host: foo.com
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    
+
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -142,7 +142,7 @@ Host: foo.com
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    
+
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 2
@@ -172,7 +172,7 @@ Host: foo.com
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    
+
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -195,7 +195,7 @@ Host: foo.com
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    
+
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 2
@@ -220,14 +220,14 @@ Host: foo.com
         }
     }
 --- pipelined_requests eval
-["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /status", "GET /delete", "GET /status", 
+["GET /add", "GET /hello", "GET /update", "GET /hello", "GET /status", "GET /delete", "GET /status",
 "GET /add2", "GET /hello_", "GET /update2", "GET /hello_", "GET /hello1", "GET /delete", "GET /hello1"]
 --- more_headers
 Host: foo.com
 --- error_code eval
 [201, 200, 200, 404, 200, 200, 404, 201, 200, 200, 404, 200, 200, 404]
 --- response_body eval
-["passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", "ok\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", 
+["passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", "ok\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n",
 "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", "hello1 world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
 --- no_error_log
 [error]
@@ -246,9 +246,9 @@ Host: foo.com
                 path = '/apisix/admin/routes/' .. tostring(i)
                 code, body = t(path,
                     ngx.HTTP_PUT,
-                    string.format('{"upstream": {"nodes": {"127.0.0.1:1999": 1},"type": "roundrobin"},"host": "foo.com","uri": "/hello%s"}', tostring(i)),
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "foo.com","uri": "/print_uri_%s"}', tostring(i)),
                     nil
-                    )
+                )
             end
             ngx.sleep(2)
             ngx.status = code
@@ -264,9 +264,9 @@ Host: foo.com
                 path = '/apisix/admin/routes/' .. tostring(i)
                 code, body = t(path,
                     ngx.HTTP_PUT,
-                    string.format('{"upstream": {"nodes": {"127.0.0.1:1999": 1},"type": "roundrobin"},"host": "foo.com","uri": "/hello%s"}', tostring(i)),
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "foo.com","uri": "/print_uri_%s"}', tostring(i)),
                     nil
-                    )
+                )
             end
             ngx.sleep(2)
             ngx.status = code
@@ -282,7 +282,7 @@ Host: foo.com
                 path = '/apisix/admin/routes/' .. tostring(i)
                 code, body = t(path,
                     ngx.HTTP_PUT,
-                    string.format('{"upstream": {"nodes": {"127.0.0.1:1999": 1},"type": "roundrobin"},"host": "foo.com","uri": "/status%s"}', tostring(i)),
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "foo.com","uri": "/print_uri_%s"}', tostring(i)),
                     nil
                     )
             end
@@ -300,7 +300,7 @@ Host: foo.com
                 path = '/apisix/admin/routes/' .. tostring(i)
                 code, body = t(path,
                     ngx.HTTP_PUT,
-                    string.format('{"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "foo.com","uri": "/status%s"}', tostring(i)),
+                    string.format('{"upstream": {"nodes": {"127.0.0.1:1980": 1},"type": "roundrobin"},"host": "foo.com","uri": "/print_uri_%s"}', tostring(i)),
                     nil
                     )
             end
@@ -323,13 +323,13 @@ Host: foo.com
         }
     }
 --- pipelined_requests eval
-["GET /add", "GET /hello20", "GET /add2", "GET /hello36", "GET /update", "GET /status12", "GET /delete", "GET /status12"]
+["GET /add", "GET /print_uri_20", "GET /add2", "GET /print_uri_36", "GET /update", "GET /print_uri_12", "GET /delete", "GET /print_uri_12"]
 --- more_headers
 Host: foo.com
 --- error_code eval
 [201, 200, 201, 200, 200, 200, 200, 404]
 --- response_body eval
-["passed\n", "/hello20\n", "passed\n", "/hello36\n", "passed\n", "/status12\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
+["passed\n", "/print_uri_20\n", "passed\n", "/print_uri_36\n", "passed\n", "/print_uri_12\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
 --- no_error_log
 [error]
 --- timeout: 20

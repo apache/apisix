@@ -247,17 +247,6 @@ _EOC_
         require("apisix").http_init_worker()
     }
 
-    server {
-        listen 1999;
-        server_tokens off;
-        location / {
-            content_by_lua_block{
-                ngx.say(ngx.var.uri);
-            }
-            more_clear_headers Date;
-        }
-    }
-
     # fake server, only for test
     server {
         listen 1980;
