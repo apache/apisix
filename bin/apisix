@@ -690,7 +690,7 @@ local function split(self, sep)
     return fields
  end
 
-local function check_or_version(cur_ver_s, need_ver_s)
+local function check_version(cur_ver_s, need_ver_s)
     local cur_vers = split(cur_ver_s, [[.]])
     local need_vers = split(need_ver_s, [[.]])
     local len = math.max(#cur_vers, #need_vers)
@@ -850,7 +850,7 @@ local function init()
     end
 
     local need_ver = "1.15.8"
-    if not check_or_version(op_ver, need_ver) then
+    if not check_version(op_ver, need_ver) then
         io.stderr:write("openresty version must >=", need_ver, " current ", op_ver, "\n")
         return
     end
@@ -894,7 +894,7 @@ local function init_etcd(show_output)
         local res = excute_cmd(cmd)
         local op_ver = str_split(res, "\"")[4]
         local need_ver = "1.15.8"
-        if not check_or_version(op_ver, need_ver) then
+        if not check_version(op_ver, need_ver) then
             io.stderr:write("etcd version must >=", need_ver, " current ", op_ver, "\n")
             return
         end
