@@ -318,10 +318,12 @@ local function merge_service_route(service_conf, route_conf)
         end
 
         new_conf.value.upstream_id = nil
+        new_conf.has_domain = route_conf.has_domain
     end
 
     if route_conf.value.upstream_id then
         new_conf.value.upstream_id = route_conf.value.upstream_id
+        new_conf.has_domain = route_conf.has_domain
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
