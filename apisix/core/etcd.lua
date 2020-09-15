@@ -17,7 +17,6 @@
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local etcd             = require("resty.etcd")
 local clone_tab        = require("table.clone")
-local type             = type
 local ipairs           = ipairs
 local string           = string
 local tonumber         = tonumber
@@ -58,15 +57,11 @@ local function kvs_to_node(kvs)
     return node
 end
 
-local function kvs_to_nodes(res, start_index)
+local function kvs_to_nodes(res)
     res.body.node.dir = true
     res.body.node.nodes = {}
-    for i=start_index, #res.body.kvs do
-        if start_index == 1 then
-            res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
-        else
-            res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
-        end
+    for i=2, #res.body.kvs do
+        res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
     end
     return res
 end
@@ -94,24 +89,13 @@ function _M.get_format(res, realkey)
 
     -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
     -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
-    -- Thus there are three different circumstances for etcd v2-v3 conversion
-    -- First let's assume the first kv in kvs would be the node (the key we asked for)
-    --  1. kvs[1].value = nil, so the first is the node (in v2, only dir would contains no value)
-    --  2. kvs[1].key ~= key asked for, thus the node not created, and first kv would be in nodes
-    --  3. in the rest when #kvs > 1 suggests the first is node and others are nodes
     res.body.node = kvs_to_node(res.body.kvs[1])
-    if type(res.body.kvs[1].value) == "userdata" or not res.body.kvs[1].value then
+    if not res.body.kvs[1].value then
         -- remove last "/" when necesary
         if string.sub(res.body.node.key, -1, -1) == "/" then
             res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
         end
-        res = kvs_to_nodes(res, 2)
-    elseif res.body.kvs[1].key ~= realkey then
-        res.body.node.key = realkey
-        res.body.node.value = nil
-        res = kvs_to_nodes(res, 1)
-    elseif #res.body.kvs > 1 then
-        res = kvs_to_nodes(res, 2)
+        res = kvs_to_nodes(res)
     end
 
     res.body.kvs = nil
