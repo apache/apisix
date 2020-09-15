@@ -21,19 +21,19 @@
 There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
-- use `etcd` , if there is no `etcd` service, please install and set env `etcd_url` in `config.sh`
+- use `etcd` , if there is no `etcd` service, please install and set etcd address in `../conf/config.yaml`
 
-- Run `config.sh` to generate `apisix-gw-config-cm.yaml` from the latest `config.yaml`
+### Usage
 
+#### Create configmap for apache apisix
+
+if you do not need to change any config, and use default config in `../conf/config.yaml`
 ```
-# if config.sh have no permission to executethen, then execute `chmod +x config.sh`
-# Generate apisix-gw-config-cm.yaml
-# sh config.sh
+$ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
-
 
 #### when using etcd-operator
-when using etcd-operator, you need to change apisix-gw-config-cm.yaml:
+when using etcd-operator, you need to change `apisix-gw-config-cm.yaml`:
 
 * add CoreDNS IP into dns_resolver
 
@@ -51,26 +51,6 @@ Following {your-namespace} should be changed to your namespace, for example `def
 etcd:
   host:
     - "http://etcd-cluster-client.{your-namespace}.svc.cluster.local:2379"     # multiple etcd address
-```
-
-### Usage
-
-#### Create configmap for apache apisix
-
-```
-$ kubectl apply -f apisix-gw-config-cm.yaml
-
-or
-
-$ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
-```
-
-##### Note: you should check etcd addr in config file `apisix-gw-config-cm.yaml` or `../conf/config.yaml` first, make sure the etcd addresses are correct.
-
-```
-etcd:
-  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-    - "http://127.0.0.1:2379"     # multiple etcd address
 ```
 
 #### Create deployment for apache apisix
