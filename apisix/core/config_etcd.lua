@@ -108,16 +108,16 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     local opts = {}
     opts.start_revision = modified_index
     opts.timeout = timeout
-    local res_fun, fun_err = etcd_cli:watchdir(key, opts)
-    if not res_fun then
-        return nil, fun_err
+    local res_func, func_err = etcd_cli:watchdir(key, opts)
+    if not res_func then
+        return nil, func_err
     end
 
     -- in etcd v3, the 1st res of watch is watch info, useless to us.
     -- try twice to skip create info
-    local res, err = res_fun()
+    local res, err = res_func()
     if not res or not res.result or not res.result.events then
-        res, err = res_fun()
+        res, err = res_func()
     end
 
     if not res then
