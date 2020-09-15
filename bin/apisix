@@ -893,7 +893,7 @@ local function init_etcd(show_output)
         cmd = "curl " .. host .. "/version 2>&1"
         local res = excute_cmd(cmd)
         local op_ver = str_split(res, "\"")[4]
-        local need_ver = "1.15.8"
+        local need_ver = "3.4.0"
         if not check_version(op_ver, need_ver) then
             io.stderr:write("etcd version must >=", need_ver, " current ", op_ver, "\n")
             return
