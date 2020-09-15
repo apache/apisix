@@ -39,7 +39,6 @@ run_tests;
 system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
 system('etcdctl --endpoints="http://127.0.0.1:2379" user delete root');
 system('etcdctl --endpoints="http://127.0.0.1:2379" role delete root');
-}
 
 __DATA__
 
