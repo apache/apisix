@@ -81,7 +81,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## Test Plugin
 
 ### generate signature:
-The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signning_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `SIGNNING_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `SIGNNING_STRING` is: `signning_string = HTTP Method + HTTP URI + canonical_query_string + HTTP BODY + ACCESS_KEY + TIMESTAMP + SECRET_KEY`
+The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signning_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `SIGNNING_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `SIGNNING_STRING` is `signning_string = HTTP Method + HTTP URI + canonical_query_string + HTTP BODY + ACCESS_KEY + TIMESTAMP + SECRET_KEY`
 
 1. **HTTP Method** : Refers to the GET, PUT, POST and other request methods defined in the HTTP protocol, and must be in all uppercase.
 2. **HTTP URI** : `HTTP URI` requirements must start with "/", those that do not start with "/" need to be added, and the empty path is "/".
@@ -91,7 +91,7 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 
 * Extract the `query` item in the URL, that is, the string "key1 = valve1 & key2 = valve2" after the "?" in the URL.
 * Split the `query` into several items according to the & separator, each item is in the form of key=value or only key.
-* Encoding each item after disassembly is divided into the following three situations.
+* Encoding each item after disassembly is divided into the following two situations.
 
     * When the item has only key, the conversion formula is UriEncode(key) + "=".
     * When the item is in the form of key=value, the conversion formula is in the form of UriEncode(key) + "=" + UriEncode(value). Here value can be an empty string.
