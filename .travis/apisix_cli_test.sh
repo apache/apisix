@@ -92,6 +92,8 @@ echo "passed: change default ssl port"
 
 # check default env
 echo "
+apisix:
+    $ADMIN_KEY
 nginx_config:
     envs:
         - TEST
