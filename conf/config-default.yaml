@@ -123,6 +123,10 @@ nginx_config:                     # config for render the template to genarate n
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
     client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
     client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
+    client_max_body_size: 0        # The maximum allowed size of the client request body.
+                                   # If exceeded, the 413 (Request Entity Too Large) error is returned to the client.
+                                   # Note that unlike Nginx, we don't limit the body size by default.
+
     send_timeout: 10s              # timeout for transmitting a response to the client.then the connection is closed
     underscores_in_headers: "on"   # default enables the use of underscores in client request header fields
     real_ip_header: "X-Real-IP"    # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
