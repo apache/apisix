@@ -25,7 +25,7 @@
 
 - Mail list: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mail list.
 - **QQ Group**: 578997126(recommended), 552030619
-- Join `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
+- Join in `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
 - [bilibili video](https://space.bilibili.com/551921247)
 
