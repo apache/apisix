@@ -72,7 +72,7 @@ passed
                         "type": "roundrobin"
                     },
                     "service_id": "1",
-                    "uris": ["/hello"]
+                    "uri": "/hello"
                 }]]
                 )
 
