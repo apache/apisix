@@ -40,44 +40,26 @@ qr/"plugins":\{"type":"object"}/
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/schema/service',
-                ngx.HTTP_GET,
-                "",
-                [[{
-                    "anyOf": [
-                        {
-                            "required":[
-                                "upstream"
-                            ]
-                        },
-                        {
-                            "required":[
-                                "upstream_id"
-                            ]
-                        },
-                        {
-                            "required":[
-                                "plugins"
-                            ]
-                        },
-                        {
-                            "required":[
-                                "script"
-                            ]
-                        }
-                    ],
-                    "action": "set"
-                }]]
+            local code, _, res_body = t('/apisix/admin/schema/service',
+                ngx.HTTP_GET
                 )
-
+            local res_data = core.json.decode(res_body)
+            local result = res_data["anyOf"]
+            local res_result = "failed"
+            if not result then
+                res_result = "passed"
+            end
+            
             ngx.status = code
-            ngx.say(body)
+            ngx.say(res_result) 
         }
     }
 --- request
 GET /t
---- error_code 500
+--- response_body
+passed
 --- no_error_log
 [error]
 
@@ -157,7 +139,7 @@ location /t {
 }
 --- request
 GET /t
---- response_body
+--- c
 passed
 --- no_error_log
 [error]
