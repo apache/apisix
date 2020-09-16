@@ -658,7 +658,7 @@ manually update the `conf/config.yaml` file.
         if type(default_conf.apisix.admin_key) ~= "table" or
            #default_conf.apisix.admin_key == 0
         then
-            io.stderr:write(help:format("missing valid Admin API Key"), "\n")
+            io.stderr:write("ERROR: missing valid Admin API Key", "\n")
             os.exit(1)
         end
 
@@ -1143,8 +1143,8 @@ function _M.gen_admin_key()
     end
 
     local user_conf_yaml_new = user_conf_yaml:gsub(
-                                "(name: \"admin\"%s+)key:%s+# set your Admin API",
-                                "%1key: " .. user_key .. " # set your Admin API")
+                                "(name: \"admin\"%s+)key:[%s%d%w-_]+# set your Admin API Key",
+                                "%1key:  " .. user_key .. "  # set your Admin API Key")
     if user_conf_yaml_new == user_conf_yaml then
         io.stderr:write("\nYou have already set the admin key, do not need to ",
                         "generate it again.\n\n",
@@ -1160,7 +1160,7 @@ function _M.gen_admin_key()
     file:write(user_conf_yaml_new)
     file:close()
 
-    print("generate admin key successfully")
+    print("generate a different admin key successfully")
 end
 
 local cmd_action = arg[1]

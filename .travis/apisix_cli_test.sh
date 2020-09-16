@@ -329,7 +329,17 @@ fi
 
 echo "pass: default admin token and show WARNING message"
 
+# generate admin api key
+
+git checkout conf/config.yaml
+
+make gen_admin_key
+
+echo "pass: generate admin api key"
+
 # default admin token
+
+git checkout conf/config.yaml
 
 make init
 make run

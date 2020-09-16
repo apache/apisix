@@ -19,7 +19,8 @@ apisix:
     admin_key:
         -
             name: "admin"
-            key:  26064d2c508ef5ea  # set your Admin API Key
+            key:   dc0bab5ae0862cf8 # set your Admin API Key here, you can call
+                                    # `apisix gen_admin_key` to generate a different key
             role: admin
 #
 #
