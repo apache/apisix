@@ -563,6 +563,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 Use the [consumer-restriction](plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
 
+```shell
 # Add Jack to the blacklist
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -597,7 +598,7 @@ HTTP/1.1 403
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
 
-```shell
+​```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
@@ -615,7 +616,7 @@ curl -X PUT \
     }'
 ```
 
-Now, the `limit-count` plugin will work on all requets
+Now, the `limit-count` plugin will work on all requests
 
 we can list all `GlobalRule` via admin api as below:
 
