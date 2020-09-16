@@ -21,6 +21,7 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
 
+<<<<<<< HEAD
     services:
       etcd:
         image: appcelerator/etcd:3.2
@@ -31,6 +32,8 @@ jobs:
           --data-dir "/etcd-data"
 
 
+=======
+>>>>>>> parent of 2a03206... change: use github action services
 
     steps:
       - name: Check out code
