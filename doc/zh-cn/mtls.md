@@ -56,5 +56,5 @@ apisix reload
 * 注意：需要和服务器使用相同的 CA 证书 *
 
 ```shell
-curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: ******'
+curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: YOUR_OWN_API_TOKEN'
 ```

@@ -35,7 +35,7 @@ any options yet.
 For example:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {

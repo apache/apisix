@@ -58,5 +58,5 @@ Please replace the following certificate paths and domain name with your real on
 * Note: The same CA certificate as the server needs to be used *
 
 ```shell
-curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: ******'
+curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: YOUR_OWN_API_TOKEN'
 ```

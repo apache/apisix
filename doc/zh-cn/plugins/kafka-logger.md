@@ -76,7 +76,7 @@
 1. 为特定路由启用 kafka-logger 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "plugins": {
        "kafka-logger": {
@@ -114,7 +114,7 @@ hello, world
 当您要禁用`kafka-logger`插件时，这很简单，您可以在插件配置中删除相应的json配置，无需重新启动服务，它将立即生效：
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d value='
+$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",

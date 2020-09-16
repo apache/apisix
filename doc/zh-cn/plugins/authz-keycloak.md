@@ -62,7 +62,7 @@
 创建一个 `route` 对象，并在该 `route` 对象上启用 `authz-keycloak` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
@@ -92,7 +92,7 @@ curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 在插件设置页面中删除相应的 json 配置即可禁用 `authz-keycloak` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {

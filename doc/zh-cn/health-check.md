@@ -26,7 +26,7 @@ APISIX的健康检查使用[lua-resty-healthcheck](https://github.com/Kong/lua-r
 下面是一个检查检查的例子：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {

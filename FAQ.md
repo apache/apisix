@@ -80,7 +80,7 @@ An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `i
 
 here is the way:
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -93,7 +93,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PU
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: ******' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -118,7 +118,7 @@ An example, redirect `http://foo.com` to `https://foo.com`
 There are several different ways to do this.
 1. Directly use the `http_to_https` in `redirect` plugin：
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -133,7 +133,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT 
 2. Use with advanced routing rule `vars` with `redirect` plugin:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -156,7 +156,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X P
 3. `serverless` plugin：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -262,7 +262,7 @@ Now you can trace the info level log in logs/error.log.
 The Apache APISIX plugin supports hot reloading. If your APISIX node has the Admin API turned on, then for scenarios such as adding / deleting / modifying plugins, you can hot reload the plugin by calling the HTTP interface without restarting the service.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: ******' -X PUT
+curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT
 ```
 
 If your APISIX node does not open the Admin API, then you can manually load the plug-in by reloading APISIX.

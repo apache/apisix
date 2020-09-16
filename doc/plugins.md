@@ -26,5 +26,5 @@ APISIX plug-ins are hot-loaded. No matter you add, delete or modify plug-ins, yo
 Just send an HTTP request through admin API:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: ******' -X PUT
+curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT
 ```

@@ -40,7 +40,7 @@ Here's an example, to proxying gRPC service by specified route:
 * the grpc server example：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",

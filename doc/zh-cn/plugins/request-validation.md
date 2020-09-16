@@ -47,7 +47,7 @@
 创建一条路由并在该路由上启用 `request-validation` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
@@ -89,7 +89,7 @@ curl --header "Content-Type: application/json" \
 在路由 `plugins` 配置块中删除 `request-validation` 配置，即可禁用该插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {

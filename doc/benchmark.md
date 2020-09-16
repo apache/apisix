@@ -51,7 +51,7 @@ The result of Flame Graph:
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -96,7 +96,7 @@ The result of Flame Graph:
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

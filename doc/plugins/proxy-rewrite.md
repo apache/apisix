@@ -44,7 +44,7 @@ upstream proxy info rewrite plugin.
 Here's an example, enable the `proxy rewrite` plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",
@@ -87,7 +87,7 @@ When you want to disable the `proxy rewrite` plugin, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately :
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",

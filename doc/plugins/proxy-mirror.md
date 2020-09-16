@@ -39,7 +39,7 @@ The proxy-mirror plugin, which provides the ability to mirror client requests.
 1:  enable the proxy-mirror plugin for a specific route :
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "plugins": {
         "proxy-mirror": {
@@ -81,7 +81,7 @@ Remove the corresponding JSON in the plugin configuration to disable the plugin 
 
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

@@ -38,7 +38,7 @@
 示例1：为特定路由启用 `proxy-mirror` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "plugins": {
         "proxy-mirror": {
@@ -77,7 +77,7 @@ hello world
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

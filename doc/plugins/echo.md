@@ -48,7 +48,7 @@ This plugin addresses the corresponding functionality in the common phases such 
 The following is an example on how to enable the echo plugin for a specific route.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "plugins": {
         "echo": {
@@ -82,7 +82,7 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d value='
+$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",

@@ -72,7 +72,7 @@ ngx.say(count)
 Here's an example, enable the serverless plugin on the specified route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -108,7 +108,7 @@ When you want to disable the serverless plugin, it is very simple,
   no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: ******' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: YOUR_OWN_API_TOKEN' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
