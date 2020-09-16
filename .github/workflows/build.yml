@@ -27,7 +27,6 @@ jobs:
         volumes: 
           - ~/etcd-data:/etcd-data
         options: >-
-          --listen-client-urls "http://0.0.0.0:2379"
           --advertise-client-urls "http://0.0.0.0:2379"
           --data-dir "/etcd-data"
 
