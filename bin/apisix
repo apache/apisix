@@ -605,6 +605,14 @@ local function merge_conf(base, new_tab)
     return base
 end
 
+local function str_split(str, sep)
+    local t = {}
+    for s in str:gmatch("([^"..sep.."]+)") do
+        table.insert(t, s)
+    end
+    return t
+end
+
 
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
@@ -682,7 +690,7 @@ local function split(self, sep)
     return fields
  end
 
-local function check_or_version(cur_ver_s, need_ver_s)
+local function check_version(cur_ver_s, need_ver_s)
     local cur_vers = split(cur_ver_s, [[.]])
     local need_vers = split(need_ver_s, [[.]])
     local len = math.max(#cur_vers, #need_vers)
@@ -842,7 +850,7 @@ local function init()
     end
 
     local need_ver = "1.15.8"
-    if not check_or_version(op_ver, need_ver) then
+    if not check_version(op_ver, need_ver) then
         io.stderr:write("openresty version must >=", need_ver, " current ", op_ver, "\n")
         return
     end
@@ -879,35 +887,35 @@ local function init_etcd(show_output)
 
     local host_count = #(yaml_conf.etcd.host)
 
-    -- check whether the user has enabled etcd v2 protocol
-    for index, host in ipairs(yaml_conf.etcd.host) do
-        uri = host .. "/v2/keys"
-        local cmd = "curl -i -m ".. timeout * 2 .. " -o /dev/null -s -w %{http_code} " .. uri
-        local res = excute_cmd(cmd)
-        if res == "404" then
-            io.stderr:write(string.format("failed: please make sure that you have enabled the v2 protocol of etcd on %s.\n", host))
-            return
-        end
-    end
-
     local etcd_ok = false
     for index, host in ipairs(yaml_conf.etcd.host) do
+        -- check if etcd version above 3.4
+        cmd = "curl " .. host .. "/version 2>&1"
+        local res = excute_cmd(cmd)
+        local op_ver = str_split(res, "\"")[4]
+        local need_ver = "3.4.0"
+        if not check_version(op_ver, need_ver) then
+            io.stderr:write("etcd version must >=", need_ver, " current ", op_ver, "\n")
+            return
+        end
 
         local is_success = true
-        uri = host .. "/v2/keys" .. (etcd_conf.prefix or "")
 
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                    "/plugins", "/consumers", "/node_status",
                                    "/ssl", "/global_rules", "/stream_routes",
                                    "/proto"}) do
-            local cmd = "curl " .. uri .. dir_name
-                    .. "?prev_exist=false -X PUT -d dir=true "
-                    .. "--connect-timeout " .. timeout
+            local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
+
+            local base64_encode = require("base64").encode
+            local uri = host .. "/v3/kv/put"
+            local post_json = '{"value":"' .. base64_encode("init_dir") ..  '", "key":"' .. base64_encode(key) .. '"}'
+            cmd = "curl " .. uri .. " -X POST -d '" .. post_json
+                    .. "' --connect-timeout " .. timeout
                     .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
             local res = excute_cmd(cmd)
-            if not res:find("index", 1, true)
-                    and not res:find("createdIndex", 1, true) then
+            if (etcd_version == "v3" and not res:find("OK", 1, true)) then
                 is_success = false
                 if (index == host_count) then
                     error(cmd .. "\n" .. res)
