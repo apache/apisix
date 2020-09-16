@@ -95,6 +95,6 @@ passed
 --- request
 GET /hello
 --- response_body
-hello
+hello world
 --- no_error_log
 [error]
