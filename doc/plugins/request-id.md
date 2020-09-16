@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/request-validation.md)
+[Chinese](../zh-cn/plugins/request-id.md)
 
 # Summary
 - [**Name**](#name)
@@ -54,10 +54,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -71,7 +71,7 @@ HTTP/1.1 200 OK
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `request-validation`.
+Remove the corresponding json configuration in the plugin configuration to disable the `request-id`.
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
@@ -81,10 +81,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```

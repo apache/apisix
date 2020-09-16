@@ -154,6 +154,8 @@ function _M.log(conf)
 end
 ```
 
+**Note : we can't invoke `ngx.exit` or `core.respond.exit` in rewrite phase and access phase. if need to exit, just return the status and body, the plugin engine will make the exit happen with the returned status and body. [example](https://github.com/apache/apisix/blob/master/apisix/plugins/limit-count.lua#L132)**
+
 ## implement the logic
 
 Write the logic of the plugin in the corresponding phase.

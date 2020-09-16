@@ -67,6 +67,7 @@
 * [authz-keycloak](plugins/authz-keycloak.md): 支持 Keycloak 身份认证服务器
 * [uri-blocker](plugins/uri-blocker.md): 根据 URI 拦截用户请求。
 * [oauth](plugins/openid-connect.md): 提供 OAuth 2 身份验证和自省。
+* [log-rotate](plugins/log-rotate.md): 日志文件定期切分。
 
 部署
 =======

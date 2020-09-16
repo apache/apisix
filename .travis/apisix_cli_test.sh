@@ -35,8 +35,17 @@ fi
 
 echo "passed: 'Server: APISIX' not in nginx.conf"
 
+#make init <- no need to re-run since we don't change the config yet.
+
+# check the error_log directive uses warn level by default.
+if ! grep "error_log logs/error.log warn;" conf/nginx.conf > /dev/null; then
+    echo "failed: error_log directive doesn't use warn level by default"
+    exit 1
+fi
+
+echo "passed: error_log directive uses warn level by default"
+
 # check whether the 'reuseport' is in nginx.conf .
-make init
 
 grep -E "listen 9080.*reuseport" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
@@ -68,6 +77,23 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "passed: change default ssl port"
+
+# check default env
+echo "
+nginx_config:
+    envs:
+        - TEST
+" > conf/config.yaml
+
+make init
+
+grep "env TEST;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to update env"
+    exit 1
+fi
+
+echo "passed: change default env"
 
 # check nameserver imported
 git checkout conf/config.yaml
@@ -185,6 +211,21 @@ fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
+# check the 'client_max_body_size' in 'nginx.conf' .
+
+sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
+
+make init
+
+if ! grep -E "client_max_body_size 512m" conf/nginx.conf > /dev/null; then
+    echo "failed: client_max_body_size in nginx.conf doesn't change"
+    exit 1
+fi
+
+echo "passed: client_max_body_size in nginx.conf is ok"
+
+git checkout conf/config-default.yaml
+
 # check worker processes number is configurable.
 
 git checkout conf/config.yaml
@@ -203,4 +244,27 @@ if [ ! $? -eq 0 ]; then
 fi
 
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
+echo "passed: worker_processes number is configurable"
+
+
+# log format
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
+' > conf/config.yaml
+
+make init
+
+grep "test_access_log_format" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: access_log_format in nginx.conf doesn't change"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
 echo "passed: worker_processes number is configurable"

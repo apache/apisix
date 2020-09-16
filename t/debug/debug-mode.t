@@ -56,6 +56,7 @@ loaded plugin and sort by priority: 2900 name: uri-blocker
 loaded plugin and sort by priority: 2800 name: request-validation
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2555 name: wolf-rbac
+loaded plugin and sort by priority: 2530 name: hmac-auth
 loaded plugin and sort by priority: 2520 name: basic-auth
 loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth

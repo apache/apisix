@@ -29,10 +29,15 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="http://www.cunw.com.cn/" rel="nofollow">cunw 湖南新云网</a>
 1. <a href="https://www.dasouche.com/" rel="nofollow">dasouche 大搜车</a>
 1. <a href="https://www.dataoke.com/" rel="nofollow">dataoke 大淘客</a>
+1. <a href="https://www.efactory-project.eu/" rel="nofollow">eFactory</a>
 1. <a href="https://www.ehomepay.com.cn/" rel="nofollow">ehomepay 理房通</a>
 1. <a href="https://fansup.mobi/" rel="nofollow">fansup</a>
 1. <a href="http://haieruplus.com/" rel="nofollow">haieruplus 海尔优家</a>
+1. <a href="http://www.hellowin.cn/" rel="nofollow">hellowin 好洛维</a>
 1. <a href="https://www.hellotalk.com/" rel="nofollow">HelloTalk, Inc.</a>
+1. <a href="http://huawei.com/" rel="nofollow">Huawei 华为</a>
+1. <a href="https://www.jiandanxinli.com/" rel="nofollow">jiandanxinli 简单心理</a>
+1. <a href="https://jr.ly.com/" rel="nofollow">jr.ly 同程金服</a>
 1. <a href="https://www.ke.com/" rel="nofollow">ke.com 贝壳找房</a>
 1. <a href="https://www.meizu.com/" rel="nofollow">Meizu 魅族</a>
 1. <a href="https://www.jpl.nasa.gov" rel="nofollow">NASA JPL 美国国家航空航天局 喷气推进实验室</a>
@@ -44,8 +49,10 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://cloud.tencent.com/" rel="nofollow">Tencent Cloud 腾讯云</a>
 1. <a href="http://travelsky.com" rel="nofollow"> Travelsky 中国航信</a>
 1. <a href="https://vbill.cn/" rel="nofollow">vbill 随行付</a>
+1. <a href="https://www.willclass.com/" rel="nofollow">willclass 会课</a>
 1. <a href="https://www.xin.com/" rel="nofollow">Xin 优信二手车</a>
 1. <a href="https://www.zuzuche.com/" rel="nofollow">zuzuche 租租车</a>
+1. <a href="https://www.zybang.com/" rel="nofollow">zybang 作业帮</a>
 
 
 <img src="https://raw.githubusercontent.com/iresty/iresty.com/master/user-wall.jpg" width="900" height="500">
@@ -55,16 +62,16 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 Using Apache APISIX as a API gateway to deal with north-south and east-west traffic between microservices.
 
 ## ke.com
-Using APISIX as traffic entry gateway
+Using Apache APISIX as traffic entry gateway
 
 ## meizu
-Using APISIX as api gateway (limit, grpc transcode, abtest, dynamic configures ...)
+Using Apache APISIX as api gateway (limit, grpc transcode, abtest, dynamic configures ...)
 
 ## zuzuche.com
-Using APISIX as a gateway, it uses the functions of current limiting, speed limiting, black-and-white list and so on. In the later stage, it also wants to add gRPC protocol, Serverless, custom plug-in, and other functions to meet business needs.
+Using Apache APISIX as a gateway, it uses the functions of current limiting, speed limiting, black-and-white list and so on. In the later stage, it also wants to add gRPC protocol, Serverless, custom plug-in, and other functions to meet business needs.
 
 ## souche.com
-Using APISIX as a Web ACL gateway to deal with backend OA systems traffic.
+Using Apache APISIX as a Web ACL gateway to deal with backend OA systems traffic.
 
 ## HelloTalk, Inc.
 Using Apache APISIX as an API gateway to manage all API and SSL certificates in test\dev\CMS environment.

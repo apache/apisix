@@ -73,6 +73,8 @@ my $default_yaml_config = read_file("conf/config-default.yaml");
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
+my $ssl_ecc_crt = read_file("conf/cert/apisix_ecc.crt");
+my $ssl_ecc_key = read_file("conf/cert/apisix_ecc.key");
 my $test2_crt = read_file("conf/cert/test2.crt");
 my $test2_key = read_file("conf/cert/test2.key");
 $user_yaml_config = <<_EOC_;
@@ -91,6 +93,18 @@ if ($etcd_enable_auth eq "true") {
 etcd:
   user: root
   password: 5tHkHhYkjr6cQY
+_EOC_
+}
+
+my $custom_hmac_auth = $ENV{"CUSTOM_HMAC_AUTH"} || "false";
+if ($custom_hmac_auth eq "true") {
+    $user_yaml_config .= <<_EOC_;
+plugin_attr:
+  hmac-auth:
+    signature_key: X-APISIX-HMAC-SIGNATURE
+    algorithm_key: X-APISIX-HMAC-ALGORITHM
+    timestamp_key: X-APISIX-HMAC-TIMESTAMP
+    access_key: X-APISIX-HMAC-ACCESS-KEY
 _EOC_
 }
 
@@ -218,6 +232,9 @@ _EOC_
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
     lua_shared_dict skywalking-tracing-buffer    100m;
+    lua_shared_dict balancer_ewma         1m;
+    lua_shared_dict balancer_ewma_locks   1m;
+    lua_shared_dict balancer_ewma_last_touched_at  1m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -438,6 +455,10 @@ $yaml_config
 $ssl_crt
 >>> ../conf/cert/apisix.key
 $ssl_key
+>>> ../conf/cert/apisix_ecc.crt
+$ssl_ecc_crt
+>>> ../conf/cert/apisix_ecc.key
+$ssl_ecc_key
 >>> ../conf/cert/test2.crt
 $test2_crt
 >>> ../conf/cert/test2.key
