@@ -228,7 +228,6 @@ do_install() {
 
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
-    sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
     sudo apt-get install lua5.1 liblua5.1-0-dev
@@ -243,8 +242,6 @@ do_install() {
     sudo make install > build.log 2>&1 || (cat build.log && exit 1)
     cd ..
     rm -rf luarocks-2.4.4
-
-    export GO111MOUDULE=on
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -262,6 +259,8 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
+    ./utils/install-etcd.sh
+
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils
 
@@ -271,7 +270,7 @@ do_install() {
     ls -l ./
 
     if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
+        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
     fi
@@ -283,8 +282,8 @@ script() {
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcd --version
+    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcdctl version
     sleep 5
 
     ./build-cache/grpc_server_example &

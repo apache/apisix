@@ -262,3 +262,144 @@ GET /t
 [delete] code: 404
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: set upstream(id: 1, using `node` mode to pass upstream host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "httpbin.org:80": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream",
+                    "pass_host": "node"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: set route(id: 1, using `node` mode to pass upstream host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/get",
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: hit route
+--- request
+GET /get
+--- response_body eval
+qr/"Host": "httpbin.org"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: set upstream(id: 1, using `rewrite` mode to pass upstream host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream",
+                    "pass_host": "rewrite",
+                    "upstream_host": "httpbin.org"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: set route(id: 1, using `rewrite` mode to pass upstream host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/uri",
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: hit route
+--- request
+GET /uri
+--- response_body eval
+qr/host: httpbin.org/
+--- no_error_log
+[error]

@@ -19,6 +19,7 @@ local sleep         = ngx.sleep
 
 local plugin_name   = "fault-injection"
 
+
 local schema = {
     type = "object",
     properties = {
@@ -28,18 +29,19 @@ local schema = {
                 http_status = {type = "integer", minimum = 200},
                 body = {type = "string", minLength = 0},
             },
-            required = {"http_status"}
+            minProperties = 1,
         },
         delay = {
             type = "object",
             properties = {
                 duration = {type = "number", minimum = 0},
             },
-            required = {"duration"}
+            minProperties = 1,
         }
     },
     minProperties = 1,
 }
+
 
 local _M = {
     version = 0.1,
@@ -47,6 +49,7 @@ local _M = {
     name = plugin_name,
     schema = schema,
 }
+
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)

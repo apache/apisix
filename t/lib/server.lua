@@ -68,6 +68,16 @@ function _M.sleep1()
     ngx.say("ok")
 end
 
+function _M.ewma()
+    if ngx.var.server_port == "1981"
+       or ngx.var.server_port == "1982" then
+        ngx.sleep(0.2)
+    else
+        ngx.sleep(0.1)
+    end
+    ngx.print(ngx.var.server_port)
+end
+
 function _M.uri()
     -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)
@@ -239,6 +249,13 @@ function _M.websocket_handshake()
     end
 end
 _M.websocket_handshake_route = _M.websocket_handshake
+
+local function print_uri()
+    ngx.say(ngx.var.uri)
+end
+for i = 1, 100 do
+    _M["print_uri_" .. i] = print_uri
+end
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)

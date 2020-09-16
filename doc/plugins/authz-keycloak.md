@@ -72,16 +72,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/get",
     "plugins": {
         "authz-keycloak": {
-        	"token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
-        	"permissions": ["resource name#scope name"],
+            "token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
+            "permissions": ["resource name#scope name"],
             "audience": "Client ID"
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -106,10 +106,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```

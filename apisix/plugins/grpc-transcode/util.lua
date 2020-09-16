@@ -14,7 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local json     = require("apisix.core.json")
+local core     = require("apisix.core")
+local json     = core.json
 local pb       = require("pb")
 local ngx      = ngx
 local pairs    = pairs
@@ -47,24 +48,35 @@ function _M.find_method(protos, service, method)
 end
 
 
-local function get_from_request(name, kind)
-    local request_table
-    if ngx.req.get_method() == "POST" then
-        if string.find(ngx.req.get_headers()["Content-Type"] or "",
-                       "application/json", 1, true) then
-            request_table = json.decode(ngx.req.get_body_data())
-        else
-            request_table = ngx.req.get_post_args()
+local function get_request_table()
+    local method = ngx.req.get_method()
+    local content_type = ngx.req.get_headers()["Content-Type"] or ""
+    if string.find(content_type, "application/json", 1, true) and
+        (method == "POST" or method == "PUT" or method == "PATCH")
+    then
+        local req_body, _ = core.request.get_body()
+        if req_body then
+            local data, _ = json.decode(req_body)
+            if data then
+                return data
+            end
         end
-    else
-        request_table = ngx.req.get_uri_args()
+    end
+
+    if method == "POST" then
+        return ngx.req.get_post_args()
+    end
+
+    return ngx.req.get_uri_args()
+end
+
+
+local function get_from_request(request_table, name, kind)
+    if not request_table then
+        return nil
     end
 
     local prefix = kind:sub(1, 3)
-    if prefix == "str" then
-        return request_table[name] or nil
-    end
-
     if prefix == "int" then
         if request_table[name] then
             if kind == "int64" then
@@ -75,7 +87,7 @@ local function get_from_request(name, kind)
         end
     end
 
-    return nil
+    return request_table[name]
 end
 
 
@@ -86,6 +98,7 @@ function _M.map_message(field, default_values)
 
     local request = {}
     local sub, err
+    local request_table = get_request_table()
     for name, _, field_type in pb.fields(field) do
         if field_type:sub(1, 1) == "." then
             sub, err = _M.map_message(field_type, default_values)
@@ -94,7 +107,7 @@ function _M.map_message(field, default_values)
             end
             request[name] = sub
         else
-            request[name] = get_from_request(name, field_type)
+            request[name] = get_from_request(request_table, name, field_type)
                                 or default_values[name] or nil
         end
     end

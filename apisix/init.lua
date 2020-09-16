@@ -72,6 +72,12 @@ function _M.http_init(args)
     math.randomseed(seed)
     parse_args(args)
     core.id.init()
+
+    local process = require("ngx.process")
+    local ok, err = process.enable_privileged_agent()
+    if not ok then
+        core.log.error("failed to enable privileged_agent: ", err)
+    end
 end
 
 
@@ -197,6 +203,7 @@ local function parse_domain_for_nodes(nodes)
             if ip then
                 local new_node = core.table.clone(node)
                 new_node.host = ip
+                new_node.domain = host
                 core.table.insert(new_nodes, new_node)
             end
 
@@ -291,6 +298,36 @@ local function return_direct(...)
 end
 
 
+local function set_upstream_host(api_ctx)
+    local pass_host = api_ctx.pass_host or "pass"
+    if pass_host == "pass" then
+        return
+    end
+
+    if pass_host == "rewrite" then
+        api_ctx.var.upstream_host = api_ctx.upstream_host
+        return
+    end
+
+    -- only support single node for `node` mode currently
+    local host
+    local up_conf = api_ctx.upstream_conf
+    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
+    if nodes_count == 1 then
+        local node = up_conf.nodes[1]
+        if node.domain and #node.domain > 0 then
+            host = node.domain
+        else
+            host = node.host
+        end
+    end
+
+    if host then
+        api_ctx.var.upstream_host = host
+    end
+end
+
+
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
@@ -361,21 +398,11 @@ function _M.http_access_phase()
             return core.response.exit(404)
         end
 
-        local changed
-        route, changed = plugin.merge_service_route(service, route)
+        route = plugin.merge_service_route(service, route)
         api_ctx.matched_route = route
-
-        if changed then
-            api_ctx.conf_type = "route&service"
-            api_ctx.conf_version = route.modifiedIndex .. "&"
-                                   .. service.modifiedIndex
-            api_ctx.conf_id = route.value.id .. "&"
-                              .. service.value.id
-        else
-            api_ctx.conf_type = "service"
-            api_ctx.conf_version = service.modifiedIndex
-            api_ctx.conf_id = service.value.id
-        end
+        api_ctx.conf_type = "route&service"
+        api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
+        api_ctx.conf_id = route.value.id .. "&" .. service.value.id
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
@@ -423,6 +450,11 @@ function _M.http_access_phase()
             if upstream.value.enable_websocket then
                 enable_websocket = true
             end
+
+            if upstream.value.pass_host then
+                api_ctx.pass_host = upstream.value.pass_host
+                api_ctx.upstream_host = upstream.value.upstream_host
+            end
         end
 
     else
@@ -448,6 +480,11 @@ function _M.http_access_phase()
 
         if route.value.upstream and route.value.upstream.enable_websocket then
             enable_websocket = true
+        end
+
+        if route.value.upstream and route.value.upstream.pass_host then
+            api_ctx.pass_host = route.value.upstream.pass_host
+            api_ctx.upstream_host = route.value.upstream.upstream_host
         end
     end
 
@@ -484,6 +521,8 @@ function _M.http_access_phase()
         core.log.error("failed to parse upstream: ", err)
         core.response.exit(500)
     end
+
+    set_upstream_host(api_ctx)
 end
 
 
@@ -644,6 +683,10 @@ end
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
     healcheck_passive(api_ctx)
+
+    if api_ctx.server_picker and api_ctx.server_picker.after_balance then
+        api_ctx.server_picker.after_balance(api_ctx)
+    end
 
     if api_ctx.uri_parse_param then
         core.tablepool.release("uri_parse_param", api_ctx.uri_parse_param)
