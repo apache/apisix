@@ -1557,8 +1557,7 @@ location /t {
         ngx.say("code: ", code)
         ngx.say(body)
 
-        -- etcd v3 would still get the value at 2s, don't know why yet
-        ngx.sleep(2.5)
+        ngx.sleep(2)
 
         -- get again
         code, body, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
@@ -1611,7 +1610,7 @@ location /t {
         end
 
         ngx.say("[push] succ: ", body)
-        ngx.sleep(2.5)
+        ngx.sleep(2)
 
         local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
         code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_GET)
@@ -2179,67 +2178,5 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
-
-
-
-=== TEST 60: set empty service. (id: 1)（allow empty `service` object）
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
-                ngx.HTTP_PUT,
-                {},
-                [[{
-                    "node": {
-                        "value": {"id":"1"}
-                    },
-                    "action": "set"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 61: route binding empty service
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "methods": ["GET"],
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "service_id": "1",
-                    "uri": "/index.html"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
 --- no_error_log
 [error]
