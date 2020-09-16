@@ -139,7 +139,7 @@ location /t {
 }
 --- request
 GET /t
---- c
+--- response_body
 passed
 --- no_error_log
 [error]
