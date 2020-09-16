@@ -80,6 +80,8 @@ function _M.access(conf, ctx)
         return 401, { message = "Missing authentication or identity verification." }
     end
 
+    core.log.info("ctx.consumer:", core.json.encode(ctx.consumer))
+    
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
         if is_include(ctx.consumer.username, conf.blacklist) then
