@@ -165,10 +165,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         apisix start
         ```
 
-**注意**：Apache APISIX 现在还不支持 etcd 的 v3 协议，所以启动 etcd 时需要开启 v2 协议的支持。
-我们正在做 etcd v3 协议的支持。
+**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，如果 etcd 版本低于 v3.4，启动 etcd 时需要开启 v3 协议的支持。
 ```shell
-etcd --enable-v2=true &
+export ETCDCTL_API=3
 ```
 
 ## 针对开发者

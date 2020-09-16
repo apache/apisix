@@ -259,6 +259,8 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
+    ./utils/install-etcd.sh
+
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils
 
@@ -280,8 +282,8 @@ script() {
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcd --version
+    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcdctl version
     sleep 5
 
     ./build-cache/grpc_server_example &

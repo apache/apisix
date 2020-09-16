@@ -26,16 +26,19 @@ no_root_location();
 log_level("info");
 
 # Authentication is enabled at etcd and credentials are set
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY user add root:5tHkHhYkjr6cQY');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth enable');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role revoke --path "/*" -rw guest');
+system('etcdctl --endpoints="http://127.0.0.1:2379" user add root:5tHkHhYkjr6cQY');
+system('etcdctl --endpoints="http://127.0.0.1:2379" role add root');
+system('etcdctl --endpoints="http://127.0.0.1:2379" user grant-role root root');
+system('etcdctl --endpoints="http://127.0.0.1:2379" role list');
+system('etcdctl --endpoints="http://127.0.0.1:2379" user user list');
+system('etcdctl --endpoints="http://127.0.0.1:2379" auth enable');
 
 run_tests;
 
-# Authentication is disabled at etcd & guest access is granted
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY auth disable');
-system('etcdctl --endpoints="http://127.0.0.1:2379" -u root:5tHkHhYkjr6cQY role grant --path "/*" -rw guest');
-
+# Authentication is disabled at etcd
+system('etcdctl --endpoints="http://127.0.0.1:2379" --user root:5tHkHhYkjr6cQY auth disable');
+system('etcdctl --endpoints="http://127.0.0.1:2379" user delete root');
+system('etcdctl --endpoints="http://127.0.0.1:2379" role delete root');
 
 __DATA__
 
@@ -52,5 +55,6 @@ __DATA__
     }
 --- request
 GET /t
---- response_body
-insufficient credentials code: 401
+--- error_code: 500
+--- error_log eval
+qr /insufficient credentials code: 401/

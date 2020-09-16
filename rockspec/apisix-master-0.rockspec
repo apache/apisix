@@ -32,7 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-template = 1.9",
-    "lua-resty-etcd = 1.0",
+    "lua-resty-etcd = 1.1",
     "lua-resty-balancer = 0.02rc5",
     "lua-resty-ngxvar = 0.5",
     "lua-resty-jit-uuid = 0.0.7",
@@ -52,6 +52,7 @@ dependencies = {
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
     "skywalking-nginx-lua-plugin = 1.0-0",
+    "base64 = 1.5-2"
 }
 
 build = {
