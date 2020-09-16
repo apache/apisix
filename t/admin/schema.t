@@ -36,24 +36,20 @@ qr/"plugins":\{"type":"object"}/
 
 
 
-=== TEST 2: get service schema
+=== TEST 2: get service schema and check if it contains `anyOf`
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local code, _, res_body = t('/apisix/admin/schema/service',
-                ngx.HTTP_GET
-                )
+            local code, _, res_body = t('/apisix/admin/schema/service', ngx.HTTP_GET)
             local res_data = core.json.decode(res_body)
-            local result = res_data["anyOf"]
-            local res_result = "failed"
-            if not result then
-                res_result = "passed"
+            if res_data["anyOf"] then
+                ngx.say("found `anyOf`")
+                return
             end
             
-            ngx.status = code
-            ngx.say(res_result) 
+            ngx.say("passed") 
         }
     }
 --- request
