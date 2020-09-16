@@ -21,6 +21,17 @@ jobs:
     env:
       SERVER_NAME: ${{ matrix.os_name }}
 
+    services:
+      etcd:
+        image: appcelerator/etcd:3.2
+        volumes: 
+          - ~/etcd-data:/etcd-data
+        options: >-
+          --listen-client-urls http://0.0.0.0:2379
+          --advertise-client-urls http://0.0.0.0:2379
+          --data-dir /etcd-data
+
+
 
     steps:
       - name: Check out code
