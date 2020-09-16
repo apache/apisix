@@ -290,12 +290,20 @@ echo "passed: support use define access log format"
 
 git checkout conf/config.yaml
 
-# default Admin API key
+# missing valid token (empty string)
+
+cat > conf/config.yaml <<EOF
+apisix:
+    admin_key:
+        -
+            name: "admin"
+            key:    # set your Admin API Key
+            role: admin
+EOF
 
 make init > output.log 2>&1 | true
 
-count=`grep -c "ERROR: missing valid apisix.admin_key" output.log`
-grep -E "ERROR: missing valid apisix.admin_key" output.log > /dev/null
+grep -E "WARNING: missing valid Admin API Key" output.log > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: missing valid Admin API key should fail to start"
     exit 1
@@ -305,6 +313,26 @@ make gen_admin_key
 
 make init
 
-echo "pass: default Admin API key"
+echo "pass: missing valid token for Admin API Key"
+
+# default admin token (check WARNING)
 
 git checkout conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+grep -E "WARNING: using the default Key is very dangerous." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: should show 'WARNING: using the default Key is very dangerous.'"
+    exit 1
+fi
+
+echo "pass: default admin token and show WARNING message"
+
+# default admin token
+
+make init
+make run
+make stop
+
+echo "pass: run server success with default Admin API key"
