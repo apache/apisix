@@ -76,12 +76,14 @@ end
 
 function _M.access(conf, ctx)
     -- local types_of = conf.types_of
+    core.log.error("ctx.service: ", core.json.encode(ctx.service))
     if not ctx.consumer then
         return 401, { message = "Missing authentication or identity verification." }
     end
 
-    core.log.info("ctx.consumer:", core.json.encode(ctx.consumer))
-    
+    local types_of = conf.ctx 
+    core.log.warn("ctx.consumer: ", core.json.encode(ctx.consumer))
+
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
         if is_include(ctx.consumer.username, conf.blacklist) then
