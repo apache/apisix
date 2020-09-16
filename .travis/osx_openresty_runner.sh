@@ -65,7 +65,7 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
-    etcd --enable-v2=true &
+    etcd &
     sleep 1
 
     ./grpc_server_example &
