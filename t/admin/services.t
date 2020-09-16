@@ -1117,7 +1117,7 @@ passed
 
 
 
-=== TEST 32: empty service increase content.(id: 1)（allow empty `service` object）
+=== TEST 32: patch content to the empty service.
 --- config
     location /t {
         content_by_lua_block {
