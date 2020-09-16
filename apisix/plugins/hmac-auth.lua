@@ -34,6 +34,7 @@ local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
 local ALGORITHM_KEY = "X-HMAC-ALGORITHM"
 local TIMESTAMP_KEY = "X-HMAC-TIMESTAMP"
 local ACCESS_KEY    = "X-HMAC-ACCESS-KEY"
+local SIGNED_HEADERS_KEY = "X-HMAC-SIGNED-HEADERS"
 local plugin_name   = "hmac-auth"
 
 local schema = {
@@ -52,7 +53,16 @@ local schema = {
                 clock_skew = {
                     type = "integer",
                     default = 300
-                }
+                },
+                signed_headers = {
+                    type = "array",
+                    default = {},
+                    items = {
+                        type = "string",
+                        minLength = 1,
+                        maxLength = 20,
+                    }
+                },
             },
             required = {"access_key", "secret_key"},
             additionalProperties = false,
@@ -98,6 +108,16 @@ local function try_attr(t, ...)
     end
 
     return true
+end
+
+
+local function array_to_map(arr)
+    local map = core.table.new(0, #arr)
+    for _, v in ipairs(arr) do
+      map[v] = true
+    end
+
+    return map
 end
 
 
@@ -184,11 +204,15 @@ local function generate_signature(ctx, secret_key, params)
 
     local req_body = core.request.get_body()
     req_body = req_body or ""
+    local canonical_headers = ""
+    for _, header in pairs(params.signed_headers) do
+        canonical_headers = canonical_headers .. (core.request.header(ctx, header) or "")
+    end
 
     local signing_string = request_method .. canonical_uri
                             .. canonical_query_string .. req_body
                             .. params.access_key .. params.timestamp
-                            .. secret_key
+                            .. canonical_headers
 
     return hmac_funcs[params.algorithm](secret_key, signing_string)
 end
@@ -218,6 +242,18 @@ local function validate(ctx, params)
         end
     end
 
+    -- validate headers
+    if conf.signed_headers and #conf.signed_headers >= 1 then
+        local headers_map = array_to_map(conf.signed_headers)
+        if params.signed_headers then
+            for _, header in ipairs(params.signed_headers) do
+                if not headers_map[header] then
+                    return nil, {message = "Invalid signed header " .. headers_map}
+                end
+            end
+        end
+    end
+
     local secret_key          = conf and conf.secret_key
     local request_signature   = ngx_decode_base64(params.signature)
     local generated_signature = generate_signature(ctx, secret_key, params)
@@ -235,23 +271,26 @@ end
 local function get_params(ctx)
     local params = {}
     local local_conf = core.config.local_conf()
+    local access_key = ACCESS_KEY
     local signature_key = SIGNATURE_KEY
     local algorithm_key = ALGORITHM_KEY
     local timestamp_key = TIMESTAMP_KEY
-    local access_key = ACCESS_KEY
+    local signed_headers_key = SIGNED_HEADERS_KEY
 
     if try_attr(local_conf, "plugin_attr", "hmac-auth") then
         local attr = local_conf.plugin_attr["hmac-auth"]
+        access_key = attr.access_key or access_key
         signature_key = attr.signature_key or signature_key
         algorithm_key = attr.algorithm_key or algorithm_key
         timestamp_key = attr.timestamp_key or timestamp_key
-        access_key = attr.access_key or access_key
+        signed_headers_key = attr.signed_headers_key or signed_headers_key
     end
 
     local ak = core.request.header(ctx, access_key)
     local signature = core.request.header(ctx, signature_key)
     local algorithm = core.request.header(ctx, algorithm_key)
     local timestamp = core.request.header(ctx, timestamp_key)
+    local signed_headers = core.request.header(ctx, signed_headers_key)
     core.log.info("signature_key: ", signature_key)
 
     -- get params from header `Authorization`
@@ -264,11 +303,12 @@ local function get_params(ctx)
         local auth_data = ngx_re.split(auth_string, "#")
         core.log.info("auth_string: ", auth_string, " #auth_data: ",
             #auth_data, " auth_data: ", core.json.delay_encode(auth_data))
-        if #auth_data == 5 and auth_data[1] == "hmac-auth-v1" then
+        if #auth_data == 6 and auth_data[1] == "hmac-auth-v2" then
             ak = auth_data[2]
             signature = auth_data[3]
             algorithm = auth_data[4]
             timestamp = auth_data[5]
+            signed_headers = ngx_re.split(auth_data[6], ";")
         end
     end
 
@@ -276,6 +316,7 @@ local function get_params(ctx)
     params.algorithm  = algorithm
     params.signature  = signature
     params.timestamp  = timestamp or 0
+    params.signed_headers = signed_headers or {}
 
     return params
 end

@@ -105,6 +105,7 @@ plugin_attr:
     algorithm_key: X-APISIX-HMAC-ALGORITHM
     timestamp_key: X-APISIX-HMAC-TIMESTAMP
     access_key: X-APISIX-HMAC-ACCESS-KEY
+    signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
 _EOC_
 }
 
