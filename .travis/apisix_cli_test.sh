@@ -211,6 +211,21 @@ fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
+# check the 'client_max_body_size' in 'nginx.conf' .
+
+sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
+
+make init
+
+if ! grep -E "client_max_body_size 512m" conf/nginx.conf > /dev/null; then
+    echo "failed: client_max_body_size in nginx.conf doesn't change"
+    exit 1
+fi
+
+echo "passed: client_max_body_size in nginx.conf is ok"
+
+git checkout conf/config-default.yaml
+
 # check worker processes number is configurable.
 
 git checkout conf/config.yaml
