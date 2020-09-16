@@ -20,6 +20,10 @@ local core      = require("apisix.core")
 local schema = {
     type = "object",
     properties = {
+        types_of = {
+            type = "string",
+            enum = {"consumer", "service"},
+        },
         whitelist = {
             type = "array",
             items = {type = "string"},
@@ -29,11 +33,12 @@ local schema = {
             type = "array",
             items = {type = "string"},
             minItems = 1
-        }
+        },
+        rejected_code = {type = "integer", minimum = 200, default = 503}
     },
     oneOf = {
-        {required = {"whitelist"}},
-        {required = {"blacklist"}}
+        {required = {"whitelist", "types_of"}},
+        {required = {"blacklist", "types_of"}}
     }
 }
 
@@ -57,6 +62,7 @@ local function is_include(value, tab)
     return false
 end
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
 
@@ -67,10 +73,16 @@ function _M.check_schema(conf)
     return true
 end
 
+
 function _M.access(conf, ctx)
+    -- local types_of = conf.types_of
+    core.log.error("ctx.service: ", core.json.encode(ctx.service))
     if not ctx.consumer then
         return 401, { message = "Missing authentication or identity verification." }
     end
+
+    local types_of = conf.ctx 
+    core.log.warn("ctx.consumer: ", core.json.encode(ctx.consumer))
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
