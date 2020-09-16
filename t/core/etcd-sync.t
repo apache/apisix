@@ -47,6 +47,8 @@ __DATA__
 
             if new_idx > idx then
                 ngx.say("prev_index updated")
+            else
+                ngx.say("prev_index not update")
             end
         }
     }

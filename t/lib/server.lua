@@ -250,6 +250,13 @@ function _M.websocket_handshake()
 end
 _M.websocket_handshake_route = _M.websocket_handshake
 
+local function print_uri()
+    ngx.say(ngx.var.uri)
+end
+for i = 1, 100 do
+    _M["print_uri_" .. i] = print_uri
+end
+
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
     action = string.gsub(action, "[/\\.]", "_")

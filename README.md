@@ -166,10 +166,9 @@ There are several ways to install the Apache Release version of APISIX:
         apisix start
         ```
 
-**Note**: Apache APISIX does not yet support the v3 protocol of etcd, so you need to enable v2 protocol when starting etcd.
-We are doing support for etcd v3 protocol.
+**Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, so you need to enable v3 protocol when starting etcd, if etcd version is below v3.4.
 ```shell
-etcd --enable-v2=true &
+export ETCDCTL_API=3
 ```
 
 ## For Developer
