@@ -19,7 +19,7 @@ apisix:
     admin_key:
         -
             name: "admin"
-            key:            # set your Admin API Key
+            key:  26064d2c508ef5ea  # set your Admin API Key
             role: admin
 #
 #

@@ -608,6 +608,7 @@ local function merge_conf(base, new_tab)
 end
 
 
+    local is_checked_admin_key = false
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
     profile.apisix_home = apisix_home .. "/"
@@ -646,9 +647,10 @@ local function read_yaml_conf()
     end
 
     -- check the Admin API token
-    if default_conf.apisix.enable_admin then
+    if default_conf.apisix.enable_admin and not is_checked_admin_key then
+        is_checked_admin_key = true
         local help = [[
-ERROR: missing valid apisix.admin_key
+WARNING: %s
 
 You can call `]] .. arg[0] .. [[ gen_admin_key` to generate a new Admin API key or
 manually update the `conf/config.yaml` file.
@@ -656,7 +658,7 @@ manually update the `conf/config.yaml` file.
         if type(default_conf.apisix.admin_key) ~= "table" or
            #default_conf.apisix.admin_key == 0
         then
-            io.stderr:write(help, "\n")
+            io.stderr:write(help:format("missing valid Admin API Key"), "\n")
             os.exit(1)
         end
 
@@ -667,9 +669,13 @@ manually update the `conf/config.yaml` file.
                 admin.key = tostring(admin.key)
             end
 
-            if admin.key == "" or admin.key:gsub("*", "") == "" then
-                io.stderr:write(help, "\n")
+            if admin.key == "" then
+                io.stderr:write(help:format("missing valid Admin API Key"), "\n")
                 os.exit(1)
+            end
+
+            if admin.key == "26064d2c508ef5ea" then
+                io.stderr:write(help:format("using the default Key is very dangerous."), "\n")
             end
         end
     end
