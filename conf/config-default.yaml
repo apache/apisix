@@ -191,6 +191,7 @@ plugins:                          # plugin list
   - proxy-cache
   - proxy-mirror
   - request-id
+  - hmac-auth
 
 stream_plugins:
   - mqtt-proxy

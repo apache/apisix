@@ -23,9 +23,11 @@
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
+- **QQ 交流群**: 578997126(推荐), 552030619
+- 加入 [Apache Slack](http://s.apache.org/slack-invite) 的 `apisix` 频道。 如果前面的链接失效，请在这里获取最新的邀请地址 [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
+- [bilibili B站 视频](https://space.bilibili.com/551921247)
 
 ## Apache APISIX 是什么？
 Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 网络库和 etcd 实现，
