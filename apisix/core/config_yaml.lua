@@ -316,7 +316,9 @@ end
 
 
 function _M.init_worker()
-    if process.type() ~= "worker" and process.type() ~= "single" then
+    if process.type() ~= "worker"
+      and process.type() ~= "single"
+      and process.type() ~= "privileged agent" then
         return
     end
 

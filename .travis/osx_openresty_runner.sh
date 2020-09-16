@@ -51,7 +51,7 @@ do_install() {
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
     chmod a+x utils/lj-releng
 
-    wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-darwin-amd64.tar.gz
+    wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-darwin-amd64.tar.gz
     tar -xvf grpc_server_example-darwin-amd64.tar.gz
 
     brew install grpcurl
@@ -65,7 +65,7 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
-    etcd --enable-v2=true &
+    etcd &
     sleep 1
 
     ./grpc_server_example &
