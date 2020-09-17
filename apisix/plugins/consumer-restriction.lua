@@ -52,7 +52,7 @@ local _M = {
     schema = schema,
 }
 
-local type_funcs = {
+local fetch_val_funcs = {
     ["service_id"] = function(ctx)
         return ctx.service.service_id
     end,
@@ -87,21 +87,21 @@ function _M.access(conf, ctx)
         return 401, { message = "Missing authentication or identity verification." }
     end
 
-    local type_value = type_funcs[conf.type](ctx)
-    if not type_value then
-        return 401, { message = "Missing `type` value." }
+    local value = fetch_val_funcs[conf.type](ctx)
+    if not value then
+        return 401, { message = "Failed to fetch value by value type: " .. conf.type }
     end
-    core.log.info("type_value: ", type_value)
+    core.log.info("value: ", value)
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
-        if is_include(type_value, conf.blacklist) then
+        if is_include(value, conf.blacklist) then
             block = true
         end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        if not is_include(type_value, conf.whitelist) then
+        if not is_include(value, conf.whitelist) then
             block = true
         end
     end
