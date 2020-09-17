@@ -22,7 +22,7 @@ local schema = {
     properties = {
         types_of = {
             type = "string",
-            enum = {"consumer", "service"},
+            enum = {"consumer", "service"}
         },
         whitelist = {
             type = "array",
@@ -74,31 +74,39 @@ function _M.check_schema(conf)
 end
 
 
+local type_funcs = {
+    ["serviec"] = function()
+        return ctx.service.service_id
+    end,
+    ["consumer"] = function()
+        return ctx.consumer.username
+    end
+}
+
 function _M.access(conf, ctx)
-    -- local types_of = conf.types_of
-    core.log.error("ctx.service: ", core.json.encode(ctx.service))
-    if not ctx.consumer then
+    local types_of = conf.types_of
+    if not types_of then
         return 401, { message = "Missing authentication or identity verification." }
     end
 
-    local types_of = conf.ctx 
-    core.log.warn("ctx.consumer: ", core.json.encode(ctx.consumer))
+    local type_name = type_funcs[types_of]()
+    core.log.warn("type_name: ", type_name)
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
-        if is_include(ctx.consumer.username, conf.blacklist) then
+        if is_include(type_name, conf.blacklist) then
             block = true
         end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        if not is_include(ctx.consumer.username, conf.whitelist) then
+        if not is_include(type_name, conf.whitelist) then
             block = true
         end
     end
 
     if block then
-        return 403, { message = "The consumer is not allowed" }
+        return conf.rejected_code, { message = "The consumer is not allowed" }
     end
 end
 
