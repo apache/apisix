@@ -21,9 +21,9 @@ local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
--- Note: The `excute_cmd` return value will have a line break at the end,
+-- Note: The `execute_cmd` return value will have a line break at the end,
 -- it is recommended to use the `trim` function to handle the return value.
-local function excute_cmd(cmd)
+local function execute_cmd(cmd)
     local t, err = io.popen(cmd)
     if not t then
         return nil, "failed to execute command: " .. cmd .. ", error info:" .. err
@@ -33,7 +33,7 @@ local function excute_cmd(cmd)
     return data
 end
 
-excute_cmd("install -d -m 777 /tmp/apisix_cores/")
+execute_cmd("install -d -m 777 /tmp/apisix_cores/")
 
 local pkg_cpath_org = package.cpath
 local pkg_path_org = package.path
@@ -42,12 +42,14 @@ local apisix_home = "/usr/local/apisix"
 local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                   .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
 local pkg_path  = apisix_home ..    "/deps/share/lua/5.1/?.lua;;"
+local min_etcd_version = "3.4.0"
+
 
 -- only for developer, use current folder as working space
 local is_root_path = false
 local script_path = arg[0]
 if script_path:sub(1, 2) == './' then
-    apisix_home = trim(excute_cmd("pwd"))
+    apisix_home = trim(execute_cmd("pwd"))
     if not apisix_home then
         error("failed to fetch current path")
     end
@@ -605,14 +607,6 @@ local function merge_conf(base, new_tab)
     return base
 end
 
-local function str_split(str, sep)
-    local t = {}
-    for s in str:gmatch("([^"..sep.."]+)") do
-        table.insert(t, s)
-    end
-    return t
-end
-
 
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
@@ -654,16 +648,17 @@ local function read_yaml_conf()
     return default_conf
 end
 
+
 local function get_openresty_version()
     local str = "nginx version: openresty/"
-    local ret = excute_cmd("openresty -v 2>&1")
+    local ret = execute_cmd("openresty -v 2>&1")
     local pos = string.find(ret,str)
     if pos then
         return string.sub(ret, pos + string.len(str))
     end
 
     str = "nginx version: nginx/"
-    ret = excute_cmd("openresty -v 2>&1")
+    ret = execute_cmd("openresty -v 2>&1")
     pos = string.find(ret, str)
     if pos then
         return string.sub(ret, pos + string.len(str))
@@ -672,23 +667,82 @@ local function get_openresty_version()
     return nil
 end
 
+
 local function is_32bit_arch()
     local ok, ffi = pcall(require, "ffi")
     if ok then
         -- LuaJIT
         return ffi.abi("32bit")
     end
-    local ret = excute_cmd("getconf LONG_BIT")
+    local ret = execute_cmd("getconf LONG_BIT")
     local bits = tonumber(ret)
     return bits <= 32
 end
+
 
 local function split(self, sep)
     local sep, fields = sep or ":", {}
     local pattern = string.format("([^%s]+)", sep)
     self:gsub(pattern, function(c) fields[#fields + 1] = c end)
     return fields
- end
+end
+
+
+local function parse_semantic_version(ver)
+    local errmsg = "invalid semantic version: " .. ver
+
+    local parts = split(ver, "-")
+    if #parts > 2 then
+        return nil, errmsg
+    end
+
+    if #parts == 2 then
+        ver = parts[1]
+    end
+
+    local fields = split(ver, ".")
+    if #fields ~= 3 then
+        return nil, errmsg
+    end
+
+    local major = tonumber(fields[1])
+    local minor = tonumber(fields[2])
+    local patch = tonumber(fields[3])
+
+    if not (major and minor and patch) then
+        return nil, errmsg
+    end
+
+    return {
+        major = major,
+        minor = minor,
+        patch = patch,
+    }
+end
+
+
+local function compare_semantic_version(v1, v2)
+    local ver1, err = parse_semantic_version(v1)
+    if not ver1 then
+        return nil, err
+    end
+
+    local ver2, err = parse_semantic_version(v2)
+    if not ver2 then
+        return nil, err
+    end
+
+    if ver1.major ~= ver2.major then
+        return ver1.major < ver2.major
+    end
+
+    if ver1.minor ~= ver2.minor then
+        return ver1.minor < ver2.minor
+    end
+
+    return ver1.patch < ver2.patch
+end
+
 
 local function check_version(cur_ver_s, need_ver_s)
     local cur_vers = split(cur_ver_s, [[.]])
@@ -758,7 +812,7 @@ local function init()
     end
     -- print("etcd: ", yaml_conf.etcd.host)
 
-    local or_ver = excute_cmd("openresty -V 2>&1")
+    local or_ver = execute_cmd("openresty -V 2>&1")
     local with_module_status = true
     if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
         io.stderr:write("'http_stub_status_module' module is missing in ",
@@ -780,7 +834,7 @@ local function init()
     local sys_conf = {
         lua_path = pkg_path_org,
         lua_cpath = pkg_cpath_org,
-        os_name = trim(excute_cmd("uname")),
+        os_name = trim(execute_cmd("uname")),
         apisix_lua_home = apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
@@ -885,20 +939,40 @@ local function init_etcd(show_output)
         yaml_conf.etcd.host = {yaml_conf.etcd.host}
     end
 
+    local cluster_version
     local host_count = #(yaml_conf.etcd.host)
+    local dkjson = require("dkjson")
 
-    local etcd_ok = false
+    -- check the etcd cluster version
     for index, host in ipairs(yaml_conf.etcd.host) do
-        -- check if etcd version above 3.4
-        cmd = "curl " .. host .. "/version 2>&1"
-        local res = excute_cmd(cmd)
-        local op_ver = str_split(res, "\"")[4]
-        local need_ver = "3.4.0"
-        if not check_version(op_ver, need_ver) then
-            io.stderr:write("etcd version must >=", need_ver, " current ", op_ver, "\n")
+        uri = host .. "/version"
+        local cmd = string.format("curl -s -m %d %s", timeout * 2, uri)
+        local res = execute_cmd(cmd)
+        local errmsg = string.format("got malformed version message: \"%s\" from etcd", res)
+        local body, _, err = dkjson.decode(res)
+        if err then
+            io.stderr:write(errmsg)
             return
         end
 
+        local cluster_version = body["etcdcluster"]
+        if not cluster_version then
+            io.stderr:write(errmsg)
+            return
+        end
+
+        if compare_semantic_version(cluster_version, min_etcd_version) then
+            io.stderr:write("etcd cluster version ", cluster_version,
+                            " is less than the required version ", min_etcd_version,
+                            ", please upgrade your etcd cluster")
+            return
+        end
+
+        break
+    end
+
+    local etcd_ok = false
+    for index, host in ipairs(yaml_conf.etcd.host) do
         local is_success = true
 
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
@@ -910,16 +984,17 @@ local function init_etcd(show_output)
             local base64_encode = require("base64").encode
             local uri = host .. "/v3/kv/put"
             local post_json = '{"value":"' .. base64_encode("init_dir") ..  '", "key":"' .. base64_encode(key) .. '"}'
-            cmd = "curl " .. uri .. " -X POST -d '" .. post_json
-                    .. "' --connect-timeout " .. timeout
-                    .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
+            local cmd = "curl " .. uri .. " -X POST -d '" .. post_json
+                        .. "' --connect-timeout " .. timeout
+                        .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
-            local res = excute_cmd(cmd)
+            local res = execute_cmd(cmd)
             if (etcd_version == "v3" and not res:find("OK", 1, true)) then
                 is_success = false
                 if (index == host_count) then
                     error(cmd .. "\n" .. res)
                 end
+
                 break
             end
 
