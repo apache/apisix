@@ -800,7 +800,7 @@ version:    print the version of apisix
 end
 
 
-local is_checked_admin_key
+local checked_admin_key = false
 local function init()
     if is_root_path then
         print('Warning! Running apisix under /root is only suitable for development environments'
@@ -818,13 +818,13 @@ local function init()
     if yaml_conf.apisix.enable_admin and yaml_conf.apisix.allow_admin then
         for _, allow_ip in ipairs(yaml_conf.apisix.allow_admin) do
             if allow_ip == "127.0.0.0/24" then
-                is_checked_admin_key = true
+                checked_admin_key = true
             end
         end
     end
 
-    if yaml_conf.apisix.enable_admin and not is_checked_admin_key then
-        is_checked_admin_key = true
+    if yaml_conf.apisix.enable_admin and not checked_admin_key then
+        checked_admin_key = true
         local help = [[
 
 %s
