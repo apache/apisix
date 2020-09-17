@@ -674,7 +674,9 @@ manually update the `conf/config.yaml` file.
                 os.exit(1)
             end
 
-            if admin.key == "26064d2c508ef5ea" then
+            if admin.key == "dc0bab5ae0862cf8" or
+               admin.key == "edd1c9f034335f136f87ad84b625c8f1"
+            then
                 io.stderr:write(help:format("using the default Key is very dangerous."), "\n")
             end
         end
@@ -1160,7 +1162,9 @@ function _M.gen_admin_key()
     file:write(user_conf_yaml_new)
     file:close()
 
-    print("generate a different admin key successfully")
+    print("Generates a different admin key successfully! Please restart your Apache APISIX service.\n\n" ..
+          "Then you can use the new key to access the Admin API.\n" ..
+          "eg: curl http://****/admin/routes -H 'X-API-KEY: " .. user_key .. "'")
 end
 
 local cmd_action = arg[1]
