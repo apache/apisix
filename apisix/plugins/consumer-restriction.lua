@@ -53,6 +53,15 @@ local _M = {
     schema = schema,
 }
 
+local type_funcs = {
+    ["serviec"] = function(ctx)
+        return ctx.service.service_id
+    end,
+    ["consumer"] = function(ctx)
+        return ctx.consumer.username
+    end
+}
+
 local function is_include(value, tab)
     for k,v in ipairs(tab) do
         if v == value then
@@ -74,39 +83,30 @@ function _M.check_schema(conf)
 end
 
 
-local type_funcs = {
-    ["serviec"] = function()
-        return ctx.service.service_id
-    end,
-    ["consumer"] = function()
-        return ctx.consumer.username
-    end
-}
-
 function _M.access(conf, ctx)
     local types_of = conf.types_of
     if not types_of then
         return 401, { message = "Missing authentication or identity verification." }
     end
 
-    local type_name = type_funcs[types_of]()
-    core.log.warn("type_name: ", type_name)
+    local type_id = type_funcs[types_of](ctx)
+    core.log.warn("type_id: ", type_id)
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
-        if is_include(type_name, conf.blacklist) then
+        if is_include(type_id, conf.blacklist) then
             block = true
         end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        if not is_include(type_name, conf.whitelist) then
+        if not is_include(type_id, conf.whitelist) then
             block = true
         end
     end
 
     if block then
-        return conf.rejected_code, { message = "The consumer is not allowed" }
+        return conf.rejected_code, { message = "The" .. types_of .. "is not allowed" }
     end
 end
 
