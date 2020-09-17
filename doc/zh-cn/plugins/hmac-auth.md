@@ -41,7 +41,7 @@
 | `secret_key`| 必须 | 无 | 与 `access_key` 配对使用。|
 | `algorithm` | 可选 | hmac-sha256 | 加密算法。目前支持 `hmac-sha1`, `hmac-sha256` 和 `hmac-sha512`。|
 | `clock_skew`| 可选 | 300 | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `timestamp` 进行检查。|
-| `signed_headers` | 可选 | 无 | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。|
+| `signed_headers` | 可选 | 无 | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"]|
 
 
 ## 如何启用
@@ -57,7 +57,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
             "access_key": "user-key",
             "secret_key": "my-secret-key",
             "clock_skew": 10,
-            "signed_headers": "User-Agent;Accept-Language"
+            "signed_headers": ["User-Agent", "Accept-Language", "x-custom-a"]
         }
     }
 }'
