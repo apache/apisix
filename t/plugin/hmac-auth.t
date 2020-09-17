@@ -618,3 +618,151 @@ GET /hello
 {"message":"access key or signature missing"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 19: add consumer with signed_headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "cook",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key5",
+                            "secret_key": "my-secret-key5",
+                            "signed_headers": ["x-custom-header-a", "x-custom-header-b"]
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "cook",
+                            "plugins": {
+                                "hmac-auth": {
+                                    "access_key": "my-access-key5",
+                                    "secret_key": "my-secret-key5",
+                                    "algorithm": "hmac-sha256",
+                                    "clock_skew": 300,
+                                    "signed_headers": ["x-custom-header-a", "x-custom-header-b"]
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: verify with invalid signed header
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key5"
+        local timestamp = ngx_time()
+        local access_key = "my-access-key5"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_c = "23879fmsldfk"
+
+        local signing_string = "GET" .. "/hello" ..  "" ..
+            access_key .. timestamp .. custom_header_a .. custom_header_c
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-c"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-c"] = custom_header_c
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body eval
+qr/\{"message":"Invalid signed header x-custom-header-c"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: verify ok with signed headers
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key5"
+        local timestamp = ngx_time()
+        local access_key = "my-access-key5"
+        local custom_header_a = "asld$%dfasf"
+
+        local signing_string = "GET" .. "/hello" ..  "" ..
+            access_key .. timestamp .. custom_header_a
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a"
+        headers["x-custom-header-a"] = custom_header_a
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

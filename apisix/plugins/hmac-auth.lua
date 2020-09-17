@@ -254,7 +254,7 @@ local function validate(ctx, params)
         if params.signed_headers then
             for _, header in ipairs(params.signed_headers) do
                 if not headers_map[header] then
-                    return nil, {message = "Invalid signed header " .. headers_map}
+                    return nil, {message = "Invalid signed header " .. header}
                 end
             end
         end
