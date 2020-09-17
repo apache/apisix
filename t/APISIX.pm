@@ -96,6 +96,18 @@ etcd:
 _EOC_
 }
 
+my $custom_hmac_auth = $ENV{"CUSTOM_HMAC_AUTH"} || "false";
+if ($custom_hmac_auth eq "true") {
+    $user_yaml_config .= <<_EOC_;
+plugin_attr:
+  hmac-auth:
+    signature_key: X-APISIX-HMAC-SIGNATURE
+    algorithm_key: X-APISIX-HMAC-ALGORITHM
+    timestamp_key: X-APISIX-HMAC-TIMESTAMP
+    access_key: X-APISIX-HMAC-ACCESS-KEY
+_EOC_
+}
+
 
 my $profile = $ENV{"APISIX_PROFILE"};
 
