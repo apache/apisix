@@ -212,7 +212,6 @@ local function generate_signature(ctx, secret_key, params)
         " h: ", core.json.encode(core.request.header(ctx, h)))
     end
 
-
     local signing_string = request_method .. canonical_uri
                             .. canonical_query_string
                             .. params.access_key .. params.timestamp
