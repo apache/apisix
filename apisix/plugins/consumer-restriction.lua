@@ -91,7 +91,7 @@ function _M.access(conf, ctx)
     if not value then
         return 401, { message = "Failed to fetch value by value type: " .. conf.type }
     end
-    core.log.warn("value: ", value)
+    core.log.info("value: ", value)
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
