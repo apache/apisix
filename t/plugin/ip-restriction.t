@@ -568,3 +568,38 @@ invalid ip address: ::1/129
 value should match only one schema, but matches none
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: set disable=true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ip-restriction": {
+                            "blacklist": [
+                                "127.0.0.0/24"
+                            ],
+                            "disable": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

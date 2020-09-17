@@ -606,6 +606,11 @@ _M.stream_route = {
 _M.id_schema = id_schema
 
 
+_M.plugin_disable_schema = {
+    disable = {type = "boolean"}
+}
+
+
 setmetatable(_M, {
     __index = schema,
     __newindex = function() error("no modification allowed") end,
