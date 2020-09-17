@@ -408,8 +408,8 @@ function _M.http_access_phase()
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
         api_ctx.conf_id = route.value.id
-        api_ctx.route_id = route.value.id
     end
+    api_ctx.route_id = route.value.id
 
     local enable_websocket
     local up_id = route.value.upstream_id
