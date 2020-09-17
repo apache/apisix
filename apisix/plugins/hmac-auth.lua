@@ -41,6 +41,11 @@ local schema = {
     type = "object",
     oneOf = {
         {
+            title = "work with route or service object",
+            properties = {},
+            additionalProperties = false,
+        },
+        {
             title = "work with consumer object",
             properties = {
                 access_key = {type = "string", minLength = 1, maxLength = 256},
@@ -56,7 +61,6 @@ local schema = {
                 },
                 signed_headers = {
                     type = "array",
-                    default = {},
                     items = {
                         type = "string",
                         minLength = 1,
@@ -67,11 +71,6 @@ local schema = {
             required = {"access_key", "secret_key"},
             additionalProperties = false,
         },
-        {
-            title = "work with route or service object",
-            properties = {},
-            additionalProperties = false,
-        }
     }
 }
 
@@ -202,17 +201,25 @@ local function generate_signature(ctx, secret_key, params)
         canonical_query_string = core.table.concat(query_tab, "&")
     end
 
-    local req_body = core.request.get_body()
-    req_body = req_body or ""
     local canonical_headers = ""
-    for _, header in pairs(params.signed_headers) do
-        canonical_headers = canonical_headers .. (core.request.header(ctx, header) or "")
+
+    core.log.info("all headers: ", core.json.encode(core.request.headers(), true))
+
+    for _, h in pairs(params.signed_headers) do
+        canonical_headers = canonical_headers .. (core.request.header(ctx, h) or "")
+        core.log.info("canonical_headers:", canonical_headers,
+        " header:", core.json.encode(h),
+        " h: ", core.json.encode(core.request.header(ctx, h)))
     end
 
+
     local signing_string = request_method .. canonical_uri
-                            .. canonical_query_string .. req_body
+                            .. canonical_query_string
                             .. params.access_key .. params.timestamp
                             .. canonical_headers
+
+    core.log.info("signing_string:", signing_string,
+        " params.signed_headers:", core.json.encode(params.signed_headers))
 
     return hmac_funcs[params.algorithm](secret_key, signing_string)
 end
@@ -308,7 +315,7 @@ local function get_params(ctx)
             signature = auth_data[3]
             algorithm = auth_data[4]
             timestamp = auth_data[5]
-            signed_headers = ngx_re.split(auth_data[6], ";")
+            signed_headers = auth_data[6]
         end
     end
 
@@ -316,7 +323,9 @@ local function get_params(ctx)
     params.algorithm  = algorithm
     params.signature  = signature
     params.timestamp  = timestamp or 0
-    params.signed_headers = signed_headers or {}
+    params.signed_headers = ngx_re.split(signed_headers or "", ";")
+
+    core.log.info("params: ", core.json.delay_encode(params))
 
     return params
 end
