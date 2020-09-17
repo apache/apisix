@@ -64,7 +64,7 @@ local schema = {
                     items = {
                         type = "string",
                         minLength = 1,
-                        maxLength = 20,
+                        maxLength = 50,
                     }
                 },
             },
@@ -203,13 +203,15 @@ local function generate_signature(ctx, secret_key, params)
 
     local canonical_headers = ""
 
-    core.log.info("all headers: ", core.json.encode(core.request.headers(), true))
+    core.log.info("all headers: ", core.json.encode(core.request.headers(ctx), true))
 
-    for _, h in pairs(params.signed_headers) do
-        canonical_headers = canonical_headers .. (core.request.header(ctx, h) or "")
-        core.log.info("canonical_headers:", canonical_headers,
-        " header:", core.json.encode(h),
-        " h: ", core.json.encode(core.request.header(ctx, h)))
+    if params.signed_headers then
+        for _, h in ipairs(params.signed_headers) do
+            canonical_headers = canonical_headers .. (core.request.header(ctx, h) or "")
+            core.log.info("canonical_headers:", canonical_headers,
+                " header:", core.json.encode(h),
+                " h: ", core.json.encode(core.request.header(ctx, h)))
+        end
     end
 
     local signing_string = request_method .. canonical_uri
@@ -322,7 +324,7 @@ local function get_params(ctx)
     params.algorithm  = algorithm
     params.signature  = signature
     params.timestamp  = timestamp or 0
-    params.signed_headers = ngx_re.split(signed_headers or "", ";")
+    params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
 
     core.log.info("params: ", core.json.delay_encode(params))
 
