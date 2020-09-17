@@ -55,10 +55,7 @@ local _M = {
 
 local fetch_val_funcs = {
     ["service_id"] = function(ctx)
-        local conf_data = ngx_re.split(ctx.conf_id, "&")
-        core.log.info("conf_data: ", core.json.encode(conf_data))
-        -- get service_id
-        return conf_data[2]
+        return ctx.service_id
     end,
     ["consumer_name"] = function(ctx)
         return ctx.consumer.username
