@@ -21,3 +21,9 @@
 #     host:
 #       - "http://127.0.0.1:2379"
 #
+apisix:
+  admin_key:
+    -
+      name: "admin"
+      key: edd1c9f034335f136f87ad84b625c8f1 # please update the default token for safe
+      role: admin
