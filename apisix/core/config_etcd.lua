@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -338,10 +340,13 @@ local function sync_data(self)
                 res.value.id = key
                 self.values[pre_index] = res
                 res.clean_handlers = {}
+                log.info("update data by key: ", key)
 
             else
                 self.sync_times = self.sync_times + 1
                 self.values[pre_index] = false
+                self.values_hash[key] = nil
+                log.info("delete data by key: ", key)
             end
 
         elseif res.value then
@@ -349,25 +354,29 @@ local function sync_data(self)
             insert_tab(self.values, res)
             self.values_hash[key] = #self.values
             res.value.id = key
+            log.info("insert data by key: ", key)
         end
 
         -- avoid space waste
-        -- todo: need to cover this path, it is important.
         if self.sync_times > 100 then
-            local count = 0
-            for i = 1, #self.values do
-                local val = self.values[i]
-                self.values[i] = nil
+            local values_original = table.clone(self.values)
+            table.clear(self.values)
+
+            for i = 1, #values_original do
+                local val = values_original[i]
                 if val then
-                    count = count + 1
-                    self.values[count] = val
+                    table.insert(self.values, val)
                 end
             end
 
-            for i = 1, count do
+            table.clear(self.values_hash)
+            log.info("clear stale data in `values_hash` for key: ", key)
+
+            for i = 1, #self.values do
                 key = short_key(self, self.values[i].key)
                 self.values_hash[key] = i
             end
+
             self.sync_times = 0
         end
 
