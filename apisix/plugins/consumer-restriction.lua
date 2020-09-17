@@ -16,6 +16,7 @@
 --
 local ipairs    = ipairs
 local core      = require("apisix.core")
+local ngx_re    = require("ngx.re")
 
 local schema = {
     type = "object",
@@ -54,7 +55,10 @@ local _M = {
 
 local fetch_val_funcs = {
     ["service_id"] = function(ctx)
-        return ctx.service.service_id
+        local conf_data = ngx_re.split(ctx.conf_id, "&")
+        core.log.info("conf_data: ", core.json.encode(conf_data))
+        -- get service_id
+        return conf_data[2]
     end,
     ["consumer_name"] = function(ctx)
         return ctx.consumer.username
@@ -91,7 +95,7 @@ function _M.access(conf, ctx)
     if not value then
         return 401, { message = "Failed to fetch value by value type: " .. conf.type }
     end
-    core.log.info("value: ", value)
+    core.log.warn("value: ", value)
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
