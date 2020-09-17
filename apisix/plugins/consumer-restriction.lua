@@ -22,8 +22,8 @@ local schema = {
     properties = {
         type = {
             type = "string",
-            enum = {"consumer", "service"},
-            default = "service"
+            enum = {"consumer_name", "service_id"},
+            default = "consumer_name"
         },
         whitelist = {
             type = "array",
@@ -38,14 +38,12 @@ local schema = {
         rejected_code = {type = "integer", minimum = 200, default = 401}
     },
     oneOf = {
-        {required = {"whitelist", "type"}},
-        {required = {"blacklist", "type"}}
+        {required = {"whitelist"}},
+        {required = {"blacklist"}}
     }
 }
 
-
 local plugin_name = "consumer-restriction"
-
 
 local _M = {
     version = 0.1,
@@ -55,10 +53,10 @@ local _M = {
 }
 
 local type_funcs = {
-    ["serviec"] = function(ctx)
+    ["service_id"] = function(ctx)
         return ctx.service.service_id
     end,
-    ["consumer"] = function(ctx)
+    ["consumer_name"] = function(ctx)
         return ctx.consumer.username
     end
 }
@@ -89,18 +87,21 @@ function _M.access(conf, ctx)
         return 401, { message = "Missing authentication or identity verification." }
     end
 
-    local type_id = type_funcs[conf.type](ctx)
-    core.log.warn("type_id: ", type_id)
+    local type_value = type_funcs[conf.type](ctx)
+    if not type_value then
+        return 401, { message = "Missing `type` value." }
+    end
+    core.log.info("type_value: ", type_value)
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
-        if is_include(type_id, conf.blacklist) then
+        if is_include(type_value, conf.blacklist) then
             block = true
         end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        if not is_include(type_id, conf.whitelist) then
+        if not is_include(type_value, conf.whitelist) then
             block = true
         end
     end
