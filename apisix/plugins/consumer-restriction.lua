@@ -35,7 +35,7 @@ local schema = {
             items = {type = "string"},
             minItems = 1
         },
-        rejected_code = {type = "integer", minimum = 200, default = 401}
+        rejected_code = {type = "integer", minimum = 200, default = 403}
     },
     oneOf = {
         {required = {"whitelist"}},
@@ -107,7 +107,7 @@ function _M.access(conf, ctx)
     end
 
     if block then
-        return conf.rejected_code, { message = "The" .. conf.type .. "is not allowed" }
+        return conf.rejected_code, { message = "The " .. conf.type .. " is not allowed" }
     end
 end
 

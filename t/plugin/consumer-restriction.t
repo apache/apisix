@@ -47,7 +47,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-{"whitelist":["jack1","jack2"]}
+{"rejected_code":403,"type":"consumer_name","whitelist":["jack1","jack2"]}
 --- no_error_log
 [error]
 
@@ -237,7 +237,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer is not allowed"}
+{"message":"The consumer_name is not allowed"}
 --- no_error_log
 [error]
 
@@ -302,7 +302,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer is not allowed"}
+{"message":"The consumer_name is not allowed"}
 --- no_error_log
 [error]
 
@@ -540,3 +540,5 @@ GET /hello
 hello world
 --- no_error_log
 [error]
+
+
