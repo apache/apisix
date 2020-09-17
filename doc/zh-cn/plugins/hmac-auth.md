@@ -107,11 +107,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 * 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序拼接起来，拼接完后就生成了 `signed_headers_string` 。
 
 
-
-
 ### 使用生成好的签名进行请求尝试
 
-**注： ACCESS_KEY,SIGNATURE,ALGORITHM,TIMESTAMP,SIGNED_HEADERS 分别代表对应的变量**
+**注： ACCESS_KEY, SIGNATURE, ALGORITHM, TIMESTAMP, SIGNED_HEADERS 分别代表对应的变量**
 **注： SIGNED_HEADERS 为客户端指定的加入加密计算的 headers ，多个以英文分号分隔如：User-Agent;Accept-Language**
 
 * 签名信息拼一起放到请求头 `Authorization` 字段中：
@@ -132,7 +130,7 @@ Accept-Ranges: bytes
 * 签名信息分开分别放到请求头：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'X-HMAC-TIMESTAMP: TIMESTAMP' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY'  -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
+$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'X-HMAC-TIMESTAMP: TIMESTAMP' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
