@@ -237,7 +237,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer_name is not allowed"}
+{"message":"The jack2 is not allowed"}
 --- no_error_log
 [error]
 
@@ -302,7 +302,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer_name is not allowed"}
+{"message":"The jack1 is not allowed"}
 --- no_error_log
 [error]
 
@@ -337,6 +337,7 @@ hello world
                         },
                         "plugins": {
                             "consumer-restriction": {
+                                "type": "consumer_name",
                                  "whitelist": [
                                      "jack1"
                                  ]
