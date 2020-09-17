@@ -116,7 +116,9 @@ done
                                     "127.0.0.1":9092
                                   },
                                 "kafka_topic" : "test2",
-                                "key" : "key1"
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1
                             }
                         },
                         "upstream": {
@@ -137,7 +139,9 @@ done
                                         "127.0.0.1":9092
                                       },
                                     "kafka_topic" : "test2",
-                                    "key" : "key1"
+                                    "key" : "key1",
+                                    "timeout" : 1,
+                                    "batch_max_size": 1
                                 }
                             },
                             "upstream": {
@@ -175,7 +179,7 @@ GET /hello
 hello world
 --- no_error_log
 [error]
---- wait: 0.2
+--- wait: 2
 
 
 
