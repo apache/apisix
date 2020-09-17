@@ -359,24 +359,21 @@ local function sync_data(self)
 
         -- avoid space waste
         if self.sync_times > 100 then
-            local values_original = table.clone(self.values)
-            table.clear(self.values)
-
-            for i = 1, #values_original do
-                local val = values_original[i]
+            local count = 0
+            for i = 1, #self.values do
+                local val = self.values[i]
+                self.values[i] = nil
                 if val then
-                    table.insert(self.values, val)
+                    count = count + 1
+                    self.values[count] = val
                 end
             end
 
             table.clear(self.values_hash)
-            log.info("clear stale data in `values_hash` for key: ", key)
-
-            for i = 1, #self.values do
+            for i = 1, count do
                 key = short_key(self, self.values[i].key)
                 self.values_hash[key] = i
             end
-
             self.sync_times = 0
         end
 
