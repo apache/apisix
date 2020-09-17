@@ -16,6 +16,8 @@
 --
 local core     = require("apisix.core")
 
+local open = io.open
+
 local _M = {}
 
 local function get_full_log(ngx, conf)
@@ -64,11 +66,10 @@ local function get_full_log(ngx, conf)
         else
             local body_file = ngx.req.get_body_file()
             if body_file then
-                local lines = {}
-                for line in io.lines(file) do
-                    lines[#lines + 1] = line
-                end
-                log.request.body_file = lines
+                local file = open(body_file, "rb")
+                local content = file:read "*a"
+                file:close()
+                log.request.body_file = content
             end
         end
     end
