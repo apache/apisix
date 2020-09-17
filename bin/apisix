@@ -852,7 +852,8 @@ Please set a new Admin API key and store it in the `conf/config.yaml` file.
 
             if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
                 io.stderr:write(
-                    help:format("WARNING: using the default Key is very dangerous."),
+                    help:format([[WARNING: using fixed API token has security risk, ]]
+                                .. [[please modify "admin_key" in conf/config.yaml.]]),
                     "\n"
                 )
             end
