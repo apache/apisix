@@ -20,9 +20,10 @@ local core      = require("apisix.core")
 local schema = {
     type = "object",
     properties = {
-        types_of = {
+        type = {
             type = "string",
-            enum = {"consumer", "service"}
+            enum = {"consumer", "service"},
+            default = "service"
         },
         whitelist = {
             type = "array",
@@ -34,11 +35,11 @@ local schema = {
             items = {type = "string"},
             minItems = 1
         },
-        rejected_code = {type = "integer", minimum = 200, default = 503}
+        rejected_code = {type = "integer", minimum = 200, default = 401}
     },
     oneOf = {
-        {required = {"whitelist", "types_of"}},
-        {required = {"blacklist", "types_of"}}
+        {required = {"whitelist", "type"}},
+        {required = {"blacklist", "type"}}
     }
 }
 
@@ -84,12 +85,11 @@ end
 
 
 function _M.access(conf, ctx)
-    local types_of = conf.types_of
-    if not types_of then
+    if not conf.type then
         return 401, { message = "Missing authentication or identity verification." }
     end
 
-    local type_id = type_funcs[types_of](ctx)
+    local type_id = type_funcs[conf.type](ctx)
     core.log.warn("type_id: ", type_id)
 
     local block = false
@@ -106,7 +106,7 @@ function _M.access(conf, ctx)
     end
 
     if block then
-        return conf.rejected_code, { message = "The" .. types_of .. "is not allowed" }
+        return conf.rejected_code, { message = "The" .. conf.type .. "is not allowed" }
     end
 end
 
