@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/key-auth.md)
+- [English](../../plugins/key-auth.md)
 
 # 目录
 - [**名字**](#名字)

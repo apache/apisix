@@ -49,10 +49,10 @@ local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
 local ipv6_def = "([a-fA-F0-9]{0,4}:){0,8}(:[a-fA-F0-9]{0,4}){0,8}"
                  .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
-    {pattern = "^" .. ipv4_def .. "$"},
-    {pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
-    {pattern = "^" .. ipv6_def .. "$"},
-    {pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
+    {title = "IPv4", type = "string", pattern = "^" .. ipv4_def .. "$"},
+    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
+    {title = "IPv6", type = "string", pattern = "^" .. ipv6_def .. "$"},
+    {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
 _M.ip_def = ip_def
 
@@ -311,7 +311,7 @@ local upstream_schema = {
         type = {
             description = "algorithms of load balancing",
             type = "string",
-            enum = {"chash", "roundrobin"}
+            enum = {"chash", "roundrobin", "ewma"}
         },
         checks = health_checker,
         hash_on = {
@@ -332,6 +332,13 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        pass_host = {
+            description = "mod of host passing",
+            type = "string",
+            enum = {"pass", "node", "rewrite"},
+            default = "pass"
+        },
+        upstream_host = host_def,
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         service_name = {type = "string", maxLength = 50},
@@ -422,6 +429,8 @@ _M.route = {
             pattern = [[^function]],
         },
 
+        script = {type = "string", minLength = 10, maxLength = 102400},
+
         plugins = plugins_schema,
         upstream = upstream_schema,
 
@@ -441,6 +450,13 @@ _M.route = {
         {required = {"upstream", "uris"}},
         {required = {"upstream_id", "uris"}},
         {required = {"service_id", "uris"}},
+        {required = {"script", "uri"}},
+        {required = {"script", "uris"}},
+    },
+    ["not"] = {
+        anyOf = {
+            {required = {"script", "plugins"}}
+        }
     },
     additionalProperties = false,
 }
@@ -455,11 +471,13 @@ _M.service = {
         upstream_id = id_schema,
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
+        script = {type = "string", minLength = 10, maxLength = 102400},
     },
     anyOf = {
         {required = {"upstream"}},
         {required = {"upstream_id"}},
         {required = {"plugins"}},
+        {required = {"script"}},
     },
     additionalProperties = false,
 }
@@ -503,6 +521,22 @@ _M.ssl = {
             items = {
                 type = "string",
                 pattern = [[^\*?[0-9a-zA-Z-.]+$]],
+            }
+        },
+        certs = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 128,
+                maxLength = 64*1024,
+            }
+        },
+        keys = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 128,
+                maxLength = 64*1024,
             }
         },
         exptime = {

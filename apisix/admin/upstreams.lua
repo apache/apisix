@@ -54,6 +54,18 @@ local function check_upstream_conf(conf)
         return false, "invalid configuration: " .. err
     end
 
+    if conf.pass_host == "node" and conf.nodes and
+        core.table.nkeys(conf.nodes) ~= 1
+    then
+        return false, "only support single node for `node` mode currently"
+    end
+
+    if conf.pass_host == "rewrite" and
+        (conf.upstream_host == nil or conf.upstream_host == "")
+    then
+        return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+    end
+
     if conf.type ~= "chash" then
         return true
     end
@@ -77,6 +89,7 @@ local function check_upstream_conf(conf)
             return false, "invalid configuration: " .. err
         end
     end
+
     return true
 end
 
@@ -211,7 +224,7 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf)
+function _M.patch(id, conf, sub_path)
     if not id then
         return 400, {error_msg = "missing upstream id"}
     end
@@ -220,8 +233,10 @@ function _M.patch(id, conf)
         return 400, {error_msg = "missing new configuration"}
     end
 
-    if type(conf) ~= "table"  then
-        return 400, {error_msg = "invalid configuration"}
+    if not sub_path or sub_path == "" then
+        if type(conf) ~= "table"  then
+            return 400, {error_msg = "invalid configuration"}
+        end
     end
 
     local key = "/upstreams" .. "/" .. id
@@ -239,7 +254,15 @@ function _M.patch(id, conf)
 
     local new_value = res_old.body.node.value
 
-    new_value = core.table.merge(new_value, conf);
+    if sub_path and sub_path ~= "" then
+        local code, err, node_val = core.table.patch(new_value, sub_path, conf)
+        new_value = node_val
+        if code then
+            return code, err
+        end
+    else
+        new_value = core.table.merge(new_value, conf);
+    end
 
     core.log.info("new value ", core.json.delay_encode(new_value, true))
 

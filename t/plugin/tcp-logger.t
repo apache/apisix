@@ -161,7 +161,7 @@ GET /hello
 hello world
 --- no_error_log
 [error]
---- wait: 0.2
+--- wait: 1
 
 
 

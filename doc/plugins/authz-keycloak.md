@@ -17,7 +17,7 @@
 #
 -->
 
-[中文](../zh-cn/plugins/authz-keycloak-cn.md)
+- [中文](../zh-cn/plugins/authz-keycloak.md)
 
 # Summary
 - [**Name**](#name)
@@ -45,6 +45,7 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | audience      |optional       |The client identifier of the resource server to which the client is seeking access. This parameter is mandatory in case the permission parameter is defined.|
 | permissions   |optional       |This parameter is optional. A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: `RESOURCE_ID#SCOPE_ID`.|
 | timeout       |optional       |Timeout for the http connection with the Identity Server. Default is 3 seconds|
+| ssl_verify    |optional       |Verify SSL cert matches hostname|
 | policy_enforcement_mode|required     |Enforcing or Permissive.|
 
 
@@ -71,16 +72,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/get",
     "plugins": {
         "authz-keycloak": {
-        	"token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
-        	"permissions": ["resource name#scope name"],
+            "token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
+            "permissions": ["resource name#scope name"],
             "audience": "Client ID"
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -105,10 +106,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```

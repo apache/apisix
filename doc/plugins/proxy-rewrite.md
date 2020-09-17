@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/proxy-rewrite.md)
+- [中文](../zh-cn/plugins/proxy-rewrite.md)
 
 # Summary
 - [**Name**](#name)

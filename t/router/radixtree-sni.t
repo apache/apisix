@@ -160,6 +160,7 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
+received: Server: APISIX/\d\.\d+(\.\d+)?
 received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
@@ -205,7 +206,7 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 failed to find any SSL certificate by SNI
 
@@ -313,6 +314,7 @@ sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
+received: Server: APISIX/\d\.\d+(\.\d+)?
 received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
@@ -426,6 +428,7 @@ sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
+received: Server: APISIX/\d\.\d+(\.\d+)?
 received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
@@ -558,12 +561,11 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
 failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNI: *.test2.com
 --- no_error_log
-[error]
 [alert]
 
 
@@ -641,11 +643,10 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 lua ssl server name: "www.test2.com"
 --- no_error_log
-[error]
 [alert]
 
 
@@ -853,12 +854,11 @@ location /t {
 GET /t
 --- response_body
 connected: 1
-failed to do SSL handshake: certificate host mismatch
+failed to do SSL handshake: handshake failed
 --- error_log
 lua ssl server name: "aa.bb.test2.com"
 failed to find any SSL certificate by SNI: aa.bb.test2.com matched SNIs: ["*.test2.com","test2.com"]
 --- no_error_log
-[error]
 [alert]
 
 
@@ -940,3 +940,227 @@ connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
 decrypt ssl key failed.
+
+
+
+=== TEST 21 set ssl with multiple certificates.
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("conf/cert/apisix.crt")
+        local ssl_key = t.read_file("conf/cert/apisix.key")
+        local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
+        local ssl_ecc_key = t.read_file("conf/cert/apisix_ecc.key")
+
+        local data = {
+            cert = ssl_cert,
+            key = ssl_key,
+            certs = { ssl_ecc_cert },
+            keys = { ssl_ecc_key },
+            sni = "test.com",
+        }
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+        )
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: client request using ECC certificate
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+location /t {
+    lua_ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384;
+    content_by_lua_block {
+        -- etcd sync
+
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "test.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", type(sess))
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+ssl handshake: userdata
+
+
+
+=== TEST 23: client request using RSA certificate
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    lua_ssl_ciphers ECDHE-RSA-AES256-SHA384;
+    content_by_lua_block {
+        -- etcd sync
+
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "test.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", type(sess))
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+ssl handshake: userdata
+
+
+
+=== TEST 24: set ssl(sni: *.test2.com) once again
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("conf/cert/test2.crt")
+        local ssl_key =  t.read_file("conf/cert/test2.key")
+        local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "sni": "*.test2.com"
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: caching of parsed certs and pkeys
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        local work = function()
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "www.test2.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            ngx.say("ssl handshake: ", type(sess))
+            local ok, err = sock:close()
+            ngx.say("close: ", ok, " ", err)
+        end  -- do
+
+        work()
+        work()
+
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body eval
+qr{connected: 1
+ssl handshake: userdata
+close: 1 nil
+connected: 1
+ssl handshake: userdata
+close: 1 nil}
+--- grep_error_log eval
+qr/parsing (cert|(priv key)) for sni: www.test2.com/
+--- grep_error_log_out
+parsing cert for sni: www.test2.com
+parsing priv key for sni: www.test2.com

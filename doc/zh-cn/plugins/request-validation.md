@@ -17,17 +17,17 @@
 #
 -->
 
-[English](../../plugins/request-validation.md)
+- [English](../../plugins/request-validation.md)
 
 # 目录
-- [**名字**](#名字)
+- [**名称**](#名称)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 - [**示例**](#示例)
 
-## 名字
+## 名称
 
 `request-validation` 插件用于提前验证请求向上游转发请求，可以验证请求的 `body` 及 `header` 数据。
 
@@ -63,10 +63,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -95,10 +95,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -108,16 +108,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **枚举（Enums）验证:**
 
-```shell
+```json
 {
     "body_schema": {
         "type": "object",
-        "required": ["emum_payload"],
+        "required": ["enum_payload"],
         "properties": {
-            "emum_payload": {
+            "enum_payload": {
                 "type": "string",
-                enum: ["enum_string_1", "enum_string_2"]
-                default = "enum_string_1"
+                "enum": ["enum_string_1", "enum_string_2"],
+                "default": "enum_string_1"
             }
         }
     }
@@ -126,15 +126,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **布尔（Boolean）验证:**
 
-```shell
+```json
 {
     "body_schema": {
         "type": "object",
         "required": ["bool_payload"],
         "properties": {
             "bool_payload": {
-                type = "boolean",
-                default = true
+                "type": "boolean",
+                "default": true
             }
         }
     }
@@ -143,16 +143,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **数字范围（Number or Integer）验证:**
 
-```shell
+```json
 {
     "body_schema": {
         "type": "object",
         "required": ["integer_payload"],
         "properties": {
             "integer_payload": {
-                type = "integer",
-                minimum = 1,
-                maximum = 65535
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535
             }
         }
     }
@@ -161,16 +161,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **字符串长度（String）验证:**
 
-```shell
+```json
 {
     "body_schema": {
         "type": "object",
         "required": ["string_payload"],
         "properties": {
             "string_payload": {
-                type = "string",
-                minLength = 1,
-                maxLength = 32
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32
             }
         }
     }
@@ -179,17 +179,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **正则表达式（Regex）验证:**
 
-```shell
+```json
 {
     "body_schema": {
         "type": "object",
         "required": ["regex_payload"],
         "properties": {
             "regex_payload": {
-                type = "string",
-                minLength = 1,
-                maxLength = 32,
-                pattern = [[^[a-zA-Z0-9_]+$]]
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "[[^[a-zA-Z0-9_]+$]]"
             }
         }
     }
@@ -199,22 +199,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **数组（Array）验证:**
 
-```shell
+```json
 {
     "body_schema": {
         "type": "object",
         "required": ["array_payload"],
         "properties": {
             "array_payload": {
-                type = "array",
-                minItems = 1,
-                items = {
-                    type = "integer",
-                    minimum = 200,
-                    maximum = 599
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "integer",
+                    "minimum": 200,
+                    "maximum": 599
                 },
-                uniqueItems = true,
-                default = {200, 302}
+                "uniqueItems": true,
+                "default": [200, 302]
             }
         }
     }
@@ -223,7 +223,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 **多字段组合（Multiple Fields）验证:**
 
-```shell
+```json
 {
     "body_schema": {
         "type": "object",
@@ -233,21 +233,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                 "type": "boolean"
             },
             "array_payload": {
-                type = "array",
-                minItems = 1,
-                items = {
-                    type = "integer",
-                    minimum = 200,
-                    maximum = 599
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "integer",
+                    "minimum": 200,
+                    "maximum": 599
                 },
-                uniqueItems = true,
-                default = {200, 302}
+                "uniqueItems": true,
+                "default": [200, 302]
             },
             "regex_payload": {
-                type = "string",
-                minLength = 1,
-                maxLength = 32,
-                pattern = [[^[a-zA-Z0-9_]+$]]
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "[[^[a-zA-Z0-9_]+$]]"
             }
         }
     }

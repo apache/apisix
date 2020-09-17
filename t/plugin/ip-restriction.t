@@ -160,7 +160,7 @@ done
 --- request
 GET /t
 --- response_body
-property "blacklist" validation failed: expect array to have at least 1 items
+value should match only one schema, but matches none
 done
 --- no_error_log
 [error]
@@ -183,7 +183,7 @@ done
 --- request
 GET /t
 --- response_body
-value should match only one schema, but matches both schemas 1 and 2
+value should match only one schema, but matches none
 done
 --- no_error_log
 [error]
@@ -565,6 +565,6 @@ GET /hello
 GET /t
 --- response_body
 invalid ip address: ::1/129
-property "whitelist" validation failed: failed to validate item 1: object matches none of the requireds
+value should match only one schema, but matches none
 --- no_error_log
 [error]
