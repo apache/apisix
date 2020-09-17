@@ -16,7 +16,6 @@
 --
 local ipairs    = ipairs
 local core      = require("apisix.core")
-local ngx_re    = require("ngx.re")
 
 local schema = {
     type = "object",
