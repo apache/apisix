@@ -178,6 +178,65 @@ end
 _M.set = set
 
 
+function _M.atomic_set(key, value, ttl, mod_revision)
+    local etcd_cli, prefix, err = new()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    local lease_id
+    if ttl then
+        local data, grant_err = etcd_cli:grant(tonumber(ttl))
+        if not data then
+            return nil, grant_err
+        end
+
+        lease_id = data.body.ID
+    end
+
+    key = prefix .. key
+
+    local compare = {
+        {
+            key = key,
+            target = "MOD",
+            result = "EQUAL",
+            mod_revision = mod_revision,
+        }
+    }
+
+    local success = {
+        {
+            requestPut = {
+                key = key,
+                value = value,
+                lease = lease_id,
+            }
+        }
+    }
+
+    local res, err = etcd_cli:txn(compare, success)
+    if not res then
+        return nil, err
+    end
+
+    if not res.body.succeeded then
+        return nil, "value changed before overwritten"
+    end
+
+    res.headers["X-Etcd-Index"] = res.body.header.revision
+    -- etcd v3 set would not return kv info
+    res.body.action = "compareAndSwap"
+    res.body.node = {
+        key = key,
+        value = value,
+    }
+    res.status = 201
+
+    return res, nil
+end
+
+
 function _M.push(key, value, ttl)
     local etcd_cli, prefix, err = new()
     if not etcd_cli then
