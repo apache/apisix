@@ -1165,7 +1165,7 @@ passed
                             "id":"1"
                         }
                     },
-                    "action":"set"
+                    "action":"compareAndSwap"
                 }]]
                 )
 
