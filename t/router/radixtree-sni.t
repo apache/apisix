@@ -589,7 +589,7 @@ location /t {
                     },
                     "key": "/apisix/ssl/1"
                 },
-                "action": "set"
+                "action": "compareAndSwap"
             }]]
             )
 
@@ -670,7 +670,7 @@ location /t {
                     },
                     "key": "/apisix/ssl/1"
                 },
-                "action": "set"
+                "action": "compareAndSwap"
             }]]
             )
 
