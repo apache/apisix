@@ -337,7 +337,6 @@ hello world
                         },
                         "plugins": {
                             "consumer-restriction": {
-                                "type": "consumer_name",
                                  "whitelist": [
                                      "jack1"
                                  ]
@@ -633,7 +632,6 @@ GET /t
 passed
 --- no_error_log
 [error]
-
 
 
 
