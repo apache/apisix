@@ -23,9 +23,11 @@
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- **QQ group**: 552030619
 - Mail list: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mail list.
+- **QQ Group**: 578997126(recommended), 552030619
+- Join in `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
+- [bilibili video](https://space.bilibili.com/551921247)
 
 ## What's Apache APISIX?
 Apache APISIX is a dynamic, real-time, high-performance API gateway, based on the Nginx library and etcd.
@@ -166,10 +168,9 @@ There are several ways to install the Apache Release version of APISIX:
         apisix start
         ```
 
-**Note**: Apache APISIX does not yet support the v3 protocol of etcd, so you need to enable v2 protocol when starting etcd.
-We are doing support for etcd v3 protocol.
+**Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, so you need to enable v3 protocol when starting etcd, if etcd version is below v3.4.
 ```shell
-etcd --enable-v2=true &
+export ETCDCTL_API=3
 ```
 
 ## For Developer

@@ -23,9 +23,11 @@
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
+- **QQ 交流群**: 578997126(推荐), 552030619
+- 加入 [Apache Slack](http://s.apache.org/slack-invite) 的 `apisix` 频道。 如果前面的链接失效，请在这里获取最新的邀请地址 [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
+- [bilibili B站 视频](https://space.bilibili.com/551921247)
 
 ## Apache APISIX 是什么？
 Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 网络库和 etcd 实现，
@@ -165,10 +167,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         apisix start
         ```
 
-**注意**：Apache APISIX 现在还不支持 etcd 的 v3 协议，所以启动 etcd 时需要开启 v2 协议的支持。
-我们正在做 etcd v3 协议的支持。
+**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，如果 etcd 版本低于 v3.4，启动 etcd 时需要开启 v3 协议的支持。
 ```shell
-etcd --enable-v2=true &
+export ETCDCTL_API=3
 ```
 
 ## 针对开发者
