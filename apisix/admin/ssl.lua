@@ -198,6 +198,7 @@ function _M.patch(id, conf)
 
 
     local node_value = res_old.body.node.value
+    local modified_index = res_old.body.node.modifiedIndex
 
     node_value = core.table.merge(node_value, conf);
 
@@ -208,8 +209,7 @@ function _M.patch(id, conf)
         return 400, err
     end
 
-    -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, node_value)
+    local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new ssl[", key, "] to etcd: ", err)
         return 500, {error_msg = err}
