@@ -49,13 +49,13 @@ done
 
 
 
-=== TEST 2: create 130 routes + delete them
+=== TEST 2: create 106 routes + delete them
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            for i = 1, 130 do
+            for i = 1, 106 do
                 local code, body = t('/apisix/admin/routes/' .. i,
                     ngx.HTTP_PUT,
                     [[{
@@ -72,7 +72,7 @@ done
 
             ngx.sleep(0.5)
 
-            for i = 1, 130 do
+            for i = 1, 106 do
                 local code, body = t('/apisix/admin/routes/' .. i,
                     ngx.HTTP_PUT,
                     [[{
@@ -89,7 +89,7 @@ done
 
             ngx.sleep(0.5)
 
-            for i = 1, 130 do
+            for i = 1, 106 do
                 local code, body = t('/apisix/admin/routes/' .. i,
                     ngx.HTTP_DELETE
                 )
@@ -97,7 +97,7 @@ done
 
             ngx.sleep(0.5)
 
-            for i = 1, 130 do
+            for i = 1, 106 do
                 local code, body = t('/apisix/admin/routes/' .. i,
                     ngx.HTTP_PUT,
                     [[{
@@ -114,7 +114,7 @@ done
 
             ngx.sleep(0.5)
 
-            for i = 1, 130 do
+            for i = 1, 106 do
                 local code, body = t('/apisix/admin/routes/' .. i,
                     ngx.HTTP_DELETE
                 )
@@ -131,11 +131,11 @@ done
 [error]
 --- wait: 1
 --- grep_error_log eval
-qr/\w+ (data by key: 126)/
+qr/\w+ (data by key: 103)/
 --- grep_error_log_out
-insert data by key: 126
-update data by key: 126
-delete data by key: 126
-insert data by key: 126
-delete data by key: 126
---- timeout: 20
+insert data by key: 103
+update data by key: 103
+delete data by key: 103
+insert data by key: 103
+delete data by key: 103
+--- timeout: 30
