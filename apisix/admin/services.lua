@@ -219,6 +219,7 @@ function _M.patch(id, conf, sub_path)
                   core.json.delay_encode(res_old, true))
 
     local node_value = res_old.body.node.value
+    local modified_index = res_old.body.node.modifiedIndex
 
     if sub_path and sub_path ~= "" then
         local code, err, node_val = core.table.patch(node_value, sub_path, conf)
@@ -237,8 +238,7 @@ function _M.patch(id, conf, sub_path)
         return 400, err
     end
 
-    -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, node_value)
+    local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new service[", key, "]: ", err)
         return 500, {error_msg = err}

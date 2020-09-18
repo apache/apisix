@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -33,7 +35,8 @@ local ngx_time     = ngx.time
 local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
-local pcall        = pcall
+local xpcall       = xpcall
+local debug        = debug
 local error        = error
 local created_obj  = {}
 
@@ -338,10 +341,13 @@ local function sync_data(self)
                 res.value.id = key
                 self.values[pre_index] = res
                 res.clean_handlers = {}
+                log.info("update data by key: ", key)
 
             else
                 self.sync_times = self.sync_times + 1
                 self.values[pre_index] = false
+                self.values_hash[key] = nil
+                log.info("delete data by key: ", key)
             end
 
         elseif res.value then
@@ -349,25 +355,29 @@ local function sync_data(self)
             insert_tab(self.values, res)
             self.values_hash[key] = #self.values
             res.value.id = key
+            log.info("insert data by key: ", key)
         end
 
         -- avoid space waste
-        -- todo: need to cover this path, it is important.
         if self.sync_times > 100 then
-            local count = 0
-            for i = 1, #self.values do
-                local val = self.values[i]
-                self.values[i] = nil
+            local values_original = table.clone(self.values)
+            table.clear(self.values)
+
+            for i = 1, #values_original do
+                local val = values_original[i]
                 if val then
-                    count = count + 1
-                    self.values[count] = val
+                    table.insert(self.values, val)
                 end
             end
 
-            for i = 1, count do
+            table.clear(self.values_hash)
+            log.info("clear stale data in `values_hash` for key: ", key)
+
+            for i = 1, #self.values do
                 key = short_key(self, self.values[i].key)
                 self.values_hash[key] = i
             end
+
             self.sync_times = 0
         end
 
@@ -415,33 +425,34 @@ local function _automatic_fetch(premature, self)
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
-        local ok, ok2, err = pcall(sync_data, self)
+        local ok, err = xpcall(function()
+            local ok, err = sync_data(self)
+            if err then
+                if err ~= "timeout" and err ~= "Key not found"
+                    and self.last_err ~= err then
+                    log.error("failed to fetch data from etcd: ", err, ", ",
+                              tostring(self))
+                end
+
+                if err ~= self.last_err then
+                    self.last_err = err
+                    self.last_err_time = ngx_time()
+                else
+                    if ngx_time() - self.last_err_time >= 30 then
+                        self.last_err = nil
+                    end
+                end
+                ngx_sleep(0.5)
+            elseif not ok then
+                ngx_sleep(0.05)
+            end
+        end, debug.traceback)
+
         if not ok then
-            err = ok2
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
             ngx_sleep(3)
             break
-
-        elseif not ok2 and err then
-            if err ~= "timeout" and err ~= "Key not found"
-               and self.last_err ~= err then
-                log.error("failed to fetch data from etcd: ", err, ", ",
-                          tostring(self))
-            end
-
-            if err ~= self.last_err then
-                self.last_err = err
-                self.last_err_time = ngx_time()
-            else
-                if ngx_time() - self.last_err_time >= 30 then
-                    self.last_err = nil
-                end
-            end
-            ngx_sleep(0.5)
-
-        elseif not ok2 then
-            ngx_sleep(0.05)
         end
     end
 

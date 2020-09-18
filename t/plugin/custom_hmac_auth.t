@@ -239,8 +239,10 @@ location /t {
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
         local signing_string = "GET" .. "/hello" ..  "" ..
-        "" .. access_key .. timestamp .. secret_key
+            access_key .. timestamp .. custom_header_a .. custom_header_b
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -249,6 +251,9 @@ location /t {
         headers["X-APISIX-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["X-APISIX-HMAC-TIMESTAMP"] = timestamp
         headers["X-APISIX-HMAC-ACCESS-KEY"] = access_key
+        headers["X-APISIX-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
 
         local code, body = t.test('/hello',
             ngx.HTTP_GET,
@@ -331,8 +336,10 @@ location /t {
         local secret_key = "my-secret-key2"
         local timestamp = ngx_time()
         local access_key = "my-access-key2"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
         local signing_string = "GET" .. "/hello" ..  "" ..
-        "" .. access_key .. timestamp .. secret_key
+            access_key .. timestamp .. custom_header_a .. custom_header_b
 
         ngx.sleep(2)
 
