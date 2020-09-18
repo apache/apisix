@@ -73,7 +73,7 @@ done
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+            local code, body = t('/apisix/admin/consumers/1',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",
@@ -194,7 +194,7 @@ GET /hello
             for i = 1, 20 do
                 username = "user_" .. tostring(i)
                 key = "auth-" .. tostring(i)
-                code, body = t('/apisix/admin/consumers',
+                code, body = t(string.format('/apisix/admin/consumers/%d', tostring(i)),
                     ngx.HTTP_PUT,
                     string.format('{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}', username, key),
                     string.format('{"node":{"value":{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}},"action":"set"}', username, key)
@@ -213,5 +213,58 @@ GET /add_more_consumer
 apikey: auth-13
 --- response_body eval
 ["passed\n", "hello world\n"]
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: add consumer with empty key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "error",
+                    "plugins": {
+                        "key-auth": {
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "error",
+                            "plugins": {
+                                "key-auth": {
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: valid consumer
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+--- response_body
+hello world
 --- no_error_log
 [error]
