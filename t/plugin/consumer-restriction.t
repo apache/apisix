@@ -237,7 +237,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer_name is not allowed"}
+{"message":"The consumer_name is forbidden."}
 --- no_error_log
 [error]
 
@@ -302,7 +302,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer_name is not allowed"}
+{"message":"The consumer_name is forbidden."}
 --- no_error_log
 [error]
 
@@ -590,54 +590,7 @@ passed
 
 
 
-=== TEST 26: create service (id:2)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "desc": "new service 002"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "desc": "new service 002"
-                        },
-                        "key": "/apisix/services/2"
-                    },
-                    "action": "set"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-
-=== TEST 27: add consumer with plugin hmac-auth and consumer-restriction, and set whitelist
+=== TEST 26: add consumer with plugin hmac-auth and consumer-restriction, and set whitelist
 --- config
     location /t {
         content_by_lua_block {
@@ -694,7 +647,7 @@ passed
 
 
 
-=== TEST 28: Route binding `hmac-auth` plug-in and whitelist `service_id`
+=== TEST 27: Route binding `hmac-auth` plug-in and whitelist `service_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -753,7 +706,7 @@ passed
 
 
 
-=== TEST 29: verify: valid whitelist `service_id`
+=== TEST 28: verify: valid whitelist `service_id`
 --- config
 location /t {
     content_by_lua_block {
@@ -791,6 +744,52 @@ location /t {
 --- request
 GET /t
 --- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: create service (id:2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new service 002"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new service 002"
+                        },
+                        "key": "/apisix/services/2"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
 --- response_body
 passed
 --- no_error_log
@@ -896,7 +895,7 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/{"message":"The service_id is not allowed"}/
+qr/{"message":"The service_id is forbidden."}/
 --- no_error_log
 [error]
 
@@ -1057,7 +1056,7 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/{"message":"The service_id is not allowed"}/
+qr/{"message":"The service_id is forbidden."}/
 --- no_error_log
 [error]
 
