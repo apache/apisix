@@ -26,18 +26,7 @@ local table_sort = table.sort
 local table_insert = table.insert
 
 
-local _M = {
-    version = 0.1,
-}
-
-
-local disable_schema = {
-    type = "object",
-    properties = {
-        disable = {type = "boolean", enum={true}}
-    },
-    required = {"disable"}
-}
+local _M = {}
 
 
 function _M.check_schema(plugins_conf)
@@ -50,14 +39,16 @@ function _M.check_schema(plugins_conf)
         end
 
         if plugin_obj.check_schema then
-            local ok = core.schema.check(disable_schema, plugin_conf)
+            local disable = plugin_conf.disable
+            plugin_conf.disable = nil
+
+            local ok, err = plugin_obj.check_schema(plugin_conf)
             if not ok then
-                local ok, err = plugin_obj.check_schema(plugin_conf)
-                if not ok then
-                    return false, "failed to check the configuration of plugin "
-                                  .. name .. " err: " .. err
-                end
+                return false, "failed to check the configuration of plugin "
+                              .. name .. " err: " .. err
             end
+
+            plugin_conf.disable = disable
         end
     end
 
@@ -75,14 +66,16 @@ function _M.stream_check_schema(plugins_conf)
         end
 
         if plugin_obj.check_schema then
-            local ok = core.schema.check(disable_schema, plugin_conf)
+            local disable = plugin_conf.disable
+            plugin_conf.disable = nil
+
+            local ok, err = plugin_obj.check_schema(plugin_conf)
             if not ok then
-                local ok, err = plugin_obj.check_schema(plugin_conf)
-                if not ok then
-                    return false, "failed to check the configuration of "
-                                  .. "stream plugin [" .. name .. "]: " .. err
-                end
+                return false, "failed to check the configuration of "
+                              .. "stream plugin [" .. name .. "]: " .. err
             end
+
+            plugin_conf.disable = disable
         end
     end
 
