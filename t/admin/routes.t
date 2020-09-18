@@ -291,17 +291,17 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code, message, res = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
-                        },
-                        "uri": "/index.html"
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "uri": "/index.html"
                 }]],
                 [[{
                     "node": {
@@ -677,16 +677,20 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code, message, res = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "plugins": {
                         "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
                             "disable": true
                         }
                     },
                     "uri": "/index.html"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -1005,7 +1009,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1056,7 +1060,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1090,7 +1094,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1124,7 +1128,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1158,7 +1162,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1190,7 +1194,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1242,7 +1246,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 

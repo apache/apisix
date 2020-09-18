@@ -657,7 +657,7 @@ GET /t
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -697,7 +697,7 @@ passed
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -788,7 +788,7 @@ passed
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -826,7 +826,7 @@ passed
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
