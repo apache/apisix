@@ -176,6 +176,10 @@ qr/1980/
                 [[{
                     "plugins": {
                         "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
                             "disable": true
                         }
                     },

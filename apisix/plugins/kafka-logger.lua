@@ -92,6 +92,8 @@ local function send_kafka_data(conf, log_message)
     if not ok then
         return nil, "failed to send data to Kafka topic" .. err
     end
+
+    return true, nil
 end
 
 -- remove stale objects from the memory after timer expires
