@@ -636,7 +636,6 @@ passed
 
 
 
-
 === TEST 27: add consumer with plugin hmac-auth and consumer-restriction, and set whitelist
 --- config
     location /t {
