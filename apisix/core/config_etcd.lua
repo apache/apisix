@@ -35,7 +35,8 @@ local ngx_time     = ngx.time
 local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
-local pcall        = pcall
+local xpcall       = xpcall
+local debug        = debug
 local error        = error
 local created_obj  = {}
 
@@ -424,33 +425,34 @@ local function _automatic_fetch(premature, self)
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
-        local ok, ok2, err = pcall(sync_data, self)
+        local ok, err = xpcall(function()
+            local ok, err = sync_data(self)
+            if err then
+                if err ~= "timeout" and err ~= "Key not found"
+                    and self.last_err ~= err then
+                    log.error("failed to fetch data from etcd: ", err, ", ",
+                              tostring(self))
+                end
+
+                if err ~= self.last_err then
+                    self.last_err = err
+                    self.last_err_time = ngx_time()
+                else
+                    if ngx_time() - self.last_err_time >= 30 then
+                        self.last_err = nil
+                    end
+                end
+                ngx_sleep(0.5)
+            elseif not ok then
+                ngx_sleep(0.05)
+            end
+        end, debug.traceback)
+
         if not ok then
-            err = ok2
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
             ngx_sleep(3)
             break
-
-        elseif not ok2 and err then
-            if err ~= "timeout" and err ~= "Key not found"
-               and self.last_err ~= err then
-                log.error("failed to fetch data from etcd: ", err, ", ",
-                          tostring(self))
-            end
-
-            if err ~= self.last_err then
-                self.last_err = err
-                self.last_err_time = ngx_time()
-            else
-                if ngx_time() - self.last_err_time >= 30 then
-                    self.last_err = nil
-                end
-            end
-            ngx_sleep(0.5)
-
-        elseif not ok2 then
-            ngx_sleep(0.05)
         end
     end
 
