@@ -57,7 +57,7 @@ local fetch_val_funcs = {
         return ctx.service_id
     end,
     ["consumer_name"] = function(ctx)
-        return ctx.consumer_id
+        return ctx.consumer.username
     end
 }
 
@@ -83,13 +83,9 @@ end
 
 
 function _M.access(conf, ctx)
-    if not conf.type then
-        return 401, { message = "Missing authentication or identity verification." }
-    end
-
     local value = fetch_val_funcs[conf.type](ctx)
     if not value then
-        return 401, { message = "Missing authentication or identity verification."}
+        return 401, { message = "Failed to fetch value by value type: " .. conf.type }
     end
     core.log.info("value: ", value)
 
@@ -107,7 +103,7 @@ function _M.access(conf, ctx)
     end
 
     if block then
-        return conf.rejected_code, { message = "The " .. conf.type .. " is not allowed" }
+        return conf.rejected_code, { message = "The " .. conf.type .. " is forbidden." }
     end
 end
 
