@@ -337,7 +337,6 @@ hello world
                         },
                         "plugins": {
                             "consumer-restriction": {
-                                "type": "consumer_name",
                                  "whitelist": [
                                      "jack1"
                                  ]
