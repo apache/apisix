@@ -57,7 +57,7 @@ local fetch_val_funcs = {
         return ctx.service_id
     end,
     ["consumer_name"] = function(ctx)
-        return ctx.consumer.username
+        return ctx.consumer_id
     end
 }
 
@@ -85,7 +85,7 @@ end
 function _M.access(conf, ctx)
     local value = fetch_val_funcs[conf.type](ctx)
     if not value then
-        return 401, { message = "Failed to fetch value by value type: " .. conf.type }
+        return 401, { message = "Missing authentication or identity verification."}
     end
     core.log.info("value: ", value)
 
