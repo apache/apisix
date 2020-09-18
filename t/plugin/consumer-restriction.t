@@ -1165,7 +1165,27 @@ passed
 
 
 
-=== TEST 37: delete: `service_id` is 1
+=== TEST 37: delete: route (id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t( '/apisix/admin/routes/1', ngx.HTTP_DELETE )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: delete: `service_id` is 1
 --- config
     location /t {
         content_by_lua_block {
@@ -1185,7 +1205,7 @@ passed
 
 
 
-=== TEST 38: delete: `service_id` is 2
+=== TEST 39: delete: `service_id` is 2
 --- config
     location /t {
         content_by_lua_block {
