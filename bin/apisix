@@ -33,8 +33,6 @@ local function excute_cmd(cmd)
     return data
 end
 
-excute_cmd("install -d -m 777 /tmp/apisix_cores/")
-
 local pkg_cpath_org = package.cpath
 local pkg_path_org = package.path
 

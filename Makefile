@@ -81,7 +81,6 @@ init: default
 run: default
 ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
-	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 else
 	@echo "APISIX is running..."
