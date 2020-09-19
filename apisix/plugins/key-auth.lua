@@ -46,7 +46,9 @@ do
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_ids[consumer.auth_conf.key] = consumer
+            if consumer.auth_conf.key then
+                consumer_ids[consumer.auth_conf.key] = consumer
+            end
         end
 
         return consumer_ids
