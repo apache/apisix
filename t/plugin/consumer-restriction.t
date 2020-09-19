@@ -47,7 +47,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-{"whitelist":["jack1","jack2"]}
+{"rejected_code":403,"type":"consumer_name","whitelist":["jack1","jack2"]}
 --- no_error_log
 [error]
 
@@ -237,7 +237,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer is not allowed"}
+{"message":"The consumer_name is forbidden."}
 --- no_error_log
 [error]
 
@@ -302,7 +302,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
-{"message":"The consumer is not allowed"}
+{"message":"The consumer_name is forbidden."}
 --- no_error_log
 [error]
 
@@ -538,5 +538,710 @@ hello world
 GET /hello
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: create service (id:1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new service 001"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new service 001"
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: add consumer with plugin hmac-auth and consumer-restriction, and set whitelist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key",
+                            "secret_key": "my-secret-key"
+                        },
+                        "consumer-restriction": {
+                            "type": "service_id",
+                            "whitelist": [ "1" ],
+                            "rejected_code": 401
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "hmac-auth": {
+                                    "access_key": "my-access-key",
+                                    "secret_key": "my-secret-key",
+                                    "algorithm": "hmac-sha256",
+                                    "clock_skew": 300
+                                },
+                                "consumer-restriction": {
+                                    "type": "service_id",
+                                    "whitelist": [ "1" ],
+                                    "rejected_code": 401
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: Route binding `hmac-auth` plug-in and whitelist `service_id`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "service_id": 1,
+                    "uri": "/hello",
+                    "plugins": {
+                        "hmac-auth": {}
+                    }
+
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/hello",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "service_id": 1,
+                            "plugins": {
+                                "hmac-auth": {}
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: verify: valid whitelist `service_id`
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = "GET" .. "/hello" ..  "" ..
+            access_key .. timestamp .. custom_header_a .. custom_header_b
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: create service (id:2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new service 002"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new service 002"
+                        },
+                        "key": "/apisix/services/2"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: Route binding `hmac-auth` plug-in and invalid whitelist `service_id`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "service_id": 2,
+                    "uri": "/hello",
+                    "plugins": {
+                        "hmac-auth": {}
+                    }
+
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/hello",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "service_id": 2,
+                            "plugins": {
+                                "hmac-auth": {}
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: verify: invalid whitelist `service_id`
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = "GET" .. "/hello" ..  "" ..
+            access_key .. timestamp .. custom_header_a .. custom_header_b
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+        if code >= 300 then
+            ngx.status = code
+        end
+        
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body eval
+qr/\{"message":"The service_id is forbidden."\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: add consumer with plugin hmac-auth and consumer-restriction, and set blacklist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key",
+                            "secret_key": "my-secret-key"
+                        },
+                        "consumer-restriction": {
+                            "type": "service_id",
+                            "blacklist": [ "1" ],
+                            "rejected_code": 401
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "plugins": {
+                                "hmac-auth": {
+                                    "access_key": "my-access-key",
+                                    "secret_key": "my-secret-key",
+                                    "algorithm": "hmac-sha256",
+                                    "clock_skew": 300
+                                },
+                                "consumer-restriction": {
+                                    "type": "service_id",
+                                    "blacklist": [ "1" ],
+                                    "rejected_code": 401
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: Route binding `hmac-auth` plug-in and blacklist `service_id`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "service_id": 1,
+                    "uri": "/hello",
+                    "plugins": {
+                        "hmac-auth": {}
+                    }
+
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/hello",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "service_id": 1,
+                            "plugins": {
+                                "hmac-auth": {}
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: verify: valid blacklist `service_id`
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = "GET" .. "/hello" ..  "" ..
+            access_key .. timestamp .. custom_header_a .. custom_header_b
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body eval
+qr/\{"message":"The service_id is forbidden."\}/
+--- no_error_log
+[error]
+
+
+=== TEST 35: Route binding `hmac-auth` plug-in and invalid blacklist `service_id`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "service_id": 2,
+                    "uri": "/hello",
+                    "plugins": {
+                        "hmac-auth": {}
+                    }
+
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/hello",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "service_id": 2,
+                            "plugins": {
+                                "hmac-auth": {}
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: verify: invalid blacklist `service_id`
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = "GET" .. "/hello" ..  "" ..
+            access_key .. timestamp .. custom_header_a .. custom_header_b
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: delete: route (id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t( '/apisix/admin/routes/1', ngx.HTTP_DELETE )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: delete: `service_id` is 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t( '/apisix/admin/services/1', ngx.HTTP_DELETE )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: delete: `service_id` is 2
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t( '/apisix/admin/services/2', ngx.HTTP_DELETE )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
