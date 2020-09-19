@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../../plugins/consumer-restriction.md)
+- [English](../../plugins/consumer-restriction.md)
 
 # 目录
 - [**名字**](#名字)

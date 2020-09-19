@@ -106,7 +106,7 @@ function _M.delete(id)
 end
 
 
-function _M.patch(id, conf)
+function _M.patch(id, conf, sub_path)
     if not id then
         return 400, {error_msg = "missing global rule id"}
     end
@@ -115,8 +115,10 @@ function _M.patch(id, conf)
         return 400, {error_msg = "missing new configuration"}
     end
 
-    if type(conf) ~= "table"  then
-        return 400, {error_msg = "invalid configuration"}
+    if not sub_path or sub_path == "" then
+        if type(conf) ~= "table"  then
+            return 400, {error_msg = "invalid configuration"}
+        end
     end
 
     local key = "/global_rules/" .. id
@@ -133,8 +135,17 @@ function _M.patch(id, conf)
                   core.json.delay_encode(res_old, true))
 
     local node_value = res_old.body.node.value
+    local modified_index = res_old.body.node.modifiedIndex
 
-    node_value = core.table.merge(node_value, conf);
+    if sub_path and sub_path ~= "" then
+        local code, err, node_val = core.table.patch(node_value, sub_path, conf)
+        node_value = node_val
+        if code then
+            return code, err
+        end
+    else
+        node_value = core.table.merge(node_value, conf);
+    end
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
@@ -143,8 +154,7 @@ function _M.patch(id, conf)
         return 400, err
     end
 
-    -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, node_value)
+    local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new global rule[", key, "]: ", err)
         return 500, {error_msg = err}

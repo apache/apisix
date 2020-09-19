@@ -27,21 +27,31 @@ local lrucache  = core.lrucache.new({
 
 local schema = {
     type = "object",
-    properties = {
-        whitelist = {
-            type = "array",
-            items = {type = "string", anyOf = core.schema.ip_def},
-            minItems = 1
-        },
-        blacklist = {
-            type = "array",
-            items = {type = "string", anyOf = core.schema.ip_def},
-            minItems = 1
-        }
-    },
     oneOf = {
-        {required = {"whitelist"}},
-        {required = {"blacklist"}}
+        {
+            title = "whitelist",
+            properties = {
+                whitelist = {
+                    type = "array",
+                    items = {anyOf = core.schema.ip_def},
+                    minItems = 1
+                },
+            },
+            required = {"whitelist"},
+            additionalProperties = false,
+        },
+        {
+            title = "blacklist",
+            properties = {
+                blacklist = {
+                    type = "array",
+                    items = {anyOf = core.schema.ip_def},
+                    minItems = 1
+                }
+            },
+            required = {"blacklist"},
+            additionalProperties = false,
+        }
     }
 }
 

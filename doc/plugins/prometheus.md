@@ -17,7 +17,8 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/prometheus.md)
+- [中文](../zh-cn/plugins/prometheus.md)
+
 # prometheus
 
 This plugin exposes metrics in Prometheus Exposition format.
@@ -88,7 +89,9 @@ And we can check the status at prometheus console:
 
 Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard.
 
-You can goto [Grafana meta](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
+Downloads [Grafana dashboard meta](../json/apisix-grafana-dashboard.json) and imports it to Grafana。
+
+Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
 
 ![](../../doc/images/plugin/grafana_1.png)
 

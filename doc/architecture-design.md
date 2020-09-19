@@ -26,6 +26,7 @@
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Plugin**](#plugin)
+- [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer)
@@ -44,25 +45,27 @@
 
 ## APISIX Config
 
-We can start using APISIX just by modifying `conf/config.yaml` file.
+For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
 
 ```yaml
 apisix:
-  node_listen: 9080             # APISIX listening port
-
-etcd:
-  host: "http://127.0.0.1:2379" # etcd address
-  prefix: "apisix"              # apisix configurations prefix
-  timeout: 60
-
-plugins:                        # plugin name list
-  - example-plugin
-  - limit-req
-  - limit-count
-  - ...
+  node_listen: 8000             # APISIX listening port
 ```
 
-*Note* `apisix` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* that file.
+Set the default listening port of APISIX to 8000, set the `etcd` address to `http://foo:2379`,
+and keep other configurations as default. The configuration in `conf/config.yaml` should be like this:
+
+```yaml
+apisix:
+  node_listen: 8000             # APISIX listening port
+
+etcd:
+  host: "http://foo:2379"       # etcd address
+```
+
+Other default configurations can be found in the `conf/config-default.yaml` file, which is bound to the APISIX source code. **Never** manually modify the `conf/config-default.yaml` file. If you need to customize any configuration, you should update the `conf/config.yaml` file.
+
+**Note** `APISIX` will generate `conf/nginx.conf` file automatically, so please *DO NOT EDIT* `conf/nginx.conf` file too.
 
 [Back to top](#Table-of-contents)
 
@@ -106,7 +109,7 @@ Server: APISIX web server
 
 When we receive a successful response, it indicates that the route was successfully created.
 
-For specific options of Route, please refer to [Admin API](zh-cn/admin-api.md#route).
+For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
 [Back to top](#Table-of-contents)
 
@@ -216,6 +219,25 @@ Not all plugins have specific configuration items. For example, there is no spec
 
 [Back to top](#Table-of-contents)
 
+## Script
+
+`Script` represents a script that will be executed during the `HTTP` request/response life cycle.
+
+The `Script` configuration can be directly bound to the `Route`.
+
+`Script` and `Plugin` are mutually exclusive, and `Script` is executed first. This means that after configuring `Script`, the `Plugin` configured on `Route` will not be executed.
+
+In theory, you can write arbitrary Lua code in `Script`, or you can directly call existing plugins to reuse existing code.
+
+`Script` also has the concept of execution phase, supporting `access`, `header_filer`, `body_filter` and `log` phase. The system will automatically execute the code of the corresponding phase in the `Script` script in the corresponding phase.
+
+```json
+{
+    ...
+    "script": "local _M = {} \n function _M.access(api_ctx) \n ngx.log(ngx.INFO,\"hit access phase\") \n end \nreturn _M"
+}
+```
+
 ## Upstream
 
 Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to configuration rules. Upstream address information can be directly configured to `Route` (or `Service`). When Upstream has duplicates, you need to use "reference" to avoid duplication.
@@ -243,6 +265,8 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |enable_websocket|optional| enable `websocket`(boolean), default `false`.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |desc     |optional|Identifies route names, usage scenarios, and more.|
+|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
+|upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
 
 Create an upstream object use case:
 
@@ -453,7 +477,7 @@ Set the route that best suits your business needs in the local configuration `co
         * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
-        * `Any filter attribute`: Allows you to specify any Ningx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
+        * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
     * `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and URL for the current request.
 
 * `apisix.router.ssl`: SSL loads the matching route.
@@ -537,8 +561,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
-Use the [consumer-restriction](zh-cn/plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
+Use the [consumer-restriction](plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
 
+```shell
 # Add Jack to the blacklist
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -573,7 +598,7 @@ HTTP/1.1 403
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
 
-```shell
+​```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
@@ -591,7 +616,7 @@ curl -X PUT \
     }'
 ```
 
-Now, the `limit-count` plugin will work on all requets
+Now, the `limit-count` plugin will work on all requests
 
 we can list all `GlobalRule` via admin api as below:
 

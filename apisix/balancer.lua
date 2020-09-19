@@ -30,8 +30,8 @@ local module_name = "balancer"
 local pickers = {
     roundrobin = require("apisix.balancer.roundrobin"),
     chash = require("apisix.balancer.chash"),
+    ewma = require("apisix.balancer.ewma")
 }
-
 
 local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
@@ -192,6 +192,7 @@ local function pick_server(route, ctx)
     local version = ctx.upstream_version
     local key = ctx.upstream_key
     local checker = fetch_healthchecker(up_conf, healthcheck_parent, version)
+    ctx.up_checker = checker
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
     if checker and ctx.balancer_try_count > 1 then
@@ -244,7 +245,7 @@ local function pick_server(route, ctx)
         core.log.error("failed to parse server addr: ", server, " err: ", err)
         return core.response.exit(502)
     end
-
+    ctx.server_picker = server_picker
     return res
 end
 

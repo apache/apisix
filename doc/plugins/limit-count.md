@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/limit-count.md)
+- [中文](../zh-cn/plugins/limit-count.md)
 
 # Summary
 

@@ -22,19 +22,13 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
-sub read_file($) {
-    my $infile = shift;
-    open my $in, $infile
-        or die "cannot open $infile for reading: $!";
-    my $cert = do { local $/; <$in> };
-    close $in;
-    $cert;
-}
-
-our $yaml_config = read_file("conf/config.yaml");
-$yaml_config =~ s/node_listen: 9080/node_listen: 1984/;
-$yaml_config =~ s/http: 'radixtree_uri'/http: 'radixtree_host_uri'/;
-$yaml_config =~ s/admin_key:/disable_admin_key:/;
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    router:
+        http: 'radixtree_host_uri'
+    admin_key: null
+_EOC_
 
 run_tests();
 

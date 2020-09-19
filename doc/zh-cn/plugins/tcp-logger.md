@@ -17,6 +17,8 @@
 #
 -->
 
+- [English](../../plugins/tcp-logger.md)
+
 # 摘要
 
 - [**定义**](#name)

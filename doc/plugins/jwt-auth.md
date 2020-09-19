@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/jwt-auth.md)
+- [中文](../zh-cn/plugins/jwt-auth.md)
 
 # Summary
 - [**Name**](#name)

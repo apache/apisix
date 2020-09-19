@@ -17,6 +17,8 @@
 #
 -->
 
+- [English](../../plugins/openid-connect.md)
+
 # 目录
 
 - [**定义**](#定义)

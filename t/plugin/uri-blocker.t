@@ -16,7 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 no_long_string();
 no_root_location();
 no_shuffle();
@@ -86,8 +86,6 @@ GET /t
 passed
 --- no_error_log
 [error]
---- error_log
-concat block_rules: ^a|^b,
 
 
 
@@ -124,7 +122,7 @@ GET /t
 
 
 
-=== TEST 4: sanity
+=== TEST 4: one block rule
 --- config
 location /t {
     content_by_lua_block {
@@ -170,8 +168,6 @@ GET /t
 passed
 --- no_error_log
 [error]
---- error_log
-concat block_rules: aa,
 
 
 
@@ -181,6 +177,8 @@ GET /hello?aa=1
 --- error_code: 403
 --- no_error_log
 [error]
+--- error_log
+concat block_rules: aa
 
 
 
@@ -189,6 +187,8 @@ GET /hello?aa=1
 GET /hello?bb=2
 --- no_error_log
 [error]
+--- error_log
+concat block_rules: aa
 
 
 
@@ -227,8 +227,6 @@ GET /t
 passed
 --- no_error_log
 [error]
---- error_log
-concat block_rules: aa|bb|c\d+,
 
 
 
@@ -238,6 +236,8 @@ GET /hello?x=bb
 --- error_code: 403
 --- no_error_log
 [error]
+--- error_log
+concat block_rules: aa|bb|c\d+,
 
 
 
@@ -247,6 +247,8 @@ GET /hello?bb=2
 --- error_code: 403
 --- no_error_log
 [error]
+--- error_log
+concat block_rules: aa|bb|c\d+,
 
 
 
@@ -302,8 +304,6 @@ GET /t
 passed
 --- no_error_log
 [error]
---- error_log
-concat block_rules: select.+(from|limit)|(?:(union(.*?)select)),
 
 
 
@@ -313,6 +313,8 @@ GET /hello?name=;select%20from%20sys
 --- error_code: 403
 --- no_error_log
 [error]
+--- error_log
+concat block_rules: select.+(from|limit)|(?:(union(.*?)select)),
 
 
 

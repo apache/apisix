@@ -17,8 +17,7 @@
 #
 -->
 
-[English](../../plugins/mqtt-proxy.md)
-
+- [English](../../plugins/mqtt-proxy.md)
 
 # 目录
 - [**名字**](#名字)

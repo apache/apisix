@@ -24,6 +24,7 @@
 - [**Route**](#route)
 - [**Service**](#service)
 - [**Plugin**](#plugin)
+- [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer)
@@ -44,21 +45,26 @@
 
 通过修改本地 `conf/config.yaml` 文件完成对 APISIX 服务本身的基本配置。
 
+比如修改 APISIX 默认监听端口为 8000，其他配置保持默认，在 `conf/config.yaml` 中只需这样配置：
+
 ```yaml
 apisix:
-  node_listen: 9080             # APISIX listening port
+  node_listen: 8000             # APISIX listening port
+```
+
+比如指定 APISIX 默认监听端口为 8000，并且设置 etcd 地址为 `http://foo:2379`，
+其他配置保持默认。在 `conf/config.yaml` 中只需这样配置：
+
+```yaml
+apisix:
+  node_listen: 8000             # APISIX listening port
 
 etcd:
-  host: "http://127.0.0.1:2379" # etcd address
-  prefix: "apisix"              # apisix configurations prefix
-  timeout: 60
-
-plugins:                        # plugin name list
-  - example-plugin
-  - limit-req
-  - limit-count
-  - ...
+  host: "http://foo:2379"       # etcd address
 ```
+
+其他默认配置，可以在 `conf/config-default.yaml` 文件中看到，该文件是与 APISIX 源码强绑定，
+**永远不要**手工修改 `conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `conf/config.yaml` 文件中完成。
 
 *注意* 不要手工修改 APISIX 自身的 `conf/nginx.conf` 文件，当服务每次启动时，`apisix`
 会根据 `conf/config.yaml` 配置自动生成新的 `conf/nginx.conf` 并自动启动服务。
@@ -220,6 +226,27 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 
 [返回目录](#目录)
 
+## Script
+
+`Script` 表示将在 `HTTP` 请求/响应生命周期期间执行的脚本。
+
+`Script` 配置可直接绑定在 `Route` 上。
+
+`Script` 与 `Plugin` 互斥，且优先执行 `Script` ，这意味着配置 `Script` 后，`Route` 上配置的 `Plugin` 将不被执行。
+
+理论上，在 `Script` 中可以写任意 lua 代码，也可以直接调用已有插件以重用已有的代码。
+
+`Script` 也有执行阶段概念，支持 `access`、`header_filer`、`body_filter` 和 `log` 阶段。系统会在相应阶段中自动执行 `Script` 脚本中对应阶段的代码。
+
+```json
+{
+    ...
+    "script": "local _M = {} \n function _M.access(api_ctx) \n ngx.log(ngx.INFO,\"hit access phase\") \n end \nreturn _M"
+}
+```
+
+[返回目录](#目录)
+
 ## Upstream
 
 Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，就需要用“引用”方式避免重复了。
@@ -246,6 +273,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](../health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
 |enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
+|pass_host            |可选|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。|
+|upstream_host    |可选|只在 `pass_host` 配置为 `rewrite` 时有效。|
 
 `hash_on` 比较复杂，这里专门说明下：
 
@@ -464,7 +493,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
         * `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
         * `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
         * `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。
-        * `任意过滤属性`：允许指定任何 Ningx 内置变量作为过滤条件，比如 URL 请求参数、请求头、cookie 等。
+        * `任意过滤属性`：允许指定任何 Nginx 内置变量作为过滤条件，比如 URL 请求参数、请求头、cookie 等。
     * `radixtree_host_uri`: 使用 `host + uri` 作为主索引（基于 `radixtree` 引擎），对当前请求会同时匹配 host 和 uri，支持的匹配条件与 `radixtree_uri` 基本一致。
 
 * `apisix.router.ssl`: SSL 加载匹配路由。
@@ -550,9 +579,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 结合 [consumer-restriction](plugins/consumer-restriction.md) 插件，限制jack对该 route 的访问
 
+```shell
 # 设置黑名单，禁止jack访问该API
 
-```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -584,7 +613,7 @@ HTTP/1.1 403
 ## Global Rule
 
 [Plugin](#Plugin) 只能绑定在 [Service](#Service) 或者 [Route](#Route) 上，如果我们需要一个能作用于所有请求的 [Plugin](#Plugin) 该怎么办呢？
-这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
+这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
 
 ```shell
 curl -X PUT \

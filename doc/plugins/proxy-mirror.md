@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/proxy-mirror.md)
+- [中文](../zh-cn/plugins/proxy-mirror.md)
 
 # proxy-mirror
 

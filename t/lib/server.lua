@@ -68,6 +68,16 @@ function _M.sleep1()
     ngx.say("ok")
 end
 
+function _M.ewma()
+    if ngx.var.server_port == "1981"
+       or ngx.var.server_port == "1982" then
+        ngx.sleep(0.2)
+    else
+        ngx.sleep(0.1)
+    end
+    ngx.print(ngx.var.server_port)
+end
+
 function _M.uri()
     -- ngx.sleep(1)
     ngx.say("uri: ", ngx.var.uri)
@@ -144,7 +154,8 @@ function _M.mock_zipkin()
             ngx.exit(400)
         end
 
-        if span.localEndpoint.serviceName ~= 'APISIX' and span.localEndpoint.serviceName ~= 'apisix' then
+        if span.localEndpoint.serviceName ~= 'APISIX'
+          and span.localEndpoint.serviceName ~= 'apisix' then
             ngx.exit(400)
         end
 
@@ -195,7 +206,9 @@ function _M.wolf_rbac_access_check()
     local args = ngx.req.get_uri_args()
     local resName = args.resName
     if resName == '/hello' or resName == '/wolf/rbac/custom/headers' then
-        ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator",username="admin", id="100"} }}))
+        ngx.say(json_encode({ok=true,
+                            data={ userInfo={nickname="administrator",
+                                username="admin", id="100"} }}))
     else
         ngx.status = 401
         ngx.say(json_encode({ok=false, reason="no permission to access"}))
@@ -210,7 +223,8 @@ function _M.wolf_rbac_user_info()
         ngx.exit(0)
     end
 
-    ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
+    ngx.say(json_encode({ok=true,
+                        data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
 end
 
 function _M.wolf_rbac_change_pwd()
@@ -227,7 +241,8 @@ end
 
 function _M.wolf_rbac_custom_headers()
     local headers = ngx.req.get_headers()
-    ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username'] .. ',nickname:' .. headers['X-Nickname'])
+    ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username']
+            .. ',nickname:' .. headers['X-Nickname'])
 end
 
 function _M.websocket_handshake()
@@ -240,6 +255,13 @@ function _M.websocket_handshake()
 end
 _M.websocket_handshake_route = _M.websocket_handshake
 
+local function print_uri()
+    ngx.say(ngx.var.uri)
+end
+for i = 1, 100 do
+    _M["print_uri_" .. i] = print_uri
+end
+
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
     action = string.gsub(action, "[/\\.]", "_")
@@ -250,5 +272,14 @@ function _M.go()
     return _M[action]()
 end
 
+function _M.headers()
+    local args = ngx.req.get_uri_args()
+    for name, val in pairs(args) do
+        ngx.header[name] = nil
+        ngx.header[name] = val
+    end
+
+    ngx.say("/headers")
+end
 
 return _M
