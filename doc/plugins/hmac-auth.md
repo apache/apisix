@@ -41,6 +41,7 @@ The `consumer` then adds its key to request header to verify its request.
 | secret_key      | required | none |Use as a pair with `access_key`|
 | algorithm    |  optional| hmac-sha256 |Encryption algorithm. support `hmac-sha1`, `hmac-sha256` and `hmac-sha512`|
 | clock_skew  | optional | 300 |The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking timestamp.|
+| signed_headers  | optional | none |Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation. Example:["User-Agent", "Accept-Language", "x-custom-a"]|
 
 ## How To Enable
 
@@ -54,7 +55,8 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
         "hmac-auth": {
             "access_key": "user-key",
             "secret_key": "my-secret-key",
-            "clock_skew": 10
+            "clock_skew": 10,
+            "signed_headers": ["User-Agent", "Accept-Language", "x-custom-a"]
         }
     }
 }'
@@ -81,11 +83,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## Test Plugin
 
 ### generate signature:
-The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signning_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `SIGNNING_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `SIGNNING_STRING` is `signning_string = HTTP Method + HTTP URI + canonical_query_string + HTTP BODY + ACCESS_KEY + TIMESTAMP + SECRET_KEY`
+The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signning_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `SIGNNING_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `SIGNNING_STRING` is `signning_string = HTTP Method + HTTP URI + canonical_query_string + access_key + timestamp + signed_headers_string`
 
 1. **HTTP Method** : Refers to the GET, PUT, POST and other request methods defined in the HTTP protocol, and must be in all uppercase.
 2. **HTTP URI** : `HTTP URI` requirements must start with "/", those that do not start with "/" need to be added, and the empty path is "/".
 3. **canonical_query_string** :`canonical_query_string` is the result of encoding the `query` in the URL (`query` is the string "key1 = valve1 & key2 = valve2" after the "?" in the URL).
+4. **signed_headers_string** :`signed_headers_string` is the result of obtaining the fields specified by the client from the request header and concatenating the strings in order.
 
 > The coding steps are as follows:
 
@@ -97,14 +100,20 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
     * When the item is in the form of key=value, the conversion formula is in the form of UriEncode(key) + "=" + UriEncode(value). Here value can be an empty string.
     * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
 
+> The signed_headers_string generation steps are as follows:
+
+* Obtain the headers specified to be added to the calculation from the request header. For details, please refer to the placement of `SIGNED_HEADERS` in the next section `Use the generated signature to make a request attempt`.
+* Take out the headers specified by `SIGNED_HEADERS` in order from the request header, and splice them together in order. After splicing, a `signed_headers_string` is generated.
+
 ### Use the generated signature to try the request
 
-**Note: ACCESS_KEY, SIGNATURE, ALGORITHM, TIMESTAMP respectively represent the corresponding variables**
+**Note: ACCESS_KEY, SIGNATURE, ALGORITHM, TIMESTAMP, SIGNED_HEADERS respectively represent the corresponding variables**
+**Note: SIGNED_HEADERS is the headers specified by the client to join the encryption calculation, multiple separated by semicolons, Example: User-Agent;Accept-Language**
 
 * The signature information is put together in the request header `Authorization` field:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + TIMESTAMP' -i
+$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + TIMESTAMP + # + SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -119,7 +128,7 @@ Accept-Ranges: bytes
 * The signature information is separately placed in the request header:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'X-HMAC-TIMESTAMP: TIMESTAMP' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -i
+$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'X-HMAC-TIMESTAMP: TIMESTAMP' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
