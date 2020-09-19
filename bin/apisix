@@ -828,13 +828,13 @@ local function init()
         local help = [[
 
 %s
-Please set a new Admin API key and store it in the `conf/config.yaml` file.
+Please modify "admin_key" in conf/config.yaml .
 
 ]]
         if type(yaml_conf.apisix.admin_key) ~= "table" or
            #yaml_conf.apisix.admin_key == 0
         then
-            io.stderr:write(help:format("ERROR: missing valid Admin API Key"))
+            io.stderr:write(help:format("ERROR: missing valid Admin API token."))
             os.exit(1)
         end
 
@@ -846,14 +846,13 @@ Please set a new Admin API key and store it in the `conf/config.yaml` file.
             end
 
             if admin.key == "" then
-                io.stderr:write(help:format("ERROR: missing valid Admin API Key"), "\n")
+                io.stderr:write(help:format("ERROR: missing valid Admin API token."), "\n")
                 os.exit(1)
             end
 
             if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
                 io.stderr:write(
-                    help:format([[WARNING: using fixed API token has security risk, ]]
-                                .. [[please modify "admin_key" in conf/config.yaml.]]),
+                    help:format([[WARNING: using fixed Admin API token has security risk.]]),
                     "\n"
                 )
             end

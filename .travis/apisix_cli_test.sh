@@ -279,9 +279,9 @@ apisix:
 
 make init > output.log 2>&1 | true
 
-grep -E "ERROR: missing valid Admin API Key" output.log > /dev/null
+grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo "failed: should show 'ERROR: missing valid Admin API Key'"
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
     exit 1
 fi
 
@@ -301,9 +301,9 @@ apisix:
 
 make init > output.log 2>&1 | true
 
-grep -E "WARNING: using fixed API token has security risk" output.log > /dev/null
+grep -E "WARNING: using fixed Admin API token has security risk." output.log > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo "failed: need to show `WARNING: using fixed API token has security risk...`"
+    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
     exit 1
 fi
 
