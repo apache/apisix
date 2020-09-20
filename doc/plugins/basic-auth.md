@@ -37,10 +37,10 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| username |required|different `consumer` have different value, it's unique. different `consumer` use the same `username`, and there will be a request matching exception.|
-| password |required|the user's password|
+| Name     | Type   | Requirement | Default | Valid | Description                                                  |
+| -------- | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
+| username | string | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
+| password | string | required    |         |       | the user's password                                          |
 
 ## How To Enable
 

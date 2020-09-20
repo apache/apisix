@@ -31,8 +31,7 @@
 
 `echo` is a a useful plugin to help users understand as fully as possible how to develop an APISIX plugin.
 
-This plugin addresses the corresponding functionality in the common phases such as init, rewrite, access, balancer
-, header filer, body filter and log.
+This plugin addresses the corresponding functionality in the common phases such as init, rewrite, access, balancer, header filer, body filter and log.
 
 ## Attributes
 
@@ -41,6 +40,8 @@ This plugin addresses the corresponding functionality in the common phases such 
 | before_body   |optional       | Body before the filter phase.|
 | body   |optional       | Body to replace upstream response.|
 | after_body       |optional       |Body after the modification of filter phase.|
+|  | ||
+|  | ||
 
 
 ## How To Enable

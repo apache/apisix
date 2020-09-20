@@ -17,126 +17,124 @@
 #
 -->
 
-- [English](../../plugins/basic-auth.md)
+- [English](../../plugins/batch-requests.md)
 
 # 目录
 
-- [**名字**](#名字)
+- [**简介**](#简介)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
+- [**批量接口请求/响应**](#批量接口请求/响应)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
 
-## 名字
+## 简介
 
-`basic-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+`batch-requests` 插件可以一次接受多个请求并以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个http请求，合并结果后再返回客户端，这在客户端需要访问多个接口时可以显著地提升请求性能。
 
-添加 Basic Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其用户名和密码添加到请求头中以验证其请求。
-
-有关 Basic Authentication 的更多信息，可参考 [维基百科](https://en.wikipedia.org/wiki/Basic_access_authentication) 查看更多信息。
+> **提示**
+>
+> 外层的 Http 请求头会自动设置到每一个独立请求中，如果独立请求中出现相同键值的请求头，那么只有独立请求的请求头会生效。
 
 ## 属性
 
-- `username`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。
-- `password`: 用户的密码
+无
 
 ## 如何启用
 
-### 1. 创建一个 consumer 对象，并设置插件 `basic-auth` 的值。
+本插件默认启用。
 
+## 批量接口请求/响应
+插件会为 `apisix` 创建一个 `/apisix/batch-requests` 的接口来处理你的批量请求。
+
+### 接口请求参数:
+
+| 参数名 | 类型 | 可选项 | 默认值 | 描述 |
+| --- | --- | --- | --- | --- |
+| query | object | 可选 | | 给所有请求都携带的 `QueryString` |
+| headers | object | 可选 | | 给所有请求都携带的 `Header` |
+| timeout | number | 可选 | 30000 | 聚合请求的超时时间，单位为 `ms` |
+| pipeline | [HttpRequest](#Request) | 必须 | | Http 请求的详细信息 |
+
+#### HttpRequest
+| 参数名 | 类型 | 可选 | 默认值 | 有效值 | 描述 |
+| --- | --- | --- | --- | --- | --- |
+| version | enum | 可选 | 1.1 | [1.0, 1.1] | 请求用的 `http` 协议版本 |
+| method | enum | 可选 | GET | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | 请求使用的 `http` 方法 |
+| query | object | 可选 | |  | 独立请求所携带的 `QueryString`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
+| headers | object | 可选 | |  | 独立请求所携带的 `Header`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
+| path | string | 必须 | |  | 请求路径 |
+| body | string | 可选 | |  | 请求体 |
+| ssl_verify | boolean | 可选 | false |  | 验证 SSL 证书与主机名是否匹配 |
+
+### 接口响应参数：
+返回值为一个 [HttpResponse](#HttpResponse) 的 `数组`。
+
+#### HttpResponse
+| 参数名 | 类型 | 描述 |
+| --- | --- | --- |
+| status | integer | Http 请求的状态码 |
+| reason | string | Http 请求的返回信息 |
+| body | string | Http 请求的响应体 |
+| headers | object | Http 请求的响应头 |
+
+## 测试插件
+
+你可以将要访问的请求信息传到网关的批量请求接口( `/apisix/batch-requests` )，网关会以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式自动帮你完成请求。
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "username": "foo",
-    "plugins": {
-        "basic-auth": {
-            "username": "foo",
-            "password": "bar"
-        }
-    }
-}'
-```
-
-你可以使用浏览器打开 dashboard：`http://127.0.0.1:9080/apisix/dashboard/`，通过 web 界面来完成上面的操作，先增加一个 consumer：
-![auth-1](../../images/plugin/basic-auth-1.png)
-
-然后在 consumer 页面中添加 basic-auth 插件：
-![auth-2](../../images/plugin/basic-auth-2.png)
-
-### 2. 创建 Route 或 Service 对象，并开启 `basic-auth` 插件。
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {
-        "basic-auth": {}
+curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
+--header 'Content-Type: application/json' \
+--d '{
+    "headers": {
+        "Content-Type": "application/json",
+        "admin-jwt":"xxxx"
     },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
+    "timeout": 500,
+    "pipeline": [
+        {
+            "method": "POST",
+            "path": "/community.GiftSrv/GetGifts",
+            "body": "test"
+        },
+        {
+            "method": "POST",
+            "path": "/community.GiftSrv/GetGifts",
+            "body": "test2"
         }
-    }
+    ]
 }'
 ```
 
-## Test Plugin
-
-- 缺少 Authorization header
-
-```shell
-$ curl http://127.0.0.2:9080/hello -i
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Missing authorization in request"}
-```
-
-- 用户名不存在：
-
-```shell
-$ curl -i -ubar:bar http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid user key in authorization"}
-```
-
-- 密码错误：
-
-```shell
-$ curl -i -ufoo:foo http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Password is error"}
-...
-```
-
-- 成功请求：
-
-```shell
-$ curl -i -ufoo:bar http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, foo!
-...
+返回如下：
+```json
+[
+    {
+        "status": 200,
+        "reason": "OK",
+        "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+        "headers": {
+            "Connection": "keep-alive",
+            "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+            "Content-Type": "application/json",
+            "Content-Length": "81",
+            "Server": "APISIX web server"
+        }
+    },
+    {
+        "status": 200,
+        "reason": "OK",
+        "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+        "headers": {
+            "Connection": "keep-alive",
+            "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+            "Content-Type": "application/json",
+            "Content-Length": "81",
+            "Server": "APISIX web server"
+        }
+    }
+]
 ```
 
 ## 禁用插件
 
-当你想去掉 `basic-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
-    }
-}'
-```
+正常情况不需要禁用本插件，如果有特殊情况，从 `/conf/config.yaml` 的 `plugins` 节点中移除即可。
