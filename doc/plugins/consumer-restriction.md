@@ -145,7 +145,7 @@ curl http://127.0.0.1:9080/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-1. Bind the `consumer-restriction` plugin on the `consumer` (need to cooperate with an authorized plugin to bind), and add the `service_id` whitelist list.
+2. Bind the `consumer-restriction` plugin on the `consumer` (need to cooperate with an authorized plugin to bind), and add the `service_id` whitelist list.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -166,7 +166,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-1. Open the `key-auth` plugin on the route and bind the `service_id` to `1`.
+3. Open the `key-auth` plugin on the route and bind the `service_id` to `1`.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
