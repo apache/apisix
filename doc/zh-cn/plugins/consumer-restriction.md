@@ -187,7 +187,7 @@ HTTP/1.1 200 OK
 ...
 ```
 4、在route上开启`key-auth`插件并绑定`service_id`为`2`
-```shell 
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
