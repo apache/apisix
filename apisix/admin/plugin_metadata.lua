@@ -45,17 +45,13 @@ end
 
 local function validate_plugin(name)
     local pkg_name = "apisix.plugins." .. name
-    local ok, _ = pcall(require, pkg_name)
-    if not ok then
-        -- try stream plugin
-        pkg_name = "apisix.stream.plugins." .. name
-        ok, _ = pcall(require, pkg_name)
-        if not ok then
-            return false
-        end
+    local ok = pcall(require, pkg_name)
+    if ok then
+        return true
     end
 
-    return true
+    pkg_name = "apisix.stream.plugins." .. name
+    return pcall(require, pkg_name)
 end
 
 
