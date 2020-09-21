@@ -572,8 +572,8 @@ apikey: auth-jack
                             "key": "auth-jack"
                         },
                         "limit-req": {
-                            "rate": 1,
-                            "burst": 0,
+                            "rate": 0.1,
+                            "burst": 0.1,
                             "rejected_code": 403,
                             "key": "consumer_name"
                         }
@@ -588,8 +588,8 @@ apikey: auth-jack
                                     "key": "auth-jack"
                                 },
                                 "limit-req": {
-                                    "rate": 1,
-                                    "burst": 0,
+                                    "rate": 0.1,
+                                    "burst": 0.1,
                                     "rejected_code": 403,
                                     "key": "consumer_name"
                                 }
@@ -619,6 +619,180 @@ passed
 --- more_headers
 apikey: auth-jack
 --- error_code eval
-[403, 403, 403, 200]
+[403, 403, 403, 403]
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: consumer binds the limit-req plugin and `key` is `remote_addr`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "consumer_limit_req",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "limit-req": {
+                            "rate": 2,
+                            "burst": 1,
+                            "rejected_code": 403,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "consumer_limit_req",
+                            "plugins": {
+                               "key-auth": {
+                                    "key": "auth-jack"
+                                },
+                                "limit-req": {
+                                    "rate": 2,
+                                    "burst": 1,
+                                    "rejected_code": 403,
+                                    "key": "remote_addr"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: not exceeding the burst
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- more_headers
+apikey: auth-jack
+--- error_code eval
+[200, 200, 200]
+--- no_error_log
+[error
+
+
+
+=== TEST 19: update the limit-req plugin（key: remote_addr）
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "consumer_limit_req",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "limit-req": {
+                            "rate": 0.1,
+                            "burst": 0.1,
+                            "rejected_code": 403,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "consumer_limit_req",
+                            "plugins": {
+                               "key-auth": {
+                                    "key": "auth-jack"
+                                },
+                                "limit-req": {
+                                    "rate": 0.1,
+                                    "burst": 0.1,
+                                    "rejected_code": 403,
+                                    "key": "remote_addr"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: not exceeding the burst
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- more_headers
+apikey: auth-jack
+--- error_code eval
+[403, 403, 403]
+--- no_error_log
+[error
+
+
+
+=== TEST 21: delete consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/consumer_limit_req', ngx.HTTP_DELETE)
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22： delete route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+
+            ngx.status =code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
