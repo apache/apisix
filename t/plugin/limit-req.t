@@ -619,6 +619,6 @@ passed
 --- more_headers
 apikey: auth-jack
 --- error_code eval
-[200, 403, 403, 403]
+[403, 403, 403, 200]
 --- no_error_log
 [error]
