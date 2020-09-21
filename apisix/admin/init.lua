@@ -45,6 +45,7 @@ local resources = {
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
     stream_routes   = require("apisix.admin.stream_routes"),
+    plugin_metadata = require("apisix.admin.plugin_metadata"),
 }
 
 
@@ -106,6 +107,11 @@ local function run()
         -- /apisix/admin/schema/plugins/limit-count
         seg_res, seg_id = uri_segs[5], uri_segs[6]
         seg_sub_path = core.table.concat(uri_segs, "/", 7)
+    end
+
+    -- plugin metadata
+    if seg_res == "plugin" then
+        seg_res = "plugin_metadata"
     end
 
     local resource = resources[seg_res]
