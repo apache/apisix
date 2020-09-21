@@ -20,31 +20,40 @@
 - [中文](../zh-cn/plugins/consumer-restriction.md)
 
 # Summary
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+- [Summary](#summary)
+  - [Name](#name)
+  - [Attributes](#attributes)
+  - [How To Enable `consumer_name`](#how-to-enable-consumer_name)
+    - [Test Plugin](#test-plugin)
+  - [How To Enable `service_id`](#how-to-enable-service_id)
+    - [Route Test](#route-test)
+    - [Route Test](#route-test-1)
+  - [Disable Plugin](#disable-plugin)
 
 
 ## Name
 
-The `consumer-restriction` can restrict access to a Service or a Route by either
-whitelisting or blacklisting consumers. Support single or multiple consumers.
+The `consumer-restriction` makes corresponding access restrictions based on different objects selected, and supports two restriction types: consumer and service.
+* consumer: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
+* service: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
+
+
 
 ## Attributes
 
-|Name     |Requirement  |Description|
-|---------|--------|-----------|
-|whitelist|optional  |List of consumers to whitelist|
-|blacklist|optional  |List of consumers to blacklist|
+|Name     |Requirement  | default |Description|
+|---------|--------|-----------|----------|
+|`type`| optional | `consumer_name` | According to different objects, corresponding restrictions (currently support consumer_name, service_id two types). |
+|`whitelist`|required  | No| Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
+|`blacklist`|required  | No |Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together.|
+|`rejected_code`|optional|`403`|The HTTP status code returned when the request is rejected, the default value is 403.|
 
 One of `whitelist` or `blacklist` must be specified, and they can not work
 together.
 
-## How To Enable
+## How To Enable `consumer_name`
 
-Creates a route or service object, and enable plugin `consumer-restriction`.
+The following is an example. The `consumer-restriction` plugin is enabled on the specified route to restrict consumer access.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -89,12 +98,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+### Test Plugin
 
 Requests from jack1:
 
 ```shell
-$ curl -u jack2019:123456 http://127.0.0.1:9080/index.html
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html
 HTTP/1.1 200 OK
 ...
 ```
@@ -102,12 +111,108 @@ HTTP/1.1 200 OK
 Requests from jack2:
 
 ```shell
-$ curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
+curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
 HTTP/1.1 403 Forbidden
 ...
-{"message":"You are not allowed"}
+{"message":"The consumer_name is forbidden."}
 ```
 
+## How To Enable `service_id`
+The `service_id` method needs to be used together with the authorization plug-in. Here, the key-auth authorization plug-in is taken as an example.
+
+1. Create two services.
+```shell
+curl http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "desc": "new service 001"
+}'
+
+curl http://127.0.0.1:9080/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "desc": "new service 002"
+}'
+```
+
+2. Bind the `consumer-restriction` plugin on the `consumer` (need to cooperate with an authorized plugin to bind), and add the `service_id` whitelist list.
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "new_consumer",
+    "plugins": {
+    "key-auth": {
+        "key": "auth-jack"
+    },
+    "consumer-restriction": {
+           "type": "service_id",
+            "whitelist": [
+                "1"
+            ],
+            "rejected_code": 403
+        }
+    }
+}'
+```
+3. Open the `key-auth` plugin on the route and bind the `service_id` to `1`.
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "service_id": 1,
+    "plugins": {
+         "key-auth": {
+        }
+    }
+}'
+```
+### Route Test
+```shell
+curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
+HTTP/1.1 200 OK
+...
+```
+
+4. Open the `key-auth` plugin on the route and bind the `service_id` to `2`.
+```shell 
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "service_id": 2,
+    "plugins": {
+         "key-auth": {
+        }
+    }
+}'
+```
+### Route Test
+```shell
+curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
+HTTP/1.1 403 Forbidden
+...
+```
 
 ## Disable Plugin
 
@@ -116,7 +221,7 @@ you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {

@@ -23,7 +23,7 @@
 - [目录](#目录)
   - [名字](#名字)
   - [属性](#属性)
-  - [如何启用 consumer_name](#如何启用-consumer_name)
+  - [如何启用 `consumer_name`](#如何启用-consumer_name)
     - [测试插件](#测试插件)
   - [如何启用 service_id](#如何启用-service_id)
     - [路由测试](#路由测试)
@@ -38,18 +38,15 @@
 
 ## 属性
 
-* `whitelist`: 可选，加入白名单的consumer
-* `blacklist`: 可选，加入黑名单的consumer
-
 |属性名         |是否可选 | 默认值 |描述|
 |---------     |--------|-----------|-----------|
 | `type` | 可选 | consumer_name | 根据不同的对象进行相应的限制(目前支持consumer_name、service_id两种类型)。|
 | `whitelist`| 必须 | 无 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。|
 | `blacklist`| 必选 | 无 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。|
-| `rejected_code`| 可选 | 403 | 当请求匹配到白名单或黑名单时，返回的 HTTP 状态码，默认值 403。|
+| `rejected_code`| 可选 | 403 | 当请求被拒绝时，返回的 HTTP 状态码，默认值 403。|
 
 
-## 如何启用 consumer_name
+## 如何启用 `consumer_name`
 
 下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制consumer访问:
 
@@ -102,7 +99,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 jack1 访问:
 
 ```shell
-$ curl -u jack2019:123456 http://127.0.0.1:9080/index.html -i
+curl -u jack2019:123456 http://127.0.0.1:9080/index.html -i
 HTTP/1.1 200 OK
 ...
 ```
@@ -110,7 +107,7 @@ HTTP/1.1 200 OK
 jack2 访问:
 
 ```shell
-$ curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
+curl -u jack2020:123456 http://127.0.0.1:9080/index.html -i
 HTTP/1.1 403 Forbidden
 ...
 {"message":"The consumer_name is forbidden."}
@@ -185,7 +182,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ### 路由测试
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
+curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
 HTTP/1.1 200 OK
 ...
 ```
@@ -210,7 +207,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 路由测试
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
+curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
 HTTP/1.1 403 Forbidden
 ...
 ```
@@ -220,7 +217,7 @@ HTTP/1.1 403 Forbidden
 当你想去掉 `consumer-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
