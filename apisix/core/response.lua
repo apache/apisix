@@ -18,6 +18,8 @@ local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local ngx_print = ngx.print
 local ngx_header = ngx.header
+local ngx_resp = require "ngx.resp"
+local ngx_add_header = ngx_resp.add_header
 local error = error
 local select = select
 local type = type
@@ -106,6 +108,31 @@ function _M.set_header(...)
 
     for i = 1, count, 2 do
         ngx_header[select(i, ...)] = select(i + 1, ...)
+    end
+end
+
+
+function _M.add_header(...)
+    if ngx.headers_sent then
+      error("headers have already been sent", 2)
+    end
+
+    local count = select('#', ...)
+    if count == 1 then
+        local headers = select(1, ...)
+        if type(headers) ~= "table" then
+            error("should be a table if only one argument", 2)
+        end
+
+        for k, v in pairs(headers) do
+            ngx_add_header(k, v)
+        end
+
+        return
+    end
+
+    for i = 1, count, 2 do
+        ngx_add_header(select(i, ...), select(i + 1, ...))
     end
 end
 

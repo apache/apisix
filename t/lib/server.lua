@@ -20,6 +20,15 @@ local json_encode = require("cjson").encode
 local _M = {}
 
 
+local function inject_headers()
+    local hdrs = ngx.req.get_headers()
+    for k, v in pairs(hdrs) do
+        if k:sub(1, 5) == "resp-" then
+            ngx.header[k:sub(6)] = v
+        end
+    end
+end
+
 function _M.hello()
     ngx.say("hello world")
 end
@@ -269,6 +278,7 @@ function _M.go()
         return ngx.exit(404)
     end
 
+    inject_headers()
     return _M[action]()
 end
 
