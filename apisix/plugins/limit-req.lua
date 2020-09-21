@@ -73,7 +73,7 @@ function _M.access(conf, ctx)
     else
         key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     end
-    core.log.error("limit key: ", key)
+    core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
     if not delay then

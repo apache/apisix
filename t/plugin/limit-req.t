@@ -432,3 +432,193 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: consumer binds the limit-req plugin and `key` is `consumer_name`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "consumer_limit_req",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "limit-req": {
+                            "rate": 2,
+                            "burst": 1,
+                            "rejected_code": 403,
+                            "key": "consumer_name"
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "consumer_limit_req",
+                            "plugins": {
+                               "key-auth": {
+                                    "key": "auth-jack"
+                                },
+                                "limit-req": {
+                                    "rate": 2,
+                                    "burst": 1,
+                                    "rejected_code": 403,
+                                    "key": "consumer_name"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: route add "key-auth" plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "key-auth": {} 
+                    },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "desc": "上游节点",
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "key-auth": {}
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "上游节点",
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: not exceeding the burst
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- more_headers
+apikey: auth-jack
+--- error_code eval
+[200, 200, 200]
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: update the limit-req plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "consumer_limit_req",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "limit-req": {
+                            "rate": 1,
+                            "burst": 0,
+                            "rejected_code": 403,
+                            "key": "consumer_name"
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "consumer_limit_req",
+                            "plugins": {
+                               "key-auth": {
+                                    "key": "auth-jack"
+                                },
+                                "limit-req": {
+                                    "rate": 1,
+                                    "burst": 0,
+                                    "rejected_code": 403,
+                                    "key": "consumer_name"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: exceeding the burst
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- more_headers
+apikey: auth-jack
+--- error_code eval
+[200, 403, 403, 403]
+--- no_error_log
+[error]
