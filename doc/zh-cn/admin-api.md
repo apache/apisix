@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin Metadata](#plugin-metadata)
 
 ## Route
 
@@ -671,5 +672,33 @@ ssl 对象 json 配置内容：
     "sni": "sni"        # host 域名
 }
 ```
+
+## Plugin Metadata
+
+*地址*：/apisix/admin/plugin/{plugin_name}
+
+*说明*: 插件元数据。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/ssl/{plugin_name}|无|获取资源|
+|PUT      |/apisix/admin/ssl/{plugin_name}|{...}|根据 plugin name 创建资源|
+|DELETE   |/apisix/admin/ssl/{plugin_name}|无|删除资源|
+
+> body 请求参数：
+
+一个至少 1 个属性最多 10 个属性的 json object 。
+
+例子:
+
+```shell
+{
+    "k1": "v",
+    "k2": "a",
+}
+```
+
 
 [Back to TOC](#目录)

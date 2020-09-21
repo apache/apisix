@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin Metadata](#plugin-metadata)
 
 ## Route
 
@@ -659,5 +660,34 @@ Config Example:
     "sni": "sni"    # https SNI
 }
 ```
+
+## Plugin Metadata
+
+*API*：/apisix/admin/plugin/{plugin_name}
+
+*Description*: plugin metadata.
+
+> Request Methods:
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/ssl/{plugin_name}|NULL|Fetch resource|
+|PUT      |/apisix/admin/ssl/{plugin_name}|{...}|Create resource by plugin name|
+|DELETE   |/apisix/admin/ssl/{plugin_name}|NULL|Remove resource|
+
+> Request Body Parameters：
+
+An object with at least one property and at most 10 properties.
+
+
+Config Example:
+
+```shell
+{
+    "k1": "v",
+    "k2": "a",
+}
+```
+
 
 [Back to TOC](#Table-of-Contents)
