@@ -23,9 +23,9 @@
 - [Summary](#summary)
   - [Name](#name)
   - [Attributes](#attributes)
-  - [How To Enable `consumer_name`](#how-to-enable-consumer_name)
+  - [How to enable `consumer_name`](#how-to-enable-consumer_name)
     - [Test Plugin](#test-plugin)
-  - [How To Enable `service_id`](#how-to-enable-service_id)
+  - [How to restrict service ID](#how-to-restrict-service-id)
     - [Route Test](#route-test)
     - [Route Test](#route-test-1)
   - [Disable Plugin](#disable-plugin)
@@ -34,12 +34,12 @@
 ## Name
 
 The `consumer-restriction` makes corresponding access restrictions based on different objects selected, and supports two restriction types: consumer and service.
-* consumer: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
-* service: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
-
 
 
 ## Attributes
+
+* consumer: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
+* service: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
 
 |Name     |Requirement  | default |Description|
 |---------|--------|-----------|----------|
@@ -48,10 +48,8 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 |`blacklist`|required  | No |Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together.|
 |`rejected_code`|optional|`403`|The HTTP status code returned when the request is rejected, the default value is 403.|
 
-One of `whitelist` or `blacklist` must be specified, and they can not work
-together.
 
-## How To Enable `consumer_name`
+## How to enable `consumer_name`
 
 The following is an example. The `consumer-restriction` plugin is enabled on the specified route to restrict consumer access.
 
@@ -117,10 +115,12 @@ HTTP/1.1 403 Forbidden
 {"message":"The consumer_name is forbidden."}
 ```
 
-## How To Enable `service_id`
+## How to restrict service ID
+
 The `service_id` method needs to be used together with the authorization plug-in. Here, the key-auth authorization plug-in is taken as an example.
 
 1. Create two services.
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -145,7 +145,8 @@ curl http://127.0.0.1:9080/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-2. Bind the `consumer-restriction` plugin on the `consumer` (need to cooperate with an authorized plugin to bind), and add the `service_id` whitelist list.
+1. Bind the `consumer-restriction` plugin on the `consumer` (need to cooperate with an authorized plugin to bind), and add the `service_id` whitelist list.
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -164,7 +165,9 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-3. Open the `key-auth` plugin on the route and bind the `service_id` to `1`.
+
+1. Open the `key-auth` plugin on the route and bind the `service_id` to `1`.
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -182,7 +185,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
 ### Route Test
+
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
 HTTP/1.1 200 OK
@@ -190,6 +195,7 @@ HTTP/1.1 200 OK
 ```
 
 4. Open the `key-auth` plugin on the route and bind the `service_id` to `2`.
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -207,7 +213,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
 ### Route Test
+
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
 HTTP/1.1 403 Forbidden

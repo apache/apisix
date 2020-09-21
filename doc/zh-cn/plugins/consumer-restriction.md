@@ -25,7 +25,7 @@
   - [属性](#属性)
   - [如何启用 `consumer_name`](#如何启用-consumer_name)
     - [测试插件](#测试插件)
-  - [如何启用 service_id](#如何启用-service_id)
+  - [如何限制 service ID](#如何限制-service-id)
     - [路由测试](#路由测试)
     - [路由测试](#路由测试-1)
   - [禁用插件](#禁用插件)
@@ -33,10 +33,12 @@
 ## 名字
 
 `consumer-restriction` 根据选择的不同对象做相应的访问限制，支持consumer和service两种限制类型。
-* consumer：把`consumer`的`username`列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
-* service：把`service`的`id`列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
 
 ## 属性
+
+* consumer：把`consumer`的`username`列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
+* service：把`service`的`id`列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
+  
 
 |属性名         |是否可选 | 默认值 |描述|
 |---------     |--------|-----------|-----------|
@@ -49,7 +51,6 @@
 ## 如何启用 `consumer_name`
 
 下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制consumer访问:
-
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -113,10 +114,11 @@ HTTP/1.1 403 Forbidden
 {"message":"The consumer_name is forbidden."}
 ```
 
-## 如何启用 service_id
+## 如何限制 service ID
 `service_id`方式需要与授权插件一起配合使用，这里以key-auth授权插件为例。
 
 1、创建两个service
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -142,6 +144,7 @@ curl http://127.0.0.1:9080/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 2、在`consumer`上绑定`consumer-restriction`插件(需要与一个授权插件配合才能绑定),并添加`service_id`白名单列表
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -162,6 +165,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 3、在route上开启`key-auth`插件并绑定`service_id`为`1`
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -186,7 +190,9 @@ curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
 HTTP/1.1 200 OK
 ...
 ```
+
 4、在route上开启`key-auth`插件并绑定`service_id`为`2`
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -206,6 +212,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ### 路由测试
+
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
 HTTP/1.1 403 Forbidden
