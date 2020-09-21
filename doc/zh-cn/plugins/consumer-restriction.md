@@ -210,6 +210,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
 HTTP/1.1 403 Forbidden
 ...
+{"message":"The service_id is forbidden."}
 ```
 
 ## 禁用插件
