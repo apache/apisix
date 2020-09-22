@@ -102,7 +102,7 @@ done
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "上游节点",
+                        "desc": "upstream node",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -122,7 +122,7 @@ done
                                 },
                                 "type": "roundrobin"
                             },
-                            "desc": "上游节点",
+                            "desc": "upstream node",
                             "uri": "/hello"
                         },
                         "key": "/apisix/routes/1"
@@ -362,7 +362,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "上游节点",
+                        "desc": "upstream node",
                         "uri": "/hello"
                 }]]
                 )
@@ -403,7 +403,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "上游节点",
+                        "desc": "upstream node",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -507,7 +507,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "上游节点",
+                        "desc": "upstream node",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -522,7 +522,7 @@ passed
                                 },
                                 "type": "roundrobin"
                             },
-                            "desc": "上游节点",
+                            "desc": "upstream node",
                             "uri": "/hello"
                         },
                         "key": "/apisix/routes/1"

@@ -36,12 +36,21 @@ limit request rate using the "leaky bucket" method.
 
 ## Attributes
 
+<<<<<<< HEAD
 | Name          | Type    | Requirement | Default | Valid                                                                    | Description                                                                                                                                                               |
 | ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | rate          | integer | required    |         | [0,...]                                                                  | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
 | burst         | integer | required    |         | [0,...]                                                                  | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
 | key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header. |
 | rejected_code | string  | optional    | 503     | [200,...]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.                                                                     |
+=======
+|Name          |Requirement  |Description|
+|---------     |--------|-----------|
+|rate          |required|is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.|
+|burst         |required|is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.|
+| key          |required|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username).|
+|rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
+>>>>>>> fix: document and test cases.
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
@@ -116,7 +125,7 @@ To enable the `limit-req` plugin on the consumer, it needs to be used together w
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "limit_req_consumer_name",
+    "username": "consumer_test",
     "plugins": {
         "key-auth": {
             "key": "auth-jack"
@@ -207,7 +216,7 @@ Remove the `limit-req` plugin on `consumer`.
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "limit_req_consumer_name",
+    "username": "consumer_test",
     "plugins": {
         "key-auth": {
             "key": "auth-jack"
