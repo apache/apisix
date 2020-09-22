@@ -41,6 +41,8 @@
 | `secret_key`| 必须 | 无 | 与 `access_key` 配对使用。|
 | `algorithm` | 可选 | hmac-sha256 | 加密算法。目前支持 `hmac-sha1`, `hmac-sha256` 和 `hmac-sha512`。|
 | `clock_skew`| 可选 | 300 | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `timestamp` 进行检查。|
+| `signed_headers` | 可选 | 无 | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"]|
+
 
 ## 如何启用
 
@@ -54,7 +56,8 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
         "hmac-auth": {
             "access_key": "user-key",
             "secret_key": "my-secret-key",
-            "clock_skew": 10
+            "clock_skew": 10,
+            "signed_headers": ["User-Agent", "Accept-Language", "x-custom-a"]
         }
     }
 }'
@@ -82,11 +85,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 签名生成公式
 
-签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signning_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signning_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signning_string` 的计算公式为 `signning_string = HTTP Method + HTTP URI + canonical_query_string + HTTP BODY + access_key + timestamp + secret_key`
+签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signning_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signning_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signning_string` 的计算公式为 `signning_string = HTTP Method + HTTP URI + canonical_query_string + access_key + timestamp + signed_headers_string`
 
 1. **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
 2. **HTTP URI**：要求必须以“/”开头，不以“/”开头的需要补充上，空路径为“/”。
 3. **canonical_query_string**：是对于 URL 中的 query（ query 即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串）进行编码后的结果。
+4. **signed_headers_string**：是从请求头中获取客户端指定的字段，并按顺序拼接字符串的结果。
 
 > canonical_query_string 编码步骤如下：
 
@@ -97,16 +101,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
   * 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
   * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
 
+> signed_headers_string 生成步骤如下：
+
+* 从请求头中获取指定加入计算的 headers ，具体请参考下节 `使用生成好的签名进行请求尝试` 中的 `SIGNED_HEADERS` 放置的位置。
+* 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序拼接起来，拼接完后就生成了 `signed_headers_string` 。
 
 
 ### 使用生成好的签名进行请求尝试
 
-**注： ACCESS_KEY,SIGNATURE,ALGORITHM,TIMESTAMP 分别代表对应的变量**
+**注： ACCESS_KEY, SIGNATURE, ALGORITHM, TIMESTAMP, SIGNED_HEADERS 分别代表对应的变量**
+**注： SIGNED_HEADERS 为客户端指定的加入加密计算的 headers ，多个以英文分号分隔如：User-Agent;Accept-Language**
 
 * 签名信息拼一起放到请求头 `Authorization` 字段中：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + TIMESTAMP' -i
+$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + TIMESTAMP + # + SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -121,7 +130,7 @@ Accept-Ranges: bytes
 * 签名信息分开分别放到请求头：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'X-HMAC-TIMESTAMP: TIMESTAMP' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -i
+$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'X-HMAC-TIMESTAMP: TIMESTAMP' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175

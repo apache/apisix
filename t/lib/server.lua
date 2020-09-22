@@ -154,7 +154,8 @@ function _M.mock_zipkin()
             ngx.exit(400)
         end
 
-        if span.localEndpoint.serviceName ~= 'APISIX' and span.localEndpoint.serviceName ~= 'apisix' then
+        if span.localEndpoint.serviceName ~= 'APISIX'
+          and span.localEndpoint.serviceName ~= 'apisix' then
             ngx.exit(400)
         end
 
@@ -205,7 +206,9 @@ function _M.wolf_rbac_access_check()
     local args = ngx.req.get_uri_args()
     local resName = args.resName
     if resName == '/hello' or resName == '/wolf/rbac/custom/headers' then
-        ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator",username="admin", id="100"} }}))
+        ngx.say(json_encode({ok=true,
+                            data={ userInfo={nickname="administrator",
+                                username="admin", id="100"} }}))
     else
         ngx.status = 401
         ngx.say(json_encode({ok=false, reason="no permission to access"}))
@@ -220,7 +223,8 @@ function _M.wolf_rbac_user_info()
         ngx.exit(0)
     end
 
-    ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
+    ngx.say(json_encode({ok=true,
+                        data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
 end
 
 function _M.wolf_rbac_change_pwd()
@@ -237,7 +241,8 @@ end
 
 function _M.wolf_rbac_custom_headers()
     local headers = ngx.req.get_headers()
-    ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username'] .. ',nickname:' .. headers['X-Nickname'])
+    ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username']
+            .. ',nickname:' .. headers['X-Nickname'])
 end
 
 function _M.websocket_handshake()
