@@ -22,18 +22,40 @@ local _M = {
 }
 
 
-local function check_conf(plugin_name, conf)
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
+local function validate_plugin(name)
+    local pkg_name = "apisix.plugins." .. name
+    local ok, plugin_object = pcall(require, pkg_name)
+    if ok then
+        return true, plugin_object
     end
 
+    pkg_name = "apisix.stream.plugins." .. name
+    return pcall(require, pkg_name)
+end
+
+
+local function check_conf(plugin_name, conf)
     if not plugin_name then
         return nil, {error_msg = "missing plugin name"}
     end
 
-    core.log.info("schema: ", core.json.delay_encode(core.schema.plugin_metadata))
+    local ok, plugin_object = validate_plugin(plugin_name)
+    if not ok then
+        return nil, {error_msg = "invalid plugin name"}
+    end
+
+    local schema = plugin_object.metadata_schema
+    if not schema then
+        return nil, {error_msg = "no metadata schema for plugin " .. plugin_name}
+    end
+
+    if not conf then
+        return nil, {error_msg = "missing configurations"}
+    end
+
+    core.log.info("schema: ", core.json.delay_encode(schema))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.plugin_metadata, conf)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -42,27 +64,10 @@ local function check_conf(plugin_name, conf)
 end
 
 
-local function validate_plugin(name)
-    local pkg_name = "apisix.plugins." .. name
-    local ok = pcall(require, pkg_name)
-    if ok then
-        return true
-    end
-
-    pkg_name = "apisix.stream.plugins." .. name
-    return pcall(require, pkg_name)
-end
-
-
 function _M.put(plugin_name, conf)
     local plugin_name, err = check_conf(plugin_name, conf)
     if not plugin_name then
         return 400, err
-    end
-
-    local ok = validate_plugin(plugin_name)
-    if not ok then
-        return 400, {error_msg = "invalid plugin name"}
     end
 
     local key = "/plugin_metadata/" .. plugin_name

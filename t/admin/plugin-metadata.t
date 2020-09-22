@@ -31,13 +31,17 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
                 ngx.HTTP_PUT,
-                [[{"key": "val"}]],
+                [[{
+                    "skey": "val",
+                    "ikey": 1
+                }]],
                 [[{
                     "node": {
                         "value": {
-                            "key": "val"
+                            "skey": "val",
+                            "ikey": 1
                         }
                     },
                     "action": "set"
@@ -62,13 +66,17 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
                  ngx.HTTP_PUT,
-                 [[{"key": "v2"}]],
+                 [[{
+                    "skey": "val2",
+                    "ikey": 2
+                 }]],
                 [[{
                     "node": {
                         "value": {
-                            "key": "v2"
+                            "skey": "val2",
+                            "ikey": 2
                         }
                     },
                     "action": "set"
@@ -93,13 +101,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
                  ngx.HTTP_GET,
                  nil,
                 [[{
                     "node": {
                         "value": {
-                            "key": "v2"
+                            "skey": "val2",
+                            "ikey": 2
                         }
                     },
                     "action": "get"
@@ -125,7 +134,7 @@ passed
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{"action": "delete"}]]
@@ -223,5 +232,70 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugin name"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: no plugin metadata schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/echo',
+                 ngx.HTTP_PUT,
+                 [[{"k": "v"}]],
+                [[{
+                    "node": {
+                        "value": "sdf"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"no metadata schema for plugin echo"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: verify metadata schema fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
+                ngx.HTTP_PUT,
+                [[{
+                    "skey": "val"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "skey": "val",
+                            "ikey": 1
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
 --- no_error_log
 [error]
