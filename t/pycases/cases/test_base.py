@@ -27,7 +27,7 @@ def test_01():
 
 	r = requests.get("http://127.0.0.1:9080/apisix/admin/routes/1", headers=headers )
 	r = json.loads(r.content)
-	assert r["action"] == "set"
+	assert r["action"] == "get"
 
 	r = requests.get("http://127.0.0.1:9080/apisix/status")
 	assert r.status_code == 200
