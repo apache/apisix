@@ -96,6 +96,12 @@ function _M.put(id, conf)
     -- encrypt private key
     conf.key = aes_encrypt(conf.key)
 
+    if conf.keys then
+        for i = 1, #conf.keys do
+            conf.keys[i] = aes_encrypt(conf.keys[i])
+        end
+    end
+
     local key = "/ssl/" .. id
     local res, err = core.etcd.set(key, conf)
     if not res then
@@ -136,6 +142,12 @@ function _M.post(id, conf)
 
     -- encrypt private key
     conf.key = aes_encrypt(conf.key)
+
+    if conf.keys then
+        for i = 1, #conf.keys do
+            conf.keys[i] = aes_encrypt(conf.keys[i])
+        end
+    end
 
     local key = "/ssl"
     -- core.log.info("key: ", key)
