@@ -683,11 +683,14 @@ An object with at least one property and at most 10 properties.
 Config Example:
 
 ```shell
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
-    "k1": "v",
-    "k2": "a",
-}
+    "skey": "val",
+    "ikey": 1
+}'
+HTTP/1.1 201 Created
+Date: Thu, 26 Dec 2019 04:19:34 GMT
+Content-Type: text/plain
 ```
-
 
 [Back to TOC](#Table-of-Contents)
