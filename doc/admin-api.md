@@ -675,10 +675,9 @@ Config Example:
 |PUT      |/apisix/admin/plugin_metadata/{plugin_name}|{...}|Create resource by plugin name|
 |DELETE   |/apisix/admin/plugin_metadata/{plugin_name}|NULL|Remove resource|
 
-> Request Body Parameters：
+> Request Body Parameters:
 
-An object with at least one property and at most 10 properties.
-
+A json object with a data structure defined according to `metadata_schema` of the plugin ({plugin_name}).
 
 Config Example:
 

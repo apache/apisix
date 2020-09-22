@@ -689,7 +689,7 @@ ssl 对象 json 配置内容：
 
 > body 请求参数：
 
-一个至少 1 个属性最多 10 个属性的 json object 。
+一个根据插件 ({plugin_name}) 的 `metadata_schema` 定义的数据结构的 json object 。
 
 例子:
 
