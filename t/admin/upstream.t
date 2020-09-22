@@ -1637,3 +1637,137 @@ GET /t
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 50: set upstream(with labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "labels": {
+	                    "key1": "value1",
+	                    "key2": "value2",
+	                    "key3": "value3"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "labels": {
+	                            "key1": "value1",
+	                            "key2": "value2",
+	                            "key3": "value3"
+                            }
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 51: get upstream(with labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_GET,
+                 nil,
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "labels": {
+	                            "key1": "value1",
+	                            "key2": "value2",
+	                            "key3": "value3"
+                            }
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "get"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 52: patch upstream(only labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "labels": {
+	                    "key1": "new-value1"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "labels": {
+	                            "key1": "new-value1",
+	                            "key2": "value2",
+	                            "key3": "value3"
+                            }
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "compareAndSwap"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

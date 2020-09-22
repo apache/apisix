@@ -332,6 +332,10 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "table"
+        },
         pass_host = {
             description = "mod of host passing",
             type = "string",
