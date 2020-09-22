@@ -19,7 +19,6 @@ local require = require
 local core    = require("apisix.core")
 
 local _M = {
-    version = 0.1,
 }
 
 
