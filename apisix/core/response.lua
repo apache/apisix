@@ -18,8 +18,12 @@ local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local ngx_print = ngx.print
 local ngx_header = ngx.header
-local ngx_resp = require "ngx.resp"
-local ngx_add_header = ngx_resp.add_header
+local ngx_add_header
+if ngx.config.subsystem == "http" then
+    local ngx_resp = require "ngx.resp"
+    ngx_add_header = ngx_resp.add_header
+end
+
 local error = error
 local select = select
 local type = type
