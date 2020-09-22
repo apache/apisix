@@ -125,7 +125,7 @@ To enable the `limit-req` plugin on the consumer, it needs to be used together w
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "consumer_test",
+    "username": "consumer_jack",
     "plugins": {
         "key-auth": {
             "key": "auth-jack"
@@ -216,7 +216,7 @@ Remove the `limit-req` plugin on `consumer`.
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "consumer_test",
+    "username": "consumer_jack",
     "plugins": {
         "key-auth": {
             "key": "auth-jack"

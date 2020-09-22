@@ -66,7 +66,7 @@ function _M.access(conf, ctx)
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
         return 500
     end
-    
+
     local key
     if conf.key == "consumer_name" then
         key = (ctx.consumer_id or "") .. ctx.conf_type .. ctx.conf_version

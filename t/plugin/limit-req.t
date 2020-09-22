@@ -102,7 +102,7 @@ done
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "upstream node",
+                        "desc": "upstream_node",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -122,7 +122,7 @@ done
                                 },
                                 "type": "roundrobin"
                             },
-                            "desc": "upstream node",
+                            "desc": "upstream_node",
                             "uri": "/hello"
                         },
                         "key": "/apisix/routes/1"
@@ -362,7 +362,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "upstream node",
+                        "desc": "upstream_node",
                         "uri": "/hello"
                 }]]
                 )
@@ -403,7 +403,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "upstream node",
+                        "desc": "upstream_node",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -443,14 +443,14 @@ passed
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "consumer_limit_req",
+                    "username": "new_consumer",
                     "plugins": {
                         "key-auth": {
                             "key": "auth-jack"
                         },
                         "limit-req": {
-                            "rate": 2,
-                            "burst": 1,
+                            "rate": 3,
+                            "burst": 2,
                             "rejected_code": 403,
                             "key": "consumer_name"
                         }
@@ -459,14 +459,14 @@ passed
                 [[{
                     "node": {
                         "value": {
-                            "username": "consumer_limit_req",
+                            "username": "new_consumer",
                             "plugins": {
                                "key-auth": {
                                     "key": "auth-jack"
                                 },
                                 "limit-req": {
-                                    "rate": 2,
-                                    "burst": 1,
+                                    "rate": 3,
+                                    "burst": 2,
                                     "rejected_code": 403,
                                     "key": "consumer_name"
                                 }
@@ -507,7 +507,7 @@ passed
                             },
                             "type": "roundrobin"
                         },
-                        "desc": "upstream node",
+                        "desc": "upstream_node",
                         "uri": "/hello"
                 }]],
                 [[{
@@ -522,7 +522,7 @@ passed
                                 },
                                 "type": "roundrobin"
                             },
-                            "desc": "upstream node",
+                            "desc": "upstream_node",
                             "uri": "/hello"
                         },
                         "key": "/apisix/routes/1"
@@ -566,7 +566,7 @@ apikey: auth-jack
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "consumer_limit_req",
+                    "username": "new_consumer",
                     "plugins": {
                         "key-auth": {
                             "key": "auth-jack"
@@ -582,7 +582,7 @@ apikey: auth-jack
                 [[{
                     "node": {
                         "value": {
-                            "username": "consumer_limit_req",
+                            "username": "new_consumer",
                             "plugins": {
                                "key-auth": {
                                     "key": "auth-jack"
@@ -633,7 +633,7 @@ apikey: auth-jack
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "consumer_limit_req",
+                    "username": "new_consumer",
                     "plugins": {
                         "key-auth": {
                             "key": "auth-jack"
@@ -649,7 +649,7 @@ apikey: auth-jack
                 [[{
                     "node": {
                         "value": {
-                            "username": "consumer_limit_req",
+                            "username": "new_consumer",
                             "plugins": {
                                "key-auth": {
                                     "key": "auth-jack"
@@ -700,7 +700,7 @@ apikey: auth-jack
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "consumer_limit_req",
+                    "username": "new_consumer",
                     "plugins": {
                         "key-auth": {
                             "key": "auth-jack"
@@ -716,7 +716,7 @@ apikey: auth-jack
                 [[{
                     "node": {
                         "value": {
-                            "username": "consumer_limit_req",
+                            "username": "new_consumer",
                             "plugins": {
                                "key-auth": {
                                     "key": "auth-jack"
@@ -747,7 +747,7 @@ passed
 
 
 
-=== TEST 20: not exceeding the burst
+=== TEST 20: exceeding the burst
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- more_headers
@@ -764,7 +764,7 @@ apikey: auth-jack
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/consumer_limit_req', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/consumers/new_consumer', ngx.HTTP_DELETE)
 
             ngx.status = code
             ngx.say(body)
