@@ -133,6 +133,15 @@ script() {
     etcdctl version
     sleep 5
 
+    ./bin/apisix start
+
+    #start again  --> fial
+    res=`./bin/apisix start`
+    if [ "$res" != "APISIX is running..." ]; then
+        echo "failed: APISIX runs repeatedly"
+        exit 1
+    fi
+
     cd t/pycases/
     sudo python runtest.py
 
