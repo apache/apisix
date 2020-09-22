@@ -799,6 +799,8 @@ version:    print the version of apisix
 ]])
 end
 
+
+local checked_admin_key = false
 local function init()
     if is_root_path then
         print('Warning! Running apisix under /root is only suitable for development environments'
@@ -811,6 +813,51 @@ local function init()
         error("failed to read local yaml config of apisix: " .. err)
     end
     -- print("etcd: ", yaml_conf.etcd.host)
+
+    -- check the Admin API token
+    if yaml_conf.apisix.enable_admin and yaml_conf.apisix.allow_admin then
+        for _, allow_ip in ipairs(yaml_conf.apisix.allow_admin) do
+            if allow_ip == "127.0.0.0/24" then
+                checked_admin_key = true
+            end
+        end
+    end
+
+    if yaml_conf.apisix.enable_admin and not checked_admin_key then
+        checked_admin_key = true
+        local help = [[
+
+%s
+Please modify "admin_key" in conf/config.yaml .
+
+]]
+        if type(yaml_conf.apisix.admin_key) ~= "table" or
+           #yaml_conf.apisix.admin_key == 0
+        then
+            io.stderr:write(help:format("ERROR: missing valid Admin API token."))
+            os.exit(1)
+        end
+
+        for _, admin in ipairs(yaml_conf.apisix.admin_key) do
+            if type(admin.key) == "table" then
+                admin.key = ""
+            else
+                admin.key = tostring(admin.key)
+            end
+
+            if admin.key == "" then
+                io.stderr:write(help:format("ERROR: missing valid Admin API token."), "\n")
+                os.exit(1)
+            end
+
+            if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
+                io.stderr:write(
+                    help:format([[WARNING: using fixed Admin API token has security risk.]]),
+                    "\n"
+                )
+            end
+        end
+    end
 
     local or_ver = execute_cmd("openresty -V 2>&1")
     local with_module_status = true
