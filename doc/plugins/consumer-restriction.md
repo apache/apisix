@@ -24,22 +24,22 @@
   - [Name](#name)
   - [Attributes](#attributes)
   - [How to enable `consumer_name`](#how-to-enable-consumer_name)
-    - [Test Plugin](#test-plugin)
+  - [Test Plugin](#test-plugin)
   - [How to restrict service ID](#how-to-restrict-service-id)
-    - [Route Test](#route-test)
-    - [Route Test](#route-test-1)
+  - [Route Test](#route-test)
+  - [Route Test](#route-test-1)
   - [Disable Plugin](#disable-plugin)
 
 
 ## Name
 
-The `consumer-restriction` makes corresponding access restrictions based on different objects selected, and supports two restriction types: consumer and service.
+The `consumer-restriction` makes corresponding access restrictions based on different objects selected, and supports two restriction types: consumer name and service id.
 
 
 ## Attributes
 
-* consumer: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
-* service: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
+* consumer name: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
+* service id: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
 
 |Name     |Requirement  | default |Description|
 |---------|--------|-----------|----------|
@@ -96,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### Test Plugin
+## Test Plugin
 
 Requests from jack1:
 
@@ -186,7 +186,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### Route Test
+## Route Test
 
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
@@ -214,7 +214,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### Route Test
+## Route Test
 
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
