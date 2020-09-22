@@ -1164,3 +1164,93 @@ qr/parsing (cert|(priv key)) for sni: www.test2.com/
 --- grep_error_log_out
 parsing cert for sni: www.test2.com
 parsing priv key for sni: www.test2.com
+
+
+
+=== TEST 26: set ssl(encrypt ssl keys with another iv)
+--- config
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("conf/cert/test2.crt")
+        local raw_ssl_key = t.read_file("conf/cert/test2.key")
+        local ssl_key = t.aes_encrypt(raw_ssl_key)
+        local data = {
+            certs = { ssl_cert },
+            keys = { ssl_key },
+            snis = {"test2.com", "*.test2.com"},
+            cert = ssl_cert,
+            key = raw_ssl_key,
+        }
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "snis": ["test2.com", "*.test2.com"]
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: client request: test2.com (with encrypted ssl keys by mistake)
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "test2.com", true)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", type(sess))
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+failed to do SSL handshake: handshake failed
+--- error_log
+decrypt ssl key failed.
