@@ -31,7 +31,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
                 ngx.HTTP_PUT,
                 [[{"key": "val"}]],
                 [[{
@@ -62,7 +62,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
                  ngx.HTTP_PUT,
                  [[{"key": "v2"}]],
                 [[{
@@ -93,7 +93,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
                  ngx.HTTP_GET,
                  nil,
                 [[{
@@ -125,7 +125,7 @@ passed
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin/log-rotate',
+            local code, body = t('/apisix/admin/plugin_metadata/log-rotate',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{"action": "delete"}]]
@@ -149,7 +149,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/plugin/not_found',
+            local code = t('/apisix/admin/plugin_metadata/not_found',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -173,7 +173,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin',
+            local code, body = t('/apisix/admin/plugin_metadata',
                  ngx.HTTP_PUT,
                  [[{"k": "v"}]],
                 [[{
@@ -203,7 +203,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin/test',
+            local code, body = t('/apisix/admin/plugin_metadata/test',
                  ngx.HTTP_PUT,
                  [[{"k": "v"}]],
                 [[{

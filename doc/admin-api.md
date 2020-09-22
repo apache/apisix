@@ -663,7 +663,7 @@ Config Example:
 
 ## Plugin Metadata
 
-*API*：/apisix/admin/plugin/{plugin_name}
+*API*：/apisix/admin/plugin_metadata/{plugin_name}
 
 *Description*: plugin metadata.
 
@@ -671,9 +671,9 @@ Config Example:
 
 |Method      |Request URI|Request Body|Description        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/ssl/{plugin_name}|NULL|Fetch resource|
-|PUT      |/apisix/admin/ssl/{plugin_name}|{...}|Create resource by plugin name|
-|DELETE   |/apisix/admin/ssl/{plugin_name}|NULL|Remove resource|
+|GET      |/apisix/admin/plugin_metadata/{plugin_name}|NULL|Fetch resource|
+|PUT      |/apisix/admin/plugin_metadata/{plugin_name}|{...}|Create resource by plugin name|
+|DELETE   |/apisix/admin/plugin_metadata/{plugin_name}|NULL|Remove resource|
 
 > Request Body Parameters：
 

@@ -675,7 +675,7 @@ ssl 对象 json 配置内容：
 
 ## Plugin Metadata
 
-*地址*：/apisix/admin/plugin/{plugin_name}
+*地址*：/apisix/admin/plugin_metadata/{plugin_name}
 
 *说明*: 插件元数据。
 
@@ -683,9 +683,9 @@ ssl 对象 json 配置内容：
 
 |Method   |请求 URI|请求 body|说明        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/ssl/{plugin_name}|无|获取资源|
-|PUT      |/apisix/admin/ssl/{plugin_name}|{...}|根据 plugin name 创建资源|
-|DELETE   |/apisix/admin/ssl/{plugin_name}|无|删除资源|
+|GET      |/apisix/admin/plugin_metadata/{plugin_name}|无|获取资源|
+|PUT      |/apisix/admin/plugin_metadata/{plugin_name}|{...}|根据 plugin name 创建资源|
+|DELETE   |/apisix/admin/plugin_metadata/{plugin_name}|无|删除资源|
 
 > body 请求参数：
 

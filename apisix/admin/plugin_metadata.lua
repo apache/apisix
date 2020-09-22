@@ -66,7 +66,7 @@ function _M.put(plugin_name, conf)
         return 400, {error_msg = "invalid plugin name"}
     end
 
-    local key = "/plugin/" .. plugin_name
+    local key = "/plugin_metadata/" .. plugin_name
     core.log.info("key: ", key)
     local res, err = core.etcd.set(key, conf)
     if not res then
@@ -79,7 +79,7 @@ end
 
 
 function _M.get(key)
-    local path = "/plugin"
+    local path = "/plugin_metadata"
     if key then
         path = path .. "/" .. key
     end
@@ -104,7 +104,7 @@ function _M.delete(key)
         return 400, {error_msg = "missing metadata key"}
     end
 
-    local key = "/plugin/" .. key
+    local key = "/plugin_metadata/" .. key
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete metadata[", key, "]: ", err)

@@ -109,11 +109,6 @@ local function run()
         seg_sub_path = core.table.concat(uri_segs, "/", 7)
     end
 
-    -- plugin metadata
-    if seg_res == "plugin" then
-        seg_res = "plugin_metadata"
-    end
-
     local resource = resources[seg_res]
     if not resource then
         core.response.exit(404)
