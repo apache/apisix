@@ -596,11 +596,6 @@ _M.stream_route = {
     }
 }
 
-_M.plugin_metadata = {
-    type = "object",
-    minProperties = 1,
-    maxProperties = 10,
-}
 
 _M.id_schema = id_schema
 
