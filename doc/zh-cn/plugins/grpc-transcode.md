@@ -52,13 +52,13 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 
 ## 参数列表
 
-| 名称      | 类型                                                               | 必选项 | 默认值 | 有效值 | 描述                       |
-| --------- | ------------------------------------------------------------------ | ------ | ------ | ------ | -------------------------- |
-| proto_id  | string/integer                                                     | 必须   |        |        | `.proto` 内容的 id         |
-| service   | string                                                             | 必须   |        |        | grpc 服务名                |
-| method    | string                                                             | 必须   |        |        | grpc 服务中要调用的方法名  |
-| deadline  | number                                                             | 可选   | 0      |        | grpc deadline, ms          |
-| pb_option | array([pb_option_def](#使用-grpc-transcode-插件的-pb_option-选项)) | 可选   |        |        | proto 编码过程中的转换选项 |
+| 名称      | 类型                                                                       | 必选项 | 默认值 | 有效值 | 描述                       |
+| --------- | -------------------------------------------------------------------------- | ------ | ------ | ------ | -------------------------- |
+| proto_id  | string/integer                                                             | 必须   |        |        | `.proto` 内容的 id         |
+| service   | string                                                                     | 必须   |        |        | grpc 服务名                |
+| method    | string                                                                     | 必须   |        |        | grpc 服务中要调用的方法名  |
+| deadline  | number                                                                     | 可选   | 0      |        | grpc deadline, ms          |
+| pb_option | array[string([pb_option_def](#使用-grpc-transcode-插件的-pb_option-选项))] | 可选   |        |        | proto 编码过程中的转换选项 |
 
 ## 示例
 

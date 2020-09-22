@@ -35,18 +35,22 @@ This will provide the ability to send Log data requests as JSON objects.
 
 ## Attributes
 
-|Name           |Requirement    |Description|
-|---------      |--------       |-----------|
-|host           |required       | IP address or the Hostname.|
-|port           |required       | Target upstream port.|
-|timeout        |optional       |Timeout for the upstream to send data.|
-|tls            |optional       |Boolean value to control whether to perform SSL verification|
-|flush_limit    |optional       |If the buffered messages' size plus the current message size reaches (>=) this limit (in bytes), the buffered log messages will be written to log server. Default to 4096 (4KB).|
-|drop_limit           |optional       |If the buffered messages' size plus the current message size is larger than this limit (in bytes), the current log message will be dropped because of limited buffer size. Default drop_limit is 1048576 (1MB).|
-|sock_type|optional      |IP protocol type to use for transport layer. Can be either "tcp" or "udp". Default is "tcp".|
-|max_retry_times|optional       |Max number of retry times after a connect to a log server failed or send log messages to a log server failed.|
-|retry_interval|optional       |The time delay (in ms) before retry to connect to a log server or retry to send log messages to a log server, default to 100 (0.1s).|
-|pool_size    |optional       |Keepalive pool size used by sock:keepalive. Default to 10.|
+| Name             | Type    | Requirement | Default      | Valid    | Description                                                                                                                                                                                          |
+| ---------------- | ------- | ----------- | ------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| host             | string  | required    |              |          | IP address or the Hostname.                                                                                                                                                                          |
+| port             | integer | required    |              |          | Target upstream port.                                                                                                                                                                                |
+| name             | string  | optional    | "sys logger" |          |                                                                                                                                                                                                      |
+| timeout          | integer | optional    | 3            | [1, ...] | Timeout for the upstream to send data.                                                                                                                                                               |
+| tls              | boolean | optional    | false        |          | Control whether to perform SSL verification                                                                                                                                                          |
+| flush_limit      | integer | optional    | 4096         | [1, ...] | If the buffered messages' size plus the current message size reaches (>=) this limit (in bytes), the buffered log messages will be written to log server. Default to 4096 (4KB).                     |
+| drop_limit       | integer | optional    | 1048576      |          | If the buffered messages' size plus the current message size is larger than this limit (in bytes), the current log message will be dropped because of limited buffer size. Default to 1048576 (1MB). |
+| sock_type        | string  | optional    | "tcp"        |          | IP protocol type to use for transport layer. Can be either "tcp" or "udp".                                                                                                                           |
+| max_retry_times  | integer | optional    | 1            | [1, ...] | Max number of retry times after a connect to a log server failed or send log messages to a log server failed.                                                                                        |
+| retry_interval   | integer | optional    | 1            | [0, ...] | The time delay (in ms) before retry to connect to a log server or retry to send log messages to a log server, default to 100 (0.1s).                                                                 |
+| pool_size        | integer | optional    | 5            | [5, ...] | Keepalive pool size used by sock:keepalive.                                                                                                                                                          |
+| batch_max_size   | integer | optional    | 1000         | [1, ...] | Max size of each batch                                                                                                                                                                               |
+| buffer_duration  | integer | optional    | 60           | [1, ...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed                                                                                                             |
+| include_req_body | boolean | optional    | false        |          | Whether to include the request body                                                                                                                                                                  |
 
 ## How To Enable
 

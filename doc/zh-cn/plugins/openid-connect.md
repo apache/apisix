@@ -31,21 +31,22 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 
 ## 属性列表
 
-|名称           |必选项    |描述|
-|-------        |-----          |------|
-|client_id      |必要的       |OAuth 客户端 ID|
-|client_secret  |必要的       |OAuth 客户端 secret|
-|discovery      |必要的       |身份服务器的发现端点的 URL|
-|realm          |可选的       |用于认证的领域； 默认为apisix|
-|bearer_only    |可选的       |设置为“true”将检查请求中带有承载令牌的授权标头； 默认为`false`|
-|logout_path    |可选的       |默认是`/logout`|
-|redirect_uri   |可选的       |默认是 `ngx.var.request_uri`|
-|timeout        |可选的       |默认是 3 秒|
-|ssl_verify     |可选的       |默认是 `false`|
-|introspection_endpoint                 |可选的       |身份服务器的令牌验证端点的 URL|
-|introspection_endpoint_auth_method     |可选的       |令牌自省的认证方法名称 |
-|public_key     |可选的       |验证令牌的公钥 |
-|token_signing_alg_values_expected     |可选的       |用于对令牌进行签名的算法 |
+| 名称                               | 类型    | 必选项 | 默认值                | 有效值  | 描述                                           |
+| ---------------------------------- | ------- | ------ | --------------------- | ------- | ---------------------------------------------- |
+| client_id                          | string  | 必须   |                       |         | OAuth 客户端 ID                                |
+| client_secret                      | string  | 必须   |                       |         | OAuth 客户端 secret                            |
+| discovery                          | string  | 必须   |                       |         | 身份服务器的发现端点的 URL                     |
+| scope                              | string  | 可选   | "openid"              |         | 用于认证                                       |
+| realm                              | string  | 可选   | "apisix"              |         | 用于认证                                       |
+| bearer_only                        | boolean | 可选   | false                 |         | 设置为`true`将检查请求中带有承载令牌的授权标头 |
+| logout_path                        | string  | 可选   | "/logout"             |         |                                                |
+| redirect_uri                       | string  | 可选   | "ngx.var.request_uri" |         |                                                |
+| timeout                            | integer | 可选   | 3                     | [1,...] |                                                |
+| ssl_verify                         | boolean | 可选   | false                 |         |                                                |
+| introspection_endpoint             | string  | 可选   |                       |         | 身份服务器的令牌验证端点的 URL                 |
+| introspection_endpoint_auth_method | string  | 可选   | "client_secret_basic" |         | 令牌自省的认证方法名称                         |
+| public_key                         | string  | 可选   |                       |         | 验证令牌的公钥                                 |
+| token_signing_alg_values_expected  | string  | 可选   |                       |         | 用于对令牌进行签名的算法                       |
 
 ### 令牌自省
 
