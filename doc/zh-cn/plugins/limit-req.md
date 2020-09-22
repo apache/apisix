@@ -117,7 +117,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
             "burst": 1,
             "rejected_code": 403,
             "key": "consumer_name"
-            }
+        }
     }
 }'
 ```

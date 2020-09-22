@@ -26,8 +26,8 @@
   - [Attributes](#attributes)
   - [How To Enable](#how-to-enable)
   - [Test Plugin](#test-plugin)
-    - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
-    - [Test Plugin](#test-plugin-1)
+  - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
+  - [Test Plugin](#test-plugin-1)
   - [Disable Plugin](#disable-plugin)
 
 ## Name
@@ -107,7 +107,7 @@ Server: APISIX web server
 
 This means that the limit req plugin is in effect.
 
-### How to enable on the `consumer`
+## How to enable on the `consumer`
 
 To enable the `limit-req` plugin on the consumer, it needs to be used together with the authorization plugin. Here, the key-auth authorization plugin is taken as an example.
 
@@ -126,7 +126,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
             "burst": 1,
             "rejected_code": 403,
             "key": "consumer_name"
-            }
+        }
     }
 }'
 ```
@@ -152,7 +152,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### Test Plugin
+## Test Plugin
 
 The value of `rate + burst` is not exceeded.
 
