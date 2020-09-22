@@ -1,0 +1,7 @@
+pytest==4.0.1
+pytest-metadata==1.7.0
+pytest-html==1.14.2
+futures==3.2.0
+requests==2.21.0
+flaky==3.4.0
+attrs==19.1.0
