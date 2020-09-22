@@ -98,6 +98,78 @@ Server: APISIX web server
 
 这就表示 limit req 插件生效了。
 
+### 如何在`consumer`上启用插件
+
+consumer上开启`limit-req`插件，需要与授权插件一起配合使用，这里以key-auth授权插件为例。
+
+1、将`limit-req`插件绑定到consumer上
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "limit_req_consumer_name",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        },
+        "limit-req": {
+            "rate": 1,
+            "burst": 1,
+            "rejected_code": 403,
+            "key": "consumer_name"
+            }
+    }
+}'
+```
+
+2、创建`route`并开启`key-auth`插件
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+### 测试插件
+
+未超过`rate + burst` 的值
+
+```shell
+curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+HTTP/1.1 200 OK
+......
+```
+
+当超过`rate + burst` 的值
+
+```shell
+curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+HTTP/1.1 403 Forbidden
+.....
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
+
+说明绑在`consumer`上的 `limit-req`插件生效了
+
 ### 移除插件
 
 当你想去掉 limit req 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
@@ -111,6 +183,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "type": "roundrobin",
         "nodes": {
             "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+移除`consumer`上的 `limit-req` 插件
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "limit_req_consumer_name",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
         }
     }
 }'

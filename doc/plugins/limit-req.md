@@ -21,11 +21,14 @@
 
 # Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+- [Summary](#summary)
+  - [Name](#name)
+  - [Attributes](#attributes)
+  - [How To Enable](#how-to-enable)
+  - [Test Plugin](#test-plugin)
+    - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
+    - [Test Plugin](#test-plugin-1)
+  - [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -104,6 +107,78 @@ Server: APISIX web server
 
 This means that the limit req plugin is in effect.
 
+### How to enable on the `consumer`
+
+To enable the `limit-req` plugin on the consumer, it needs to be used together with the authorization plugin. Here, the key-auth authorization plugin is taken as an example.
+
+1. Bind the `limit-req` plugin to the consumer
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "limit_req_consumer_name",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        },
+        "limit-req": {
+            "rate": 1,
+            "burst": 1,
+            "rejected_code": 403,
+            "key": "consumer_name"
+            }
+    }
+}'
+```
+
+2. Create a `route` and enable the `key-auth` plugin
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+### Test Plugin
+
+The value of `rate + burst` is not exceeded.
+
+```shell
+curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+HTTP/1.1 200 OK
+......
+```
+
+When the value of `rate + burst` is exceeded.
+
+```shell
+curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+HTTP/1.1 403 Forbidden
+.....
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
+
+Explains that the `limit-req` plugin tied to `consumer` has taken effect.
+
 ## Disable Plugin
 
 When you want to disable the limit req plugin, it is very simple,
@@ -122,6 +197,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "type": "roundrobin",
         "nodes": {
             "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+Remove the `limit-req` plugin on `consumer`.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "limit_req_consumer_name",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
         }
     }
 }'
