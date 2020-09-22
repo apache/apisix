@@ -62,6 +62,20 @@ local function parse_pem_priv_key(sni, pkey)
 end
 
 
+local function decrypt_priv_pkey(iv, key)
+    if core.string.has_prefix(key, "---") then
+        return key
+    end
+
+    local decrypted = iv:decrypt(ngx_decode_base64(key))
+    if decrypted then
+        return decrypted
+    end
+
+    core.log.error("decrypt ssl key failed. key[", key, "] ")
+end
+
+
 local function create_router(ssl_items)
     local ssl_items = ssl_items or {}
 
@@ -95,13 +109,23 @@ local function create_router(ssl_items)
             end
 
             -- decrypt private key
-            if aes_128_cbc_with_iv ~= nil and
-                not core.string.has_prefix(ssl.value.key, "---") then
-                local decrypted = aes_128_cbc_with_iv:decrypt(ngx_decode_base64(ssl.value.key))
-                if decrypted == nil then
-                    core.log.error("decrypt ssl key failed. key[", ssl.value.key, "] ")
-                else
-                    ssl.value.key = decrypted
+            if aes_128_cbc_with_iv ~= nil then
+                if ssl.value.key then
+                    local decrypted = decrypt_priv_pkey(aes_128_cbc_with_iv,
+                                                        ssl.value.key)
+                    if decrypted then
+                        ssl.value.key = decrypted
+                    end
+                end
+
+                if ssl.value.keys then
+                    for i = 1, #ssl.value.keys do
+                        local decrypted = decrypt_priv_pkey(aes_128_cbc_with_iv,
+                                                            ssl.value.keys[i])
+                        if decrypted then
+                            ssl.value.keys[i] = decrypted
+                        end
+                    end
                 end
             end
 
