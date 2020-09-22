@@ -144,6 +144,7 @@ script() {
 
     cd t/pycases/
     sudo python runtest.py
+    pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "cases"
 
 }
 
