@@ -61,6 +61,7 @@ def runcase(casedirpath):
     setupcmd = "pip install -r %s/requirements.txt"%cur_file_dir()
     exc_case_cmd='pytest --force-flaky --max-runs=3 --no-flaky-report -q "%s" --html="%s/result.html" --self-contained-html > "%s/result.log"'%(casedirpath,casedirpath,casedirpath)
     exc_case_cmd2='pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "%s" > "%s/result.log"'%(casedirpath,casedirpath)
+    exc_case_cmd3='pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "%s" '%(casedirpath)
 
     #r_exc_case_cmd = subprocess.Popen(updatepip, stderr=subprocess.PIPE,shell=True)
     #r_exc_case_cmd.wait()
@@ -71,7 +72,7 @@ def runcase(casedirpath):
     r_exc_case_cmd.wait()
     err = r_exc_case_cmd.stderr.read()
 
-    r_exc_case_cmd = subprocess.Popen(exc_case_cmd2, stderr=subprocess.PIPE,shell=True)
+    r_exc_case_cmd = subprocess.Popen(exc_case_cmd3, stderr=subprocess.PIPE,shell=True)
     r_exc_case_cmd.wait()
     err = r_exc_case_cmd.stderr.read()
 
