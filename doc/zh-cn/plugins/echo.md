@@ -35,11 +35,15 @@ echo 可以帮助用户尽可能全面地了解如何开发APISIX插件。
 
 ## 属性
 
-|属性名称          |必选项  |描述|
-|---------     |--------|-----------|
-| before_body |可选| 在 body 属性之前添加的内容，如果 body 属性没有指定将添加在 upstream response body 之前。 |
-| body |可选| 返回给客户端的响应内容，它将覆盖 upstream 返回的响应 body。 |
-| after_body |可选| 在 body 属性之后添加的内容，如果 body 属性没有指定将在 upstream 响应 body 之后添加。 |
+| 名称        | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                     |
+| ----------- | ------ | ------ | ------ | ------ | ---------------------------------------------------------------------------------------- |
+| before_body | string | 可选   |        |        | 在 body 属性之前添加的内容，如果 body 属性没有指定将添加在 upstream response body 之前。 |
+| body        | string | 可选   |        |        | 返回给客户端的响应内容，它将覆盖 upstream 返回的响应 body。                              |
+| after_body  | string | 可选   |        |        | 在 body 属性之后添加的内容，如果 body 属性没有指定将在 upstream 响应 body 之后添加。     |
+| headers     | object | 可选   |        |        | 返回值的 headers                                                                         |
+| auth_value  | string | 可选   |        |        |                                                                                          |
+
+参数 before_body，body 和 after_body 至少要存在一个
 
 ## 如何启用
 

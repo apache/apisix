@@ -49,34 +49,34 @@ The plugin will create a API in `apisix` to handle your batch request.
 
 ### Batch API Request:
 
-| Name | Type | Requirement | Default | Valid | Description |
-| --- | --- | --- | --- | --- | --- |
-| query | object | optional | |  | Specify `QueryString` for all request |
-| headers | object | optional | |  | Specify `Header` for all request |
-| timeout | integer | optional | 30000 |  | Aggregate API timeout in `ms` |
-| pipeline | [HttpRequest](#Request) | required | |  | Request's detail |
+| Name     | Type                        | Requirement | Default | Valid | Description                           |
+| -------- | --------------------------- | ----------- | ------- | ----- | ------------------------------------- |
+| query    | object                      | optional    |         |       | Specify `QueryString` for all request |
+| headers  | object                      | optional    |         |       | Specify `Header` for all request      |
+| timeout  | integer                     | optional    | 30000   |       | Aggregate API timeout in `ms`         |
+| pipeline | [HttpRequest](#HttpRequest) | required    |         |       | Request's detail                      |
 
 #### HttpRequest
-| Name | Type | Requirement | Default | Valid | Description |
-| --- | --- | --- | --- | --- | --- |
-| version | enum | optional | 1.1 | [1.0, 1.1] | http version |
-| method | enum | optional | GET | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | http method |
-| query | object | optional | |  | request's `QueryString`, if `Key` is conflicted with global `query`, this setting's value will be used. |
-| headers | object | optional | | | request's `Header`, if `Key` is conflicted with global `headers`, this setting's value will be used. |
-| path | string | required | |  | http request's path |
-| body | string | optional | |  | http request's body |
-| ssl_verify | boolean | optional | false |  | verify if SSL cert matches hostname. |
+| Name       | Type    | Requirement | Default | Valid                                                                            | Description                                                                                             |
+| ---------- | ------- | ----------- | ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| version    | string  | optional    | 1.1     | [1.0, 1.1]                                                                       | http version                                                                                            |
+| method     | string  | optional    | GET     | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | http method                                                                                             |
+| query      | object  | optional    |         |                                                                                  | request's `QueryString`, if `Key` is conflicted with global `query`, this setting's value will be used. |
+| headers    | object  | optional    |         |                                                                                  | request's `Header`, if `Key` is conflicted with global `headers`, this setting's value will be used.    |
+| path       | string  | required    |         |                                                                                  | http request's path                                                                                     |
+| body       | string  | optional    |         |                                                                                  | http request's body                                                                                     |
+| ssl_verify | boolean | optional    | false   |                                                                                  | verify if SSL cert matches hostname.                                                                    |
 
 ### Batch API Response：
 Response is `Array` of [HttpResponse](#HttpResponse).
 
 #### HttpResponse
-| Name | Type | Description |
-| --- | --- | --- |
-| status | integer | http status code |
-| reason | string | http reason phrase |
-| body | string | http response body |
-| headers | object | http response headers |
+| Name    | Type    | Description           |
+| ------- | ------- | --------------------- |
+| status  | integer | http status code      |
+| reason  | string  | http reason phrase    |
+| body    | string  | http response body    |
+| headers | object  | http response headers |
 
 ## Test Plugin
 

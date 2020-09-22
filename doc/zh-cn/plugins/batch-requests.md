@@ -49,34 +49,34 @@
 
 ### 接口请求参数:
 
-| 参数名 | 类型 | 可选项 | 默认值 | 描述 |
-| --- | --- | --- | --- | --- |
-| query | object | 可选 | | 给所有请求都携带的 `QueryString` |
-| headers | object | 可选 | | 给所有请求都携带的 `Header` |
-| timeout | number | 可选 | 30000 | 聚合请求的超时时间，单位为 `ms` |
-| pipeline | [HttpRequest](#HttpRequest) | 必须 | | Http 请求的详细信息 |
+| 参数名   | 类型                        | 可选项 | 默认值 | 有效值 | 描述                             |
+| -------- | --------------------------- | ------ | ------ | ------ | -------------------------------- |
+| query    | object                      | 可选   |        |        | 给所有请求都携带的 `QueryString` |
+| headers  | object                      | 可选   |        |        | 给所有请求都携带的 `Header`      |
+| timeout  | number                      | 可选   | 30000  |        | 聚合请求的超时时间，单位为 `ms`  |
+| pipeline | [HttpRequest](#HttpRequest) | 必须   |        |        | Http 请求的详细信息              |
 
 #### HttpRequest
-| 参数名 | 类型 | 可选 | 默认值 | 有效值 | 描述 |
-| --- | --- | --- | --- | --- | --- |
-| version | enum | 可选 | 1.1 | [1.0, 1.1] | 请求用的 `http` 协议版本 |
-| method | enum | 可选 | GET | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | 请求使用的 `http` 方法 |
-| query | object | 可选 | |  | 独立请求所携带的 `QueryString`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
-| headers | object | 可选 | |  | 独立请求所携带的 `Header`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
-| path | string | 必须 | |  | 请求路径 |
-| body | string | 可选 | |  | 请求体 |
-| ssl_verify | boolean | 可选 | false |  | 验证 SSL 证书与主机名是否匹配 |
+| 参数名     | 类型    | 可选 | 默认值 | 有效值                                                                           | 描述                                                                      |
+| ---------- | ------- | ---- | ------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| version    | string  | 可选 | 1.1    | [1.0, 1.1]                                                                       | 请求用的 `http` 协议版本                                                  |
+| method     | string  | 可选 | GET    | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | 请求使用的 `http` 方法                                                    |
+| query      | object  | 可选 |        |                                                                                  | 独立请求所携带的 `QueryString`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
+| headers    | object  | 可选 |        |                                                                                  | 独立请求所携带的 `Header`, 如果 `Key` 和全局的有冲突，以此设置为主。      |
+| path       | string  | 必须 |        |                                                                                  | 请求路径                                                                  |
+| body       | string  | 可选 |        |                                                                                  | 请求体                                                                    |
+| ssl_verify | boolean | 可选 | false  |                                                                                  | 验证 SSL 证书与主机名是否匹配                                             |
 
 ### 接口响应参数：
 返回值为一个 [HttpResponse](#HttpResponse) 的 `数组`。
 
 #### HttpResponse
-| 参数名 | 类型 | 描述 |
-| --- | --- | --- |
-| status | integer | Http 请求的状态码 |
-| reason | string | Http 请求的返回信息 |
-| body | string | Http 请求的响应体 |
-| headers | object | Http 请求的响应头 |
+| 参数名  | 类型    | 描述                |
+| ------- | ------- | ------------------- |
+| status  | integer | Http 请求的状态码   |
+| reason  | string  | Http 请求的返回信息 |
+| body    | string  | Http 请求的响应体   |
+| headers | object  | Http 请求的响应头   |
 
 ## 测试插件
 
