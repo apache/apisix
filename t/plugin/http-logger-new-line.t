@@ -96,7 +96,7 @@ request log: {"upstream":"127.0.0.1:1982"
                                 "max_retry_count": 3,
                                 "retry_delay": 2,
                                 "buffer_duration": 2,
-                                "inactive_timeout": 2,
+                                "inactive_timeout": 1,
                                 "concat_method": "new_line"
                             }
                         },
@@ -186,6 +186,36 @@ GET /t
 qr/"upstream":"127.0.0.1:1982"/
 --- grep_error_log_out
 "upstream":"127.0.0.1:1982"
+"upstream":"127.0.0.1:1982"
+"upstream":"127.0.0.1:1982"
+"upstream":"127.0.0.1:1982"
+"upstream":"127.0.0.1:1982"
+"upstream":"127.0.0.1:1982"
+
+
+
+=== TEST 7: hit route, and report log
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+
+        for i = 1, 5 do
+            t('/hello', ngx.HTTP_GET)
+        end
+
+        ngx.sleep(3)
+        ngx.say("done")
+    }
+}
+--- request
+GET /t
+--- timeout: 4
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/"upstream":"127.0.0.1:1982"/
+--- grep_error_log_out
 "upstream":"127.0.0.1:1982"
 "upstream":"127.0.0.1:1982"
 "upstream":"127.0.0.1:1982"
