@@ -143,24 +143,26 @@ local function send_http_data(conf, log_message)
 end
 
 
+local function gen_log_format(metadata)
+    local log_format = {}
+    for k, var_name in pairs(metadata.value.log_format) do
+        if var_name:sub(1, 1) == "$" then
+            log_format[k] = {true, var_name:sub(2)}
+        else
+            log_format[k] = {false, var_name}
+        end
+    end
+    core.log.info("log_format: ", core.json.delay_encode(log_format))
+    return log_format
+end
+
+
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
-    local log_format = lru_log_format(metadata, nil, function()
-        local log_format = {}
-        for k, var_name in pairs(metadata.value.log_format) do
-            if var_name:sub(1, 1) == "$" then
-                log_format[k] = {true, var_name:sub(2)}
-            else
-                log_format[k] = {false, var_name}
-            end
-        end
-        core.log.info("log_format: ", core.json.delay_encode(log_format))
-        return log_format
-    end)
-
     local entry
+    local log_format = lru_log_format(metadata, nil, gen_log_format, metadata)
     if log_format then
         entry = core.table.new(0, core.table.nkeys(log_format))
         for k, var_attr in pairs(log_format) do
