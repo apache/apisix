@@ -473,12 +473,6 @@ _M.service = {
         desc = {type = "string", maxLength = 256},
         script = {type = "string", minLength = 10, maxLength = 102400},
     },
-    anyOf = {
-        {required = {"upstream"}},
-        {required = {"upstream_id"}},
-        {required = {"plugins"}},
-        {required = {"script"}},
-    },
     additionalProperties = false,
 }
 
@@ -604,6 +598,11 @@ _M.stream_route = {
 
 
 _M.id_schema = id_schema
+
+
+_M.plugin_disable_schema = {
+    disable = {type = "boolean"}
+}
 
 
 setmetatable(_M, {

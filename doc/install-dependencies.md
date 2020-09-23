@@ -28,12 +28,12 @@
 
 Note
 ====
-- Apache APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default.
+- Apache APISIX would not support the v2 protocol storage to etcd anymore. If etcd version is below 3.4, the default protocol is still v2 and you need to turn on v3 protocol mannually.
 
-You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
+You need to add `ETCDCTL_API=3` to the environmental variables to enable the v3 protocol.
 
 ```shell
-etcd --enable-v2=true &
+export ETCDCTL_API=3
 ```
 
 - If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](../.travis/linux_tengine_runner.sh).
@@ -70,7 +70,7 @@ sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openrest
 sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
 
 # start etcd server
-sudo etcd --enable-v2=true &
+sudo etcd &
 ```
 
 Ubuntu 16.04 & 18.04
@@ -127,6 +127,6 @@ Mac OSX
 # install OpenResty, etcd and some compilation tools
 brew install openresty/brew/openresty etcd luarocks curl git
 
-# start etcd server with v2 protocol
-etcd --enable-v2=true &
+# start etcd server
+etcd &
 ```

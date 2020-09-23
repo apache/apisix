@@ -37,13 +37,13 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| key         |required|different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception.|
-| secret      |optional|encryption key. if you do not specify, the value is auto-generated in the background.|
-| algorithm    |  optional|encryption algorithm. support`HS256`, `HS384`, `HS512`, `RS256` and `ES256`,`HS256` is default.|
-| exp          |optional|token's expire time, the unit is second. for example, 5 minutes, need to set the value of 300.( 5 * 60 = 300 )|
-| base64_secret|optional|boolean value to indicate whether secret is base64 encoded, default value is false.|
+| Name          | Type    | Requirement | Default | Valid                                         | Description                                                                                                                                      |
+| ------------- | ------- | ----------- | ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| key           | string  | required    |         |                                               | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
+| secret        | string  | optional    |         |                                               | encryption key. if you do not specify, the value is auto-generated in the background.                                                            |
+| algorithm     | string  | optional    | "HS256" | ["HS256", "HS384", "HS512", "RS256", "ES256"] | encryption algorithm.                                                                                                                            |
+| exp           | integer | optional    | 86400   | [1,...]                                       | token's expire time, in seconds                                                                                                                  |
+| base64_secret | boolean | optional    | false   |                                               | whether secret is base64 encoded                                                                                                                 |
 
 ## How To Enable
 

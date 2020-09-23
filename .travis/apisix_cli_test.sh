@@ -78,6 +78,23 @@ fi
 
 echo "passed: change default ssl port"
 
+# check default env
+echo "
+nginx_config:
+    envs:
+        - TEST
+" > conf/config.yaml
+
+make init
+
+grep "env TEST;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to update env"
+    exit 1
+fi
+
+echo "passed: change default env"
+
 # check nameserver imported
 git checkout conf/config.yaml
 
@@ -194,6 +211,21 @@ fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
+# check the 'client_max_body_size' in 'nginx.conf' .
+
+sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
+
+make init
+
+if ! grep -E "client_max_body_size 512m" conf/nginx.conf > /dev/null; then
+    echo "failed: client_max_body_size in nginx.conf doesn't change"
+    exit 1
+fi
+
+echo "passed: client_max_body_size in nginx.conf is ok"
+
+git checkout conf/config-default.yaml
+
 # check worker processes number is configurable.
 
 git checkout conf/config.yaml
@@ -259,3 +291,43 @@ fi
 git checkout conf/config.yaml
 
 echo "passed: worker_processes number is configurable"
+
+# missing admin key, allow any IP to access admin api
+
+echo '
+apisix:
+  allow_admin: ~
+  admin_key: ~
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo "pass: missing admin key and show ERROR message"
+
+# admin api, allow any IP but use default key
+
+echo '
+apisix:
+  allow_admin: ~
+  admin_key:
+    -
+      name: "admin"
+      key: edd1c9f034335f136f87ad84b625c8f1
+      role: admin
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+grep -E "WARNING: using fixed Admin API token has security risk." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
+    exit 1
+fi
+
+echo "pass: show WARNING message if the user used default token and allow any IP to access"

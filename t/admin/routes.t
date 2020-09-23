@@ -291,17 +291,17 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code, message, res = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "limit-count": {
-                                "count": 2,
-                                "time_window": 60,
-                                "rejected_code": 503,
-                                "key": "remote_addr"
-                            }
-                        },
-                        "uri": "/index.html"
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "uri": "/index.html"
                 }]],
                 [[{
                     "node": {
@@ -677,16 +677,20 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code, message, res = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "plugins": {
                         "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
                             "disable": true
                         }
                     },
                     "uri": "/index.html"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -1005,7 +1009,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1056,7 +1060,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1090,7 +1094,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1124,7 +1128,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1158,7 +1162,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1190,7 +1194,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1242,7 +1246,7 @@ passed
                         },
                         "key": "/apisix/routes/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1557,7 +1561,8 @@ location /t {
         ngx.say("code: ", code)
         ngx.say(body)
 
-        ngx.sleep(2)
+        -- etcd v3 would still get the value at 2s, don't know why yet
+        ngx.sleep(2.5)
 
         -- get again
         code, body, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
@@ -1610,7 +1615,7 @@ location /t {
         end
 
         ngx.say("[push] succ: ", body)
-        ngx.sleep(2)
+        ngx.sleep(2.5)
 
         local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
         code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_GET)
