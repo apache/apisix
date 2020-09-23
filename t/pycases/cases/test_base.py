@@ -35,7 +35,8 @@ def geturl(url,times):
     return r
 
 def setup_module():
-    global headers,nginx_pid,apisixhost
+    global headers,nginx_pid,apisixhost,apisixpid
+    apisixpid = getpidbyname()
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
     casepath = cur_file_dir()
@@ -49,7 +50,7 @@ def teardown_module():
     #killprocesstree(nginx_pid)
 
 def test_01():
-    getchildres(getpidbyname())
+    getchildres(apisixpid)
     cfgdata = {
     "uri": "/hello",
     "upstream": {
@@ -66,11 +67,15 @@ def test_01():
     assert r.status_code == 200 and "Hello, World!" in r.content
     r = geturl("%s/hello"%apisixhost,10)
     assert all(i == 200 for i in r)
-    getchildres(getpidbyname())
+    getchildres(apisixpid)
 
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 404
     r = geturl("%s/hello"%apisixhost,10)
     assert all(i == 404 for i in r)
-    getchildres(getpidbyname())
+    getchildres(apisixpid)
+
+    print("the error log:\n")
+    with open(cur_file_dir()+r"/logs/error.log") as fh:
+        print(fh.read()) 
