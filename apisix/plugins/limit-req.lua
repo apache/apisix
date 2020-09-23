@@ -71,13 +71,14 @@ function _M.access(conf, ctx)
     if conf.key == "consumer_name" then
         if not ctx.consumer_id then
             core.log.error("The username of consumer is nil.")
-            return 401, { message = "Missing consumer‘s username."}    
+            return 500, { message = "Missing consumer‘s username."}    
         end
         key = ctx.consumer_id .. ctx.conf_type .. ctx.conf_version
+
     else
         key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     end
-    core.log.warn("limit key: ", key)
+    core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
     if not delay then

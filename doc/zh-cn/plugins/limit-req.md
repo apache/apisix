@@ -19,35 +19,34 @@
 
 - [English](../../plugins/limit-req.md)
 
-# limit-req
+# 目录
+  - [简介](#简介)
+  - [属性](#属性)
+  - [示例](#示例)
+    - [如何在 `route` 或 `service` 上使用](#如何在`route`或`service`上使用)
+    - [如何在 `consumer` 上使用](#如何在`consumer`上使用)
+  - [移除插件](#移除插件)
+
+## 简介
 
 限制请求速度的插件，使用的是漏桶算法。
 
-## 参数
+## 属性
 
-<<<<<<< HEAD
 | 名称          | 类型    | 必选项 | 默认值 | 有效值                                                                   | 描述                                                                                                                                              |
 | ------------- | ------- | ------ | ------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | integer | 必须   |        | [0,...]                                                                  | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
-| burst         | integer | 必须   |        | [0,...]                                                                  | t请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
-| key           | string  | 必须   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for"] | 用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"。 |
-| rejected_code | string  | 可选   | 503    | [200,...]                                                                | 当请求超过阈值被拒绝时，返回的 HTTP 状态码                                                                                                        |
-=======
-|名称          |可选项  |描述|
-|---------     |--------|-----------|
-|rate          |必选|指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。|
-|burst         |必选|请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。|
-| key          |必选|是用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"，“consumer_name”(consumer 的 username)。|
-|rejected_code |可选|当请求超过阈值被拒绝时，返回的 HTTP 状态码，默认 503。|
->>>>>>> fix: document and test cases.
+| rate          | number | 必须   |        | [0,...]                                                                  | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
+| burst         | number | 必须   |        | [0,...]                                                                  | t请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
+| key           | string  | 必须   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"，"consumer_name"(consumer 的 username)。 |
+| rejected_code | integer  | 可选   | 503    | [200,...]                                                                | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                        |
 
 **key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
 
 ## 示例
 
-### 开启插件
+### 如何在`route`或`service`上使用
 
-下面是一个示例，在指定的 route 上开启了 limit req 插件:
+这里以`route`为例(`service`的使用是同样的方法)，在指定的路线上启用limit req插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -79,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ![添加插件](../../images/plugin/limit-req-2.png)
 
-### 测试插件
+**测试插件**
 
 上述配置限制了每秒请求速率为 1，大于 1 小于 3 的会被加上延时，速率超过 3 就会被拒绝：
 
@@ -107,7 +106,7 @@ Server: APISIX web server
 
 这就表示 limit req 插件生效了。
 
-### 如何在`consumer`上启用插件
+### 如何在`consumer`上使用
 
 consumer上开启`limit-req`插件，需要与授权插件一起配合使用，这里以key-auth授权插件为例。
 
@@ -152,7 +151,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### 测试插件
+**测试插件**
 
 未超过`rate + burst` 的值
 
@@ -179,7 +178,7 @@ HTTP/1.1 403 Forbidden
 
 说明绑在`consumer`上的 `limit-req`插件生效了
 
-### 移除插件
+## 移除插件
 
 当你想去掉 limit req 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 

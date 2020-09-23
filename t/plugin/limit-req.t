@@ -625,141 +625,82 @@ apikey: auth-jack
 
 
 
-=== TEST 17: consumer binds the limit-req plugin and `key` is `remote_addr`
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "new_consumer",
-                    "plugins": {
-                        "key-auth": {
-                            "key": "auth-jack"
-                        },
-                        "limit-req": {
-                            "rate": 2,
-                            "burst": 1,
-                            "rejected_code": 403,
-                            "key": "remote_addr"
-                        }
-                    }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "new_consumer",
-                            "plugins": {
-                               "key-auth": {
-                                    "key": "auth-jack"
-                                },
-                                "limit-req": {
-                                    "rate": 2,
-                                    "burst": 1,
-                                    "rejected_code": 403,
-                                    "key": "remote_addr"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
-                }]]
-                )
+=== TEST 17: key is "consumer_name"
+ --- config
+     location /t {
+         content_by_lua_block {
+             local t = require("lib.test_admin").test
+             local code, body = t('/apisix/admin/routes/1',
+                  ngx.HTTP_PUT,
+                  [[{
+                     "plugins": {
+                         "limit-req": {
+                             "rate": 2,
+                             "burst": 1,
+                             "key": "consumer_name"
+                         }
+                     },
+                         "upstream": {
+                             "nodes": {
+                                 "127.0.0.1:1980": 1
+                             },
+                             "type": "roundrobin"
+                         },
+                         "desc": "upstream_node",
+                         "uri": "/hello"
+                 }]],
+                 [[{
+                     "node": {
+                         "value": {
+                             "plugins": {
+                                 "limit-req": {
+                                     "rate": 2,
+                                     "burst": 1,
+                                     "key": "consumer_name"
+                                 }
+                             },
+                             "upstream": {
+                                 "nodes": {
+                                     "127.0.0.1:1980": 1
+                                 },
+                                 "type": "roundrobin"
+                             },
+                             "desc": "upstream_node",
+                             "uri": "/hello"
+                         },
+                         "key": "/apisix/routes/1"
+                     },
+                     "action": "set"
+                 }]]
+                 )
 
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 18: not exceeding the burst
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello"]
---- more_headers
-apikey: auth-jack
---- error_code eval
-[200, 200, 200]
---- no_error_log
-[error
+             if code >= 300 then
+                 ngx.status = code
+             end
+             ngx.say(body)
+         }
+     }
+ --- request
+ GET /t
+ --- response_body
+ passed
+ --- no_error_log
+ [error]
 
 
 
-=== TEST 19: update the limit-req plugin（key: remote_addr）
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "new_consumer",
-                    "plugins": {
-                        "key-auth": {
-                            "key": "auth-jack"
-                        },
-                        "limit-req": {
-                            "rate": 0.1,
-                            "burst": 0.1,
-                            "rejected_code": 403,
-                            "key": "remote_addr"
-                        }
-                    }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "new_consumer",
-                            "plugins": {
-                               "key-auth": {
-                                    "key": "auth-jack"
-                                },
-                                "limit-req": {
-                                    "rate": 0.1,
-                                    "burst": 0.1,
-                                    "rejected_code": 403,
-                                    "key": "remote_addr"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
+ === TEST 18: get "consumer_name" is empty
+ --- request
+ GET /hello
+ --- error_code: 401
+ --- response_body
+ {"message":"Missing consumer's username."}
+ --- error_log
+ [error]
 
 
 
-=== TEST 20: exceeding the burst
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello"]
---- more_headers
-apikey: auth-jack
---- error_code eval
-[403, 403, 403]
---- no_error_log
-[error
-
-
-
-=== TEST 21: delete consumer
+=== TEST 19: delete consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -779,7 +720,7 @@ passed
 
 
 
-=== TEST 22： delete route
+=== TEST 20： delete route
 --- config
     location /t {
         content_by_lua_block {

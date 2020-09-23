@@ -20,43 +20,33 @@
 - [中文](../zh-cn/plugins/limit-req.md)
 
 # Summary
-
-- [Summary](#summary)
-  - [Name](#name)
+  - [Introduction](#introduction)
   - [Attributes](#attributes)
-  - [How To Enable](#how-to-enable)
-  - [Test Plugin](#test-plugin)
-  - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
-  - [Test Plugin](#test-plugin-1)
+  - [Example](#example)
+    - [How To Enable](#how-to-enable)
+    - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
   - [Disable Plugin](#disable-plugin)
 
-## Name
+# Introduction
 
 limit request rate using the "leaky bucket" method.
 
-## Attributes
+# Attributes
 
-<<<<<<< HEAD
 | Name          | Type    | Requirement | Default | Valid                                                                    | Description                                                                                                                                                               |
 | ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | integer | required    |         | [0,...]                                                                  | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
-| burst         | integer | required    |         | [0,...]                                                                  | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
-| key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header. |
-| rejected_code | string  | optional    | 503     | [200,...]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.                                                                     |
-=======
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-|rate          |required|is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.|
-|burst         |required|is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.|
-| key          |required|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username).|
-|rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
->>>>>>> fix: document and test cases.
+| rate          | number | required    |         | [0,...]                                                                  | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
+| burst         | number | required    |         | [0,...]                                                                  | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
+| key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username). |
+| rejected_code | integer  | optional    | 503     | [200,...]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected.                                                                      |
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
-## How To Enable
+# Example
 
-Here's an example, enable the limit req plugin on the specified route:
+## How to enable on the `route` or `serivce`
+
+Take `route` as an example (the use of `service` is the same method), enable the limit req plugin on the specified route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -88,7 +78,7 @@ Then add limit-req plugin:
 
 ![add plugin](../images/plugin/limit-req-2.png)
 
-## Test Plugin
+**Test Plugin**
 
 The above configuration limits the request rate to 1 per second. If it is greater than 1 and less than 3, the delay will be added. If the rate exceeds 3, it will be rejected:
 
@@ -161,7 +151,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+**Test Plugin**
 
 The value of `rate + burst` is not exceeded.
 
