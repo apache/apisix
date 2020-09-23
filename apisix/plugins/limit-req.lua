@@ -69,7 +69,11 @@ function _M.access(conf, ctx)
 
     local key
     if conf.key == "consumer_name" then
-        key = (ctx.consumer_id or "") .. ctx.conf_type .. ctx.conf_version
+        if not ctx.consumer_id then
+            core.log.error("The username of consumer is nil.")
+            return 401, { message = "Missing consumer‘s username."}    
+        end
+        key = ctx.consumer_id .. ctx.conf_type .. ctx.conf_version
     else
         key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
     end
