@@ -113,13 +113,6 @@ local function send_http_data(conf, log_message)
             .. "body[" .. httpc_res:read_body() .. "]"
     end
 
-    -- keep the connection alive
-    ok, err = httpc:set_keepalive(conf.keepalive)
-
-    if not ok then
-        core.log.debug("failed to keep the connection alive", err)
-    end
-
     return res, err_msg
 end
 
