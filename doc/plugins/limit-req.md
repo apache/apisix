@@ -27,11 +27,11 @@
     - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
   - [Disable Plugin](#disable-plugin)
 
-# Introduction
+## Introduction
 
 limit request rate using the "leaky bucket" method.
 
-# Attributes
+## Attributes
 
 | Name          | Type    | Requirement | Default | Valid                                                                    | Description                                                                                                                                                               |
 | ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -42,9 +42,9 @@ limit request rate using the "leaky bucket" method.
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
-# Example
+## Example
 
-## How to enable on the `route` or `serivce`
+### How to enable on the `route` or `serivce`
 
 Take `route` as an example (the use of `service` is the same method), enable the limit req plugin on the specified route.
 
@@ -106,7 +106,7 @@ Server: APISIX web server
 
 This means that the limit req plugin is in effect.
 
-## How to enable on the `consumer`
+### How to enable on the `consumer`
 
 To enable the `limit-req` plugin on the consumer, it needs to be used together with the authorization plugin. Here, the key-auth authorization plugin is taken as an example.
 
