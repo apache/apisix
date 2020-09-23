@@ -8,6 +8,19 @@ def killprocesstree(id):
             psutil.Process(int(pid)).terminate() 
     psutil.Process(id).terminate()
 
+def getpidbyname():
+    name = "apisix"
+    cmd = "ps -ef | grep %s | grep nginx | grep -v grep | grep -v %s/t | awk '{print $2}'"%(name,name)
+    p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True) 
+    p.wait()
+    return p.stdout.read()
+
+def getchildres(pid):
+    for cpid in psutil.pids():
+        if psutil.Process(int(cpid)).ppid()==int(pid):
+            p = psutil.Process(int(cpid))
+            print(cpid,p.memory_percent())
+    
 def cur_file_dir():
     return os.path.split(os.path.realpath(__file__))[0]
 
@@ -33,9 +46,10 @@ def setup_module():
 
 def teardown_module():
     pass
-    # killprocesstree(nginx_pid)
+    #killprocesstree(nginx_pid)
 
 def test_01():
+    getchildres(getpidbyname())
     cfgdata = {
     "uri": "/hello",
     "upstream": {
@@ -52,10 +66,11 @@ def test_01():
     assert r.status_code == 200 and "Hello, World!" in r.content
     r = geturl("%s/hello"%apisixhost,10)
     assert all(i == 200 for i in r)
+    getchildres(getpidbyname())
 
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 404
     r = geturl("%s/hello"%apisixhost,10)
     assert all(i == 404 for i in r)
-
+    getchildres(getpidbyname())
