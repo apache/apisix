@@ -31,21 +31,22 @@ The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspec
 
 ## Attributes
 
-|Name           |Requirement    |Description|
-|-------        |-----          |------|
-|client_id      |required       |OAuth client ID|
-|client_secret  |required       |OAuth client secret|
-|discovery      |required       |URL of the discovery endpoint of the identity server|
-|realm          |optional       |Realm used for the authentication; default is apisix|
-|bearer_only    |optional       |Setting this `true` will check for the authorization header in the request with a bearer token; default is `false`|
-|logout_path    |optional       |default is `/logout`|
-|redirect_uri   |optional       |default is `ngx.var.request_uri`|
-|timeout        |optional       |default is 3 seconds|
-|ssl_verify     |optional       |default is `false`|
-|introspection_endpoint                 |optional       |URL of the token verification endpoint of the identity server|
-|introspection_endpoint_auth_method     |optional       |Authentication method name for token introspection |
-|public_key     |optional       |The public key to verify the token |
-|token_signing_alg_values_expected     |optional       |Algorithm used to sign the token |
+| Name                               | Type    | Requirement | Default               | Valid   | Description                                                                                    |
+| ---------------------------------- | ------- | ----------- | --------------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| client_id                          | string  | required    |                       |         | OAuth client ID                                                                                |
+| client_secret                      | string  | required    |                       |         | OAuth client secret                                                                            |
+| discovery                          | string  | required    |                       |         | URL of the discovery endpoint of the identity server                                           |
+| scope                              | string  | optional    | "openid"              |         | Scope used for the authentication                                                              |
+| realm                              | string  | optional    | "apisix"              |         | Realm used for the authentication                                                              |
+| bearer_only                        | boolean | optional    | false                 |         | Setting this `true` will check for the authorization header in the request with a bearer token |
+| logout_path                        | string  | optional    | "/logout"             |         |                                                                                                |
+| redirect_uri                       | string  | optional    | "ngx.var.request_uri" |         |                                                                                                |
+| timeout                            | integer | optional    | 3                     | [1,...] |                                                                                                |
+| ssl_verify                         | boolean | optional    | false                 |         |                                                                                                |
+| introspection_endpoint             | string  | optional    |                       |         | URL of the token verification endpoint of the identity server                                  |
+| introspection_endpoint_auth_method | string  | optional    | "client_secret_basic" |         | Authentication method name for token introspection                                             |
+| public_key                         | string  | optional    |                       |         | The public key to verify the token                                                             |
+| token_signing_alg_values_expected  | string  | optional    |                       |         | Algorithm used to sign the token                                                               |
 
 ### Token Introspection
 

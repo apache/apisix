@@ -36,9 +36,11 @@ The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more
 
 ## Attributes
 
-* `server`: Set the service address of` wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
-* `appid`: Set the app id. The app id must be added in wolf-console.
-* `header_prefix`: prefix of custom HTTP header. The default value is `X-`. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`.
+| Name          | Type   | Requirement | Default                  | Valid | Description                                               |
+| ------------- | ------ | ----------- | ------------------------ | ----- | --------------------------------------------------------- |
+| server        | string | optional    | "http://127.0.0.1:10080" |       | Set the service address of` wolf-server`.                 |
+| appid         | string | optional    | "unset"                  |       | Set the app id. The app id must be added in wolf-console. |
+| header_prefix | string | optional    | "X-"                     |       | prefix of custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`. |
 
 
 ## Dependencies

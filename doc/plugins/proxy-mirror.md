@@ -23,13 +23,13 @@
 
 The proxy-mirror plugin, which provides the ability to mirror client requests.
 
-*Note*:  The response returned by the mirror request is ignored.
+*Note*: The response returned by the mirror request is ignored.
 
 ## Attributes
 
-|Name          |Requirement  | Type |Description|
-|------- |-----|------|------|
-|host|required|string|Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part)|
+| Name | Type   | Requirement | Default | Valid | Description                                                                                                                 |
+| ---- | ------ | ----------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
+| host | string | optional    |         |       | Specify a mirror service address, e.g. http://127.0.0.1:9797 (address needs to contain schema: http or https, not URI part) |
 
 
 ### Examples

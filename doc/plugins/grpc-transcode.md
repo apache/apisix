@@ -52,11 +52,13 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 
 ## Attribute List
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| proto_id         |required|`.proto` content id.|
-| service         |required|the grpc service name.|
-| method         |required|the method name of grpc service.|
+| Name      | Type                                                                           | Requirement | Default | Valid | Description                      |
+| --------- | ------------------------------------------------------------------------------ | ----------- | ------- | ----- | -------------------------------- |
+| proto_id  | string/integer                                                                 | required    |         |       | `.proto` content id.             |
+| service   | string                                                                         | required    |         |       | the grpc service name.           |
+| method    | string                                                                         | required    |         |       | the method name of grpc service. |
+| deadline  | number                                                                         | optional    | 0       |       | deadline for grpc, ms            |
+| pb_option | array[string([pb_option_def](#Use-pb_option-option-of-grpc-transcode-plugin))] | optional    |         |       | protobuf options                 |
 
 ## How To Enable
 
@@ -89,7 +91,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f
 
 ## Test Plugin
 
-The above configuration proxy :
+The above configuration proxy:
 
 ```shell
 curl -i http://127.0.0.1:9080/grpctest?name=world
@@ -110,3 +112,71 @@ Proxy-Connection: keep-alive
 ```
 
 This means that the proxying is working.
+
+## Use pb_option option of grpc-transcode plugin
+
+### option list
+
+* enum as result
+    * enum_as_name
+    * enum_as_value
+
+* int64 as result
+    * int64_as_number
+    * int64_as_string
+    * int64_as_hexstring
+
+* default values option
+    * auto_default_values
+    * no_default_values
+    * use_default_values
+    * use_default_metatable
+
+* hooks option
+    * enable_hooks
+    * disable_hooks
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/zeebe/WorkflowInstanceCreate",
+    "service_protocol": "grpc",
+    "plugins": {
+        "grpc-transcode": {
+            "proto_id": "1",
+            "service": "gateway_protocol.Gateway",
+            "method": "CreateWorkflowInstance",
+            "pb_option":["int64_as_string"]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:26500": 1
+        }
+    }
+}'
+```
+
+### Test pb_option
+
+Visit configured route：
+
+```shell
+$ curl -i "http://127.0.0.1:9080/zeebe/WorkflowInstanceCreate?bpmnProcessId=order-process&version=1&variables=\{\"orderId\":\"7\",\"ordervalue\":99\}"
+HTTP/1.1 200 OK
+Date: Wed, 13 Nov 2019 03:38:27 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+grpc-encoding: identity
+grpc-accept-encoding: gzip
+Server: APISIX web server
+Trailer: grpc-status
+Trailer: grpc-message
+
+{"workflowKey":"#2251799813685260","workflowInstanceKey":"#2251799813688013","bpmnProcessId":"order-process","version":1}
+```
+
+`"workflowKey":"#2251799813685260"` suggests pb_option configuation success.

@@ -36,7 +36,7 @@ local schema = {
             type = "string"
         },
         headers = {
-            description = "new headers for repsonse",
+            description = "new headers for response",
             type = "object",
             minProperties = 1,
         },
