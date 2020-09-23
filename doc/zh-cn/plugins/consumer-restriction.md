@@ -32,8 +32,10 @@
 
 ## 属性
 
-* `whitelist`: 可选，加入白名单的consumer
-* `blacklist`: 可选，加入黑名单的consumer
+| 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
+| --------- | ------------- | ------ | ------ | ------ | -------------------- |
+| whitelist | array[string] | 可选   |        |        | 加入白名单的consumer |
+| blacklist | array[string] | 可选   |        |        | 加入黑名单的consumer |
 
 只能单独启用白名单或黑名单，两个不能一起使用。
 
