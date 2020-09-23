@@ -45,7 +45,7 @@ local req_schema = {
         timeout = {
             description = "pipeline timeout(ms)",
             type = "integer",
-            default = 30000,
+            default = 3000,
         },
         pipeline = {
             type = "array",
