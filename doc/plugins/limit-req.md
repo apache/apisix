@@ -23,7 +23,7 @@
   - [Introduction](#introduction)
   - [Attributes](#attributes)
   - [Example](#example)
-    - [How To Enable](#how-to-enable)
+    - [How to enable on the `route` or `serivce`](#how-to-enable-on-the-route-or-serivce)
     - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
   - [Disable Plugin](#disable-plugin)
 
