@@ -20,43 +20,34 @@
 - [中文](../zh-cn/plugins/consumer-restriction.md)
 
 # Summary
-- [Summary](#summary)
-  - [Name](#name)
+  - [Introduction](#introduction)
   - [Attributes](#attributes)
-  - [How to enable `consumer_name`](#how-to-enable-consumer_name)
-  - [Test Plugin](#test-plugin)
-  - [How to restrict service ID](#how-to-restrict-service-id)
-  - [Route Test](#route-test)
-  - [Route Test](#route-test-1)
+  - [Example](#example)
+    - [How to restrict consumer_name](#how-to-restrict-consumer_name)
+    - [How to restrict service_id](#how-to-restrict-service_id)
   - [Disable Plugin](#disable-plugin)
 
 
-## Name
+## Introduction
 
-The `consumer-restriction` makes corresponding access restrictions based on different objects selected, and supports two restriction types: consumer name and service id.
-
+The `consumer-restriction` makes corresponding access restrictions based on different objects selected.
 
 ## Attributes
 
-<<<<<<< HEAD
-* consumer name: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
-* service id: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
+|Name       |   Type      | Requirement  | default       | Valid                           | Description          |
+|-----------|-------------|--------------|---------------|---------------------------------|----------------------|
+|`type`     | string      | optional     | consumer_name | ["consumer_name", "service_id"] |According to different objects, corresponding restrictions (currently support consumer_name, service_id two types). |
+|`whitelist`| array[string] | required   |               |                                 |Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
+|`blacklist`| array[string] | required   |               |                                 | Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together.|
+|`rejected_code`| integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.|
 
-|Name     |Requirement  | default |Description|
-|---------|--------|-----------|----------|
-|`type`| optional | `consumer_name` | According to different objects, corresponding restrictions (currently support consumer_name, service_id two types). |
-|`whitelist`|required  | No| Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
-|`blacklist`|required  | No |Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together.|
-|`rejected_code`|optional|`403`|The HTTP status code returned when the request is rejected, the default value is 403.|
-=======
-| Name      | Type          | Requirement | Default | Valid | Description                     |
-| --------- | ------------- | ----------- | ------- | ----- | ------------------------------- |
-| whitelist | array[string] | optional    |         |       | List of consumers to whitelist. |
-| blacklist | array[string] | optional    |         |       | List of consumers to blacklist. |
->>>>>>> 1b24f3663926cc1ee565c4b71a259def55601f79
+For the `type` field is an enumerated type, it can be `consumer_name` or `service_id`. They stand for the following meanings:
+* **consumer_name**: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
+* **service_id**: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
 
+## Example
 
-## How to enable `consumer_name`
+### How to restrict `consumer_name`
 
 The following is an example. The `consumer-restriction` plugin is enabled on the specified route to restrict consumer access.
 
@@ -103,7 +94,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+**Test Plugin**
 
 Requests from jack1:
 
@@ -122,7 +113,7 @@ HTTP/1.1 403 Forbidden
 {"message":"The consumer_name is forbidden."}
 ```
 
-## How to restrict service ID
+## How to restrict `service_id`
 
 The `service_id` method needs to be used together with the authorization plug-in. Here, the key-auth authorization plug-in is taken as an example.
 
@@ -193,7 +184,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Route Test
+**Route Test**
 
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
@@ -221,7 +212,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Route Test
+**Route Test**
 
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i

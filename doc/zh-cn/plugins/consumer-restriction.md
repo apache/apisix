@@ -20,41 +20,33 @@
 - [English](../../plugins/consumer-restriction.md)
 
 # 目录
-- [目录](#目录)
-  - [名字](#名字)
+  - [简介](#简介)
   - [属性](#属性)
-  - [如何启用 `consumer_name`](#如何启用-consumer_name)
-  - [测试插件](#测试插件)
-  - [如何限制 service ID](#如何限制-service-id)
-  - [路由测试](#路由测试)
-  - [路由测试](#路由测试-1)
+  - [示例](#示例)
+    - [如何限制 consumer_name](#如何限制-consumer_name)
+    - [如何限制 service_id](#如何限制-service_id)
   - [禁用插件](#禁用插件)
 
-## 名字
+## 简介
 
-`consumer-restriction` 根据选择的不同对象做相应的访问限制，支持 consumer name 和 service id 两种限制类型。
+`consumer-restriction` 根据选择的不同对象做相应的访问限制。
 
 ## 属性
 
-<<<<<<< HEAD
-* consumer name：把 `consumer` 的 `username` 列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
-* service id：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
-=======
-| 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
-| --------- | ------------- | ------ | ------ | ------ | -------------------- |
-| whitelist | array[string] | 可选   |        |        | 加入白名单的consumer |
-| blacklist | array[string] | 可选   |        |        | 加入黑名单的consumer |
->>>>>>> 1b24f3663926cc1ee565c4b71a259def55601f79
+| 参数名     | 类型          | 可选项   | 默认值            | 有效值                           | 描述                                                       |
+| --------- | ------------- | ------ | -----------------| --------------------------------| ----------------------------------------------------------|
+| type      |     string    | 可选    | consumer_name    | ["consumer_name", "service_id"] | 根据不同的对象做相应的限制,支持 consumer_name、service_id。     |
+| whitelist | array[string] | 必选    |                  |                                 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
+| blacklist | array[string] | 必选    |                  |                                 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。 |
+| rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
 
-|属性名         |是否可选 | 默认值 |描述|
-|---------     |--------|-----------|-----------|
-| `type` | 可选 | consumer_name | 根据不同的对象进行相应的限制(目前支持consumer_name、service_id两种类型)。|
-| `whitelist`| 必须 | 无 | 与`blacklist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。|
-| `blacklist`| 必选 | 无 | 与`whitelist`二选一，只能单独启用白名单或黑名单，两个不能一起使用。|
-| `rejected_code`| 可选 | 403 | 当请求被拒绝时，返回的 HTTP 状态码，默认值 403。|
+对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
+* **consumer_name**：把 `consumer` 的 `username` 列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
+* **service_id**：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
 
+## 示例
 
-## 如何启用 `consumer_name`
+### 如何限制 `consumer_name`
 
 下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制 consumer 访问:
 
@@ -101,7 +93,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## 测试插件
+**测试插件**
 
 jack1 访问:
 
@@ -120,7 +112,7 @@ HTTP/1.1 403 Forbidden
 {"message":"The consumer_name is forbidden."}
 ```
 
-## 如何限制 service ID
+### 如何限制 `service_id`
 `service_id`方式需要与授权插件一起配合使用，这里以key-auth授权插件为例。
 
 1、创建两个 service
@@ -189,7 +181,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
-## 路由测试
+
+**插件测试**
 
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
@@ -217,7 +210,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## 路由测试
+**路由测试**
 
 ```shell
 curl http://127.0.0.1:9080/index.html -H 'apikey: auth-jack' -i
