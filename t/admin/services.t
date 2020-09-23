@@ -657,7 +657,7 @@ GET /t
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -697,7 +697,7 @@ passed
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -788,7 +788,7 @@ passed
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -826,7 +826,7 @@ passed
                         },
                         "key": "/apisix/services/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1083,5 +1083,99 @@ passed
 --- request
 GET /t
 --- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: set empty service. (id: 1)（allow empty `service` object）
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                {},
+                [[{
+                    "node": {
+                        "value": {"id":"1"}
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: patch content to the empty service.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "desc": "empty service",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:80": 1
+                        }
+                    }
+                }]],
+                [[{ 
+                    "node":{
+                        "value":{
+                            "desc":"empty service",
+                            "plugins":{
+                                "limit-count":{
+                                    "time_window":60,
+                                    "count":2,
+                                    "rejected_code":503,
+                                    "key":"remote_addr",
+                                    "policy":"local"
+                                }
+                            },
+                            "upstream":{
+                                "type":"roundrobin",
+                                "nodes":{
+                                    "127.0.0.1:80":1
+                                },
+                                "hash_on":"vars",
+                                "pass_host":"pass"
+                            },
+                            "id":"1"
+                        }
+                    },
+                    "action":"compareAndSwap"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

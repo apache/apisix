@@ -672,7 +672,7 @@ GET /t
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -710,7 +710,7 @@ passed
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -833,7 +833,7 @@ passed
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -869,7 +869,7 @@ passed
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
