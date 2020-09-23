@@ -40,13 +40,20 @@
 
 ## 属性列表
 
-|属性名称          |必选项  |描述|
-|---------     |--------|-----------|
-| host |必要的| TCP 服务的IP地址或主机名。|
-| port |必要的| 目标端口。|
-| timeout |可选的|发送数据超时间。|
-| tls |可选的|布尔值，用于控制是否执行SSL验证。|
-| tls_options |可选的|TLS 选项|
+| 名称             | 类型    | 必选项 | 默认值 | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | ------ | ------- | ------------------------------------------------ |
+| host             | string  | 必须   |        |         | TCP 服务的IP地址或主机名                         |
+| port             | integer | 必须   |        | [0,...] | 目标端口                                         |
+| timeout          | integer | 可选   | 1000   | [1,...] | 发送数据超时间                                   |
+| tls              | boolean | 可选   | false  |         | 用于控制是否执行SSL验证                          |
+| tls_options      | string  | 可选   |        |         | TLS 选项                                         |
+| batch_max_size   | integer | 可选   | 1000   | [1,...] | 每批的最大大小                                   |
+| inactive_timeout | integer | 可选   | 5      | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
+| buffer_duration  | integer | 可选   | 60     | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位） |
+| max_retry_count  | integer | 可选   | 0      | [0,...] | 从处理管道中移除之前的最大重试次数               |
+| retry_delay      | integer | 可选   | 1      | [0,...] | 如果执行失败，则应延迟执行流程的秒数             |
+| include_req_body | boolean | 可选   |        |         | 是否包括请求 body                                |
+
 
 ## 如何开启
 
@@ -59,7 +66,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "tcp-logger": {
                  "host": "127.0.0.1",
                  "port": 5044,
-                 "tls": false
+                 "tls": false,
+                 "batch_max_size": 1,
+                 "name": "tcp logger"
             }
        },
       "upstream": {
