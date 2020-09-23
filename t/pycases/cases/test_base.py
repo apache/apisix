@@ -56,7 +56,7 @@ def test_01():
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:9000": 1
+            "127.0.0.1:9666": 1
         }
     }
 }
