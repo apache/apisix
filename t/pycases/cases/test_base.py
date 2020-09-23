@@ -36,7 +36,7 @@ def geturl(url,times):
 
 def setup_module():
     global headers,nginx_pid,apisixhost,apisixpid,apisixpath
-    apisixpid = getpidbyname()
+    apisixpid = int(getpidbyname())
     apisixpath = psutil.Process(apisixpid).cwd()
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
@@ -78,6 +78,5 @@ def test_01():
     getchildres(apisixpid)
 
     print("the error log:\n")
-    
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read()) 
