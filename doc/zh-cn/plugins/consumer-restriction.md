@@ -240,4 +240,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 现在就已移除 `consumer-restriction` 插件，其它插件的开启和移除也类似。
-
