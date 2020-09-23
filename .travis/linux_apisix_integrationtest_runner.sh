@@ -145,7 +145,7 @@ script() {
     cd t/pycases/
     sudo python runtest.py
     #start another nginx for test
-    sudo openresty -p "cases" -c "cases/nginx.conf"
+    openresty -p "cases" -c "cases/nginx.conf"
     #run test
     pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "cases"
 
