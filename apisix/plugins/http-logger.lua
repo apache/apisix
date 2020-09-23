@@ -23,6 +23,7 @@ local tostring = tostring
 local http = require "resty.http"
 local url = require "net.url"
 local buffers = {}
+local ipairs = ipairs
 
 local schema = {
     type = "object",
