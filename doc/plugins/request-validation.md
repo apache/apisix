@@ -37,10 +37,10 @@ For more information on schema, refer to [JSON schema](https://github.com/api7/j
 
 ## Attributes
 
-|Name           |Requirement    |Description|
-|---------      |--------       |-----------|
-| header_schema |optional       |schema for the header data|
-| body_schema   |optional       |schema for the body data|
+| Name          | Type   | Requirement | Default | Valid | Description                |
+| ------------- | ------ | ----------- | ------- | ----- | -------------------------- |
+| header_schema | object | optional    |         |       | schema for the header data |
+| body_schema   | object | optional    |         |       | schema for the body data   |
 
 ## How To Enable
 
