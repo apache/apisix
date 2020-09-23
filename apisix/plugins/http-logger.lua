@@ -14,15 +14,24 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local log_util = require("apisix.utils.log-util")
+
 local batch_processor = require("apisix.utils.batch-processor")
-local plugin_name = "http-logger"
-local ngx = ngx
+local log_util        = require("apisix.utils.log-util")
+local core            = require("apisix.core")
+local http            = require("resty.http")
+local url             = require("net.url")
+local plugin          = require("apisix.plugin")
+local ngx      = ngx
 local tostring = tostring
-local http = require "resty.http"
-local url = require "net.url"
+local pairs    = pairs
+
+
+local plugin_name = "http-logger"
 local buffers = {}
+local lru_log_format = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
 
 local schema = {
     type = "object",
@@ -42,11 +51,24 @@ local schema = {
 }
 
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = {
+            type = "object",
+            default = {},
+        },
+    },
+    additionalProperties = false,
+}
+
+
 local _M = {
     version = 0.1,
     priority = 410,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
@@ -121,8 +143,40 @@ local function send_http_data(conf, log_message)
 end
 
 
-function _M.log(conf)
-    local entry = log_util.get_full_log(ngx, conf)
+function _M.log(conf, ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
+    local log_format = lru_log_format(metadata, nil, function()
+        local log_format = {}
+        for k, var_name in pairs(metadata.value.log_format) do
+            if var_name:sub(1, 1) == "$" then
+                log_format[k] = {true, var_name:sub(2)}
+            else
+                log_format[k] = {false, var_name}
+            end
+        end
+        core.log.info("log_format: ", core.json.delay_encode(log_format))
+        return log_format
+    end)
+
+    local entry
+    if log_format then
+        entry = core.table.new(0, core.table.nkeys(log_format))
+        for k, var_attr in pairs(log_format) do
+            if var_attr[1] then
+                entry[k] = ctx.var[var_attr[2]]
+            else
+                entry[k] = var_attr[2]
+            end
+        end
+        local matched_route = ctx.matched_route and ctx.matched_route.value
+
+        entry.service_id = matched_route.service_id
+        entry.route_id = matched_route.id
+    else
+        entry = log_util.get_full_log(ngx, conf)
+    end
 
     if not entry.route_id then
         core.log.error("failed to obtain the route id for http logger")
