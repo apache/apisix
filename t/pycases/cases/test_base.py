@@ -25,15 +25,15 @@ def setup_module():
     global headers,nginx_pid,apisixhost
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
-    casepath = cur_file_dir()
-    confpath = casepath + "/nginx.conf"
-    p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
-    p.wait()
-    nginx_pid = p.pid+1
+    # casepath = cur_file_dir()
+    # confpath = casepath + "/nginx.conf"
+    # p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
+    # p.wait()
+    # nginx_pid = p.pid+1
 
 def teardown_module():
     pass
-    killprocesstree(nginx_pid)
+    # killprocesstree(nginx_pid)
 
 def test_01():
     cfgdata = {
