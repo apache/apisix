@@ -91,7 +91,7 @@ function _M.say(...)
 end
 
 
-function _M.set_header(...)
+local function set_header(append, ...)
     if ngx.headers_sent then
       error("headers have already been sent", 2)
     end
@@ -103,41 +103,40 @@ function _M.set_header(...)
             error("should be a table if only one argument", 2)
         end
 
-        for k, v in pairs(headers) do
-            ngx_header[k] = v
+        if append then
+            for k, v in pairs(headers) do
+                ngx_add_header(k, v)
+            end
+
+        else
+            for k, v in pairs(headers) do
+                ngx_header[k] = v
+            end
         end
 
         return
     end
 
-    for i = 1, count, 2 do
-        ngx_header[select(i, ...)] = select(i + 1, ...)
+    if append then
+        for i = 1, count, 2 do
+            ngx_add_header(select(i, ...), select(i + 1, ...))
+        end
+
+    else
+        for i = 1, count, 2 do
+            ngx_header[select(i, ...)] = select(i + 1, ...)
+        end
     end
 end
 
 
+function _M.set_header(...)
+    set_header(false, ...)
+end
+
+
 function _M.add_header(...)
-    if ngx.headers_sent then
-      error("headers have already been sent", 2)
-    end
-
-    local count = select('#', ...)
-    if count == 1 then
-        local headers = select(1, ...)
-        if type(headers) ~= "table" then
-            error("should be a table if only one argument", 2)
-        end
-
-        for k, v in pairs(headers) do
-            ngx_add_header(k, v)
-        end
-
-        return
-    end
-
-    for i = 1, count, 2 do
-        ngx_add_header(select(i, ...), select(i + 1, ...))
-    end
+    set_header(true, ...)
 end
 
 
