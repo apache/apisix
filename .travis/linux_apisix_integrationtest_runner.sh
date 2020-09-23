@@ -146,9 +146,9 @@ script() {
     sudo python runtest.py
     #start another nginx for test
     mkdir -p cases/logs
-    casepath=$(pwd)"/cases"
-    caseconfpath=$casepath"/nginx.conf"
-    openresty -p $casepath -c $caseconfpath
+    # casepath=$(pwd)"/cases"
+    # caseconfpath=$casepath"/nginx.conf"
+    # openresty -p $casepath -c $caseconfpath
     #run test
     pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "cases"
 

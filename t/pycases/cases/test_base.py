@@ -25,11 +25,11 @@ def setup_module():
     global headers,nginx_pid,apisixhost
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
-    # casepath = cur_file_dir()
-    # confpath = casepath + "/nginx.conf"
-    # p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
-    # p.wait()
-    # nginx_pid = p.pid+1
+    casepath = cur_file_dir()
+    confpath = casepath + "/nginx.conf"
+    p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
+    p.wait()
+    nginx_pid = p.pid+1
 
 def teardown_module():
     pass
@@ -51,7 +51,6 @@ def test_01():
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 200 and "Hello, World!" in r.content
     r = geturl("%s/hello"%apisixhost,10)
-    print(len(r))
     assert all(i == 200 for i in r)
 
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
