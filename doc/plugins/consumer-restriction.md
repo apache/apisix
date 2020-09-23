@@ -38,6 +38,7 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 
 ## Attributes
 
+<<<<<<< HEAD
 * consumer name: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
 * service id: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
 
@@ -47,6 +48,12 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 |`whitelist`|required  | No| Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
 |`blacklist`|required  | No |Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together.|
 |`rejected_code`|optional|`403`|The HTTP status code returned when the request is rejected, the default value is 403.|
+=======
+| Name      | Type          | Requirement | Default | Valid | Description                     |
+| --------- | ------------- | ----------- | ------- | ----- | ------------------------------- |
+| whitelist | array[string] | optional    |         |       | List of consumers to whitelist. |
+| blacklist | array[string] | optional    |         |       | List of consumers to blacklist. |
+>>>>>>> 1b24f3663926cc1ee565c4b71a259def55601f79
 
 
 ## How to enable `consumer_name`

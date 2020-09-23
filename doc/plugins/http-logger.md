@@ -35,25 +35,26 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 ## Attributes
 
-|Name           |Requirement    |Description|
-|---------      |--------       |-----------|
-|uri            |required       |URI of the server|
-|authorization  |optional       |Any authorization headers|
-|keepalive      |optional       |Time to keep the connection alive after sending a request|
-|name           |optional       |A unique identifier to identity the logger|
-|batch_max_size |optional       |Max size of each batch, default is 1000|
-|inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
-|buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
-|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
-|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
 
+| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
+| ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
+| uri              | string  | required    |               |         | URI of the server                                                                        |
+| auth_header      | string  | optional    | ""            |         | Any authorization headers                                                                |
+| timeout          | integer | optional    | 3             | [1,...] | Time to keep the connection alive after sending a request                                |
+| name             | string  | optional    | "http logger" |         | A unique identifier to identity the logger                                               |
+| batch_max_size   | integer | optional    | 1000          | [1,...] | Max size of each batch                                                                   |
+| inactive_timeout | integer | optional    | 5             | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
+| buffer_duration  | integer | optional    | 60            | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
+| max_retry_count  | integer | optional    | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
+| retry_delay      | integer | optional    | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
+| include_req_body | boolean | optional    | false         |         | Whether to include the request body                                                      |
 
 ## How To Enable
 
 The following is an example on how to enable the http-logger for a specific route.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "http-logger": {
