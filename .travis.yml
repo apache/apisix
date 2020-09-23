@@ -23,7 +23,6 @@ addons:
       - libreadline-dev
       - libssl-dev
       - perl
-      - etcd
   homebrew:
     update: true
 

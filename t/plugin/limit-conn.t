@@ -858,3 +858,101 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 21: set global rule with conn = 2
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 2,
+                            "burst": 1,
+                            "default_conn_delay": 0.1,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: exceeding the burst of global rule
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+200
+200
+503
+503
+503
+503
+503
+503
+503
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: delete global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: not exceeding the burst
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+200
+200
+200
+200
+--- no_error_log
+[error]

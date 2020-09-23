@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/ip-restriction.md)
+- [中文](../zh-cn/plugins/ip-restriction.md)
 
 # Summary
 - [**Name**](#name)
@@ -35,10 +35,10 @@ in CIDR notation like 10.10.10.0/24 can be used(will support IPv6 soon).
 
 ## Attributes
 
-|Name     |Requirement  |Description|
-|---------|--------|-----------|
-|whitelist|optional  |List of IPs or CIDR ranges to whitelist|
-|blacklist|optional  |List of IPs or CIDR ranges to blacklist|
+| Name      | Type          | Requirement | Default | Valid | Description                              |
+| --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
+| whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
+| blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
 
 One of `whitelist` or `blacklist` must be specified, and they can not work
 together.

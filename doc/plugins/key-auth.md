@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](../zh-cn/plugins/key-auth.md)
+- [中文](../zh-cn/plugins/key-auth.md)
 
 # Summary
 - [**Name**](#name)
@@ -35,9 +35,10 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| key         |required|different consumer objects should use different values, it should be unique.|
+
+| Name | Type   | Requirement | Default | Valid | Description                                                                  |
+| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
+| key  | string | required    |         |       | different consumer objects should use different values, it should be unique. |
 
 
 ## How To Enable

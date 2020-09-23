@@ -672,7 +672,7 @@ GET /t
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -710,7 +710,7 @@ passed
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -833,7 +833,7 @@ passed
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -869,7 +869,7 @@ passed
                         },
                         "key": "/apisix/upstreams/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -1576,5 +1576,64 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"retries\" validation failed: expected -1 to be greater than 0"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 48: invalid route: multi nodes with `node` mode to pass host
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "httpbin.org:8080": 1,
+                        "test.com:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "pass_host": "node"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 49: invalid route: empty `upstream_host` when `pass_host` is `rewrite`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "httpbin.org:8080": 1,
+                        "test.com:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "pass_host": "rewrite",
+                    "upstream_host": ""
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
 --- no_error_log
 [error]
