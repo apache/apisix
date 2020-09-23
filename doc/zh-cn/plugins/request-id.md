@@ -35,10 +35,10 @@
 
 ## 属性
 
-| 名称                | 必选项 | 描述                                        |
-| ------------------- | ------ | ------------------------------------------- |
-| header_name         | 可选   | Request ID header name (默认: X-Request-Id) |
-| include_in_response | 可选   | 是否需要在返回头中包含该唯一ID (默认: true) |
+| 名称                | 类型    | 必选项   | 默认值         | 有效值 | 描述                           |
+| ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
+| header_name         | string  | 可选 | "X-Request-Id" |        | Request ID header name         |
+| include_in_response | boolean | 可选 | false          |        | 是否需要在返回头中包含该唯一ID |
 
 ## 如何启用
 
