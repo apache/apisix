@@ -145,6 +145,7 @@ script() {
     cd t/pycases/
     sudo python runtest.py
     #start another nginx for test
+    mkdir -p cases/logs
     casepath=$(pwd)"/case"
     caseconfpath=$casepath"/nginx.conf"
     openresty -p $casepath -c $caseconfpath
