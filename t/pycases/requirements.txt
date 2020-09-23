@@ -5,3 +5,5 @@ futures==3.2.0
 requests==2.21.0
 flaky==3.4.0
 attrs==19.1.0
+psutil==5.7.2
+gevent==1.1b5
