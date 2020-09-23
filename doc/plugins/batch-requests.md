@@ -30,11 +30,11 @@
 
 ## Description
 
-`batch-requests` can accept mutiple request and send them from `apisix` via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining),and return a aggregated response to client,this can significantly improve performance when the client needs to access multiple APIs.
+`batch-requests` can accept multiple request and send them from `apisix` via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining), and return an aggregated response to client, which can significantly improve performance when the client needs to access multiple APIs.
 
 > **Tips**
 >
-> The HTTP headers for the outer batch request, except for the Content- headers such as Content-Type, apply to every request in the batch. If you specify a given HTTP header in both the outer request and an individual call, then the individual call header's value overrides the outer batch request header's value. The headers for an individual call apply only to that call.
+> The HTTP headers for the outer batch request, except for the Content- headers such as Content-Type, apply to every request in the batch. If you specify a given HTTP header in both the outer request and the individual call, the header's value of individual call would override the outer batch request header's value. The headers for an individual call apply only to that call.
 
 ## Attributes
 
@@ -42,44 +42,45 @@ None
 
 ## How To Enable
 
-Default enbaled
+Default enabled
 
-## Batch Api Request/Response
-The plugin will create a api in `apisix` to handle your batch request.
+## Batch API Request/Response
+The plugin will create a API in `apisix` to handle your batch request.
 
-### Batch Api Request:
+### Batch API Request:
 
-| ParameterName | Type | Optional | Default | Description |
-| --- | --- | --- | --- | --- |
-| query | Object | Yes | | Specify `QueryString` for all request |
-| headers | Object | Yes | | Specify `Header` for all request |
-| timeout | Number | Yes | 3000 | Aggregate Api timeout in `ms` |
-| pipeline | [HttpRequest](#Request) | No | | Request's detail |
+| Name     | Type                        | Requirement | Default | Valid | Description                           |
+| -------- | --------------------------- | ----------- | ------- | ----- | ------------------------------------- |
+| query    | object                      | optional    |         |       | Specify `QueryString` for all request |
+| headers  | object                      | optional    |         |       | Specify `Header` for all request      |
+| timeout  | integer                     | optional    | 30000   |       | Aggregate API timeout in `ms`         |
+| pipeline | [HttpRequest](#HttpRequest) | required    |         |       | Request's detail                      |
 
 #### HttpRequest
-| ParameterName | Type | Optional | Default | Description |
-| --- | --- | --- | --- | --- |
-| version | Enum | Yes | 1.1 | http version: `1.0` or `1.1` |
-| method | Enum | Yes | GET | http method, such as：`GET`. |
-| query | Object | Yes | | request's `QueryString`, if `Key` is conflicted with global `query`, this setting's value will be setted.|
-| headers | Object | Yes | | request's `Header`, if `Key` is conflicted with global `headers`, this setting's value will be setted.|
-| path | String | No | | http request's path |
-| body | String | Yes | | http request's body |
+| Name       | Type    | Requirement | Default | Valid                                                                            | Description                                                                                             |
+| ---------- | ------- | ----------- | ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| version    | string  | optional    | 1.1     | [1.0, 1.1]                                                                       | http version                                                                                            |
+| method     | string  | optional    | GET     | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | http method                                                                                             |
+| query      | object  | optional    |         |                                                                                  | request's `QueryString`, if `Key` is conflicted with global `query`, this setting's value will be used. |
+| headers    | object  | optional    |         |                                                                                  | request's `Header`, if `Key` is conflicted with global `headers`, this setting's value will be used.    |
+| path       | string  | required    |         |                                                                                  | http request's path                                                                                     |
+| body       | string  | optional    |         |                                                                                  | http request's body                                                                                     |
+| ssl_verify | boolean | optional    | false   |                                                                                  | verify if SSL cert matches hostname.                                                                    |
 
-### Batch Api Response：
+### Batch API Response：
 Response is `Array` of [HttpResponse](#HttpResponse).
 
 #### HttpResponse
-| ParameterName | Type | Description |
-| --- | --- | --- |
-| status | Integer | http status code |
-| reason | String | http reason phrase |
-| body | String | http response body |
-| headers | Object | http response headers |
+| Name    | Type    | Description           |
+| ------- | ------- | --------------------- |
+| status  | integer | http status code      |
+| reason  | string  | http reason phrase    |
+| body    | string  | http response body    |
+| headers | object  | http response headers |
 
 ## Test Plugin
 
-You can pass your request detail to batch api( `/apisix/batch-requests` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
+You can pass your request detail to batch API( `/apisix/batch-requests` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
@@ -136,4 +137,4 @@ response as below：
 
 ## Disable Plugin
 
-Normally, you don't need to disable this plugin.If you does need please remove it from the `plugins` section of`/conf/config.yaml`.
+Normally, you don't need to disable this plugin. If you do need, please remove it from the `plugins` section of`/conf/config.yaml`.

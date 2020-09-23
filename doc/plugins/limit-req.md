@@ -33,12 +33,12 @@ limit request rate using the "leaky bucket" method.
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-|rate          |required|is the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.|
-|burst         |required|is the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.|
-| key          |required|is the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header.|
-|rejected_code |optional|The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.|
+| Name          | Type    | Requirement | Default | Valid                                                                    | Description                                                                                                                                                               |
+| ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| rate          | integer | required    |         | [0,...]                                                                  | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
+| burst         | integer | required    |         | [0,...]                                                                  | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
+| key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header. |
+| rejected_code | string  | optional    | 503     | [200,...]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.                                                                     |
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 

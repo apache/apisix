@@ -37,10 +37,10 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| username |required|different `consumer` have different value, it's unique. different `consumer` use the same `username`, and there will be a request matching exception.|
-| password |required|the user's password|
+| Name     | Type   | Requirement | Default | Valid | Description                                                                                                                                                      |
+| -------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| username | string | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
+| password | string | required    |         |       | the user's password                                                                                                                                              |
 
 ## How To Enable
 
@@ -91,7 +91,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 - missing Authorization header
 
 ```shell
-$ curl http://127.0.0.2:9080/hello -i
+$ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing authorization in request"}
