@@ -28,22 +28,26 @@
 
 ## 简介
 
-echo 是一个有用的插件，可帮助用户尽可能全面地了解如何开发APISIX插件。
+echo 可以帮助用户尽可能全面地了解如何开发APISIX插件。
 
 
-该插件展示了如何在常见的 phase 中实现相应的功能，常见的 phase 有：init, rewrite, access, balancer, header filer, body filter 以及 log。
+该插件展示了如何在常见的 phase 中实现相应的功能，常见的 phase 包括：init, rewrite, access, balancer, header filer, body filter 以及 log。
 
 ## 属性
 
-|属性名称          |必选项  |描述|
-|---------     |--------|-----------|
-| before_body |可选| 在 body 属性之前添加的内容，如果 body 属性没有指定将添加在 upstream response body 之前。 |
-| body |可选| 返回给客户端的响应内容，它将覆盖 upstream 返回的响应 body。 |
-| after_body |可选| 在 body 属性之后添加的内容，如果 body 属性没有指定将在 upstream 响应 body 之后添加。 |
+| 名称        | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                     |
+| ----------- | ------ | ------ | ------ | ------ | ---------------------------------------------------------------------------------------- |
+| before_body | string | 可选   |        |        | 在 body 属性之前添加的内容，如果 body 属性没有指定将添加在 upstream response body 之前。 |
+| body        | string | 可选   |        |        | 返回给客户端的响应内容，它将覆盖 upstream 返回的响应 body。                              |
+| after_body  | string | 可选   |        |        | 在 body 属性之后添加的内容，如果 body 属性没有指定将在 upstream 响应 body 之后添加。     |
+| headers     | object | 可选   |        |        | 返回值的 headers                                                                         |
+| auth_value  | string | 可选   |        |        |                                                                                          |
+
+参数 before_body，body 和 after_body 至少要存在一个
 
 ## 如何启用
 
-1. 为特定路由启用 echo 插件。
+为特定路由启用 echo 插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -76,7 +80,7 @@ before the body modification hello world
 
 ## 禁用插件
 
-当您要禁用`echo`插件时，这很简单，您可以在插件配置中删除相应的json配置，无需重新启动服务，它将立即生效：
+当您要禁用`echo`插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='

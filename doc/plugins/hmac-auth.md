@@ -35,13 +35,13 @@ The `consumer` then adds its key to request header to verify its request.
 
 ## Attributes
 
-|Name          |Requirement |Default  |Description|
-|---------     |--------|-----------|-----------|
-| access_key         | required | none |Different `consumer` objects should have different values, and it should be unique. If different consumers use the same `access_key`, a request matching exception will occur|
-| secret_key      | required | none |Use as a pair with `access_key`|
-| algorithm    |  optional| hmac-sha256 |Encryption algorithm. support `hmac-sha1`, `hmac-sha256` and `hmac-sha512`|
-| clock_skew  | optional | 300 |The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking timestamp.|
-| signed_headers  | optional | none |Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation. Example:["User-Agent", "Accept-Language", "x-custom-a"]|
+| Name           | Type          | Requirement | Default       | Valid                                       | Description                                                                                                                                                                                                                                                                   |
+| -------------- | ------------- | ----------- | ------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| access_key     | string        | required    |               |                                             | Different `consumer` objects should have different values, and it should be unique. If different consumers use the same `access_key`, a request matching exception will occur.                                                                                                |
+| secret_key     | string        | required    |               |                                             | Use as a pair with `access_key`.                                                                                                                                                                                                                                              |
+| algorithm      | string        | optional    | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | Encryption algorithm.                                                                                                                                                                                                                                                         |
+| clock_skew     | integer       | optional    | 300           |                                             | The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking timestamp                                                                                    |
+| signed_headers | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
 
 ## How To Enable
 
@@ -83,7 +83,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## Test Plugin
 
 ### generate signature:
-The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signning_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `SIGNNING_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `SIGNNING_STRING` is `signning_string = HTTP Method + HTTP URI + canonical_query_string + access_key + timestamp + signed_headers_string`
+The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_STRING` is `signing_string = HTTP Method + HTTP URI + canonical_query_string + access_key + timestamp + signed_headers_string`
 
 1. **HTTP Method** : Refers to the GET, PUT, POST and other request methods defined in the HTTP protocol, and must be in all uppercase.
 2. **HTTP URI** : `HTTP URI` requirements must start with "/", those that do not start with "/" need to be added, and the empty path is "/".

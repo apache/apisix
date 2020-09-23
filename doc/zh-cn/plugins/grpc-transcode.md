@@ -52,10 +52,13 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 
 ## 参数列表
 
-* `proto_id`: `.proto`内容的id.
-* `service`:  grpc服务名.
-* `method`:   grpc服务中要调用的方法名.
-* `pb_option`:   proto 编码过程中的转换选项. [ "int64_as_string" / "enum_as_value" / "auto_default_values" / "enable_hooks" ]
+| 名称      | 类型                                                                       | 必选项 | 默认值 | 有效值 | 描述                       |
+| --------- | -------------------------------------------------------------------------- | ------ | ------ | ------ | -------------------------- |
+| proto_id  | string/integer                                                             | 必须   |        |        | `.proto` 内容的 id         |
+| service   | string                                                                     | 必须   |        |        | grpc 服务名                |
+| method    | string                                                                     | 必须   |        |        | grpc 服务中要调用的方法名  |
+| deadline  | number                                                                     | 可选   | 0      |        | grpc deadline, ms          |
+| pb_option | array[string([pb_option_def](#使用-grpc-transcode-插件的-pb_option-选项))] | 可选   |        |        | proto 编码过程中的转换选项 |
 
 ## 示例
 
@@ -64,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136
 在指定 route 中，代理 grpc 服务接口:
 
 * 注意： 这个 route 的属性`service_protocol` 必须设置为 `grpc`
-* 例子所代理的 grpc 服务可参考：[grpc_server_example](https://github.com/iresty/grpc_server_example)
+* 代理 grpc 服务例子可参考：[grpc_server_example](https://github.com/iresty/grpc_server_example)
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -107,30 +110,30 @@ Proxy-Connection: keep-alive
 
 这表示已成功代理。
 
-#### 使用 grpc-transcode 插件的 pb_option 选项
+## 使用 grpc-transcode 插件的 pb_option 选项
 
 在指定 route 中，代理 grpc 服务接口:
 
-##### 选项清单
+### 选项清单
 
 * 枚举类型
-    > enum_as_name
-    > enum_as_value
+    * enum_as_name
+    * enum_as_value
 
 * 64位整型
-    > int64_as_number
-    > int64_as_string
-    > int64_as_hexstring
+    * int64_as_number
+    * int64_as_string
+    * int64_as_hexstring
 
 * 使用默认值
-    > auto_default_values
-    > no_default_values
-    > use_default_values
-    > use_default_metatable
+    * auto_default_values
+    * no_default_values
+    * use_default_values
+    * use_default_metatable
 
 * Hooks开关
-    > enable_hooks
-    > disable_hooks
+    * enable_hooks
+    * disable_hooks
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -140,10 +143,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f1
     "service_protocol": "grpc",
     "plugins": {
         "grpc-transcode": {
-         "proto_id": "1",
-         "service": "gateway_protocol.Gateway",
-         "method": "CreateWorkflowInstance",
-         "pb_option":["int64_as_string"]
+            "proto_id": "1",
+            "service": "gateway_protocol.Gateway",
+            "method": "CreateWorkflowInstance",
+            "pb_option":["int64_as_string"]
         }
     },
     "upstream": {
@@ -155,7 +158,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-#### 测试 pb_option 参数
+### 测试 pb_option 参数
 
 访问上面配置的 route：
 
@@ -175,4 +178,4 @@ Trailer: grpc-message
 {"workflowKey":"#2251799813685260","workflowInstanceKey":"#2251799813688013","bpmnProcessId":"order-process","version":1}
 ```
 
-`"workflowKey":"#2251799813685260"` 这表示已成功。
+`"workflowKey":"#2251799813685260"` 表示已成功。
