@@ -33,33 +33,30 @@ def setup_module():
 
 def teardown_module():
     pass
-    #killprocesstree(nginx_pid)
+    # killprocesstree(nginx_pid)
 
 def test_01():
     cfgdata = {
-    "uri": "/apisix/status",
+    "uri": "/hello",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "39.97.63.215:80": 1
+            "127.0.0.1:9000": 1
         }
     }
 }
     r = requests.put("%s/apisix/admin/routes/1"%apisixhost, json=cfgdata,headers=headers )
     r = json.loads(r.content)
     assert r["action"] == "set"
-    r = requests.get("%s/apisix/status"%apisixhost)
-    assert r.status_code == 200
-    r = geturl("%s/apisix/status"%apisixhost,1)
+    r = requests.get("%s/hello"%apisixhost)
+    assert r.status_code == 200 and "Hello, World!" in r.content
+    r = geturl("%s/hello"%apisixhost,10)
     print(len(r))
     assert all(i == 200 for i in r)
 
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 404
-    r = geturl("%s/hello"%apisixhost,1)
+    r = geturl("%s/hello"%apisixhost,10)
     assert all(i == 404 for i in r)
 
-setup_module()
-test_01()
-teardown_module()
