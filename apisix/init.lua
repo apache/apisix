@@ -107,6 +107,10 @@ function _M.http_init_worker()
     require("apisix.debug").init_worker()
     require("apisix.upstream").init_worker()
 
+    -- need call seed
+    local uuid = require("resty.jit-uuid")
+    uuid.seed()
+
     local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
                         local_conf.apisix.dns_resolver_valid
