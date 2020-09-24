@@ -29,21 +29,23 @@
 
 ## 简介
 
-`cors` 插件可以让你轻易地为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) 的返回头。
+`cors` 插件可以让你为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) 的返回头。
 
 ## 属性
 
-- `allow_origins`: `可选`，允许跨域访问的 Origin，格式如：`scheme`://`host`:`port`，比如: https://somehost.com:8081。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Origin 都通过，但请注意这样存在安全隐患。默认值为 `*`。
-- `allow_methods`: `可选`，允许跨域访问的 Method，比如: `GET`，`POST`等。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。默认值为 `*`。
-- `allow_headers`: `可选`，允许跨域访问时请求方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所 有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。默认值为 `*`。
-- `expose_headers`: `可选`，允许跨域访问时响应方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割。默认值为 `*`。
-- `max_age`: `可选`，浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的的最大时间不用，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives). 默认值为 `5`。
-- `allow_credential`: 是否允许跨域访问的请求方携带凭据(如 Cookie 等)，默认值为: `false`。根据 CORS 规范，如果设置该选项为 `true`，那么将不能在其他选项中使用 `*`。
+| 名称             | 类型    | 可选项 | 默认值 | 有效值 | 描述                                                         |
+| ---------------- | ------- | ------ | ------ | ------ | ------------------------------------------------------------ |
+| allow_origins    | string  | 可选   | "*"    |        | 允许跨域访问的 Origin，格式如：`scheme`://`host`:`port`，比如: https://somehost.com:8081。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Origin 都通过，但请注意这样存在安全隐患。 |
+| allow_methods    | string  | 可选   | "*"    |        | 允许跨域访问的 Method，比如: `GET`，`POST`等。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
+| allow_headers    | string  | 可选   | "*"    |        | 允许跨域访问时请求方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所 有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
+| expose_headers   | string  | 可选   | "*"    |        | 允许跨域访问时响应方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割。 |
+| max_age          | integer | 可选   | 5      |        | 浏览器缓存 CORS 结果的最大时间，单位为秒，在这个时间范围内浏览器会复用上一次的检查结果，`-1` 表示不缓存。请注意各个浏览器允许的的最大时间不同，详情请参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives)。 |
+| allow_credential | boolean | 可选   | false  |        | 是否允许跨域访问的请求方携带凭据（如 Cookie 等）。根据 CORS 规范，如果设置该选项为 `true`，那么将不能在其他选项中使用 `*`。 |
 
 > **提示**
 >
 > 请注意 `allow_credential` 是一个很敏感的选项，谨慎选择开启。开启之后，其他参数默认的 `*` 将失效，你必须显式指定它们的值。
-> 使用 `**` 时要充分理解它引入了一些安全隐患，比如 CSRF，所以确保这样的安全等级符合自己预期再使用。
+> 使用 `**` 时要充分理解它引入了一些安全隐患，比如 CSRF，所以确保这样的安全等级符合自己预期再使用。
 
 ## 如何启用
 

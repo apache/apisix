@@ -36,11 +36,10 @@
 
 ## 属性
 
-|名称           |必选项          |描述|
-|---------      |--------       |-----------|
-| header_schema |可选           |`header` 数据的 `schema` 数据结构|
-| body_schema   |可选           |`body` 数据的 `schema` 数据结构|
-
+| Name          | Type   | Requirement | Default | Valid | Description                       |
+| ------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
+| header_schema | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
+| body_schema   | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
 
 ## 如何启用
 

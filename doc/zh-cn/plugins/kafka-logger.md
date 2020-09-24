@@ -38,18 +38,19 @@
 
 ## 属性
 
-|属性名称          |必选项  |描述|
-|---------     |--------|-----------|
-| broker_list |必须| 要推送的 kafka 的 broker 列表。|
-| kafka_topic |必须| 要推送的 topic。|
-| timeout |可选| 发送数据的超时时间。|
-| key |必须| 用于加密消息的密钥。|
-| name |必须| batch processor 的唯一标识。|
-| batch_max_size |可选| 批量发送的消息最大数量，当到达该阀值后会立即发送消息|
-| inactive_timeout |可选| 不活跃时间，如果在该时间范围内都没有消息写入缓冲区，那么会立即发送到 kafka。默认值： 5(s)|
-| buffer_duration |可选| 缓冲周期，消息停留在缓冲区的最大时间，当超过该时间时会立即发送到 kafka。默认值： 60(s)|
-| max_retry_count |可选| 最大重试次数。默认值： 0|
-| retry_delay |可选| 重试间隔。默认值： 1(s)|
+| 名称             | 类型    | 必选项 | 默认值         | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
+| broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
+| kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
+| key              | string  | 必须   |                |         | 发送数据的超时时间。                             |
+| timeout          | integer | 可选   | 3              | [1,...] | 用于加密消息的密钥。                             |
+| name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
+| batch_max_size   | integer | 可选   | 1000           | [1,...] | 每批的最大大小                                   |
+| inactive_timeout | integer | 可选   | 5              | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
+| buffer_duration  | integer | 可选   | 60             | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位） |
+| max_retry_count  | integer | 可选   | 0              | [0,...] | 从处理管道中移除之前的最大重试次数               |
+| retry_delay      | integer | 可选   | 1              | [0,...] | 如果执行失败，则应延迟执行流程的秒数             |
+| include_req_body | boolean | 可选   |                |         | 是否包括请求 body                                |
 
 ## 工作原理
 

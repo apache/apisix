@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin Metadata](#plugin-metadata)
 
 ## Route
 
@@ -658,6 +659,37 @@ Config Example:
     "key": "key",   # Private key
     "sni": "sni"    # https SNI
 }
+```
+
+## Plugin Metadata
+
+*API*：/apisix/admin/plugin_metadata/{plugin_name}
+
+*Description*: plugin metadata.
+
+> Request Methods:
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugin_metadata/{plugin_name}|NULL|Fetch resource|
+|PUT      |/apisix/admin/plugin_metadata/{plugin_name}|{...}|Create resource by plugin name|
+|DELETE   |/apisix/admin/plugin_metadata/{plugin_name}|NULL|Remove resource|
+
+> Request Body Parameters:
+
+A json object with a data structure defined according to `metadata_schema` of the plugin ({plugin_name}).
+
+Config Example:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+{
+    "skey": "val",
+    "ikey": 1
+}'
+HTTP/1.1 201 Created
+Date: Thu, 26 Dec 2019 04:19:34 GMT
+Content-Type: text/plain
 ```
 
 [Back to TOC](#Table-of-Contents)

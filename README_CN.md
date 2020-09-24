@@ -295,12 +295,6 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
 
-## 参与社区
-
-如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
-
-<img src="doc/images/qq-group.png" width="302" height="302">
-
 ## 致谢
 
 灵感来自 Kong 和 Orange。

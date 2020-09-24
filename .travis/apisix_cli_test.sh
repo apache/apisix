@@ -268,3 +268,43 @@ fi
 git checkout conf/config.yaml
 
 echo "passed: worker_processes number is configurable"
+
+# missing admin key, allow any IP to access admin api
+
+echo '
+apisix:
+  allow_admin: ~
+  admin_key: ~
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo "pass: missing admin key and show ERROR message"
+
+# admin api, allow any IP but use default key
+
+echo '
+apisix:
+  allow_admin: ~
+  admin_key:
+    -
+      name: "admin"
+      key: edd1c9f034335f136f87ad84b625c8f1
+      role: admin
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+grep -E "WARNING: using fixed Admin API token has security risk." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
+    exit 1
+fi
+
+echo "pass: show WARNING message if the user used default token and allow any IP to access"
