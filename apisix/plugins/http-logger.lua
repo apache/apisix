@@ -140,7 +140,15 @@ end
 
 
 local function gen_log_format(metadata)
-    local log_format = {}
+    local log_format = core.table.empty_tab
+    if not metadata or
+       not metadata.value or
+       not metadata.value.log_format or
+       core.talbe.nkeys(metadata.value.log_format) == 0
+    then
+        return log_format
+    end
+
     for k, var_name in pairs(metadata.value.log_format) do
         if var_name:sub(1, 1) == "$" then
             log_format[k] = {true, var_name:sub(2)}
@@ -158,8 +166,8 @@ function _M.log(conf, ctx)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
     local entry
-    local log_format = lru_log_format(metadata, nil, gen_log_format, metadata)
-    if log_format then
+    local log_format = lru_log_format(metadata or "", nil, gen_log_format, metadata)
+    if log_format ~= core.table.empty_tab then
         entry = core.table.new(0, core.table.nkeys(log_format))
         for k, var_attr in pairs(log_format) do
             if var_attr[1] then
