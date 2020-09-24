@@ -69,7 +69,7 @@ def setup_module():
 
 def teardown_module():
     pass
-    #killprocesstree(nginx_pid)
+    # killprocesstree(nginx_pid)
 
 def test_01():
     print("APISIX's resource occupation(before test):")
