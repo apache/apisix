@@ -24,6 +24,7 @@ local plugin          = require("apisix.plugin")
 local ngx      = ngx
 local tostring = tostring
 local pairs    = pairs
+local ipairs = ipairs
 
 
 local plugin_name = "http-logger"
@@ -45,7 +46,9 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        concat_method = {type = "string", default = "json",
+                         enum = {"json", "new_line"}}
     },
     required = {"uri"}
 }
@@ -132,13 +135,6 @@ local function send_http_data(conf, log_message)
             .. "body[" .. httpc_res:read_body() .. "]"
     end
 
-    -- keep the connection alive
-    ok, err = httpc:set_keepalive(conf.keepalive)
-
-    if not ok then
-        core.log.debug("failed to keep the connection alive", err)
-    end
-
     return res, err_msg
 end
 
@@ -195,10 +191,26 @@ function _M.log(conf, ctx)
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
-        if batch_max_size == 1 then
-            data, err = core.json.encode(entries[1]) -- encode as single {}
-        else
-            data, err = core.json.encode(entries) -- encode as array [{}]
+        if conf.concat_method == "json" then
+            if batch_max_size == 1 then
+                data, err = core.json.encode(entries[1]) -- encode as single {}
+            else
+                data, err = core.json.encode(entries) -- encode as array [{}]
+            end
+
+        elseif conf.concat_method == "new_line" then
+            if batch_max_size == 1 then
+                data, err = core.json.encode(entries[1]) -- encode as single {}
+            else
+                local t = core.table.new(#entries, 0)
+                for i, entrie in ipairs(entries) do
+                    t[i], err = core.json.encode(entrie)
+                    if err then
+                        break
+                    end
+                end
+                data = core.table.concat(t, "\n") -- encode as multiple string
+            end
         end
 
         if not data then
@@ -228,5 +240,6 @@ function _M.log(conf, ctx)
     buffers[entry.route_id] = log_buffer
     log_buffer:push(entry)
 end
+
 
 return _M
