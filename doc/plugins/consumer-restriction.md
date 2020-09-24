@@ -34,12 +34,12 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 
 ## Attributes
 
-|Name       |   Type      | Requirement  | default       | Valid                           | Description          |
-|-----------|-------------|--------------|---------------|---------------------------------|----------------------|
-|`type`     | string      | optional     | consumer_name | ["consumer_name", "service_id"] |According to different objects, corresponding restrictions (currently support consumer_name, service_id two types). |
-|`whitelist`| array[string] | required   |               |                                 |Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
-|`blacklist`| array[string] | required   |               |                                 | Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together.|
-|`rejected_code`| integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.|
+|Name       |   Type      | Requirement  | Default       | Valid                           | Description                                                                                                                         |
+|-----------|-------------|--------------|---------------|---------------------------------|--------------------------------------------------------------------------------------------------------------------                 |
+| type      | string      | optional     | consumer_name | ["consumer_name", "service_id"] | According to different objects, corresponding restrictions, support `consumer_name`, `service_id`.                 |
+| whitelist | array[string] | required   |               |                                 | Choose one of the two with `blacklist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
+| blacklist | array[string] | required   |               |                                 | Choose one of the two with `whitelist`, only whitelist or blacklist can be enabled separately, and the two cannot be used together. |
+| rejected_code | integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.                                                                         |
 
 For the `type` field is an enumerated type, it can be `consumer_name` or `service_id`. They stand for the following meanings:
 * **consumer_name**: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
