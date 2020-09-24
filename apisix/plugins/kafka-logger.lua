@@ -25,6 +25,8 @@ local ipairs   = ipairs
 local plugin_name = "kafka-logger"
 local stale_timer_running = false;
 local timer_at = ngx.timer.at
+local crc32 = ngx.crc32_short
+local now = ngx.now
 local tostring = tostring
 local ngx = ngx
 local buffers = {}
@@ -82,6 +84,11 @@ local function send_kafka_data(conf, log_message)
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
+    broker_config["partitioner"] = function(key, num, correlation_id)
+        local id = key and crc32(key) + now() * 1000 or correlation_id
+        -- random select partition_id for init
+        return id % num
+    end
 
     local prod, err = producer:new(broker_list,broker_config)
     if err then
