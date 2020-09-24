@@ -41,12 +41,7 @@ def setup_module():
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
     casepath = cur_file_dir()
-    print("caspath:",casepath)
     confpath = casepath + "/nginx.conf"
-    try:
-        os.mkdir("logs")
-    except Exception as e:
-        pass
     p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
     p.wait()
     nginx_pid = p.pid+1
