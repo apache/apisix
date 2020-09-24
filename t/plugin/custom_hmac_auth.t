@@ -40,7 +40,8 @@ __DATA__
                     "plugins": {
                         "hmac-auth": {
                             "access_key": "my-access-key",
-                            "secret_key": "my-secret-key"
+                            "secret_key": "my-secret-key",
+                            "clock_skew": 10
                         }
                     }
                 }]],
@@ -53,7 +54,7 @@ __DATA__
                                     "access_key": "my-access-key",
                                     "secret_key": "my-secret-key",
                                     "algorithm": "hmac-sha256",
-                                    "clock_skew": 300
+                                    "clock_skew": 10
                                 }
                             }
                         }

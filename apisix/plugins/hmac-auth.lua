@@ -57,7 +57,7 @@ local schema = {
                 },
                 clock_skew = {
                     type = "integer",
-                    default = 300
+                    default = 0
                 },
                 signed_headers = {
                     type = "array",
