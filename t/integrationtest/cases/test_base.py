@@ -43,7 +43,10 @@ def setup_module():
     casepath = cur_file_dir()
     print("caspath:",casepath)
     confpath = casepath + "/nginx.conf"
-    os.mkdir("logs")
+    try:
+        os.mkdir("logs")
+    except Exception as e:
+        pass
     p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
     p.wait()
     nginx_pid = p.pid+1

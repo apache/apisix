@@ -144,7 +144,7 @@ script() {
 
     cd t/integrationtest/
     sudo python runtest.py
-    # mkdir -p cases/logs
+    python --version
     pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "cases"
 
 }
