@@ -89,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 1. **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
 2. **HTTP URI**：要求必须以“/”开头，不以“/”开头的需要补充上，空路径为“/”。
-3. **Date**：请求头中的 Date （ GMT 格式）。
+3. **Date**：请求头中的 Date （ GMT 格式 ）。
 4. **canonical_query_string**：是对于 URL 中的 query（ query 即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串）进行编码后的结果。
 5. **signed_headers_string**：是从请求头中获取客户端指定的字段，并按顺序拼接字符串的结果。
 
