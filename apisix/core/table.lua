@@ -26,6 +26,7 @@ local ngx_re       = require("ngx.re")
 
 
 local _M = {
+    version = 0.2,
     new     = new_tab,
     clear   = require("table.clear"),
     nkeys   = nkeys,
@@ -34,7 +35,6 @@ local _M = {
     sort    = table.sort,
     clone   = require("table.clone"),
     isarray = require("table.isarray"),
-    empty_tab = {},
 }
 
 
