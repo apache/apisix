@@ -42,10 +42,13 @@ def setup_module():
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
     casepath = cur_file_dir()
     confpath = casepath + "/nginx.conf"
+    try:
+        os.makedirs("./cases/logs")
+    except Exception as e:
+        pass
     p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
     p.wait()
     nginx_pid = p.pid+1
-    print(os.listdir("./cases"))
 
 def teardown_module():
     pass
@@ -82,6 +85,5 @@ def test_01():
     getworkerres(apisixpid)
 
     print("APISIX's error log:")
-    print(os.path.exists(apisixpath+r"/logs/error.log"))
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read()) 
