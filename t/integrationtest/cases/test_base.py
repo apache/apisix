@@ -45,7 +45,7 @@ def setup_module():
     p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
     p.wait()
     nginx_pid = p.pid+1
-    print(os.listdir("./"))
+    print(os.listdir("./cases"))
 
 def teardown_module():
     pass
@@ -82,5 +82,6 @@ def test_01():
     getworkerres(apisixpid)
 
     print("APISIX's error log:")
+    print(os.path.exists(apisixpath+r"/logs/error.log"))
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read()) 
