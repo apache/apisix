@@ -70,8 +70,8 @@ function _M.access(conf, ctx)
     local key
     if conf.key == "consumer_name" then
         if not ctx.consumer_id then
-            core.log.error("Missing consumer's username.")
-            return 500, { message = "Missing consumer's username."}
+            core.log.error("consumer not found.")
+            return 500, { message = "Consumer not found."}
         end
         key = ctx.consumer_id .. ctx.conf_type .. ctx.conf_version
 
