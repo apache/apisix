@@ -694,7 +694,7 @@ passed
 GET /hello
 --- error_code: 500
 --- response_body
-{"message":"Missing consumer's username."}
+{"message":"Consumer not found."}
 --- error_log
 [error]
 
