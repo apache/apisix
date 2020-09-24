@@ -42,8 +42,8 @@
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
 | broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
 | kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
-| key              | string  | 必须   |                |         | 发送数据的超时时间。                             |
-| timeout          | integer | 可选   | 3              | [1,...] | 用于加密消息的密钥。                             |
+| key              | string  | 必须   |                |         | 用于加密消息的密钥。                             |
+| timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
 | batch_max_size   | integer | 可选   | 1000           | [1,...] | 每批的最大大小                                   |
 | inactive_timeout | integer | 可选   | 5              | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
