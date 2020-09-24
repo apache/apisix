@@ -29,6 +29,15 @@ local schema = {
     required = {"i"},
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        ikey = {type = "number", minimum = 0},
+        skey = {type = "string"},
+    },
+    required = {"ikey", "skey"},
+    additionalProperties = false,
+}
 
 local plugin_name = "example-plugin"
 
@@ -37,6 +46,7 @@ local _M = {
     priority = 0,        -- TODO: add a type field, may be a good idea
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 

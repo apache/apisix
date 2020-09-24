@@ -16,17 +16,57 @@
 #
 use t::APISIX 'no_plan';
 
-repeat_each(1);
 log_level('info');
-worker_connections(256);
+repeat_each(1);
+no_long_string();
 no_root_location();
-no_shuffle();
 
-run_tests();
+run_tests;
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "host": "$host",
+                        "@timestamp": "$time_iso8601",
+                        "client_ip": "$remote_addr"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "log_format": {
+                                "host": "$host",
+                                "@timestamp": "$time_iso8601",
+                                "client_ip": "$remote_addr"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 2: sanity, batch_max_size=1
 --- config
     location /t {
         content_by_lua_block {
@@ -34,10 +74,20 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1980/log",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "concat_method": "new_line"
+                            }
+                        },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1,
-                                "apple.com:80": 0
+                                "127.0.0.1:1982": 1
                             },
                             "type": "roundrobin"
                         },
@@ -60,52 +110,32 @@ passed
 
 
 
-=== TEST 2: /not_found
---- request
-GET /not_found
---- error_code: 404
---- response_body
-{"error_msg":"failed to match any routes"}
---- no_error_log
-[error]
-
-
-
-=== TEST 3: hit route
+=== TEST 3: hit route and report http logger
 --- request
 GET /hello
 --- response_body
 hello world
+--- wait: 0.5
 --- no_error_log
 [error]
---- error_log eval
-qr/dns resolver domain: apple.com to \d+.\d+.\d+.\d+/
+--- error_log
+request log: {
 
 
 
-=== TEST 4: set route(id: 1, using `rewrite` mode to pass upstream host)
+=== TEST 4: remove plugin metadata
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin",
-                            "pass_host": "rewrite",
-                            "upstream_host": "httpbin.org"
-                        },
-                        "uri": "/uri"
-                }]]
-                )
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_DELETE
+            )
 
             if code >= 300 then
                 ngx.status = code
             end
+
             ngx.say(body)
         }
     }
@@ -113,60 +143,5 @@ qr/dns resolver domain: apple.com to \d+.\d+.\d+.\d+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
-
-
-
-=== TEST 5: hit route
---- request
-GET /uri
---- response_body eval
-qr/host: httpbin.org/
---- no_error_log
-[error]
-
-
-
-=== TEST 6: set route(id: 1, using `node` mode to pass upstream host)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "upstream": {
-                            "nodes": {
-                                "httpbin.org:80": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream",
-                            "pass_host": "node"
-                        },
-                        "uri": "/get"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 7: hit route
---- request
-GET /get
---- response_body eval
-qr/"Host": "httpbin.org"/
 --- no_error_log
 [error]
