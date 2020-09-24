@@ -111,9 +111,14 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     local opts = {}
     opts.start_revision = modified_index
     opts.timeout = timeout
-    local res_func, func_err = etcd_cli:watchdir(key, opts)
+    opts.need_cancel = true
+    local res_func, func_err, http_cli = etcd_cli:watchdir(key, opts)
     if not res_func then
         return nil, func_err
+    end
+
+    if type(http_cli) ~= "table" then
+        return nil, "need_cancel failed"
     end
 
     -- in etcd v3, the 1st res of watch is watch info, useless to us.
@@ -125,6 +130,12 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
 
     if not res then
         -- log.error("failed to get key from etcd: ", err)
+        return nil, err
+    end
+
+    local res_cancel, err = etcd:watchcancel(http_cli)
+
+    if not res_cancel then
         return nil, err
     end
 
