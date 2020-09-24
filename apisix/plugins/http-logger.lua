@@ -166,7 +166,8 @@ function _M.log(conf, ctx)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
     local entry
-    local log_format = lru_log_format(metadata or "", nil, gen_log_format, metadata)
+    local log_format = lru_log_format(metadata or "", nil, gen_log_format,
+                                      metadata)
     if log_format ~= core.table.empty_tab then
         entry = core.table.new(0, core.table.nkeys(log_format))
         for k, var_attr in pairs(log_format) do
