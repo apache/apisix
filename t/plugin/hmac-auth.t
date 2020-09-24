@@ -757,7 +757,7 @@ location /t {
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["Date"] = gmt
+        headers["date"] = gmt
         headers["X-HMAC-ACCESS-KEY"] = access_key
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a"
         headers["x-custom-header-a"] = custom_header_a
