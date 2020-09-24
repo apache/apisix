@@ -24,7 +24,7 @@ def getworkerres(pid):
 def cur_file_dir():
     return os.path.split(os.path.realpath(__file__))[0]
 
-def geturl(url,times):
+def requesttest(url,times):
     start = time.time()
     tasks = []
     r = []
@@ -71,7 +71,7 @@ def test_01():
     assert r["action"] == "set"
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 200 and "Hello, World!" in r.content
-    r = geturl("%s/hello"%apisixhost,10)
+    r = requesttest("%s/hello"%apisixhost,10)
     assert all(i == 200 for i in r)
     print("APISIX's resource occupation(after set route and request test):")
     getworkerres(apisixpid)
@@ -79,7 +79,7 @@ def test_01():
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 404
-    r = geturl("%s/hello"%apisixhost,10)
+    r = requesttest("%s/hello"%apisixhost,10)
     assert all(i == 404 for i in r)
     print("APISIX's resource occupation(after delete route and request test):")
     getworkerres(apisixpid)
