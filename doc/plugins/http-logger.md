@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/http-logger.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -35,7 +36,6 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 ## Attributes
 
-
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
 | uri              | string  | required    |               |         | URI of the server                                                                        |
@@ -48,6 +48,7 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 | max_retry_count  | integer | optional    | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
 | retry_delay      | integer | optional    | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
 | include_req_body | boolean | optional    | false         |         | Whether to include the request body                                                      |
+| concat_method    | string  | optional    | "json"        |         | Enum type, `json` and `new_line`. **json**: use `json.encode` for all pending logs. **new_line**: use `json.encode` for each pending log and concat them with "\n" line. |
 
 ## How To Enable
 
@@ -58,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
       "plugins": {
             "http-logger": {
-                 "uri": "127.0.0.1:80/postendpoint?param=1",
+                "uri": "127.0.0.1:80/postendpoint?param=1",
             }
        },
       "upstream": {
@@ -73,7 +74,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-* success:
+> success:
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
@@ -90,7 +91,6 @@ APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 ```shell
 $ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
 {
-    "methods": ["GET"],
     "uri": "/hello",
     "plugins": {},
     "upstream": {
