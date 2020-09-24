@@ -35,8 +35,8 @@ limit request rate using the "leaky bucket" method.
 
 | Name          | Type    | Requirement | Default | Valid                                                                    | Description                                                                                                                                                               |
 | ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | number | required    |         | [0,...]                                                                  | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
-| burst         | number | required    |         | [0,...]                                                                  | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
+| rate          | integer | required    |         | [0,...]                                                                  | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
+| burst         | integer | required    |         | [0,...]                                                                  | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
 | key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username). |
 | rejected_code | integer  | optional    | 503     | [200,...]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected.                                                                      |
 
@@ -46,7 +46,7 @@ limit request rate using the "leaky bucket" method.
 
 ### How to enable on the `route` or `serivce`
 
-Take `route` as an example (the use of `service` is the same method), enable the limit req plugin on the specified route.
+Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

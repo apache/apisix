@@ -35,8 +35,8 @@
 
 | 名称          | 类型    | 必选项 | 默认值 | 有效值                                                                   | 描述                                                                                                                                              |
 | ------------- | ------- | ------ | ------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | number | 必须   |        | [0,...]                                                                  | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
-| burst         | number | 必须   |        | [0,...]                                                                  | t请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
+| rate          | integer | 必须   |        | [0,...]                                                                  | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过 （`rate` + `brust`）的请求会被加上延时。                                             |
+| burst         | integer | 必须   |        | [0,...]                                                                  | t请求速率超过 （`rate` + `brust`）的请求会被直接拒绝。                                                                                            |
 | key           | string  | 必须   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 key 有："remote_addr"(客户端IP地址), "server_addr"(服务端 IP 地址), 请求头中的"X-Forwarded-For" 或 "X-Real-IP"，"consumer_name"(consumer 的 username)。 |
 | rejected_code | integer  | 可选   | 503    | [200,...]                                                                | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                        |
 
@@ -46,7 +46,7 @@
 
 ### 如何在`route`或`service`上使用
 
-这里以`route`为例(`service`的使用是同样的方法)，在指定的路线上启用limit req插件。
+这里以`route`为例(`service`的使用是同样的方法)，在指定的 `route` 上启用 `limit-req` 插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
