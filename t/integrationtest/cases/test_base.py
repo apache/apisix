@@ -43,7 +43,7 @@ def setup_module():
     casepath = cur_file_dir()
     print("caspath:",casepath)
     confpath = casepath + "/nginx.conf"
-    os.makedirs(casepath+"/logs")
+    os.mkdir("logs")
     p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
     p.wait()
     nginx_pid = p.pid+1
@@ -53,7 +53,7 @@ def teardown_module():
     #killprocesstree(nginx_pid)
 
 def test_01():
-    print("APISIX's resource occupation(before test):\n")
+    print("APISIX's resource occupation(before test):")
     getworkerres(apisixpid)
     cfgdata = {
     "uri": "/hello",
@@ -79,9 +79,9 @@ def test_01():
     assert r.status_code == 404
     r = geturl("%s/hello"%apisixhost,10)
     assert all(i == 404 for i in r)
-    print("APISIX's resource occupation(after delete route and request test):\n")
+    print("APISIX's resource occupation(after delete route and request test):")
     getworkerres(apisixpid)
 
-    print("APISIX's error log:\n")
+    print("APISIX's error log:")
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read()) 
