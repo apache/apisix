@@ -133,10 +133,10 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
         return nil, err
     end
 
-    local res_cancel, err = etcd:watchcancel(http_cli)
+    local res_cancel, err_cancel = etcd_cli:watchcancel(http_cli)
 
     if not res_cancel then
-        return nil, err
+        return nil, err_cancel
     end
 
     if type(res.result) ~= "table" then
