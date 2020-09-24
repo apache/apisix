@@ -45,6 +45,7 @@ def setup_module():
     p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False) 
     p.wait()
     nginx_pid = p.pid+1
+    print(os.listdir("./"))
 
 def teardown_module():
     pass
@@ -69,7 +70,7 @@ def test_01():
     assert r.status_code == 200 and "Hello, World!" in r.content
     r = geturl("%s/hello"%apisixhost,10)
     assert all(i == 200 for i in r)
-    print("APISIX's resource occupation(after set route and request test):\n")
+    print("APISIX's resource occupation(after set route and request test):")
     getworkerres(apisixpid)
 
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
