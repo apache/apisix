@@ -142,9 +142,9 @@ script() {
         exit 1
     fi
 
-    cd t/pycases/
+    cd t/integrationtest/
     sudo python runtest.py
-    mkdir -p cases/logs
+    # mkdir -p cases/logs
     pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "cases"
 
 }
