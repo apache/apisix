@@ -246,7 +246,7 @@ GET /hello
 --- more_headers
 X-HMAC-SIGNATURE: asdf
 X-HMAC-ALGORITHM: hmac-sha256
-X-HMAC-TIMESTAMP: 112
+Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
 --- response_body
@@ -262,7 +262,7 @@ GET /hello
 --- more_headers
 X-HMAC-SIGNATURE: asdf
 X-HMAC-ALGORITHM: ljlj
-X-HMAC-TIMESTAMP: 112
+Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
@@ -272,17 +272,17 @@ X-HMAC-ACCESS-KEY: my-access-key
 
 
 
-=== TEST 10: verify: invalid timestamp
+=== TEST 10: verify: Invalid GMT format time
 --- request
 GET /hello
 --- more_headers
 X-HMAC-SIGNATURE: asdf
 X-HMAC-ALGORITHM: hmac-sha256
-X-HMAC-TIMESTAMP: 112
+Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Invalid timestamp"}
+{"message":"Invalid GMT format time"}
 --- no_error_log
 [error]
 
@@ -293,6 +293,7 @@ X-HMAC-ACCESS-KEY: my-access-key
 location /t {
     content_by_lua_block {
         local ngx_time   = ngx.time
+        local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
@@ -300,19 +301,20 @@ location /t {
 
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a .. custom_header_b
+            access_key .. gmt .. custom_header_a .. custom_header_b
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["Date"] = gmt
         headers["X-HMAC-ACCESS-KEY"] = access_key
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
@@ -392,7 +394,7 @@ GET /hello
 --- more_headers
 X-HMAC-SIGNATURE: asdf
 X-HMAC-ALGORITHM: hmac-sha256
-X-HMAC-TIMESTAMP: 112
+Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key3
 --- error_code: 401
 --- response_body
@@ -450,11 +452,12 @@ passed
 
 
 
-=== TEST 15: verify: invalid timestamp
+=== TEST 15: verify: Invalid GMT format time
 --- config
 location /t {
     content_by_lua_block {
         local ngx_time   = ngx.time
+        local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
@@ -462,6 +465,7 @@ location /t {
 
         local secret_key = "my-secret-key2"
         local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key2"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
@@ -469,14 +473,14 @@ location /t {
         ngx.sleep(2)
 
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a .. custom_header_b
+            access_key .. gmt .. custom_header_a .. custom_header_b
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["Date"] = gmt
         headers["X-HMAC-ACCESS-KEY"] = access_key
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
@@ -497,7 +501,7 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/\{"message":"Invalid timestamp"\}/
+qr/\{"message":"Invalid GMT format time"\}/
 --- no_error_log
 [error]
 
@@ -507,7 +511,8 @@ qr/\{"message":"Invalid timestamp"\}/
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
@@ -519,19 +524,20 @@ location /t {
 
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
         local signing_string = "PUT" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a .. custom_header_b
+            access_key .. gmt .. custom_header_a .. custom_header_b
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["Date"] = gmt
         headers["X-HMAC-ACCESS-KEY"] = access_key
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
@@ -562,6 +568,7 @@ passed
 location /t {
     content_by_lua_block {
         local ngx_time   = ngx.time
+        local ngx_http_time   = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
@@ -573,17 +580,18 @@ location /t {
 
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
         local signing_string = "PUT" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a .. custom_header_b
+            access_key .. gmt .. custom_header_a .. custom_header_b
         core.log.info("signing_string:", signing_string)
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
-        local auth_string = "hmac-auth-v2#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
-        "hmac-sha256#" .. timestamp .. "#x-custom-header-a;x-custom-header-b"
+        local auth_string = "hmac-auth-v3#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
+        "hmac-sha256#" .. gmt .. "#x-custom-header-a;x-custom-header-b"
         
         local headers = {}
         headers["Authorization"] = auth_string
@@ -675,6 +683,7 @@ passed
 location /t {
     content_by_lua_block {
         local ngx_time   = ngx.time
+        local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
@@ -682,19 +691,20 @@ location /t {
 
         local secret_key = "my-secret-key5"
         local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key5"
         local custom_header_a = "asld$%dfasf"
         local custom_header_c = "23879fmsldfk"
 
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a .. custom_header_c
+            access_key .. gmt .. custom_header_a .. custom_header_c
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["Date"] = gmt
         headers["X-HMAC-ACCESS-KEY"] = access_key
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-c"
         headers["x-custom-header-a"] = custom_header_a
@@ -725,7 +735,8 @@ qr/\{"message":"Invalid signed header x-custom-header-c"\}/
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
@@ -733,18 +744,19 @@ location /t {
 
         local secret_key = "my-secret-key5"
         local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key5"
         local custom_header_a = "asld$%dfasf"
 
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a
+            access_key .. gmt .. custom_header_a
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["X-HMAC-TIMESTAMP"] = timestamp
+        headers["Date"] = gmt
         headers["X-HMAC-ACCESS-KEY"] = access_key
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a"
         headers["x-custom-header-a"] = custom_header_a

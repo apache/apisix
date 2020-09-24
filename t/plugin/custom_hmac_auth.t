@@ -184,7 +184,7 @@ GET /hello
 --- more_headers
 X-APISIX-HMAC-SIGNATURE: asdf
 X-APISIX-HMAC-ALGORITHM: hmac-sha256
-X-APISIX-HMAC-TIMESTAMP: 112
+Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-APISIX-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
 --- response_body
@@ -200,7 +200,7 @@ GET /hello
 --- more_headers
 X-APISIX-HMAC-SIGNATURE: asdf
 X-APISIX-HMAC-ALGORITHM: ljlj
-X-APISIX-HMAC-TIMESTAMP: 112
+Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-APISIX-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
 --- response_body
@@ -210,17 +210,17 @@ X-APISIX-HMAC-ACCESS-KEY: sdf
 
 
 
-=== TEST 8: verify: invalid timestamp
+=== TEST 8: verify: Invalid GMT format time
 --- request
 GET /hello
 --- more_headers
 X-APISIX-HMAC-SIGNATURE: asdf
 X-APISIX-HMAC-ALGORITHM: hmac-sha256
-X-APISIX-HMAC-TIMESTAMP: 112
+Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-APISIX-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Invalid timestamp"}
+{"message":"Invalid GMT format time"}
 --- no_error_log
 [error]
 
@@ -230,26 +230,28 @@ X-APISIX-HMAC-ACCESS-KEY: my-access-key
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
         local ngx_encode_base64 = ngx.encode_base64
 
         local secret_key = "my-secret-key"
-        local timestamp = ngx_time()
+        local time = ngx_time()
+        local gmt = ngx_http_time(time)
         local access_key = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a .. custom_header_b
+            access_key .. gmt .. custom_header_a .. custom_header_b
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-APISIX-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-APISIX-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["X-APISIX-HMAC-TIMESTAMP"] = timestamp
+        headers["Date"] = gmt
         headers["X-APISIX-HMAC-ACCESS-KEY"] = access_key
         headers["X-APISIX-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
@@ -323,23 +325,25 @@ passed
 
 
 
-=== TEST 11: verify: invalid timestamp
+=== TEST 11: verify: Invalid GMT format time
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
         local hmac = require("resty.hmac")
         local ngx_encode_base64 = ngx.encode_base64
 
         local secret_key = "my-secret-key2"
-        local timestamp = ngx_time()
+        local time = ngx_time()
+        local gmt = ngx_http_time(time)
         local access_key = "my-access-key2"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. timestamp .. custom_header_a .. custom_header_b
+            access_key .. gmt .. custom_header_a .. custom_header_b
 
         ngx.sleep(2)
 
@@ -348,7 +352,7 @@ location /t {
         local headers = {}
         headers["X-APISIX-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-APISIX-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["X-APISIX-HMAC-TIMESTAMP"] = timestamp
+        headers["Date"] = gmt
         headers["X-APISIX-HMAC-ACCESS-KEY"] = access_key
 
         local code, body = t.test('/hello',
@@ -366,6 +370,6 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/\{"message":"Invalid timestamp"\}/
+qr/\{"message":"Invalid GMT format time"\}/
 --- no_error_log
 [error]
