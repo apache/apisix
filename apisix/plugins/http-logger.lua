@@ -144,7 +144,7 @@ local function gen_log_format(metadata)
     if not metadata or
        not metadata.value or
        not metadata.value.log_format or
-       core.talbe.nkeys(metadata.value.log_format) == 0
+       core.table.nkeys(metadata.value.log_format) == 0
     then
         return log_format
     end
