@@ -282,4 +282,10 @@ function _M.headers()
     ngx.say("/headers")
 end
 
+function _M.log()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    ngx.log(ngx.WARN, "request log: ", body or "nil")
+end
+
 return _M
