@@ -218,7 +218,7 @@ local function generate_signature(ctx, secret_key, params)
 
     local signing_string = request_method .. canonical_uri
                             .. canonical_query_string
-                            .. params.access_key .. params.gmt
+                            .. params.access_key .. params.date
                             .. core.table.concat(canonical_headers, "")
 
     core.log.info("signing_string:", signing_string,
@@ -246,12 +246,12 @@ local function validate(ctx, params)
 
     core.log.info("clock_skew: ", conf.clock_skew)
     if conf.clock_skew and conf.clock_skew > 0 then
-        local time = ngx.parse_http_time(params.gmt)
+        local time = ngx.parse_http_time(params.date)
         if time then
             local diff = abs(ngx_time() - time)
             core.log.info("gmt diff: ", diff)
             if diff > conf.clock_skew then
-            return nil, {message = "Invalid GMT format time"}
+                return nil, {message = "Invalid GMT format time"}
             end
         end
     end
@@ -303,7 +303,7 @@ local function get_params(ctx)
     local app_key = core.request.header(ctx, access_key)
     local signature = core.request.header(ctx, signature_key)
     local algorithm = core.request.header(ctx, algorithm_key)
-    local gmt = core.request.header(ctx, http_date_key)
+    local date = core.request.header(ctx, http_date_key)
     local signed_headers = core.request.header(ctx, signed_headers_key)
     core.log.info("signature_key: ", signature_key)
 
@@ -323,7 +323,7 @@ local function get_params(ctx)
             app_key = auth_data[2]
             signature = auth_data[3]
             algorithm = auth_data[4]
-            gmt = auth_data[5]
+            date = auth_data[5]
             signed_headers = auth_data[6]
         end
     end
@@ -331,7 +331,7 @@ local function get_params(ctx)
     params.access_key = app_key
     params.algorithm  = algorithm
     params.signature  = signature
-    params.gmt  = gmt or ""
+    params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
 
     core.log.info("params: ", core.json.delay_encode(params))
