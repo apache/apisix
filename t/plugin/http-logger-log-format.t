@@ -119,7 +119,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log
-request log: {"host":"localhost"
+request log: {
 
 
 
