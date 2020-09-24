@@ -152,7 +152,7 @@ location /t {
 }
 --- request
 GET /t
---- timeout: 4
+--- timeout: 10
 --- no_error_log
 [error]
 --- grep_error_log eval
@@ -179,7 +179,7 @@ location /t {
 }
 --- request
 GET /t
---- timeout: 4
+--- timeout: 10
 --- no_error_log
 [error]
 --- grep_error_log eval
@@ -210,7 +210,7 @@ location /t {
 }
 --- request
 GET /t
---- timeout: 4
+--- timeout: 10
 --- no_error_log
 [error]
 --- grep_error_log eval
