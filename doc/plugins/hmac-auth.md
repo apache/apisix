@@ -83,11 +83,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## Test Plugin
 
 ### generate signature:
-The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_STRING` is `signing_string = HTTP Method + HTTP URI + canonical_query_string + access_key + HTTP Date + signed_headers_string`
+The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_STRING` is `signing_string = HTTP Method + HTTP URI + canonical_query_string + access_key + Date + signed_headers_string`
 
 1. **HTTP Method** : Refers to the GET, PUT, POST and other request methods defined in the HTTP protocol, and must be in all uppercase.
 2. **HTTP URI** : `HTTP URI` requirements must start with "/", those that do not start with "/" need to be added, and the empty path is "/".
-3. **HTTP Date** : Date and time string in GMT format.
+3. **Date** : Date in http header(GMT format).
 4. **canonical_query_string** :`canonical_query_string` is the result of encoding the `query` in the URL (`query` is the string "key1 = valve1 & key2 = valve2" after the "?" in the URL).
 5. **signed_headers_string** :`signed_headers_string` is the result of obtaining the fields specified by the client from the request header and concatenating the strings in order.
 
@@ -108,13 +108,13 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 
 ### Use the generated signature to try the request
 
-**Note: ACCESS_KEY, SIGNATURE, ALGORITHM, HTTP_DATE, SIGNED_HEADERS respectively represent the corresponding variables**
+**Note: ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS respectively represent the corresponding variables**
 **Note: SIGNED_HEADERS is the headers specified by the client to join the encryption calculation, multiple separated by semicolons, Example: User-Agent;Accept-Language**
 
 * The signature information is put together in the request header `Authorization` field:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v3# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + HTTP_DATE + # + SIGNED_HEADERS' -i
+$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v3# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + DATE + # + SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -129,7 +129,7 @@ Accept-Ranges: bytes
 * The signature information is separately placed in the request header:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'Date: HTTP_DATE' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
+$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'Date: DATE' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
