@@ -1653,9 +1653,9 @@ GET /t
                     },
                     "type": "roundrobin",
                     "labels": {
-	                    "key1": "value1",
-	                    "key2": "value2",
-	                    "key3": "value3"
+                        "build":"16",
+                        "env":"prodution",
+                        "version":"v2"
                     }
                 }]],
                 [[{
@@ -1666,9 +1666,9 @@ GET /t
                             },
                             "type": "roundrobin",
                             "labels": {
-	                            "key1": "value1",
-	                            "key2": "value2",
-	                            "key3": "value3"
+                                "build":"16",
+                                "env":"prodution",
+                                "version":"v2"
                             }
                         },
                         "key": "/apisix/upstreams/1"
@@ -1706,9 +1706,9 @@ passed
                             },
                             "type": "roundrobin",
                             "labels": {
-	                            "key1": "value1",
-	                            "key2": "value2",
-	                            "key3": "value3"
+                                "version":"v2",
+                                "build":"16",
+                                "env":"prodution"
                             }
                         },
                         "key": "/apisix/upstreams/1"
@@ -1739,7 +1739,7 @@ passed
                 ngx.HTTP_PATCH,
                 [[{
                     "labels": {
-	                    "key1": "new-value1"
+	                    "build": "17"
                     }
                 }]],
                 [[{
@@ -1750,9 +1750,9 @@ passed
                             },
                             "type": "roundrobin",
                             "labels": {
-	                            "key1": "new-value1",
-	                            "key2": "value2",
-	                            "key3": "value3"
+                                "version":"v2",
+                                "build":"17",
+                                "env":"prodution"
                             }
                         },
                         "key": "/apisix/upstreams/1"
@@ -1769,5 +1769,37 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 53: invalid format of label value: set upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "labels": {
+	                    "env": ["prodution", "release"]
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
 --- no_error_log
 [error]
