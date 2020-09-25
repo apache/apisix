@@ -416,14 +416,12 @@ local function _automatic_fetch(premature, self)
         return
     end
 
-    local created_etcd_cli = false
     local i = 0
-
     while not exiting() and self.running and i <= 32 do
         i = i + 1
 
         local ok, err = xpcall(function()
-            if not created_etcd_cli then
+            if not self.etcd_cli then
                 local etcd_cli, err = etcd.new(self.etcd_conf)
                 if not etcd_cli then
                     error("failed to create etcd instance for key ["
@@ -431,7 +429,6 @@ local function _automatic_fetch(premature, self)
                 end
                 self.etcd_cli = etcd_cli
             end
-            created_etcd_cli = true
 
             local ok, err = sync_data(self)
             if err then
