@@ -185,7 +185,7 @@ GET /hello
 --- more_headers
 X-APISIX-HMAC-SIGNATURE: asdf
 X-APISIX-HMAC-ALGORITHM: hmac-sha256
-Date: Thu, 24 Sep 2020 06:39:52 GMT
+X-APISIX-Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-APISIX-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
 --- response_body
@@ -201,7 +201,7 @@ GET /hello
 --- more_headers
 X-APISIX-HMAC-SIGNATURE: asdf
 X-APISIX-HMAC-ALGORITHM: ljlj
-Date: Thu, 24 Sep 2020 06:39:52 GMT
+X-APISIX-Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-APISIX-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
 --- response_body
@@ -217,7 +217,7 @@ GET /hello
 --- more_headers
 X-APISIX-HMAC-SIGNATURE: asdf
 X-APISIX-HMAC-ALGORITHM: hmac-sha256
-Date: adfa
+X-APISIX-Date: adfa
 X-APISIX-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
@@ -252,7 +252,7 @@ location /t {
         local headers = {}
         headers["X-APISIX-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-APISIX-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["Date"] = gmt
+        headers["X-APISIX-DATE"] = gmt
         headers["X-APISIX-HMAC-ACCESS-KEY"] = access_key
         headers["X-APISIX-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
@@ -353,7 +353,7 @@ location /t {
         local headers = {}
         headers["X-APISIX-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-APISIX-HMAC-ALGORITHM"] = "hmac-sha256"
-        headers["Date"] = gmt
+        headers["X-APISIX-DATE"] = gmt
         headers["X-APISIX-HMAC-ACCESS-KEY"] = access_key
 
         local code, body = t.test('/hello',

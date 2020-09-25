@@ -143,6 +143,21 @@ Accept-Ranges: bytes
 ```
 
 
+## 自定义 header 名称
+
+我们可以在 `conf/config.yaml` 中，`plugin_attr` 下添加插件的属性配置来自定义参数 header 名称。
+
+```yaml
+plugin_attr:
+  hmac-auth:
+    signature_key: X-APISIX-HMAC-SIGNATURE
+    algorithm_key: X-APISIX-HMAC-ALGORITHM
+    http_date_key: X-APISIX-DATE
+    access_key: X-APISIX-HMAC-ACCESS-KEY
+    signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
+```
+
+
 ## 禁用插件
 
 当你想去掉 `hmac-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：

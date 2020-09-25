@@ -140,6 +140,20 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
+## Custom header key
+
+We can customize header key for auth parameters by adding the attribute configuration of the plugin under `plugin_attr` in `conf / config.yaml`.
+
+```yaml
+plugin_attr:
+  hmac-auth:
+    signature_key: X-APISIX-HMAC-SIGNATURE
+    algorithm_key: X-APISIX-HMAC-ALGORITHM
+    http_date_key: X-APISIX-DATE
+    access_key: X-APISIX-HMAC-ACCESS-KEY
+    signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
+```
+
 ## Disable Plugin
 
 When you want to disable the `hmac-auth` plugin, it is very simple,
