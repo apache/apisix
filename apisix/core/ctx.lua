@@ -89,6 +89,14 @@ do
                 key = re_gsub(key, "-", "_", "jo")
                 val = get_var(key, t._request)
 
+            elseif key == "route_id" then
+                local route_id = ngx.ctx.api_ctx.route_id
+                val = route_id
+
+            elseif key == "service_id" then
+                local service_id = ngx.ctx.api_ctx.service_id
+                val = service_id
+
             else
                 val = get_var(key, t._request)
             end
