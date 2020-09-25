@@ -247,12 +247,15 @@ local function validate(ctx, params)
     core.log.info("clock_skew: ", conf.clock_skew)
     if conf.clock_skew and conf.clock_skew > 0 then
         local time = ngx.parse_http_time(params.date)
-        if time then
-            local diff = abs(ngx_time() - time)
-            core.log.info("gmt diff: ", diff)
-            if diff > conf.clock_skew then
-                return nil, {message = "Invalid GMT format time"}
-            end
+        core.log.info("params.date: ", params.date, " time: ", time)
+        if not time then
+            return nil, {message = "Invalid GMT format time"}
+        end
+
+        local diff = abs(ngx_time() - time)
+        core.log.info("gmt diff: ", diff)
+        if diff > conf.clock_skew then
+            return nil, {message = "Clock skew exceeded"}
         end
     end
 

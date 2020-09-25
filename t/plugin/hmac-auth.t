@@ -273,7 +273,7 @@ X-HMAC-ACCESS-KEY: my-access-key
 
 
 
-=== TEST 10: verify: Invalid GMT format time
+=== TEST 10: verify: Clock skew exceeded
 --- request
 GET /hello
 --- more_headers
@@ -283,13 +283,44 @@ Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
+{"message":"Clock skew exceeded"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: verify: missing Date
+--- request
+GET /hello
+--- more_headers
+X-HMAC-SIGNATURE: asdf
+X-HMAC-ALGORITHM: hmac-sha256
+X-HMAC-ACCESS-KEY: my-access-key
+--- error_code: 401
+--- response_body
 {"message":"Invalid GMT format time"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 11: verify: ok
+=== TEST 12: verify: Invalid GMT format time
+--- request
+GET /hello
+--- more_headers
+X-HMAC-SIGNATURE: asdf
+X-HMAC-ALGORITHM: hmac-sha256
+Date: adfsdf
+X-HMAC-ACCESS-KEY: my-access-key
+--- error_code: 401
+--- response_body
+{"message":"Invalid GMT format time"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: verify: ok
 --- config
 location /t {
     content_by_lua_block {
@@ -341,7 +372,7 @@ passed
 
 
 
-=== TEST 12: add consumer with 0 clock skew
+=== TEST 14: add consumer with 0 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -389,7 +420,7 @@ passed
 
 
 
-=== TEST 13: verify: invalid signature
+=== TEST 15: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
@@ -405,7 +436,7 @@ X-HMAC-ACCESS-KEY: my-access-key3
 
 
 
-=== TEST 14: add consumer with 1 clock skew
+=== TEST 16: add consumer with 1 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -453,7 +484,7 @@ passed
 
 
 
-=== TEST 15: verify: Invalid GMT format time
+=== TEST 17: verify: Invalid GMT format time
 --- config
 location /t {
     content_by_lua_block {
@@ -502,13 +533,13 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/\{"message":"Invalid GMT format time"\}/
+qr/\{"message":"Clock skew exceeded"\}/
 --- no_error_log
 [error]
 
 
 
-=== TEST 16: verify: put ok
+=== TEST 18: verify: put ok
 --- config
 location /t {
     content_by_lua_block {
@@ -564,7 +595,7 @@ passed
 
 
 
-=== TEST 17: verify: put ok (pass auth data by header `Authorization`)
+=== TEST 19: verify: put ok (pass auth data by header `Authorization`)
 --- config
 location /t {
     content_by_lua_block {
@@ -619,7 +650,7 @@ passed
 
 
 
-=== TEST 18: hit route without auth info
+=== TEST 20: hit route without auth info
 --- request
 GET /hello
 --- error_code: 401
@@ -630,7 +661,7 @@ GET /hello
 
 
 
-=== TEST 19: add consumer with signed_headers
+=== TEST 21: add consumer with signed_headers
 --- config
     location /t {
         content_by_lua_block {
@@ -679,7 +710,7 @@ passed
 
 
 
-=== TEST 20: verify with invalid signed header
+=== TEST 22: verify with invalid signed header
 --- config
 location /t {
     content_by_lua_block {
@@ -732,7 +763,7 @@ qr/\{"message":"Invalid signed header x-custom-header-c"\}/
 
 
 
-=== TEST 21: verify ok with signed headers
+=== TEST 23: verify ok with signed headers
 --- config
 location /t {
     content_by_lua_block {

@@ -217,7 +217,7 @@ GET /hello
 --- more_headers
 X-APISIX-HMAC-SIGNATURE: asdf
 X-APISIX-HMAC-ALGORITHM: hmac-sha256
-Date: Thu, 24 Sep 2020 06:39:52 GMT
+Date: adfa
 X-APISIX-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
@@ -326,7 +326,7 @@ passed
 
 
 
-=== TEST 11: verify: Invalid GMT format time
+=== TEST 11: verify: Clock skew exceeded
 --- config
 location /t {
     content_by_lua_block {
@@ -371,6 +371,6 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/\{"message":"Invalid GMT format time"\}/
+qr/\{"message":"Clock skew exceeded"\}/
 --- no_error_log
 [error]
