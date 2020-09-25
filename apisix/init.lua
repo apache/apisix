@@ -240,7 +240,7 @@ local function compare_upstream_node(old_t, new_t)
 end
 
 
-local function parse_domain_in_up(up, api_ctx)
+local function parse_domain_in_up(up)
     local nodes = up.value.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
@@ -253,20 +253,17 @@ local function parse_domain_in_up(up, api_ctx)
         return up
     end
 
-    if not up.modifiedIndex_org then
-        up.modifiedIndex_org = up.modifiedIndex
-    end
-    up.modifiedIndex = up.modifiedIndex_org .. "#" .. ngx_now()
-
-    up.dns_value = core.table.clone(up.value)
-    up.dns_value.nodes = new_nodes
+    local up_new = core.table.clone(up)
+    up_new.modifiedIndex = up.modifiedIndex .. "#" .. ngx_now()
+    up_new.dns_value = core.table.clone(up.value)
+    up_new.dns_value.nodes = new_nodes
     core.log.info("resolve upstream which contain domain: ",
                   core.json.delay_encode(up))
-    return up
+    return up_new
 end
 
 
-local function parse_domain_in_route(route, api_ctx)
+local function parse_domain_in_route(route)
     local nodes = route.value.upstream.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
@@ -279,17 +276,14 @@ local function parse_domain_in_route(route, api_ctx)
         return route
     end
 
-    if not route.modifiedIndex_org then
-        route.modifiedIndex_org = route.modifiedIndex
-    end
-    route.modifiedIndex = route.modifiedIndex_org .. "#" .. ngx_now()
-    api_ctx.conf_version = route.modifiedIndex
+    local route_new = core.table.clone(route)
+    route_new.modifiedIndex = route.modifiedIndex .. "#" .. ngx_now()
 
-    route.dns_value = core.table.deepcopy(route.value)
-    route.dns_value.upstream.nodes = new_nodes
+    route_new.dns_value = core.table.deepcopy(route.value)
+    route_new.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route))
-    return route
+    return route_new
 end
 
 
@@ -461,23 +455,15 @@ function _M.http_access_phase()
 
     else
         if route.has_domain then
-            local parsed_route, err = lru_resolved_domain(route, api_ctx.conf_version,
-                                        return_direct, nil)
+            local err
+            route, err = lru_resolved_domain(route, api_ctx.conf_version,
+                            parse_domain_in_route, route, api_ctx)
             if err then
                 core.log.error("failed to get resolved route: ", err)
                 return core.response.exit(500)
             end
 
-            if not parsed_route then
-                route, err = parse_domain_in_route(route, api_ctx)
-                if err then
-                    core.log.error("failed to reolve domain in route: ", err)
-                    return core.response.exit(500)
-                end
-
-                lru_resolved_domain(route, api_ctx.conf_version,
-                                return_direct, route)
-            end
+            api_ctx.matched_route = route
         end
 
         if route.value.upstream and route.value.upstream.enable_websocket then
