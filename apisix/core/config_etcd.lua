@@ -426,8 +426,8 @@ local function _automatic_fetch(premature, self)
             if not created_etcd_cli then
                 local etcd_cli, err = etcd.new(self.etcd_conf)
                 if not etcd_cli then
-                    error("failed to start a etcd instance: "
-                          .. (err or "unknown"))
+                    error("failed to create etcd instance for key ["
+                          .. self.key .. "]: " .. (err or "unknown"))
                 end
                 self.etcd_cli = etcd_cli
             end
