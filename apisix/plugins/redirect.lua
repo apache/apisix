@@ -19,7 +19,6 @@ local tab_insert = table.insert
 local tab_concat = table.concat
 local re_gmatch = ngx.re.gmatch
 local ipairs = ipairs
-local http_post = "POST"
 local ngx = ngx
 
 local lrucache = core.lrucache.new({
@@ -135,10 +134,11 @@ function _M.rewrite(conf, ctx)
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
         uri = "https://$host$request_uri"
-        if ngx.req.get_method() == http_post then
-            ret_code = 308
-        else
+        local method_name = ngx.req.get_method()
+        if method_name == "GET" or method_name == "HEAD" then
             ret_code = 301
+        else
+            ret_code = 308
         end
     end
 
