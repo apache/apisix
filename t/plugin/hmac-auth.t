@@ -622,7 +622,7 @@ location /t {
         core.log.info("signing_string:", signing_string)
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
-        local auth_string = "hmac-auth-v3#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
+        local auth_string = "hmac-auth-v1#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
         "hmac-sha256#" .. gmt .. "#x-custom-header-a;x-custom-header-b"
         
         local headers = {}

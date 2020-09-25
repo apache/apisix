@@ -322,7 +322,7 @@ local function get_params(ctx)
                       #auth_data, " auth_data: ",
                       core.json.delay_encode(auth_data))
 
-        if #auth_data == 6 and auth_data[1] == "hmac-auth-v3" then
+        if #auth_data == 6 and auth_data[1] == "hmac-auth-v1" then
             app_key = auth_data[2]
             signature = auth_data[3]
             algorithm = auth_data[4]

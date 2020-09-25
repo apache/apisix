@@ -114,7 +114,7 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 * The signature information is put together in the request header `Authorization` field:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v3# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + DATE + # + SIGNED_HEADERS' -i
+$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + DATE + # + SIGNED_HEADERS' -i
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
