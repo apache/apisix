@@ -181,10 +181,6 @@ local function sync_data(self)
             return false, err
         end
 
-        if not dir_res.dir then
-            return false, self.key .. " is not a dir"
-        end
-
         if not dir_res.nodes then
             dir_res.nodes = {}
         end
