@@ -37,7 +37,7 @@ __DATA__
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "apple.com:80": 0
+                                "baidu.com:80": 0
                             },
                             "type": "roundrobin"
                         },
@@ -79,7 +79,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/dns resolver domain: apple.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
 
 
 
@@ -97,7 +97,7 @@ qr/dns resolver domain: apple.com to \d+.\d+.\d+.\d+/
                             },
                             "type": "roundrobin",
                             "pass_host": "rewrite",
-                            "upstream_host": "httpbin.org"
+                            "upstream_host": "httpbin.org"                        
                         },
                         "uri": "/uri"
                 }]]
