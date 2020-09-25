@@ -25,11 +25,11 @@ URI 重定向插件。
 
 ### 参数
 
-| Name          | Type    | Requirement | Default | Valid      | Description                                                                                                                                                                                                                   |
-| ------------- | ------- | ----------- | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| http_to_https | boolean | 可选        | false   |            | 当设置为 `true` 并且请求是 http 时，会自动 301 重定向为 https，uri 保持不变                                                                                                                                                   |
-| uri           | string  | 可选        |         |            | 可以包含 Nginx 变量的 URI，例如：`/test/index.html`, `$uri/index.html`。你可以通过类似于 `$ {xxx}` 的方式引用变量，以避免产生歧义，例如：`${uri}foo/index.html`。若你需要保留 `$` 字符，那么使用如下格式：`/\$foo/index.html` |
-| ret_code      | string  | 可选        | 302     | [200, ...] | 请求响应码                                                                                                                                                                                                                    |
+| Name          | Type    | Requirement | Default | Valid        | Description                                                  |
+| ------------- | ------- | ----------- | ------- | ------------ | ------------------------------------------------------------ |
+| http_to_https | boolean | 可选        | false   |              | 当设置为 `true` 并且请求是 http 时，会自动 301 重定向为 https，uri 保持不变 |
+| uri           | string  | 可选        |         |              | 重定向目标地址(响应头Location字段)。可以包含 Nginx 变量的 URI，例如：`/test/index.html`, `$uri/index.html`。你可以通过类似于 `$ {xxx}` 的方式引用变量，以避免产生歧义，例如：`${uri}foo/index.html`。若你需要保留 `$` 字符，那么使用如下格式：`/\$foo/index.html` |
+| ret_code      | integer | 可选        | 302     | >=300，< 400 | 请求响应码。如果有配置，以配置优先。                         |
 
 ### 示例
 
@@ -98,7 +98,7 @@ Location: /test/default.html
 ```
 
 下面是一个实现 http 到 https 跳转的示例：
-```shell
+​```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",

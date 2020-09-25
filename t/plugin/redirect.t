@@ -76,7 +76,6 @@ done
 [error]
 
 
-
 === TEST 3: add plugin with new uri: /test/add
 --- config
     location /t {
@@ -676,3 +675,86 @@ close: 1 nil}
 --- no_error_log
 [error]
 [alert]
+
+
+=== TEST 26: add plugin with new uri: /test/add
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true
+                        }
+                    },
+                    "host": "localhost",
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+=== TEST 27: redirect
+--- request
+GET /hello
+--- error_code: 301
+--- no_error_log
+[error]
+
+=== TEST 28: redirect
+--- request
+POST /hello
+--- error_code: 308
+--- no_error_log
+[error]
+
+=== TEST 29: add plugin with new uri: /test/add
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "ret_code": 307
+                        }
+                    },
+                    "host": "localhost",
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+=== TEST 30: redirect
+--- request
+GET /hello
+--- error_code: 307
+--- no_error_log
+[error]

@@ -19,6 +19,7 @@ local tab_insert = table.insert
 local tab_concat = table.concat
 local re_gmatch = ngx.re.gmatch
 local ipairs = ipairs
+local ngx         = ngx
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -96,13 +97,13 @@ function _M.check_schema(conf)
 end
 
 
-    local tmp = {}
 local function concat_new_uri(uri, ctx)
     local passed_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
     if not passed_uri_segs then
         return nil, err
     end
 
+    local tmp = {}
     core.table.clear(tmp)
 
     for _, uri_segs in ipairs(passed_uri_segs) do
@@ -133,14 +134,20 @@ function _M.rewrite(conf, ctx)
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
         uri = "https://$host$request_uri"
-        ret_code = 301
+        if not ret_code or ret_code == 302 then
+            if ngx.req.get_method() == "POST" then
+                ret_code = 308
+            else
+                ret_code = 301
+            end
+        end
     end
 
     if uri and ret_code then
         local new_uri, err = concat_new_uri(uri, ctx)
         if not new_uri then
-            core.log.error("failed to generate new uri by: ", uri, " error: ",
-                           err)
+            core.log.error("failed to generate new uri by: ", uri,
+                            " error: ", err)
             return 500
         end
 
