@@ -17,7 +17,6 @@
 
 local lru_new = require("resty.lrucache").new
 local resty_lock = require("resty.lock")
-local type = type
 local tostring = tostring
 local ngx = ngx
 local get_phase = ngx.get_phase
@@ -142,11 +141,7 @@ local function _plugin(plugin_name, key, version, create_obj_fun, ...)
 
     local err
     obj, err = create_obj_fun(...)
-    if type(obj) == 'table' then
-        obj.ver = version
-        lru_global:set(key, obj, PLUGIN_TTL)
-
-    elseif obj ~= nil then
+    if obj ~= nil then
         lru_global:set(key, {val = obj, ver = version}, PLUGIN_TTL)
     end
 
