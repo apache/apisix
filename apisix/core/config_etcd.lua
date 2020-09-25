@@ -174,7 +174,7 @@ local function sync_data(self)
             return false, err
         end
 
-        local dir_res, headers = res.body.node, res.headers
+        local dir_res, headers = res.body.node or {}, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then
