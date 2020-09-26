@@ -40,7 +40,7 @@
 | access_key     | string        | 必须   |               |                                             | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。                                                                    |
 | secret_key     | string        | 必须   |               |                                             | 与 `access_key` 配对使用。                                                                                                                                                              |
 | algorithm      | string        | 可选   | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | 加密算法。                                                                                                                                                                              |
-| clock_skew     | integer       | 可选   | 300           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
+| clock_skew     | integer       | 可选   | 0           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
 | signed_headers | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
 
 
