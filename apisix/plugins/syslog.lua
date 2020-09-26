@@ -37,7 +37,7 @@ local schema = {
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
-        sock_type = {type = "string", default = "tcp"},
+        sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
         max_retry_times = {type = "integer", minimum = 1, default = 1},
         retry_interval = {type = "integer", minimum = 0, default = 1},
         pool_size = {type = "integer", minimum = 5, default = 5},
