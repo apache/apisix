@@ -426,7 +426,6 @@ function _M.http_access_phase()
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
                 end
-
             end
 
             if upstream.value.enable_websocket then
@@ -437,6 +436,9 @@ function _M.http_access_phase()
                 api_ctx.pass_host = upstream.value.pass_host
                 api_ctx.upstream_host = upstream.value.upstream_host
             end
+
+            core.log.info("parsed upstream: ", core.json.delay_encode(upstream))
+            api_ctx.matched_upstream = upstream.dns_value or upstream.value
         end
 
     else
@@ -452,14 +454,19 @@ function _M.http_access_phase()
             api_ctx.matched_route = route
         end
 
-        if route.value.upstream and route.value.upstream.enable_websocket then
+        local route_val = route.value
+        if route_val.upstream and route_val.enable_websocket then
             enable_websocket = true
         end
 
-        if route.value.upstream and route.value.upstream.pass_host then
-            api_ctx.pass_host = route.value.upstream.pass_host
-            api_ctx.upstream_host = route.value.upstream.upstream_host
+        if route_val.upstream and route_val.upstream.pass_host then
+            api_ctx.pass_host = route_val.upstream.pass_host
+            api_ctx.upstream_host = route_val.upstream.upstream_host
         end
+
+        api_ctx.matched_upstream = (route.dns_value and
+                                    route.dns_value.upstream)
+                                   or route_val.upstream
     end
 
     if enable_websocket then
