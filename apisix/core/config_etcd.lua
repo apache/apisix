@@ -126,7 +126,6 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
 
     if http_cli then
         etcd_cli:watchcancel(http_cli)
-        http_cli:close()
     end
 
     if not res then
