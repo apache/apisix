@@ -32,7 +32,7 @@ local ngx_decode_base64 = ngx.decode_base64
 
 local SIGNATURE_KEY = "X-HMAC-SIGNATURE"
 local ALGORITHM_KEY = "X-HMAC-ALGORITHM"
-local HTTP_DATE_KEY = "Date"
+local DATE_KEY = "Date"
 local ACCESS_KEY    = "X-HMAC-ACCESS-KEY"
 local SIGNED_HEADERS_KEY = "X-HMAC-SIGNED-HEADERS"
 local plugin_name   = "hmac-auth"
@@ -291,7 +291,7 @@ local function get_params(ctx)
     local access_key = ACCESS_KEY
     local signature_key = SIGNATURE_KEY
     local algorithm_key = ALGORITHM_KEY
-    local http_date_key = HTTP_DATE_KEY
+    local date_key = DATE_KEY
     local signed_headers_key = SIGNED_HEADERS_KEY
 
     if try_attr(local_conf, "plugin_attr", "hmac-auth") then
@@ -299,14 +299,14 @@ local function get_params(ctx)
         access_key = attr.access_key or access_key
         signature_key = attr.signature_key or signature_key
         algorithm_key = attr.algorithm_key or algorithm_key
-        http_date_key = attr.http_date_key or http_date_key
+        date_key = attr.date_key or date_key
         signed_headers_key = attr.signed_headers_key or signed_headers_key
     end
 
     local app_key = core.request.header(ctx, access_key)
     local signature = core.request.header(ctx, signature_key)
     local algorithm = core.request.header(ctx, algorithm_key)
-    local date = core.request.header(ctx, http_date_key)
+    local date = core.request.header(ctx, date_key)
     local signed_headers = core.request.header(ctx, signed_headers_key)
     core.log.info("signature_key: ", signature_key)
 
