@@ -97,7 +97,7 @@ passed
                     },
                     "upstream": {
                         "nodes": {
-                            "www.baidu.com:80": 1
+                            "www.apple.com:80": 1
                         },
                         "pass_host": "node",
                         "type": "roundrobin"
@@ -147,7 +147,109 @@ location /t {
 --- request
 GET /t
 --- response_body
-return: 200
+return: 301
+return: 503
+return: 503
+--- no_error_log
+[error]
+--- timeout: 5
+
+
+
+=== TEST 5: set upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "www.apple.com:80": 1
+                    },
+                    "pass_host": "node",
+                    "type": "roundrobin"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: create route with plugin `limit-req`(upstream node contain domain)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-req": {
+                            "rate": 1,
+                            "burst": 0,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream_id": 1,
+                    "service_id": 1,
+                    "uri": "/index.html"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: hit route 3 times
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local headers = {
+            ["User-Agent"] = "curl/7.68.0",
+            ["apikey"] = "auth-one",
+        }
+
+        for i = 1, 3 do
+            local code, body = t.test('/index.html',
+                ngx.HTTP_GET,
+                "",
+                nil,
+                headers
+            )
+            ngx.say("return: ", code)
+        end
+    }
+}
+--- request
+GET /t
+--- response_body
+return: 301
 return: 503
 return: 503
 --- no_error_log

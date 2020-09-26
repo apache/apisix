@@ -258,7 +258,7 @@ local function parse_domain_in_up(up)
     up_new.dns_value = core.table.clone(up.value)
     up_new.dns_value.nodes = new_nodes
     core.log.info("resolve upstream which contain domain: ",
-                  core.json.delay_encode(up))
+                  core.json.delay_encode(up_new))
     return up_new
 end
 
@@ -284,11 +284,6 @@ local function parse_domain_in_route(route)
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route))
     return route_new
-end
-
-
-local function return_direct(...)
-    return ...
 end
 
 
@@ -422,23 +417,14 @@ function _M.http_access_phase()
                 -- the `api_ctx.conf_version` is different after we called
                 -- `parse_domain_in_up`, need to recreate the cache by new
                 -- `api_ctx.conf_version`
-                local parsed_upstream, err = lru_resolved_domain(upstream,
-                                upstream.modifiedIndex, return_direct, nil)
+                local err
+                upstream, err = lru_resolved_domain(upstream,
+                                                    upstream.modifiedIndex,
+                                                    parse_domain_in_up,
+                                                    upstream)
                 if err then
                     core.log.error("failed to get resolved upstream: ", err)
                     return core.response.exit(500)
-                end
-
-                if not parsed_upstream then
-                    parsed_upstream, err = parse_domain_in_up(upstream)
-                    if err then
-                        core.log.error("failed to reolve domain in upstream: ",
-                                       err)
-                        return core.response.exit(500)
-                    end
-
-                    lru_resolved_domain(upstream, upstream.modifiedIndex,
-                                    return_direct, parsed_upstream)
                 end
 
             end
@@ -457,7 +443,7 @@ function _M.http_access_phase()
         if route.has_domain then
             local err
             route, err = lru_resolved_domain(route, api_ctx.conf_version,
-                            parse_domain_in_route, route, api_ctx)
+                                             parse_domain_in_route, route)
             if err then
                 core.log.error("failed to get resolved route: ", err)
                 return core.response.exit(500)
