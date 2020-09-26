@@ -192,6 +192,8 @@ HTTP/1.1 200 OK
 ...
 ```
 
+The `service_id` in the whitelist column allows access, and the plug-in configuration takes effect.
+
 4. Open the `key-auth` plugin on the route and bind the `service_id` to `2`.
 
 ```shell
@@ -220,6 +222,8 @@ HTTP/1.1 403 Forbidden
 ...
 {"message":"The service_id is forbidden."}
 ```
+
+It means that the `service_id` that is not in the whitelist is denied access, and the plug-in configuration takes effect.
 
 ## Disable Plugin
 
