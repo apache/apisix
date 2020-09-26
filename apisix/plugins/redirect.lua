@@ -138,6 +138,7 @@ function _M.rewrite(conf, ctx)
         if method_name == "GET" or method_name == "HEAD" then
             ret_code = 301
         else
+         -- https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/308
             ret_code = 308
         end
     end
