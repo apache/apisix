@@ -192,7 +192,6 @@ HTTP/1.1 200 OK
 
 说明在白名单列中的 `service_id` 允许访问，插件配置生效。
 
-
 4、在 route 上开启 `key-auth` 插件并绑定 `service_id` 为`2`
 
 ```shell
