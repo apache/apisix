@@ -687,13 +687,13 @@ close: 1 nil}
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
+                    "methods":["POST","GET","HEAD"],
                     "plugins": {
                         "redirect": {
                             "http_to_https": true,
                             "ret_code": 307
                         }
                     },
-                    "methods":["POST"],
                     "host": "test.com",
                     "uri": "/hello-https"
                 }]]
