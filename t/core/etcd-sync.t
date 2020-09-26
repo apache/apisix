@@ -66,6 +66,8 @@ GET /t
 prev_index updated
 --- no_error_log
 [error]
+--- error_log
+cancel watch connection success
 
 
 

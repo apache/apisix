@@ -125,7 +125,12 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     end
 
     if http_cli then
-        etcd_cli:watchcancel(http_cli)
+        local res_cancel, err_cancel = etcd_cli:watchcancel(http_cli)
+        if res_cancel and res_cancel == 1 then
+            log.info("cancel watch connection success")
+        else
+            log.error("cancel watch failed: ", err_cancel)
+        end
     end
 
     if not res then
