@@ -714,7 +714,7 @@ passed
 
 
 
-=== TEST 27: redirect
+=== TEST 27: http to https post redirect
 --- request
 POST /hello-https
 --- more_headers
@@ -722,5 +722,31 @@ Host: test.com
 --- response_headers
 Location: https://test.com/hello-https
 --- error_code: 308
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: http to https get redirect
+--- request
+GET /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 301
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: http to https head redirect
+--- request
+HEAD /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 301
 --- no_error_log
 [error]
