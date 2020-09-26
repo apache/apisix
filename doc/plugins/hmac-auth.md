@@ -154,6 +154,20 @@ plugin_attr:
     signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
 ```
 
+**After customizing the header, request example:**
+
+```shell
+$ curl http://127.0.0.1:9080/index.html -H 'X-APISIX-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-APISIX-HMAC-ALGORITHM: ALGORITHM' -H 'X-APISIX-DATE: DATE' -H 'X-APISIX-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-APISIX-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 13175
+...
+Accept-Ranges: bytes
+
+<!DOCTYPE html>
+<html lang="cn">
+```
+
 ## Disable Plugin
 
 When you want to disable the `hmac-auth` plugin, it is very simple,
