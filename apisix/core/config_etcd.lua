@@ -460,6 +460,7 @@ function _M.new(key, opts)
     etcd_conf.host = nil
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
+    etcd_conf.api_prefix = "/v3"
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
