@@ -28,6 +28,7 @@ local ngx_var      = ngx.var
 local re_gsub      = ngx.re.gsub
 local type         = type
 local error        = error
+local ngx          = ngx
 
 
 ffi.cdef[[
