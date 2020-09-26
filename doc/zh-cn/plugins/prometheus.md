@@ -137,3 +137,20 @@ apisix_nginx_http_current_connections{state="writing"} 1
 # TYPE apisix_nginx_metric_errors_total counter
 apisix_nginx_metric_errors_total 0
 ```
+## 禁用插件
+
+在插件设置页面中删除相应的 json 配置即可禁用 `prometheus` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
