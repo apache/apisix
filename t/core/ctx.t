@@ -273,7 +273,6 @@ passed
 
 
 
-
 === TEST 11: the route object not bind any service object
 --- config
     location /t {
