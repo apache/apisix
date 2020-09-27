@@ -559,6 +559,8 @@ function _M.grpc_access_phase()
         api_ctx.conf_id = route.value.id
     end
 
+    -- todo: support upstream id
+
     api_ctx.matched_upstream = (route.dns_value and
                                 route.dns_value.upstream)
                                or route.value.upstream
