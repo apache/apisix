@@ -47,6 +47,7 @@
 | max_retry_count  | integer | 可选   | 0             | [0,...] | 从处理管道中移除之前的最大重试次数               |
 | retry_delay      | integer | 可选   | 1             | [0,...] | 如果执行失败，则应延迟执行流程的秒数             |
 | include_req_body | boolean | 可选   |               |         | 是否包括请求 body                                |
+| concat_method    | string  | 可选   | "json"        |         | 枚举类型，`json`、`new_line`。**json**: 对所有待发日志使用 `json.encode` 编码。**new_line**: 对每一条待发日志单独使用 `json.encode` 编码并使用 "\n" 连接起来。 |
 
 ## 如何开启
 
@@ -57,7 +58,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
       "plugins": {
             "http-logger": {
-                 "uri": "127.0.0.1:80/postendpoint?param=1"
+                "uri": "127.0.0.1:80/postendpoint?param=1"
             }
        },
       "upstream": {
