@@ -303,11 +303,12 @@ passed
 GET /hello HTTP/1.1
 --- more_headers
 Origin: http://sub2.domain.com
+resp-vary: Via
 --- response_body
 hello world
 --- response_headers
 Access-Control-Allow-Origin: http://sub2.domain.com
-Vary: Origin
+Vary: Via, Origin
 Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2

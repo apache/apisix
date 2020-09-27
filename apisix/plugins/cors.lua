@@ -129,7 +129,7 @@ local function set_cors_headers(conf, ctx)
 
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
     if ctx.cors_allow_origins ~= "*" then
-        core.response.set_header("Vary", "Origin")
+        core.response.add_header("Vary", "Origin")
     end
 
     core.response.set_header("Access-Control-Allow-Methods", allow_methods)
