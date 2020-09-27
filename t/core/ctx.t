@@ -158,7 +158,7 @@ invalid argument, expect string value
 
 
 
-=== TEST 7: add route
+=== TEST 7: add route and get `route_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -220,7 +220,7 @@ passed
 
 
 
-=== TEST 8: route_id
+=== TEST 8: `url` exist and `route_id` is not empty
 --- request
 GET /hello
 --- response_body
@@ -230,7 +230,16 @@ route_id: 1
 
 
 
-=== TEST 9: create service (id:1)
+=== TEST 9: `url` does not exist and  `route_id` is empty
+--- request
+GET /hello123
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: create a service and `service_id` is 1
 --- config
     location /t {
         content_by_lua_block {
@@ -264,7 +273,80 @@ passed
 
 
 
-=== TEST 10: update route and binding service_id
+
+=== TEST 11: the route object not bind any service object
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions" : ["return function() if ngx.ctx.api_ctx.service_id then ngx.log(ngx.ERR, \"service_id: \", ngx.ctx.api_ctx.service_id) end end"]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    },
+                    "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/hello",
+                            "plugins": {
+                                "serverless-pre-function": {
+                                    "phase": "access",
+                                    "functions" : ["return function() if ngx.ctx.api_ctx.service_id then ngx.log(ngx.ERR, \"service_id: \", ngx.ctx.api_ctx.service_id) end end"]
+                                }
+                            },
+                            "upstream": {
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                }
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: service_id is empty
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: update route and binding service_id
 --- config
     location /t {
         content_by_lua_block {
@@ -328,7 +410,7 @@ passed
 
 
 
-=== TEST 11: service_id
+=== TEST 14: service_id is not empty
 --- request
 GET /hello
 --- response_body
