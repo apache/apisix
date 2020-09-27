@@ -559,6 +559,10 @@ function _M.grpc_access_phase()
         api_ctx.conf_id = route.value.id
     end
 
+    api_ctx.matched_upstream = (route.dns_value and
+                                route.dns_value.upstream)
+                               or route.upstream
+
     local plugins = core.tablepool.fetch("plugins", 32, 0)
     api_ctx.plugins = plugin.filter(route, plugins)
 
@@ -795,13 +799,18 @@ function _M.stream_preread_phase()
     api_ctx.plugins = plugin.stream_filter(matched_route, plugins)
     -- core.log.info("valid plugins: ", core.json.delay_encode(plugins, true))
 
+    api_ctx.matched_upstream = matched_route.value.upstream
     api_ctx.conf_type = "stream/route"
     api_ctx.conf_version = matched_route.modifiedIndex
     api_ctx.conf_id = matched_route.value.id
 
     run_plugin("preread", plugins, api_ctx)
 
-    set_upstream(matched_route, api_ctx)
+    local ok, err = set_upstream(matched_route, api_ctx)
+    if not ok then
+        core.log.error("failed to set upstream: ", err)
+        return ngx_exit(1)
+    end
 end
 
 
