@@ -71,7 +71,7 @@ def teardown_module():
     pass
     # killprocesstree(nginx_pid)
 
-def test_01():
+def test_basescenario01():
     print("APISIX's resource occupation(before test):")
     getworkerres(apisixpid)
     cfgdata = {
@@ -104,5 +104,3 @@ def test_01():
     print("APISIX's error log:")
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read())
-
-setup_module()

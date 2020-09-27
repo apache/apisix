@@ -58,6 +58,6 @@ def setup_module():
 def teardown_module():
     pass
 
-def test_01():
+def test_etcdlinks01():
     time.sleep(30)
     assert getetcdlinks() <= getworkernum(apisixpid)*7
