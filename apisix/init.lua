@@ -561,7 +561,7 @@ function _M.grpc_access_phase()
 
     api_ctx.matched_upstream = (route.dns_value and
                                 route.dns_value.upstream)
-                               or route.upstream
+                               or route.value.upstream
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)
     api_ctx.plugins = plugin.filter(route, plugins)
