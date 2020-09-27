@@ -103,13 +103,10 @@ local function set_header(append, ...)
             error("should be a table if only one argument", 2)
         end
 
-        if append then
-            for k, v in pairs(headers) do
+        for k, v in pairs(headers) do
+            if append then
                 ngx_add_header(k, v)
-            end
-
-        else
-            for k, v in pairs(headers) do
+            else
                 ngx_header[k] = v
             end
         end
@@ -117,13 +114,10 @@ local function set_header(append, ...)
         return
     end
 
-    if append then
-        for i = 1, count, 2 do
+    for i = 1, count, 2 do
+        if append then
             ngx_add_header(select(i, ...), select(i + 1, ...))
-        end
-
-    else
-        for i = 1, count, 2 do
+        else
             ngx_header[select(i, ...)] = select(i + 1, ...)
         end
     end
