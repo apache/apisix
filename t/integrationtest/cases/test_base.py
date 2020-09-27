@@ -104,3 +104,5 @@ def test_01():
     print("APISIX's error log:")
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read())
+
+setup_module()
