@@ -455,7 +455,7 @@ function _M.http_access_phase()
         end
 
         local route_val = route.value
-        if route_val.upstream and route_val.enable_websocket then
+        if route_val.upstream and route_val.upstream.enable_websocket then
             enable_websocket = true
         end
 
