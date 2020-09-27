@@ -54,7 +54,7 @@ passed
 
 
 
-=== TEST 2: set service
+=== TEST 2: set service and enabled plugin `key-auth`
 --- config
     location /t {
         content_by_lua_block {
@@ -63,6 +63,7 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
+                        "key-auth": {}
                     },
                     "desc": "new service"
                 }]]
@@ -79,7 +80,7 @@ passed
 
 
 
-=== TEST 3: create route with plugin `limit-req`(upstream node contain domain)
+=== TEST 3: create route with plugin `limit-req`(upstream node contains domain)
 --- config
     location /t {
         content_by_lua_block {
@@ -187,7 +188,7 @@ passed
 
 
 
-=== TEST 6: create route with plugin `limit-req`(upstream node contain domain)
+=== TEST 6: create route with plugin `limit-req`, and bind upstream via id
 --- config
     location /t {
         content_by_lua_block {
