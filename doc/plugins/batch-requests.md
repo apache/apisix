@@ -137,4 +137,4 @@ response as below：
 
 ## Disable Plugin
 
-Normally, you don't need to disable this plugin. If you do need, please remove it from the `plugins` section of`/conf/config.yaml`.
+Normally, you don't need to disable this plugin. If you do need, please make a new list of `plugins` you need in `/conf/config.yaml` to cover the original one.
