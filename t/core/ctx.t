@@ -230,6 +230,8 @@ GET /hello
 hello world
 --- error_log
 route_id: 1
+--- no_error_log
+[error]
 
 
 
@@ -410,3 +412,5 @@ GET /hello
 hello world
 --- error_log
 service_id: 1
+--- no_error_log
+[error]
