@@ -174,36 +174,12 @@ invalid argument, expect string value
                         }
                     },
                     "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/hello",
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "phase": "access",
-                                    "functions" : ["return function() ngx.log(ngx.INFO, \"route_id: \", ngx.ctx.api_ctx.var.route_id) end"]
-                                }
-                            },
-                            "upstream": {
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -211,7 +187,6 @@ invalid argument, expect string value
                 ngx.status = code
             end
             ngx.say(body)
-
         }
     }
 --- request
@@ -285,36 +260,12 @@ passed
                         }
                     },
                     "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/hello",
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "phase": "access",
-                                    "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id or 'empty route_id') end"]
-                                }
-                            },
-                            "upstream": {
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -352,7 +303,7 @@ service_id: empty route_id
                 ngx.HTTP_PUT,
                 [[{
                     "methods": ["GET"],
-                     "service_id": 1,
+                    "service_id": 1,
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
@@ -366,31 +317,6 @@ service_id: empty route_id
                             }
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/hello",
-                            "service_id": 1,
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "phase": "access",
-                                    "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id) end"]
-                                }
-                            },
-                            "upstream": {
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -407,7 +333,7 @@ passed
 
 
 
-=== TEST 14: service_id is 1
+=== TEST 13: service_id is 1
 --- request
 GET /hello
 --- response_body

@@ -91,12 +91,10 @@ do
                 val = get_var(key, t._request)
 
             elseif key == "route_id" then
-                local route_id = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id
-                val = route_id
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id
 
             elseif key == "service_id" then
-                local service_id = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_id
-                val = service_id
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_id
 
             else
                 val = get_var(key, t._request)
