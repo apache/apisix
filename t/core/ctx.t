@@ -338,6 +338,8 @@ GET /hello
 hello world
 --- error_log
 service_id: empty route_id
+--- no_error_log
+[error]
 
 
 
