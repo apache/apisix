@@ -21,6 +21,7 @@ local pairs     = pairs
 local ipairs    = ipairs
 local pcall     = pcall
 local require   = require
+local type      = type
 local table_remove = table.remove
 local table_sort = table.sort
 local table_insert = table.insert
