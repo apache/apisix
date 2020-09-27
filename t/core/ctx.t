@@ -170,7 +170,7 @@ invalid argument, expect string value
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.ERR, \"route_id: \", ngx.ctx.api_ctx.route_id) end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"route_id: \", ngx.ctx.api_ctx.var.route_id) end"]
                         }
                     },
                     "upstream": {
@@ -191,7 +191,7 @@ invalid argument, expect string value
                             "plugins": {
                                 "serverless-pre-function": {
                                     "phase": "access",
-                                    "functions" : ["return function() ngx.log(ngx.ERR, \"route_id: \", ngx.ctx.api_ctx.route_id) end"]
+                                    "functions" : ["return function() ngx.log(ngx.INFO, \"route_id: \", ngx.ctx.api_ctx.var.route_id) end"]
                                 }
                             },
                             "upstream": {
@@ -207,8 +207,11 @@ invalid argument, expect string value
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
+
         }
     }
 --- request
@@ -220,7 +223,7 @@ passed
 
 
 
-=== TEST 8: `url` exist and `route_id` is not empty
+=== TEST 8: `url` exist and `route_id` is 1
 --- request
 GET /hello
 --- response_body
@@ -230,16 +233,7 @@ route_id: 1
 
 
 
-=== TEST 9: `url` does not exist and  `route_id` is empty
---- request
-GET /hello123
---- error_code: 404
---- no_error_log
-[error]
-
-
-
-=== TEST 10: create a service and `service_id` is 1
+=== TEST 9: create a service and `service_id` is 1
 --- config
     location /t {
         content_by_lua_block {
@@ -273,7 +267,7 @@ passed
 
 
 
-=== TEST 11: the route object not bind any service object
+=== TEST 10: the route object not bind any service object
 --- config
     location /t {
         content_by_lua_block {
@@ -285,7 +279,7 @@ passed
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() if ngx.ctx.api_ctx.service_id then ngx.log(ngx.ERR, \"service_id: \", ngx.ctx.api_ctx.service_id) end end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id or 'empty route_id') end"]
                         }
                     },
                     "upstream": {
@@ -306,7 +300,7 @@ passed
                             "plugins": {
                                 "serverless-pre-function": {
                                     "phase": "access",
-                                    "functions" : ["return function() if ngx.ctx.api_ctx.service_id then ngx.log(ngx.ERR, \"service_id: \", ngx.ctx.api_ctx.service_id) end end"]
+                                    "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id or 'empty route_id') end"]
                                 }
                             },
                             "upstream": {
@@ -335,17 +329,17 @@ passed
 
 
 
-=== TEST 12: service_id is empty
+=== TEST 11: service_id is empty
 --- request
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
+--- error_log
+service_id: empty route_id
 
 
 
-=== TEST 13: update route and binding service_id
+=== TEST 12: update route and binding service_id
 --- config
     location /t {
         content_by_lua_block {
@@ -358,7 +352,7 @@ hello world
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.ERR, \"service_id: \", ngx.ctx.api_ctx.service_id) end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id) end"]
                         }
                     },
                     "upstream": {
@@ -380,7 +374,7 @@ hello world
                             "plugins": {
                                 "serverless-pre-function": {
                                     "phase": "access",
-                                    "functions" : ["return function() ngx.log(ngx.ERR, \"service_id: \", ngx.ctx.api_ctx.service_id) end"]
+                                    "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id) end"]
                                 }
                             },
                             "upstream": {
@@ -409,7 +403,7 @@ passed
 
 
 
-=== TEST 14: service_id is not empty
+=== TEST 14: service_id is 1
 --- request
 GET /hello
 --- response_body
