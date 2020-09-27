@@ -342,3 +342,142 @@ hello world
 service_id: 1
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: create consumer and bind key-auth plugin
+--- config 
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "consumer_jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: create route and enable key-auth plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello",
+                    "plugins": {
+                        "key-auth": {},
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_name: \", ngx.ctx.api_ctx.var.consumer_name) end"]
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end   
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: consumer_name is `consumer_jack`
+--- request
+GET /hello
+--- more_headers
+apikey: auth-jack
+--- response_body
+hello world
+--- error_log
+consumer_name: consumer_jack
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: update route and turn off the key-auth plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello",
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_name: \", ngx.ctx.api_ctx.var.consumer_name or 'consumer_name is nil') end"]
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end   
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: consumer_name is empty
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+consumer_name: consumer_name is nil
+--- no_error_log
+[error]
