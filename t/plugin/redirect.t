@@ -676,3 +676,77 @@ close: 1 nil}
 --- no_error_log
 [error]
 [alert]
+
+
+
+=== TEST 26: add plugin with new uri: /test/add
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods":["POST","GET","HEAD"],
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "ret_code": 307
+                        }
+                    },
+                    "host": "test.com",
+                    "uri": "/hello-https"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: http to https post redirect
+--- request
+POST /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 308
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: http to https get redirect
+--- request
+GET /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 301
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: http to https head redirect
+--- request
+HEAD /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 301
+--- no_error_log
+[error]
