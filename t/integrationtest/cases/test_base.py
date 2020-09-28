@@ -73,8 +73,7 @@ def setup_module():
         os.makedirs("./cases/logs")
     except Exception as e:
         pass
-    p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], 
-        stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
+    p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
     p.wait()
 
 def teardown_module():
