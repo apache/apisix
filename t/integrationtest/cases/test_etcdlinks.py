@@ -33,11 +33,9 @@ def getpidbyname():
     return p.stdout.read().strip()
 
 def getworkernum(pid):
-    num = 0
-    for cpid in psutil.pids():
-        if psutil.Process(int(cpid)).ppid()==int(pid):
-            num += 1
-    return num
+    parent = psutil.Process(pid)
+    children = parent.children(recursive=True)
+    return len(children)
 
 def getetcdlinks():
     for r in psutil.process_iter():
