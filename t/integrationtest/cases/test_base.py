@@ -58,7 +58,6 @@ def setup_module():
     global headers,apisixhost,apisixpid,apisixpath
     apisixpid = int(get_pid_byname())
     apisixpath = psutil.Process(apisixpid).cwd()
-    print apisixpath
     os.chdir(apisixpath)
     subprocess.call("./bin/apisix stop",shell=True, stdout=subprocess.PIPE)
     time.sleep(1)
@@ -74,7 +73,8 @@ def setup_module():
         os.makedirs("./cases/logs")
     except Exception as e:
         pass
-    p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
+    p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], 
+        stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
     p.wait()
 
 def teardown_module():
@@ -82,7 +82,7 @@ def teardown_module():
 
 #verify the route after added and deleted routes
 def test_basescenario01():
-    print("=============APISIX's resource occupation(before test):")
+    print("====APISIX's resource occupation(before test):")
     get_workerres(apisixpid)
     cfgdata = {
     "uri": "/hello",
@@ -93,14 +93,14 @@ def test_basescenario01():
         }
     }
 }
-    r = requests.put("%s/apisix/admin/routes/1"%apisixhost, json=cfgdata,headers=headers )
+    r = requests.put("%s/apisix/admin/routes/1"%apisixhost, json=cfgdata,headers=headers)
     r = json.loads(r.content)
     assert r["action"] == "set"
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 200 and "Hello, World!" in r.content
     r = requesttest("%s/hello"%apisixhost,10)
     assert all(i == 200 for i in r)
-    print("=============APISIX's resource occupation(after set route and request test):")
+    print("====APISIX's resource occupation(after set route and request test):")
     get_workerres(apisixpid)
 
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
@@ -108,9 +108,9 @@ def test_basescenario01():
     assert r.status_code == 404
     r = requesttest("%s/hello"%apisixhost,10)
     assert all(i == 404 for i in r)
-    print("=============APISIX's resource occupation(after delete route and request test):")
+    print("====PISIX's resource occupation(after delete route and request test):")
     get_workerres(apisixpid)
 
-    print("=============APISIX's error log:")
+    print("====APISIX's error log:")
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read())
