@@ -14,9 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx = ngx
+local math = math
+local os = os
+local ipairs   = ipairs
 local core = require("apisix.core")
 local plugin_name = "api-breaker"
-local ngx = ngx
+
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 
 local schema = {
