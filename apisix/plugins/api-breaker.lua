@@ -154,6 +154,7 @@ function _M.header_filter(conf, ctx)
     if is_unhealthy(unhealthy_status, upstream_statu) then
         local newval, _ = shared_buffer:incr(unhealthy_cache_key(ctx), 1, 0, 600)
         shared_buffer:expire(unhealthy_cache_key(ctx), 600)
+        shared_buffer:delete(healthy_cache_key(ctx)) -- del healthy numeration
 
         core.log.info("unhealthy-" .. core.request.get_host(ctx) .. ctx.var.uri, " ", newval)
         if 0 == newval % conf.unhealthy.failures then
