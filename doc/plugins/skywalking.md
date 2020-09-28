@@ -31,14 +31,15 @@
 
 ## Name
 
-**Skywalking**(https://github.com/apache/skywalking)  is an OpenTracing plugin.\
+**Skywalking**(https://github.com/apache/skywalking) is an OpenTracing plugin.\
 The skywalking server can supports both http and grpc protocols . The APISIX client only support http protocols.
 ## Attributes
-|Name          |Requirement  |Description|
-|-------|-------|-------|
-|endpoint|required| the http endpoint of Skywalking ，for example: http://127.0.0.1:12800|
-|sample_ratio|required| the ratio of sample, the minimum is 0.00001, the maximum is 1|
-|service_name|optional| service name for skywalking reporter, the default values is **APISIX**|
+
+| Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
+| ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
+| endpoint     | string | required    |          |              | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
+| sample_ratio | number | required    | 1        | [0.00001, 1] | the ratio of sample                                                  |
+| service_name | string | optional    | "APISIX" |              | service name for skywalking reporter                                 |
 
 ## How To Enable
 

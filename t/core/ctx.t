@@ -155,3 +155,190 @@ GET /t?a=aaa
 --- error_code: 500
 --- error_log
 invalid argument, expect string value
+
+
+
+=== TEST 7: add route and get `route_id`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"route_id: \", ngx.ctx.api_ctx.var.route_id) end"]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: `url` exist and `route_id` is 1
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+route_id: 1
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: create a service and `service_id` is 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "desc": "new_service"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "desc": "new_service"
+                        },
+                        "key": "/apisix/services/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: the route object not bind any service object
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id or 'empty route_id') end"]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: service_id is empty
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+service_id: empty route_id
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: update route and binding service_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "service_id": 1,
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"service_id: \", ngx.ctx.api_ctx.var.service_id) end"]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: service_id is 1
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+service_id: 1
+--- no_error_log
+[error]

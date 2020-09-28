@@ -37,10 +37,10 @@ Both plug-ins receive the same parameters.
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|---------     |--------|-----------|
-| phase         |optional|The default phase is `access`, if not specified. The valid phases are: `rewrite`, `access`,`Header_filer`, `body_filter`, `log` and `balancer`.|
-| functions         |required|A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially.|
+| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
+| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| phase     | string        | optional    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"] |                                                                                                                                                     |
+| functions | array[string] | required    |            |                                                                          | A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially. |
 
 Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:<br>
 

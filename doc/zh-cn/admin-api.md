@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin Metadata](#plugin-metadata)
 
 ## Route
 
@@ -670,6 +671,37 @@ ssl 对象 json 配置内容：
     "key": "key",       # 私钥
     "sni": "sni"        # host 域名
 }
+```
+
+## Plugin Metadata
+
+*地址*：/apisix/admin/plugin_metadata/{plugin_name}
+
+*说明*: 插件元数据。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugin_metadata/{plugin_name}|无|获取资源|
+|PUT      |/apisix/admin/plugin_metadata/{plugin_name}|{...}|根据 plugin name 创建资源|
+|DELETE   |/apisix/admin/plugin_metadata/{plugin_name}|无|删除资源|
+
+> body 请求参数：
+
+一个根据插件 ({plugin_name}) 的 `metadata_schema` 定义的数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+{
+    "skey": "val",
+    "ikey": 1
+}'
+HTTP/1.1 201 Created
+Date: Thu, 26 Dec 2019 04:19:34 GMT
+Content-Type: text/plain
 ```
 
 [Back to TOC](#目录)
