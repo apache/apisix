@@ -258,3 +258,32 @@ GET /t
 {"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"username\" is required"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: invalid schema, not a table
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": "blah"
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [basic-auth]"}
+--- no_error_log
+[error]

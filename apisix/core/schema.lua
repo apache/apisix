@@ -22,8 +22,7 @@ local pcall = pcall
 
 local _M = {
     version = 0.3,
-    TYPE_ANY = 1,
-    TYPE_CONSUMER = 2,
+    TYPE_CONSUMER = 1,
 }
 
 
