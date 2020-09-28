@@ -96,10 +96,7 @@ do
             elseif key == "service_id" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_id
 
-            elseif key == "consumer_name" then
-                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.consumer_id
-
-            elseif key == "consumer_id" then
+            elseif key == "consumer_name" or  key == "consumer_id" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.consumer_id
 
             else
