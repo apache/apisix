@@ -99,6 +99,10 @@ do
             elseif key == "consumer_name" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.consumer_id
 
+            elseif key == "consumer_id" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.consumer_id
+                log.warn("consumer_id: ", ngx.ctx.api_ctx.consumer_id)
+
             else
                 val = get_var(key, t._request)
             end
