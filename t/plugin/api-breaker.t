@@ -60,6 +60,6 @@ __DATA__
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/failed to check the configuration of plugin
+qr/failed to check the configuration of plugin api-breaker err/
 --- no_error_log
 [error]
