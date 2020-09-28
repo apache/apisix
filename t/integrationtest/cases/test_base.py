@@ -29,7 +29,7 @@ def kill_processtree(id):
 
 def get_pid_byname():
     name = "apisix"
-    cmd = "ps -ef | grep %s | grep nginx | grep -v grep | grep -v %s/t | awk '{print $2}'"%(name,name)
+    cmd = "ps -ef | grep %s/conf | grep master | grep -v grep| awk '{print $2}'"%name
     p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True)
     p.wait()
     return p.stdout.read().strip()
