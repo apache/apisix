@@ -28,7 +28,7 @@ def kill_processtree(id):
 
 def get_pid_byname():
     name = "apisix"
-    cmd = "ps -ef | grep %s | grep nginx | grep -v grep | grep -v %s/t | awk '{print $2}'"%(name,name)
+    cmd = "ps -ef | grep %s/conf | grep master | grep -v grep| awk '{print $2}'"%name
     p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True)
     p.wait()
     return p.stdout.read().strip()
@@ -48,15 +48,27 @@ def cur_file_dir():
 
 def setup_module():
     global headers,nginx_pid,apisixhost,apisixpid,apisixpath
-    apisixpid = int(getpidbyname())
+    print get_pid_byname()
+    apisixpid = int(get_pid_byname())
     apisixpath = psutil.Process(apisixpid).cwd()
+    os.chdir(apisixpath)
+    subprocess.call("./bin/apisix stop",shell=True, stdout=subprocess.PIPE)
+    time.sleep(1)
+    subprocess.call("./bin/apisix start",shell=True, stdout=subprocess.PIPE)
+    time.sleep(1)
+    apisixpid = int(get_pid_byname())
+    print("=============APISIX's pid:",apisixpid)
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
-    casepath = cur_file_dir()
+    confpath = "./t/integrationtest/cases/nginx.conf"
+    try:
+        os.makedirs("./t/integrationtest/cases/logs")
+    except Exception as e:
+        pass
 
 def teardown_module():
     pass
 
 def test_etcdlinks01():
     time.sleep(30)
-    assert getetcdlinks() <= getworkernum(apisixpid)*7
+    assert get_etcdlinks() <= get_workernum(apisixpid)*7
