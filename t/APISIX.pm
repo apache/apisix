@@ -103,7 +103,7 @@ plugin_attr:
   hmac-auth:
     signature_key: X-APISIX-HMAC-SIGNATURE
     algorithm_key: X-APISIX-HMAC-ALGORITHM
-    timestamp_key: X-APISIX-HMAC-TIMESTAMP
+    date_key: X-APISIX-DATE
     access_key: X-APISIX-HMAC-ACCESS-KEY
     signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
 _EOC_
