@@ -20,12 +20,12 @@
 - [中文](../zh-cn/plugins/hmac-auth.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -83,6 +83,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## Test Plugin
 
 ### generate signature:
+
 The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`. From the formula, it can be seen that in order to obtain the signature, two parameters, `SECRET_KEY` and `signing_STRING`, are required. Where secret_key is configured by the corresponding consumer, the calculation formula of `signing_STRING` is `signing_string = HTTP Method + HTTP URI + canonical_query_string + access_key + Date + signed_headers_string`
 
 1. **HTTP Method** : Refers to the GET, PUT, POST and other request methods defined in the HTTP protocol, and must be in all uppercase.
@@ -96,7 +97,6 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 * Extract the `query` item in the URL, that is, the string "key1 = valve1 & key2 = valve2" after the "?" in the URL.
 * Split the `query` into several items according to the & separator, each item is in the form of key=value or only key.
 * Encoding each item after disassembly is divided into the following two situations.
-
     * When the item has only key, the conversion formula is UriEncode(key) + "=".
     * When the item is in the form of key=value, the conversion formula is in the form of UriEncode(key) + "=" + UriEncode(value). Here value can be an empty string.
     * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
