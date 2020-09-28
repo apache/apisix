@@ -64,6 +64,16 @@ local remote_addr_def = {
 }
 
 
+local label_value_def = {
+    description = "value of label",
+    type = "string",
+    pattern = [[^[a-zA-Z0-9-_.]+$]],
+    maxLength = 64,
+    minLength = 1
+}
+_M.label_value_def = label_value_def
+
+
 local health_checker = {
     type = "object",
     properties = {
@@ -331,6 +341,14 @@ local upstream_schema = {
         enable_websocket = {
             description = "enable websocket for request",
             type        = "boolean"
+        },
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
         },
         pass_host = {
             description = "mod of host passing",
