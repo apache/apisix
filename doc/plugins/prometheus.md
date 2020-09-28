@@ -139,3 +139,22 @@ apisix_nginx_http_current_connections{state="writing"} 1
 # TYPE apisix_nginx_metric_errors_total counter
 apisix_nginx_metric_errors_total 0
 ```
+
+## Disable Plugin
+
+Remove the corresponding json configuration in the plugin configuration to disable `prometheus`.
+APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
