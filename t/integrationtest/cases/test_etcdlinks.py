@@ -17,27 +17,28 @@
 
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-import sys,os,time,requests,json,subprocess,signal,psutil,grequests,re
+import sys,os,time,json,subprocess,signal
+import requests,psutil,grequests
 
-def killprocesstree(id):
+def kill_processtree(id):
     for pid in psutil.pids():
         if psutil.Process(int(pid)).ppid()==id:
             psutil.Process(int(pid)).terminate()
     psutil.Process(id).terminate()
 
-def getpidbyname():
+def get_pid_byname():
     name = "apisix"
     cmd = "ps -ef | grep %s | grep nginx | grep -v grep | grep -v %s/t | awk '{print $2}'"%(name,name)
     p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True)
     p.wait()
     return p.stdout.read().strip()
 
-def getworkernum(pid):
+def get_workernum(pid):
     parent = psutil.Process(pid)
     children = parent.children(recursive=True)
     return len(children)
 
-def getetcdlinks():
+def get_etcdlinks():
     for r in psutil.process_iter():
         if r.name()=="etcd":
             return len(psutil.Process(r.pid).connections())
