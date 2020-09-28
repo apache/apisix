@@ -24,7 +24,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity check (missing required field)
+=== TEST 1: sanity check
 --- config
         location /t {
            content_by_lua_block {
@@ -36,6 +36,47 @@ __DATA__
                             "api-breaker": {
                                 "response_code": 502,
                                 "healthy": {
+                                    "successes": 3
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin api-breaker err/
+--- no_error_log
+[error]
+
+=== TEST 2: sanity check
+--- config
+        location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "api-breaker": {
+                                "response_code": 502,
+                                "healthy": {
+                                    "http_statuses": [100],
                                     "successes": 3
                                 }
                             }
