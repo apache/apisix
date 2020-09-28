@@ -193,6 +193,7 @@ plugins:                          # plugin list
   - proxy-mirror
   - request-id
   - hmac-auth
+  - api-breaker
 
 stream_plugins:
   - mqtt-proxy
