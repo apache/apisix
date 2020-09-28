@@ -111,7 +111,8 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     local opts = {}
     opts.start_revision = modified_index
     opts.timeout = timeout
-    local res_func, func_err = etcd_cli:watchdir(key, opts)
+    opts.need_cancel = true
+    local res_func, func_err, http_cli = etcd_cli:watchdir(key, opts)
     if not res_func then
         return nil, func_err
     end
@@ -121,6 +122,15 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     local res, err = res_func()
     if not res or not res.result or not res.result.events then
         res, err = res_func()
+    end
+
+    if http_cli then
+        local res_cancel, err_cancel = etcd_cli:watchcancel(http_cli)
+        if res_cancel and res_cancel == 1 then
+            log.info("cancel watch connection success")
+        else
+            log.error("cancel watch failed: ", err_cancel)
+        end
     end
 
     if not res then
@@ -168,15 +178,11 @@ local function sync_data(self)
             return false, err
         end
 
-        local dir_res, headers = res.body.node, res.headers
+        local dir_res, headers = res.body.node or {}, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then
             return false, err
-        end
-
-        if not dir_res.dir then
-            return false, self.key .. " is not a dir"
         end
 
         if not dir_res.nodes then
@@ -246,24 +252,9 @@ local function sync_data(self)
         return true
     end
 
-    -- for fetch the etcd index
-    local key_res, _ = getkey(self.etcd_cli, self.key)
-
     local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
-
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
-    if err == "timeout" then
-        if key_res and key_res.headers then
-            local key_index = key_res.headers["X-Etcd-Index"]
-            local key_idx = key_index and tonumber(key_index) or 0
-            if key_idx and key_idx > self.prev_index then
-                -- Avoid the index to exceed 1000 by updating other keys
-                -- that will causing a full reload
-                self:upgrade_version(key_index)
-            end
-        end
-    end
 
     if not dir_res then
         return false, err
@@ -474,6 +465,7 @@ function _M.new(key, opts)
     etcd_conf.host = nil
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
+    etcd_conf.api_prefix = "/v3"
 
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
