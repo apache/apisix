@@ -94,6 +94,22 @@ local function is_healthy(healthy_status, upstream_statu)
     return false
 end
 
+
+local function healthy_cache_key(ctx)
+    return "healthy-" .. core.request.get_host(ctx) .. ctx.var.uri
+end
+
+
+local function unhealthy_cache_key(ctx)
+    return "unhealthy-" .. core.request.get_host(ctx) .. ctx.var.uri
+end
+
+
+local function unhealthy_lastime_cache_key(ctx)
+    return "unhealthy-lastime" .. core.request.get_host(ctx) .. ctx.var.uri
+end
+
+
 local _M = {
     version = 0.1,
     name = plugin_name,
@@ -113,8 +129,8 @@ end
 
 
 function _M.access(conf, ctx)
-    local unhealthy_val, _ = shared_buffer:get("unhealthy-" .. ctx.var.uri)
-    local unhealthy_lastime, _ = shared_buffer:get("unhealthy-lastime" .. ctx.var.uri)
+    local unhealthy_val, _ = shared_buffer:get(unhealthy_cache_key(ctx))
+    local unhealthy_lastime, _ = shared_buffer:get(unhealthy_lastime_cache_key(ctx))
 
     if unhealthy_val and unhealthy_lastime then
         local ride = math.ceil(unhealthy_val / conf.unhealthy.failures)
@@ -136,25 +152,25 @@ function _M.header_filter(conf, ctx)
     local upstream_statu = core.response.get_upstream_status(ctx)
 
     if is_unhealthy(unhealthy_status, upstream_statu) then
-        local newval, _ = shared_buffer:incr("unhealthy-" .. ctx.var.uri, 1, 0, 600)
-        shared_buffer:expire("unhealthy-" .. ctx.var.uri, 600)
+        local newval, _ = shared_buffer:incr(unhealthy_cache_key(ctx), 1, 0, 600)
+        shared_buffer:expire(unhealthy_cache_key(ctx), 600)
 
-        core.log.info("unhealthy-" .. ctx.var.uri, " ", newval)
+        core.log.info("unhealthy-" .. core.request.get_host(ctx) .. ctx.var.uri, " ", newval)
         if 0 == newval % conf.unhealthy.failures then
-            shared_buffer:set("unhealthy-lastime" .. ctx.var.uri, os.time(), 600)
+            shared_buffer:set(unhealthy_lastime_cache_key(ctx), os.time(), 600)
         end
 
     elseif is_healthy(healthy_status, upstream_statu) then
-        local unhealthy_val, _ = shared_buffer:get("unhealthy-" .. ctx.var.uri)
+        local unhealthy_val, _ = shared_buffer:get(unhealthy_cache_key(ctx))
         if unhealthy_val then
-            local healthy_val, _ = shared_buffer:incr("healthy-" .. ctx.var.uri, 1, 0, 600)
-            shared_buffer:expire("healthy-" .. ctx.var.uri, 600)
+            local healthy_val, _ = shared_buffer:incr(healthy_cache_key(ctx), 1, 0, 600)
+            shared_buffer:expire(healthy_cache_key(ctx), 600)
 
             if healthy_val >= conf.healthy.successes then
-                core.log.info("healthy-" .. ctx.var.uri, " ", healthy_val)
-                shared_buffer:delete("unhealthy-" .. ctx.var.uri)
-                shared_buffer:delete("healthy-" .. ctx.var.uri)
-                shared_buffer:delete("unhealthy-lastime" .. ctx.var.uri)
+                core.log.info(healthy_cache_key(ctx), " ", healthy_val)
+                shared_buffer:delete(unhealthy_cache_key(ctx))
+                shared_buffer:delete(healthy_cache_key(ctx))
+                shared_buffer:delete(unhealthy_lastime_cache_key(ctx))
             end
         end
     end
