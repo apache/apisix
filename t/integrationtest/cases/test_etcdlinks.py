@@ -71,4 +71,4 @@ def teardown_module():
 
 def test_etcdlinks01():
     time.sleep(30)
-    assert get_etcdlinks() <= get_workernum(apisixpid)*7
+    assert get_etcdlinks() <= get_workernum(apisixpid) * 7
