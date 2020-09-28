@@ -40,6 +40,8 @@ do_install() {
     sudo make install > build.log 2>&1 || (cat build.log && exit 1)
     cd ..
     rm -rf luarocks-2.4.4
+
+    ./utils/install-etcd.sh
 }
 
 script() {
