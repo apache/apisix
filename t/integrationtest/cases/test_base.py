@@ -67,13 +67,12 @@ def setup_module():
     print("=============APISIX's pid:",apisixpid)
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
-    casepath = cur_file_dir()
-    confpath = casepath + "/nginx.conf"
+    confpath = "./t/integrationtest/cases/nginx.conf"
     try:
-        os.makedirs("./cases/logs")
+        os.makedirs("./t/integrationtest/cases/logs")
     except Exception as e:
         pass
-    p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
+    p = subprocess.Popen(['openresty', '-p', apisixpath ,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
     p.wait()
 
 def teardown_module():
