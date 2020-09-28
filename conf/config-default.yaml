@@ -166,6 +166,7 @@ plugins:                          # plugin list
   - jwt-auth
   - zipkin
   - ip-restriction
+  - referer-restriction
   - grpc-transcode
   - serverless-pre-function
   - serverless-post-function
