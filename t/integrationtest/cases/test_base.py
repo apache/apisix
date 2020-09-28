@@ -17,26 +17,29 @@
 
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-import sys,os,time,requests,json,subprocess,signal,psutil,grequests
+import sys,os,time,json,subprocess,signal
+import requests,psutil,grequests
 
-def killprocesstree(id):
-    for pid in psutil.pids():
-        if psutil.Process(int(pid)).ppid()==id:
-            psutil.Process(int(pid)).terminate()
+def kill_processtree(id):
+    parent = psutil.Process(pid)
+    children = parent.children(recursive=True)
+    for p in children:
+        psutil.Process(p.pid).terminate()
     psutil.Process(id).terminate()
 
-def getpidbyname():
+def get_pid_byname():
     name = "apisix"
     cmd = "ps -ef | grep %s | grep nginx | grep -v grep | grep -v %s/t | awk '{print $2}'"%(name,name)
     p = subprocess.Popen(cmd, stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = True)
     p.wait()
     return p.stdout.read().strip()
 
-def getworkerres(pid):
-    for cpid in psutil.pids():
-        if psutil.Process(int(cpid)).ppid()==int(pid):
-            p = psutil.Process(int(cpid))
-            print(cpid,p.cpu_percent(interval=1.0),p.memory_percent())
+def get_workerres(pid):
+    parent = psutil.Process(pid)
+    children = parent.children(recursive=True)
+    for p in children:
+        cp = psutil.Process(p.pid)
+        print(p.pid,cp.cpu_percent(interval=1.0),cp.memory_percent())
 
 def cur_file_dir():
     return os.path.split(os.path.realpath(__file__))[0]
@@ -52,9 +55,17 @@ def requesttest(url,times):
     return r
 
 def setup_module():
-    global headers,nginx_pid,apisixhost,apisixpid,apisixpath
-    apisixpid = int(getpidbyname())
+    global headers,apisixhost,apisixpid,apisixpath
+    apisixpid = int(get_pid_byname())
     apisixpath = psutil.Process(apisixpid).cwd()
+    print apisixpath
+    os.chdir(apisixpath)
+    subprocess.call("./bin/apisix stop",shell=True, stdout=subprocess.PIPE)
+    time.sleep(1)
+    subprocess.call("./bin/apisix start",shell=True, stdout=subprocess.PIPE)
+    time.sleep(1)
+    apisixpid = int(get_pid_byname())
+    print("=============APISIX's pid:",apisixpid)
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
     casepath = cur_file_dir()
@@ -65,15 +76,14 @@ def setup_module():
         pass
     p = subprocess.Popen(['openresty', '-p',casepath,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
     p.wait()
-    nginx_pid = p.pid+1
 
 def teardown_module():
     pass
-    # killprocesstree(nginx_pid)
 
-def test_01():
-    print("APISIX's resource occupation(before test):")
-    getworkerres(apisixpid)
+#verify the route after added and deleted routes
+def test_basescenario01():
+    print("=============APISIX's resource occupation(before test):")
+    get_workerres(apisixpid)
     cfgdata = {
     "uri": "/hello",
     "upstream": {
@@ -90,17 +100,17 @@ def test_01():
     assert r.status_code == 200 and "Hello, World!" in r.content
     r = requesttest("%s/hello"%apisixhost,10)
     assert all(i == 200 for i in r)
-    print("APISIX's resource occupation(after set route and request test):")
-    getworkerres(apisixpid)
+    print("=============APISIX's resource occupation(after set route and request test):")
+    get_workerres(apisixpid)
 
     r = requests.delete("%s/apisix/admin/routes/1"%apisixhost, headers=headers )
     r = requests.get("%s/hello"%apisixhost)
     assert r.status_code == 404
     r = requesttest("%s/hello"%apisixhost,10)
     assert all(i == 404 for i in r)
-    print("APISIX's resource occupation(after delete route and request test):")
-    getworkerres(apisixpid)
+    print("=============APISIX's resource occupation(after delete route and request test):")
+    get_workerres(apisixpid)
 
-    print("APISIX's error log:")
+    print("=============APISIX's error log:")
     with open(apisixpath+r"/logs/error.log") as fh:
         print(fh.read())
