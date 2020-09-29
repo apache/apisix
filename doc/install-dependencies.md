@@ -28,7 +28,7 @@
 
 Note
 ====
-- Apache APISIX would not support the v2 protocol storage to etcd anymore. If etcd version is below 3.4, the default protocol is still v2 so you need to turn on v3 protocol mannually.
+- Apache APISIX would not support the v2 protocol storage to etcd anymore. If etcd version is below 3.4, the default protocol is still v2 so you need to turn on v3 protocol mannually. Plus, etcd version below v3.4 would not support etcd authentication.
 
 You need to add `ETCDCTL_API=3` to the environmental variables to enable the v3 protocol.
 
