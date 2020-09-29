@@ -28,6 +28,7 @@ local ngx_var      = ngx.var
 local re_gsub      = ngx.re.gsub
 local type         = type
 local error        = error
+local ngx          = ngx
 
 
 ffi.cdef[[
@@ -88,6 +89,12 @@ do
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
                 val = get_var(key, t._request)
+
+            elseif key == "route_id" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id
+
+            elseif key == "service_id" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_id
 
             else
                 val = get_var(key, t._request)
