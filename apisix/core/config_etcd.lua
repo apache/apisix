@@ -126,7 +126,7 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
 
     if http_cli then
         local res_cancel, err_cancel = etcd_cli:watchcancel(http_cli)
-        if res_cancel and res_cancel == 1 then
+        if res_cancel == 1 then
             log.info("cancel watch connection success")
         else
             log.error("cancel watch failed: ", err_cancel)
@@ -139,7 +139,7 @@ local function waitdir(etcd_cli, key, modified_index, timeout)
     end
 
     if type(res.result) ~= "table" then
-        return nil, "failed to read etcd dir"
+        return nil, "failed to wait etcd dir"
     end
     return etcd_apisix.watch_format(res)
 end
