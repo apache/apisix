@@ -28,10 +28,11 @@ if not shared_buffer then
     error("get ngx.shared dict error.")
 end
 
+
 local schema = {
     type = "object",
     properties = {
-        response_code = {
+        unhealthy_response_code = {
             type = "integer",
             minimum = 200,
             maximum = 599,
@@ -75,8 +76,9 @@ local schema = {
             }
         }
     },
-    required = {"response_code", "unhealthy", "healthy"},
+    required = {"unhealthy_response_code", "unhealthy", "healthy"},
 }
+
 
 local function is_unhealthy(unhealthy_status, upstream_statu)
     for _, unhealthy in ipairs(unhealthy_status) do
@@ -118,7 +120,7 @@ end
 local _M = {
     version = 0.1,
     name = plugin_name,
-    priority = 1000,
+    priority = 1005,
     schema = schema,
 }
 
@@ -151,7 +153,7 @@ function _M.access(conf, ctx)
         end
 
         if unhealthy_lastime + 2^ride >= ngx.time() then
-            return conf.response_code
+            return conf.unhealthy_response_code
         end
     end
 end
