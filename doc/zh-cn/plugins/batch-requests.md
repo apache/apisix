@@ -137,4 +137,4 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 
 ## 禁用插件
 
-正常情况不需要禁用本插件，如果有特殊情况，从 `/conf/config.yaml` 的 `plugins` 节点中移除即可。
+正常情况不需要禁用本插件，如有需要，在 `/conf/config.yaml` 中新建一个所需的 `plugins` 列表，以覆盖原列表。
