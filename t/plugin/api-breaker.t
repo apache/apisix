@@ -33,7 +33,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.api-breaker")
             local ok, err = plugin.check_schema({
-                response_code = 502,
+                unhealthy_response_code = 502,
                 unhealthy = {
                     http_statuses = {500},
                     failures = 1,
@@ -64,7 +64,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.api-breaker")
             local ok, err = plugin.check_schema({
-                response_code = 502,
+                unhealthy_response_code = 502,
                 unhealthy = {
                     failures = 1,
                 },
@@ -97,7 +97,7 @@ done
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "response_code": 502,
+                            "unhealthy_response_code": 502,
                             "unhealthy": {
                                 "http_statuses": [500, 503],
                                 "failures": 3
@@ -169,7 +169,7 @@ passed
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "response_code": 502,
+                            "unhealthy_response_code": 502,
                             "unhealthy": {
                                 "failures": 3
                             },
