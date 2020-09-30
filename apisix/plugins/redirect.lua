@@ -19,6 +19,7 @@ local tab_insert = table.insert
 local tab_concat = table.concat
 local re_gmatch = ngx.re.gmatch
 local ipairs = ipairs
+local ngx = ngx
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -133,7 +134,13 @@ function _M.rewrite(conf, ctx)
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
         uri = "https://$host$request_uri"
-        ret_code = 301
+        local method_name = ngx.req.get_method()
+        if method_name == "GET" or method_name == "HEAD" then
+            ret_code = 301
+        else
+         -- https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/308
+            ret_code = 308
+        end
     end
 
     if uri and ret_code then

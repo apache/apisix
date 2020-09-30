@@ -265,6 +265,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |enable_websocket|optional| enable `websocket`(boolean), default `false`.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |desc     |optional|Identifies route names, usage scenarios, and more.|
+|labels   |optional|The key/value pairs to specify attributes. |
 |pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
 |upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
 
