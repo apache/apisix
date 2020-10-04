@@ -138,7 +138,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         ./bin/apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         ./bin/apisix start
         ```
@@ -162,7 +162,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         apisix start
         ```

@@ -139,7 +139,7 @@ There are several ways to install the Apache Release version of APISIX:
         ```shell
         ./bin/apisix version
         ```
-    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+    - start APISIX:
         ```shell
         ./bin/apisix start
         ```
@@ -163,7 +163,7 @@ There are several ways to install the Apache Release version of APISIX:
         ```shell
         apisix version
         ```
-    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+    - start APISIX:
         ```shell
         apisix start
         ```
