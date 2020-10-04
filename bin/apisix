@@ -33,8 +33,6 @@ local function execute_cmd(cmd)
     return data
 end
 
-execute_cmd("install -d -m 777 /tmp/apisix_cores/")
-
 local pkg_cpath_org = package.cpath
 local pkg_path_org = package.path
 
@@ -208,7 +206,7 @@ http {
     {% if enabled_plugins["proxy-cache"] then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
-    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *};
+    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
     {% end %}
     {% end %}
 
