@@ -59,6 +59,7 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"failed to match any routes"}
+--- wait: 1
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
@@ -72,13 +73,13 @@ qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud
         content_by_lua_block {
             local core = require("apisix.core")
             local res, err = core.etcd.set("/services/1", core.json.decode([[{
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        }
-                }]]))
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]))
 
             if res.status >= 300 then
                 res.status = code
@@ -91,6 +92,7 @@ qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud
 GET /t
 --- response_body_like eval
 qr/"nodes":\{"127.0.0.1:1980":1\}/
+--- wait: 1
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
