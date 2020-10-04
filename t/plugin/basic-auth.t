@@ -28,8 +28,9 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.basic-auth")
-            local ok, err = plugin.check_schema({username = 'foo', password = 'bar'})
+            local ok, err = plugin.check_schema({username = 'foo', password = 'bar'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -62,7 +63,7 @@ done
 --- request
 GET /t
 --- response_body
-value should match only one schema, but matches none
+additional properties forbidden, found username
 done
 --- no_error_log
 [error]
@@ -224,6 +225,65 @@ hello world
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: value should match only one schema, but matches none"}
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"password\" is required"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: invalid schema, not field given
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"username\" is required"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: invalid schema, not a table
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": "blah"
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [basic-auth]"}
 --- no_error_log
 [error]
