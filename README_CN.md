@@ -138,7 +138,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         ./bin/apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         ./bin/apisix start
         ```
@@ -162,15 +162,12 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         apisix start
         ```
 
-**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，如果 etcd 版本低于 v3.4，启动 etcd 时需要开启 v3 协议的支持。
-```shell
-export ETCDCTL_API=3
-```
+**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，并且 etcd 最低支持版本为 v3.4.0，如果有需要请进行升级。如果需要将数据迁移至 etcd v3，请按照 [etcd 迁移指南](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/) 进行迁移。
 
 ## 针对开发者
 
