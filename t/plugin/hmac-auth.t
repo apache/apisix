@@ -338,8 +338,17 @@ location /t {
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
-        local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n")
+        core.log.info("signing_string:", signing_string)
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -501,7 +510,7 @@ location /t {
         local access_key = "my-access-key2"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
-        
+
         ngx.sleep(2)
 
         local signing_string = "GET" .. "/hello" ..  "" ..
@@ -561,8 +570,17 @@ location /t {
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
-        local signing_string = "PUT" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+        local signing_string = {
+            "PUT",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n")
+        core.log.info("signing_string:", signing_string)
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -617,19 +635,28 @@ location /t {
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
-        local signing_string = "PUT" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+        local signing_string = {
+            "PUT",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n")
+
         core.log.info("signing_string:", signing_string)
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local auth_string = "hmac-auth-v1#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
         "hmac-sha256#" .. gmt .. "#x-custom-header-a;x-custom-header-b"
-        
+
         local headers = {}
         headers["Authorization"] = auth_string
         headers["x-custom-header-a"] = custom_header_a
-        headers["x-custom-header-b"] = custom_header_b        
-        
+        headers["x-custom-header-b"] = custom_header_b
+
         local code, body = t.test('/hello',
             ngx.HTTP_PUT,
             req_body,
@@ -780,8 +807,15 @@ location /t {
         local access_key = "my-access-key5"
         local custom_header_a = "asld$%dfasf"
 
-        local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a
+        }
+        signing_string = core.table.concat(signing_string, "\n")
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
