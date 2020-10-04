@@ -43,6 +43,7 @@ __DATA__
     }
 --- request
 GET /t
+--- wait: 1
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
@@ -58,6 +59,7 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"failed to match any routes"}
+--- wait: 1
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
