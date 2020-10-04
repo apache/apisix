@@ -20,14 +20,11 @@
 - [中文](../zh-cn/plugins/jwt-auth.md)
 
 # Summary
-- [Summary](#summary)
-  - [Name](#name)
-  - [Attributes](#attributes)
-  - [How To Enable](#how-to-enable)
-  - [Test Plugin](#test-plugin)
-      - [get the token in `jwt-auth` plugin:](#get-the-token-in-jwt-auth-plugin)
-      - [try request with token](#try-request-with-token)
-  - [Disable Plugin](#disable-plugin)
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Test Plugin**](#test-plugin)
+- [**Disable Plugin**](#disable-plugin)
 
 
 ## Name
