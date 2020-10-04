@@ -32,6 +32,7 @@ apisix:
 etcd:
   host:
     - "http://127.0.0.1:7777"  -- wrong etcd port
+  timeout: 1
 --- config
     location /t {
         content_by_lua_block {
@@ -43,6 +44,6 @@ etcd:
 --- request
 GET /t
 --- grep_error_log eval
-qr{failed to create etcd instance for key.*routes}
+qr{failed to fetch data from etcd: connection refused,  etcd key: .*routes}
 --- grep_error_log_out eval
-qr/(failed to create etcd instance for key.*routes\n){2,}/
+qr/(failed to fetch data from etcd: connection refused,  etcd key: .*routes\n){1,}/
