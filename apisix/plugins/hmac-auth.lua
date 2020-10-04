@@ -201,27 +201,31 @@ local function generate_signature(ctx, secret_key, params)
         canonical_query_string = core.table.concat(query_tab, "&")
     end
 
-    local canonical_headers = {}
-
     core.log.info("all headers: ",
                   core.json.delay_encode(core.request.headers(ctx), true))
+
+    local signing_string_items = {
+        request_method,
+        canonical_uri,
+        canonical_query_string,
+        params.access_key,
+        params.date,
+    }
 
     if params.signed_headers then
         for _, h in ipairs(params.signed_headers) do
             local canonical_header = core.request.header(ctx, h) or ""
-            core.table.insert(canonical_headers, canonical_header)
+            core.table.insert(signing_string_items,
+                              h .. ":" .. canonical_header)
             core.log.info("canonical_header name:", core.json.delay_encode(h))
             core.log.info("canonical_header value: ",
                           core.json.delay_encode(canonical_header))
         end
     end
 
-    local signing_string = request_method .. canonical_uri
-                            .. canonical_query_string
-                            .. params.access_key .. params.date
-                            .. core.table.concat(canonical_headers, "")
+    local signing_string = core.table.concat(signing_string_items, "\n")
 
-    core.log.info("signing_string:", signing_string,
+    core.log.info("signing_string: ", signing_string,
                   " params.signed_headers:",
                   core.json.delay_encode(params.signed_headers))
 
