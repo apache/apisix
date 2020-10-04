@@ -43,7 +43,7 @@ local function check_conf(consumer_name, conf)
     end
 
     if conf.plugins then
-        ok, err = plugins.check_schema(conf.plugins)
+        ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
