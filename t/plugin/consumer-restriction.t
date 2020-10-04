@@ -1085,6 +1085,7 @@ qr/\{"message":"The service_id is forbidden."\}/
 [error]
 
 
+
 === TEST 35: Route binding `hmac-auth` plug-in and invalid blacklist `service_id`
 --- config
     location /t {
