@@ -35,7 +35,7 @@
 | 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
 | whitelist | array[string] | 必须    |         |       | 域名列表。域名开头可以用'*'作为通配符 |
-| optional  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否允许访问 |
+| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查 |
 
 ## 如何启用
 
@@ -53,7 +53,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     },
     "plugins": {
         "referer-restriction": {
-            "optional": true,
+            "bypass_missing": true,
             "whitelist": [
                 "xx.com",
                 "*.xx.com"

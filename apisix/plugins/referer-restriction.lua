@@ -25,7 +25,7 @@ local lrucache  = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
-        optional = {
+        bypass_missing = {
             type = "boolean",
             default = false,
         },
@@ -107,7 +107,7 @@ function _M.access(conf, ctx)
 
 
     if not referer then
-        block = not conf.optional
+        block = not conf.bypass_missing
 
     elseif conf.whitelist then
         local matcher = lrucache(conf.whitelist, nil,

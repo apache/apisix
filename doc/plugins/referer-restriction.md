@@ -37,7 +37,7 @@ whitelisting request header Referers.
 | Name      | Type          | Requirement | Default | Valid | Description                              |
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
 | whitelist | array[string] | required    |         |       | List of hostname to whitelist. The hostname can be started with `*` as a wildcard |
-| optional  | boolean       | optional    | false   |       | Whether to allow when the Referer header is missing or malformed |
+| bypass_missing  | boolean       | optional    | false   |       | Whether to bypass the check when the Referer header is missing or malformed |
 
 ## How To Enable
 
@@ -55,7 +55,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     },
     "plugins": {
         "referer-restriction": {
-            "optional": true,
+            "bypass_missing": true,
             "whitelist": [
                 "xx.com",
                 "*.xx.com"

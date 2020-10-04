@@ -124,7 +124,7 @@ GET /hello
                         },
                         "plugins": {
                             "referer-restriction": {
-                                "optional": true,
+                                "bypass_missing": true,
                                  "whitelist": [
                                      "*.xx.com",
                                      "yy.com"
