@@ -244,8 +244,17 @@ location /t {
         local access_key = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
-        local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n")
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
