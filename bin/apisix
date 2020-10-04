@@ -993,24 +993,24 @@ local function init_etcd(show_output)
         uri = host .. "/version"
         local cmd = string.format("curl -s -m %d %s", timeout * 2, uri)
         local res = execute_cmd(cmd)
-        local errmsg = string.format("got malformed version message: \"%s\" from etcd", res)
+        local errmsg = string.format("got malformed version message: \"%s\" from etcd\n", res)
         local body, _, err = dkjson.decode(res)
         if err then
             io.stderr:write(errmsg)
-            return
+            os.exit(1)
         end
 
         local cluster_version = body["etcdcluster"]
         if not cluster_version then
             io.stderr:write(errmsg)
-            return
+            os.exit(1)
         end
 
         if compare_semantic_version(cluster_version, min_etcd_version) then
-            io.stderr:write("etcd cluster version ", cluster_version,
-                            " is less than the required version ", min_etcd_version,
-                            ", please upgrade your etcd cluster")
-            return
+            io.stderr:write("etcd cluster version ".. cluster_version ..
+                            " is less than the required version ".. min_etcd_version ..
+                            ", please upgrade your etcd cluster\n")
+            os.exit(1)
         end
 
         break
