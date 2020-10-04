@@ -20,12 +20,12 @@
 - [English](../../plugins/hmac-auth.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
-
 
 ## 名字
 
@@ -42,7 +42,6 @@
 | algorithm      | string        | 可选   | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | 加密算法。                                                                                                                                                                              |
 | clock_skew     | integer       | 可选   | 0           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
 | signed_headers | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
-
 
 ## 如何启用
 
@@ -85,7 +84,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 签名生成公式
 
-签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signing_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signing_string` 的计算公式为 `signing_string = HTTP Method + HTTP URI + canonical_query_string + access_key + Date + signed_headers_string`
+签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signing_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。
 
 1. **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
 2. **HTTP URI**：要求必须以“/”开头，不以“/”开头的需要补充上，空路径为“/”。
@@ -105,13 +104,30 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 > signed_headers_string 生成步骤如下：
 
 * 从请求头中获取指定加入计算的 headers ，具体请参考下节 `使用生成好的签名进行请求尝试` 中的 `SIGNED_HEADERS` 放置的位置。
-* 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序拼接起来，拼接完后就生成了 `signed_headers_string` 。
+* 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序用`name:value`方式拼接起来，拼接完后就生成了 `signed_headers_string` 。
 
+```plain
+HeaderKey1 + ":" + HeaderValue1 + "\n"\+
+HeaderKey2 + ":" + HeaderValue2 + "\n"\+
+...
+HeaderKeyN + ":" + HeaderValueN
+```
+
+拼接后的示例：
+
+```plain
+GET
+/hello
+
+your-access-key
+Mon, 28 Sep 2020 06:48:57 GMT
+x-custom-header:value
+```
 
 ### 使用生成好的签名进行请求尝试
 
 **注： ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
-**注： SIGNED_HEADERS 为客户端指定的加入加密计算的 headers ，多个以英文分号分隔如：User-Agent;Accept-Language**
+**注： SIGNED_HEADERS 为客户端指定的加入加密计算的 headers**
 
 * 签名信息拼一起放到请求头 `Authorization` 字段中：
 
