@@ -63,13 +63,6 @@ function _M.http_init(args)
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    --
-    local seed, err = core.utils.get_seed_from_urandom()
-    if not seed then
-        core.log.warn('failed to get seed from urandom: ', err)
-        seed = ngx_now() * 1000 + ngx.worker.pid()
-    end
-    math.randomseed(seed)
     parse_args(args)
     core.id.init()
 
@@ -767,6 +760,14 @@ end
 
 function _M.stream_init_worker()
     core.log.info("enter stream_init_worker")
+    local seed, err = core.utils.get_seed_from_urandom()
+    if not seed then
+        core.log.warn('failed to get seed from urandom: ', err)
+        seed = ngx_now() * 1000 + ngx.worker.pid()
+    end
+    math.randomseed(seed)
+    core.log.info("random stream test in [1, 10000]: ", math.random(1, 1000000))
+
     router.stream_init_worker()
     plugin.init_worker()
 
