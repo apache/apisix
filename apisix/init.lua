@@ -672,7 +672,7 @@ function _M.http_log_phase()
     healcheck_passive(api_ctx)
 
     if api_ctx.server_picker and api_ctx.server_picker.after_balance then
-        api_ctx.server_picker.after_balance(api_ctx)
+        api_ctx.server_picker.after_balance(api_ctx, false)
     end
 
     if api_ctx.uri_parse_param then
