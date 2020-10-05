@@ -44,6 +44,7 @@ __DATA__
     }
 --- request
 GET /t
+--- wait: 1
 --- grep_error_log eval
 qr/\[error\].*/
 --- grep_error_log_out eval
@@ -53,7 +54,7 @@ qr/"value":"mexxxxxxxxxxxxxxx"/
 
 
 
-=== TEST 2: /not_found
+=== TEST 2: try /not_found, got error log
 --- request
 GET /not_found
 --- error_code: 404
@@ -67,7 +68,7 @@ qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud
 
 
 
-=== TEST 3: set valid service(id: 1)
+=== TEST 3: set valid service(id: 1), cover the old one
 --- config
     location /t {
         content_by_lua_block {
@@ -82,7 +83,7 @@ qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud
             }]]))
 
             if res.status >= 300 then
-                res.status = code
+                ngx.status = code
             end
 
             ngx.print(core.json.encode(res.body))
@@ -90,13 +91,9 @@ qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud
     }
 --- request
 GET /t
+--- ret_code: 200
 --- response_body_like eval
 qr/"nodes":\{"127.0.0.1:1980":1\}/
---- wait: 1
---- grep_error_log eval
-qr/\[error\].*/
---- grep_error_log_out eval
-qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud be a object}
 
 
 
