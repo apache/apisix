@@ -51,7 +51,7 @@ GET /apisix/admin/plugins
 --- request
 GET /apisix/admin/plugins/limit-req
 --- response_body
-{"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200}},"required":["rate","burst","key"],"type":"object"}
+{"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for","consumer_name"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200}},"required":["rate","burst","key"],"type":"object"}
 --- no_error_log
 [error]
 
