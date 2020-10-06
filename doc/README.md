@@ -66,6 +66,7 @@ Plugins
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
 * [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
+* [referer-restriction](plugins/referer-restriction.md): Referer whitelist.
 
 **Traffic**
 * [limit-req](plugins/limit-req.md): Request rate limiting and adjustment based on the "leaky bucket" method.

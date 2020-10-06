@@ -81,6 +81,7 @@
     -  [Limit Request](plugins/limit-req.md)
     -  [CORS](plugins/cors.md)
     -  [IP Restriction](plugins/ip-restriction.md)
+    -  [Referer Restriction](plugins/referer-restriction.md)
     -  [Keycloak Authorization](plugins/authz-keycloak.md)
     -  [RBAC Wolf](plugins/wolf-rbac.md)
 
