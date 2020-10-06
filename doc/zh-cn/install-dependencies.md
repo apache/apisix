@@ -27,11 +27,7 @@
 
 注意
 ====
-- Apache APISIX 不再支持 `v2` 版本的 etcd。在 etcd 版本低于 3.4 时，默认 API 协议仍为 v2，因此需要添加 `ETCDCTL_API=3` 至环境变量以启动 v3 协议。
-
-```shell
-export ETCDCTL_API=3
-```
+- Apache APISIX 从 v2.0 开始不再支持 `v2` 版本的 etcd，并且 etcd 最低支持版本为 v3.4.0。
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
