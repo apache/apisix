@@ -372,7 +372,7 @@ function _M.http_access_phase()
     local route = api_ctx.matched_route
     if not route then
         return core.response.exit(404,
-                    {error_msg = "failed to match any routes"})
+                    {error_msg = "404 Route Not Found"})
     end
 
     if route.value.service_protocol == "grpc" then
