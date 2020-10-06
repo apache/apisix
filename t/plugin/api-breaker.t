@@ -214,6 +214,6 @@ GET /test?r=500
 --- request eval
 ["GET /test?r=200", "GET /test?r=500", "GET /test?r=503", "GET /test?r=500", "GET /test?r=500", "GET /test?r=500"]
 --- error_code eval
-[200, 500, 503, 500, 502, 502]
+[200, 500, 503, 500, 500, 502]
 --- no_error_log
 [error]

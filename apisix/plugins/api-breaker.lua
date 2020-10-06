@@ -39,40 +39,44 @@ local schema = {
         },
         unhealthy = {
             type = "object",
-            http_statuses = {
-                type = "array",
-                minItems = 1,
-                items = {
-                    type = "integer",
-                    minimum = 500,
-                    maximum = 599,
+            properties = {
+                http_statuses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "integer",
+                        minimum = 500,
+                        maximum = 599,
+                    },
+                    uniqueItems = true,
+                    default = {500}
                 },
-                uniqueItems = true,
-                default = {500}
-            },
-            failures = {
-                type = "integer",
-                minimum = 1,
-                default = 1,
-            },
+                failures = {
+                    type = "integer",
+                    minimum = 1,
+                    default = 1,
+                }
+            }
         },
         healthy = {
             type = "object",
-            http_statuses = {
-                type = "array",
-                minItems = 1,
-                items = {
-                    type = "integer",
-                    minimum = 200,
-                    maximum = 499,
+            properties = {
+                http_statuses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "integer",
+                        minimum = 200,
+                        maximum = 499,
+                    },
+                    uniqueItems = true,
+                    default = {200, 206}
                 },
-                uniqueItems = true,
-                default = {200, 206}
-            },
-            successes = {
-                type = "integer",
-                minimum = 1,
-                default = 1,
+                successes = {
+                    type = "integer",
+                    minimum = 1,
+                    default = 1,
+                }
             }
         }
     },
