@@ -110,11 +110,11 @@ done
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1988": 1
+                            "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
+                    "uri": "/api_breaker"
                 }]]
                 )
 
@@ -134,7 +134,7 @@ passed
 
 === TEST 4: trigger breaker
 --- request eval
-["GET /hello?r=200", "GET /hello?r=500", "GET /hello?r=503", "GET /hello?r=500", "GET /hello?r=500", "GET /hello?r=500"]
+["GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=503", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
 [200, 500, 503, 500, 502, 502]
 --- no_error_log
@@ -143,7 +143,7 @@ passed
 
 === TEST 5: trigger reset status
 --- request eval
-["GET /hello?r=500", "GET /hello?r=500", "GET /hello?r=200", "GET /hello?r=200", "GET /hello?r=200", "GET /hello?r=500", "GET /hello?r=500"]
+["GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
 [500, 500, 200, 200, 200, 500, 500]
 --- no_error_log
@@ -152,7 +152,7 @@ passed
 
 === TEST 6: trigger del healthy numeration
 --- request eval
-["GET /hello?r=500", "GET /hello?r=200", "GET /hello?r=500", "GET /hello?r=500", "GET /hello?r=500", "GET /hello?r=500", "GET /hello?r=500"]
+["GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
 [500, 200, 500, 500, 502, 502, 502]
 --- no_error_log
@@ -180,11 +180,11 @@ passed
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1988": 1
+                            "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/test"
+                    "uri": "/api_breaker"
                 }]]
                 )
 
@@ -204,7 +204,7 @@ passed
 
 === TEST 8: default value
 --- request
-GET /test?r=500
+GET /api_breaker?code=500
 --- error_code: 500
 --- no_error_log
 [error]
@@ -212,7 +212,7 @@ GET /test?r=500
 
 === TEST 9: trigger default value breaker 
 --- request eval
-["GET /test?r=200", "GET /test?r=500", "GET /test?r=503", "GET /test?r=500", "GET /test?r=500", "GET /test?r=500"]
+["GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=503", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
 [200, 500, 503, 500, 500, 502]
 --- no_error_log

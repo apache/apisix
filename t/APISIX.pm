@@ -261,17 +261,6 @@ _EOC_
         require("apisix").http_init_worker()
     }
 
-    # only for test
-    server {
-        listen 1988;
-
-        location / {
-            content_by_lua_block {
-                ngx.exit(tonumber(ngx.var.arg_r))
-            }
-        }
-    }
-
     # fake server, only for test
     server {
         listen 1980;

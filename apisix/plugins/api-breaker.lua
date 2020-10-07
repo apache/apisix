@@ -25,7 +25,7 @@ local DEFAULT_EXPTIME = 600
 
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 if not shared_buffer then
-    error("get ngx.shared dict error.")
+    error("failed to get ngx.shared dict when load plugin " .. plugin_name)
 end
 
 
@@ -142,12 +142,12 @@ end
 function _M.access(conf, ctx)
     local unhealthy_val, err = shared_buffer:get(unhealthy_cache_key(ctx))
     if err then
-        core.log.error("ngx.shared get error", err)
+        core.log.error("failed to get unhealthy_cache_key in ngx.shared:", err)
     end
 
     local unhealthy_lastime, err = shared_buffer:get(unhealthy_lastime_cache_key(ctx))
     if err then
-        core.log.error("ngx.shared get error", err)
+        core.log.error("failed to get unhealthy_lastime_cache_key in ngx.shared: ", err)
     end
 
     if unhealthy_val and unhealthy_lastime then
@@ -175,26 +175,26 @@ function _M.header_filter(conf, ctx)
     if is_unhealthy(unhealthy_status, upstream_statu) then
         local newval, err = shared_buffer:incr(unhealthy_key, 1, 0, DEFAULT_EXPTIME)
         if err then
-            core.log.error("ngx.shared incr error", err)
+            core.log.error("failed to incr unhealthy_key in ngx.shared: ", err)
         end
         shared_buffer:expire(unhealthy_key, DEFAULT_EXPTIME)
         shared_buffer:delete(healthy_key) -- del healthy numeration
 
         if 0 == newval % conf.unhealthy.failures then
-            shared_buffer:set(unhealthy_lastime_cache_key(ctx), os.time(), DEFAULT_EXPTIME)
+            shared_buffer:set(unhealthy_lastime_cache_key(ctx), ngx.time(), DEFAULT_EXPTIME)
             core.log.info(unhealthy_key, " ", newval) -- stat change
         end
 
     elseif is_healthy(healthy_status, upstream_statu) then
         local unhealthy_val, err = shared_buffer:get(unhealthy_key)
         if err then
-            core.log.error("ngx.shared incr error", err)
+            core.log.error("failed to get unhealthy_key in ngx.shared: ", err)
         end
 
         if unhealthy_val then
             local healthy_val, err = shared_buffer:incr(healthy_key, 1, 0, DEFAULT_EXPTIME)
             if err then
-                core.log.error("ngx.shared incr error", err)
+                core.log.error("failed to incr healthy_key in ngx.shared: ", err)
             end
             shared_buffer:expire(healthy_key, DEFAULT_EXPTIME)
 
