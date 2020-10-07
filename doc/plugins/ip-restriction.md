@@ -31,7 +31,7 @@
 
 The `ip-restriction` can restrict access to a Service or a Route by either
 whitelisting or blacklisting IP addresses. Single IPs, multiple IPs or ranges
-in CIDR notation like 10.10.10.0/24 can be used(will support IPv6 soon).
+in CIDR notation like 10.10.10.0/24 can be used.
 
 ## Attributes
 
