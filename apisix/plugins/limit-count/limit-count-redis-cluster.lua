@@ -20,6 +20,8 @@ local resty_lock = require("resty.lock")
 local assert = assert
 local setmetatable = setmetatable
 local tostring = tostring
+local require     = require
+local ipairs      = ipairs
 
 
 local _M = {version = 0.3}
@@ -53,7 +55,7 @@ local function new_redis_cluster(conf)
     if conf.redis_password then
         config.auth = conf.redis_password --set password while setting auth
     end
-    
+
     local redis_cluster = require "resty.rediscluster"
     local red_c = redis_cluster:new(config)
 

@@ -131,12 +131,6 @@ function _M.check_schema(conf)
         end
     end
 
-    if conf.policy == "redis-cluster" then
-        if not conf.redis_serv_list then
-            return false, "missing valid redis option serv_list"
-        end
-    end
-
     return true
 end
 
