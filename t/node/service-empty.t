@@ -26,7 +26,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: set empty service. (id: 1)（allow empty `service` object）
 --- config
     location /t {

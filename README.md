@@ -86,6 +86,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Security**
     - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md), [wolf-rbac](doc/plugins/wolf-rbac.md)
     - [IP Whitelist/Blacklist](doc/plugins/ip-restriction.md)
+    - [Referer Whitelist/Blacklist](doc/plugins/referer-restriction.md)
     - [IdP](doc/plugins/openid-connect.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
     - [Limit-req](doc/plugins/limit-req.md)
     - [Limit-count](doc/plugins/limit-count.md)
@@ -139,7 +140,7 @@ There are several ways to install the Apache Release version of APISIX:
         ```shell
         ./bin/apisix version
         ```
-    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+    - start APISIX:
         ```shell
         ./bin/apisix start
         ```
@@ -163,15 +164,12 @@ There are several ways to install the Apache Release version of APISIX:
         ```shell
         apisix version
         ```
-    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+    - start APISIX:
         ```shell
         apisix start
         ```
 
-**Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, so you need to enable v3 protocol when starting etcd, if etcd version is below v3.4.
-```shell
-export ETCDCTL_API=3
-```
+**Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, and the minimum etcd version supported is v3.4.0. Please update etcd when needed. If you need to migrate your data from etcd v2 to v3, please follow [etcd migration guide](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/).
 
 ## For Developer
 

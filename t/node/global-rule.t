@@ -94,7 +94,7 @@ passed
 GET /not_found
 --- error_code: 404
 --- response_body
-{"error_msg":"failed to match any routes"}
+{"error_msg":"404 Route Not Found"}
 --- no_error_log
 [error]
 
@@ -105,7 +105,7 @@ GET /not_found
 GET /hello
 --- error_code: 404
 --- response_body
-{"error_msg":"failed to match any routes"}
+{"error_msg":"404 Route Not Found"}
 --- no_error_log
 [error]
 

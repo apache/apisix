@@ -16,17 +16,23 @@
 #
 use t::APISIX 'no_plan';
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    $block->set_value("no_error_log", "[error]");
+
+    $block;
+});
+
 repeat_each(1);
-log_level('info');
-worker_connections(256);
+no_long_string();
 no_root_location();
 no_shuffle();
-
-run_tests();
+run_tests;
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: set whitelist
 --- config
     location /t {
         content_by_lua_block {
@@ -34,13 +40,20 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
                         "uri": "/hello",
                         "upstream": {
+                            "type": "roundrobin",
                             "nodes": {
                                 "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
+                            }
+                        },
+                        "plugins": {
+                            "referer-restriction": {
+                                 "whitelist": [
+                                     "*.xx.com",
+                                     "yy.com"
+                                 ]
+                            }
                         }
                 }]]
                 )
@@ -55,33 +68,46 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 2: /not_found
---- request
-GET /not_found
---- error_code: 404
---- response_body
-{"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
-
-
-
-=== TEST 3: hit routes
+=== TEST 2: hit route and in the whitelist (wildcard)
 --- request
 GET /hello
+--- more_headers
+Referer: http://www.xx.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
-=== TEST 4: set route(id: 1)
+=== TEST 3: hit route and in the whitelist
+--- request
+GET /hello
+--- more_headers
+Referer: https://yy.com/am
+--- response_body
+hello world
+
+
+
+=== TEST 4: hit route and not in the whitelist
+--- request
+GET /hello
+--- more_headers
+Referer: https://www.yy.com/am
+--- error_code: 403
+
+
+
+=== TEST 5: hit route and without Referer
+--- request
+GET /hello
+--- error_code: 403
+
+
+
+=== TEST 6: set whitelist, allow Referer missing
 --- config
     location /t {
         content_by_lua_block {
@@ -89,13 +115,22 @@ hello world
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
+                        "uri": "/hello",
                         "upstream": {
+                            "type": "roundrobin",
                             "nodes": {
                                 "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
+                            }
                         },
-                        "uri": "/hello*"
+                        "plugins": {
+                            "referer-restriction": {
+                                "bypass_missing": true,
+                                 "whitelist": [
+                                     "*.xx.com",
+                                     "yy.com"
+                                 ]
+                            }
+                        }
                 }]]
                 )
 
@@ -109,47 +144,46 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 5: hit routes：/hello
+=== TEST 7: hit route and without Referer
 --- request
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
-=== TEST 6: hit routes: /hello1
+=== TEST 8: malformed Referer is treated as missing
 --- request
-GET /hello1
+GET /hello
+--- more_headers
+Referer: www.yy.com
 --- response_body
-hello1 world
---- no_error_log
-[error]
+hello world
 
 
 
-=== TEST 7: hit routes: /hello2
+=== TEST 9: invalid schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.referer-restriction")
+            local cases = {
+                "x.*",
+                "~y.xn",
+                "::1",
+            }
+            for _, c in ipairs(cases) do
+                local ok, err = plugin.check_schema({
+                    whitelist = {c}
+                })
+                if ok then
+                    ngx.log(ngx.ERR, c)
+                end
+            end
+        }
+    }
 --- request
-GET /hello2
---- error_code: 404
---- response_body eval
-qr/404 Not Found/
---- no_error_log
-[error]
-
-
-
-=== TEST 8: hit routes: /hel
---- request
-GET /hel
---- error_code: 404
---- response_body
-{"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
+GET /t

@@ -17,7 +17,7 @@
 #
 -->
 
-- [English](../../plugins/ip-restriction.md)
+- [English](../../plugins/referer-restriction.md)
 
 # 目录
 - [**名字**](#名字)
@@ -28,20 +28,18 @@
 
 ## 名字
 
-`ip-restriction` 可以通过以下方式限制对服务或路线的访问，将 IP 地址列入白名单或黑名单。 单个 IP 地址，多个 IP 地址 或 CIDR 范围，可以使用类似 10.10.10.0/24 的 CIDR 表示法。
+`referer-restriction` 插件可以根据 Referer 请求头限制访问。
 
 ## 属性
 
 | 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| whitelist | array[string] | 可选   |        |        | 加入白名单的 IP 地址或 CIDR 范围 |
-| blacklist | array[string] | 可选   |        |        | 加入黑名单的 IP 地址或 CIDR 范围 |
-
-只能单独启用白名单或黑名单，两个不能一起使用。
+| whitelist | array[string] | 必须    |         |       | 域名列表。域名开头可以用'*'作为通配符 |
+| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查 |
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 `ip-restriction` 插件:
+下面是一个示例，在指定的 route 上开启了 `referer-restriction` 插件:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -54,10 +52,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "plugins": {
-        "ip-restriction": {
+        "referer-restriction": {
+            "bypass_missing": true,
             "whitelist": [
-                "127.0.0.1",
-                "113.74.26.106/24"
+                "xx.com",
+                "*.xx.com"
             ]
         }
     }
@@ -66,7 +65,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-访问 `127.0.0.1`:
+带 `Referer: http://xx.com/x` 请求:
+
+```shell
+$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
+HTTP/1.1 200 OK
+...
+```
+
+带 `Referer: http://yy.com/x` 请求:
+
+```shell
+$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
+HTTP/1.1 403 Forbidden
+...
+{"message":"Your referer host is not allowed"}
+```
+
+不带 `Referer` 请求:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html
@@ -74,18 +90,9 @@ HTTP/1.1 200 OK
 ...
 ```
 
-访问 `127.0.0.2`:
-
-```shell
-$ curl http://127.0.0.2:9080/index.html -i
-HTTP/1.1 403 Forbidden
-...
-{"message":"Your IP address is not allowed"}
-```
-
 ## 禁用插件
 
-当你想去掉 `ip-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你想去掉 `referer-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
@@ -101,5 +108,4 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 }'
 ```
 
-现在就已移除 `ip-restriction` 插件，其它插件的开启和移除也类似。
-
+现在就已移除 `referer-restriction` 插件，其它插件的开启和移除也类似。

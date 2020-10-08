@@ -17,7 +17,7 @@
 #
 -->
 
-- [中文](../zh-cn/plugins/ip-restriction.md)
+- [中文](../zh-cn/plugins/referer-restriction.md)
 
 # Summary
 - [**Name**](#name)
@@ -29,23 +29,19 @@
 
 ## Name
 
-The `ip-restriction` can restrict access to a Service or a Route by either
-whitelisting or blacklisting IP addresses. Single IPs, multiple IPs or ranges
-in CIDR notation like 10.10.10.0/24 can be used.
+The `referer-restriction` can restrict access to a Service or a Route by
+whitelisting request header Referers.
 
 ## Attributes
 
 | Name      | Type          | Requirement | Default | Valid | Description                              |
 | --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
-| whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
-| blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
-
-One of `whitelist` or `blacklist` must be specified, and they can not work
-together.
+| whitelist | array[string] | required    |         |       | List of hostname to whitelist. The hostname can be started with `*` as a wildcard |
+| bypass_missing  | boolean       | optional    | false   |       | Whether to bypass the check when the Referer header is missing or malformed |
 
 ## How To Enable
 
-Creates a route or service object, and enable plugin `ip-restriction`.
+Creates a route or service object, and enable plugin `referer-restriction`.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -58,10 +54,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "plugins": {
-        "ip-restriction": {
+        "referer-restriction": {
+            "bypass_missing": true,
             "whitelist": [
-                "127.0.0.1",
-                "113.74.26.106/24"
+                "xx.com",
+                "*.xx.com"
             ]
         }
     }
@@ -70,7 +67,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-Requests to `127.0.0.1`:
+Request with `Referer: http://xx.com/x`:
+
+```shell
+$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
+HTTP/1.1 200 OK
+...
+```
+
+Request with `Referer: http://yy.com/x`:
+
+```shell
+$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
+HTTP/1.1 403 Forbidden
+...
+{"message":"Your referer host is not allowed"}
+```
+
+Request without `Referer`:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html
@@ -78,65 +92,9 @@ HTTP/1.1 200 OK
 ...
 ```
 
-Requests to `127.0.0.2`:
-
-```shell
-$ curl http://127.0.0.2:9080/index.html -i
-HTTP/1.1 403 Forbidden
-...
-{"message":"Your IP address is not allowed"}
-```
-
-## Change the restriction
-
-When you want to change the whitelisted ip, it is very simple,
-you can send the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
-    "plugins": {
-        "ip-restriction": {
-            "whitelist": [
-                "127.0.0.2",
-                "113.74.26.106/24"
-            ]
-        }
-    }
-}'
-```
-
-## Test Plugin after restriction change
-
-Requests to `127.0.0.2`:
-
-```shell
-$ curl http://127.0.0.2:9080/index.html
-HTTP/1.1 200 OK
-...
-```
-
-Requests to `127.0.0.1`:
-
-```shell
-$ curl http://127.0.0.1:9080/index.html -i
-HTTP/1.1 403 Forbidden
-...
-{"message":"Your IP address is not allowed"}
-```
-
-
 ## Disable Plugin
 
-When you want to disable the `ip-restriction` plugin, it is very simple,
+When you want to disable the `referer-restriction` plugin, it is very simple,
 you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
@@ -154,4 +112,5 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-The `ip-restriction` plugin has been disabled now. It works for other plugins.
+The `referer-restriction` plugin has been disabled now. It works for other plugins.
+
