@@ -16,7 +16,7 @@
 --
 local core = require("apisix.core")
 local ngx  = ngx
-
+local pairs = pairs
 
 local _M = {}
 
@@ -74,7 +74,6 @@ local function get_full_log(ngx, conf)
 
     return log
 end
-
 _M.get_full_log = get_full_log
 
 
