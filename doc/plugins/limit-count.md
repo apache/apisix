@@ -109,6 +109,41 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
+If using redis-cluster:
+
+```shell
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "policy": "redis-cluster",
+            "redis_serv_list": [
+            	{
+              	"redis_host": "127.0.0.1",
+                "redis_port": 6373
+              },
+            	{
+              	"redis_host": "127.0.0.1",
+                "redis_port": 6374
+              }
+            ]
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+
 ## Test Plugin
 
 The above configuration limits access to only 2 times in 60 seconds. The first two visits will be normally:
