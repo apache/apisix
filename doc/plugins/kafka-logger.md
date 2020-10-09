@@ -48,7 +48,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | key              | string  | required    |                |         | Key for the message.                                                                     |
 | timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
 | name             | string  | optional    | "kafka logger" |         | A  unique identifier to identity the batch processor                                     |
-| meta_style       | string  | optional    | "default"      | enum: `default`, `origin`| `default`: collect the request information with detfault JSON way. `origin`: collect the request information with original HTTP request. [example](#examples-of-meta_style)|
+| meta_format       | string  | optional    | "default"      | enum: `default`, `origin`| `default`: collect the request information with detfault JSON way. `origin`: collect the request information with original HTTP request. [example](#examples-of-meta_format)|
 | batch_max_size   | integer | optional    | 1000           | [1,...] | Max size of each batch                                                                   |
 | inactive_timeout | integer | optional    | 5              | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
 | buffer_duration  | integer | optional    | 60             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
@@ -56,7 +56,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | retry_delay      | integer | optional    | 1              | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
 | include_req_body | boolean | optional    | false          |         | Whether to include the request body                                                      |
 
-### examples of meta_style
+### examples of meta_format
 
 - **default**:
 

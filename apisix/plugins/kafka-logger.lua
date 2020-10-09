@@ -32,7 +32,7 @@ local buffers = {}
 local schema = {
     type = "object",
     properties = {
-        meta_style = {
+        meta_format = {
             type = "string",
             default = "default",
             enum = {"default", "origin"},
@@ -120,7 +120,7 @@ end
 
 function _M.log(conf, ctx)
     local entry
-    if conf.meta_style == "origin" then
+    if conf.meta_format == "origin" then
         entry = log_util.get_req_original(ctx, conf)
         -- core.log.info("origin entry: ", entry)
 

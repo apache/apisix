@@ -258,7 +258,7 @@ failed to send data to Kafka topic
 
 
 
-=== TEST 7: set route(meta_style = origin, include_req_body = true)
+=== TEST 7: set route(meta_format = origin, include_req_body = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -276,7 +276,7 @@ failed to send data to Kafka topic
                                 "timeout" : 1,
                                 "batch_max_size": 1,
                                 "include_req_body": true,
-                                "meta_style": "origin"
+                                "meta_format": "origin"
                             }
                         },
                         "upstream": {
@@ -322,7 +322,7 @@ abcdef
 
 
 
-=== TEST 9: set route(meta_style = origin, include_req_body = false)
+=== TEST 9: set route(meta_format = origin, include_req_body = false)
 --- config
     location /t {
         content_by_lua_block {
@@ -340,7 +340,7 @@ abcdef
                                 "timeout" : 1,
                                 "batch_max_size": 1,
                                 "include_req_body": false,
-                                "meta_style": "origin"
+                                "meta_format": "origin"
                             }
                         },
                         "upstream": {
@@ -384,7 +384,7 @@ connection: close
 
 
 
-=== TEST 11: set route(meta_style = default)
+=== TEST 11: set route(meta_format = default)
 --- config
     location /t {
         content_by_lua_block {
