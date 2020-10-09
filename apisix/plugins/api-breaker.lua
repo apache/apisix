@@ -84,9 +84,9 @@ local schema = {
 }
 
 
-local function is_unhealthy(unhealthy_status, upstream_statu)
+local function is_unhealthy(unhealthy_status, upstream_status)
     for _, unhealthy in ipairs(unhealthy_status) do
-        if unhealthy == upstream_statu then
+        if unhealthy == upstream_status then
             return true
         end
     end
@@ -95,9 +95,9 @@ local function is_unhealthy(unhealthy_status, upstream_statu)
 end
 
 
-local function is_healthy(healthy_status, upstream_statu)
+local function is_healthy(healthy_status, upstream_status)
     for _, healthy in ipairs(healthy_status) do
-        if healthy == upstream_statu then
+        if healthy == upstream_status then
             return true
         end
     end
@@ -172,9 +172,9 @@ function _M.header_filter(conf, ctx)
     local unhealthy_key = unhealthy_cache_key(ctx)
     local healthy_key = healthy_cache_key(ctx)
 
-    local upstream_statu = core.response.get_upstream_status(ctx)
+    local upstream_status = core.response.get_upstream_status(ctx)
 
-    if is_unhealthy(unhealthy_status, upstream_statu) then
+    if is_unhealthy(unhealthy_status, upstream_status) then
         local newval, err = shared_buffer:incr(unhealthy_key, 1, 0, DEFAULT_EXPTIME)
         if err then
             core.log.error("failed to incr unhealthy_key in ngx.shared: ", err)
@@ -187,7 +187,7 @@ function _M.header_filter(conf, ctx)
             core.log.info(unhealthy_key, " ", newval) -- stat change
         end
 
-    elseif is_healthy(healthy_status, upstream_statu) then
+    elseif is_healthy(healthy_status, upstream_status) then
         local unhealthy_val, err = shared_buffer:get(unhealthy_key)
         if err then
             core.log.error("failed to get unhealthy_key in ngx.shared: ", err)
