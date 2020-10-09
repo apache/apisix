@@ -46,7 +46,7 @@
 | key              | string  | 必须   |                |         | 发送数据的超时时间。                             |
 | timeout          | integer | 可选   | 3              | [1,...] | 用于加密消息的密钥。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
-| meta_style       | string  | 可选   | "default"      | 枚举：`default`，`origin`| `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](meta_style_参考示例)|
+| meta_style       | string  | 可选   | "default"      | 枚举：`default`，`origin`| `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](#meta_style-参考示例)|
 | batch_max_size   | integer | 可选   | 1000           | [1,...] | 每批的最大大小                                   |
 | inactive_timeout | integer | 可选   | 5              | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
 | buffer_duration  | integer | 可选   | 60             | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位） |
