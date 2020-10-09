@@ -223,3 +223,78 @@ GET /t
 {"error_msg":"missing consumer name"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: add consumer with labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username":"jack",
+                     "desc": "new consumer",
+                     "labels": {
+                         "build":"16",
+                         "env":"production",
+                         "version":"v2"
+                     }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "desc": "new consumer",
+                            "labels": {
+                                "build":"16",
+                                "env":"production",
+                                "version":"v2"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: invalid format of label value: set consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                 ngx.HTTP_PUT,
+                 [[{
+                     "username":"jack",
+                     "desc": "new consumer",
+                     "labels": {
+	                     "env": ["production", "release"]
+                     }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
+--- no_error_log
+[error]
