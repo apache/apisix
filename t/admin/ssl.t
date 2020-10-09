@@ -530,3 +530,90 @@ GET /t
 {"error_msg":"invalid configuration: value should match only one schema, but matches none"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: set ssl(with labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { version = "v2", build = "16", env = "production"}}
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com",
+                            "labels": {
+                                "version": "v2",
+                                "build": "16",
+                                "env": "production"
+                            }
+                        },
+
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: invalid format of label value: set ssl
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { env = {"production", "release"}}}
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com",
+                            "labels": {
+                                "env": ["production", "release"]
+                            }
+                        },
+
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
+--- no_error_log
+[error]
