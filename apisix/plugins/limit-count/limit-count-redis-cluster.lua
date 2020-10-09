@@ -24,7 +24,7 @@ local require     = require
 local ipairs      = ipairs
 
 
-local _M = {version = 0.3}
+local _M = {version = 0.1}
 
 
 local mt = {
@@ -36,14 +36,15 @@ local function new_redis_cluster(conf)
     local config = {
         dict_name = "redis_cluster_slot_locks", --shared dictionary name for locks
         name = "apisix-rediscluster",           --rediscluster name
+        enable_slave_read = true,
         keepalive_timeout = 60000,              --redis connection pool idle timeout
         keepalive_cons = 1000,                  --redis connection pool size
         connect_timeout = 1000,                 --timeout while connecting
         max_redirection = 5,                    --maximum retry attempts for redirection
         max_connection_attempts = 1,            --maximum retry attempts for connection
-        read_timeout = conf.redis_timeout or 1000,
-        enable_slave_read = true,
         serv_list = {},
+        read_timeout = conf.redis_timeout,
+        auth = conf.redis_password --set password while setting auth
     }
 
     for key, value in ipairs(conf.redis_serv_list) do
@@ -52,12 +53,12 @@ local function new_redis_cluster(conf)
         end
     end
 
-    if conf.redis_password then
-        config.auth = conf.redis_password --set password while setting auth
-    end
 
     local redis_cluster = require "resty.rediscluster"
     local red_c = redis_cluster:new(config)
+    if not red_c then
+        error("connect to redis cluster fails")
+    end
 
     return red_c
 end
@@ -78,7 +79,7 @@ end
 function _M.incoming(self, key)
     local conf = self.conf
     local red = _M.red_c
-    core.log.info("ttl key: ", key, " timeout: ", conf.redis_timeout or 1000)
+    core.log.info("ttl key: ", key, " timeout: ", conf.redis_timeout)
 
     local limit = self.limit
     local window = self.window
