@@ -54,7 +54,7 @@ dependencies = {
     "skywalking-nginx-lua-plugin = 1.0-0",
     "base64 = 1.5-2",
     "dkjson = 2.5-2",
-    "lua-resty-redis-cluster = 1.1-0",
+    "resty-redis-cluster = 1.02-4",
 }
 
 build = {
