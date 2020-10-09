@@ -34,12 +34,12 @@ local mt = {
 -- https://github.com/steve0511/resty-redis-cluster
 local function new_redis_cluster(conf)
     local config = {
-        dict_name = "redis_cluster_slot_locks", --shared dictionary name for locks
         name = "apisix-rediscluster",           --rediscluster name
         enable_slave_read = true,
         keepalive_timeout = 60000,              --redis connection pool idle timeout
         keepalive_cons = 1000,                  --redis connection pool size
         connect_timeout = 1000,                 --timeout while connecting
+        send_timeout = 1000,                    --timeout while sending
         max_redirection = 5,                    --maximum retry attempts for redirection
         max_connection_attempts = 1,            --maximum retry attempts for connection
         serv_list = {},
