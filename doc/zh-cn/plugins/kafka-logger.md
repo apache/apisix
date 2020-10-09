@@ -59,7 +59,7 @@
 - **default**:
 
     ```json
-    {"upstream":"127.0.0.1:1980","start_time":1602211788041,"client_ip":"127.0.0.1","service_id":"","route_id":"1","request":{"querystring":{"ab":"cd"},"size":90,"uri":"\/hello?ab=cd","url":"http:\/\/localhost:1984\/hello?ab=cd","headers":{"host":"localhost","content-length":"6","connection":"close"},"body":"abcdef","method":"GET"},"response":{"headers":{"content-type":"text\/plain","server":"APISIX\/1.5"],"connection":"close","transfer-encoding":"chunked"},"status":200,"size":153},"latency":99.000215530396}
+    {"upstream":"127.0.0.1:1980","start_time":1602211788041,"client_ip":"127.0.0.1","service_id":"","route_id":"1","request":{"querystring":{"ab":"cd"},"size":90,"uri":"\/hello?ab=cd","url":"http:\/\/localhost:1984\/hello?ab=cd","headers":{"host":"localhost","content-length":"6","connection":"close"},"body":"abcdef","method":"GET"},"response":{"headers":{"content-type":"text\/plain","server":"APISIX\/1.5","connection":"close","transfer-encoding":"chunked"},"status":200,"size":153},"latency":99.000215530396}
     ```
 
 - **origin**:
@@ -76,11 +76,11 @@
 ## 工作原理
 
 消息将首先写入缓冲区。
-当缓冲区超过`batch_max_size`时，它将发送到kafka服务器，
+当缓冲区超过`batch_max_size`时，它将发送到 kafka 服务器，
 或每个`buffer_duration`刷新缓冲区。
 
-如果成功，则返回“ true”。
-如果出现错误，则返回“ nil”，并带有描述错误的字符串（`buffer overflow`）。
+如果成功，则返回 `true`。
+如果出现错误，则返回 `nil`，并带有描述错误的字符串（`buffer overflow`）。
 
 ### Broker 列表
 
@@ -133,7 +133,7 @@ hello, world
 
 ## 禁用插件
 
-当您要禁用`kafka-logger`插件时，这很简单，您可以在插件配置中删除相应的json配置，无需重新启动服务，它将立即生效：
+当您要禁用`kafka-logger`插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
 
 ```shell
 $ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
