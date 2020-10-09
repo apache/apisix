@@ -1654,7 +1654,7 @@ GET /t
                     "type": "roundrobin",
                     "labels": {
                         "build":"16",
-                        "env":"prodution",
+                        "env":"production",
                         "version":"v2"
                     }
                 }]],
@@ -1667,7 +1667,7 @@ GET /t
                             "type": "roundrobin",
                             "labels": {
                                 "build":"16",
-                                "env":"prodution",
+                                "env":"production",
                                 "version":"v2"
                             }
                         },
@@ -1708,7 +1708,7 @@ passed
                             "labels": {
                                 "version":"v2",
                                 "build":"16",
-                                "env":"prodution"
+                                "env":"production"
                             }
                         },
                         "key": "/apisix/upstreams/1"
@@ -1752,7 +1752,7 @@ passed
                             "labels": {
                                 "version":"v2",
                                 "build":"17",
-                                "env":"prodution"
+                                "env":"production"
                             }
                         },
                         "key": "/apisix/upstreams/1"
@@ -1787,7 +1787,7 @@ passed
                     },
                     "type": "roundrobin",
                     "labels": {
-	                    "env": ["prodution", "release"]
+	                    "env": ["production", "release"]
                     }
                 }]]
                 )
