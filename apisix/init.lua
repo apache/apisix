@@ -81,6 +81,7 @@ function _M.http_init_worker()
         seed = ngx_now() * 1000 + ngx.worker.pid()
     end
     math.randomseed(seed)
+    -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 1000000))
 
     local we = require("resty.worker.events")
@@ -766,6 +767,7 @@ function _M.stream_init_worker()
         seed = ngx_now() * 1000 + ngx.worker.pid()
     end
     math.randomseed(seed)
+    -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 1000000))
 
     router.stream_init_worker()
