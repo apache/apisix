@@ -36,10 +36,10 @@ The plugin implements API fuse functionality to help us protect our upstream bus
 | Name          | Type          | Requirement | Default | Valid      | Description                                                                 |
 | ------------- | ------------- | ----------- | ------- | ---------- | --------------------------------------------------------------------------- |
 | unhealthy_response_code           | integer | required |          | [200, ..., 600] | return error code when unhealthy |
-| unhealthy.http_statuses | array[integer] | required | {500}      | [500, ..., 599] | Status codes when unhealthy |
-| unhealthy.failures      | integer        | required | 1          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
-| healthy.http_statuses   | array[integer] | required | {200, 206} | [200, ..., 499] | Status codes when healthy |
-| successes.successes     | integer        | required | 1          | >=1             | Number of consecutive normal requests that trigger health status |
+| unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
+| unhealthy.failures      | integer        | optional | 1          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
+| healthy.http_statuses   | array[integer] | optional | {200, 206} | [200, ..., 499] | Status codes when healthy |
+| successes.successes     | integer        | optional | 1          | >=1             | Number of consecutive normal requests that trigger health status |
 
 ## How To Enable
 

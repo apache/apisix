@@ -31,15 +31,16 @@
 
 该插件实现API熔断功能，帮助我们保护上游业务服务。
 
+
 ## 属性列表
 
 | 名称                    | 类型           | 必选项 | 默认值     | 有效值          | 描述                             |
 | ----------------------- | -------------- | ------ | ---------- | --------------- | -------------------------------- |
 | unhealthy_response_code | integer        | 必须   | 无         | [200, ..., 600] | 不健康返回错误码                 |
-| unhealthy.http_statuses | array[integer] | 必须   | {500}      | [500, ..., 599] | 不健康时候的状态码               |
-| unhealthy.failures      | integer        | 必须   | 1          | >=1             | 触发不健康状态的连续错误请求次数 |
-| healthy.http_statuses   | array[integer] | 必须   | {200, 206} | [200, ..., 499] | 健康时候的状态码                 |
-| successes.successes     | integer        | 必须   | 1          | >=1             | 触发健康状态的连续正常请求次数   |
+| unhealthy.http_statuses | array[integer] | 可选   | {500}      | [500, ..., 599] | 不健康时候的状态码               |
+| unhealthy.failures      | integer        | 可选   | 1          | >=1             | 触发不健康状态的连续错误请求次数 |
+| healthy.http_statuses   | array[integer] | 可选   | {200, 206} | [200, ..., 499] | 健康时候的状态码                 |
+| successes.successes     | integer        | 可选   | 1          | >=1             | 触发健康状态的连续正常请求次数   |
 
 ## 启用方式
 

@@ -21,7 +21,7 @@ local ipairs = ipairs
 local error = error
 local core = require("apisix.core")
 
-local DEFAULT_EXPTIME = 600
+local DEFAULT_EXPTIME = 300
 
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 if not shared_buffer then
@@ -156,6 +156,8 @@ function _M.access(conf, ctx)
             ride = 1
         end
 
+        -- The maximum intercept request is 5 minutes(DEFAULT_EXPTIME),
+        -- and then the upstream service will be retry.
         if unhealthy_lastime + 2^ride >= ngx.time() then
             return conf.unhealthy_response_code
         end
