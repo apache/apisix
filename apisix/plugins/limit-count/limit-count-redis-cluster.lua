@@ -18,10 +18,11 @@
 local core = require("apisix.core")
 local resty_lock = require("resty.lock")
 local assert = assert
+local error = error
 local setmetatable = setmetatable
 local tostring = tostring
-local require     = require
-local ipairs      = ipairs
+local require = require
+local ipairs = ipairs
 
 
 local _M = {version = 0.1}
