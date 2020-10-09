@@ -20,6 +20,7 @@
 - [English](../../plugins/kafka-logger.md)
 
 # 目录
+
 - [**简介**](#简介)
 - [**属性**](#属性)
 - [**工作原理**](#工作原理)
@@ -45,12 +46,32 @@
 | key              | string  | 必须   |                |         | 发送数据的超时时间。                             |
 | timeout          | integer | 可选   | 3              | [1,...] | 用于加密消息的密钥。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
+| meta_style       | string  | 可选   | "default"      | 枚举：`default`，`origin`| `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](meta_style_参考示例)|
 | batch_max_size   | integer | 可选   | 1000           | [1,...] | 每批的最大大小                                   |
 | inactive_timeout | integer | 可选   | 5              | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
 | buffer_duration  | integer | 可选   | 60             | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位） |
 | max_retry_count  | integer | 可选   | 0              | [0,...] | 从处理管道中移除之前的最大重试次数               |
 | retry_delay      | integer | 可选   | 1              | [0,...] | 如果执行失败，则应延迟执行流程的秒数             |
 | include_req_body | boolean | 可选   |                |         | 是否包括请求 body                                |
+
+### meta_style 参考示例
+
+- **default**:
+
+    ```json
+    {"upstream":"127.0.0.1:1980","start_time":1602211788041,"client_ip":"127.0.0.1","service_id":"","route_id":"1","request":{"querystring":{"ab":"cd"},"size":90,"uri":"\/hello?ab=cd","url":"http:\/\/localhost:1984\/hello?ab=cd","headers":{"host":"localhost","content-length":"6","connection":"close"},"body":"abcdef","method":"GET"},"response":{"headers":{"content-type":"text\/plain","server":["APISIX\/1.5","openresty"],"connection":"close","transfer-encoding":"chunked"},"status":200,"size":153},"latency":99.000215530396}
+    ```
+
+- **origin**:
+
+    ```http
+    GET /hello?ab=cd HTTP/1.1
+    host: localhost
+    content-length: 6
+    connection: close
+
+    abcdef
+    ```
 
 ## 工作原理
 
@@ -61,7 +82,7 @@
 如果成功，则返回“ true”。
 如果出现错误，则返回“ nil”，并带有描述错误的字符串（`buffer overflow`）。
 
-##### Broker 列表
+### Broker 列表
 
 插件支持一次推送到多个 Broker，如下配置：
 
@@ -101,7 +122,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 成功:
+ 成功
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello
