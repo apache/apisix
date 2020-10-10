@@ -25,9 +25,6 @@ local tostring = tostring
 local ipairs = ipairs
 
 
-local _M = {version = 0.1}
-
-
 local mt = {
     __index = _M
 }
@@ -41,13 +38,13 @@ local function new_redis_cluster(conf)
         auth = conf.redis_password
     }
 
-    for i, c in ipairs(conf.redis_serv_list) do
-        config.serv_list[i] = {ip = c.host, port = c.port}
+    for i, conf_item in ipairs(conf.redis_serv_list) do
+        config.serv_list[i] = {ip = conf_item.host, port = conf_item.port}
     end
 
     local red_cli = rediscluster:new(config)
     if not red_cli then
-        error("connect to redis cluster fails")
+        error("limit-count-redis: connect to redis cluster fails")
     end
 
     return red_cli
