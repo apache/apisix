@@ -169,7 +169,10 @@ script() {
     sudo bash ./utils/check-plugins-code.sh
 
     make lint && make license-check || exit 1
-    APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t/plugin/limit-count-redis-cluster.t
+
+    # run test quickly
+    APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t/plugin/limit-count*.t
 }
 
 after_success() {
