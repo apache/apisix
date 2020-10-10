@@ -17,7 +17,8 @@
 #
 -->
 
-[Chinese](README_CN.md)
+- [Chinese](README_CN.md)
+
 ## APISIX
 
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
@@ -290,6 +291,11 @@ Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) pa
 APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
+
+## Logos
+
+- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo source](https://apache.org/logos/#apisix)
 
 ## Contributing
 

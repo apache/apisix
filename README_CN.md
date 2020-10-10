@@ -17,7 +17,8 @@
 #
 -->
 
-[English](README.md)
+- [English](README.md)
+
 ## APISIX
 
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
@@ -293,6 +294,11 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 <br/><br/>
 APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
+
+## Logo
+
+- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo 源文件](https://apache.org/logos/#apisix)
 
 ## 致谢
 
