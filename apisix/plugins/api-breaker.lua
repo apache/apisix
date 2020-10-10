@@ -86,8 +86,20 @@ local schema = {
 }
 
 
+-- todo: we can move this into `core.talbe`
+local function array_index(array, value)
+    for i, v in ipairs(array) do
+        if v == value then
+            return i
+        end
+    end
+
+    return -1
+end
+
+
 local function is_unhealthy(unhealthy_status, upstream_status)
-    local idx = core.table.array_index(unhealthy_status, upstream_status);
+    local idx = array_index(unhealthy_status, upstream_status);
     if idx > 0 then
         return true
     end
@@ -97,7 +109,7 @@ end
 
 
 local function is_healthy(healthy_status, upstream_status)
-    local idx = core.table.array_index(healthy_status, upstream_status);
+    local idx = array_index(healthy_status, upstream_status);
     if idx > 0 then
         return true
     end
