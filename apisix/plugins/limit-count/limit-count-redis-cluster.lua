@@ -24,6 +24,7 @@ local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
 
+local _M = {}
 
 local mt = {
     __index = _M
