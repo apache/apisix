@@ -77,7 +77,7 @@ local schema = {
                 successes = {
                     type = "integer",
                     minimum = 1,
-                    default = 1,
+                    default = 3,
                 }
             }
         }
