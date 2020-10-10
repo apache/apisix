@@ -105,7 +105,7 @@ def test_fuzzing_uri_of_route():
         if r.status_code != 200 or "Hello, World!" not in r.content :
             print uri,r.status_code, r.content
             raise AssertionError('assertError')
-        
+
     print("====APISIX's resource occupation(after set route and request test):")
     get_workerres(apisixpid)
     print("====APISIX's error log:")
