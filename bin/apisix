@@ -1012,8 +1012,6 @@ local function init_etcd(show_output)
                             ", please upgrade your etcd cluster\n")
             os.exit(1)
         end
-
-        break
     end
 
     local etcd_ok = false
