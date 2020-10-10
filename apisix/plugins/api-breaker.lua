@@ -142,12 +142,12 @@ end
 function _M.access(conf, ctx)
     local unhealthy_val, err = shared_buffer:get(unhealthy_cache_key(ctx))
     if err then
-        core.log.error("failed to get unhealthy_cache_key in ngx.shared:", err)
+        core.log.warn("failed to get unhealthy_cache_key in ngx.shared:", err)
     end
 
     local unhealthy_lastime, err = shared_buffer:get(unhealthy_lastime_cache_key(ctx))
     if err then
-        core.log.error("failed to get unhealthy_lastime_cache_key in ngx.shared: ", err)
+        core.log.warn("failed to get unhealthy_lastime_cache_key in ngx.shared: ", err)
     end
 
     if unhealthy_val and unhealthy_lastime then
@@ -177,7 +177,7 @@ function _M.log(conf, ctx)
     if is_unhealthy(unhealthy_status, upstream_status) then
         local newval, err = shared_buffer:incr(unhealthy_key, 1, 0, DEFAULT_EXPTIME)
         if err then
-            core.log.error("failed to incr unhealthy_key in ngx.shared: ", err)
+            core.log.warn("failed to incr unhealthy_key in ngx.shared: ", err)
         end
         shared_buffer:expire(unhealthy_key, DEFAULT_EXPTIME)
         shared_buffer:delete(healthy_key) -- del healthy numeration
@@ -193,13 +193,13 @@ function _M.log(conf, ctx)
     if is_healthy(healthy_status, upstream_status) then
         local unhealthy_val, err = shared_buffer:get(unhealthy_key)
         if err then
-            core.log.error("failed to get unhealthy_key in ngx.shared: ", err)
+            core.log.warn("failed to get unhealthy_key in ngx.shared: ", err)
         end
 
         if unhealthy_val then
             local healthy_val, err = shared_buffer:incr(healthy_key, 1, 0, DEFAULT_EXPTIME)
             if err then
-                core.log.error("failed to incr healthy_key in ngx.shared: ", err)
+                core.log.warn("failed to incr healthy_key in ngx.shared: ", err)
             end
             shared_buffer:expire(healthy_key, DEFAULT_EXPTIME)
 

@@ -31,9 +31,19 @@
 
 The plugin implements API fuse functionality to help us protect our upstream business services.
 
-About the breaker timeout logic; the current version does not open the relevant configuration items to the user, the code logic automatically **triggers the unhealthy state **incrementation of the number of operations.
+**About the breaker timeout logic**
 
-For example, if the upstream service returns `unhealthy.http_statuses`   state and reaches `unhealthy.failures` for the first time, **the breaker will take 2 seconds**. Then, after 2 seconds, the upstream service returns `unhealthy.http_statuses` continuously again and reaches to `unhealthy.failures` a second time,  **breaker for 4 seconds**. And so on, up to a maximum of 300 seconds is not increased.
+the current version does not open the relevant configuration items to the user, the code logic automatically **triggers the unhealthy state **incrementation of the number of operations.
+
+Whenever the upstream service returns a status code from the `unhealthy.http_statuses` configuration (e.g., 500), apisix counts in memory up to `unhealthy.failures` (e.g., three times) and considers the upstream service to be in an unhealthy state.
+
+The first time unhealthy status is triggered, **breaken for 2 seconds**.
+
+Then, the request is forwarded to the upstream service again after 2 seconds, and if the `unhealthy.http_statuses` status code is returned, and the count reaches `unhealthy.failures` again, **broken for 4 seconds**.
+
+and so on,The maximum of 300 seconds will not be increased.
+
+In an unhealthy state, when a request is forwarded to an upstream service and the status code in the `healthy.http_statuses` configuration is returned (e.g., 200), apisix likewise counts the number of times in memory that `healthy.successes` is reached (e.g., three times), and the upstream service is considered healthy again.
 
 ## Attributes
 
@@ -43,7 +53,7 @@ For example, if the upstream service returns `unhealthy.http_statuses`   state a
 | unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
 | unhealthy.failures      | integer        | optional | 1          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
 | healthy.http_statuses   | array[integer] | optional | {200, 206} | [200, ..., 499] | Status codes when healthy |
-| successes.successes     | integer        | optional | 1          | >=1             | Number of consecutive normal requests that trigger health status |
+| healthy.successes | integer        | optional | 1          | >=1             | Number of consecutive normal requests that trigger health status |
 
 ## How To Enable
 
@@ -70,6 +80,8 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
       "upstream_id": 50
   }'
 ```
+
+> Response 500 or 503 three times in a row to trigger a unhealthy. Response 200 once in a row to restore healthy.
 
 ## Test Plugin
 

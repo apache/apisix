@@ -31,9 +31,21 @@
 
 该插件实现API熔断功能，帮助我们保护上游业务服务。
 
-关于熔断超时逻辑；当前版本没有开放相关配置项给用户，由代码逻辑自动按**触发不健康状态**的次数递增运算。
+**关于熔断超时逻辑**：
 
-比如：上流服务第一次返回`unhealthy.http_statuses`状态达到`unhealthy.failures`次时，**熔断2秒**。然后，过2秒以后，上流服务再次连续返回`unhealthy.http_statuses`状态达到`unhealthy.failures`次时，**熔断4秒**。依次类推，最大达到300秒不再增加。
+当前版本没有开放相关配置项给用户，由代码逻辑自动按**触发不健康状态**的次数递增运算：
+
+每当上游服务返回`unhealthy.http_statuses`配置中的状态码(比如：500)，apisix会在内存中记数，达到`unhealthy.failures`次时(比如：3次)，认为上游服务处于不健康状态。
+
+第一次触发不健康状态，**熔断2秒**。
+
+然后，2秒过后重新开始转发请求到上游服务，如果继续返回`unhealthy.http_statuses`状态码，记数再次达到`unhealthy.failures`次时，**熔断4秒**。
+
+依次类推，最大达到300秒不再增加。
+
+在不健康状态时，当转发请求到上游服务并返回`healthy.http_statuses`配置中的状态码(比如：200)，apisix同样会在内存中记数，达到`healthy.successes`次时(比如：3次)，认为上游服务恢复健康状态。
+
+
 
 
 ## 属性列表
@@ -44,7 +56,7 @@
 | unhealthy.http_statuses | array[integer] | 可选   | {500}      | [500, ..., 599] | 不健康时候的状态码               |
 | unhealthy.failures      | integer        | 可选   | 1          | >=1             | 触发不健康状态的连续错误请求次数 |
 | healthy.http_statuses   | array[integer] | 可选   | {200, 206} | [200, ..., 499] | 健康时候的状态码                 |
-| successes.successes     | integer        | 可选   | 1          | >=1             | 触发健康状态的连续正常请求次数   |
+| healthy.successes       | integer        | 可选   | 1          | >=1             | 触发健康状态的连续正常请求次数   |
 
 ## 启用方式
 
@@ -71,6 +83,8 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
       "upstream_id": 50
   }'
 ```
+
+> 应答500 或 503连续3次，触发熔断。应答200连续1次，恢复健康。
 
 ## 测试插件
 

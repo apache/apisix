@@ -16,8 +16,6 @@
 #
 use t::APISIX 'no_plan';
 
-$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
-
 repeat_each(1);
 no_long_string();
 no_shuffle();
@@ -58,6 +56,7 @@ done
 [error]
 
 
+
 === TEST 2: default http_statuses
 --- config
     location /t {
@@ -85,6 +84,7 @@ GET /t
 done
 --- no_error_log
 [error]
+
 
 
 === TEST 3: add plugin
@@ -132,6 +132,7 @@ passed
 [error]
 
 
+
 === TEST 4: trigger breaker
 --- request eval
 ["GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=503", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
@@ -139,6 +140,7 @@ passed
 [200, 500, 503, 500, 502, 502]
 --- no_error_log
 [error]
+
 
 
 === TEST 5: trigger reset status
@@ -150,6 +152,7 @@ passed
 [error]
 
 
+
 === TEST 6: trigger del healthy numeration
 --- request eval
 ["GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
@@ -157,6 +160,7 @@ passed
 [500, 200, 500, 500, 502, 502, 502]
 --- no_error_log
 [error]
+
 
 
 === TEST 7: add plugin with default config value
@@ -202,12 +206,14 @@ passed
 [error]
 
 
+
 === TEST 8: default value
 --- request
 GET /api_breaker?code=500
 --- error_code: 500
 --- no_error_log
 [error]
+
 
 
 === TEST 9: trigger default value breaker 
