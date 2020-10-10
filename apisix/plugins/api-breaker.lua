@@ -17,11 +17,8 @@
 local plugin_name = "api-breaker"
 local ngx = ngx
 local math = math
-local ipairs = ipairs
 local error = error
 local core = require("apisix.core")
-
-local DEFAULT_EXPTIME = 300 -- TODO: user can config
 
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 if not shared_buffer then
@@ -36,6 +33,11 @@ local schema = {
             type = "integer",
             minimum = 200,
             maximum = 599,
+        },
+        max_breaker_seconds = {
+            type = "integer",
+            minimum = 3,
+            default = 300,
         },
         unhealthy = {
             type = "object",
@@ -54,7 +56,7 @@ local schema = {
                 failures = {
                     type = "integer",
                     minimum = 1,
-                    default = 1,
+                    default = 3,
                 }
             }
         },
@@ -85,10 +87,9 @@ local schema = {
 
 
 local function is_unhealthy(unhealthy_status, upstream_status)
-    for _, unhealthy in ipairs(unhealthy_status) do
-        if unhealthy == upstream_status then
-            return true
-        end
+    local idx = core.table.array_index(unhealthy_status, upstream_status);
+    if idx > 0 then
+        return true
     end
 
     return false
@@ -96,10 +97,9 @@ end
 
 
 local function is_healthy(healthy_status, upstream_status)
-    for _, healthy in ipairs(healthy_status) do
-        if healthy == upstream_status then
-            return true
-        end
+    local idx = core.table.array_index(healthy_status, upstream_status);
+    if idx > 0 then
+        return true
     end
 
     return false
@@ -140,28 +140,37 @@ end
 
 
 function _M.access(conf, ctx)
+    -- unhealthy counts
     local unhealthy_val, err = shared_buffer:get(unhealthy_cache_key(ctx))
     if err then
-        core.log.warn("failed to get unhealthy_cache_key in ngx.shared:", err)
+        core.log.warn("failed to get unhealthy_cache_key in ngx.shared: ", unhealthy_cache_key(ctx), err)
     end
 
+    -- Timestamp of the last time a unhealthy state was triggered
     local unhealthy_lastime, err = shared_buffer:get(unhealthy_lastime_cache_key(ctx))
     if err then
-        core.log.warn("failed to get unhealthy_lastime_cache_key in ngx.shared: ", err)
+        core.log.warn("failed to get unhealthy_lastime_cache_key in ngx.shared: ", unhealthy_lastime_cache_key(ctx), err)
     end
 
     if unhealthy_val and unhealthy_lastime then
-        local ride = math.ceil(unhealthy_val / conf.unhealthy.failures)
-        if ride < 1 then
-            ride = 1
+        local multiplication = math.ceil(unhealthy_val / conf.unhealthy.failures)
+        if multiplication < 1 then
+            multiplication = 1
         end
 
-        -- The maximum intercept request is 5 minutes(DEFAULT_EXPTIME),
-        -- and then the upstream service will be retry.
-        if unhealthy_lastime + 2^ride >= ngx.time() then
+        -- Cannot exceed the maximum value of the user configuration
+        local breaker_time = 2^multiplication
+        if breaker_time > conf.max_breaker_seconds then
+            breaker_time = conf.max_breaker_seconds
+        end
+
+        -- breaker
+        if unhealthy_lastime + breaker_time >= ngx.time() then
             return conf.unhealthy_response_code
         end
     end
+
+    return
 end
 
 
@@ -175,39 +184,46 @@ function _M.log(conf, ctx)
     local upstream_status = core.response.get_upstream_status(ctx)
 
     if is_unhealthy(unhealthy_status, upstream_status) then
-        local newval, err = shared_buffer:incr(unhealthy_key, 1, 0, DEFAULT_EXPTIME)
+        -- Incremental unhealthy counts
+        local newval, err = shared_buffer:incr(unhealthy_key, 1, 0)
         if err then
-            core.log.warn("failed to incr unhealthy_key in ngx.shared: ", err)
+            core.log.warn("failed to incr unhealthy_key in ngx.shared: ", unhealthy_key, err)
         end
-        shared_buffer:expire(unhealthy_key, DEFAULT_EXPTIME)
         shared_buffer:delete(healthy_key) -- del healthy numeration
 
+        -- Whether the user-configured number of failures has been reached,
+        -- and if so, the timestamp for entering the unhealthy state.
         if 0 == newval % conf.unhealthy.failures then
-            shared_buffer:set(unhealthy_lastime_cache_key(ctx), ngx.time(), DEFAULT_EXPTIME)
-            core.log.info(unhealthy_key, " ", newval) -- stat change
+            shared_buffer:set(unhealthy_lastime_cache_key(ctx), ngx.time(), conf.max_breaker_seconds)
+            core.log.info(unhealthy_key, " ", newval) -- stat change to unhealthy
         end
 
         return
     end
 
+
     if is_healthy(healthy_status, upstream_status) then
+        -- Blow operation is only required if it is unhealthy.
+        -- the current value of the unhealthy state is taken first.
         local unhealthy_val, err = shared_buffer:get(unhealthy_key)
         if err then
-            core.log.warn("failed to get unhealthy_key in ngx.shared: ", err)
+            core.log.warn("failed to get unhealthy_key in ngx.shared: ", unhealthy_key, err)
         end
 
         if unhealthy_val then
-            local healthy_val, err = shared_buffer:incr(healthy_key, 1, 0, DEFAULT_EXPTIME)
+            -- Incremental healthy counts
+            local healthy_val, err = shared_buffer:incr(healthy_key, 1, 0)
             if err then
                 core.log.warn("failed to incr healthy_key in ngx.shared: ", err)
             end
-            shared_buffer:expire(healthy_key, DEFAULT_EXPTIME)
 
+            -- Continuous Response Normal, stat change to normal.
+            -- Clear related status records
             if healthy_val >= conf.healthy.successes then
-                core.log.info(healthy_key, " ", healthy_val) -- stat change
+                core.log.info(healthy_key, " ", healthy_val) -- stat change to normal
+                shared_buffer:delete(unhealthy_lastime_cache_key(ctx))
                 shared_buffer:delete(unhealthy_key)
                 shared_buffer:delete(healthy_key)
-                shared_buffer:delete(unhealthy_lastime_cache_key(ctx))
             end
         end
 

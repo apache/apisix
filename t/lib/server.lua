@@ -268,6 +268,11 @@ function _M.api_breaker()
     ngx.exit(tonumber(ngx.var.arg_code))
 end
 
+function _M.mysleep()
+    ngx.sleep(tonumber(ngx.var.arg_seconds))
+    ngx.say(ngx.var.arg_seconds)
+end
+
 local function print_uri()
     ngx.say(ngx.var.uri)
 end

@@ -145,4 +145,15 @@ end
 _M.patch = patch
 
 
+local function array_index(array, value)
+    for i, v in ipairs(array) do
+        if v == value then
+            return i
+        end
+    end
+
+    return -1
+end
+_M.array_index = array_index
+
 return _M

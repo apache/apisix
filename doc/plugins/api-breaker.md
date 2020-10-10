@@ -33,23 +33,24 @@ The plugin implements API fuse functionality to help us protect our upstream bus
 
 **About the breaker timeout logic**
 
-the current version does not open the relevant configuration items to the user, the code logic automatically **triggers the unhealthy state **incrementation of the number of operations.
+the code logic automatically **triggers the unhealthy state **incrementation of the number of operations.
 
-Whenever the upstream service returns a status code from the `unhealthy.http_statuses` configuration (e.g., 500), apisix counts in memory up to `unhealthy.failures` (e.g., three times) and considers the upstream service to be in an unhealthy state.
+Whenever the upstream service returns a status code from the `unhealthy.http_statuses` configuration (e.g., 500), up to `unhealthy.failures` (e.g., three times) and considers the upstream service to be in an unhealthy state.
 
 The first time unhealthy status is triggered, **breaken for 2 seconds**.
 
 Then, the request is forwarded to the upstream service again after 2 seconds, and if the `unhealthy.http_statuses` status code is returned, and the count reaches `unhealthy.failures` again, **broken for 4 seconds**.
 
-and so on,The maximum of 300 seconds will not be increased.
+and so on, 2,4,8,16,32,64,128... ...
 
-In an unhealthy state, when a request is forwarded to an upstream service and the status code in the `healthy.http_statuses` configuration is returned (e.g., 200), apisix likewise counts the number of times in memory that `healthy.successes` is reached (e.g., three times), and the upstream service is considered healthy again.
+In an unhealthy state, when a request is forwarded to an upstream service and the status code in the `healthy.http_statuses` configuration is returned (e.g., 200) that `healthy.successes` is reached (e.g., three times), and the upstream service is considered healthy again.
 
 ## Attributes
 
 | Name          | Type          | Requirement | Default | Valid      | Description                                                                 |
 | ------------- | ------------- | ----------- | ------- | ---------- | --------------------------------------------------------------------------- |
 | unhealthy_response_code           | integer | required |          | [200, ..., 600] | return error code when unhealthy |
+| max_breaker_seconds | integer | optional | 300 | >=60 | Maximum breaker time(seconds) |
 | unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
 | unhealthy.failures      | integer        | optional | 1          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
 | healthy.http_statuses   | array[integer] | optional | {200, 206} | [200, ..., 499] | Status codes when healthy |
@@ -57,10 +58,12 @@ In an unhealthy state, when a request is forwarded to an upstream service and th
 
 ## How To Enable
 
-Here's an example, enable the `api-breaker` plugin on the specified route:
+Here's an example, enable the `api-breaker` plugin on the specified route.
+
+Response 500 or 503 three times in a row to trigger a unhealthy. Response 200 once in a row to restore healthy.
 
 ```shell
-curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
    {
       "plugins": {
           "api-breaker": {
@@ -77,13 +80,12 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
       },
       "uri": "/get",
       "host": "127.0.0.1",
-      "upstream_id": 50
   }'
 ```
 
-> Response 500 or 503 three times in a row to trigger a unhealthy. Response 200 once in a row to restore healthy.
-
 ## Test Plugin
+
+Then. Like the configuration above, if your upstream service returns 500. 3 times in a row. The client will receive a 502 (unhealthy_response_code) response.
 
 ```shell
 $ curl -i -X POST "http://127.0.0.1:9080/get"
@@ -94,8 +96,6 @@ Server: APISIX/1.5
 
 ... ...
 ```
-
-> Then. Like the configuration above, if your upstream service returns 500. 3 times in a row. The client will receive a 502 (unhealthy_response_code) response.
 
 
 ## Disable Plugin
