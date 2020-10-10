@@ -155,13 +155,15 @@ function _M.access(conf, ctx)
     -- unhealthy counts
     local unhealthy_val, err = shared_buffer:get(unhealthy_cache_key(ctx))
     if err then
-        core.log.warn("failed to get unhealthy_cache_key in ngx.shared: ", unhealthy_cache_key(ctx), err)
+        core.log.warn("failed to get unhealthy_cache_key in ngx.shared: ", 
+                      unhealthy_cache_key(ctx), err)
     end
 
     -- Timestamp of the last time a unhealthy state was triggered
     local unhealthy_lastime, err = shared_buffer:get(unhealthy_lastime_cache_key(ctx))
     if err then
-        core.log.warn("failed to get unhealthy_lastime_cache_key in ngx.shared: ", unhealthy_lastime_cache_key(ctx), err)
+        core.log.warn("failed to get unhealthy_lastime_cache_key in ngx.shared: ", 
+                      unhealthy_lastime_cache_key(ctx), err)
     end
 
     if unhealthy_val and unhealthy_lastime then
@@ -206,7 +208,8 @@ function _M.log(conf, ctx)
         -- Whether the user-configured number of failures has been reached,
         -- and if so, the timestamp for entering the unhealthy state.
         if 0 == newval % conf.unhealthy.failures then
-            shared_buffer:set(unhealthy_lastime_cache_key(ctx), ngx.time(), conf.max_breaker_seconds)
+            shared_buffer:set(unhealthy_lastime_cache_key(ctx), ngx.time(), 
+                              conf.max_breaker_seconds)
             core.log.info(unhealthy_key, " ", newval) -- stat change to unhealthy
         end
 
