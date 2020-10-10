@@ -84,17 +84,10 @@ local schema = {
                         policy = {
                             enum = {"redis-cluster"},
                         },
-                        redis_serv_list = {
+                        redis_cluster_nodes = {
                             type = "array",
                             minItems = 2,
-                            items = {
-                                type = "object",
-                                properties = {
-                                    host = {type = "string", minLength = 2},
-                                    port = {type = "integer", minimum = 1, maximum = 65535},
-                                },
-                                required = {"host", "port"},
-                            },
+                            items = {type = "string", minLength = 2, maxLength = 100},
                         },
                         redis_password = {
                             type = "string", minLength = 0,
@@ -103,7 +96,7 @@ local schema = {
                             type = "integer", minimum = 1, default = 1000,
                         },
                     },
-                    required = {"redis_serv_list"},
+                    required = {"redis_cluster_nodes"},
                 }
             }
         }

@@ -94,9 +94,9 @@ GET /t
                             "key": "remote_addr",
                             "policy": "redis-cluster",
                             "redis_timeout": 1001,
-                            "redis_serv_list": [
-                                {"host": "127.0.0.1", "port":5000},
-                                {"host": "127.0.0.1", "port":5001}
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:5001",
                             ]
                         }
                     },
@@ -140,9 +140,9 @@ passed
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "policy": "redis-cluster",
-                            "redis_serv_list": [
-                                {"host": "127.0.0.1", "port":5000},
-                                {"host": "127.0.0.1", "port":5001}
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:5001"
                             ]
                         }
                     },
@@ -164,9 +164,9 @@ passed
                                     "key": "remote_addr",
                                     "policy": "redis-cluster",
                                     "redis_timeout": 1000,
-                                    "redis_serv_list": [
-                                        {"host": "127.0.0.1", "port":5000},
-                                        {"host": "127.0.0.1", "port":5001}
+                                    "redis_cluster_nodes": [
+                                        "127.0.0.1:5000",
+                                        "127.0.0.1:5001"
                                     ]
                                 }
                             },

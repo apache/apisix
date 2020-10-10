@@ -30,6 +30,21 @@ local mt = {
     __index = _M
 }
 
+
+local function split(inputstr, sep)
+    if sep == nil then
+       sep = "%s"
+    end
+
+    local t={}
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+       table.insert(t, str)
+    end
+
+    return t
+ end
+
+
 -- https://github.com/steve0511/resty-redis-cluster
 local function new_redis_cluster(conf)
     local config = {
@@ -39,8 +54,9 @@ local function new_redis_cluster(conf)
         auth = conf.redis_password
     }
 
-    for i, conf_item in ipairs(conf.redis_serv_list) do
-        config.serv_list[i] = {ip = conf_item.host, port = conf_item.port}
+    for i, conf_item in ipairs(conf.redis_cluster_nodes) do
+        local ip, port = split(conf_item, ":")
+        config.serv_list[i] = {ip = ip, port = port}
     end
 
     local red_cli = rediscluster:new(config)

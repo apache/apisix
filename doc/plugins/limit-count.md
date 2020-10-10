@@ -124,14 +124,8 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
             "key": "remote_addr",
             "policy": "redis-cluster",
             "redis_serv_list": [
-              {
-                "host": "127.0.0.1",
-                "port": 6373
-              },
-              {
-                 "host": "127.0.0.1",
-                 "port": 6374
-              }
+              "127.0.0.1:5000",
+              "127.0.0.1:5001"
             ]
         }
     },
