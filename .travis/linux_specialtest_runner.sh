@@ -142,7 +142,7 @@ script() {
         exit 1
     fi
 
-    cd t/fuzzingtest/
+    cd t/specialtest/
     sudo python runtest.py
     pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "cases"
 
