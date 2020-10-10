@@ -64,9 +64,9 @@ def setup_module():
     print("=============APISIX's pid:",apisixpid)
     apisixhost = "http://127.0.0.1:9080"
     headers = {"X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1"}
-    confpath = "./t/integrationtest/cases/nginx.conf"
+    confpath = "./t/specialtest/cases/nginx.conf"
     try:
-        os.makedirs("./t/integrationtest/cases/logs")
+        os.makedirs("./t/specialtest/cases/logs")
     except Exception as e:
         pass
     p = subprocess.Popen(['openresty', '-p', apisixpath ,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
@@ -80,9 +80,10 @@ def test_fuzzing_uri_of_route():
     get_workerres(apisixpid)
     #use environment variables "FUZZING_URI" you can setting the numbers of test uris
     fuzzing_uri_nums = 5000 if not os.getenv('FUZZING_URI') else os.getenv('FUZZING_URI')
+    orgin_char = '''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~!*'();:@&=+$,/?#[]'''
     for i in range(int(fuzzing_uri_nums)):
         length = random.randint(1, 4090)
-        tmpuri = "".join(random.sample(list(string.printable.strip())*(length//94 + 1),length))
+        tmpuri = "".join(random.sample(list(orgin_char)*(length//84 + 1),length))
         uri = "/hello%s"%tmpuri
         assert len("/hello%s"%uri)<=4096
         cfgdata = {
@@ -94,15 +95,16 @@ def test_fuzzing_uri_of_route():
             }
         }
     }
+
         r = requests.put("%s/apisix/admin/routes/1"%apisixhost, json=cfgdata,headers=headers )
         assert r.status_code == 200
-        time.sleep(0.1)
+        time.sleep(0.2)
         #verify route
         r = requests.get("%s%s"%(apisixhost,uri))
         # assert uri == uri and r.status_code == 200 and "Hello, World!" in r.content
         if r.status_code != 200 or "Hello, World!" not in r.content :
-            print uri, r.status_code, r.content
-            break
+            print uri,r.status_code, r.content
+            raise AssertionError('assertError')
         
     print("====APISIX's resource occupation(after set route and request test):")
     get_workerres(apisixpid)
