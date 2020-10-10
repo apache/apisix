@@ -221,26 +221,8 @@ passed
 
 === TEST 6: up the limit
 --- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
---- error_code eval
-[200, 200, 503, 503]
---- no_error_log
-[error]
-
-
-
-=== TEST 7: up the limit
---- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
 [404, 503, 404, 503, 503]
 --- no_error_log
 [error]
-
-
-
-=== TEST 8: multi request for TEST 9
---- pipelined_requests eval
-["GET /hello_new", "GET /hello1", "GET /hello1", "GET /hello_new"]
---- error_code eval
-[500, 404, 404, 500]
