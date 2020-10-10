@@ -58,7 +58,7 @@ endif
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")
-	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
+	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
 
