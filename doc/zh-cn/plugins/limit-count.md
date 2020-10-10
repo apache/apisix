@@ -37,7 +37,7 @@
 | redis_port      | integer  | 可选         | 6379    | [1,...]                                                      | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的端口     |
 | redis_password  | string   | 可选         |         |                                                              | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点的密码。   |
 | redis_timeout   | integer  | 可选         | 1000    | [1,...]                                                      | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点以毫秒为单位的超时时间 |
-| redis_serv_list | 对象数组 | 可选         |         |                                                              | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的地址列表。 |
+| redis_serv_list | array<object>[] | 可选         |         |                                                              | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的地址列表。 |
 
 
 **key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
