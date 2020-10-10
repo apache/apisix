@@ -80,7 +80,7 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
-mkdir -p logs
+	mkdir -p logs
 ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
