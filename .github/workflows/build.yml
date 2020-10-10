@@ -36,7 +36,7 @@ jobs:
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Install Redis Cluster
-        if: matrix.platform == 'ubuntu-18.04'
+        if: matrix.os_name == 'linux_openresty'
         uses: vishnudxb/redis-cluster@1.0.5
         with:
           master1-port: 5000
@@ -47,7 +47,7 @@ jobs:
           slave3-port: 5005
 
       - name: Running Redis Cluster Test
-        if: matrix.platform == 'ubuntu-18.04'
+        if: matrix.os_name == 'linux_openresty'
         run: |
           sudo apt-get install -y redis-tools
           docker ps -a
