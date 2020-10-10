@@ -90,10 +90,10 @@ local schema = {
                             items = {
                                 type = "object",
                                 properties = {
-                                    redis_host = {type = "string", minLength = 2},
-                                    redis_port = {type = "integer", minimum = 1},
+                                    host = {type = "string", minLength = 2},
+                                    port = {type = "integer", minimum = 1, maximum = 65535},
                                 },
-                                required = {"redis_host", "redis_port"},
+                                required = {"host", "port"},
                             },
                         },
                         redis_password = {
@@ -149,8 +149,8 @@ local function create_limit_obj(conf)
     end
 
     if conf.policy == "redis-cluster" then
-        return limit_redis_cluster_new("plugin-" .. plugin_name,
-                               conf.count, conf.time_window, conf)
+        return limit_redis_cluster_new("plugin-" .. plugin_name,conf.count,
+                                       conf.time_window, conf)
     end
 
     return nil

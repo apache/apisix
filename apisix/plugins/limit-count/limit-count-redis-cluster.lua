@@ -15,13 +15,13 @@
 -- limitations under the License.
 --
 
+local rediscluster = require("resty.rediscluster")
 local core = require("apisix.core")
 local resty_lock = require("resty.lock")
 local assert = assert
 local error = error
 local setmetatable = setmetatable
 local tostring = tostring
-local require = require
 local ipairs = ipairs
 
 
@@ -35,53 +35,39 @@ local mt = {
 -- https://github.com/steve0511/resty-redis-cluster
 local function new_redis_cluster(conf)
     local config = {
-        name = "apisix-rediscluster",           --rediscluster name
-        enable_slave_read = true,
-        keepalive_timeout = 60000,              --redis connection pool idle timeout
-        keepalive_cons = 1000,                  --redis connection pool size
-        connect_timeout = 1000,                 --timeout while connecting
-        send_timeout = 1000,                    --timeout while sending
-        max_redirection = 5,                    --maximum retry attempts for redirection
-        max_connection_attempts = 1,            --maximum retry attempts for connection
+        name = "apisix-rediscluster",
         serv_list = {},
         read_timeout = conf.redis_timeout,
-        auth = conf.redis_password --set password while setting auth
+        auth = conf.redis_password
     }
 
-    for key, value in ipairs(conf.redis_serv_list) do
-        if value['redis_host'] and value['redis_port'] then
-            config.serv_list[key] = {ip = value['redis_host'], port = value['redis_port']}
-        end
+    for i, conf in ipairs(conf.redis_serv_list) do
+        config.serv_list[i] = {ip = conf.redhost, port = conf.redis_port}
     end
 
-
-    local redis_cluster = require "resty.rediscluster"
-    local red_c = redis_cluster:new(config)
-    if not red_c then
+    local red_cli = rediscluster:new(config)
+    if not red_cli then
         error("connect to redis cluster fails")
     end
 
-    return red_c
+    return red_cli
 end
 
 
 function _M.new(plugin_name, limit, window, conf)
     assert(limit > 0 and window > 0)
 
-    _M.red_c = new_redis_cluster(conf)
+    local red_cli = new_redis_cluster(conf)
 
     local self = {limit = limit, window = window, conf = conf,
-                  plugin_name = plugin_name}
-    return setmetatable(self, mt)
+                  plugin_name = plugin_name, red_cli =red_cli}
 
+    return setmetatable(self, mt)
 end
 
 
 function _M.incoming(self, key)
-    local conf = self.conf
-    local red = _M.red_c
-    core.log.info("ttl key: ", key, " timeout: ", conf.redis_timeout)
-
+    local red = self.red_cli
     local limit = self.limit
     local window = self.window
     local remaining
