@@ -23,6 +23,8 @@ local error = error
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
+local string = string
+local table = table
 
 local _M = {}
 
@@ -55,8 +57,8 @@ local function new_redis_cluster(conf)
     }
 
     for i, conf_item in ipairs(conf.redis_cluster_nodes) do
-        local ip, port = split(conf_item, ":")
-        config.serv_list[i] = {ip = ip, port = port}
+        local t = split(conf_item, ":")
+        config.serv_list[i] = {ip = t[1], port = t[2]}
     end
 
     local red_cli = rediscluster:new(config)
