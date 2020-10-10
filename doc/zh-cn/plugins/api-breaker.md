@@ -62,7 +62,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
               }
           }
       },
-     "uri": "/get",
+      "uri": "/get",
       "host": "127.0.0.1",
       "upstream_id": 50
   }'
@@ -83,6 +83,11 @@ Date: Tue, 29 Sep 2020 05:00:02 GMT
 ... ...
 ```
 
+> 然后。像上面的配置，如果你的上流服务返回500，连续3次。客户端将会收到502（unhealthy_response_code）应答。
+
+
+
+
 ## 禁用插件
 
 当想禁用`api-breaker`插件时，非常简单，只需要在插件配置中删除相应的 json 配置，无需重启服务，即可立即生效：
@@ -100,4 +105,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
- `api-breaker` 插件现在已被禁用，它也适用于其他插件。
+`api-breaker` 插件现在已被禁用，它也适用于其他插件。 

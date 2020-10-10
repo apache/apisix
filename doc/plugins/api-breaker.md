@@ -61,7 +61,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
               }
           }
       },
-     "uri": "/get",
+      "uri": "/get",
       "host": "127.0.0.1",
       "upstream_id": 50
   }'
@@ -81,6 +81,10 @@ Date: Tue, 29 Sep 2020 05:00:02 GMT
 
 ... ...
 ```
+
+> Then. Like the configuration above, if your upstream service returns 500. 3 times in a row. The client will receive a 502 (unhealthy_response_code) response.
+
+
 
 ## Disable Plugin
 
