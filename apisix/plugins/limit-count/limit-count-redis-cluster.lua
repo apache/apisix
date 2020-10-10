@@ -33,37 +33,26 @@ local mt = {
 }
 
 
-local function split(inputstr, sep)
-    if sep == nil then
-       sep = "%s"
-    end
-
-    local t={}
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-       table.insert(t, str)
-    end
-
-    return t
- end
-
-
--- https://github.com/steve0511/resty-redis-cluster
 local function new_redis_cluster(conf)
     local config = {
-        name = "apisix-rediscluster",
+        name = "apisix-redis-cluster",
         serv_list = {},
         read_timeout = conf.redis_timeout,
         auth = conf.redis_password
     }
 
     for i, conf_item in ipairs(conf.redis_cluster_nodes) do
-        local t = split(conf_item, ":")
-        config.serv_list[i] = {ip = t[1], port = t[2]}
+        local host, port, err = core.utils.parse_addr(conf_item)
+        if err then
+            error("limit-count-redis: redis_cluster_nodes configure err " .. conf_item, err)
+        end
+
+        config.serv_list[i] = {ip = host, port = port}
     end
 
-    local red_cli = rediscluster:new(config)
+    local red_cli, err = rediscluster:new(config)
     if not red_cli then
-        error("limit-count-redis: connect to redis cluster fails")
+        error("limit-count-redis: connect to redis cluster failed: ", err)
     end
 
     return red_cli

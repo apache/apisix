@@ -87,7 +87,9 @@ local schema = {
                         redis_cluster_nodes = {
                             type = "array",
                             minItems = 2,
-                            items = {type = "string", minLength = 2, maxLength = 100},
+                            items = {
+                                type = "string", minLength = 2, maxLength = 100
+                            },
                         },
                         redis_password = {
                             type = "string", minLength = 0,
@@ -142,7 +144,7 @@ local function create_limit_obj(conf)
     end
 
     if conf.policy == "redis-cluster" then
-        return limit_redis_cluster_new("plugin-" .. plugin_name,conf.count,
+        return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
                                        conf.time_window, conf)
     end
 
