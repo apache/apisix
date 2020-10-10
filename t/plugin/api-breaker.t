@@ -216,7 +216,7 @@ GET /api_breaker?code=500
 
 
 
-=== TEST 9: trigger default value of unhealthy.http_statuses breaker 
+=== TEST 9: trigger default value of unhealthy.http_statuses breaker
 --- request eval
 ["GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=503", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
@@ -240,6 +240,7 @@ GET /api_breaker?code=500
 --- timeout: 100
 
 
+
 === TEST 11: trigger timeout again 4 second
 --- config
     location /sleep1 {
@@ -252,6 +253,7 @@ GET /api_breaker?code=500
 --- no_error_log
 [error]
 --- timeout: 100
+
 
 
 === TEST 12: del plugin
@@ -356,3 +358,167 @@ GET /t
 --- no_error_log
 [error]
 --- timeout: 100
+
+
+
+=== TEST 15: add plugin with default config value
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "api-breaker": {
+                            "unhealthy_response_code": 502,
+                            "max_breaker_seconds": 10,
+                            "unhealthy": {
+                                "http_statuses": [500, 503],
+                                "failures": 1
+                            },
+                            "healthy": {
+                                "successes": 3
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/api_breaker"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+--- SKIP
+
+
+
+=== TEST 16: max_breaker_seconds = 20
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("lib.json_sort")
+
+            local status_count = {}
+            for i = 1, 20 do
+                local code = t('/api_breaker?code=500', ngx.HTTP_GET)
+                code = tostring(code)
+                status_count[code] = (status_count[code] or 0) + 1
+                ngx.sleep(1)
+            end
+
+            ngx.say(json.encode(status_count))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+phase_func(): breaker_time: 16
+--- error_log
+phase_func(): breaker_time: 2
+phase_func(): breaker_time: 4
+phase_func(): breaker_time: 8
+phase_func(): breaker_time: 10
+--- response_body
+{"500":4,"502":16}
+--- timeout: 25
+--- SKIP
+
+
+
+=== TEST 17: add plugin, max_breaker_seconds = 17
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "api-breaker": {
+                            "unhealthy_response_code": 502,
+                            "max_breaker_seconds": 17,
+                            "unhealthy": {
+                                "http_statuses": [500, 503],
+                                "failures": 1
+                            },
+                            "healthy": {
+                                "successes": 3
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/api_breaker"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: max_breaker_seconds = 35
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("lib.json_sort")
+
+            local status_count = {}
+            for i = 1, 35 do
+                local code = t('/api_breaker?code=500', ngx.HTTP_GET)
+                code = tostring(code)
+                status_count[code] = (status_count[code] or 0) + 1
+                ngx.sleep(1)
+            end
+
+            ngx.say(json.encode(status_count))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+phase_func(): breaker_time: 32
+--- error_log
+phase_func(): breaker_time: 2
+phase_func(): breaker_time: 4
+phase_func(): breaker_time: 8
+phase_func(): breaker_time: 10
+phase_func(): breaker_time: 16
+phase_func(): breaker_time: 17
+--- response_body
+{"500":5,"502":30}
+--- timeout: 40

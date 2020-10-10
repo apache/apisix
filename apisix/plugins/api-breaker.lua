@@ -14,11 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local core = require("apisix.core")
 local plugin_name = "api-breaker"
 local ngx = ngx
 local math = math
 local error = error
-local core = require("apisix.core")
+local ipairs = ipairs
 
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 if not shared_buffer then
@@ -99,7 +101,7 @@ end
 
 
 local function is_unhealthy(unhealthy_status, upstream_status)
-    local idx = array_index(unhealthy_status, upstream_status);
+    local idx = array_index(unhealthy_status, upstream_status)
     if idx > 0 then
         return true
     end
@@ -109,7 +111,7 @@ end
 
 
 local function is_healthy(healthy_status, upstream_status)
-    local idx = array_index(healthy_status, upstream_status);
+    local idx = array_index(healthy_status, upstream_status)
     if idx > 0 then
         return true
     end
@@ -155,14 +157,14 @@ function _M.access(conf, ctx)
     -- unhealthy counts
     local unhealthy_val, err = shared_buffer:get(unhealthy_cache_key(ctx))
     if err then
-        core.log.warn("failed to get unhealthy_cache_key in ngx.shared: ", 
+        core.log.warn("failed to get unhealthy_cache_key in ngx.shared: ",
                       unhealthy_cache_key(ctx), err)
     end
 
     -- Timestamp of the last time a unhealthy state was triggered
     local unhealthy_lastime, err = shared_buffer:get(unhealthy_lastime_cache_key(ctx))
     if err then
-        core.log.warn("failed to get unhealthy_lastime_cache_key in ngx.shared: ", 
+        core.log.warn("failed to get unhealthy_lastime_cache_key in ngx.shared: ",
                       unhealthy_lastime_cache_key(ctx), err)
     end
 
@@ -173,10 +175,11 @@ function _M.access(conf, ctx)
         end
 
         -- Cannot exceed the maximum value of the user configuration
-        local breaker_time = 2^multiplication
+        local breaker_time = 2 ^ multiplication
         if breaker_time > conf.max_breaker_seconds then
             breaker_time = conf.max_breaker_seconds
         end
+        core.log.info("breaker_time: ", breaker_time)
 
         -- breaker
         if unhealthy_lastime + breaker_time >= ngx.time() then
@@ -208,7 +211,7 @@ function _M.log(conf, ctx)
         -- Whether the user-configured number of failures has been reached,
         -- and if so, the timestamp for entering the unhealthy state.
         if 0 == newval % conf.unhealthy.failures then
-            shared_buffer:set(unhealthy_lastime_cache_key(ctx), ngx.time(), 
+            shared_buffer:set(unhealthy_lastime_cache_key(ctx), ngx.time(),
                               conf.max_breaker_seconds)
             core.log.info(unhealthy_key, " ", newval) -- stat change to unhealthy
         end
