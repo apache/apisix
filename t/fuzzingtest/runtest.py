@@ -24,14 +24,17 @@ import sys,os
 import json
 import re
 import base64
+from sys import version_info
 
 def cur_file_dir():
     return os.path.split(os.path.realpath(__file__))[0]
 
-def runcase(casedirpath):
+def env_prepare(casedirpath):
     updatepip = "curl https://bootstrap.pypa.io/get-pip.py | python"
-    requirements = "pip install -r %s/requirements.txt"%cur_file_dir()
-
+    if version_info.major == 2:
+        requirements = "python -m pip install -r %s/requirements.txt"%cur_file_dir()
+    else:
+        requirements = "python3 -m pip install -r %s/requirements.txt"%cur_file_dir()
     r_exc_case_cmd = subprocess.Popen(updatepip, stderr=subprocess.PIPE,shell=True)
     r_exc_case_cmd.wait()
     err = r_exc_case_cmd.stderr.read()
@@ -51,4 +54,4 @@ def runcase(casedirpath):
     #shutil.rmtree(casedirpath+r'/__pycache__')
 
 casepath = cur_file_dir()+"/cases"
-runcase(casepath)
+env_prepare(casepath)
