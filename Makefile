@@ -72,7 +72,7 @@ lint: utils
 ### init:             Initialize the runtime environment
 .PHONY: init
 init: default
-	mkdir -p logs
+	mkdir -p ./logs
 	./bin/apisix init
 	./bin/apisix init_etcd
 
