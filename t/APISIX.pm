@@ -244,11 +244,6 @@ _EOC_
     underscores_in_headers on;
     lua_socket_log_errors off;
 
-    client_header_timeout    100s;
-    send_timeout             100s;
-    proxy_connect_timeout    100s;
-    proxy_send_timeout       100s;
-
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
