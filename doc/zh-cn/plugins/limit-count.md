@@ -120,12 +120,12 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
             "policy": "redis-cluster",
             "redis_serv_list": [
             	{
-              	"redis_host": "127.0.0.1",
-                "redis_port": 6373
+              	"host": "127.0.0.1",
+                "port": 6373
               },
             	{
-              	"redis_host": "127.0.0.1",
-                "redis_port": 6374
+              	"host": "127.0.0.1",
+                "port": 6374
               }
             ]
         }

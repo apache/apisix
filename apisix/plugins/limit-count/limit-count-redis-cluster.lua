@@ -41,8 +41,8 @@ local function new_redis_cluster(conf)
         auth = conf.redis_password
     }
 
-    for i, conf in ipairs(conf.redis_serv_list) do
-        config.serv_list[i] = {ip = conf.redhost, port = conf.redis_port}
+    for i, c in ipairs(conf.redis_serv_list) do
+        config.serv_list[i] = {ip = c.host, port = c.port}
     end
 
     local red_cli = rediscluster:new(config)
