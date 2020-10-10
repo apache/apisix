@@ -23,8 +23,6 @@ local error = error
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
-local string = string
-local table = table
 
 local _M = {}
 
