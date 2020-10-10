@@ -21,7 +21,7 @@ local ipairs = ipairs
 local error = error
 local core = require("apisix.core")
 
-local DEFAULT_EXPTIME = 300
+local DEFAULT_EXPTIME = 300 -- TODO: user can config
 
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 if not shared_buffer then
@@ -165,7 +165,7 @@ function _M.access(conf, ctx)
 end
 
 
-function _M.header_filter(conf, ctx)
+function _M.log(conf, ctx)
     local unhealthy_status = conf.unhealthy.http_statuses
     local healthy_status = conf.healthy.http_statuses
 
@@ -187,7 +187,10 @@ function _M.header_filter(conf, ctx)
             core.log.info(unhealthy_key, " ", newval) -- stat change
         end
 
-    elseif is_healthy(healthy_status, upstream_status) then
+        return
+    end
+
+    if is_healthy(healthy_status, upstream_status) then
         local unhealthy_val, err = shared_buffer:get(unhealthy_key)
         if err then
             core.log.error("failed to get unhealthy_key in ngx.shared: ", err)
@@ -207,7 +210,11 @@ function _M.header_filter(conf, ctx)
                 shared_buffer:delete(unhealthy_lastime_cache_key(ctx))
             end
         end
+
+        return
     end
+
+    return
 end
 
 

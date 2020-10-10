@@ -31,6 +31,10 @@
 
 The plugin implements API fuse functionality to help us protect our upstream business services.
 
+About the breaker timeout logic; the current version does not open the relevant configuration items to the user, the code logic automatically **triggers the unhealthy state **incrementation of the number of operations.
+
+For example, if the upstream service returns `unhealthy.http_statuses`   state and reaches `unhealthy.failures` for the first time, **the breaker will take 2 seconds**. Then, after 2 seconds, the upstream service returns `unhealthy.http_statuses` continuously again and reaches to `unhealthy.failures` a second time,  **breaker for 4 seconds**. And so on, up to a maximum of 300 seconds is not increased.
+
 ## Attributes
 
 | Name          | Type          | Requirement | Default | Valid      | Description                                                                 |
@@ -70,14 +74,11 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
 ## Test Plugin
 
 ```shell
-$ curl -i -X POST "http://127.0.0.1:9080/get?list=1,b,c"
-HTTP/1.1 200 OK
+$ curl -i -X POST "http://127.0.0.1:9080/get"
+HTTP/1.1 502 Bad Gateway
 Content-Type: application/octet-stream
-Content-Length: 0
 Connection: keep-alive
 Server: APISIX/1.5
-Server: openresty/1.17.8.2
-Date: Tue, 29 Sep 2020 05:00:02 GMT
 
 ... ...
 ```

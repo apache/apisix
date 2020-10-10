@@ -31,6 +31,10 @@
 
 该插件实现API熔断功能，帮助我们保护上游业务服务。
 
+关于熔断超时逻辑；当前版本没有开放相关配置项给用户，由代码逻辑自动按**触发不健康状态**的次数递增运算。
+
+比如：上流服务第一次返回`unhealthy.http_statuses`状态达到`unhealthy.failures`次时，**熔断2秒**。然后，过2秒以后，上流服务再次连续返回`unhealthy.http_statuses`状态达到`unhealthy.failures`次时，**熔断4秒**。依次类推，最大达到300秒不再增加。
+
 
 ## 属性列表
 
@@ -71,14 +75,11 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f
 ## 测试插件
 
 ```shell
-$ curl -i -X POST "http://127.0.0.1:9080/get?list=1,b,c"
-HTTP/1.1 200 OK
+$ curl -i -X POST "http://127.0.0.1:9080/get"
+HTTP/1.1 502 Bad Gateway
 Content-Type: application/octet-stream
-Content-Length: 0
 Connection: keep-alive
 Server: APISIX/1.5
-Server: openresty/1.17.8.2
-Date: Tue, 29 Sep 2020 05:00:02 GMT
 
 ... ...
 ```
