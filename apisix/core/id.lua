@@ -65,6 +65,7 @@ function _M.init()
         return
     end
 
+    uuid.seed()
     apisix_uid = uuid.generate_v4()
     log.notice("not found apisix uid, generate a new one: ", apisix_uid)
 

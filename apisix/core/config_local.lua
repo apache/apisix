@@ -17,7 +17,9 @@
 
 local log = require("apisix.core.log")
 local profile = require("apisix.core.profile")
+local table = require("apisix.core.table")
 local yaml = require("tinyyaml")
+
 local io_open = io.open
 local type = type
 local str_gmatch = string.gmatch
@@ -57,16 +59,6 @@ local function is_empty_yaml_line(line)
 end
 
 
-local function tab_is_array(t)
-    local count = 0
-    for k,v in pairs(t) do
-        count = count + 1
-    end
-
-    return #t == count
-end
-
-
 local function tinyyaml_type(t)
     local mt = getmetatable(t)
     if mt then
@@ -84,7 +76,7 @@ local function merge_conf(base, new_tab, ppath)
             if tinyyaml_type(val) == "null" then
                 base[key] = nil
 
-            elseif tab_is_array(val) then
+            elseif table.isarray(val) then
                 base[key] = val
 
             else

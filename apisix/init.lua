@@ -63,13 +63,6 @@ function _M.http_init(args)
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    --
-    local seed, err = core.utils.get_seed_from_urandom()
-    if not seed then
-        core.log.warn('failed to get seed from urandom: ', err)
-        seed = ngx_now() * 1000 + ngx.worker.pid()
-    end
-    math.randomseed(seed)
     parse_args(args)
     core.id.init()
 
@@ -82,6 +75,15 @@ end
 
 
 function _M.http_init_worker()
+    local seed, err = core.utils.get_seed_from_urandom()
+    if not seed then
+        core.log.warn('failed to get seed from urandom: ', err)
+        seed = ngx_now() * 1000 + ngx.worker.pid()
+    end
+    math.randomseed(seed)
+    -- for testing only
+    core.log.info("random test in [1, 10000]: ", math.random(1, 1000000))
+
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
     if not ok then
@@ -364,16 +366,20 @@ function _M.http_access_phase()
         end
     end
 
-    router.router_http.match(api_ctx)
-
-    core.log.info("matched route: ",
-                  core.json.delay_encode(api_ctx.matched_route, true))
+    local user_defined_route_matched = router.router_http.match(api_ctx)
+    if not user_defined_route_matched then
+        router.api.match(api_ctx)
+    end
 
     local route = api_ctx.matched_route
     if not route then
+        core.log.info("not find any matched route")
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
+
+    core.log.info("matched route: ",
+                  core.json.delay_encode(api_ctx.matched_route, true))
 
     if route.value.service_protocol == "grpc" then
         return ngx.exec("@grpc_pass")
@@ -759,6 +765,15 @@ end
 
 function _M.stream_init_worker()
     core.log.info("enter stream_init_worker")
+    local seed, err = core.utils.get_seed_from_urandom()
+    if not seed then
+        core.log.warn('failed to get seed from urandom: ', err)
+        seed = ngx_now() * 1000 + ngx.worker.pid()
+    end
+    math.randomseed(seed)
+    -- for testing only
+    core.log.info("random stream test in [1, 10000]: ", math.random(1, 1000000))
+
     router.stream_init_worker()
     plugin.init_worker()
 
