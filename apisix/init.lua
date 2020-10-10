@@ -366,16 +366,20 @@ function _M.http_access_phase()
         end
     end
 
-    router.router_http.match(api_ctx)
-
-    core.log.info("matched route: ",
-                  core.json.delay_encode(api_ctx.matched_route, true))
+    local user_defined_route_matched = router.router_http.match(api_ctx)
+    if not user_defined_route_matched then
+        router.api.match(api_ctx)
+    end
 
     local route = api_ctx.matched_route
     if not route then
+        core.log.info("not find any matched route")
         return core.response.exit(404,
                     {error_msg = "404 Route Not Found"})
     end
+
+    core.log.info("matched route: ",
+                  core.json.delay_encode(api_ctx.matched_route, true))
 
     if route.value.service_protocol == "grpc" then
         return ngx.exec("@grpc_pass")
