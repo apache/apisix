@@ -17,7 +17,6 @@
 local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")
-local plugin = require("apisix.plugin")
 local ipairs = ipairs
 local type = type
 local error = error
@@ -34,18 +33,7 @@ local _M = {version = 0.2}
 local function create_radixtree_router(routes)
     routes = routes or {}
 
-    local api_routes = plugin.api_routes()
     core.table.clear(uri_routes)
-
-    for _, route in ipairs(api_routes) do
-        if type(route) == "table" then
-            core.table.insert(uri_routes, {
-                paths = route.uris or route.uri,
-                methods = route.methods,
-                handler = route.handler,
-            })
-        end
-    end
 
     for _, route in ipairs(routes) do
         if type(route) == "table" then
@@ -108,12 +96,7 @@ function _M.match(api_ctx)
     match_opts.vars = api_ctx.var
 
     local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
-    if not ok then
-        core.log.info("not find any matched route")
-        return true
-    end
-
-    return true
+    return ok
 end
 
 

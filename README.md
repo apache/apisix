@@ -17,7 +17,8 @@
 #
 -->
 
-[Chinese](README_CN.md)
+- [Chinese](README_CN.md)
+
 ## APISIX
 
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
@@ -269,6 +270,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 - [Analysis of Excellent Performance of Apache APISIX Microservices Gateway](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
 
 ## User Stories
+- [European Factory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
 - [HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
@@ -289,6 +291,11 @@ Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) pa
 APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
+
+## Logos
+
+- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo source](https://apache.org/logos/#apisix)
 
 ## Contributing
 
