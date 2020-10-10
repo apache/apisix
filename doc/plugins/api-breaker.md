@@ -85,7 +85,6 @@ Date: Tue, 29 Sep 2020 05:00:02 GMT
 > Then. Like the configuration above, if your upstream service returns 500. 3 times in a row. The client will receive a 502 (unhealthy_response_code) response.
 
 
-
 ## Disable Plugin
 
 When you want to disable the `api-breader` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
