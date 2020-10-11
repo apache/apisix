@@ -95,7 +95,7 @@ local function send_kafka_data(conf, log_message)
 
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     if not ok then
-        return nil, "failed to send data to Kafka topic" .. err
+        return nil, "failed to send data to Kafka topic: " .. err
     end
 
     return true
