@@ -63,13 +63,11 @@ script() {
     # show install file
     luarocks show apisix
 
+    mkdir cli_tmp && cd cli_tmp
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
-
-    # apisix cli test
-    sudo PATH=$PATH .travis/apisix_cli_test.sh
 
     cat /usr/local/apisix/logs/error.log | grep '\[error\]' > /tmp/error.log | true
     if [ -s /tmp/error.log ]; then
@@ -77,6 +75,11 @@ script() {
         cat /usr/local/apisix/logs/error.log
         exit 1
     fi
+
+    cd ..
+
+    # apisix cli test
+    sudo PATH=$PATH .travis/apisix_cli_test.sh
 }
 
 case_opt=$1
