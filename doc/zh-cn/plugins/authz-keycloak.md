@@ -35,15 +35,15 @@
 
 ## 属性
 
-|名称           |选项    |描述|
-|---------      |--------       |-----------|
-| token_endpoint|必填       |接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型|
-| grant_type    |选填       |默认值为 `urn:ietf:params:oauth:grant-type:uma-ticket`|
-| audience      |选填       |客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。|
-| permissions   |选填       |描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID`|
-| timeout       |选填       |与身份认证服务器的 http 连接的超时时间。默认值为 3 秒。|
-| ssl_verify    |选填       |验证 SSL 证书与主机名是否匹配。|
-| policy_enforcement_mode|必填     |只能是 ENFORCING 或 PERMISSIVE。|
+| 名称                    | 类型          | 必选项 | 默认值      | 有效值                      | 描述                                                                                            |
+| ----------------------- | ------------- | ------ | ----------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
+| token_endpoint          | string        | 必须   |             | [1, 4096]                   | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型  |
+| grant_type              | string        | 可选   | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"] |                                    |
+| audience                | string        | 可选   |             |                             | 客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。 |
+| permissions             | array[string] | 可选   |             |                             | 描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID`              |
+| timeout                 | integer       | 可选   | 3000        | [1000, ...]                 | 与身份认证服务器的 http 连接的超时时间                                                          |
+| ssl_verify              | boolean       | 可选   | true        |                             | 验证 SSL 证书与主机名是否匹配                                                                   |
+| policy_enforcement_mode | string        | 可选   | "ENFORCING" | ["ENFORCING", "PERMISSIVE"] |                                                                                                 |
 
 ### 策略执行模式
 

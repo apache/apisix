@@ -78,6 +78,14 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         return
     end
 
+    if plugin.schema and plugin.schema.type == "object" then
+        if not plugin.schema.properties or
+           core.table.nkeys(plugin.schema.properties) == 0
+        then
+            plugin.schema.properties = core.schema.plugin_disable_schema
+        end
+    end
+
     plugin.name = name
     core.table.insert(plugins_list, plugin)
 
@@ -189,45 +197,6 @@ function _M.load()
 end
 
 
-local fetch_api_routes
-do
-    local routes = {}
-function fetch_api_routes()
-    core.table.clear(routes)
-
-    for _, plugin in ipairs(_M.plugins) do
-        local api_fun = plugin.api
-        if api_fun then
-            local api_routes = api_fun()
-            core.log.debug("fetched api routes: ",
-                           core.json.delay_encode(api_routes, true))
-            for _, route in ipairs(api_routes) do
-                core.table.insert(routes, {
-                        methods = route.methods,
-                        uri = route.uri,
-                        handler = function (...)
-                            local code, body = route.handler(...)
-                            if code or body then
-                                core.response.exit(code, body)
-                            end
-                        end
-                    })
-            end
-        end
-    end
-
-    return routes
-end
-
-end -- do
-
-
-function _M.api_routes()
-    return core.lrucache.global("plugin_routes", _M.load_times,
-                                fetch_api_routes)
-end
-
-
 function _M.filter(user_route, plugins)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
@@ -318,10 +287,12 @@ local function merge_service_route(service_conf, route_conf)
         end
 
         new_conf.value.upstream_id = nil
+        new_conf.has_domain = route_conf.has_domain
     end
 
     if route_conf.value.upstream_id then
         new_conf.value.upstream_id = route_conf.value.upstream_id
+        new_conf.has_domain = route_conf.has_domain
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))

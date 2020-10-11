@@ -32,6 +32,7 @@ local _M = {
     nkeys   = nkeys,
     insert  = table.insert,
     concat  = table.concat,
+    sort    = table.sort,
     clone   = require("table.clone"),
     isarray = require("table.isarray"),
 }

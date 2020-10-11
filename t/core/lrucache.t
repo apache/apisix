@@ -52,7 +52,7 @@ GET /t
 --- response_body
 obj: {"idx":1}
 obj: {"idx":1}
-obj: {"idx":2,"_cache_ver":"1"}
+obj: {"idx":2}
 --- no_error_log
 [error]
 
@@ -88,8 +88,8 @@ GET /t
 --- response_body
 obj: {"idx":1}
 obj: {"idx":1}
-obj: {"idx":2,"_cache_ver":"1"}
-obj: {"idx":3,"_cache_ver":"1"}
+obj: {"idx":2}
+obj: {"idx":3}
 --- no_error_log
 [error]
 
@@ -130,9 +130,9 @@ GET /t
 --- response_body
 obj: {"idx":1}
 obj: {"idx":1}
-obj: {"idx":2,"_cache_ver":"1"}
-obj: {"idx":2,"_cache_ver":"1"}
-obj: {"idx":3,"_cache_ver":"1"}
+obj: {"idx":2}
+obj: {"idx":2}
+obj: {"idx":3}
 --- no_error_log
 [error]
 
@@ -199,9 +199,9 @@ obj: 2
 --- request
 GET /t
 --- response_body
-obj: {"_cache_ver":"t1","name":"aaa"}
-release: {"_cache_ver":"t1","name":"aaa"}
-obj: {"_cache_ver":"t2","name":"bbb"}
+obj: {"name":"aaa"}
+release: {"name":"aaa"}
+obj: {"name":"bbb"}
 --- no_error_log
 [error]
 
@@ -236,9 +236,9 @@ obj: {"_cache_ver":"t2","name":"bbb"}
 --- request
 GET /t
 --- response_body
-obj: {"idx":1,"_cache_ver":"ver"}
-obj: {"idx":1,"_cache_ver":"ver"}
-obj: {"idx":2,"_cache_ver":"ver"}
+obj: {"idx":1}
+obj: {"idx":1}
+obj: {"idx":2}
 --- no_error_log
 [error]
 
@@ -275,7 +275,48 @@ obj: {"idx":2,"_cache_ver":"ver"}
 --- request
 GET /t
 --- response_body
-obj: {"idx":1,"_cache_ver":"ver"}
-obj: {"idx":1,"_cache_ver":"ver"}
+obj: {"idx":1}
+obj: {"idx":1}
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: different `key` and `ver`, cached same one table
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            local item = {}
+            local idx = 0
+            local function create_obj()
+                idx = idx + 1
+                ngx.say("create obj ", idx, " time")
+                return item
+            end
+
+            local lru_get = core.lrucache.new({
+                ttl = 10, count = 256
+            })
+
+            local obj = lru_get("key", "ver", create_obj)
+            ngx.say("fetch obj: ", obj == item)
+
+            obj = lru_get("key2", "ver2", create_obj)
+            ngx.say("fetch obj: ", obj == item)
+
+            obj = lru_get("key", "ver", create_obj)
+            ngx.say("fetch obj: ", obj == item)
+        }
+    }
+--- request
+GET /t
+--- response_body
+create obj 1 time
+fetch obj: true
+create obj 2 time
+fetch obj: true
+fetch obj: true
 --- no_error_log
 [error]

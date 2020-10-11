@@ -172,6 +172,10 @@ local function pick_server(route, ctx)
         return nil, "no valid upstream node"
     end
 
+    if ctx.server_picker and ctx.server_picker.after_balance then
+        ctx.server_picker.after_balance(ctx, true)
+    end
+
     if up_conf.timeout then
         local timeout = up_conf.timeout
         local ok, err = set_timeouts(timeout.connect, timeout.send,

@@ -39,6 +39,8 @@ do_install() {
     sudo make install > build.log 2>&1 || (cat build.log && exit 1)
     cd ..
     rm -rf luarocks-2.4.4
+
+    ./utils/install-etcd.sh
 }
 
 script() {
@@ -48,8 +50,8 @@ script() {
     sudo service etcd start
     sudo service etcd stop
     mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcd --version
+    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcdctl version
     sleep 5
 
     sudo rm -rf /usr/local/apisix
@@ -57,6 +59,8 @@ script() {
     # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps  > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
+
+    mkdir cli_tmp && cd cli_tmp
 
     # show install file
     luarocks show apisix
@@ -66,15 +70,17 @@ script() {
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
-    # apisix cli test
-    sudo PATH=$PATH .travis/apisix_cli_test.sh
-
     cat /usr/local/apisix/logs/error.log | grep '\[error\]' > /tmp/error.log | true
     if [ -s /tmp/error.log ]; then
         echo "=====found error log====="
         cat /usr/local/apisix/logs/error.log
         exit 1
     fi
+
+    cd ..
+
+    # apisix cli test
+    sudo PATH=$PATH .travis/apisix_cli_test.sh
 }
 
 case_opt=$1

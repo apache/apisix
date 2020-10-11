@@ -27,7 +27,7 @@ local schema = {
         burst = {type = "number",  minimum = 0},
         key = {type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for"},
+                    "http_x_forwarded_for", "consumer_name"},
         },
         rejected_code = {type = "integer", minimum = 200, default = 503},
     },
@@ -67,7 +67,17 @@ function _M.access(conf, ctx)
         return 500
     end
 
-    local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    local key
+    if conf.key == "consumer_name" then
+        if not ctx.consumer_id then
+            core.log.error("consumer not found.")
+            return 500, { message = "Consumer not found."}
+        end
+        key = ctx.consumer_id .. ctx.conf_type .. ctx.conf_version
+
+    else
+        key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
+    end
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)

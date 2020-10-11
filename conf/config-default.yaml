@@ -115,12 +115,18 @@ nginx_config:                     # config for render the template to genarate n
   worker_shutdown_timeout: 240s     # timeout for a graceful shutdown of worker processes
   event:
     worker_connections: 10620
+  #envs:                            # allow to get a list of environment variables
+  #  - TEST_ENV
   http:
     access_log: "logs/access.log"
     access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time"
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
     client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
     client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
+    client_max_body_size: 0        # The maximum allowed size of the client request body.
+                                   # If exceeded, the 413 (Request Entity Too Large) error is returned to the client.
+                                   # Note that unlike Nginx, we don't limit the body size by default.
+
     send_timeout: 10s              # timeout for transmitting a response to the client.then the connection is closed
     underscores_in_headers: "on"   # default enables the use of underscores in client request header fields
     real_ip_header: "X-Real-IP"    # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
@@ -160,6 +166,7 @@ plugins:                          # plugin list
   - jwt-auth
   - zipkin
   - ip-restriction
+  - referer-restriction
   - grpc-transcode
   - serverless-pre-function
   - serverless-post-function
@@ -185,6 +192,7 @@ plugins:                          # plugin list
   - proxy-cache
   - proxy-mirror
   - request-id
+  - hmac-auth
 
 stream_plugins:
   - mqtt-proxy

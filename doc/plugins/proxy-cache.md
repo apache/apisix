@@ -29,15 +29,15 @@ The proxy-cache plugin, which provides the ability to cache upstream response da
 
 ## Attributes
 
-|Name          |Requirement  | Type |Description|
-|------- |-----|------|------|
-|cache_zone|required|string|Specify which cache area to use, each cache area can be configured with different paths. In addition, cache areas can be predefined in conf/config.yaml file|
-|cache_key|required|array[string]|key of a cache, can use variables. For example: ["$host", "$uri", "-cache-id"]|
-|cache_bypass|optional|array[string]|Whether to skip cache retrieval. That is, do not look for data in the cache. It can use variables, and note that cache data retrieval will be skipped when the value of this attribute is not empty or not '0'. For example: ["$arg_bypass"]|
-|cache_method|optional|array[string]|Decide whether to be cached according to the request method|
-|cache_http_status|optional|array[integer]|Decide whether to be cached according to the upstream response status|
-|hide_cache_headers|optional|boolean|Whether to return the Expires and Cache-Control response headers to the client, the default is false|
-|no_cache|optional|array[string]|Whether to cache data, it can use variables, and note that the data will not be cached when the value of this attribute is not empty or not '0'.|
+| Name               | Type           | Requirement | Default                   | Valid                                                                           | Description                                                                                                                                                                                                                                  |
+| ------------------ | -------------- | ----------- | ------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| cache_zone         | string         | required    |                           |                                                                                 | Specify which cache area to use, each cache area can be configured with different paths. In addition, cache areas can be predefined in conf/config.yaml file                                                                                 |
+| cache_key          | array[string]  | optional    | ["$host", "$request_uri"] |                                                                                 | key of a cache, can use variables. For example: ["$host", "$uri", "-cache-id"]                                                                                                                                                               |
+| cache_bypass       | array[string]  | optional    |                           |                                                                                 | Whether to skip cache retrieval. That is, do not look for data in the cache. It can use variables, and note that cache data retrieval will be skipped when the value of this attribute is not empty or not '0'. For example: ["$arg_bypass"] |
+| cache_method       | array[string]  | optional    | ["GET", "HEAD"]           | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD","OPTIONS", "CONNECT", "TRACE"] | Decide whether to be cached according to the request method                                                                                                                                                                                  |
+| cache_http_status  | array[integer] | optional    | [200, 301, 404]           | [200, 599]                                                                      | Decide whether to be cached according to the upstream response status                                                                                                                                                                        |
+| hide_cache_headers | boolean        | optional    | false                     |                                                                                 | Whether to return the Expires and Cache-Control response headers to the client,                                                                                                                                                              |
+| no_cache           | array[string]  | optional    |                           |                                                                                 | Whether to cache data, it can use variables, and note that the data will not be cached when the value of this attribute is not empty or not '0'.                                                                                             |
 
 Note:
 1. The variable starts with $.
