@@ -103,6 +103,11 @@ function _M.init()
         return
     end
 
+    --todo: maybe need to fetch them from plugin-metadata
+    local metadata_buffer = ngx.shared.tracing_buffer
+    metadata_buffer:set('serviceName', 'User Service Name')
+    metadata_buffer:set('serviceInstanceName', 'User Service Instance Name')
+
     local local_conf = core.config.local_conf()
     local local_endpoint_addr = try_read_attr(local_conf, "plugin_attr",
                                               plugin_name)
