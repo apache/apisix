@@ -74,6 +74,10 @@ script() {
     # install APISIX by luarocks
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
 
+    # REMOVE ME !!!! after PR merged: https://github.com/apache/apisix/pull/2383
+    install -d /usr/local/apisix/ssl/router
+	install apisix/ssl/router/*.lua /usr/local/apisix/ssl/router/
+
     # show install files
     luarocks show apisix
 
