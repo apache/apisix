@@ -22,6 +22,7 @@ local sw_client = require("apisix.plugins.skywalking.client")
 local sw_tracer = require("apisix.plugins.skywalking.tracer")
 
 local plugin_name = "skywalking"
+local DEFAULT_ENDPOINT_ADDR = "http://127.0.0.1:12800"
 
 
 local schema = {
@@ -76,5 +77,30 @@ function _M.log(conf, ctx)
         sw_tracer.prepareForReport(ctx, conf.endpoint)
     end
 end
+
+
+local function try_read_attr(t, ...)
+    local count = select('#', ...)
+    for i = 1, count do
+        local attr = select(i, ...)
+        if type(t) ~= "table" then
+            return nil
+        end
+        t = t[attr]
+    end
+
+    return true
+end
+
+
+function _M.init()
+    local local_conf = core.config.local_conf()
+    local local_endpoint_addr = try_read_attr(local_conf, "plugin_attr",
+                                              plugin_name)
+
+    local endpoint_addr = local_endpoint_addr or DEFAULT_ENDPOINT_ADDR
+    require("skywalking.client"):startBackendTimer(endpoint_addr)
+end
+
 
 return _M
