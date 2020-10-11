@@ -15,28 +15,26 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local process = require("ngx.process")
 local ngx = ngx
 local math = math
 
-local sw_client = require("apisix.plugins.skywalking.client")
-local sw_tracer = require("apisix.plugins.skywalking.tracer")
+local sw_tracer = require("skywalking.tracer")
 
 local plugin_name = "skywalking"
 local DEFAULT_ENDPOINT_ADDR = "http://127.0.0.1:12800"
 
-
 local schema = {
     type = "object",
     properties = {
-        endpoint = {type = "string"},
-        sample_ratio = {type = "number", minimum = 0.00001, maximum = 1, default = 1}
+        sample_ratio = {
+            type = "number",
+            minimum = 0.00001,
+            maximum = 1,
+            default = 1
+        }
     },
-    service_name = {
-        type = "string",
-        description = "service name for skywalking",
-        default = "APISIX",
-    },
-    required = {"endpoint"}
+    additionalProperties = false,
 }
 
 
@@ -56,25 +54,29 @@ end
 function _M.rewrite(conf, ctx)
     core.log.debug("rewrite phase of skywalking plugin")
     ctx.skywalking_sample = false
-    if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
+    if conf.sample_ratio == 1 or math.random() <= conf.sample_ratio then
         ctx.skywalking_sample = true
-        sw_client.heartbeat(conf)
-        -- Currently, we can not have the upstream real network address
-        sw_tracer.start(ctx, conf.endpoint, "upstream service")
+        sw_tracer:start("upstream service")
+        core.log.info("tracer start")
+        return
     end
+
+    core.log.info("miss sampling, ignore")
 end
 
 
 function _M.body_filter(conf, ctx)
     if ctx.skywalking_sample and ngx.arg[2] then
-        sw_tracer.finish(ctx)
+        sw_tracer:finish()
+        core.log.info("tracer finish")
     end
 end
 
 
 function _M.log(conf, ctx)
     if ctx.skywalking_sample then
-        sw_tracer.prepareForReport(ctx, conf.endpoint)
+        sw_tracer:prepareForReport()
+        core.log.info("tracer prepare for report")
     end
 end
 
@@ -89,17 +91,22 @@ local function try_read_attr(t, ...)
         t = t[attr]
     end
 
-    return true
+    return t
 end
 
 
 function _M.init()
+    if process.type() ~= "worker" and process.type() ~= "single" then
+        return
+    end
+
     local local_conf = core.config.local_conf()
     local local_endpoint_addr = try_read_attr(local_conf, "plugin_attr",
                                               plugin_name)
 
     local endpoint_addr = local_endpoint_addr or DEFAULT_ENDPOINT_ADDR
     require("skywalking.client"):startBackendTimer(endpoint_addr)
+    core.log.info("start the backend timer, report to: ", endpoint_addr)
 end
 
 
