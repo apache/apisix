@@ -326,6 +326,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             content_by_lua_block {
@@ -339,6 +341,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             alias dashboard/;
@@ -397,6 +401,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             content_by_lua_block {
@@ -410,6 +416,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             alias dashboard/;

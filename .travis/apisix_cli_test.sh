@@ -213,26 +213,30 @@ echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
 # empty allow_admin in conf/config.yaml
 
-git checkout conf/config.yaml
-
-sed  -i 's/- 127.0.0.0\/24/- 127.0.0.9/'  conf/config.yaml
+echo "
+apisix:
+    allow_admin:
+        - 127.0.0.9
+" > conf/config.yaml
 
 make init
 
-grep -E "allow 127.0.0.9;" conf/nginx.conf > /dev/null
-if [ ! $? -eq 0 ]; then
+count=`grep -c "allow 127.0.0.9" conf/nginx.conf`
+if [ $count -eq 0 ]; then
     echo "failed: not found 'allow 127.0.0.9;' in conf/nginx.conf"
     exit 1
 fi
 
-sed  -i 's/- 127.0.0.9/\# - 127.0.0.9/'  conf/config.yaml
+echo "
+apisix:
+    allow_admin: ~
+" > conf/config.yaml
 
 make init
 
-set +ex
-grep "allow 127.0.0.9;" conf/nginx.conf > /dev/null
-if [ ! $? -eq 1 ]; then
-    echo "failed: found allow 127.0.0.9; in conf/nginx.conf"
+count=`grep -c "allow all;" conf/nginx.conf || true`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow all;' in conf/nginx.conf"
     exit 1
 fi
 
@@ -240,6 +244,7 @@ echo "passed: empty allow_admin in conf/config.yaml"
 
 # check the 'client_max_body_size' in 'nginx.conf' .
 
+git checkout conf/config.yaml
 sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
 
 make init
