@@ -60,10 +60,11 @@ script() {
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps  > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
 
+    mkdir cli_tmp && cd cli_tmp
+
     # show install file
     luarocks show apisix
 
-    mkdir cli_tmp && cd cli_tmp
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
