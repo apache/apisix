@@ -20,6 +20,7 @@
 # Table of Contents
 
 
+- [1.5.0](#150)
 - [1.4.1](#141)
 - [1.4.0](#140)
 - [1.3.0](#130)
@@ -30,6 +31,53 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+
+## 1.5.0
+
+### Core
+- Admin API: support authentication with SSL certificates. [1747](https://github.com/apache/apisix/pull/1747)
+- Admin API: support both standard `PATCH` and sub path `PATCH`. [1930](https://github.com/apache/apisix/pull/1930)
+- HealthCheck: supports custom host port. [1914](https://github.com/apache/apisix/pull/1914)
+- Upstream: supports turning off the default retry mechanism. [1919](https://github.com/apache/apisix/pull/1919)
+- URI: supports delete the '/' at the end of the `URI`. [1766](https://github.com/apache/apisix/pull/1766)
+
+### New Plugin
+- :sunrise: **Request Validator** [1709](https://github.com/apache/apisix/pull/1709)
+
+### Improvements
+- change: nginx worker_shutdown_timeout is changed from 3s to recommended value 240s. [1883](https://github.com/apache/apisix/pull/1883)
+- change: the `healthcheck` timeout time type changed from `integer ` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
+- change: the `request-validation` plugin input parameter supports `Schema` validation. [1920](https://github.com/apache/apisix/pull/1920)
+- change: add comments for Makefile `install` command. [1912](https://github.com/apache/apisix/pull/1912)
+- change: update comment for config.yaml `etcd.timeout` configuration. [1929](https://github.com/apache/apisix/pull/1929)
+- change: add more prometheus metrics. [1888](https://github.com/apache/apisix/pull/1888)
+- change: add more configuration options for `cors` plugin. [1963](https://github.com/apache/apisix/pull/1963)
+
+### Bugfix
+- fixed: failed to get `host` in health check configuration. [1871](https://github.com/apache/apisix/pull/1871)
+- fixed: should not save the runtime data of plugin into `etcd`. [1910](https://github.com/apache/apisix/pull/1910)
+- fixed: run `apisix start` several times will start multi nginx processes. [1913](https://github.com/apache/apisix/pull/1913)
+- fixed: read the request body from the temporary file if it was cached. [1863](https://github.com/apache/apisix/pull/1863)
+- fixed: batch processor name and error return type. [1927](https://github.com/apache/apisix/pull/1927)
+- fixed: failed to read redis.ttl in `limit-count` plugin. [1928](https://github.com/apache/apisix/pull/1928)
+- fixed: passive health check seems never provide a healthy report. [1918](https://github.com/apache/apisix/pull/1918)
+- fixed: avoid to modify the original plugin conf. [1958](https://github.com/apache/apisix/pull/1958)
+- fixed: the test case of `invalid-upstream` is unstable and sometimes fails to run. [1925](https://github.com/apache/apisix/pull/1925)
+
+### Doc
+- doc: added APISIX Lua Coding Style Guide. [1874](https://github.com/apache/apisix/pull/1874)
+- doc: fixed link syntax in README.md. [1894](https://github.com/apache/apisix/pull/1894)
+- doc: fixed image links in zh-cn benchmark. [1896](https://github.com/apache/apisix/pull/1896)
+- doc: fixed typos in `FAQ`、`admin-api`、`architecture-design`、`discovery`、`prometheus`、`proxy-rewrite`、`redirect`、`http-logger` documents. [1916](https://github.com/apache/apisix/pull/1916)
+- doc: added improvements for OSx unit tests and request validation plugin. [1926](https://github.com/apache/apisix/pull/1926)
+- doc: fixed typos in `architecture-design` document. [1938](https://github.com/apache/apisix/pull/1938)
+- doc: added the default import path of `Nginx` for unit testing in `Linux` and `macOS` systems in the `how-to-build` document. [1936](https://github.com/apache/apisix/pull/1936)
+- doc: add `request-validation` plugin chinese document. [1932](https://github.com/apache/apisix/pull/1932)
+- doc: fixed file path of `gRPC transcoding` in `README`. [1945](https://github.com/apache/apisix/pull/1945)
+- doc: fixed `uri-blocker` plugin path error in `README`. [1950](https://github.com/apache/apisix/pull/1950)
+- doc: fixed `grpc-transcode` plugin path error in `README`. [1946](https://github.com/apache/apisix/pull/1946)
+- doc: removed unnecessary configurations for `k8s` document. [1891](https://github.com/apache/apisix/pull/1891)
 
 
 ## 1.4.1

@@ -164,7 +164,8 @@ GET /t
 plugin name: example-plugin priority: 0
 --- yaml_config
 etcd:
-  host: "http://127.0.0.1:2379" # etcd address
+  host:
+    - "http://127.0.0.1:2379" # etcd address
   prefix: "/apisix"             # apisix configurations prefix
   timeout: 1
 
@@ -256,5 +257,55 @@ passed
 GET /server_port
 --- response_body_like eval
 qr/1981/
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: set disable = true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+            local ok, err = plugin.check_schema({
+                i = 1, s = "s", t = {1},
+                disable = true,
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: set disable = false
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+            local ok, err = plugin.check_schema({
+                i = 1, s = "s", t = {1},
+                disable = true,
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
 --- no_error_log
 [error]

@@ -17,15 +17,18 @@
 #
 -->
 
-[Chinese](README_CN.md)
+- [Chinese](README_CN.md)
+
 ## APISIX
 
-[![Build Status](https://travis-ci.org/apache/incubator-apisix.svg?branch=master)](https://travis-ci.org/apache/incubator-apisix)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/incubator-apisix/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- **QQ group**: 552030619
 - Mail list: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mail list.
+- **QQ Group**: 578997126(recommended), 552030619
+- Join in `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
+- [bilibili video](https://space.bilibili.com/551921247)
 
 ## What's Apache APISIX?
 Apache APISIX is a dynamic, real-time, high-performance API gateway, based on the Nginx library and etcd.
@@ -84,17 +87,19 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Security**
     - Authentications: [key-auth](doc/plugins/key-auth.md), [JWT](doc/plugins/jwt-auth.md), [basic-auth](doc/plugins/basic-auth.md), [wolf-rbac](doc/plugins/wolf-rbac.md)
     - [IP Whitelist/Blacklist](doc/plugins/ip-restriction.md)
-    - [IdP](doc/plugins/oauth.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
+    - [Referer Whitelist/Blacklist](doc/plugins/referer-restriction.md)
+    - [IdP](doc/plugins/openid-connect.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
     - [Limit-req](doc/plugins/limit-req.md)
     - [Limit-count](doc/plugins/limit-count.md)
     - [Limit-concurrency](doc/plugins/limit-conn.md)
     - Anti-ReDoS(Regular expression Denial of Service): Built-in policies to Anti ReDoS without configuration.
     - [CORS](doc/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
-    - [uri-blocker](doc/plugins/uri-blocker.md): Block client request by URI.
+    - [URI Blocker](doc/plugins/uri-blocker.md): Block client request by URI.
+    - [Request Validator](doc/plugins/request-validation.md)
 
 - **OPS friendly**
     - OpenTracing: support [Apache Skywalking](doc/plugins/skywalking.md) and [Zipkin](doc/plugins/zipkin.md)
-    - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/incubator-apisix/issues/1731#issuecomment-646392129), and [Eureka](doc/discovery.md)
+    - works with external service discovery：In addition to the built-in etcd, it also supports `Consul` and `Nacos` [DNS discovery mode](https://github.com/apache/apisix/issues/1731#issuecomment-646392129), and [Eureka](doc/discovery.md)
     - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
     - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
     - High availability: support to configure multiple etcd addresses in the same cluster.
@@ -124,19 +129,19 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
     - Download the latest source code release package:
         ```shell
-        wget http://www.apache.org/dist/incubator/apisix/1.4/apache-apisix-1.4-incubating-src.tar.gz
-        tar zxvf apache-apisix-1.4-incubating-src.tar.gz
+        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
+        tar zxvf apache-apisix-1.5-src.tar.gz
         ```
     - Install the dependencies：
         ```shell
-        cd apache-apisix-1.4-incubating
+        cd apache-apisix-1.5
         make deps
         ```
     - check version of APISIX:
         ```shell
         ./bin/apisix version
         ```
-    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+    - start APISIX:
         ```shell
         ./bin/apisix start
         ```
@@ -148,28 +153,24 @@ There are several ways to install the Apache Release version of APISIX:
     docker pull apache/apisix
     ```
 
-    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/incubator-apisix-docker/tree/master/example) to start a test cluster.
+    The Docker image does not include `etcd`, you can refer to [docker compose example](https://github.com/apache/apisix-docker/tree/master/example) to start a test cluster.
 
 3. RPM package（only for CentOS 7）
     - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
     - install APISIX：
     ```shell
-    sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4/apisix-1.4-0.el7.noarch.rpm
+    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
     ```
     - check version of APISIX:
         ```shell
         apisix version
         ```
-    - start APISIX (Please make sure that etcd is started and enabled the v2 protocol):
+    - start APISIX:
         ```shell
         apisix start
         ```
 
-**Note**: Apache APISIX does not yet support the v3 protocol of etcd, so you need to enable v2 protocol when starting etcd.
-We are doing support for etcd v3 protocol.
-```shell
-etcd --enable-v2=true &
-```
+**Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, and the minimum etcd version supported is v3.4.0. Please update etcd when needed. If you need to migrate your data from etcd v2 to v3, please follow [etcd migration guide](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/).
 
 ## For Developer
 
@@ -177,15 +178,15 @@ etcd --enable-v2=true &
 
     - build from source code
     ```shell
-    git clone git@github.com:apache/incubator-apisix.git
-    cd incubator-apisix
+    git clone git@github.com:apache/apisix.git
+    cd apisix
     make deps
     ```
 
    - Docker image
     ```shell
-    git clone https://github.com/apache/incubator-apisix-docker.git
-    cd incubator-apisix-docker
+    git clone https://github.com/apache/apisix-docker.git
+    cd apisix-docker
     sudo docker build -f alpine-dev/Dockerfile .
     ```
 
@@ -209,7 +210,7 @@ etcd --enable-v2=true &
 For more documents, please refer to [Apache APISIX Document Index](doc/README.md)
 
 ## Dashboard
-APISIX has built-in support for Dashboard,
+APISIX has built-in support for [Dashboard](https://github.com/apache/apisix-dashboard), which could be directly deployed by docker compose.
 
 The dashboard only allows 127.0.0.1 by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
 
@@ -269,6 +270,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 - [Analysis of Excellent Performance of Apache APISIX Microservices Gateway](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
 
 ## User Stories
+- [European Factory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [ke.com: How to Build a Gateway Based on Apache APISIX(Chinese)](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360: Apache APISIX Practice in OPS Platform(Chinese)](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
 - [HelloTalk: Exploring Globalization Based on OpenResty and Apache APISIX(Chinese)](https://www.upyun.com/opentalk/447.html)
@@ -290,9 +292,14 @@ APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&form
 CNCF API Gateway Landscape.</a>
 </p>
 
+## Logos
+
+- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo source](https://apache.org/logos/#apisix)
+
 ## Contributing
 
-See [CONTRIBUTING](Contributing.md) for details on submitting patches and the contribution workflow.
+See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
 ## Acknowledgments
 

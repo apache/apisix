@@ -36,11 +36,26 @@ qr/"plugins":\{"type":"object"}/
 
 
 
-=== TEST 2: get service schema
+=== TEST 2: get service schema and check if it contains `anyOf`
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, _, res_body = t('/apisix/admin/schema/service', ngx.HTTP_GET)
+            local res_data = core.json.decode(res_body)
+            if res_data["anyOf"] then
+                ngx.say("found `anyOf`")
+                return
+            end
+            
+            ngx.say("passed") 
+        }
+    }
 --- request
-GET /apisix/admin/schema/service
---- response_body eval
-qr/"required":\["upstream"\]/
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
 
@@ -157,7 +172,7 @@ location /t {
             [[{
                 "properties": {
                     "phase": {
-                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "enum": ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"],
                         "type": "string"
                     },
                     "functions": {
@@ -197,7 +212,7 @@ location /t {
             [[{
                 "properties": {
                     "phase": {
-                        "enum": ["rewrite", "access", "header_filer", "body_filter", "log", "balancer"],
+                        "enum": ["rewrite", "access", "header_filter", "body_filter", "log", "balancer"],
                         "type": "string"
                     },
                     "functions": {
@@ -241,5 +256,25 @@ qr/{"properties":/
 GET /apisix/admin/schema/plugins/grpc-transcode
 --- response_body eval
 qr/"proto_id".*additionalProperties/
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: get plugin prometheus schema
+--- request
+GET /apisix/admin/schema/plugins/prometheus
+--- response_body eval
+qr/"disable":\{"type":"boolean"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: get plugin node-status schema
+--- request
+GET /apisix/admin/schema/plugins/node-status
+--- response_body eval
+qr/"disable":\{"type":"boolean"\}/
 --- no_error_log
 [error]

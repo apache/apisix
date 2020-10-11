@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin Metadata](#plugin-metadata)
 
 ## Route
 
@@ -57,10 +58,11 @@
 |---------|---------|----|-----------|----|
 |uri      |与 `uris` 二选一 |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](architecture-design.md#router) 还允许更高级匹配，更多见 [Router](architecture-design.md#router)。|"/hello"|
 |uris     |与 `uri` 二选一 |匹配规则|数组形式，可以匹配多个 `uri`|["/hello", "/world"]|
-|plugins  |`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Plugin|详见 [Plugin](architecture-design.md#plugin) ||
-|upstream |`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
-|upstream_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
-|service_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
+|plugins  |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Plugin|详见 [Plugin](architecture-design.md#plugin) ||
+|script  |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Script|详见 [Script](architecture-design.md#script) ||
+|upstream |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
+|upstream_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
+|service_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
 |service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
 |name     |可选 |辅助   |标识路由名称|route-xxxx|
 |desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
@@ -72,10 +74,11 @@
 |priority  |可选 |匹配规则|如果不同路由包含相同 `uri`，根据属性 `priority` 确定哪个 `route` 被优先匹配，值越大优先级越高，默认值为 0。|priority = 10|
 |vars       |可选  |匹配规则|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 有两点需要特别注意：
 
-* 除了 `uri`/`uris` 是必选的之外，`plugins`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
+* 除了 `uri`/`uris` 是必选的之外，`plugins`、`script`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
 * 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
 
 route 对象 json 配置内容：
@@ -296,6 +299,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |upstream_id| upstream 或 upstream_id 两个选一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
 |name     |可选 |辅助   |标识服务名称。||
 |desc     |可选 |辅助   |服务描述、使用场景等。||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 serivce 对象 json 配置内容：
 
@@ -437,6 +441,7 @@ HTTP/1.1 200 OK
 |username|必需|辅助|Consumer 名称。||
 |plugins|可选|Plugin|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。||
 |desc     |可选 |辅助|consumer描述||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 consumer 对象 json 配置内容：
 
@@ -517,6 +522,9 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
 |name     |可选 |辅助|标识上游服务名称、使用场景等。||
 |desc     |可选 |辅助|上游服务描述、使用场景等。||
+|pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。||
+|upstream_host    |可选|辅助|只在 `pass_host` 配置为 `rewrite` 时有效。||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 upstream 对象 json 配置内容：
 
@@ -657,6 +665,7 @@ HTTP/1.1 200 OK
 |cert|必需|公钥|https 证书公钥||
 |key|必需|私钥|https 证书私钥||
 |sni|必需|匹配规则|https 证书SNI||
+|labels|可选|匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 ssl 对象 json 配置内容：
 
@@ -667,6 +676,37 @@ ssl 对象 json 配置内容：
     "key": "key",       # 私钥
     "sni": "sni"        # host 域名
 }
+```
+
+## Plugin Metadata
+
+*地址*：/apisix/admin/plugin_metadata/{plugin_name}
+
+*说明*: 插件元数据。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugin_metadata/{plugin_name}|无|获取资源|
+|PUT      |/apisix/admin/plugin_metadata/{plugin_name}|{...}|根据 plugin name 创建资源|
+|DELETE   |/apisix/admin/plugin_metadata/{plugin_name}|无|删除资源|
+
+> body 请求参数：
+
+一个根据插件 ({plugin_name}) 的 `metadata_schema` 定义的数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+{
+    "skey": "val",
+    "ikey": 1
+}'
+HTTP/1.1 201 Created
+Date: Thu, 26 Dec 2019 04:19:34 GMT
+Content-Type: text/plain
 ```
 
 [Back to TOC](#目录)
