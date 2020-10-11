@@ -96,7 +96,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"secret_key\\" is required"\}/
 --- no_error_log
 [error]
 
@@ -126,7 +126,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"access_key\\" is required"\}/
 --- no_error_log
 [error]
 
@@ -157,7 +157,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"access_key\\" validation failed: string too long, expected at most 256, got 320"\}/
 --- no_error_log
 [error]
 
@@ -188,7 +188,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: value should match only one schema, but matches none"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"secret_key\\" validation failed: string too long, expected at most 256, got 384"\}/
 --- no_error_log
 [error]
 
@@ -842,5 +842,34 @@ location /t {
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: add consumer with plugin hmac-auth - empty configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "hmac-auth": {
+                        }
+                    }
+                }]])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"secret_key\\" is required"\}/
 --- no_error_log
 [error]
