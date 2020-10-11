@@ -75,8 +75,8 @@ script() {
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
 
     # REMOVE ME !!!! after PR merged: https://github.com/apache/apisix/pull/2383
-    install -d /usr/local/apisix/ssl/router
-    wget -P /usr/local/apisix/ssl/router/ https://raw.githubusercontent.com/apache/apisix/master/apisix/ssl/router/radixtree_sni.lua
+    mkdir -p /usr/local/apisix/apisix/ssl/router
+    wget -P /usr/local/apisix/apisix/ssl/router/ https://raw.githubusercontent.com/apache/apisix/master/apisix/ssl/router/radixtree_sni.lua
 
     # show install files
     luarocks show apisix
