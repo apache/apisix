@@ -14,15 +14,18 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local sw_tracer = require("skywalking.tracer")
 local core = require("apisix.core")
 local process = require("ngx.process")
 local ngx = ngx
 local math = math
-
-local sw_tracer = require("skywalking.tracer")
+local select = select
+local type = type
+local require = require
 
 local plugin_name = "skywalking"
 local DEFAULT_ENDPOINT_ADDR = "http://127.0.0.1:12800"
+
 
 local schema = {
     type = "object",
