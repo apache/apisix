@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/skywalking.md)
 
 # Summary
+
 - [**Summary**](#Summary)
   - [**Name**](#Name)
   - [**Attributes**](#Attributes)
@@ -31,8 +32,9 @@
 
 ## Name
 
-**Skywalking**(https://github.com/apache/skywalking) is an OpenTracing plugin.\
+[**Skywalking**](https://github.com/apache/skywalking) is an OpenTracing plugin.\
 The skywalking server can supports both http and grpc protocols . The APISIX client only support http protocols.
+
 ## Attributes
 
 | Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
