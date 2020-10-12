@@ -212,12 +212,11 @@ local function sleep(sec)
         return
     end
     sec = sec - max_sleep_interval
-    sleep(sec)
+    return sleep(sec)
 end
 
 
-function _M.sleep(sec)
-    sleep(sec)
-end
+_M.sleep = sleep
+
 
 return _M
