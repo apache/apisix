@@ -99,11 +99,13 @@ GET /opentracing
 opentracing
 --- no_error_log
 [error]
+--- error_log
+segments reported
 --- wait: 4
 
 
 
-=== TEST 3: test heartbeat
+=== TEST 3: test heartbeat(need to update skywalking library)
 --- request
 GET /opentracing
 --- response_body
@@ -111,6 +113,7 @@ opentracing
 --- no_error_log
 [error]
 --- wait: 4
+--- SKIP
 
 
 
@@ -246,7 +249,7 @@ rewrite phase of skywalking plugin
 
 
 
-=== TEST 8: enable skywalking
+=== TEST 8: enable skywalking(sample_ratio=1)
 --- config
     location /t {
         content_by_lua_block {
