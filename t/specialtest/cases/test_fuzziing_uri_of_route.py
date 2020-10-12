@@ -18,7 +18,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 import sys,os,time,json,subprocess,signal,random
-import requests,psutil,grequests,string
+import requests,psutil,grequests,string,urllib
 
 def kill_processtree(id):
     parent = psutil.Process(pid)
@@ -79,11 +79,12 @@ def test_fuzzing_uri_of_route():
     print("====APISIX's resource occupation(before test):")
     get_workerres(apisixpid)
     #use environment variables "FUZZING_URI" you can setting the numbers of test uris
-    fuzzing_uri_nums = 5000 if not os.getenv('FUZZING_URI') else os.getenv('FUZZING_URI')
-    orgin_char = '''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~!*'();:@&=+$,/?#[]'''
+    fuzzing_uri_nums = 1000 if not os.getenv('FUZZING_URI') else os.getenv('FUZZING_URI')
+    orgin_char = '''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/'''
+
     for i in range(int(fuzzing_uri_nums)):
-        length = random.randint(1, 4090)
-        tmpuri = "".join(random.sample(list(orgin_char)*(length//84 + 1),length))
+        length = random.randint(1, 4080)
+        tmpuri = "".join(random.sample(list(orgin_char)*(length//len(orgin_char) + 1),length)).replace("//","/")
         uri = "/hello%s"%tmpuri
         assert len("/hello%s"%uri)<=4096
         cfgdata = {
@@ -98,12 +99,11 @@ def test_fuzzing_uri_of_route():
 
         r = requests.put("%s/apisix/admin/routes/1"%apisixhost, json=cfgdata,headers=headers )
         assert r.status_code == 200
-        time.sleep(0.2)
+        time.sleep(0.1)
         #verify route
         r = requests.get("%s%s"%(apisixhost,uri))
-        # assert uri == uri and r.status_code == 200 and "Hello, World!" in r.content
         if r.status_code != 200 or "Hello, World!" not in r.content :
-            print uri,r.status_code, r.content
+            print(uri,r.status_code, r.content)
             raise AssertionError('assertError')
 
     print("====APISIX's resource occupation(after set route and request test):")
