@@ -381,7 +381,6 @@ GET /t
 passed
 --- no_error_log
 [error]
---- SKIP
 
 
 
@@ -416,7 +415,6 @@ phase_func(): breaker_time: 10
 --- response_body
 {"500":4,"502":16}
 --- timeout: 25
---- SKIP
 
 
 
