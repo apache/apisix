@@ -114,7 +114,7 @@ function _M.init()
 
     local endpoint_addr = local_endpoint_addr or DEFAULT_ENDPOINT_ADDR
     require("skywalking.client"):startBackendTimer(endpoint_addr)
-    core.log.info("start the backend timer, report to: ", endpoint_addr)
+    core.log.info("start backend timer, endpoint_addr: ", endpoint_addr)
 end
 
 
