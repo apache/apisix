@@ -338,30 +338,7 @@ passed
 
 
 
-=== TEST 14: max_breaker_seconds
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('GET http://127.0.0.1:1980/mysleep?seconds=10')
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- error_code
-200
---- no_error_log
-[error]
---- timeout: 100
-
-
-
-=== TEST 15: add plugin with default config value
+=== TEST 14: add plugin with default config value
 --- config
     location /t {
         content_by_lua_block {
@@ -408,7 +385,7 @@ passed
 
 
 
-=== TEST 16: max_breaker_seconds = 20
+=== TEST 15: max_breaker_seconds = 20
 --- config
     location /t {
         content_by_lua_block {
@@ -443,7 +420,7 @@ phase_func(): breaker_time: 10
 
 
 
-=== TEST 17: add plugin, max_breaker_seconds = 17
+=== TEST 16: add plugin, max_breaker_seconds = 17
 --- config
     location /t {
         content_by_lua_block {
@@ -489,7 +466,7 @@ passed
 
 
 
-=== TEST 18: max_breaker_seconds = 35
+=== TEST 17: max_breaker_seconds = 35
 --- config
     location /t {
         content_by_lua_block {
