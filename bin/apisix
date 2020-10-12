@@ -180,7 +180,6 @@ http {
                       .. [=[{*lua_cpath*};";
 
     variables_hash_bucket_size 512;
-    
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
     lua_shared_dict prometheus-metrics   10m;
