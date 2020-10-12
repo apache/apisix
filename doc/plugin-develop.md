@@ -138,6 +138,31 @@ At the same time, we need to implement the __check_schema(conf)__ method to comp
 Note: the project has provided the public method "__core.schema.check__", which can be used directly to complete JSON
 verification.
 
+In addition, if the plugin needs to use some metadata, we can define the plugin `metadata_schema`, and then we can dynamically manage these metadata through the `admin api`. Example:
+
+```lua
+local metadata_schema = {
+    type = "object",
+    properties = {
+        ikey = {type = "number", minimum = 0},
+        skey = {type = "string"},
+    },
+    required = {"ikey", "skey"},
+    additionalProperties = false,
+}
+
+local plugin_name = "example-plugin"
+
+local _M = {
+    version = 0.1,
+    priority = 0,        -- TODO: add a type field, may be a good idea
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
+
+
 ## choose phase to run
 
 Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's

@@ -35,7 +35,8 @@ local schema = {
         secret = {type = "string"},
         algorithm = {
             type = "string",
-            enum = {"HS256", "HS384", "HS512", "RS256", "ES256"}
+            enum = {"HS256", "HS512", "RS256"},
+            default = "HS256"
         },
         exp = {type = "integer", minimum = 1},
         base64_secret = {
@@ -83,10 +84,6 @@ function _M.check_schema(conf)
 
     if not conf.secret then
         conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
-    end
-
-    if not conf.algorithm then
-        conf.algorithm = "HS256"
     end
 
     if not conf.exp then
@@ -207,11 +204,11 @@ local function gen_token()
     local jwt_token = jwt:sign(
         auth_secret,
         {
-            header={
+            header = {
                 typ = "JWT",
                 alg = consumer.auth_conf.algorithm
             },
-            payload={
+            payload = {
                 key = key,
                 exp = ngx_time() + consumer.auth_conf.exp
             }

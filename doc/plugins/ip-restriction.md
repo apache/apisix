@@ -31,14 +31,14 @@
 
 The `ip-restriction` can restrict access to a Service or a Route by either
 whitelisting or blacklisting IP addresses. Single IPs, multiple IPs or ranges
-in CIDR notation like 10.10.10.0/24 can be used(will support IPv6 soon).
+in CIDR notation like 10.10.10.0/24 can be used.
 
 ## Attributes
 
-|Name     |Requirement  |Description|
-|---------|--------|-----------|
-|whitelist|optional  |List of IPs or CIDR ranges to whitelist|
-|blacklist|optional  |List of IPs or CIDR ranges to blacklist|
+| Name      | Type          | Requirement | Default | Valid | Description                              |
+| --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
+| whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
+| blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
 
 One of `whitelist` or `blacklist` must be specified, and they can not work
 together.

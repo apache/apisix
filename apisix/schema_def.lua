@@ -64,6 +64,16 @@ local remote_addr_def = {
 }
 
 
+local label_value_def = {
+    description = "value of label",
+    type = "string",
+    pattern = [[^[a-zA-Z0-9-_.]+$]],
+    maxLength = 64,
+    minLength = 1
+}
+_M.label_value_def = label_value_def
+
+
 local health_checker = {
     type = "object",
     properties = {
@@ -332,6 +342,14 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        },
         pass_host = {
             description = "mod of host passing",
             type = "string",
@@ -434,6 +452,15 @@ _M.route = {
         plugins = plugins_schema,
         upstream = upstream_schema,
 
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        },
+
         service_id = id_schema,
         upstream_id = id_schema,
         service_protocol = {
@@ -472,6 +499,14 @@ _M.service = {
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         script = {type = "string", minLength = 10, maxLength = 102400},
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        }
     },
     additionalProperties = false,
 }
@@ -486,6 +521,14 @@ _M.consumer = {
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
         plugins = plugins_schema,
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        },
         desc = {type = "string", maxLength = 256}
     },
     required = {"username"},
@@ -536,6 +579,14 @@ _M.ssl = {
         exptime = {
             type = "integer",
             minimum = 1588262400,  -- 2020/5/1 0:0:0
+        },
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
         },
         status = {
             description = "ssl status, 1 to enable, 0 to disable",

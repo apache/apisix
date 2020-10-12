@@ -34,10 +34,10 @@ whitelisting or blacklisting consumers. Support single or multiple consumers.
 
 ## Attributes
 
-|Name     |Requirement  |Description|
-|---------|--------|-----------|
-|whitelist|optional  |List of consumers to whitelist|
-|blacklist|optional  |List of consumers to blacklist|
+| Name      | Type          | Requirement | Default | Valid | Description                     |
+| --------- | ------------- | ----------- | ------- | ----- | ------------------------------- |
+| whitelist | array[string] | optional    |         |       | List of consumers to whitelist. |
+| blacklist | array[string] | optional    |         |       | List of consumers to blacklist. |
 
 One of `whitelist` or `blacklist` must be specified, and they can not work
 together.
