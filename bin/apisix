@@ -1063,6 +1063,9 @@ local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
                        .. apisix_home .. [[/conf/nginx.conf]]
 
 function _M.start(...)
+
+    local cmd_logs = "mkdir -p " ..  apisix_home .. "/logs"
+    os.execute(cmd_logs)
     -- check running
     local pid_path = apisix_home .. "/logs/nginx.pid"
     local pid, err = read_file(pid_path)
