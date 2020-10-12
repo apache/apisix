@@ -39,39 +39,37 @@ local plugin_name   = "hmac-auth"
 
 local schema = {
     type = "object",
-    oneOf = {
-        {
-            title = "work with route or service object",
-            properties = {},
-            additionalProperties = false,
+    title = "work with route or service object",
+    properties = {},
+    additionalProperties = false,
+}
+
+local consumer_schema = {
+    type = "object",
+    title = "work with consumer object",
+    properties = {
+        access_key = {type = "string", minLength = 1, maxLength = 256},
+        secret_key = {type = "string", minLength = 1, maxLength = 256},
+        algorithm = {
+            type = "string",
+            enum = {"hmac-sha1", "hmac-sha256", "hmac-sha512"},
+            default = "hmac-sha256"
         },
-        {
-            title = "work with consumer object",
-            properties = {
-                access_key = {type = "string", minLength = 1, maxLength = 256},
-                secret_key = {type = "string", minLength = 1, maxLength = 256},
-                algorithm = {
-                    type = "string",
-                    enum = {"hmac-sha1", "hmac-sha256", "hmac-sha512"},
-                    default = "hmac-sha256"
-                },
-                clock_skew = {
-                    type = "integer",
-                    default = 0
-                },
-                signed_headers = {
-                    type = "array",
-                    items = {
-                        type = "string",
-                        minLength = 1,
-                        maxLength = 50,
-                    }
-                },
-            },
-            required = {"access_key", "secret_key"},
-            additionalProperties = false,
+        clock_skew = {
+            type = "integer",
+            default = 0
         },
-    }
+        signed_headers = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 1,
+                maxLength = 50,
+            }
+        },
+    },
+    required = {"access_key", "secret_key"},
+    additionalProperties = false,
 }
 
 local _M = {
@@ -138,10 +136,14 @@ do
 end -- do
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
     core.log.info("input conf: ", core.json.delay_encode(conf))
 
-    return core.schema.check(schema, conf)
+    if schema_type == core.schema.TYPE_CONSUMER then
+        return core.schema.check(consumer_schema, conf)
+    else
+        return core.schema.check(schema, conf)
+    end
 end
 
 
