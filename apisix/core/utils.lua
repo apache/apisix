@@ -29,7 +29,9 @@ local type     = type
 local C        = ffi.C
 local ffi_string = ffi.string
 local get_string_buf = base.get_string_buf
-
+local exiting = ngx.worker.exiting
+local ngx_sleep    = ngx.sleep
+local max_sleep_interval = 1
 
 ffi.cdef[[
     int ngx_escape_uri(char *dst, const char *src,
@@ -199,5 +201,23 @@ function _M.validate_header_value(value)
     return true
 end
 
+
+local function sleep(sec)
+    if sec <= max_sleep_interval then
+        ngx_sleep(sec)
+        return
+    end
+    ngx_sleep(max_sleep_interval)
+    if exiting() then
+        return
+    end
+    sec = sec - max_sleep_interval
+    sleep(sec)
+end
+
+
+function _M.sleep(sec)
+    sleep(sec)
+end
 
 return _M
