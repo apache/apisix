@@ -47,6 +47,7 @@ return {
     version  = require("apisix.core.version"),
     log      = log,
     config   = config,
+    sleep    = sleep,
     json     = require("apisix.core.json"),
     table    = require("apisix.core.table"),
     request  = require("apisix.core.request"),
@@ -62,5 +63,4 @@ return {
     http     = require("apisix.core.http"),
     tablepool= require("tablepool"),
     empty_tab= {},
-    sleep    = sleep,
 }

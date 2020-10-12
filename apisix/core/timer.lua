@@ -15,7 +15,8 @@
 -- limitations under the License.
 --
 local log = require("apisix.core.log")
-local sleep = require("apisix.core").sleep
+local core = require("apisix.core")
+local sleep = core.sleep
 local timer_every = ngx.timer.every
 local timer_at = ngx.timer.at
 local update_time = ngx.update_time
