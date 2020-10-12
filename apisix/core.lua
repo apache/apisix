@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local exiting = ngx.worker.exiting
+local ngx_sleep    = ngx.sleep
 local log = require("apisix.core.log")
 local local_conf, err = require("apisix.core.config_local").local_conf()
 if not local_conf then
@@ -23,6 +25,21 @@ end
 local config_center = local_conf.apisix and local_conf.apisix.config_center
                       or "etcd"
 log.info("use config_center: ", config_center)
+
+local max_sleep_interval = 1
+
+local function sleep(sec)
+    if sec <= max_sleep_interval then
+        ngx_sleep(sec)
+        return
+    end
+    ngx_sleep(max_sleep_interval)
+    if exiting() then
+        return
+    end
+    sec = sec - max_sleep_interval
+    sleep(sec)
+end
 
 return {
     version  = require("apisix.core.version"),
@@ -43,4 +60,5 @@ return {
     http     = require("apisix.core.http"),
     tablepool= require("tablepool"),
     empty_tab= {},
+    sleep    = sleep,
 }

@@ -17,7 +17,7 @@
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
 local plugin_name = "limit-req"
-local sleep = ngx.sleep
+local sleep = require("apisix.core.sleep")
 
 
 local schema = {
