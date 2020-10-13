@@ -234,7 +234,7 @@ apisix:
 
 make init
 
-count=`grep -c "allow all;" conf/nginx.conf || true`
+count=`grep -c "allow all;" conf/nginx.conf`
 if [ $count -eq 0 ]; then
     echo "failed: not found 'allow all;' in conf/nginx.conf"
     exit 1
