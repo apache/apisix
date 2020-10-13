@@ -984,7 +984,6 @@ local function init_etcd(show_output)
         yaml_conf.etcd.host = {yaml_conf.etcd.host}
     end
 
-    local cluster_version
     local host_count = #(yaml_conf.etcd.host)
     local dkjson = require("dkjson")
 
@@ -1032,7 +1031,7 @@ local function init_etcd(show_output)
                         .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
             local res = execute_cmd(cmd)
-            if (etcd_version == "v3" and not res:find("OK", 1, true)) then
+            if res:find("OK", 1, true) then
                 is_success = false
                 if (index == host_count) then
                     error(cmd .. "\n" .. res)
