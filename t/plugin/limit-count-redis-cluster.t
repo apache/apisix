@@ -14,15 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
-        $SkipReason = "unavailable for the hup tests";
-
-    } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
-    }
-}
 
 use t::APISIX 'no_plan';
 
@@ -30,6 +21,7 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
 run_tests;
 
 __DATA__
@@ -124,7 +116,7 @@ passed
 
 
 
-=== TEST 3: set route(default value: timeout)
+=== TEST 3: set route
 --- config
     location /t {
         content_by_lua_block {
@@ -226,3 +218,91 @@ passed
 [404, 503, 404, 503, 503]
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: set route, four redis nodes, only one is valid
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 9999,
+                            "time_window": 60,
+                            "key": "http_x_real_ip",
+                            "policy": "redis-cluster",
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:8001",
+                                "127.0.0.1:8002",
+                                "127.0.0.1:8003"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: hit route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i = 1, 20 do
+                local code, body = t('/hello', ngx.HTTP_GET)
+                ngx.say("code: ", code)
+            end
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+--- no_error_log
+[error]
+--- timeout: 10
