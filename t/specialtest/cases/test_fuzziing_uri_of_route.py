@@ -17,8 +17,9 @@
 
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-import sys,os,time,json,subprocess,signal,random
-import requests,psutil,grequests,string,urllib
+import sys, os, time, json, subprocess, signal
+import random, string, urllib, re
+import requests, psutil, grequests
 
 def kill_processtree(id):
     parent = psutil.Process(pid)
@@ -59,7 +60,13 @@ def setup_module():
     apisixpid = int(get_pid_byname())
     apisixpath = psutil.Process(apisixpid).cwd()
     os.chdir(apisixpath)
+    subprocess.call("./bin/apisix stop",shell=True, stdout=subprocess.PIPE)
+    time.sleep(1)
     subprocess.Popen("> logs/error.log",shell = True, stdout = subprocess.PIPE)
+    subprocess.call("etcd &",shell=True, stdout=subprocess.PIPE)
+    time.sleep(5)
+    subprocess.call("./bin/apisix start",shell=True, stdout=subprocess.PIPE)
+    time.sleep(1)
     apisixpid = int(get_pid_byname())
     print("=============APISIX's pid:",apisixpid)
     apisixhost = "http://127.0.0.1:9080"
@@ -69,7 +76,8 @@ def setup_module():
         os.makedirs("./t/specialtest/cases/logs")
     except Exception as e:
         pass
-    p = subprocess.Popen(['openresty', '-p', apisixpath ,'-c',confpath], stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
+    p = subprocess.Popen(['openresty', '-p', apisixpath ,'-c',confpath],
+    stderr = subprocess.PIPE, stdout = subprocess.PIPE, shell = False)
     p.wait()
 
 def teardown_module():
@@ -80,11 +88,13 @@ def test_fuzzing_uri_of_route():
     get_workerres(apisixpid)
     #use environment variables "FUZZING_URI" you can setting the numbers of test uris
     fuzzing_uri_nums = 1000 if not os.getenv('FUZZING_URI') else os.getenv('FUZZING_URI')
-    orgin_char = '''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/'''
-
+    #not spupport * :
+    orgin_char = '''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/-_~!();@&=+$,?#'.[]'''
     for i in range(int(fuzzing_uri_nums)):
         length = random.randint(1, 4080)
-        tmpuri = "".join(random.sample(list(orgin_char)*(length//len(orgin_char) + 1),length)).replace("//","/")
+        tmpuri = "".join(random.sample(list(orgin_char)*(length//len(orgin_char) + 1),length))
+        tmpuri = re.sub(r"/(\.+)/", "", tmpuri)
+        tmpuri = re.sub(r"/+", "/", tmpuri)
         uri = "/hello%s"%tmpuri
         assert len("/hello%s"%uri)<=4096
         cfgdata = {
@@ -98,9 +108,10 @@ def test_fuzzing_uri_of_route():
     }
 
         r = requests.put("%s/apisix/admin/routes/1"%apisixhost, json=cfgdata,headers=headers )
-        assert r.status_code == 200
-        time.sleep(0.1)
+        assert str(r.status_code).startswith("2")
+        time.sleep(0.2)
         #verify route
+        uri = urllib.quote(uri)
         r = requests.get("%s%s"%(apisixhost,uri))
         if r.status_code != 200 or "Hello, World!" not in r.content :
             print(uri,r.status_code, r.content)
