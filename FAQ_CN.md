@@ -220,3 +220,23 @@ curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 ```shell
 apisix reload
 ```
+
+## 如何支持http和https多端口监听
+apisix默认监听单端口，如果需要支持http或https监听多端口，修改步骤：
+
+1、修改conf/config.yaml中的http端口监听的配置参数`node_listen`，或https端口监听的参数`ssl.listen_port`，格式如下
+```
+apisix:
+  node_listen:
+    - 9080
+    - 9081
+    - 9082
+  ssl:
+    listen_port:
+      - 9443
+      - 9444
+      - 9445
+```
+
+2、重启APISIX
+

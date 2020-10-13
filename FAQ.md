@@ -270,3 +270,21 @@ If your APISIX node does not open the Admin API, then you can manually load the 
 ```shell
 apisix reload
 ```
+
+## How to support multiple ports in http and https listen port？
+
+The Apache APISIX listens to a single port by default. If you need to support http or https to listen to multiple ports, modify the steps:
+1. Modify the parameter of http port listen `node_listen`, or https port listen `ssl.listen_port` in conf/config.yaml, style like
+    ```
+    apisix:
+      node_listen:
+        - 9080
+        - 9081
+        - 9082
+      ssl:
+        listen_port:
+          - 9443
+          - 9444
+          - 9445
+    ```
+2. Restart APISIX
