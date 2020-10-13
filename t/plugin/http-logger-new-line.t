@@ -221,3 +221,86 @@ qr/"upstream":"127.0.0.1:1982"/
 "upstream":"127.0.0.1:1982"
 "upstream":"127.0.0.1:1982"
 "upstream":"127.0.0.1:1982"
+
+
+
+=== TEST 8: set in global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 3,
+                            "max_retry_count": 3,
+                            "retry_delay": 2,
+                            "buffer_duration": 2,
+                            "inactive_timeout": 1,
+                            "concat_method": "new_line"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: not hit route, and report log
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+
+        for i = 1, 5 do
+            t('/not_hit_route', ngx.HTTP_GET)
+        end
+
+        ngx.sleep(3)
+        ngx.say("done")
+    }
+}
+--- request
+GET /t
+--- timeout: 10
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: delete the global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_DELETE
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
