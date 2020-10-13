@@ -25,6 +25,7 @@ local ngx      = ngx
 local tostring = tostring
 local pairs    = pairs
 local ipairs = ipairs
+local str_byte = string.byte
 
 
 local plugin_name = "http-logger"
@@ -59,7 +60,11 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object",
-            default = {},
+            default = {
+                ["host"] = "$host",
+                ["@timestamp"] = "$time_iso8601",
+                ["client_ip"] = "$remote_addr",
+            },
         },
     },
     additionalProperties = false,
@@ -146,7 +151,7 @@ local function gen_log_format(metadata)
     end
 
     for k, var_name in pairs(metadata.value.log_format) do
-        if var_name:sub(1, 1) == "$" then
+        if var_name:byte(1, 1) == str_byte("/") then
             log_format[k] = {true, var_name:sub(2)}
         else
             log_format[k] = {false, var_name}
