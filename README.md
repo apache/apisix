@@ -265,6 +265,10 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
+## Milestones
+- [2.0](https://github.com/apache/apisix/milestone/7)
+- [2.1](https://github.com/apache/apisix/milestone/8)
+
 ## Videos And Articles
 - [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
 - [Analysis of Excellent Performance of Apache APISIX Microservices Gateway](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
