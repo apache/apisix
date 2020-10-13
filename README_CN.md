@@ -263,6 +263,10 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
+## 开发计划
+- [2.0](https://github.com/apache/apisix/milestone/7)
+- [2.1](https://github.com/apache/apisix/milestone/8)
+
 ## 视频和文章
 - 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
 - 2019.12.14 [从 0 到 1：Apache APISIX 的 Apache 之路](https://zhuanlan.zhihu.com/p/99620158)
