@@ -82,7 +82,7 @@ Then add limit-count plugin:
 
 If you need a cluster-level precision traffic limit, then we can do it with the redis server. The rate limit of the traffic will be shared between different APISIX nodes to limit the rate of cluster traffic.
 
-Here is the example:
+Here is the example if we use single `redis` policy:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -110,7 +110,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-If using redis-cluster:
+If using `redis-cluster` policy:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -138,7 +138,6 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-
 ## Test Plugin
 
 The above configuration limits access to only 2 times in 60 seconds. The first two visits will be normally:
@@ -150,7 +149,7 @@ curl -i http://127.0.0.1:9080/index.html
 The response header contains `X-RateLimit-Limit` and `X-RateLimit-Remaining`,
  which mean the total number of requests and the remaining number of requests that can be sent:
 
-```
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -162,7 +161,7 @@ Server: APISIX web server
 
 When you visit for the third time, you will receive a response with the 503 HTTP code:
 
-```
+```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194

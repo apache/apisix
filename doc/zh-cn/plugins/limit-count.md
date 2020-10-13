@@ -39,7 +39,6 @@
 | redis_timeout   | integer  | 可选         | 1000    | [1,...]                                                      | 当使用 `redis` 限速策略时，该属性是 Redis 服务节点以毫秒为单位的超时时间 |
 | redis_cluster_nodes | array | 可选         |         |                                                              | 当使用 `redis-cluster` 限速策略时，该属性是 Redis 集群服务节点的地址列表。 |
 
-
 **key 是可以被用户自定义的，只需要修改插件的一行代码即可完成。并没有在插件中放开是处于安全的考虑。**
 
 ### 示例
@@ -77,7 +76,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 如果你需要一个集群级别的流量控制，我们可以借助 redis server 来完成。不同的 APISIX 节点之间将共享流量限速结果，实现集群流量限速。
 
-请看下面例子：
+如果启用单 redis 策略，请看下面例子：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -105,7 +104,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-如果使用redis-cluster:
+如果使用 `redis-cluster` 策略:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -119,8 +118,8 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
             "key": "remote_addr",
             "policy": "redis-cluster",
             "redis_cluster_nodes": [
-            	"127.0.0.1:5000",
-            	"127.0.0.1:5001"
+                "127.0.0.1:5000",
+                "127.0.0.1:5001"
             ]
         }
     },
@@ -133,8 +132,6 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-
-
 #### 测试插件
 
 上述配置限制了 60 秒内只能访问 2 次，前两次访问都会正常访问：
@@ -145,7 +142,7 @@ curl -i http://127.0.0.1:9080/index.html
 
 响应头里面包含了 `X-RateLimit-Limit` 和 `X-RateLimit-Remaining`，他们的含义分别是限制的总请求数和剩余还可以发送的请求数：
 
-```
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -157,7 +154,7 @@ Server: APISIX web server
 
 当你第三次访问的时候，就会收到包含 503 返回码的响应头：
 
-```
+```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194

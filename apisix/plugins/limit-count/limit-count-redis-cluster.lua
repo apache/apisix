@@ -18,13 +18,12 @@
 local rediscluster = require("resty.rediscluster")
 local core = require("apisix.core")
 local resty_lock = require("resty.lock")
-local assert = assert
-local error = error
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
 
 local _M = {}
+
 
 local mt = {
     __index = _M
@@ -36,13 +35,15 @@ local function new_redis_cluster(conf)
         name = "apisix-redis-cluster",
         serv_list = {},
         read_timeout = conf.redis_timeout,
-        auth = conf.redis_password
+        auth = conf.redis_password,
+        dict_name = "plugin-limit-count-redis-cluster-slot-lock",
     }
 
     for i, conf_item in ipairs(conf.redis_cluster_nodes) do
         local host, port, err = core.utils.parse_addr(conf_item)
         if err then
-            error("limit-count-redis: redis_cluster_nodes configure err " .. conf_item, err)
+            return nil, "failed to parse address: " .. conf_item
+                        .. " err: " .. err
         end
 
         config.serv_list[i] = {ip = host, port = port}
@@ -50,7 +51,7 @@ local function new_redis_cluster(conf)
 
     local red_cli, err = rediscluster:new(config)
     if not red_cli then
-        error("limit-count-redis: connect to redis cluster failed: ", err)
+        return nil, "failed to new redis cluster: " .. err
     end
 
     return red_cli
@@ -58,12 +59,15 @@ end
 
 
 function _M.new(plugin_name, limit, window, conf)
-    assert(limit > 0 and window > 0)
+    local red_cli, err = new_redis_cluster(conf)
+    if not red_cli then
+        return nil, err
+    end
 
-    local red_cli = new_redis_cluster(conf)
-
-    local self = {limit = limit, window = window, conf = conf,
-                  plugin_name = plugin_name, red_cli =red_cli}
+    local self = {
+        limit = limit, window = window, conf = conf,
+        plugin_name = plugin_name, red_cli =red_cli
+    }
 
     return setmetatable(self, mt)
 end
