@@ -282,10 +282,10 @@ qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
                 [[{
                     "interceptors": [
                         {
-                        "name": "ip-restriction",
-                        "conf": {
-                            "whitelist": ["192.168.1.0/24"]
-                        }
+                            "name": "ip-restriction",
+                            "conf": {
+                                "whitelist": ["192.168.1.0/24"]
+                            }
                         }
                     ]
                 }]]
@@ -323,10 +323,10 @@ GET /apisix/prometheus/metrics
                 [[{
                     "interceptors": [
                         {
-                        "name": "ip-restriction",
-                        "conf": {
-                            "whitelist": ["127.0.0.1"]
-                        }
+                            "name": "ip-restriction",
+                            "conf": {
+                                "whitelist": ["127.0.0.1"]
+                            }
                         }
                     ]
                 }]]
@@ -364,10 +364,10 @@ GET /apisix/prometheus/metrics
                 [[{
                     "interceptors": [
                         {
-                        "name": "unknown",
-                        "conf": {
-                            "whitelist": ["127.0.0.1"]
-                        }
+                            "name": "unknown",
+                            "conf": {
+                                "whitelist": ["127.0.0.1"]
+                            }
                         }
                     ]
                 }]]
@@ -399,7 +399,7 @@ qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation 
                 [[{
                     "interceptors": [
                         {
-                        "name": "ip-restriction"
+                            "name": "ip-restriction"
                         }
                     ]
                 }]]
@@ -431,8 +431,8 @@ qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation 
                 [[{
                     "interceptors": [
                         {
-                        "name": "ip-restriction",
-                        "conf": {"aa": "b"}
+                            "name": "ip-restriction",
+                            "conf": {"aa": "b"}
                         }
                     ]
                 }]]
