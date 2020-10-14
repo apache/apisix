@@ -45,6 +45,7 @@ local ver_header    = "APISIX/" .. core.version.VERSION
 
 local function parse_args(args)
     dns_resolver = args and args["dns_resolver"]
+    core.utils.set_resolver(dns_resolver)
     core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
 end
 
@@ -218,6 +219,7 @@ local function parse_domain_for_nodes(nodes)
     end
     return new_nodes
 end
+
 
 local function compare_upstream_node(old_t, new_t)
     if type(old_t) ~= "table" then

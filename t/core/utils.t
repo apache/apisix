@@ -68,3 +68,19 @@ qr/random seed \d+\ntwice: false/
 GET /t
 --- no_error_log
 [error]
+
+
+=== TEST 2: allow resolvers is empty
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.say("resolvers: ", core.json.encode(core.utils.resolvers))
+        }
+    }
+--- request
+GET /t
+--- response_body
+resolvers: ["8.8.8.8","114.114.114.114"]
+--- no_error_log
+[error]
