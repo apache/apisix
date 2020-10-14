@@ -211,7 +211,7 @@ fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
-# empty allow_admin in conf/config.yaml
+# set allow_admin in conf/config.yaml
 
 echo "
 apisix:
