@@ -137,6 +137,10 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 _EOC_
 
+    # set default `timeout` to 5sec
+    my $timeout = $block->timeout // 5;
+    $block->set_value("timeout", $timeout);
+
     $block->set_value("main_config", $main_config);
 
     my $stream_enable = $block->stream_enable;

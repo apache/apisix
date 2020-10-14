@@ -41,10 +41,8 @@ jobs:
         with:
           master1-port: 5000
           master2-port: 5001
-          master3-port: 5002
-          slave1-port: 5003
-          slave2-port: 5004
-          slave3-port: 5005
+          slave1-port: 5002
+          slave2-port: 5003
 
       - name: Running Redis Cluster Test
         if: matrix.os_name == 'linux_openresty'
