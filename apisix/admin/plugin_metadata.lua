@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local error   = error
 local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
