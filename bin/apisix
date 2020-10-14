@@ -1127,7 +1127,7 @@ end
 
 if not _M[cmd_action] then
     print("invalid argument: ", cmd_action, "\n")
-	_M.help()
+    _M.help()
     return
 end
 
