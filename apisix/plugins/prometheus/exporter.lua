@@ -276,32 +276,36 @@ function _M.collect()
     -- across all services
     nginx_status()
 
-    -- etcd modify index
-    etcd_modify_index()
+    local config = core.config.new()
 
     -- config server status
     local vars = ngx.var or {}
     local hostname = vars.hostname or ""
-    local config = core.config.new()
-    local version, err = config:server_version()
-    if version then
-        metrics.etcd_reachable:set(1)
 
-    else
-        metrics.etcd_reachable:set(0)
-        core.log.error("prometheus: failed to reach config server while ",
-                       "processing metrics endpoint: ", err)
+    if config.type == "etcd" then
+        -- etcd modify index
+        etcd_modify_index()
+
+        local version, err = config:server_version()
+        if version then
+            metrics.etcd_reachable:set(1)
+
+        else
+            metrics.etcd_reachable:set(0)
+            core.log.error("prometheus: failed to reach config server while ",
+                           "processing metrics endpoint: ", err)
+        end
+
+        local res, _ = config:getkey("/routes")
+        if res and res.headers then
+            clear_tab(key_values)
+            -- global max
+            key_values[1] = "x_etcd_index"
+            metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
+        end
     end
 
     metrics.node_info:set(1, gen_arr(hostname))
-
-    local res, _ = config:getkey("/routes")
-    if res and res.headers then
-        clear_tab(key_values)
-        -- global max
-        key_values[1] = "x_etcd_index"
-        metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
-    end
 
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())
