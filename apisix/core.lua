@@ -23,11 +23,13 @@ end
 local config_center = local_conf.apisix and local_conf.apisix.config_center
                       or "etcd"
 log.info("use config_center: ", config_center)
+local config = require("apisix.core.config_" .. config_center)
+config.type = config_center
 
 return {
     version  = require("apisix.core.version"),
     log      = log,
-    config   = require("apisix.core.config_" .. config_center),
+    config   = config,
     json     = require("apisix.core.json"),
     table    = require("apisix.core.table"),
     request  = require("apisix.core.request"),
