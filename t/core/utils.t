@@ -88,10 +88,10 @@ GET /t
 --- request
 GET /t
 --- response_body eval
-qr/"name":"baidu.com"/
+qr/"address":.+,"name":"baidu.com"/
 --- no_error_log
 [error]
-
+--- LAST
 
 
 === TEST 4: resolvers is empty
@@ -112,6 +112,6 @@ GET /t
 --- response_body
 resolvers: ["8.8.8.8","114.114.114.114"]
 --- error_log eval
-qr/"name":"baidu.com"/
+qr/"address":.+,"name":"baidu.com"/
 --- no_error_log
 [error]
