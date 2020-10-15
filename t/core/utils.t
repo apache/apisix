@@ -71,19 +71,47 @@ GET /t
 
 
 
-=== TEST 2: allow resolvers is empty
+=== TEST 3: resolvers is not empty
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local resolvers
+            local resolvers = {"8.8.8.8"}
             core.utils.set_resolver(resolvers)
+            local ip_info, err = core.utils.dns_parse("baidu.com", resolvers)
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+            end
+            ngx.say(core.json.encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/"name":"baidu.com"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: resolvers is empty
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("baidu.com")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+            end
+            core.log.info("ip_info: ", core.json.encode(ip_info))
             ngx.say("resolvers: ", core.json.encode(core.utils.resolvers))
         }
     }
 --- request
 GET /t
 --- response_body
-resolvers: null
+resolvers: ["8.8.8.8","114.114.114.114"]
+--- error_log eval
+qr/"name":"baidu.com"/
 --- no_error_log
 [error]
