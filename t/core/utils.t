@@ -91,7 +91,7 @@ GET /t
 qr/"address":.+,"name":"baidu.com"/
 --- no_error_log
 [error]
---- LAST
+
 
 
 === TEST 4: resolvers is empty
