@@ -71,14 +71,14 @@ GET /t
 
 
 
-=== TEST 3: resolvers is not empty
+=== TEST 3: specify resolvers
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local resolvers = {"8.8.8.8"}
             core.utils.set_resolver(resolvers)
-            local ip_info, err = core.utils.dns_parse("baidu.com", resolvers)
+            local ip_info, err = core.utils.dns_parse("github.com", resolvers)
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -88,18 +88,18 @@ GET /t
 --- request
 GET /t
 --- response_body eval
-qr/"address":.+,"name":"baidu.com"/
+qr/"address":.+,"name":"github.com"/
 --- no_error_log
 [error]
 
 
 
-=== TEST 4: resolvers is empty
+=== TEST 4: default resolvers
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ip_info, err = core.utils.dns_parse("baidu.com")
+            local ip_info, err = core.utils.dns_parse("github.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -112,6 +112,6 @@ GET /t
 --- response_body
 resolvers: ["8.8.8.8","114.114.114.114"]
 --- error_log eval
-qr/"address":.+,"name":"baidu.com"/
+qr/"address":.+,"name":"github.com"/
 --- no_error_log
 [error]
