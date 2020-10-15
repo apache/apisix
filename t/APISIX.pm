@@ -24,6 +24,7 @@ repeat_each(1);
 log_level('info');
 no_long_string();
 no_shuffle();
+no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
@@ -135,6 +136,7 @@ add_block_preprocessor(sub {
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env TEST_NGINX_HTML_DIR;
 _EOC_
 
     # set default `timeout` to 5sec

@@ -28,3 +28,7 @@ Just send an HTTP request through admin API:
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
 ```
+
+### Hot reload in stand-alone mode
+
+For stand-alone mode, see plugin related section in [stand alone mode](stand-alone.md).

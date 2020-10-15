@@ -665,6 +665,23 @@ _M.stream_route = {
 }
 
 
+_M.plugins = {
+    type = "array",
+    items = {
+        type = "object",
+        properties = {
+            name = {
+                type = "string"
+            },
+            stream = {
+                type = "boolean"
+            },
+        },
+        required = {"name"}
+    }
+}
+
+
 _M.id_schema = id_schema
 
 

@@ -14,51 +14,27 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local exporter = require("apisix.plugins.prometheus.exporter")
-local plugin_name = "prometheus"
+local nkeys        = require("table.nkeys")
+local pairs        = pairs
 
 
-local schema = {
-    type = "object",
-    additionalProperties = false,
-}
+local _M = {}
 
 
-local _M = {
-    version = 0.2,
-    priority = 500,
-    name = plugin_name,
-    log  = exporter.log,
-    schema = schema,
-}
+-- Compare two tables as if they are sets (only compare the key part)
+function _M.eq(a, b)
+    if nkeys(a) ~= nkeys(b) then
+        return false
+    end
 
-
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
+    for k in pairs(a) do
+        if b[k] == nil then
+            return false
+        end
     end
 
     return true
 end
-
-
-function _M.api()
-    return {
-        {
-            methods = {"GET"},
-            uri = "/apisix/prometheus/metrics",
-            handler = exporter.collect
-        }
-    }
-end
-
-
--- only for test
--- function _M.access()
---     ngx.say(exporter.metric_data())
--- end
 
 
 return _M

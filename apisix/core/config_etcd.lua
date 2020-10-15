@@ -185,10 +185,6 @@ local function sync_data(self)
             return false, err
         end
 
-        if not dir_res.nodes then
-            dir_res.nodes = {}
-        end
-
         if self.values then
             for i, val in ipairs(self.values) do
                 if val and val.clean_handlers then
@@ -203,19 +199,14 @@ local function sync_data(self)
             self.values_hash = nil
         end
 
-        self.values = new_tab(#dir_res.nodes, 0)
-        self.values_hash = new_tab(0, #dir_res.nodes)
-
         local changed = false
-        for _, item in ipairs(dir_res.nodes) do
-            local key = short_key(self, item.key)
-            local data_valid = true
-            if type(item.value) ~= "table" then
-                data_valid = false
-                log.error("invalid item data of [", self.key .. "/" .. key,
-                          "], val: ", item.value,
-                          ", it shoud be a object")
-            end
+
+        if self.single_item then
+            self.values = new_tab(1, 0)
+            self.values_hash = new_tab(0, 1)
+
+            local item = dir_res
+            local data_valid = item.value ~= nil
 
             if data_valid and self.item_schema then
                 data_valid, err = check_schema(self.item_schema, item.value)
@@ -228,8 +219,8 @@ local function sync_data(self)
             if data_valid then
                 changed = true
                 insert_tab(self.values, item)
-                self.values_hash[key] = #self.values
-                item.value.id = key
+                self.values_hash[self.key] = #self.values
+
                 item.clean_handlers = {}
 
                 if self.filter then
@@ -238,6 +229,48 @@ local function sync_data(self)
             end
 
             self:upgrade_version(item.modifiedIndex)
+
+        else
+            if not dir_res.nodes then
+                dir_res.nodes = {}
+            end
+
+            self.values = new_tab(#dir_res.nodes, 0)
+            self.values_hash = new_tab(0, #dir_res.nodes)
+
+            for _, item in ipairs(dir_res.nodes) do
+                local key = short_key(self, item.key)
+                local data_valid = true
+                if type(item.value) ~= "table" then
+                    data_valid = false
+                    log.error("invalid item data of [", self.key .. "/" .. key,
+                              "], val: ", item.value,
+                              ", it shoud be a object")
+                end
+
+                if data_valid and self.item_schema then
+                    data_valid, err = check_schema(self.item_schema, item.value)
+                    if not data_valid then
+                        log.error("failed to check item data of [", self.key,
+                                  "] err:", err, " ,val: ", json.encode(item.value))
+                    end
+                end
+
+                if data_valid then
+                    changed = true
+                    insert_tab(self.values, item)
+                    self.values_hash[key] = #self.values
+
+                    item.value.id = key
+                    item.clean_handlers = {}
+
+                    if self.filter then
+                        self.filter(item)
+                    end
+                end
+
+                self:upgrade_version(item.modifiedIndex)
+            end
         end
 
         if headers then
@@ -285,9 +318,16 @@ local function sync_data(self)
     end
 
     local res_copy = res
+    -- waitdir will return [res] even for self.single_item = true
     for _, res in ipairs(res_copy) do
-        local key = short_key(self, res.key)
-        if res.value and type(res.value) ~= "table" then
+        local key
+        if self.single_item then
+            key = self.key
+        else
+            key = short_key(self, res.key)
+        end
+
+        if res.value and not self.single_item and type(res.value) ~= "table" then
             self:upgrade_version(res.modifiedIndex)
             return false, "invalid item data of [" .. self.key .. "/" .. key
                             .. "], val: " .. res.value
@@ -314,10 +354,6 @@ local function sync_data(self)
             return false
         end
 
-        if self.filter then
-            self.filter(res)
-        end
-
         local pre_index = self.values_hash[key]
         if pre_index then
             local pre_val = self.values[pre_index]
@@ -329,7 +365,10 @@ local function sync_data(self)
             end
 
             if res.value then
-                res.value.id = key
+                if not self.single_item then
+                    res.value.id = key
+                end
+
                 self.values[pre_index] = res
                 res.clean_handlers = {}
                 log.info("update data by key: ", key)
@@ -345,7 +384,10 @@ local function sync_data(self)
             res.clean_handlers = {}
             insert_tab(self.values, res)
             self.values_hash[key] = #self.values
-            res.value.id = key
+            if not self.single_item then
+                res.value.id = key
+            end
+
             log.info("insert data by key: ", key)
         end
 
@@ -370,6 +412,12 @@ local function sync_data(self)
             end
 
             self.sync_times = 0
+        end
+
+        -- /plugins' filter need to known self.values when it is called
+        -- so the filter should be called after self.values set.
+        if self.filter then
+            self.filter(res)
         end
 
         self.conf_version = self.conf_version + 1
@@ -476,6 +524,7 @@ function _M.new(key, opts)
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
     local timeout = opts and opts.timeout
+    local single_item = opts and opts.single_item
 
     local obj = setmetatable({
         etcd_cli = nil,
@@ -493,6 +542,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         timeout = timeout,
+        single_item = single_item,
         filter = filter_fun,
     }, mt)
 

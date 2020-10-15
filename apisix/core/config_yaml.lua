@@ -141,25 +141,18 @@ local function sync_data(self)
         self.values = nil
     end
 
-    self.values = new_tab(#items, 0)
-    self.values_hash = new_tab(0, #items)
+    if self.single_item then
+        -- treat items as a single item
+        self.values = new_tab(1, 0)
+        self.values_hash = new_tab(0, 1)
 
-    local err
-    for i, item in ipairs(items) do
-        local id = tostring(i)
-        local data_valid = true
-        if type(item) ~= "table" then
-            data_valid = false
-            log.error("invalid item data of [", self.key .. "/" .. id,
-                        "], val: ", json.delay_encode(item),
-                        ", it shoud be a object")
-        end
-
-        local key = item.id or "arr_" .. i
+        local item = items
         local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
-                           key = "/" .. self.key .. "/" .. key}
+                           key = "/" .. self.key}
 
-        if data_valid and self.item_schema then
+        local data_valid = true
+        local err
+        if self.item_schema then
             data_valid, err = check_schema(self.item_schema, item)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
@@ -169,14 +162,52 @@ local function sync_data(self)
 
         if data_valid then
             insert_tab(self.values, conf_item)
-            local item_id = conf_item.value.id or self.key .. "#" .. id
-            item_id = tostring(item_id)
-            self.values_hash[item_id] = #self.values
-            conf_item.value.id = item_id
+            self.values_hash[self.key] = #self.values
             conf_item.clean_handlers = {}
 
             if self.filter then
                 self.filter(conf_item)
+            end
+        end
+
+    else
+        self.values = new_tab(#items, 0)
+        self.values_hash = new_tab(0, #items)
+
+        local err
+        for i, item in ipairs(items) do
+            local id = tostring(i)
+            local data_valid = true
+            if type(item) ~= "table" then
+                data_valid = false
+                log.error("invalid item data of [", self.key .. "/" .. id,
+                            "], val: ", json.delay_encode(item),
+                            ", it shoud be a object")
+            end
+
+            local key = item.id or "arr_" .. i
+            local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
+                            key = "/" .. self.key .. "/" .. key}
+
+            if data_valid and self.item_schema then
+                data_valid, err = check_schema(self.item_schema, item)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                            "] err:", err, " ,val: ", json.delay_encode(item))
+                end
+            end
+
+            if data_valid then
+                insert_tab(self.values, conf_item)
+                local item_id = conf_item.value.id or self.key .. "#" .. id
+                item_id = tostring(item_id)
+                self.values_hash[item_id] = #self.values
+                conf_item.value.id = item_id
+                conf_item.clean_handlers = {}
+
+                if self.filter then
+                    self.filter(conf_item)
+                end
             end
         end
     end
@@ -256,6 +287,7 @@ function _M.new(key, opts)
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
+    local single_item = opts and opts.single_item
 
     -- like /routes and /upstreams, remove first char `/`
     if key then
@@ -274,6 +306,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         key = key,
+        single_item = single_item,
         filter = filter_fun,
     }, mt)
 
