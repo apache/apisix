@@ -62,9 +62,11 @@ local function create_radixtree_router(routes)
                                or route.value.remote_addr,
                 vars = route.value.vars,
                 filter_fun = filter_fun,
-                handler = function (api_ctx)
+                handler = function (api_ctx, curr_req_matched_record)
                     api_ctx.matched_params = nil
                     api_ctx.matched_route = route
+                    --to keep the record which matches the current request and pass it to api_ctx
+                    api_ctx.curr_req_matched_record = curr_req_matched_record
                 end
             })
 
@@ -95,7 +97,10 @@ function _M.match(api_ctx)
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
 
-    local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
+    local curr_req_matched_record = {}
+    match_opts.matched = curr_req_matched_record
+
+    local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, curr_req_matched_record)
     return ok
 end
 
