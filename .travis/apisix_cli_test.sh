@@ -169,7 +169,6 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
-
 # check support multiple ports listen in http and https
 
 echo "
