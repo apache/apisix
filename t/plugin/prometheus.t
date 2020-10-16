@@ -521,7 +521,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="3",service="",node="127.0.0.1"\} 2/
+qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host="",service="",node="127.0.0.1"\} 2/
 --- no_error_log
 [error]
 

@@ -60,9 +60,11 @@ local function push_host_router(route, host_routes, only_uri_routes)
                        or route.value.remote_addr,
         vars = route.value.vars,
         filter_fun = filter_fun,
-        handler = function (api_ctx)
+        handler = function (api_ctx, curr_req_matched_record)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
+            --to keep the record which matches the current request and pass it to api_ctx
+            api_ctx.curr_req_matched_record = curr_req_matched_record
         end
     }
 
@@ -130,9 +132,13 @@ function _M.match(api_ctx)
     match_opts.vars = api_ctx.var
     match_opts.host = api_ctx.var.host
 
+    local curr_req_matched_record = {}
+    match_opts.matched = curr_req_matched_record
+
     if host_router then
         local host_uri = api_ctx.var.host
-        local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx)
+        local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx,
+                curr_req_matched_record)
         if ok then
             return true
         end
