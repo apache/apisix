@@ -38,7 +38,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/random seed \d+\ntwice: false/
+qr/random seed \d+(\.\d+)?(e\+\d+)?\ntwice: false/
 
 
 
