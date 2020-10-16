@@ -876,7 +876,6 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
                         "plugins": {
                             "key-auth": {},
                             "limit-count": {
