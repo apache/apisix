@@ -14,13 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require   = require
 local core = require("apisix.core")
 local local_plugins = require("apisix.plugin").plugins_hash
 local stream_local_plugins = require("apisix.plugin").stream_plugins_hash
 local pairs     = pairs
 local ipairs    = ipairs
 local pcall     = pcall
-local require   = require
 local type      = type
 local table_remove = table.remove
 local table_sort = table.sort
