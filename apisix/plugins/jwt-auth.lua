@@ -19,6 +19,7 @@ local jwt      = require("resty.jwt")
 local ck       = require("resty.cookie")
 local consumer = require("apisix.consumer")
 local resty_random = require("resty.random")
+
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local ipairs   = ipairs
@@ -101,6 +102,7 @@ local function fetch_jwt_token(ctx)
         if prefix == 'Bearer ' or prefix == 'bearer ' then
             return sub_str(token, 8)
         end
+
         return token
     end
 
@@ -118,12 +120,15 @@ local function fetch_jwt_token(ctx)
     return val, err
 end
 
+
 local function get_secret(conf)
     if conf.base64_secret then
         return ngx_decode_base64(conf.secret)
     end
-        return conf.secret
+
+    return conf.secret
 end
+
 
 function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)
