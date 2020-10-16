@@ -137,7 +137,8 @@ function _M.match(api_ctx)
 
     if host_router then
         local host_uri = api_ctx.var.host
-        local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx, curr_req_matched_record)
+        local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx,
+                curr_req_matched_record)
         if ok then
             return true
         end
