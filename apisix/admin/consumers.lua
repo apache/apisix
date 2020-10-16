@@ -103,7 +103,7 @@ end
 
 
 function _M.post(consumer_name, conf)
-    return 400, {error_msg = "not support `POST` method for consumer"}
+    return 405, {error_msg = "not supported `POST` method for consumer"}
 end
 
 

@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require      = require
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -25,7 +26,6 @@ local ngx          = ngx
 local re_find      = ngx.re.find
 local type         = type
 local pairs        = pairs
-local require      = require
 local setmetatable = setmetatable
 local pcall        = pcall
 local ipairs       = ipairs

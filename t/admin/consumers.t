@@ -282,7 +282,7 @@ passed
                      "username":"jack",
                      "desc": "new consumer",
                      "labels": {
-	                     "env": ["production", "release"]
+                        "env": ["production", "release"]
                      }
                 }]]
                 )
@@ -296,5 +296,29 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: post consumers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                 ngx.HTTP_POST,
+                 ""
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 405
+--- response_body
+{"error_msg":"not supported `POST` method for consumer"}
 --- no_error_log
 [error]
