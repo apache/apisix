@@ -42,6 +42,16 @@ rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更�
 | appid         | string | 可选   | "unset"                  |        | 设置应用id, 该应用id, 需要是在 `wolf-console` 中已经添加的应用id |
 | header_prefix | string | 可选   | "X-"                     |        | 自定义http头的前缀。`wolf-rbac`在鉴权成功后, 会在请求头(用于传给后端)及响应头(用于传给前端)中添加3个头: `X-UserId`, `X-Username`, `X-Nickname` |
 
+## 接口
+
+插件会增加这些接口：
+
+* /apisix/plugin/wolf-rbac/login
+* /apisix/plugin/wolf-rbac/change_pwd
+* /apisix/plugin/wolf-rbac/user_info
+
+你可能需要通过 [interceptors](plugin-interceptors.md) 来保护它们。
+
 ## 依赖项
 
 ### 安装 wolf, 并启动服务

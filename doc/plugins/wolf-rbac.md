@@ -42,6 +42,15 @@ The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more
 | appid         | string | optional    | "unset"                  |       | Set the app id. The app id must be added in wolf-console. |
 | header_prefix | string | optional    | "X-"                     |       | prefix of custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`. |
 
+## API
+
+This plugin will add several API:
+
+* /apisix/plugin/wolf-rbac/login
+* /apisix/plugin/wolf-rbac/change_pwd
+* /apisix/plugin/wolf-rbac/user_info
+
+You may need to use [interceptors](plugin-interceptors.md) to protect it.
 
 ## Dependencies
 
