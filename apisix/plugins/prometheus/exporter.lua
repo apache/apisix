@@ -122,20 +122,23 @@ function _M.log(conf, ctx)
     local route_id = ""
     local balancer_ip = ctx.balancer_ip or ""
     local service_id
-    local matched_uri = ""
-    local matched_host = ""
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
         service_id = matched_route.service_id or ""
         route_id = matched_route.id
-        if ctx.curr_req_matched_record then
-            --Extracts the record of the route hit by the current request from api_ctx.
-            matched_uri = ctx.curr_req_matched_record._path
-            matched_host = ctx.curr_req_matched_record._host
-        end
     else
         service_id = vars.host
+    end
+
+    --Extracts the record of the route hit by the current request from api_ctx.
+    local matched_uri = ""
+    local matched_host = ""
+    if ctx.curr_req_matched_record and ctx.curr_req_matched_record._path then
+        matched_uri = ctx.curr_req_matched_record._path
+    end
+    if ctx.curr_req_matched_record and ctx.curr_req_matched_record._host then
+        matched_host = ctx.curr_req_matched_record._host
     end
 
     metrics.status:inc(1,
