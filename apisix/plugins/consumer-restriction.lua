@@ -27,7 +27,7 @@ local schema = {
                     type = "string",
                     enum = {"consumer_name", "service_id"},
                     default = "consumer_name"
-               },               
+               },
 		blacklist = {
                     type = "array",
                     minItems = 1,
