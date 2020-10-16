@@ -275,8 +275,8 @@ apisix reload
 
 By default, APISIX only listens on port 9080 when handling HTTP requests. If you want APISIX to listen on multiple ports, you need to modify the relevant parameters in the configuration file as follows:
 
-1. Modify the parameter of HTTP port listen `node_listen` in `conf/config.yaml`, style like
-    
+1. Modify the parameter of HTTP port listen `node_listen` in `conf/config.yaml`, for example:
+
    ```
     apisix:
       node_listen:
@@ -284,9 +284,9 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
         - 9081
         - 9082
     ```
-  
-   Handling https requests is similar, Modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, style like
-   
+
+   Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
+
     ```
     apisix:
       ssl:
@@ -295,5 +295,5 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
           - 9444
           - 9445
     ```
-   
+
 2. Restart APISIX

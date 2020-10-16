@@ -169,6 +169,50 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
+
+# check support multiple ports listen in http and https
+
+echo "
+apisix:
+  node_listen:
+    - 9080
+    - 9081
+    - 9082
+  ssl:
+    listen_port:
+      - 9443
+      - 9444
+      - 9445
+" > conf/config.yaml
+
+make init
+
+count_http_ipv4=`grep -c "listen 908." conf/nginx.conf || true`
+if [ $count_http_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv4"
+    exit 1
+fi
+
+count_http_ipv6=`grep -c "listen \[::\]:908." conf/nginx.conf || true`
+if [ $count_http_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv6"
+    exit 1
+fi
+
+count_https_ipv4=`grep -c "listen 944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv4"
+    exit 1
+fi
+
+count_https_ipv6=`grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv6"
+    exit 1
+fi
+
+echo "passed: support multiple ports listen in http and https"
+
 make run
 
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')

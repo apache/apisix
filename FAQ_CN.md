@@ -225,7 +225,7 @@ apisix reload
 
 默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。如果你想让 APISIX 监听多个端口，你需要修改配置文件中的相关参数，具体步骤如下：
 
-1. 修改`conf/config.yaml`中 HTTP 端口监听的参数`node_listen`，格式如下
+1. 修改`conf/config.yaml`中 HTTP 端口监听的参数`node_listen`，示例：
 
     ```
     apisix:
@@ -234,9 +234,9 @@ apisix reload
         - 9081
         - 9082
     ```
-   
-    处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数``ssl.listen_port``，格式如下
-    
+
+    处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数``ssl.listen_port``，示例：
+
     ```
     apisix:
       ssl:
@@ -247,4 +247,3 @@ apisix reload
     ```
 
 2. 重启 APISIX
-
