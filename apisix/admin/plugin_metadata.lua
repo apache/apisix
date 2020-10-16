@@ -99,7 +99,7 @@ end
 
 
 function _M.post(key, conf)
-    return 400, {error_msg = "not support `POST` method for metadata"}
+    return 405, {error_msg = "not supported `POST` method for metadata"}
 end
 
 
