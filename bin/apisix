@@ -354,11 +354,14 @@ http {
     {% end %}
 
     server {
-        listen {* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
-        {% if ssl.enable then %}
-        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, port in ipairs(node_listen) do %}
+        listen {* port *} {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
-
+        {% if ssl.enable then %}
+        {% for _, port in ipairs(ssl.listen_port) do %}
+        listen {* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+        {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
         listen {* proxy_protocol.listen_http_port *} proxy_protocol;
         {% end %}
@@ -367,9 +370,13 @@ http {
         {% end %}
 
         {% if enable_ipv6 then %}
-        listen [::]:{* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, port in ipairs(node_listen) do %}
+        listen [::]:{* port *} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
         {% if ssl.enable then %}
-        listen [::]:{* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, port in ipairs(ssl.listen_port) do %}
+        listen [::]:{* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
@@ -875,6 +882,18 @@ Please modify "admin_key" in conf/config.yaml .
     if enabled_plugins["proxy-cache"] and not yaml_conf.apisix.proxy_cache then
         error("missing apisix.proxy_cache for plugin proxy-cache")
     end
+
+    --support multiple ports listen, compatible with the original style
+    if type(yaml_conf.apisix.node_listen) == "number" then
+        local node_listen = {yaml_conf.apisix.node_listen}
+        yaml_conf.apisix.node_listen = node_listen
+    end
+
+    if type(yaml_conf.apisix.ssl.listen_port) == "number" then
+        local listen_port = {yaml_conf.apisix.ssl.listen_port}
+        yaml_conf.apisix.ssl.listen_port = listen_port
+    end
+
 
     -- Using template.render
     local sys_conf = {
