@@ -16,13 +16,57 @@
 --
 local require = require
 local router = require("resty.radixtree")
-local plugin = require("apisix.plugin")
+local plugin_mod = require("apisix.plugin")
+local ip_restriction = require("apisix.plugins.ip-restriction")
 local core = require("apisix.core")
 local ipairs = ipairs
 
 
 local _M = {}
 local match_opts = {}
+local interceptors = {
+    ["ip-restriction"] = {
+        run = function (conf, ctx)
+            return ip_restriction.access(conf, ctx)
+        end,
+        schema = ip_restriction.schema,
+    }
+}
+
+
+_M.interceptors_schema = {
+    type = "array",
+    items = {
+        type = "object",
+        minItems = 1,
+        properties = {
+            name = {
+                type = "string",
+                enum = {"ip-restriction"},
+            },
+            conf = {
+                type = "object",
+            }
+        },
+        required = {"name", "conf"},
+        dependencies = {
+            name = {
+                oneOf = {}
+            }
+        }
+    }
+}
+for name, attrs in pairs(interceptors) do
+    core.table.insert(_M.interceptors_schema.items.properties.name.enum, name)
+    core.table.insert(_M.interceptors_schema.items.dependencies.name.oneOf, {
+        properties = {
+            name = {
+                enum = {name},
+            },
+            conf = attrs.schema,
+        }
+    })
+end
 
 
 local fetch_api_router
@@ -31,9 +75,10 @@ do
 function fetch_api_router()
     core.table.clear(routes)
 
-    for _, plugin in ipairs(plugin.plugins) do
+    for _, plugin in ipairs(plugin_mod.plugins) do
         local api_fun = plugin.api
         if api_fun then
+            local name = plugin.name
             local api_routes = api_fun()
             core.log.debug("fetched api routes: ",
                            core.json.delay_encode(api_routes, true))
@@ -41,8 +86,25 @@ function fetch_api_router()
                 core.table.insert(routes, {
                         methods = route.methods,
                         paths = route.uri,
-                        handler = function (...)
-                            local code, body = route.handler(...)
+                        handler = function (api_ctx)
+                            local code, body
+
+                            local metadata = plugin_mod.plugin_metadata(name)
+                            if metadata and metadata.interceptors then
+                                for _, rule in ipairs(metadata.interceptors) do
+                                    local f = interceptors[rule.name]
+                                    if f == nil then
+                                        core.log.error("unknown interceptor: ", rule.name)
+                                    else
+                                        code, body = f.run(rule.conf, api_ctx)
+                                        if code or body then
+                                            return core.response.exit(code, body)
+                                        end
+                                    end
+                                end
+                            end
+
+                            code, body = route.handler(api_ctx)
                             if code or body then
                                 core.response.exit(code, body)
                             end
@@ -59,7 +121,7 @@ end -- do
 
 
 function _M.match(api_ctx)
-    local api_router = core.lrucache.global("api_router", plugin.load_times, fetch_api_router)
+    local api_router = core.lrucache.global("api_router", plugin_mod.load_times, fetch_api_router)
     if not api_router then
         core.log.error("failed to fetch valid api router")
         return false
