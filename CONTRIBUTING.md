@@ -68,7 +68,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 * Capitalization:
 
-    * For titles of a section, capitalize the first letter of each word except for the [closed-class words](http://babelnet.sbg.ac.at/themepark/grammar/classes.htm)
+    * For titles of a section, capitalize the first letter of each word except for the [closed-class words](https://en.wikipedia.org/wiki/Part_of_speech#Open_and_closed_classes)
       such as determiners, pronouns, conjunctions, and prepositions. Use the following [link](https://capitalizemytitle.com/#Chicago) for guidance.
       - Recommended: Authentication **with** APISIX
 
@@ -132,5 +132,5 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## Do you have questions about the source code?
 
-- **QQ Group**: 552030619
-- [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+- **QQ Group**: 578997126(recommended), 552030619
+- Join in `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).

@@ -109,7 +109,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
         sudo docker run --name skywalking-ui -d -p 8080:8080 --link skywalking:skywalking -e SW_OAP_ADDRESS=skywalking:12800 --restart always apache/skywalking-ui
         ```
     2. 打开管理页面
-        在浏览器里面输入http://10.110.149.175:8080,出现了如下界面，则表示安装成功
+        在浏览器里面输入http://10.110.149.175:8080，出现了如下界面，则表示安装成功
         ![](../../images/plugin/skywalking-3.png)
 
 3. 测试示例:

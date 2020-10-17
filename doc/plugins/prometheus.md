@@ -27,6 +27,11 @@ This plugin exposes metrics in Prometheus Exposition format.
 
 none.
 
+## API
+
+This plugin will add `/apisix/prometheus/metrics` to expose the metrics.
+You may need to use [interceptors](plugin-interceptors.md) to protect it.
+
 ## How to enable it
 
 `prometheus` plugin can be enable with empty table, because it doesn't have

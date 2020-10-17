@@ -270,3 +270,30 @@ If your APISIX node does not open the Admin API, then you can manually load the 
 ```shell
 apisix reload
 ```
+
+## How to make APISIX listen on multiple ports when handling HTTP or HTTPS requests?
+
+By default, APISIX only listens on port 9080 when handling HTTP requests. If you want APISIX to listen on multiple ports, you need to modify the relevant parameters in the configuration file as follows:
+
+1. Modify the parameter of HTTP port listen `node_listen` in `conf/config.yaml`, for example:
+
+   ```
+    apisix:
+      node_listen:
+        - 9080
+        - 9081
+        - 9082
+    ```
+
+   Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
+
+    ```
+    apisix:
+      ssl:
+        listen_port:
+          - 9443
+          - 9444
+          - 9445
+    ```
+
+2. Restart APISIX

@@ -27,6 +27,11 @@
 
 无
 
+## 接口
+
+插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](plugin-interceptors.md)
+来保护它。
+
 ## 如何开启插件
 
 `prometheus` 插件用空{}就可以开启了,他没有任何的选项。

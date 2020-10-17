@@ -33,7 +33,7 @@
 
 添加 Basic Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其用户名和密码添加到请求头中以验证其请求。
 
-有关 Basic Authentication 的更多信息，可参考 [维基百科](https://en.wikipedia.org/wiki/Basic_access_authentication) 查看更多信息。
+有关 Basic Authentication 的更多信息，可参考 [维基百科](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81) 查看更多信息。
 
 ## 属性
 

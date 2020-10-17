@@ -33,7 +33,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/doc/benchmark-cn.md)
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/doc/zh-cn/benchmark.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
@@ -220,3 +220,30 @@ curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 ```shell
 apisix reload
 ```
+
+## 如何让 APISIX 在处理 HTTP 或 HTTPS 请求时监听多个端口
+
+默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。如果你想让 APISIX 监听多个端口，你需要修改配置文件中的相关参数，具体步骤如下：
+
+1. 修改`conf/config.yaml`中 HTTP 端口监听的参数`node_listen`，示例：
+
+    ```
+    apisix:
+      node_listen:
+        - 9080
+        - 9081
+        - 9082
+    ```
+
+    处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数``ssl.listen_port``，示例：
+
+    ```
+    apisix:
+      ssl:
+        listen_port:
+          - 9443
+          - 9444
+          - 9445
+    ```
+
+2. 重启 APISIX

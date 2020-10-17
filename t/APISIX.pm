@@ -137,6 +137,10 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 _EOC_
 
+    # set default `timeout` to 5sec
+    my $timeout = $block->timeout // 5;
+    $block->set_value("timeout", $timeout);
+
     $block->set_value("main_config", $main_config);
 
     my $stream_enable = $block->stream_enable;
@@ -236,6 +240,7 @@ _EOC_
     lua_shared_dict balancer_ewma         1m;
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;

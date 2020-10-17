@@ -78,6 +78,49 @@ fi
 
 echo "passed: change default ssl port"
 
+# check support multiple ports listen in http and https
+
+echo "
+apisix:
+  node_listen:
+    - 9080
+    - 9081
+    - 9082
+  ssl:
+    listen_port:
+      - 9443
+      - 9444
+      - 9445
+" > conf/config.yaml
+
+make init
+
+count_http_ipv4=`grep -c "listen 908." conf/nginx.conf || true`
+if [ $count_http_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv4"
+    exit 1
+fi
+
+count_http_ipv6=`grep -c "listen \[::\]:908." conf/nginx.conf || true`
+if [ $count_http_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv6"
+    exit 1
+fi
+
+count_https_ipv4=`grep -c "listen 944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv4"
+    exit 1
+fi
+
+count_https_ipv6=`grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv6"
+    exit 1
+fi
+
+echo "passed: support multiple ports listen in http and https"
+
 # check default env
 echo "
 nginx_config:
@@ -211,8 +254,40 @@ fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
+# set allow_admin in conf/config.yaml
+
+echo "
+apisix:
+    allow_admin:
+        - 127.0.0.9
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow 127.0.0.9" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow 127.0.0.9;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "
+apisix:
+    allow_admin: ~
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow all;" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow all;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "passed: empty allow_admin in conf/config.yaml"
+
 # check the 'client_max_body_size' in 'nginx.conf' .
 
+git checkout conf/config.yaml
 sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
 
 make init
@@ -245,7 +320,6 @@ fi
 
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
-
 
 # log format
 
