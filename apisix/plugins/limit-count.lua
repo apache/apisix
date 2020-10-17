@@ -17,10 +17,14 @@
 local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local plugin_name = "limit-count"
+local limit_redis_cluster_new
 local limit_redis_new
 do
     local redis_src = "apisix.plugins.limit-count.limit-count-redis"
     limit_redis_new = require(redis_src).new
+
+    local cluster_src = "apisix.plugins.limit-count.limit-count-redis-cluster"
+    limit_redis_cluster_new = require(cluster_src).new
 end
 
 
@@ -40,7 +44,7 @@ local schema = {
         },
         policy = {
             type = "string",
-            enum = {"local", "redis"},
+            enum = {"local", "redis", "redis-cluster"},
             default = "local",
         }
     },
@@ -70,11 +74,31 @@ local schema = {
                             type = "string", minLength = 0,
                         },
                         redis_timeout = {
-                            type = "integer", minimum = 1,
-                            default = 1000,
+                            type = "integer", minimum = 1, default = 1000,
                         },
                     },
                     required = {"redis_host"},
+                },
+                {
+                    properties = {
+                        policy = {
+                            enum = {"redis-cluster"},
+                        },
+                        redis_cluster_nodes = {
+                            type = "array",
+                            minItems = 2,
+                            items = {
+                                type = "string", minLength = 2, maxLength = 100
+                            },
+                        },
+                        redis_password = {
+                            type = "string", minLength = 0,
+                        },
+                        redis_timeout = {
+                            type = "integer", minimum = 1, default = 1000,
+                        },
+                    },
+                    required = {"redis_cluster_nodes"},
                 }
             }
         }
@@ -83,7 +107,7 @@ local schema = {
 
 
 local _M = {
-    version = 0.3,
+    version = 0.4,
     priority = 1002,
     name = plugin_name,
     schema = schema,
@@ -117,6 +141,11 @@ local function create_limit_obj(conf)
     if conf.policy == "redis" then
         return limit_redis_new("plugin-" .. plugin_name,
                                conf.count, conf.time_window, conf)
+    end
+
+    if conf.policy == "redis-cluster" then
+        return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
+                                       conf.time_window, conf)
     end
 
     return nil
