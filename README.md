@@ -288,6 +288,10 @@ A wide variety of companies and organizations use APISIX for research, productio
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 
+## Contributor Over Time
+
+![](./doc/images/contributor-over-time.png)
+
 ## Landscape
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
