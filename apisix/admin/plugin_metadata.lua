@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local error   = error
 local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
+local api_router = require("apisix.api_router")
 
 local _M = {
 }
@@ -44,14 +46,25 @@ local function check_conf(plugin_name, conf)
         return nil, {error_msg = "invalid plugin name"}
     end
 
-    local schema = plugin_object.metadata_schema
-    if not schema then
-        return nil, {error_msg = "no metadata schema for plugin " .. plugin_name}
-    end
-
     if not conf then
         return nil, {error_msg = "missing configurations"}
     end
+
+    local schema = plugin_object.metadata_schema or {
+        type = "object",
+        properties = {},
+    }
+    if not schema.properties then
+        schema.properties = {
+            additionalProperties = false,
+        }
+    end
+
+    -- inject interceptors schema to each plugins
+    if schema.properties.interceptors then
+        error("'interceptors' can not be used as the name of metadata schema's field")
+    end
+    schema.properties.interceptors = api_router.interceptors_schema
 
     core.log.info("schema: ", core.json.delay_encode(schema))
     core.log.info("conf  : ", core.json.delay_encode(conf))
