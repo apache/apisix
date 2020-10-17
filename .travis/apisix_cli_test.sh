@@ -78,6 +78,49 @@ fi
 
 echo "passed: change default ssl port"
 
+# check support multiple ports listen in http and https
+
+echo "
+apisix:
+  node_listen:
+    - 9080
+    - 9081
+    - 9082
+  ssl:
+    listen_port:
+      - 9443
+      - 9444
+      - 9445
+" > conf/config.yaml
+
+make init
+
+count_http_ipv4=`grep -c "listen 908." conf/nginx.conf || true`
+if [ $count_http_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv4"
+    exit 1
+fi
+
+count_http_ipv6=`grep -c "listen \[::\]:908." conf/nginx.conf || true`
+if [ $count_http_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv6"
+    exit 1
+fi
+
+count_https_ipv4=`grep -c "listen 944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv4"
+    exit 1
+fi
+
+count_https_ipv6=`grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv6"
+    exit 1
+fi
+
+echo "passed: support multiple ports listen in http and https"
+
 # check default env
 echo "
 nginx_config:

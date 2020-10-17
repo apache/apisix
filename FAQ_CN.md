@@ -220,3 +220,30 @@ curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 ```shell
 apisix reload
 ```
+
+## 如何让 APISIX 在处理 HTTP 或 HTTPS 请求时监听多个端口
+
+默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。如果你想让 APISIX 监听多个端口，你需要修改配置文件中的相关参数，具体步骤如下：
+
+1. 修改`conf/config.yaml`中 HTTP 端口监听的参数`node_listen`，示例：
+
+    ```
+    apisix:
+      node_listen:
+        - 9080
+        - 9081
+        - 9082
+    ```
+
+    处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数``ssl.listen_port``，示例：
+
+    ```
+    apisix:
+      ssl:
+        listen_port:
+          - 9443
+          - 9444
+          - 9445
+    ```
+
+2. 重启 APISIX
