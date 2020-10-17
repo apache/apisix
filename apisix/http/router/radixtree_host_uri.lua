@@ -56,6 +56,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
     local radixtree_route = {
         paths = route.value.uris or route.value.uri,
         methods = route.value.methods,
+        priority = route.value.priority,
         remote_addrs = route.value.remote_addrs
                        or route.value.remote_addr,
         vars = route.value.vars,
