@@ -45,6 +45,11 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 | exp           | integer | optional    | 86400   | [1,...]                                       | token's expire time, in seconds                                                                                                                  |
 | base64_secret | boolean | optional    | false   |                                               | whether secret is base64 encoded                                                                                                                 |
 
+## API
+
+This plugin will add `/apisix/plugin/jwt/sign` to sign.
+You may need to use [interceptors](plugin-interceptors.md) to protect it.
+
 ## How To Enable
 
 1. set a consumer and config the value of the `jwt-auth` option
