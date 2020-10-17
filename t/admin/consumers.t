@@ -322,3 +322,67 @@ GET /t
 {"error_msg":"not supported `POST` method for consumer"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: add consumer with create_time and update_time(pony)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username":"pony",
+                     "desc": "new consumer",
+                     "create_time": 1602883670,
+                     "update_time": 1602893670
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "pony",
+                            "desc": "new consumer",
+                            "create_time": 1602883670,
+                            "update_time": 1602893670
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: delete test consumer(pony)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/pony',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{"action": "delete"}]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
