@@ -14,15 +14,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local redis_new = require("resty.redis").new
+
+local rediscluster = require("resty.rediscluster")
 local core = require("apisix.core")
 local resty_lock = require("resty.lock")
-local assert = assert
 local setmetatable = setmetatable
 local tostring = tostring
+local ipairs = ipairs
 
-
-local _M = {version = 0.3}
+local _M = {}
 
 
 local mt = {
@@ -30,48 +30,56 @@ local mt = {
 }
 
 
-function _M.new(plugin_name, limit, window, conf)
-    assert(limit > 0 and window > 0)
+local function new_redis_cluster(conf)
+    local config = {
+        name = "apisix-redis-cluster",
+        serv_list = {},
+        read_timeout = conf.redis_timeout,
+        auth = conf.redis_password,
+        dict_name = "plugin-limit-count-redis-cluster-slot-lock",
+    }
 
-    local self = {limit = limit, window = window, conf = conf,
-                  plugin_name = plugin_name}
+    for i, conf_item in ipairs(conf.redis_cluster_nodes) do
+        local host, port, err = core.utils.parse_addr(conf_item)
+        if err then
+            return nil, "failed to parse address: " .. conf_item
+                        .. " err: " .. err
+        end
+
+        config.serv_list[i] = {ip = host, port = port}
+    end
+
+    local red_cli, err = rediscluster:new(config)
+    if not red_cli then
+        return nil, "failed to new redis cluster: " .. err
+    end
+
+    return red_cli
+end
+
+
+function _M.new(plugin_name, limit, window, conf)
+    local red_cli, err = new_redis_cluster(conf)
+    if not red_cli then
+        return nil, err
+    end
+
+    local self = {
+        limit = limit, window = window, conf = conf,
+        plugin_name = plugin_name, red_cli =red_cli
+    }
+
     return setmetatable(self, mt)
 end
 
 
 function _M.incoming(self, key)
-    local conf = self.conf
-    local red = redis_new()
-    local timeout = conf.redis_timeout or 1000    -- 1sec
-    core.log.info("ttl key: ", key, " timeout: ", timeout)
-
-    red:set_timeouts(timeout, timeout, timeout)
-
-    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379)
-    if not ok then
-        return false, err
-    end
-
-    local count
-    count, err = red:get_reused_times()
-    if 0 == count then
-        if conf.redis_password and conf.redis_password ~= '' then
-            local ok, err = red:auth(conf.redis_password)
-            if not ok then
-                return nil, err
-            end
-        end
-    elseif err then
-        -- core.log.info(" err: ", err)
-        return nil, err
-    end
-
+    local red = self.red_cli
     local limit = self.limit
     local window = self.window
     local remaining
     key = self.plugin_name .. tostring(key)
 
-    -- todo: test case
     local ret, err = red:ttl(key)
     if not ret then
         return false, "failed to get redis `" .. key .."` ttl: " .. err
@@ -79,7 +87,6 @@ function _M.incoming(self, key)
 
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
     if ret < 0 then
-        -- todo: test case
         local lock, err = resty_lock:new("plugin-limit-count")
         if not lock then
             return false, "failed to create lock: " .. err
@@ -92,21 +99,20 @@ function _M.incoming(self, key)
 
         ret = red:ttl(key)
         if ret < 0 then
-            ok, err = lock:unlock()
+            local ok, err = lock:unlock()
             if not ok then
                 return false, "failed to unlock: " .. err
             end
 
-            limit = limit -1
-            ret, err = red:set(key, limit, "EX", window)
+            ret, err = red:set(key, limit -1, "EX", window)
             if not ret then
                 return nil, err
             end
 
-            return 0, limit
+            return 0, limit -1
         end
 
-        ok, err = lock:unlock()
+        local ok, err = lock:unlock()
         if not ok then
             return false, "failed to unlock: " .. err
         end
@@ -114,11 +120,6 @@ function _M.incoming(self, key)
 
     remaining, err = red:incrby(key, -1)
     if not remaining then
-        return nil, err
-    end
-
-    local ok, err = red:set_keepalive(10000, 100)
-    if not ok then
         return nil, err
     end
 
