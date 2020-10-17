@@ -645,7 +645,7 @@ GET /t
                 [[{
                     "node": {
                         "value": {
-                            "sni": "test.com"
+                            "sni": "test.com",
                             "create_time": 1602883670,
                             "update_time": 1602893670,
                             "validity_start": 1602873670,

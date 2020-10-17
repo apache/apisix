@@ -1335,7 +1335,7 @@ GET /t
                         "type": "roundrobin",
                         "create_time": 1602883670,
                         "update_time": 1602893670
-                    },
+                    }
                 }]],
                 [[{
                     "node": {
@@ -1344,10 +1344,10 @@ GET /t
                                 "nodes": {
                                     "127.0.0.1:8080": 1
                                 },
-                                "type": "roundrobin"
-                            },
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
+                                "type": "roundrobin",
+                                "create_time": 1602883670,
+                                "update_time": 1602893670
+                            }
                         },
                         "key": "/apisix/services/1"
                     },
