@@ -327,6 +327,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             content_by_lua_block {
@@ -340,6 +342,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             alias dashboard/;
@@ -405,6 +409,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             content_by_lua_block {
@@ -418,6 +424,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             alias dashboard/;
@@ -939,6 +947,10 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["enable_reuseport"] = false
     elseif tonumber(sys_conf["worker_processes"]) == nil then
         sys_conf["worker_processes"] = "auto"
+    end
+
+    if sys_conf.allow_admin and #sys_conf.allow_admin == 0 then
+        sys_conf.allow_admin = nil
     end
 
     local dns_resolver = sys_conf["dns_resolver"]
