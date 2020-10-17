@@ -69,7 +69,8 @@ function _M.split_uri(uri)
 end
 
 
-local function dns_parse(resolvers, domain)
+local function dns_parse(domain, resolvers)
+    resolvers = resolvers or _M.resolvers
     local r, err = resolver:new{
         nameservers = table.clone(resolvers),
         retrans = 5,  -- 5 retransmissions on receive timeout
@@ -100,9 +101,14 @@ local function dns_parse(resolvers, domain)
         return nil, "unsupport DNS answer"
     end
 
-    return dns_parse(resolvers, answer.cname)
+    return dns_parse(answer.cname, resolvers)
 end
 _M.dns_parse = dns_parse
+
+
+function _M.set_resolver(resolvers)
+    _M.resolvers = resolvers
+end
 
 
 local function rfind_char(s, ch, idx)
