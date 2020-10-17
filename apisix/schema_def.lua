@@ -287,7 +287,7 @@ local upstream_schema = {
     type = "object",
     properties = {
         create_time = timestamp_def,
-        update_time = timestamp_def,        
+        update_time = timestamp_def,
         nodes = nodes_schema,
         retries = {
             type = "integer",
@@ -513,7 +513,7 @@ _M.service = {
             maxProperties = 16
         },
         create_time = timestamp_def,
-        update_time = timestamp_def        
+        update_time = timestamp_def
     },
     additionalProperties = false,
 }
@@ -537,7 +537,7 @@ _M.consumer = {
             maxProperties = 16
         },
         create_time = timestamp_def,
-        update_time = timestamp_def,        
+        update_time = timestamp_def,
         desc = {type = "string", maxLength = 256}
     },
     required = {"username"},
@@ -606,7 +606,7 @@ _M.ssl = {
         validity_end = timestamp_def,
         validity_start = timestamp_def,
         create_time = timestamp_def,
-        update_time = timestamp_def        
+        update_time = timestamp_def
     },
     oneOf = {
         {required = {"sni", "key", "cert"}},
