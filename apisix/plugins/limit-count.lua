@@ -36,7 +36,7 @@ local schema = {
         key = {
             type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for"},
+                    "http_x_forwarded_for", "consumer_name"},
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 600,
