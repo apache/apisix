@@ -254,8 +254,40 @@ fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
+# set allow_admin in conf/config.yaml
+
+echo "
+apisix:
+    allow_admin:
+        - 127.0.0.9
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow 127.0.0.9" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow 127.0.0.9;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "
+apisix:
+    allow_admin: ~
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow all;" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow all;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "passed: empty allow_admin in conf/config.yaml"
+
 # check the 'client_max_body_size' in 'nginx.conf' .
 
+git checkout conf/config.yaml
 sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
 
 make init
@@ -288,7 +320,6 @@ fi
 
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
-
 
 # log format
 
