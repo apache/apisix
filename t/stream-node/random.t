@@ -32,6 +32,7 @@ __DATA__
 --- config
     location /test {
         content_by_lua_block {
+            ngx.sleep(0.3)
             local log_file = ngx.config.prefix() .. "logs/error.log"
             local file = io.open(log_file, "r")
             local log = file:read("*a")
@@ -62,6 +63,10 @@ __DATA__
                 local pre = random_nums[i - 1]
                 local cur = random_nums[i]
                 ngx.say("random[", i - 1, "] == random[", i, "]: ", pre == cur)
+                if not pre == cur then
+                    ngx.say("random info in log: ", table.concat(random_nums, ", "))
+                    break
+                end
             end
         }
     }

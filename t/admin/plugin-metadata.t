@@ -237,37 +237,7 @@ GET /t
 
 
 
-=== TEST 8: no plugin metadata schema
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/echo',
-                 ngx.HTTP_PUT,
-                 [[{"k": "v"}]],
-                [[{
-                    "node": {
-                        "value": "sdf"
-                    },
-                    "action": "set"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"no metadata schema for plugin echo"}
---- no_error_log
-[error]
-
-
-
-=== TEST 9: verify metadata schema fail
+=== TEST 8: verify metadata schema fail
 --- config
     location /t {
         content_by_lua_block {
@@ -297,5 +267,187 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: set plugin interceptors
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{
+                    "interceptors": [
+                        {
+                            "name": "ip-restriction",
+                            "conf": {
+                                "whitelist": ["192.168.1.0/24"]
+                            }
+                        }
+                    ]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: hit prometheus route
+--- request
+GET /apisix/prometheus/metrics
+-- error_code: 403
+
+
+
+=== TEST 11: set plugin interceptors (allow ip access)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{
+                    "interceptors": [
+                        {
+                            "name": "ip-restriction",
+                            "conf": {
+                                "whitelist": ["127.0.0.1"]
+                            }
+                        }
+                    ]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit prometheus route again
+--- request
+GET /apisix/prometheus/metrics
+-- error_code: 200
+
+
+
+=== TEST 13: invalid interceptors configure (unknown interceptor)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{
+                    "interceptors": [
+                        {
+                            "name": "unknown",
+                            "conf": {
+                                "whitelist": ["127.0.0.1"]
+                            }
+                        }
+                    ]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"name\\" validation failed: matches non of the enum values"\}/
+--- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: invalid interceptors configure (missing conf)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{
+                    "interceptors": [
+                        {
+                            "name": "ip-restriction"
+                        }
+                    ]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"conf\\" is required"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: invalid interceptors configure (invalid interceptor configure)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/prometheus',
+                ngx.HTTP_PUT,
+                [[{
+                    "interceptors": [
+                        {
+                            "name": "ip-restriction",
+                            "conf": {"aa": "b"}
+                        }
+                    ]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: failed to validate dependent schema for \\"name\\": value should match only one schema, but matches none"\}/
 --- no_error_log
 [error]

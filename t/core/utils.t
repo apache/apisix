@@ -68,3 +68,50 @@ qr/random seed \d+\ntwice: false/
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 3: specify resolvers
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local resolvers = {"8.8.8.8"}
+            core.utils.set_resolver(resolvers)
+            local ip_info, err = core.utils.dns_parse("github.com", resolvers)
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+            end
+            ngx.say(core.json.encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/"address":.+,"name":"github.com"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: default resolvers
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("github.com")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+            end
+            core.log.info("ip_info: ", core.json.encode(ip_info))
+            ngx.say("resolvers: ", core.json.encode(core.utils.resolvers))
+        }
+    }
+--- request
+GET /t
+--- response_body
+resolvers: ["8.8.8.8","114.114.114.114"]
+--- error_log eval
+qr/"address":.+,"name":"github.com"/
+--- no_error_log
+[error]

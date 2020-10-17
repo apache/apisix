@@ -70,18 +70,18 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-Requests to `127.0.0.1`:
+Requests from `127.0.0.1`:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+$ curl http://127.0.0.1:9080/index.html -i
 HTTP/1.1 200 OK
 ...
 ```
 
-Requests to `127.0.0.2`:
+Requests from `127.0.0.2`:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -i
+$ curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
 HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
@@ -116,15 +116,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin after restriction change
 
-Requests to `127.0.0.2`:
+Requests from `127.0.0.2`:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html
+$ curl http://127.0.0.2:9080/index.html -i --interface 127.0.0.2
 HTTP/1.1 200 OK
 ...
 ```
 
-Requests to `127.0.0.1`:
+Requests from `127.0.0.1`:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -i
