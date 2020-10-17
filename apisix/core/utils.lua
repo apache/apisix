@@ -204,8 +204,7 @@ end
 
 local function sleep(sec)
     if sec <= max_sleep_interval then
-        ngx_sleep(sec)
-        return
+        return ngx_sleep(sec)
     end
     ngx_sleep(max_sleep_interval)
     if exiting() then
