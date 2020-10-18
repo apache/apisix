@@ -31,9 +31,9 @@
 
 The plugin implements API fuse functionality to help us protect our upstream business services.
 
-**About the breaker timeout logic**
+> About the breaker timeout logic
 
-the code logic automatically **triggers the unhealthy state **incrementation of the number of operations.
+the code logic automatically **triggers the unhealthy state** incrementation of the number of operations.
 
 Whenever the upstream service returns a status code from the `unhealthy.http_statuses` configuration (e.g., 500), up to `unhealthy.failures` (e.g., three times) and considers the upstream service to be in an unhealthy state.
 
@@ -41,7 +41,7 @@ The first time unhealthy status is triggered, **breaken for 2 seconds**.
 
 Then, the request is forwarded to the upstream service again after 2 seconds, and if the `unhealthy.http_statuses` status code is returned, and the count reaches `unhealthy.failures` again, **broken for 4 seconds**.
 
-and so on, 2,4,8,16,32,64,128... ...
+and so on, 2, 4, 8, 16, 32, 64, ..., 256, 300
 
 In an unhealthy state, when a request is forwarded to an upstream service and the status code in the `healthy.http_statuses` configuration is returned (e.g., 200) that `healthy.successes` is reached (e.g., three times), and the upstream service is considered healthy again.
 
@@ -49,8 +49,8 @@ In an unhealthy state, when a request is forwarded to an upstream service and th
 
 | Name          | Type          | Requirement | Default | Valid      | Description                                                                 |
 | ------------- | ------------- | ----------- | ------- | ---------- | --------------------------------------------------------------------------- |
-| unhealthy_response_code           | integer | required |          | [200, ..., 600] | return error code when unhealthy |
-| max_breaker_seconds | integer | optional | 300 | >=60 | Maximum breaker time(seconds) |
+| break_response_code           | integer | required |          | [200, ..., 600] | return error code when unhealthy |
+| max_breaker_sec | integer | optional | 300 | >=60 | Maximum breaker time(seconds) |
 | unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
 | unhealthy.failures      | integer        | optional | 1          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
 | healthy.http_statuses   | array[integer] | optional | {200, 206} | [200, ..., 499] | Status codes when healthy |
@@ -64,28 +64,28 @@ Response 500 or 503 three times in a row to trigger a unhealthy. Response 200 on
 
 ```shell
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-   {
-      "plugins": {
-          "api-breaker": {
-              "unhealthy_response_code": 502,
-              "unhealthy": {
-                  "http_statuses": [500, 503],
-                  "failures": 3
-              },
-              "healthy": {
-                  "http_statuses": [200],
-                  "successes": 1
-              }
-          }
-      },
-      "uri": "/get",
-      "host": "127.0.0.1",
-  }'
+{
+    "plugins": {
+        "api-breaker": {
+            "break_response_code": 502,
+            "unhealthy": {
+                "http_statuses": [500, 503],
+                "failures": 3
+            },
+            "healthy": {
+                "http_statuses": [200],
+                "successes": 1
+            }
+        }
+    },
+    "uri": "/hello",
+    "host": "127.0.0.1",
+}'
 ```
 
 ## Test Plugin
 
-Then. Like the configuration above, if your upstream service returns 500. 3 times in a row. The client will receive a 502 (unhealthy_response_code) response.
+Then. Like the configuration above, if your upstream service returns 500. 3 times in a row. The client will receive a 502 (break_response_code) response.
 
 ```shell
 $ curl -i -X POST "http://127.0.0.1:9080/get"
@@ -97,7 +97,6 @@ Server: APISIX/1.5
 ... ...
 ```
 
-
 ## Disable Plugin
 
 When you want to disable the `api-breader` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
@@ -105,7 +104,7 @@ When you want to disable the `api-breader` plugin, it is very simple, you can de
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/*",
+    "uri": "/hello",
     "upstream": {
         "type": "roundrobin",
         "nodes": {

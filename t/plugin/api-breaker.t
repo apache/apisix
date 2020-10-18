@@ -31,7 +31,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.api-breaker")
             local ok, err = plugin.check_schema({
-                unhealthy_response_code = 502,
+                break_response_code = 502,
                 unhealthy = {
                     http_statuses = {500},
                     failures = 1,
@@ -57,37 +57,88 @@ done
 
 
 
-=== TEST 2: default http_statuses
+=== TEST 2: default configuration
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.api-breaker")
-            local ok, err = plugin.check_schema({
-                unhealthy_response_code = 502,
-                unhealthy = {
-                    failures = 1,
-                },
-                healthy = {
-                    successes = 1,
-                },
-            })
+            local conf = {
+                break_response_code = 502
+            }
+
+            local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
             end
 
-            ngx.say("done")
+            ngx.say(require("lib.json_sort").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body
-done
+{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 --- no_error_log
 [error]
 
 
 
-=== TEST 3: add plugin
+=== TEST 3: default `healthy`
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.api-breaker")
+            local conf = {
+                break_response_code = 502,
+                healthy = {}
+            }
+
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(require("lib.json_sort").encode(conf))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: default `unhealthy`
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.api-breaker")
+            local conf = {
+                break_response_code = 502,
+                unhealthy = {}
+            }
+
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(require("lib.json_sort").encode(conf))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+--- no_error_log
+[error]
+--- LAST
+
+
+
+=== TEST 5: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -97,7 +148,7 @@ done
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "unhealthy_response_code": 502,
+                            "break_response_code": 502,
                             "unhealthy": {
                                 "http_statuses": [500, 503],
                                 "failures": 3
@@ -133,7 +184,7 @@ passed
 
 
 
-=== TEST 4: bad unhealthy_response_code
+=== TEST 6: bad break_response_code
 --- config
     location /t {
         content_by_lua_block {
@@ -143,7 +194,7 @@ passed
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "unhealthy_response_code": 199,
+                            "break_response_code": 199,
                             "unhealthy": {
                                 "http_statuses": [500, 503],
                                 "failures": 3
@@ -178,7 +229,7 @@ GET /t
 
 
 
-=== TEST 5: bad max_breaker_seconds
+=== TEST 7: bad max_breaker_sec
 --- config
     location /t {
         content_by_lua_block {
@@ -188,16 +239,8 @@ GET /t
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "unhealthy_response_code": 200,
-                            "max_breaker_seconds": -1,
-                            "unhealthy": {
-                                "http_statuses": [500, 503],
-                                "failures": 3
-                            },
-                            "healthy": {
-                                "http_statuses": [200, 206],
-                                "successes": 3
-                            }
+                            "break_response_code": 200,
+                            "max_breaker_sec": -1
                         }
                     },
                     "upstream": {
@@ -224,7 +267,7 @@ GET /t
 
 
 
-=== TEST 6: bad unhealthy.http_statuses
+=== TEST 8: bad unhealthy.http_statuses
 --- config
     location /t {
         content_by_lua_block {
@@ -234,8 +277,8 @@ GET /t
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "unhealthy_response_code": 200,
-                            "max_breaker_seconds": 40,
+                            "break_response_code": 200,
+                            "max_breaker_sec": 40,
                             "unhealthy": {
                                 "http_statuses": [500, 603],
                                 "failures": 3
@@ -270,7 +313,7 @@ GET /t
 
 
 
-=== TEST 7: dup http_statuses
+=== TEST 9: dup http_statuses
 --- config
     location /t {
         content_by_lua_block {
@@ -280,8 +323,8 @@ GET /t
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "unhealthy_response_code": 200,
-                            "max_breaker_seconds": -1,
+                            "break_response_code": 200,
+                            "max_breaker_sec": -1,
                             "unhealthy": {
                                 "http_statuses": [500, 503],
                                 "failures": 3
@@ -316,7 +359,7 @@ GET /t
 
 
 
-=== TEST 8: trigger breaker
+=== TEST 10: trigger breaker
 --- request eval
 ["GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=503", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
@@ -326,7 +369,7 @@ GET /t
 
 
 
-=== TEST 9: trigger reset status
+=== TEST 11: trigger reset status
 --- request eval
 ["GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
@@ -336,7 +379,7 @@ GET /t
 
 
 
-=== TEST 10: trigger del healthy numeration
+=== TEST 12: trigger del healthy numeration
 --- request eval
 ["GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
 --- error_code eval
@@ -346,7 +389,7 @@ GET /t
 
 
 
-=== TEST 11: add plugin with default config value
+=== TEST 13: add plugin with default config value
 --- config
     location /t {
         content_by_lua_block {
@@ -356,7 +399,7 @@ GET /t
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "unhealthy_response_code": 502,
+                            "break_response_code": 502,
                             "unhealthy": {
                                 "failures": 3
                             },
@@ -390,7 +433,7 @@ passed
 
 
 
-=== TEST 12: default value
+=== TEST 14: default value
 --- request
 GET /api_breaker?code=500
 --- error_code: 500
@@ -399,7 +442,7 @@ GET /api_breaker?code=500
 
 
 
-=== TEST 13: trigger default value of unhealthy.http_statuses breaker
+=== TEST 15: trigger default value of unhealthy.http_statuses breaker
 --- request eval
 [
     "GET /api_breaker?code=200", "GET /api_breaker?code=500",
@@ -413,7 +456,7 @@ GET /api_breaker?code=500
 
 
 
-=== TEST 14: unhealthy -> timeout -> normal
+=== TEST 16: unhealthy -> timeout -> normal
 --- config
     location /sleep1 {
         proxy_pass "http://127.0.0.1:1980/sleep1";
@@ -445,7 +488,7 @@ GET /api_breaker?code=500
 
 
 
-=== TEST 15: unhealthy -> timeout -> unhealthy
+=== TEST 17: unhealthy -> timeout -> unhealthy
 --- config
 location /sleep1 {
     proxy_pass "http://127.0.0.1:1980/sleep1";
@@ -471,7 +514,7 @@ location /sleep1 {
 
 
 
-=== TEST 16: enable plugin, unhealthy.failures=1
+=== TEST 18: enable plugin, unhealthy.failures=1
 --- config
     location /t {
         content_by_lua_block {
@@ -481,8 +524,8 @@ location /sleep1 {
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "unhealthy_response_code": 502,
-                            "max_breaker_seconds": 10,
+                            "break_response_code": 502,
+                            "max_breaker_sec": 10,
                             "unhealthy": {
                                 "http_statuses": [500, 503],
                                 "failures": 1
@@ -517,7 +560,7 @@ passed
 
 
 
-=== TEST 17: hit route 20 times
+=== TEST 19: hit route 20 times
 --- config
     location /t {
         content_by_lua_block {

@@ -31,12 +31,12 @@ end
 local schema = {
     type = "object",
     properties = {
-        unhealthy_response_code = {
+        break_response_code = {
             type = "integer",
             minimum = 200,
             maximum = 599,
         },
-        max_breaker_seconds = {
+        max_breaker_sec = {
             type = "integer",
             minimum = 3,
             default = 300,
@@ -60,7 +60,8 @@ local schema = {
                     minimum = 1,
                     default = 3,
                 }
-            }
+            },
+            default = {http_statuses = {500}, failures = 3}
         },
         healthy = {
             type = "object",
@@ -74,17 +75,18 @@ local schema = {
                         maximum = 499,
                     },
                     uniqueItems = true,
-                    default = {200, 206}
+                    default = {200}
                 },
                 successes = {
                     type = "integer",
                     minimum = 1,
                     default = 3,
                 }
-            }
+            },
+            default = {http_statuses = {200}, successes = 3}
         }
     },
-    required = {"unhealthy_response_code", "unhealthy", "healthy"},
+    required = {"break_response_code"},
 }
 
 
@@ -162,14 +164,14 @@ function _M.access(conf, ctx)
 
     -- cannot exceed the maximum value of the user configuration
     local breaker_time = 2 ^ failure_times
-    if breaker_time > conf.max_breaker_seconds then
-        breaker_time = conf.max_breaker_seconds
+    if breaker_time > conf.max_breaker_sec then
+        breaker_time = conf.max_breaker_sec
     end
     core.log.info("breaker_time: ", breaker_time)
 
     -- breaker
     if unhealthy_lastime + breaker_time >= ngx.time() then
-        return conf.unhealthy_response_code
+        return conf.break_response_code
     end
 
     return
@@ -201,7 +203,7 @@ function _M.log(conf, ctx)
         -- and if so, the timestamp for entering the unhealthy state.
         if unhealthy_count % conf.unhealthy.failures == 0 then
             shared_buffer:set(gen_unhealthy_lastime_key(ctx), ngx.time(),
-                              conf.max_breaker_seconds)
+                              conf.max_breaker_sec)
             core.log.info("update unhealthy_key: ", unhealthy_key, " to ",
                           unhealthy_count)
         end
