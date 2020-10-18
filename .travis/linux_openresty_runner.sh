@@ -177,6 +177,7 @@ script() {
 after_success() {
     # cat luacov.stats.out
     # luacov-coveralls
+    echo "done"
 }
 
 case_opt=$1
