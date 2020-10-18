@@ -401,7 +401,11 @@ GET /api_breaker?code=500
 
 === TEST 13: trigger default value of unhealthy.http_statuses breaker
 --- request eval
-["GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=503", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
+[
+    "GET /api_breaker?code=200", "GET /api_breaker?code=500",
+    "GET /api_breaker?code=503", "GET /api_breaker?code=500",
+    "GET /api_breaker?code=500", "GET /api_breaker?code=500"
+]
 --- error_code eval
 [200, 500, 503, 500, 500, 502]
 --- no_error_log
@@ -409,70 +413,65 @@ GET /api_breaker?code=500
 
 
 
-=== TEST 14: trigger timeout 2 second
+=== TEST 14: unhealthy -> timeout -> normal
 --- config
     location /sleep1 {
         proxy_pass "http://127.0.0.1:1980/sleep1";
     }
 --- request eval
-["GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /sleep1", "GET /sleep1", "GET /sleep1", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=200","GET /api_breaker?code=200"]
+[
+    "GET /api_breaker?code=500",
+    "GET /api_breaker?code=500",
+    "GET /api_breaker?code=500",
+    "GET /api_breaker?code=200",
+
+    "GET /sleep1",
+    "GET /sleep1",
+    "GET /sleep1",
+
+    "GET /api_breaker?code=200",
+    "GET /api_breaker?code=200",
+    "GET /api_breaker?code=200",
+    "GET /api_breaker?code=200",
+    "GET /api_breaker?code=200"]
 --- error_code eval
-[500, 500, 500, 502, 200, 200, 200, 200, 200, 200, 200,200]
+[
+    500, 500, 500, 502,
+    200, 200, 200,
+    200, 200, 200, 200,200
+]
 --- no_error_log
 [error]
 
 
 
-=== TEST 15: trigger timeout again 4 second
+=== TEST 15: unhealthy -> timeout -> unhealthy
 --- config
-    location /sleep1 {
-        proxy_pass "http://127.0.0.1:1980/sleep1";
-    }
+location /sleep1 {
+    proxy_pass "http://127.0.0.1:1980/sleep1";
+}
 --- request eval
-["GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /sleep1", "GET /sleep1", "GET /sleep1", "GET /api_breaker?code=500","GET /api_breaker?code=500","GET /api_breaker?code=500","GET /api_breaker?code=500"]
+[
+    "GET /api_breaker?code=500", "GET /api_breaker?code=500",
+    "GET /api_breaker?code=500", "GET /api_breaker?code=200",
+
+    "GET /sleep1", "GET /sleep1", "GET /sleep1",
+
+    "GET /api_breaker?code=500","GET /api_breaker?code=500",
+    "GET /api_breaker?code=500","GET /api_breaker?code=500"
+    ]
 --- error_code eval
-[500, 500, 500, 502, 200, 200, 200, 500,502,502,502]
+[
+    500, 500, 500, 502,
+    200, 200, 200,
+    500,502,502,502
+]
 --- no_error_log
 [error]
 
 
 
-=== TEST 16: del plugin
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/api_breaker"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 17: add plugin with default config value
+=== TEST 16: enable plugin, unhealthy.failures=1
 --- config
     location /t {
         content_by_lua_block {
@@ -501,7 +500,7 @@ passed
                     },
                     "uri": "/api_breaker"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -518,7 +517,7 @@ passed
 
 
 
-=== TEST 18: add plugin, max_breaker_seconds = 17
+=== TEST 17: hit route 20 times
 --- config
     location /t {
         content_by_lua_block {
