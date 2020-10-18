@@ -175,8 +175,8 @@ script() {
 }
 
 after_success() {
-    cat luacov.stats.out
-    luacov-coveralls
+    # cat luacov.stats.out
+    # luacov-coveralls
 }
 
 case_opt=$1
