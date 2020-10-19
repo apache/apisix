@@ -33,6 +33,8 @@ echo 可以帮助用户尽可能全面地了解如何开发APISIX插件。
 
 该插件展示了如何在常见的 phase 中实现相应的功能，常见的 phase 包括：init, rewrite, access, balancer, header filer, body filter 以及 log。
 
+**注意：该插件仅用作示例，并没有处理一些特别的场景。请勿将之用于生产环境上！**
+
 ## 属性
 
 | 名称        | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                     |
