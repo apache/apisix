@@ -21,13 +21,21 @@ local io           = io
 
 local schema = {
     type = "object",
-    properties = {
-        body_schema = {type = "object"},
-        header_schema = {type = "object"}
-    },
     anyOf = {
-        {required = {"body_schema"}},
-        {required = {"header_schema"}}
+        {
+            title = "Body schema",
+            properties = {
+                body_schema = {type = "object"}
+            },
+            required = {"body_schema"}
+        },
+        {
+            title = "Header schema",
+            properties = {
+                header_schema = {type = "object"}
+            },
+            required = {"header_schema"}
+        }
     }
 }
 
