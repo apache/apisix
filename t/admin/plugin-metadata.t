@@ -309,7 +309,7 @@ passed
 === TEST 10: hit prometheus route
 --- request
 GET /apisix/prometheus/metrics
--- error_code: 403
+--- error_code: 403
 
 
 
@@ -350,7 +350,7 @@ passed
 === TEST 12: hit prometheus route again
 --- request
 GET /apisix/prometheus/metrics
--- error_code: 200
+--- error_code: 200
 
 
 
