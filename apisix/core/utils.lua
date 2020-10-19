@@ -52,16 +52,17 @@ function _M.get_seed_from_urandom()
         return nil, 'failed to open /dev/urandom: ' .. err
     end
 
-    local str = frandom:read(4)
+    local str = frandom:read(8)
     frandom:close()
     if not str then
         return nil, 'failed to read data from /dev/urandom'
     end
 
     local seed = 0
-    for i = 1, 4 do
+    for i = 1, 8 do
         seed = 256 * seed + str:byte(i)
     end
+
     return seed
 end
 
