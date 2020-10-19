@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local log = require("apisix.core.log")
+local utils = require("apisix.core.utils")
 local local_conf, err = require("apisix.core.config_local").local_conf()
 if not local_conf then
     error("failed to parse yaml config: " .. err)
@@ -26,10 +27,12 @@ log.info("use config_center: ", config_center)
 local config = require("apisix.core.config_" .. config_center)
 config.type = config_center
 
+
 return {
     version  = require("apisix.core.version"),
     log      = log,
     config   = config,
+    sleep    = utils.sleep,
     json     = require("apisix.core.json"),
     table    = require("apisix.core.table"),
     request  = require("apisix.core.request"),
@@ -40,7 +43,7 @@ return {
     ctx      = require("apisix.core.ctx"),
     timer    = require("apisix.core.timer"),
     id       = require("apisix.core.id"),
-    utils    = require("apisix.core.utils"),
+    utils    = utils,
     etcd     = require("apisix.core.etcd"),
     http     = require("apisix.core.http"),
     tablepool= require("tablepool"),
