@@ -17,10 +17,9 @@
 -- limitations under the License.
 --
 
-local util = require "apisix.cmd.util"
-local ops  = require "apisix.cmd.ops"
-local etcd = require "apisix.cmd.etcd"
-local ver  = require "apisix.core.version"
+local ops  = require("apisix.cli.ops")
+local etcd = require("apisix.cli.etcd")
+local ver  = require("apisix.core.version")
 
 local print = print
 

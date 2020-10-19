@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-local util = require "apisix.cmd.util"
+local util = require("apisix.cli.util")
 
 local execute_cmd   = util.execute_cmd
 local trim          = util.trim
@@ -24,8 +24,8 @@ local error         = error
 local str_match     = string.match
 local pkg_cpath_org = package.cpath
 local pkg_path_org  = package.path
-local apisix_home   = "/usr/local/apisix"
 
+local apisix_home   = "/usr/local/apisix"
 local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                   .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
 local pkg_path  = apisix_home .. "/deps/share/lua/5.1/?.lua;;"

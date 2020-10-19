@@ -15,10 +15,10 @@
 -- limitations under the License.
 --
 
-local dkjson = require "dkjson"
-local file = require "apisix.cmd.file"
-local util = require "apisix.cmd.util"
-local env = require "apisix.cmd.env"
+local dkjson = require("dkjson")
+local file = require("apisix.cli.file")
+local util = require("apisix.cli.util")
+local env = require("apisix.cli.env")
 
 local base64_encode = require("base64").encode
 
@@ -119,9 +119,9 @@ function _M.init(show_output)
     local host_count = #(yaml_conf.etcd.host)
     local uri
 
-    for index, host in ipairs(yaml_conf.etcd.host) do
+    for _, host in ipairs(etcd_conf.host) do
         -- check the etcd cluster version
-        uri = etcd_conf.host[1] .. "/version"
+        uri = host .. "/version"
         local cmd = str_format("curl -s -m %d %s", timeout * 2, uri)
         local res = util.execute_cmd(cmd)
         local errmsg = str_format("got malformed version message: \"%s\" from etcd\n",
@@ -147,7 +147,7 @@ function _M.init(show_output)
 
 
     local etcd_ok = false
-    for index, host in ipairs(yaml_conf.etcd.host) do
+    for index, host in ipairs(etcd_conf.host) do
         local is_success = true
 
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",

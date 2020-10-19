@@ -15,15 +15,16 @@
 -- limitations under the License.
 --
 
-local yaml = require "tinyyaml"
-local env = require "apisix.cmd.env"
-local profile = require "apisix.core.profile"
+local yaml = require("tinyyaml")
+local env = require("apisix.cli.env")
+local profile = require("apisix.core.profile")
 
 local pairs = pairs
 local type = type
 local open = io.open
 local str_find = string.find
 local str_gmatch = string.gmatch
+
 local _M = {}
 
 
@@ -69,7 +70,11 @@ function _M.write_file(file_path, data)
         return false, "failed to open file: " .. file_path .. ", error info:" .. err
     end
 
-    file:write(data)
+    local _, err = file:write(data)
+    if err ~= nil then
+        return false, "failed to write file: " .. file_path .. ", error info:" .. err
+    end
+
     file:close()
 
     return true
@@ -82,7 +87,11 @@ function _M.read_file(file_path)
         return false, "failed to open file: " .. file_path .. ", error info:" .. err
     end
 
-    local data = file:read("*all")
+    local data, err = file:read("*all")
+    if err ~= nil then
+        return false, "failed to read file: " .. file_path .. ", error info:" .. err
+    end
+
     file:close()
     return data
 end

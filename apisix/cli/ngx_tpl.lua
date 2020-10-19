@@ -122,6 +122,7 @@ http {
     lua_shared_dict balancer_ewma        10m;
     lua_shared_dict balancer_ewma_locks  10m;
     lua_shared_dict balancer_ewma_last_touched_at 10m;
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m; # plugin: skywalking
     lua_shared_dict plugin-api-breaker 10m;
 
@@ -260,6 +261,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             content_by_lua_block {
@@ -273,6 +276,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             alias dashboard/;
@@ -287,9 +292,13 @@ http {
     {% end %}
 
     server {
-        listen {* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, port in ipairs(node_listen) do %}
+        listen {* port *} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
         {% if ssl.enable then %}
-        listen {* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, port in ipairs(ssl.listen_port) do %}
+        listen {* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
         {% end %}
 
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
@@ -300,9 +309,13 @@ http {
         {% end %}
 
         {% if enable_ipv6 then %}
-        listen [::]:{* node_listen *} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, port in ipairs(node_listen) do %}
+        listen [::]:{* port *} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
         {% if ssl.enable then %}
-        listen [::]:{* ssl.listen_port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% for _, port in ipairs(ssl.listen_port) do %}
+        listen [::]:{* port *} ssl {% if ssl.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
@@ -335,6 +348,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             content_by_lua_block {
@@ -348,6 +363,8 @@ http {
                 allow {*allow_ip*};
                 {% end %}
                 deny all;
+            {%else%}
+                allow all;
             {%end%}
 
             alias dashboard/;

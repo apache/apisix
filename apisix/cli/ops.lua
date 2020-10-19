@@ -15,12 +15,12 @@
 -- limitations under the License.
 --
 
-local env = require "apisix.cmd.env"
-local etcd = require "apisix.cmd.etcd"
-local file = require "apisix.cmd.file"
-local util = require "apisix.cmd.util"
-local ngx_tpl = require "apisix.cmd.ngx_tpl"
-local template = require "resty.template"
+local env = require("apisix.cli.env")
+local etcd = require("apisix.cli.etcd")
+local file = require("apisix.cli.file")
+local util = require("apisix.cli.util")
+local ngx_tpl = require("apisix.cli.ngx_tpl")
+local template = require("resty.template")
 
 local type = type
 local pairs = pairs
@@ -31,10 +31,13 @@ local tostring = tostring
 local str_find = string.find
 local str_sub = string.sub
 local max = math.max
+local floor = math.floor
 local popen = io.popen
 local execute = os.execute
+local getenv = os.getenv
 local error = error
 local stderr = io.stderr
+
 local openresty_args = [[openresty  -p ]] .. env.apisix_home .. [[ -c ]]
                        .. env.apisix_home .. [[/conf/nginx.conf]]
 
@@ -44,14 +47,14 @@ local _M = {}
 local function get_openresty_version()
     local str = "nginx version: openresty/"
     local ret = util.execute_cmd("openresty -v 2>&1")
-    local pos = str_find(ret, str)
+    local pos = str_find(ret, str, 1, true)
     if pos then
         return str_sub(ret, pos + #str)
     end
 
     str = "nginx version: nginx/"
     ret = util.execute_cmd("openresty -v 2>&1")
-    pos = str_find(ret, str)
+    pos = str_find(ret, str, 1, true)
     if pos then
         return str_sub(ret, pos + #str)
     end
@@ -133,7 +136,7 @@ Please modify "admin_key" in conf/config.yaml .
 
             if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
                 local msg = help:format([[WARNING: using fixed Admin API token has security risk.]])
-                return util.die(msg, "\n")
+                stderr:write(msg, "\n")
             end
         end
     end
@@ -156,6 +159,17 @@ Please modify "admin_key" in conf/config.yaml .
 
     if enabled_plugins["proxy-cache"] and not yaml_conf.apisix.proxy_cache then
         error("missing apisix.proxy_cache for plugin proxy-cache")
+    end
+
+    --support multiple ports listen, compatible with the original style
+    if type(yaml_conf.apisix.node_listen) == "number" then
+        local node_listen = {yaml_conf.apisix.node_listen}
+        yaml_conf.apisix.node_listen = node_listen
+    end
+
+    if type(yaml_conf.apisix.ssl.listen_port) == "number" then
+        local listen_port = {yaml_conf.apisix.ssl.listen_port}
+        yaml_conf.apisix.ssl.listen_port = listen_port
     end
 
     if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
@@ -213,6 +227,10 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["worker_processes"] = "auto"
     end
 
+    if sys_conf.allow_admin and #sys_conf.allow_admin == 0 then
+        sys_conf.allow_admin = nil
+    end
+
     local dns_resolver = sys_conf["dns_resolver"]
     if not dns_resolver or #dns_resolver == 0 then
         local dns_addrs, err = util.local_dns_resolver("/etc/resolv.conf")
@@ -227,9 +245,13 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["dns_resolver"] = dns_addrs
     end
 
+<<<<<<< HEAD
     local env_worker_processes = os.getenv("APISIX_WORKER_PROCESSES")
+=======
+    local env_worker_processes = getenv("APIX_WORKER_PROCESSES")
+>>>>>>> change: tweaked code according to the code review comments
     if env_worker_processes then
-        sys_conf["worker_processes"] = math.floor(tonumber(env_worker_processes))
+        sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
     end
 
     local conf_render = template.compile(ngx_tpl)
@@ -254,6 +276,9 @@ end
 
 
 function _M.start(...)
+    local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
+    execute(cmd_logs)
+
     -- check running
     local pid = file.read_file(env.pid_path)
     if pid then

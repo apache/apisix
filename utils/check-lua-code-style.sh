@@ -19,7 +19,7 @@
 
 set -ex
 
-luacheck -q apisix t/lib
+luacheck -q apisix t/lib bin/apisix
 
 find apisix -name '*.lua' -exec ./utils/lj-releng {} + > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
