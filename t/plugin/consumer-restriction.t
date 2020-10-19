@@ -30,8 +30,9 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.consumer-restriction")
-            local conf = {
-                whitelist = {
+            local conf = {                
+		title = "whitelist",
+		whitelist = {
                     "jack1",
                     "jack2"
                 }
@@ -47,7 +48,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-{"rejected_code":403,"type":"consumer_name","whitelist":["jack1","jack2"]}
+{"type":"consumer_name","title":"whitelist","rejected_code":403,"whitelist":["jack1","jack2"]}
 --- no_error_log
 [error]
 
