@@ -290,7 +290,7 @@ Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) pa
 
 ## Contributor Over Time
 
-![](./doc/images/contributor-over-time.png)
+![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## Landscape
 <p align="left">

@@ -294,7 +294,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 ## 贡献者变化
 
-![](./doc/images/contributor-over-time.png)
+![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## 全景图
 <p align="left">
