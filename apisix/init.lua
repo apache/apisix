@@ -776,6 +776,12 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 1000000))
 
+    local we = require("resty.worker.events")
+    local ok, err = we.configure({shm = "worker-events-stream", interval = 0.1})
+    if not ok then
+        error("failed to init worker event: " .. err)
+    end
+
     router.stream_init_worker()
     plugin.init_worker()
 

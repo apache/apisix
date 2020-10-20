@@ -24,7 +24,10 @@ local tostring    = tostring
 local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
-
+local healthcheck_shm_name = "upstream-healthcheck"
+if ngx.config.subsystem == "stream" then
+    healthcheck_shm_name = healthcheck_shm_name .. "-" .. ngx.config.subsystem
+end
 
 local module_name = "balancer"
 local pickers = {
@@ -89,7 +92,7 @@ local function create_checker(upstream, healthcheck_parent)
     end
     local checker = healthcheck.new({
         name = "upstream#" .. healthcheck_parent.key,
-        shm_name = "upstream-healthcheck",
+        shm_name = healthcheck_shm_name,
         checks = upstream.checks,
     })
 
