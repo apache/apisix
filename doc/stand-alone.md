@@ -25,7 +25,7 @@ Turning on the APISIX node in Stand-alone mode will no longer use the default et
 
 This method is more suitable for two types of users:
 1. kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
-2. Different configuration centers: There are many implementations of the configuration center, such as Consule, etc., using the full yaml file for intermediate conversion.
+2. Different configuration centers: There are many implementations of the configuration center, such as Consul, etc., using the full yaml file for intermediate conversion.
 
 The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. And every time interval (default 1 second), will try to detect whether the file content is updated, if there is an update, reload the rule.
 
