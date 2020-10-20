@@ -95,7 +95,11 @@ function _M.init()
             "Etcd modify index for APISIX keys",
             {"key"})
 
-    -- per service and consumer
+    -- per service
+
+    -- The consumer label indicates the name of consumer corresponds to the
+    -- request to the route/service, it will be an empty string if there is
+    -- no consumer in request.
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
             {"code", "route", "service", "consumer", "node"})
