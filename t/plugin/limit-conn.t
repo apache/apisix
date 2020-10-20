@@ -428,7 +428,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be sctrictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -511,7 +511,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be sctrictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -954,5 +954,35 @@ GET /test_concurrency
 200
 200
 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: invalid schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.limit-conn")
+            local cases = {
+                {conn = 0, burst = 0, default_conn_delay = 0.1, rejected_code = 503, key = 'remote_addr'},
+                {conn = 1, burst = 0, default_conn_delay = 0, rejected_code = 503, key = 'remote_addr'},
+            }
+            for _, c in ipairs(cases) do
+                local ok, err = plugin.check_schema(c)
+                if not ok then
+                    ngx.say(err)
+                end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "conn" validation failed: expected 0 to be sctrictly greater than 0
+property "default_conn_delay" validation failed: expected 0 to be sctrictly greater than 0
+done
 --- no_error_log
 [error]
