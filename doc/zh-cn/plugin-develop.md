@@ -54,7 +54,7 @@
 
 ## 插件命名与配置
 
-给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
+给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config-default.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
 需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/key-auth.lua__ 文件中可以看到：
 
 ```lua
@@ -71,7 +71,7 @@
 
 注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。另外，优先级( priority )值大的插件，会优先执行，比如 `basic-auth` 的优先级是 2520 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `basic-auth` 插件。
 
-在 __conf/config.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
+在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
 ```yaml
 plugins:                          # plugin list
@@ -133,11 +133,37 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 
 注：项目已经提供了 __core.schema.check__ 公共方法，直接使用即可完成配置参数校验。
 
+另外，如果插件需要使用一些元数据，可以定义插件的 `metadata_schema` ，然后就可以通过 `admin api` 动态的管理这些元数据了。如：
+
+```lua
+local metadata_schema = {
+    type = "object",
+    properties = {
+        ikey = {type = "number", minimum = 0},
+        skey = {type = "string"},
+    },
+    required = {"ikey", "skey"},
+    additionalProperties = false,
+}
+
+local plugin_name = "example-plugin"
+
+local _M = {
+    version = 0.1,
+    priority = 0,        -- TODO: add a type field, may be a good idea
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
+
 ## 确定执行阶段
 
 根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，只要在请求进来之后业务响应之前完成认证即可。
 该插件在 rewrite 、access 阶段执行都可以，项目中是用 rewrite 阶段执行认证逻辑，一般 IP 准入、接口权限是在 access 阶段
 完成的。
+
+**注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。**
 
 ## 编写执行逻辑
 

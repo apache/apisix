@@ -28,7 +28,7 @@ local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
 local setmetatable = setmetatable
-local ngx_sleep    = ngx.sleep
+local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
 local sub_str      = string.sub
@@ -316,7 +316,9 @@ end
 
 
 function _M.init_worker()
-    if process.type() ~= "worker" and process.type() ~= "single" then
+    if process.type() ~= "worker"
+      and process.type() ~= "single"
+      and process.type() ~= "privileged agent" then
         return
     end
 

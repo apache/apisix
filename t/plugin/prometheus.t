@@ -773,3 +773,39 @@ GET /apisix/prometheus/metrics
 qr/apisix_etcd_modify_indexes\{key="x_etcd_index"\} \d+/
 --- no_error_log
 [error]
+
+
+
+=== TEST 43: fetch the prometheus metric data -- hostname
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_node_info\{hostname=".*"\} 1/
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: don't try to provide etcd metrics when you don't use it
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_/
+--- response_body_unlike eval
+qr/etcd/
+--- no_error_log
+[error]

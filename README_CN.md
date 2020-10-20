@@ -17,15 +17,18 @@
 #
 -->
 
-[English](README.md)
+- [English](README.md)
+
 ## APISIX
 
-[![Build Status](https://travis-ci.org/apache/incubator-apisix.svg?branch=master)](https://travis-ci.org/apache/incubator-apisix)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/incubator-apisix/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
+- **QQ 交流群**: 578997126(推荐), 552030619
+- 加入 [Apache Slack](http://s.apache.org/slack-invite) 的 `apisix` 频道。 如果前面的链接失效，请在这里获取最新的邀请地址 [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
+- [bilibili B站 视频](https://space.bilibili.com/551921247)
 
 ## Apache APISIX 是什么？
 Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 网络库和 etcd 实现，
@@ -66,7 +69,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [Serverless](doc/zh-cn/plugins/serverless.md): 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
     - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
     - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
-    - [健康检查](doc/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
+    - [健康检查](doc/zh-cn/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
     - 熔断器: 智能跟踪不健康上游服务。
     - [代理镜像](doc/zh-cn/plugins/proxy-mirror.md): 提供镜像客户端请求的能力。
 
@@ -83,17 +86,19 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **安全防护**
     - 多种身份认证方式: [key-auth](doc/zh-cn/plugins/key-auth.md), [JWT](doc/zh-cn/plugins/jwt-auth.md), [basic-auth](doc/zh-cn/plugins/basic-auth.md), [wolf-rbac](doc/zh-cn/plugins/wolf-rbac.md)。
     - [IP 黑白名单](doc/zh-cn/plugins/ip-restriction.md)
-    - [IdP 支持](doc/plugins/oauth.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
+    - [Referer 白名单](doc/zh-cn/plugins/referer-restriction.md)
+    - [IdP 支持](doc/plugins/openid-connect.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
     - [限制速率](doc/zh-cn/plugins/limit-req.md)
     - [限制请求数](doc/zh-cn/plugins/limit-count.md)
     - [限制并发](doc/zh-cn/plugins/limit-conn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
     - [CORS](doc/zh-cn/plugins/cors.md)：为你的API启用 CORS。
-    - [uri-blocker](doc/zh-cn/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
+    - [URI拦截器](doc/zh-cn/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
+    - [请求验证器](doc/zh-cn/plugins/request-validation.md)。
 
 - **运维友好**
     - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
-    - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/incubator-apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](doc/zh-cn/discovery.md)。
+    - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](doc/zh-cn/discovery.md)。
     - 监控和指标: [Prometheus](doc/zh-cn/plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
@@ -123,19 +128,19 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
     - 下载最新的源码发布包：
         ```shell
-        wget http://www.apache.org/dist/incubator/apisix/1.4/apache-apisix-1.4-incubating-src.tar.gz
-        tar zxvf apache-apisix-1.4-incubating-src.tar.gz
+        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
+        tar zxvf apache-apisix-1.5-src.tar.gz
         ```
     - 安装运行时依赖的 Lua 库：
         ```shell
-        cd apache-apisix-1.4-incubating
+        cd apache-apisix-1.5
         make deps
         ```
     - 检查 APISIX 的版本号：
         ```shell
         ./bin/apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         ./bin/apisix start
         ```
@@ -147,28 +152,24 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     docker pull apache/apisix
     ```
 
-    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/incubator-apisix-docker/tree/master/example)来启动一个测试集群。
+    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/apisix-docker/tree/master/example)来启动一个测试集群。
 
 3. RPM 包（只适用于 CentOS 7）
     - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
     - 安装 APISIX：
     ```shell
-    sudo yum install -y https://github.com/apache/incubator-apisix/releases/download/1.4/apisix-1.4-0.el7.noarch.rpm
+    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
     ```
     - 检查 APISIX 的版本号：
         ```shell
         apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         apisix start
         ```
 
-**注意**：Apache APISIX 现在还不支持 etcd 的 v3 协议，所以启动 etcd 时需要开启 v2 协议的支持。
-我们正在做 etcd v3 协议的支持。
-```shell
-etcd --enable-v2=true &
-```
+**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，并且 etcd 最低支持版本为 v3.4.0，如果有需要请进行升级。如果需要将数据迁移至 etcd v3，请按照 [etcd 迁移指南](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/) 进行迁移。
 
 ## 针对开发者
 
@@ -176,15 +177,15 @@ etcd --enable-v2=true &
 
     - 源码编译
     ```shell
-    git clone git@github.com:apache/incubator-apisix.git
-    cd incubator-apisix
+    git clone git@github.com:apache/apisix.git
+    cd apisix
     make deps
     ```
 
    - Docker 镜像
     ```shell
-    git clone https://github.com/apache/incubator-apisix-docker.git
-    cd incubator-apisix-docker
+    git clone https://github.com/apache/apisix-docker.git
+    cd apisix-docker
     sudo docker build -f alpine-dev/Dockerfile .
     ```
 
@@ -208,7 +209,7 @@ etcd --enable-v2=true &
 
 ## 控制台
 
-APISIX 提供了 [Dashboard 项目](https://github.com/apache/incubator-apisix-dashboard)，
+APISIX 提供了 [Dashboard 项目](https://github.com/apache/apisix-dashboard)，
 可以使用 docker compose 直接部署和体验。
 
 Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
@@ -262,6 +263,10 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
+## 开发计划
+- [2.0](https://github.com/apache/apisix/milestone/7)
+- [2.1](https://github.com/apache/apisix/milestone/8)
+
 ## 视频和文章
 - 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
 - 2019.12.14 [从 0 到 1：Apache APISIX 的 Apache 之路](https://zhuanlan.zhihu.com/p/99620158)
@@ -273,6 +278,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 - 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
 ## 用户实际使用案例
+- [欧盟数字工厂平台: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
 - [HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
@@ -293,11 +299,10 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
 
-## 参与社区
+## Logo
 
-如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
-
-<img src="doc/images/qq-group.png" width="302" height="302">
+- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo 源文件](https://apache.org/logos/#apisix)
 
 ## 致谢
 

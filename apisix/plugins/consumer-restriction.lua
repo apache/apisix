@@ -19,33 +19,60 @@ local core      = require("apisix.core")
 
 local schema = {
     type = "object",
-    properties = {
-        whitelist = {
-            type = "array",
-            items = {type = "string"},
-            minItems = 1
-        },
-        blacklist = {
-            type = "array",
-            items = {type = "string"},
-            minItems = 1
-        }
-    },
     oneOf = {
-        {required = {"whitelist"}},
-        {required = {"blacklist"}}
+        {
+            title = "blacklist",
+            properties = {
+                type = {
+                    type = "string",
+                    enum = {"consumer_name", "service_id"},
+                    default = "consumer_name"
+               },
+		blacklist = {
+                    type = "array",
+                    minItems = 1,
+                    items = {type = "string"}
+                },
+                rejected_code = {type = "integer", minimum = 200, default = 403}
+            },
+            required = {"blacklist"},
+        },
+        {
+            title = "whitelist",
+            properties = {
+	        type = {
+                    type = "string",
+                    enum = {"consumer_name", "service_id"},
+                    default = "consumer_name"
+               },
+                whitelist = {
+                    type = "array",
+                    minItems = 1,
+                    items = {type = "string"}
+	       },
+               rejected_code = {type = "integer", minimum = 200, default = 403}
+            },
+            required = {"whitelist"},
+        }
     }
 }
 
-
 local plugin_name = "consumer-restriction"
-
 
 local _M = {
     version = 0.1,
     priority = 2400,
     name = plugin_name,
     schema = schema,
+}
+
+local fetch_val_funcs = {
+    ["service_id"] = function(ctx)
+        return ctx.service_id
+    end,
+    ["consumer_name"] = function(ctx)
+        return ctx.consumer_id
+    end
 }
 
 local function is_include(value, tab)
@@ -57,6 +84,7 @@ local function is_include(value, tab)
     return false
 end
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
 
@@ -67,26 +95,29 @@ function _M.check_schema(conf)
     return true
 end
 
+
 function _M.access(conf, ctx)
-    if not ctx.consumer then
-        return 401, { message = "Missing authentication or identity verification." }
+    local value = fetch_val_funcs[conf.type](ctx)
+    if not value then
+        return 401, { message = "Missing authentication or identity verification."}
     end
+    core.log.info("value: ", value)
 
     local block = false
     if conf.blacklist and #conf.blacklist > 0 then
-        if is_include(ctx.consumer.username, conf.blacklist) then
+        if is_include(value, conf.blacklist) then
             block = true
         end
     end
 
     if conf.whitelist and #conf.whitelist > 0 then
-        if not is_include(ctx.consumer.username, conf.whitelist) then
+        if not is_include(value, conf.whitelist) then
             block = true
         end
     end
 
     if block then
-        return 403, { message = "The consumer is not allowed" }
+        return conf.rejected_code, { message = "The " .. conf.type .. " is forbidden." }
     end
 end
 
