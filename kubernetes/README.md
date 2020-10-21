@@ -21,47 +21,51 @@
 There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
-- Install etcd
+- use `etcd` , if there is no `etcd` service, please install and set etcd address in `../conf/config.yaml`
 
 ### Usage
 
-#### Create configmap for apache incubator-apisix
+#### Create configmap for apache apisix
 
+if you do not need to change any config, and use default config in `../conf/config.yaml`
 ```
-$ kubectl apply -f apisix-gw-config-cm.yaml
-
-or
-
 $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
 
-##### Note: you should modify etcd addr in config file `apisix-gw-config-cm.yaml` or `../conf/config.yaml` first
+#### when using etcd-operator
+when using etcd-operator, you need to change `apisix-gw-config-cm.yaml`:
+
+* add CoreDNS IP into dns_resolver
+
+```
+dns_resolver:
+  - 10.233.0.3      # default coreDNS cluster ip
+
+```
+* change etcd host
+
+Following {your-namespace} should be changed to your namespace, for example `default`.
+> Mention: must use `Full Qualified Domain Name`. Short name `etcd-cluster-client` is not work.
 
 ```
 etcd:
-  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-    - "http://127.0.0.1:2379"     # multiple etcd address
+  host:
+    - "http://etcd-cluster-client.{your-namespace}.svc.cluster.local:2379"     # multiple etcd address
 ```
 
-#### Create deployment for apache incubator-apisix
+#### Create deployment for apache apisix
 
 ```
 $ kubectl apply -f deployment.yaml
 ```
 
-#### Create service for apache incubator-apisix
+#### Create service for apache apisix
 
 ```
 $ kubectl apply -f service.yaml
 ```
 
-#### Create service for apache incubator-apisix (when using Aliyun SLB)
-
-```
-$ kubectl apply -f service-aliyun-slb.yaml
-```
-
-#### Scale apache incubator-apisix
+#### Scale apache apisix
 
 ```
 $ kubectl scale deployment apisix-gw-deployment --replicas=4

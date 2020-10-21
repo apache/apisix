@@ -56,7 +56,7 @@ Note : if the dependency of some plugin needs to be initialized when Nginx start
 
 ## name and config
 
-determine the name and priority of the plugin, and add to conf/config.yaml. For example, for the key-auth plugin,
+determine the name and priority of the plugin, and add to conf/config-default.yaml. For example, for the key-auth plugin,
  you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
  duplicate), you can see the code in file "__apisix/plugins/key-auth.lua__" :
 
@@ -74,7 +74,7 @@ determine the name and priority of the plugin, and add to conf/config.yaml. For 
 
 Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first. For example, the priority of basic-auth is 2520 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the basic-auth plugin.
 
-in the "__conf/config.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
+in the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
 ```yaml
 plugins:                          # plugin list
@@ -138,6 +138,31 @@ At the same time, we need to implement the __check_schema(conf)__ method to comp
 Note: the project has provided the public method "__core.schema.check__", which can be used directly to complete JSON
 verification.
 
+In addition, if the plugin needs to use some metadata, we can define the plugin `metadata_schema`, and then we can dynamically manage these metadata through the `admin api`. Example:
+
+```lua
+local metadata_schema = {
+    type = "object",
+    properties = {
+        ikey = {type = "number", minimum = 0},
+        skey = {type = "string"},
+    },
+    required = {"ikey", "skey"},
+    additionalProperties = false,
+}
+
+local plugin_name = "example-plugin"
+
+local _M = {
+    version = 0.1,
+    priority = 0,        -- TODO: add a type field, may be a good idea
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
+
+
 ## choose phase to run
 
 Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's
@@ -153,6 +178,8 @@ function _M.log(conf)
 -- Implement logic here
 end
 ```
+
+**Note : we can't invoke `ngx.exit` or `core.respond.exit` in rewrite phase and access phase. if need to exit, just return the status and body, the plugin engine will make the exit happen with the returned status and body. [example](https://github.com/apache/apisix/blob/master/apisix/plugins/limit-count.lua#L132)**
 
 ## implement the logic
 

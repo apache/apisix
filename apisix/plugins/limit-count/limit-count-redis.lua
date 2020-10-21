@@ -71,7 +71,12 @@ function _M.incoming(self, key)
     local remaining
     key = self.plugin_name .. tostring(key)
 
-    local ret = red:ttl(key)
+    -- todo: test case
+    local ret, err = red:ttl(key)
+    if not ret then
+        return false, "failed to get redis `" .. key .."` ttl: " .. err
+    end
+
     core.log.info("ttl key: ", key, " ret: ", ret, " err: ", err)
     if ret < 0 then
         -- todo: test case
@@ -92,12 +97,13 @@ function _M.incoming(self, key)
                 return false, "failed to unlock: " .. err
             end
 
-            ret, err = red:set(key, limit -1, "EX", window)
+            limit = limit -1
+            ret, err = red:set(key, limit, "EX", window)
             if not ret then
                 return nil, err
             end
 
-            return 0, limit -1
+            return 0, limit
         end
 
         ok, err = lock:unlock()

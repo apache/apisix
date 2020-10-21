@@ -26,7 +26,8 @@ create_lua_deps() {
     echo "Create lua deps cache"
 
     make deps
-    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+    # maybe reopen this feature later
+    # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
 
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -39,7 +40,7 @@ before_install() {
     docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
     docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
     # Runs Keycloak version 10.0.2 with inbuilt policies for unit tests
-    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 sshniro/keycloak-apisix
+    docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 -p 8443:8443 sshniro/keycloak-apisix
     # spin up kafka cluster for tests (1 zookeper and 1 kafka instance)
     docker pull bitnami/zookeeper:3.6.0
     docker pull bitnami/kafka:latest
@@ -49,7 +50,7 @@ before_install() {
     docker pull bitinit/eureka
     docker run --name eureka -d -p 8761:8761 --env ENVIRONMENT=apisix --env spring.application.name=apisix-eureka --env server.port=8761 --env eureka.instance.ip-address=127.0.0.1 --env eureka.client.registerWithEureka=true --env eureka.client.fetchRegistry=false --env eureka.client.serviceUrl.defaultZone=http://127.0.0.1:8761/eureka/ bitinit/eureka
     sleep 5
-    docker exec -it kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
+    docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
 }
 
 do_install() {
@@ -59,7 +60,6 @@ do_install() {
     sudo apt-get -y update --fix-missing
     sudo apt-get -y install software-properties-common
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-    sudo add-apt-repository -y ppa:longsleep/golang-backports
 
     sudo apt-get update
     sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
@@ -75,7 +75,7 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
-    export GO111MOUDULE=on
+    ./utils/install-etcd.sh
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -102,7 +102,7 @@ do_install() {
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
+        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
     fi
@@ -130,8 +130,8 @@ script() {
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcd --version
+    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcdctl version
     sleep 5
 
     ./build-cache/grpc_server_example &
@@ -140,6 +140,23 @@ script() {
     ./bin/apisix init
     ./bin/apisix init_etcd
     ./bin/apisix start
+
+    #start again  --> fial
+    res=`./bin/apisix start`
+    if [ "$res" != "APISIX is running..." ]; then
+        echo "failed: APISIX runs repeatedly"
+        exit 1
+    fi
+
+    #kill apisix
+    sudo kill -9 `ps aux | grep apisix | grep nginx | awk '{print $2}'`
+
+    #start -> ok
+    res=`./bin/apisix start`
+    if [ "$res" == "APISIX is running..." ]; then
+        echo "failed: shouldn't stop APISIX running after kill the old process."
+        exit 1
+    fi
 
     sleep 1
     cat logs/error.log
@@ -150,13 +167,17 @@ script() {
     ./bin/apisix stop
     sleep 1
 
+    sudo bash ./utils/check-plugins-code.sh
+
     make lint && make license-check || exit 1
-    APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
 after_success() {
-    cat luacov.stats.out
-    luacov-coveralls
+    # cat luacov.stats.out
+    # luacov-coveralls
+    echo "done"
 }
 
 case_opt=$1

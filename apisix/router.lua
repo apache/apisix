@@ -80,9 +80,11 @@ function _M.http_init_worker()
     router_http.init_worker(filter)
     _M.router_http = router_http
 
-    local router_ssl = require("apisix.http.router." .. router_ssl_name)
+    local router_ssl = require("apisix.ssl.router." .. router_ssl_name)
     router_ssl.init_worker()
     _M.router_ssl = router_ssl
+
+    _M.api = require("apisix.api_router")
 
     local global_rules, err = core.config.new("/global_rules", {
             automatic = true,
@@ -103,8 +105,20 @@ function _M.stream_init_worker()
 end
 
 
+function _M.ssls()
+    return _M.router_ssl.ssls()
+end
+
 function _M.http_routes()
     return _M.router_http.routes()
+end
+
+function _M.stream_routes()
+    -- maybe it's not inited.
+    if not _M.router_stream then
+        return nil, nil
+    end
+    return _M.router_stream.routes()
 end
 
 

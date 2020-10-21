@@ -33,7 +33,7 @@ In addition, APISIX has dynamic routing and hot loading of plug-ins, which is es
 
 ## What's the performance of APISIX?
 
-One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](https://github.com/apache/incubator-apisix/blob/master/doc/benchmark.md)
+One of the goals of APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](https://github.com/apache/apisix/blob/master/doc/benchmark.md)
 
 APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
 
@@ -73,7 +73,7 @@ If using a proxy doesn't solve this problem, you can add `--verbose` option duri
 
 ## How to support gray release via APISIX?
 
-An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in uri as a condition：
+An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in URL as a condition：
 
 1. Group A：id <= 1000
 2. Group B：id > 1000
@@ -253,7 +253,7 @@ Steps:
 
 1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
 
-2. Restart APISIX
+2. Reload or restart APISIX
 
 Now you can trace the info level log in logs/error.log.
 
@@ -270,3 +270,30 @@ If your APISIX node does not open the Admin API, then you can manually load the 
 ```shell
 apisix reload
 ```
+
+## How to make APISIX listen on multiple ports when handling HTTP or HTTPS requests?
+
+By default, APISIX only listens on port 9080 when handling HTTP requests. If you want APISIX to listen on multiple ports, you need to modify the relevant parameters in the configuration file as follows:
+
+1. Modify the parameter of HTTP port listen `node_listen` in `conf/config.yaml`, for example:
+
+   ```
+    apisix:
+      node_listen:
+        - 9080
+        - 9081
+        - 9082
+    ```
+
+   Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
+
+    ```
+    apisix:
+      ssl:
+        listen_port:
+          - 9443
+          - 9444
+          - 9445
+    ```
+
+2. Reload or restart APISIX

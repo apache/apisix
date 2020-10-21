@@ -133,8 +133,8 @@ passed
                         "cors": {
                             "allow_origins": "**",
                             "allow_methods": "**",
-                            "allow_headers": "*",
-                            "expose_headers": "*",
+                            "allow_headers": "request-h",
+                            "expose_headers": "expose-h",
                             "madx_age": 5,
                             "allow_credential": true
                         }
@@ -244,6 +244,7 @@ GET /hello HTTP/1.1
 hello world
 --- response_headers
 Access-Control-Allow-Origin: *
+Vary:
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
@@ -302,10 +303,12 @@ passed
 GET /hello HTTP/1.1
 --- more_headers
 Origin: http://sub2.domain.com
+resp-vary: Via
 --- response_body
 hello world
 --- response_headers
 Access-Control-Allow-Origin: http://sub2.domain.com
+Vary: Via, Origin
 Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2
@@ -347,7 +350,7 @@ Access-Control-Allow-Credentials:
                         "cors": {
                             "allow_origins": "**",
                             "allow_methods": "**",
-                            "allow_headers": "*",
+                            "allow_headers": "**",
                             "expose_headers": "*"
                         }
                     },
@@ -384,12 +387,14 @@ Origin: https://sub.domain.com
 ExternalHeader1: val
 ExternalHeader2: val
 ExternalHeader3: val
+Access-Control-Request-Headers: req-header1,req-header2
 --- response_body
 hello world
 --- response_headers
 Access-Control-Allow-Origin: https://sub.domain.com
+Vary: Origin
 Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
-Access-Control-Allow-Headers: *
+Access-Control-Allow-Headers: req-header1,req-header2
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
@@ -410,7 +415,7 @@ hello world
 --- response_headers
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
-Access-Control-Allow-Headers: *
+Access-Control-Allow-Headers:
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
@@ -489,5 +494,267 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: set route(overwrite upstream)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "**",
+                            "allow_methods": "**",
+                            "allow_headers": "request-h",
+                            "expose_headers": "expose-h",
+                            "allow_credential": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/headers"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: overwrite upstream
+--- request
+GET /headers?Access-Control-Allow-Origin=https://sub.domain.com HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Origin: https://sub.domain.com
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: overwrite upstream(Access-Control-Allow-Methods)
+--- request
+GET /headers?Access-Control-Allow-Methods=methods HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: overwrite upstream(Access-Control-Allow-Headers)
+--- request
+GET /headers?Access-Control-Allow-Headers=a-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Headers: request-h
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: overwrite upstream(Access-Control-Expose-Headers)
+--- request
+GET /headers?Access-Control-Expose-Headers=e-headers HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Expose-Headers: expose-h
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: overwrite upstream(Access-Control-Max-Age)
+--- request
+GET /headers?Access-Control-Max-Age=10 HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Max-Age: 5
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: not overwrite upstream(Access-Control-Allow-Credentials)
+--- request
+GET /headers?Access-Control-Allow-Credentials=false HTTP/1.1
+--- more_headers
+Origin: https://sub.domain.com
+--- response_body
+/headers
+--- response_headers
+Access-Control-Allow-Credentials: true
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: should not set * to allow_origins when allow_credential is true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "*",
+                            "allow_credential": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin cors err: you can not/
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: should not set * to allow_methods when allow_credential is true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_methods": "*",
+                            "allow_credential": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin cors err: you can not/
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: should not set * to allow_headers when allow_credential is true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_headers": "*",
+                            "allow_credential": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin cors err: you can not/
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: should not set * to expose_headers when allow_credential is true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "expose_headers": "*",
+                            "allow_credential": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/failed to check the configuration of plugin cors err: you can not/
 --- no_error_log
 [error]

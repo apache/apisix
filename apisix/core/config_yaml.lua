@@ -28,7 +28,7 @@ local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
 local setmetatable = setmetatable
-local ngx_sleep    = ngx.sleep
+local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
 local sub_str      = string.sub
@@ -58,7 +58,10 @@ local mt = {
 
     local apisix_yaml
     local apisix_yaml_ctime
-local function read_apisix_yaml(pre_mtime)
+local function read_apisix_yaml(premature, pre_mtime)
+    if premature then
+        return
+    end
     local attributes, err = lfs.attributes(apisix_yaml_path)
     if not attributes then
         log.error("failed to fetch ", apisix_yaml_path, " attributes: ", err)
@@ -308,12 +311,14 @@ end
 
 
 function _M.fetch_created_obj(key)
-    return created_obj[key]
+    return created_obj[sub_str(key, 2)]
 end
 
 
 function _M.init_worker()
-    if process.type() ~= "worker" and process.type() ~= "single" then
+    if process.type() ~= "worker"
+      and process.type() ~= "single"
+      and process.type() ~= "privileged agent" then
         return
     end
 

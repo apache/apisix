@@ -37,7 +37,7 @@ __DATA__
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "baidu.com:80": 0
+                                "github.com:80": 0
                             },
                             "type": "roundrobin"
                         },
@@ -65,7 +65,7 @@ passed
 GET /not_found
 --- error_code: 404
 --- response_body
-{"error_msg":"failed to match any routes"}
+{"error_msg":"404 Route Not Found"}
 --- no_error_log
 [error]
 
@@ -79,4 +79,94 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: github.com to \d+.\d+.\d+.\d+/
+
+
+
+=== TEST 4: set route(id: 1, using `rewrite` mode to pass upstream host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin",
+                            "pass_host": "rewrite",
+                            "upstream_host": "httpbin.org"                        
+                        },
+                        "uri": "/uri"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: hit route
+--- request
+GET /uri
+--- response_body eval
+qr/host: httpbin.org/
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: set route(id: 1, using `node` mode to pass upstream host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "httpbin.org:80": 1
+                            },
+                            "type": "roundrobin",
+                            "desc": "new upstream",
+                            "pass_host": "node"
+                        },
+                        "uri": "/get"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: hit route
+--- request
+GET /get
+--- response_body eval
+qr/"Host": "httpbin.org"/
+--- no_error_log
+[error]

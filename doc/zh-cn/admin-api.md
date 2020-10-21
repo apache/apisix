@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin Metadata](#plugin-metadata)
 
 ## Route
 
@@ -40,9 +41,12 @@
 |PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/routes     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/routes/{id}|无|删除资源|
-|PATCH    |/apisix/admin/routes/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
+|PATCH    |/apisix/admin/routes/{id}|{...}|标准 PATCH ，修改已有 Route 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/routes/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。两种 PATCH 的区别可以参考后面的示例|
 
-> uri 请求参数：
+
+
+> URL 请求参数：
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
@@ -54,10 +58,11 @@
 |---------|---------|----|-----------|----|
 |uri      |与 `uris` 二选一 |匹配规则|除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](architecture-design.md#router) 还允许更高级匹配，更多见 [Router](architecture-design.md#router)。|"/hello"|
 |uris     |与 `uri` 二选一 |匹配规则|数组形式，可以匹配多个 `uri`|["/hello", "/world"]|
-|plugins  |`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Plugin|详见 [Plugin](architecture-design.md#plugin) ||
-|upstream |`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
-|upstream_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
-|service_id|`plugins`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
+|plugins  |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Plugin|详见 [Plugin](architecture-design.md#plugin) ||
+|script  |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Script|详见 [Script](architecture-design.md#script) ||
+|upstream |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
+|upstream_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
+|service_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
 |service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
 |name     |可选 |辅助   |标识路由名称|route-xxxx|
 |desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
@@ -69,10 +74,11 @@
 |priority  |可选 |匹配规则|如果不同路由包含相同 `uri`，根据属性 `priority` 确定哪个 `route` 被优先匹配，值越大优先级越高，默认值为 0。|priority = 10|
 |vars       |可选  |匹配规则|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 有两点需要特别注意：
 
-* 除了 `uri`/`uris` 是必选的之外，`plugins`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
+* 除了 `uri`/`uris` 是必选的之外，`plugins`、`script`、`upstream`/`upstream_id`、`service_id` 这三类必须选择其中至少一个。
 * 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
 
 route 对象 json 配置内容：
@@ -80,8 +86,8 @@ route 对象 json 配置内容：
 ```shell
 {
     "id": "1",                  # id，非必填
-    "uri": "/release/a",        # uri 路径
-    "uris": ["/a","/b"],        # 一组 uri 路径， uri 与 uris 只需要有一个非空即可
+    "uri": "/release/a",        # URL 路径
+    "uris": ["/a","/b"],        # 一组 URL 路径， URL 与 uris 只需要有一个非空即可
     "methods": ["GET","POST"],  # 可以填多个方法
     "host": "aa.com",           # host 域名
     "hosts": ["a.com","b.com"], # 一组 host 域名， host 与 hosts 只需要有一个非空即可
@@ -136,6 +142,97 @@ HTTP/1.1 201 Created
 Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
+
+# 给路由增加一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 1
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给路由更新一个 upstream node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 10
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给路由删除一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.215:80": null
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换路由的 methods -- 数组
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+    "methods": ["GET", "POST"]
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，methods 将不保留原来的数据，整个更新为：
+["GET", "POST"]
+
+
+# 替换路由的 upstream nodes -- sub path
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
+
+
+# 替换路由的 methods  -- sub path
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1/methods -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '["POST", "DELETE", "PATCH"]'
+HTTP/1.1 200 OK
+...
+
+执行成功后，methods 将不保留原来的数据，整个更新为：
+["POST", "DELETE", "PATCH"]
+
+
 ```
 
 > 应答参数
@@ -189,7 +286,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/services/{id}|无|删除资源|
-|PATCH    |/apisix/admin/services/{id}|{...}|修改已有 Service 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
+|PATCH    |/apisix/admin/services/{id}|{...}|标准 PATCH ，修改已有 Service 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/services/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Service 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留|
+
 
 > body 请求参数：
 
@@ -200,6 +299,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |upstream_id| upstream 或 upstream_id 两个选一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
 |name     |可选 |辅助   |标识服务名称。||
 |desc     |可选 |辅助   |服务描述、使用场景等。||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 serivce 对象 json 配置内容：
 
@@ -239,17 +339,78 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
 # 返回结果
 
 HTTP/1.1 201 Created
-Date: Thu, 26 Dec 2019 03:48:47 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Credentials: true
-Access-Control-Expose-Headers: *
-Access-Control-Max-Age: 3600
-Server: APISIX web server
+...
 
-{"node":{"value":{"upstream":{"nodes":{"39.97.63.215:80":1},"type":"roundrobin"},"plugins":{"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":60,"key":"\/apisix\/services\/201","modifiedIndex":60},"action":"set"}
+
+# 给 Service 增加一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 1
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给 Service 更新一个 upstream node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.216:80": 10
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给 Service 删除一个 upstream node
+$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "upstream": {
+        "nodes": {
+            "39.97.63.215:80": null
+        }
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换 Service 的 upstream nodes
+$ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，upstream nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
+
 ```
 
 > 应答参数
@@ -280,6 +441,7 @@ Server: APISIX web server
 |username|必需|辅助|Consumer 名称。||
 |plugins|可选|Plugin|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。||
 |desc     |可选 |辅助|consumer描述||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 consumer 对象 json 配置内容：
 
@@ -340,7 +502,8 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 |PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/upstreams/{id}|无|删除资源|
-|PATCH    |/apisix/admin/upstreams/{id}|{...}|修改已有 Route 的部分内容，其他不涉及部分会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除|
+|PATCH    |/apisix/admin/upstreams/{id}|{...}|标准 PATCH ，修改已有 Upstream 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/upstreams/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Upstream 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。|
 
 > body 请求参数：
 
@@ -353,19 +516,22 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
 |key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](../health-check.md)||
-|retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认不启用重试机制||
+|retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制||
 |timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
 |enable_websocket     |可选 |辅助|是否允许启用 websocket 能力||
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
 |name     |可选 |辅助|标识上游服务名称、使用场景等。||
 |desc     |可选 |辅助|上游服务描述、使用场景等。||
+|pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。||
+|upstream_host    |可选|辅助|只在 `pass_host` 配置为 `rewrite` 时有效。||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 upstream 对象 json 配置内容：
 
 ```shell
 {
     "id": "1",                  # id
-    "retries": 0,               # 请求重试次数
+    "retries": 1,               # 请求重试次数
     "timeout": {                # 设置连接、发送消息、接收消息的超时时间
         "connect":15,
         "send":15,
@@ -403,11 +569,71 @@ $ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f0
     }
 }'
 HTTP/1.1 201 Created
-Date: Thu, 26 Dec 2019 04:19:34 GMT
-Content-Type: text/plain
 ...
 
-{"node":{"value":{"nodes":{"127.0.0.1:80":1,"foo.com:80":3,"127.0.0.2:80":2},"type":"roundrobin"},"createdIndex":61,"key":"\/apisix\/upstreams\/100","modifiedIndex":61},"action":"set"}
+
+# 给 Upstream 增加一个 node
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.216:80": 1
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 1
+}
+
+
+# 给 Upstream 更新一个 node 的权重
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.216:80": 10
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.215:80": 1,
+    "39.97.63.216:80": 10
+}
+
+
+# 给 Upstream 删除一个 node
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "nodes": {
+        "39.97.63.215:80": null
+    }
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将更新为：
+{
+    "39.97.63.216:80": 10
+}
+
+
+# 替换 Upstream 的  nodes
+$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "39.97.63.200:80": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，nodes 将不保留原来的数据，整个更新为：
+{
+    "39.97.63.200:80": 1
+}
 
 ```
 
@@ -439,6 +665,7 @@ Content-Type: text/plain
 |cert|必需|公钥|https 证书公钥||
 |key|必需|私钥|https 证书私钥||
 |sni|必需|匹配规则|https 证书SNI||
+|labels|可选|匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 
 ssl 对象 json 配置内容：
 
@@ -449,6 +676,37 @@ ssl 对象 json 配置内容：
     "key": "key",       # 私钥
     "sni": "sni"        # host 域名
 }
+```
+
+## Plugin Metadata
+
+*地址*：/apisix/admin/plugin_metadata/{plugin_name}
+
+*说明*: 插件元数据。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugin_metadata/{plugin_name}|无|获取资源|
+|PUT      |/apisix/admin/plugin_metadata/{plugin_name}|{...}|根据 plugin name 创建资源|
+|DELETE   |/apisix/admin/plugin_metadata/{plugin_name}|无|删除资源|
+
+> body 请求参数：
+
+一个根据插件 ({plugin_name}) 的 `metadata_schema` 定义的数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+{
+    "skey": "val",
+    "ikey": 1
+}'
+HTTP/1.1 201 Created
+Date: Thu, 26 Dec 2019 04:19:34 GMT
+Content-Type: text/plain
 ```
 
 [Back to TOC](#目录)

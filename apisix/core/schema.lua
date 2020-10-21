@@ -20,7 +20,10 @@ local lrucache = require("apisix.core.lrucache")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
 local pcall = pcall
 
-local _M = {version = 0.3}
+local _M = {
+    version = 0.3,
+    TYPE_CONSUMER = 1,
+}
 
 
 local function create_validator(schema)
@@ -36,10 +39,20 @@ local function create_validator(schema)
     return nil, res -- error message
 end
 
-
-function _M.check(schema, json)
+local function get_validator(schema)
     local validator, err = cached_validator(schema, nil,
                                 create_validator, schema)
+
+    if not validator then
+        return nil, err
+    end
+
+    return validator, nil
+end
+
+function _M.check(schema, json)
+    local validator, err = get_validator(schema)
+
     if not validator then
         return false, err
     end
@@ -47,5 +60,6 @@ function _M.check(schema, json)
     return validator(json)
 end
 
+_M.valid = get_validator
 
 return _M

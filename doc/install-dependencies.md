@@ -18,33 +18,20 @@
 -->
 
 # Install Dependencies
-- [CentOS 6](#centos-6)
+- [Install Dependencies](#install-dependencies)
+- [Note](#note)
 - [CentOS 7](#centos-7)
+- [Fedora 31 & 32](#fedora-31--32)
 - [Ubuntu 16.04 & 18.04](#ubuntu-1604--1804)
 - [Debian 9 & 10](#debian-9--10)
 - [Mac OSX](#mac-osx)
-- [How to compile the OpenResty](#how-to-compile-the-openresty)
-- [Note](#note)
 
-CentOS 6
-========
+Note
+====
+- Since v2.0 Apache APISIX would not support the v2 protocol storage to etcd anymore, and the minimum etcd version supported is v3.4.0.
 
-```shell
-# add OpenResty source
-sudo yum install yum-utils
-sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](../.travis/linux_tengine_runner.sh).
 
-# install OpenResty, etcd and some compilation tools
-sudo yum install -y openresty curl git gcc luarocks lua-devel make
-
-wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
-    cd etcd-v3.3.13-linux-amd64 && \
-    sudo cp -a etcd etcdctl /usr/bin/
-
-# start etcd server
-nohup etcd &
-```
 
 CentOS 7
 ========
@@ -54,15 +41,42 @@ CentOS 7
 wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 sudo rpm -ivh epel-release-latest-7.noarch.rpm
 
+# install etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
 # add OpenResty source
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
-# install OpenResty, etcd and some compilation tools
-sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
+# install OpenResty and some compilation tools
+sudo yum install -y openresty curl git gcc luarocks lua-devel
 
 # start etcd server
-sudo service etcd start
+nohup etcd &
+```
+
+Fedora 31 & 32
+==============
+
+```shell
+# add OpenResty source
+sudo yum install yum-utils
+sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
+
+# install etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# install OpenResty and some compilation tools
+sudo yum install -y openresty curl git gcc luarocks lua-devel
+
+# start etcd server
+nohup etcd &
 ```
 
 Ubuntu 16.04 & 18.04
@@ -76,11 +90,17 @@ sudo apt-get -y install software-properties-common
 sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
 sudo apt-get update
 
-# install OpenResty, etcd and some compilation tools
-sudo apt-get install -y git etcd openresty curl luarocks
+# install etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# install OpenResty and some compilation tools
+sudo apt-get install -y git openresty curl luarocks
 
 # start etcd server
-sudo service etcd start
+nohup etcd &
 ```
 
 Debian 9 & 10
@@ -100,9 +120,9 @@ sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_releas
 sudo apt-get update
 
 # install etcd
-wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
-    cd etcd-v3.3.13-linux-amd64 && \
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # install OpenResty and some compilation tools
@@ -119,21 +139,6 @@ Mac OSX
 # install OpenResty, etcd and some compilation tools
 brew install openresty/brew/openresty etcd luarocks curl git
 
-# start etcd server with v2 protocol
-etcd --enable-v2=true &
+# start etcd server
+etcd &
 ```
-
-How to compile the OpenResty
-============================
-
-Compiling OpenResty from source is very complicated, it's not easy to make it clear. So we recommend that you refer to the official installation documentation.
-
-http://openresty.org/en/linux-packages.html
-
-Note
-====
-- Apache APISIX currently only supports the v2 protocol storage to etcd, but the latest version of etcd (starting with 3.4) has turned off the v2 protocol by default.
-
-You need to add `--enable-v2=true` to the startup parameter to enable the v2 protocol. The development of the v3 protocol supporting etcd has begun and will soon be available.
-
-- If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](../.travis/linux_tengine_runner.sh).

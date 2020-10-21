@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
@@ -22,10 +22,10 @@ local ngx = ngx
 local get_method = ngx.req.get_method
 local tonumber = tonumber
 local str_lower = string.lower
-local require = require
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local events
+local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
 
 
 local viewer_methods = {
@@ -44,6 +44,7 @@ local resources = {
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
     stream_routes   = require("apisix.admin.stream_routes"),
+    plugin_metadata = require("apisix.admin.plugin_metadata"),
 }
 
 
@@ -117,8 +118,11 @@ local function run()
         core.response.exit(404)
     end
 
-    ngx.req.read_body()
-    local req_body = ngx.req.get_body_data()
+    local req_body, err = core.request.get_body(MAX_REQ_BODY)
+    if err then
+        core.log.error("failed to read request body: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
 
     if req_body then
         local data, err = core.json.decode(req_body)
@@ -263,13 +267,13 @@ local uri_route = {
         handler = run,
     },
     {
-        paths = [[/apisix/admin/stream_routes*]],
+        paths = [[/apisix/admin/stream_routes/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
         handler = run_stream,
     },
     {
         paths = [[/apisix/admin/plugins/list]],
-        methods = {"GET", "PUT", "POST", "DELETE"},
+        methods = {"GET"},
         handler = get_plugins_list,
     },
     {

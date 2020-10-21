@@ -17,29 +17,30 @@
 #
 -->
 
-[English](README.md)
+- [English](README.md)
+
 ## APISIX
 
-[![Build Status](https://travis-ci.org/apache/incubator-apisix.svg?branch=master)](https://travis-ci.org/apache/incubator-apisix)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/incubator-apisix/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
+- **QQ 交流群**: 578997126(推荐), 552030619
+- 加入 [Apache Slack](http://s.apache.org/slack-invite) 的 `apisix` 频道。 如果前面的链接失效，请在这里获取最新的邀请地址 [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
+- [bilibili B站 视频](https://space.bilibili.com/551921247)
 
-APISIX 是一个云原生、高性能、可扩展的微服务 API 网关。
+## Apache APISIX 是什么？
+Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 网络库和 etcd 实现，
+提供负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。
 
-它是基于 Nginx 和 etcd 来实现，和传统 API 网关相比，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
+你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量，
+也可以当做 k8s ingress controller 来使用。
 
-## 为什么选择 APISIX？
-
-如果你正在构建网站、移动设备或 IoT（物联网）的应用，那么你可能需要使用 API 网关来处理接口流量。
-
-APISIX 是基于云原生的微服务 API 网关，它是所有业务流量的入口，可以处理传统的南北向流量，也可以处理服务间的东西向流量，也可以当做 k8s ingress controller 来使用。
-
-APISIX 通过插件机制，提供动态负载平衡、身份验证、限流限速等功能，并且支持你自己开发的插件。
+Apache APISIX 的技术架构如下图所示：
 
 ![](doc/images/apisix.png)
+
 
 ## 功能
 你可以把 Apache APISIX 当做流量入口，来处理所有的业务数据，包括动态路由、动态上游、动态证书、
@@ -54,7 +55,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [TCP/UDP 代理](doc/zh-cn/stream-proxy.md): 动态 TCP/UDP 代理。
     - [动态 MQTT 代理](doc/zh-cn/plugins/mqtt-proxy.md): 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 和 [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html) 两个协议标准。
     - [gRPC 代理](doc/zh-cn/grpc-proxy.md)：通过 APISIX 代理 gRPC 连接，并使用 APISIX 的大部分特性管理你的 gRPC 服务。
-    - [gRPC 协议转换](doc/plugins/grpc-transcoding-cn.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
+    - [gRPC 协议转换](doc/zh-cn/plugins/grpc-transcode.md)：支持协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API。
     - Websocket 代理
     - Proxy Protocol
     - Dubbo 代理：基于 Tengine，可以实现 Dubbo 请求的代理。
@@ -68,9 +69,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - [Serverless](doc/zh-cn/plugins/serverless.md): 在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
     - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
     - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
-    - [健康检查](doc/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
+    - [健康检查](doc/zh-cn/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
     - 熔断器: 智能跟踪不健康上游服务。
-    - [动态服务发现](doc/zh-cn/discovery.md)：支持基于注册中心的服务发现功能，降低反向代理维护成本。
+    - [代理镜像](doc/zh-cn/plugins/proxy-mirror.md): 提供镜像客户端请求的能力。
 
 - **精细化路由**
     - [支持全路径匹配和前缀匹配](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
@@ -85,16 +86,19 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **安全防护**
     - 多种身份认证方式: [key-auth](doc/zh-cn/plugins/key-auth.md), [JWT](doc/zh-cn/plugins/jwt-auth.md), [basic-auth](doc/zh-cn/plugins/basic-auth.md), [wolf-rbac](doc/zh-cn/plugins/wolf-rbac.md)。
     - [IP 黑白名单](doc/zh-cn/plugins/ip-restriction.md)
-    - [IdP 支持](doc/plugins/oauth.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
+    - [Referer 白名单](doc/zh-cn/plugins/referer-restriction.md)
+    - [IdP 支持](doc/plugins/openid-connect.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
     - [限制速率](doc/zh-cn/plugins/limit-req.md)
     - [限制请求数](doc/zh-cn/plugins/limit-count.md)
     - [限制并发](doc/zh-cn/plugins/limit-conn.md)
     - 防御 ReDoS(正则表达式拒绝服务)：内置策略，无需配置即可抵御 ReDoS。
     - [CORS](doc/zh-cn/plugins/cors.md)：为你的API启用 CORS。
-    - [uri-blocker](plugins/uri-blocker.md)：根据 URI 拦截用户请求。
+    - [URI拦截器](doc/zh-cn/plugins/uri-blocker.md)：根据 URI 拦截用户请求。
+    - [请求验证器](doc/zh-cn/plugins/request-validation.md)。
 
 - **运维友好**
     - OpenTracing 可观测性: 支持 [Apache Skywalking](doc/zh-cn/plugins/skywalking.md) 和 [Zipkin](doc/zh-cn/plugins/zipkin.md)。
+    - 对接外部服务发现：除了内置的 etcd 外，还支持 `Consul` 和 `Nacos` 的 [DNS 发现模式](https://github.com/apache/apisix/issues/1731#issuecomment-646392129)，以及 [Eureka](doc/zh-cn/discovery.md)。
     - 监控和指标: [Prometheus](doc/zh-cn/plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
@@ -113,61 +117,100 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
     - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
     - 自定义路由: 支持用户自己实现路由算法。
 
-## 安装
+## 编译和安装
 
-APISIX 在以下操作系统中可顺利安装并做过运行测试，需要注意的是：OpenResty 的版本必须 >= 1.15.8.1：
+APISIX 在以下操作系统中可顺利安装并做过测试：
 
 CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
-安装 APISIX 的步骤：
-1. 安装运行时依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
-2. 有以下几种方式来安装 Apache APISIX:
-    - 通过[源码包安装](doc/zh-cn/how-to-build.md#通过源码包安装);
-    - 如果你在使用 CentOS 7，可以使用 [RPM 包安装](doc/zh-cn/how-to-build.md#通过-rpm-包安装centos-7)；
-    - 其它 Linux 操作系统，可以使用 [Luarocks 安装方式](doc/zh-cn/how-to-build.md#通过-luarocks-安装-不支持-macos)；
-    - 你也可以使用 [Docker 镜像](https://github.com/apache/incubator-apisix-docker) 来安装。
+有以下几种方式来安装 APISIX 的 Apache Release 版本:
+1. 源码编译（适用所有系统）
+    - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
+    - 下载最新的源码发布包：
+        ```shell
+        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
+        tar zxvf apache-apisix-1.5-src.tar.gz
+        ```
+    - 安装运行时依赖的 Lua 库：
+        ```shell
+        cd apache-apisix-1.5
+        make deps
+        ```
+    - 检查 APISIX 的版本号：
+        ```shell
+        ./bin/apisix version
+        ```
+    - 启动 APISIX:
+        ```shell
+        ./bin/apisix start
+        ```
+2. [Docker 镜像](https://hub.docker.com/r/apache/apisix)（适用所有系统）
 
-## 快速上手
+    默认会拉取最新的 Apache 发布包：
 
-1. 启动 APISIX
+    ```shell
+    docker pull apache/apisix
+    ```
 
-```shell
-sudo apisix start
-```
+    Docker 镜像中并不包含 etcd，你可以参考 [docker compose 的示例](https://github.com/apache/apisix-docker/tree/master/example)来启动一个测试集群。
+
+3. RPM 包（只适用于 CentOS 7）
+    - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
+    - 安装 APISIX：
+    ```shell
+    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
+    ```
+    - 检查 APISIX 的版本号：
+        ```shell
+        apisix version
+        ```
+    - 启动 APISIX:
+        ```shell
+        apisix start
+        ```
+
+**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，并且 etcd 最低支持版本为 v3.4.0，如果有需要请进行升级。如果需要将数据迁移至 etcd v3，请按照 [etcd 迁移指南](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/) 进行迁移。
+
+## 针对开发者
+
+1. 对于开发者而言，可以使用最新的 master 分支来体验更多功能
+
+    - 源码编译
+    ```shell
+    git clone git@github.com:apache/apisix.git
+    cd apisix
+    make deps
+    ```
+
+   - Docker 镜像
+    ```shell
+    git clone https://github.com/apache/apisix-docker.git
+    cd apisix-docker
+    sudo docker build -f alpine-dev/Dockerfile .
+    ```
 
 2. 入门指南
 
-入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/zh-cn/getting-started.md)的步骤即可。
+    入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](doc/zh-cn/getting-started.md)的步骤即可。
 
-更进一步，你可以跟着文档来尝试更多的[插件](doc/zh-cn/README.md#插件)。
+    更进一步，你可以跟着文档来尝试更多的[插件](doc/zh-cn/README.md#插件)。
+
+3. Admin API
+
+    Apache APISIX 提供了 [REST Admin API](doc/zh-cn/admin-api.md)，方便动态控制 Apache APISIX 集群。
+
+4. 插件二次开发
+
+    可以参考[插件开发指南](doc/zh-cn/plugin-develop.md)，以及[示例插件 echo](doc/zh-cn/plugins/echo.md) 的文档和代码实现。
+
+    请注意，Apache APISIX 的插件新增、更新、删除等都是热加载的，不用重启服务。
+
+更多文档请参考 [Apache APISIX 文档索引](doc/zh-cn/README.md)。
 
 ## 控制台
 
-APISIX 内置了对 Dashboard 的支持，使用步骤如下：
-
-1. 确保你的运行环境中使用了最新的 Node.js 版本（>= 10）。
-
-2. 下载 dashboard 子模块的源码：
-```
-git submodule update --init --recursive
-```
-
-3. 安装 [yarn](https://yarnpkg.com/zh-Hans/docs/install)
-
-4. 安装依赖并构建
-```
-cd dashboard
-yarn && yarn build:prod
-```
-
-5. 与 APISIX 集成
-把编译后的在 `/dist` 目录下的所有文件，拷贝到 `apisix/dashboard` 目录下。
-```
-cp -r dist/* .
-```
-
-使用浏览器打开 `http://127.0.0.1:9080/apisix/dashboard/` 即可使用，
-不用填写用户名和密码，直接登录。
+APISIX 提供了 [Dashboard 项目](https://github.com/apache/apisix-dashboard)，
+可以使用 docker compose 直接部署和体验。
 
 Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
 
@@ -175,9 +218,8 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
 
-## 文档
+[性能测试脚本](benchmark/run.sh)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
 
-[Apache APISIX 文档索引](doc/zh-cn/README.md)
 
 ## Apache APISIX 和 Kong 的比较
 
@@ -219,6 +261,11 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 | 指定时间窗口的限速   | 是   | 否   |
 | 支持任何 Nginx 变量做路由条件 | 是   | 否   |
 
+性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
+
+## 开发计划
+- [2.0](https://github.com/apache/apisix/milestone/7)
+- [2.1](https://github.com/apache/apisix/milestone/8)
 
 ## 视频和文章
 - 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
@@ -231,6 +278,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 - 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
 ## 用户实际使用案例
+- [欧盟数字工厂平台: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
 - [HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
@@ -251,11 +299,10 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
 
-## 参与社区
+## Logo
 
-如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
-
-<img src="doc/images/qq-group.png" width="302" height="302">
+- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo 源文件](https://apache.org/logos/#apisix)
 
 ## 致谢
 

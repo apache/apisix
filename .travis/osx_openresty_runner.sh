@@ -23,19 +23,25 @@ export_or_prefix() {
 }
 
 before_install() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis@3.2
-    brew upgrade go
 
     sudo sed -i "" "s/requirepass/#requirepass/g" /usr/local/etc/redis.conf
     brew services start redis@3.2
 
-    export GO111MOUDULE=on
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     export_or_prefix
     luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls --local --tree=deps
 }
 
 do_install() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     export_or_prefix
 
     make deps
@@ -45,17 +51,21 @@ do_install() {
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
     chmod a+x utils/lj-releng
 
-    wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-darwin-amd64.tar.gz
+    wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-darwin-amd64.tar.gz
     tar -xvf grpc_server_example-darwin-amd64.tar.gz
 
     brew install grpcurl
 }
 
 script() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
-    etcd --enable-v2=true &
+    etcd &
     sleep 1
 
     ./grpc_server_example &
@@ -78,6 +88,10 @@ script() {
 }
 
 after_success() {
+    if [ "$TRAVIS_OS_NAME" == "" ]; then
+        exit 0
+    fi
+
     $PWD/deps/bin/luacov-coveralls
 }
 

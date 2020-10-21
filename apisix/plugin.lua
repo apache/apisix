@@ -25,6 +25,7 @@ local type          = type
 local local_plugins = core.table.new(32, 0)
 local ngx           = ngx
 local tostring      = tostring
+local error         = error
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
 local stream_local_plugins_hash = core.table.new(0, 32)
@@ -78,6 +79,14 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         return
     end
 
+    if plugin.schema and plugin.schema.type == "object" then
+        if not plugin.schema.properties or
+           core.table.nkeys(plugin.schema.properties) == 0
+        then
+            plugin.schema.properties = core.schema.plugin_disable_schema
+        end
+    end
+
     plugin.name = name
     core.table.insert(plugins_list, plugin)
 
@@ -97,10 +106,6 @@ local function load()
     local plugin_names = local_conf.plugins
     if not plugin_names then
         return nil, "failed to read plugin list from local file"
-    end
-
-    if local_conf.apisix and local_conf.apisix.enable_heartbeat then
-        core.table.insert(plugin_names, "heartbeat")
     end
 
     local processed = {}
@@ -193,56 +198,17 @@ function _M.load()
 end
 
 
-local fetch_api_routes
-do
-    local routes = {}
-function fetch_api_routes()
-    core.table.clear(routes)
-
-    for _, plugin in ipairs(_M.plugins) do
-        local api_fun = plugin.api
-        if api_fun then
-            local api_routes = api_fun()
-            core.log.debug("fetched api routes: ",
-                           core.json.delay_encode(api_routes, true))
-            for _, route in ipairs(api_routes) do
-                core.table.insert(routes, {
-                        methods = route.methods,
-                        uri = route.uri,
-                        handler = function (...)
-                            local code, body = route.handler(...)
-                            if code or body then
-                                core.response.exit(code, body)
-                            end
-                        end
-                    })
-            end
-        end
-    end
-
-    return routes
-end
-
-end -- do
-
-
-function _M.api_routes()
-    return core.lrucache.global("plugin_routes", _M.load_times,
-                                fetch_api_routes)
-end
-
-
 function _M.filter(user_route, plugins)
-    plugins = plugins or core.table.new(#local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
         if local_conf and local_conf.apisix.enable_debug then
             core.response.set_header("Apisix-Plugins", "no plugin")
         end
-        return plugins
+        return core.empty_tab
     end
 
+    plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
@@ -301,6 +267,7 @@ local function merge_service_route(service_conf, route_conf)
     local new_conf = core.table.deepcopy(service_conf)
     new_conf.value.service_id = new_conf.value.id
     new_conf.value.id = route_conf.value.id
+    new_conf.modifiedIndex = route_conf.modifiedIndex
 
     if route_conf.value.plugins then
         for name, conf in pairs(route_conf.value.plugins) do
@@ -321,10 +288,12 @@ local function merge_service_route(service_conf, route_conf)
         end
 
         new_conf.value.upstream_id = nil
+        new_conf.has_domain = route_conf.has_domain
     end
 
     if route_conf.value.upstream_id then
         new_conf.value.upstream_id = route_conf.value.upstream_id
+        new_conf.has_domain = route_conf.has_domain
     end
 
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
@@ -336,34 +305,36 @@ function _M.merge_service_route(service_conf, route_conf)
     core.log.info("service conf: ", core.json.delay_encode(service_conf))
     core.log.info("  route conf: ", core.json.delay_encode(route_conf))
 
-    return merged_route(route_conf, service_conf,
+    local route_service_key = route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
+    return merged_route(route_service_key, service_conf,
                         merge_service_route,
                         service_conf, route_conf)
 end
 
 
 local function merge_consumer_route(route_conf, consumer_conf)
-    local new_route_conf
+    if not consumer_conf.plugins or
+       core.table.nkeys(consumer_conf.plugins) == 0
+    then
+        core.log.info("consumer no plugins")
+        return route_conf
+    end
 
-    if consumer_conf.plugins then
-        for name, conf in pairs(consumer_conf.plugins) do
-            if not new_route_conf then
-                new_route_conf = core.table.deepcopy(route_conf)
-            end
-            if not new_route_conf.value.plugins then
-                new_route_conf.value.plugins = {}
-            end
-
-            new_route_conf.value.plugins[name] = conf
+    local new_route_conf = core.table.deepcopy(route_conf)
+    for name, conf in pairs(consumer_conf.plugins) do
+        if not new_route_conf.value.plugins then
+            new_route_conf.value.plugins = {}
         end
+
+        new_route_conf.value.plugins[name] = conf
     end
 
     core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
-    return new_route_conf or route_conf
+    return new_route_conf
 end
 
 
-function _M.merge_consumer_route(route_conf, consumer_conf)
+function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
     core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
 
@@ -371,12 +342,32 @@ function _M.merge_consumer_route(route_conf, consumer_conf)
     local new_conf = merged_route(flag, nil,
                         merge_consumer_route, route_conf, consumer_conf)
 
+    api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
+    api_ctx.conf_version = api_ctx.conf_version .. "&" ..
+                           api_ctx.consumer_ver
+    api_ctx.conf_id = api_ctx.conf_id .. "&" .. api_ctx.consumer_id
+
     return new_conf, new_conf ~= route_conf
 end
 
 
 function _M.init_worker()
     _M.load()
+
+    local plugin_metadatas, err = core.config.new("/plugin_metadata",
+        {automatic = true}
+    )
+    if not plugin_metadatas then
+        error("failed to create etcd instance for fetching /plugin_metadatas : "
+              .. err)
+    end
+
+    _M.plugin_metadatas = plugin_metadatas
+end
+
+
+function _M.plugin_metadata(name)
+    return _M.plugin_metadatas:get(name)
 end
 
 

@@ -23,10 +23,35 @@
 
 set -ex
 
+clean_up() {
+    git checkout conf/config.yaml
+}
+
+trap clean_up EXIT
+
 git checkout conf/config.yaml
 
-# check whether the 'reuseport' is in nginx.conf .
+# check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
 make init
+
+if grep "Server: APISIX" conf/nginx.conf > /dev/null; then
+    echo "failed: 'Server: APISIX' should not be added twice"
+    exit 1
+fi
+
+echo "passed: 'Server: APISIX' not in nginx.conf"
+
+#make init <- no need to re-run since we don't change the config yet.
+
+# check the error_log directive uses warn level by default.
+if ! grep "error_log logs/error.log warn;" conf/nginx.conf > /dev/null; then
+    echo "failed: error_log directive doesn't use warn level by default"
+    exit 1
+fi
+
+echo "passed: error_log directive uses warn level by default"
+
+# check whether the 'reuseport' is in nginx.conf .
 
 grep -E "listen 9080.*reuseport" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
@@ -37,7 +62,11 @@ fi
 echo "passed: nginx.conf file contains reuseport configuration"
 
 # check default ssl port
-sed  -i 's/listen_port: 9443/listen_port: 8443/g'  conf/config.yaml
+echo "
+apisix:
+    ssl:
+        listen_port: 8443
+" > conf/config.yaml
 
 make init
 
@@ -55,9 +84,68 @@ fi
 
 echo "passed: change default ssl port"
 
-# check nameserver imported
+# check support multiple ports listen in http and https
 
-sed -i '/dns_resolver:/,+4s/^/#/'  conf/config.yaml
+echo "
+apisix:
+  node_listen:
+    - 9080
+    - 9081
+    - 9082
+  ssl:
+    listen_port:
+      - 9443
+      - 9444
+      - 9445
+" > conf/config.yaml
+
+make init
+
+count_http_ipv4=`grep -c "listen 908." conf/nginx.conf || true`
+if [ $count_http_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv4"
+    exit 1
+fi
+
+count_http_ipv6=`grep -c "listen \[::\]:908." conf/nginx.conf || true`
+if [ $count_http_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv6"
+    exit 1
+fi
+
+count_https_ipv4=`grep -c "listen 944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv4"
+    exit 1
+fi
+
+count_https_ipv6=`grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv6"
+    exit 1
+fi
+
+echo "passed: support multiple ports listen in http and https"
+
+# check default env
+echo "
+nginx_config:
+    envs:
+        - TEST
+" > conf/config.yaml
+
+make init
+
+grep "env TEST;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: failed to update env"
+    exit 1
+fi
+
+echo "passed: change default env"
+
+# check nameserver imported
+git checkout conf/config.yaml
 
 make init
 
@@ -72,11 +160,15 @@ do
   fi
 done
 
-sed -i '/dns_resolver:/,+4s/^#//'  conf/config.yaml
 echo "passed: system nameserver imported"
 
 # enable enable_dev_mode
-sed  -i 's/enable_dev_mode: false/enable_dev_mode: true/g'  conf/config.yaml
+git checkout conf/config.yaml
+
+echo "
+apisix:
+    enable_dev_mode: true
+" > conf/config.yaml
 
 make init
 
@@ -92,9 +184,11 @@ if [ $count -ne 0 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+echo "passed: enable enable_dev_mode"
 
-# check whether the 'worker_cpu_affinity' is in nginx.conf .
+# check whether the 'worker_cpu_affinity' is in nginx.conf
+
+git checkout conf/config.yaml
 
 make init
 
@@ -108,8 +202,13 @@ echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
 
 # check admin https enabled
 
-sed  -i 's/\# port_admin: 9180/port_admin: 9180/'  conf/config.yaml
-sed  -i 's/\# https_admin: true/https_admin: true/'  conf/config.yaml
+git checkout conf/config.yaml
+
+echo "
+apisix:
+    port_admin: 9180
+    https_admin: true
+" > conf/config.yaml
 
 make init
 
@@ -127,14 +226,13 @@ if [ ! $code -eq 200 ]; then
     exit 1
 fi
 
+make stop
+
 echo "passed: admin https enabled"
 
 # rollback to the default
 
-make stop
-
-sed  -i 's/port_admin: 9180/\# port_admin: 9180/'  conf/config.yaml
-sed  -i 's/https_admin: true/\# https_admin: true/'  conf/config.yaml
+git checkout conf/config.yaml
 
 make init
 
@@ -149,3 +247,164 @@ fi
 set -ex
 
 echo "passed: rollback to the default admin config"
+
+# check the 'worker_shutdown_timeout' in 'nginx.conf' .
+
+make init
+
+grep -E "worker_shutdown_timeout 240s" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: worker_shutdown_timeout in nginx.conf is required 240s"
+    exit 1
+fi
+
+echo "passed: worker_shutdown_timeout in nginx.conf is ok"
+
+# set allow_admin in conf/config.yaml
+
+echo "
+apisix:
+    allow_admin:
+        - 127.0.0.9
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow 127.0.0.9" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow 127.0.0.9;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "
+apisix:
+    allow_admin: ~
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow all;" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow all;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "passed: empty allow_admin in conf/config.yaml"
+
+# check the 'client_max_body_size' in 'nginx.conf' .
+
+git checkout conf/config.yaml
+sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
+
+make init
+
+if ! grep -E "client_max_body_size 512m" conf/nginx.conf > /dev/null; then
+    echo "failed: client_max_body_size in nginx.conf doesn't change"
+    exit 1
+fi
+
+echo "passed: client_max_body_size in nginx.conf is ok"
+
+git checkout conf/config-default.yaml
+
+# check worker processes number is configurable.
+
+git checkout conf/config.yaml
+
+echo "
+nginx_config:
+    worker_processes: 2
+" > conf/config.yaml
+
+make init
+
+grep "worker_processes 2;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: worker_processes in nginx.conf doesn't change"
+    exit 1
+fi
+
+sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
+echo "passed: worker_processes number is configurable"
+
+# log format
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_format"
+' > conf/config.yaml
+
+make init
+
+grep "test_access_log_format" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: access_log_format in nginx.conf doesn't change"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
+echo "passed: worker_processes number is configurable"
+
+# missing admin key, allow any IP to access admin api
+
+echo '
+apisix:
+  allow_admin: ~
+  admin_key: ~
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo "pass: missing admin key and show ERROR message"
+
+# admin api, allow any IP but use default key
+
+echo '
+apisix:
+  allow_admin: ~
+  admin_key:
+    -
+      name: "admin"
+      key: edd1c9f034335f136f87ad84b625c8f1
+      role: admin
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+grep -E "WARNING: using fixed Admin API token has security risk." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
+    exit 1
+fi
+
+echo "pass: show WARNING message if the user used default token and allow any IP to access"
+
+# allow to merge configuration without middle layer
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    lua_shared_dicts:
+      my_dict: 1m
+' > conf/config.yaml
+
+make init
+
+if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'my_dict' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found 'my_dict' in nginx.conf"

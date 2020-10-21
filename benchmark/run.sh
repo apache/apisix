@@ -28,6 +28,8 @@ mkdir -p benchmark/fake-apisix/logs
 
 sudo openresty -p $PWD/benchmark/server || exit 1
 
+make init
+
 trap 'onCtrlC' INT
 function onCtrlC () {
     sudo killall wrk
@@ -57,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
@@ -90,7 +92,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
