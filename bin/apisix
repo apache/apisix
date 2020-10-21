@@ -192,10 +192,14 @@ http {
     lua_shared_dict balancer_ewma_last_touched_at 10m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
 
+    lua_shared_dict error-log            64k; # control the error-log-logger plugin
+
     # for openid-connect plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
+    
+    
 
     # for custom shared dict
     {% if http.lua_shared_dicts then %}
@@ -222,6 +226,8 @@ http {
 
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
+
+    lua_capture_error_log     128k; # cache for  capture the error log
 
     {% if http.underscores_in_headers then %}
     underscores_in_headers {* http.underscores_in_headers *};
