@@ -41,7 +41,7 @@ The first time unhealthy status is triggered, **breaken for 2 seconds**.
 
 Then, the request is forwarded to the upstream service again after 2 seconds, and if the `unhealthy.http_statuses` status code is returned, and the count reaches `unhealthy.failures` again, **broken for 4 seconds**.
 
-and so on, 2, 4, 8, 16, 32, 64, ..., 256, 300
+and so on, 2, 4, 8, 16, 32, 64, ..., 256, 300. `300` is the maximum value of `max_breaker_sec`, allow users to specify.
 
 In an unhealthy state, when a request is forwarded to an upstream service and the status code in the `healthy.http_statuses` configuration is returned (e.g., 200) that `healthy.successes` is reached (e.g., three times), and the upstream service is considered healthy again.
 
