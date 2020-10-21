@@ -58,7 +58,7 @@ endif
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")
-	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
+	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
 
@@ -81,7 +81,6 @@ init: default
 run: default
 ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
-	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 else
 	@echo "APISIX is running..."
@@ -135,14 +134,14 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
+	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/http
 	$(INSTALL) apisix/http/*.lua $(INST_LUADIR)/apisix/http/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/http/router
 	$(INSTALL) apisix/http/router/*.lua $(INST_LUADIR)/apisix/http/router/
-
-	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
-	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins
 	$(INSTALL) apisix/plugins/*.lua $(INST_LUADIR)/apisix/plugins/
@@ -161,6 +160,9 @@ install: default
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/ssl/router
+	$(INSTALL) apisix/ssl/router/*.lua $(INST_LUADIR)/apisix/ssl/router/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/stream/plugins
 	$(INSTALL) apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/stream/plugins/

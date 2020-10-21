@@ -38,12 +38,12 @@ response rewrite plugin, rewrite the content from upstream.
 
 ## Attributes
 
-|Name    |Requirement|Description|
-|-------         |-----|------|
-|status_code   |optional| New `status code` to client, keep the original response code by default.|
-|body          |optional| New `body` to client, and the content-length will be reset too.|
-|body_base64   |optional| This is a boolean value，identify if `body` in configuration need base64 decoded before rewrite to client.|
-|headers             |optional| Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
+| Name        | Type    | Requirement | Default | Valid      | Description                                                                                                                                                                                                                   |
+| ----------- | ------- | ----------- | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| status_code | integer | optional    |         | [200, 598] | New `status code` to client, keep the original response code by default.                                                                                                                                                      |
+| body        | string  | optional    |         |            | New `body` to client, and the content-length will be reset too.                                                                                                                                                               |
+| body_base64 | boolean | optional    | false   |            | Identify if `body` in configuration need base64 decoded before rewrite to client.                                                                                                                                             |
+| headers     | object  | optional    |         |            | Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. |
 
 ## How To Enable
 

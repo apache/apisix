@@ -27,6 +27,11 @@ This plugin exposes metrics in Prometheus Exposition format.
 
 none.
 
+## API
+
+This plugin will add `/apisix/prometheus/metrics` to expose the metrics.
+You may need to use [interceptors](plugin-interceptors.md) to protect it.
+
 ## How to enable it
 
 `prometheus` plugin can be enable with empty table, because it doesn't have
@@ -89,7 +94,9 @@ And we can check the status at prometheus console:
 
 Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard.
 
-You can goto [Grafana meta](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
+Downloads [Grafana dashboard meta](../json/apisix-grafana-dashboard.json) and imports it to Grafana。
+
+Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719) for `Grafana` meta data.
 
 ![](../../doc/images/plugin/grafana_1.png)
 
@@ -136,4 +143,23 @@ apisix_nginx_http_current_connections{state="writing"} 1
 # HELP apisix_nginx_metric_errors_total Number of nginx-lua-prometheus errors
 # TYPE apisix_nginx_metric_errors_total counter
 apisix_nginx_metric_errors_total 0
+```
+
+## Disable Plugin
+
+Remove the corresponding json configuration in the plugin configuration to disable `prometheus`.
+APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
 ```

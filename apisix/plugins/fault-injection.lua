@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core          = require("apisix.core")
-local sleep         = ngx.sleep
+local sleep         = core.sleep
 
 local plugin_name   = "fault-injection"
 

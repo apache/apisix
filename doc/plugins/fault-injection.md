@@ -25,13 +25,13 @@ Fault injection plugin, this plugin can be used with other plugins and will be e
 
 ## Attributes
 
-|Name          |Requirement  |Description|
-|------- |-----|------|
-|abort.http_status|optional|user-specified http code returned to the client|
-|abort.body|optional|response data returned to the client|
-|delay.duration|optional|delay time(can be decimal)|
+| Name              | Type    | Requirement | Default | Valid      | Description                                      |
+| ----------------- | ------- | ----------- | ------- | ---------- | ------------------------------------------------ |
+| abort.http_status | integer | optional    |         | [200, ...] | user-specified http code returned to the client. |
+| abort.body        | string  | optional    |         |            | response data returned to the client.            |
+| delay.duration    | number  | optional    |         |            | delay time (can be decimal).                     |
 
-Note: `abort` and `delay` must have at least one.
+Note: One of `abort` and `delay` must be specified.
 
 ## How To Enable
 

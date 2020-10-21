@@ -273,6 +273,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](../health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
 |enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
+|labels          |可选| 用于标识属性的键值对。 |
 |pass_host            |可选|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。|
 |upstream_host    |可选|只在 `pass_host` 配置为 `rewrite` 时有效。|
 
@@ -579,9 +580,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 结合 [consumer-restriction](plugins/consumer-restriction.md) 插件，限制jack对该 route 的访问
 
+```shell
 # 设置黑名单，禁止jack访问该API
 
-```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -613,7 +614,7 @@ HTTP/1.1 403
 ## Global Rule
 
 [Plugin](#Plugin) 只能绑定在 [Service](#Service) 或者 [Route](#Route) 上，如果我们需要一个能作用于所有请求的 [Plugin](#Plugin) 该怎么办呢？
-这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
+这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
 
 ```shell
 curl -X PUT \

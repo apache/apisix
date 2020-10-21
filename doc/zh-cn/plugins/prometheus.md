@@ -27,6 +27,11 @@
 
 无
 
+## 接口
+
+插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](plugin-interceptors.md)
+来保护它。
+
 ## 如何开启插件
 
 `prometheus` 插件用空{}就可以开启了,他没有任何的选项。
@@ -87,7 +92,9 @@ scrape_configs:
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
-你可以到 [Grafana meta](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
+下载 [Grafana dashboard 元数据](../../json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
+
+你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据.
 
 ![](../../images/plugin/grafana_1.png)
 
@@ -134,4 +141,21 @@ apisix_nginx_http_current_connections{state="writing"} 1
 # HELP apisix_nginx_metric_errors_total Number of nginx-lua-prometheus errors
 # TYPE apisix_nginx_metric_errors_total counter
 apisix_nginx_metric_errors_total 0
+```
+## 禁用插件
+
+在插件设置页面中删除相应的 json 配置即可禁用 `prometheus` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
 ```

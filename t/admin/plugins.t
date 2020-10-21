@@ -30,7 +30,7 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","tcp-logger","kafka-logger","syslog","udp-logger","zipkin","skywalking","serverless-post-function"\]/
+qr/\["request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","tcp-logger","kafka-logger","syslog","udp-logger","zipkin","skywalking","serverless-post-function"\]/
 --- no_error_log
 [error]
 
@@ -51,7 +51,7 @@ GET /apisix/admin/plugins
 --- request
 GET /apisix/admin/plugins/limit-req
 --- response_body
-{"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200}},"required":["rate","burst","key"],"type":"object"}
+{"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for","consumer_name"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200}},"required":["rate","burst","key"],"type":"object"}
 --- no_error_log
 [error]
 
@@ -61,6 +61,16 @@ GET /apisix/admin/plugins/limit-req
 --- request
 GET /apisix/admin/plugins/node-status
 --- response_body
-{"additionalProperties":false,"type":"object"}
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 --- no_error_log
-[error] 
+[error]
+
+
+
+=== TEST 5: get plugin prometheus schema
+--- request
+GET /apisix/admin/plugins/prometheus
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]

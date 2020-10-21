@@ -695,6 +695,7 @@ GET /t
 qr/^.*?\[warn\].*/
 --- grep_error_log_out eval
 qr/unhealthy TCP increment.*foo.com.*127.0.0.1:1988/
+--- timeout: 5
 
 
 

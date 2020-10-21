@@ -26,7 +26,8 @@ create_lua_deps() {
     echo "Create lua deps cache"
 
     make deps
-    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+    # maybe reopen this feature later
+    # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
 
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -74,6 +75,8 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
+    ./utils/install-etcd.sh
+
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
 
@@ -99,7 +102,7 @@ do_install() {
 
     ls -l ./
     if [ ! -f "build-cache/grpc_server_example" ]; then
-        wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-amd64.tar.gz
+        wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
         tar -xvf grpc_server_example-amd64.tar.gz
         mv grpc_server_example build-cache/
     fi
@@ -127,8 +130,8 @@ script() {
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcd --version
+    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcdctl version
     sleep 5
 
     ./build-cache/grpc_server_example &
@@ -164,15 +167,17 @@ script() {
     ./bin/apisix stop
     sleep 1
 
-    sudo sh ./utils/check-plugins-code.sh
+    sudo bash ./utils/check-plugins-code.sh
 
     make lint && make license-check || exit 1
-    APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
 after_success() {
-    cat luacov.stats.out
-    luacov-coveralls
+    # cat luacov.stats.out
+    # luacov-coveralls
+    echo "done"
 }
 
 case_opt=$1

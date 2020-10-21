@@ -33,12 +33,14 @@
 
 添加 Basic Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其用户名和密码添加到请求头中以验证其请求。
 
-有关 Basic Authentication 的更多信息，可参考 [维基百科](https://en.wikipedia.org/wiki/Basic_access_authentication) 查看更多信息。
+有关 Basic Authentication 的更多信息，可参考 [维基百科](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81) 查看更多信息。
 
 ## 属性
 
-- `username`: 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。
-- `password`: 用户的密码
+| 名称     | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                               |
+| -------- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| username | string | 必须   |        |        | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。 |
+| password | string | 必须   |        |        | 用户的密码                                                                                                         |
 
 ## 如何启用
 
@@ -87,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 - 缺少 Authorization header
 
 ```shell
-$ curl http://127.0.0.2:9080/hello -i
+$ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing authorization in request"}

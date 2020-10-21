@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
@@ -22,7 +22,6 @@ local ngx = ngx
 local get_method = ngx.req.get_method
 local tonumber = tonumber
 local str_lower = string.lower
-local require = require
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local events
@@ -45,6 +44,7 @@ local resources = {
     proto           = require("apisix.admin.proto"),
     global_rules    = require("apisix.admin.global_rules"),
     stream_routes   = require("apisix.admin.stream_routes"),
+    plugin_metadata = require("apisix.admin.plugin_metadata"),
 }
 
 

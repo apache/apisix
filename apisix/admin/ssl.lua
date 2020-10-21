@@ -18,7 +18,6 @@ local core              = require("apisix.core")
 local tostring          = tostring
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
-local str_find          = string.find
 local type              = type
 local assert            = assert
 
@@ -74,7 +73,7 @@ local function aes_encrypt(origin)
     local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
             assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
-    if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
+    if aes_128_cbc_with_iv ~= nil and core.string.has_prefix(origin, "---") then
         local encrypted = aes_128_cbc_with_iv:encrypt(origin)
         if encrypted == nil then
             core.log.error("failed to encrypt key[", origin, "] ")
@@ -96,6 +95,12 @@ function _M.put(id, conf)
 
     -- encrypt private key
     conf.key = aes_encrypt(conf.key)
+
+    if conf.keys then
+        for i = 1, #conf.keys do
+            conf.keys[i] = aes_encrypt(conf.keys[i])
+        end
+    end
 
     local key = "/ssl/" .. id
     local res, err = core.etcd.set(key, conf)
@@ -137,6 +142,12 @@ function _M.post(id, conf)
 
     -- encrypt private key
     conf.key = aes_encrypt(conf.key)
+
+    if conf.keys then
+        for i = 1, #conf.keys do
+            conf.keys[i] = aes_encrypt(conf.keys[i])
+        end
+    end
 
     local key = "/ssl"
     -- core.log.info("key: ", key)
@@ -199,6 +210,7 @@ function _M.patch(id, conf)
 
 
     local node_value = res_old.body.node.value
+    local modified_index = res_old.body.node.modifiedIndex
 
     node_value = core.table.merge(node_value, conf);
 
@@ -209,8 +221,7 @@ function _M.patch(id, conf)
         return 400, err
     end
 
-    -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, node_value)
+    local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new ssl[", key, "] to etcd: ", err)
         return 500, {error_msg = err}

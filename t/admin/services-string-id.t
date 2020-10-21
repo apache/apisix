@@ -657,7 +657,7 @@ GET /t
                         },
                         "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 
@@ -697,7 +697,7 @@ passed
                         },
                         "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
             )
 

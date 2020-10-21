@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,11 +17,8 @@
 # limitations under the License.
 #
 
-apiVersion: v1
-data:
-  config.yaml: |
-    #CONFIG_YAML#
-kind: ConfigMap
-metadata:
-  name: apisix-gw-config.yaml
-  # namespace: default
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
+tar xf etcd-v3.4.0-linux-amd64.tar.gz
+sudo cp etcd-v3.4.0-linux-amd64/etcd /usr/local/bin/
+sudo cp etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
+rm -rf etcd-v3.4.0-linux-amd64
