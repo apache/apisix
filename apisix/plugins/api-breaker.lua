@@ -112,7 +112,7 @@ local function gen_unhealthy_key(ctx)
 end
 
 
-local function gen_unhealthy_lastime_key(ctx)
+local function gen_lasttime_key(ctx)
     return "unhealthy-lastime" .. core.request.get_host(ctx) .. ctx.var.uri
 end
 
@@ -145,15 +145,15 @@ function _M.access(conf, ctx)
     end
 
     -- timestamp of the last time a unhealthy state was triggered
-    local unhealthy_lastime_key = gen_unhealthy_lastime_key(ctx)
-    local unhealthy_lastime, err = shared_buffer:get(unhealthy_lastime_key)
+    local lasttime_key = gen_lasttime_key(ctx)
+    local lasttime, err = shared_buffer:get(lasttime_key)
     if err then
-        core.log.warn("failed to get unhealthy_lastime_key: ",
-                      unhealthy_lastime_key, " err: ", err)
+        core.log.warn("failed to get lasttime_key: ",
+                      lasttime_key, " err: ", err)
         return
     end
 
-    if not unhealthy_lastime then
+    if not lasttime then
         return
     end
 
@@ -170,7 +170,7 @@ function _M.access(conf, ctx)
     core.log.info("breaker_time: ", breaker_time)
 
     -- breaker
-    if unhealthy_lastime + breaker_time >= ngx.time() then
+    if lasttime + breaker_time >= ngx.time() then
         return conf.break_response_code
     end
 
@@ -202,7 +202,7 @@ function _M.log(conf, ctx)
         -- whether the user-configured number of failures has been reached,
         -- and if so, the timestamp for entering the unhealthy state.
         if unhealthy_count % conf.unhealthy.failures == 0 then
-            shared_buffer:set(gen_unhealthy_lastime_key(ctx), ngx.time(),
+            shared_buffer:set(gen_lasttime_key(ctx), ngx.time(),
                               conf.max_breaker_sec)
             core.log.info("update unhealthy_key: ", unhealthy_key, " to ",
                           unhealthy_count)
@@ -235,8 +235,8 @@ function _M.log(conf, ctx)
     -- clear related status
     if healthy_count >= conf.healthy.successes then
         -- stat change to normal
-        core.log.info(healthy_key, " ", healthy_count)
-        shared_buffer:delete(gen_unhealthy_lastime_key(ctx))
+        core.log.info("chagne to normal, ", healthy_key, " ", healthy_count)
+        shared_buffer:delete(gen_lasttime_key(ctx))
         shared_buffer:delete(unhealthy_key)
         shared_buffer:delete(healthy_key)
     end
