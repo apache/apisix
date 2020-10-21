@@ -90,7 +90,7 @@ local ngx_tpl = [=[
 master_process on;
 
 worker_processes {* worker_processes *};
-{% if os_name == "Linux" and enable_cpu_affinity then %}
+{% if os_name == "Linux" and enable_cpu_affinity == true then %}
 worker_cpu_affinity auto;
 {% end %}
 
