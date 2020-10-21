@@ -611,6 +611,8 @@ local function merge_conf(base, new_tab)
         if type(val) == "table" then
             if tab_is_array(val) then
                 base[key] = val
+            elseif base[key] == nil then
+                base[key] = val
             else
                 merge_conf(base[key], val)
             end
