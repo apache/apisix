@@ -16,30 +16,34 @@
 --
 
 local core = require("apisix.core")
-local sleep = ngx.sleep
-local exiting = ngx.worker.exiting
 local plugin_name = "error-log-logger"
 local ngx = ngx
 local tcp = ngx.socket.tcp
-local timer_at = ngx.timer.at
+--local exiting = ngx.worker.exiting
+local errlog = require "ngx.errlog"
 
-
+local timer
 local schema = {
     type = "object",
-    properties = {
-        host = {type = "string"},
-        port = {type = "integer"},
-        loglevel = {type = "string", default = "WARN"},
-        uri_path = {type = "string"},
-        name = {type = "string", default = "error logger"},
-        timeout = {type = "integer", minimum = 1, default = 3},
-        protocol_type = {type = "string", default = "tcp", enum = {"tcp", "http"}},
-        max_retry_times = {type = "integer", minimum = 1, default = 1},
-        retry_interval = {type = "integer", minimum = 0, default = 1},
-        tls = {type = "boolean", default = false}
-    },
-    required = {"host", "port"}
+    properties = {},
+    additionalProperties = false,
 }
+-- local schema = {
+--     type = "object",
+--     properties = {
+--         host = {type = "string"},
+--         port = {type = "integer"},
+--         loglevel = {type = "string", default = "WARN"},
+--         uri_path = {type = "string"},
+--         name = {type = "string", default = "error logger"},
+--         timeout = {type = "integer", minimum = 1, default = 3},
+--         protocol_type = {type = "string", default = "tcp", enum = {"tcp", "http"}},
+--         max_retry_times = {type = "integer", minimum = 1, default = 1},
+--         retry_interval = {type = "integer", minimum = 0, default = 1},
+--         tls = {type = "boolean", default = false}
+--     },
+--     required = {"host", "port"}
+-- }
 
 local log_level = {
     STDERR =    ngx.STDERR,
@@ -66,70 +70,86 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-local report = function(premature, errlog, level)
-    if premature then
+
+local function try_attr(t, ...)
+    local count = select('#', ...)
+    for i = 1, count do
+        local attr = select(i, ...)
+        t = t[attr]
+        if type(t) ~= "table" then
+            return false
+        end
+    end
+
+    return true
+end
+
+
+local function report()
+    local local_conf = core.config.local_conf()
+    local host, port
+    local timeout = 3
+    local keepalive = 30
+    local level = "warn"
+    if try_attr(local_conf, "plugin_attr", plugin_name) then
+        local attr = local_conf.plugin_attr[plugin_name]
+        host = attr.host
+        port = attr.port
+        level = attr.loglevel or level
+        timeout = attr.timeout or timeout
+        keepalive = attr.keepalive or keepalive
+    end
+    level = log_level[string.upper(level)]
+
+    local status, err = errlog.set_filter_level(level)
+    if not status then
+        core.log.error("failed to set filter level by ngx.errlog, the error is :", err)
         return
     end
 
     local sock, soc_err = tcp()
-
     if not sock then
         core.log.error("failed to init the socket " .. soc_err)
         return
     end
-    local conf ={
-            host = "127.0.0.1",
-            port = 33333,
-            timeout = 3,
-    } -- will be reload from plugin's config
-
-    sock:settimeout(conf.timeout)
-
-    local ok, err = sock:connect(conf.host, conf.port)
-
+    sock:settimeout(timeout)
+    sock:setkeepalive(keepalive)
+    local ok, err = sock:connect(host, port)
     if not ok then
         core.log.warn("connect to the server failed for " .. err)
     end
+    local logs = errlog.get_logs(10)
 
-    while ( not exiting()) do
-        local logs, err = errlog.get_logs(10)
-        if #logs == 0 then
-            sleep(0.2)
-        elseif #logs < 0 then
-            core.log.error("errlog.get_logs failed for " .. err)
-        else
-            -- send to the server
-            for i = 1, #logs, 3 do
-                if logs[i] <= level then --ommit the lower log producted at the initial
-                    local bytes, err = sock:send(logs[i + 2])
-                    if not bytes then
-                        core.log.warn("send data  failed for " , err, ", the data:", logs[i + 2] )
-                    end
+    while ( logs and #logs>0 ) do
+        for i = 1, #logs, 3 do
+            if logs[i] <= level then --ommit the lower log producted at the initial
+                local bytes
+                bytes, err = sock:send(logs[i + 2])
+                if not bytes then
+                    core.log.warn("send data  failed for " , err, ", the data:", logs[i + 2] )
+                    return
                 end
             end
         end
+        logs = errlog.get_logs(10)
 	end
-
 end
 
 function _M.init()
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
         return
     end
-    local default_level_str = "warn"
-    local level = log_level[string.upper(default_level_str)]
-    if not level then
-        core.log.error("input a wrong loglevel.")
+
+    if timer then
         return
     end
-    core.log.error("set   loglevel WARN.")
-    local errlog = require "ngx.errlog"
-    local status, err = errlog.set_filter_level(level)
-    if not status then
-        core.log.error("failed to set filter level by ngx.errlog, the error is :", err)
-        return
+    local err
+    timer, err = core.timer.new("error-log-logger", report)
+    if not timer then
+        core.log.error("failed to create timer error-log-logger: ", err)
+    else
+        core.log.notice("succeed to create timer: error-log-logger")
     end
-    timer_at(0, report, errlog, level)
 end
 
 return _M
