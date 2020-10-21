@@ -43,6 +43,8 @@
 | clock_skew     | integer       | 可选   | 0           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
 | signed_headers | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
 
+注: 与 `hmac-auth` 插件相关的请求头在认证过程中会被移除，不会出现在上游服务中。
+
 ## 如何启用
 
 1. 创建一个 consumer 对象，并设置插件 `hmac-auth` 的值。

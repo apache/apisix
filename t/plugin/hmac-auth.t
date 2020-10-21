@@ -873,3 +873,217 @@ GET /t
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"secret_key\\" is required"\}/
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: enable the hmac auth plugin to remove the request header test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/uri"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: add consumer with 0 clock skew
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "robin",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key3",
+                            "secret_key": "my-secret-key3",
+                            "clock_skew": 0
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "robin",
+                            "plugins": {
+                                "hmac-auth": {
+                                    "access_key": "my-access-key3",
+                                    "secret_key": "my-secret-key3",
+                                    "algorithm": "hmac-sha256",
+                                    "clock_skew": 0
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: verify pass, and check whether the request header has been removed
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
+        local req_body = core.json.encode(data)
+        req_body = req_body or ""
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "PUT",
+            "/uri",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n")
+        core.log.info("signing_string:", signing_string)
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, _, body = t.test('/uri',
+            ngx.HTTP_PUT,
+            req_body,
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(core.json.encode(body))
+    }
+}
+--- request
+GET /t
+--- response_body
+"uri: \/uri\nhost: 127.0.0.1\ncontent-length: 52\nx-real-ip: 127.0.0.1\nuser-agent: lua-resty-http\/0.14 (Lua) ngx_lua\/10017\ncontent-type: application\/x-www-form-urlencoded\n"
+--- no_error_log
+[error]
+
+
+
+
+=== TEST 28: verify pass, and remove the `Authorization` request header 
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time   = ngx.time
+        local ngx_http_time   = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
+        local req_body = core.json.encode(data)
+        req_body = req_body or ""
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "PUT",
+            "/uri",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n")
+
+        core.log.info("signing_string:", signing_string)
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local auth_string = "hmac-auth-v1#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
+        "hmac-sha256#" .. gmt .. "#x-custom-header-a;x-custom-header-b"
+
+        local headers = {}
+        headers["Authorization"] = auth_string
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, _, body = t.test('/uri',
+            ngx.HTTP_PUT,
+            req_body,
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(core.json.encode(body))
+    }
+}
+--- request
+GET /t
+--- response_body
+"uri: \/uri\nhost: 127.0.0.1\ncontent-length: 52\nx-real-ip: 127.0.0.1\ncontent-type: application\/x-www-form-urlencoded\nuser-agent: lua-resty-http\/0.14 (Lua) ngx_lua\/10017\n"
+--- no_error_log
+[error]

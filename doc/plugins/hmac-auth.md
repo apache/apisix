@@ -21,11 +21,15 @@
 
 # Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+- [Summary](#summary)
+  - [Name](#name)
+  - [Attributes](#attributes)
+  - [How To Enable](#how-to-enable)
+  - [Test Plugin](#test-plugin)
+    - [generate signature:](#generate-signature)
+    - [Use the generated signature to try the request](#use-the-generated-signature-to-try-the-request)
+  - [Custom header key](#custom-header-key)
+  - [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -42,6 +46,8 @@ The `consumer` then adds its key to request header to verify its request.
 | algorithm      | string        | optional    | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | Encryption algorithm.                                                                                                                                                                                                                                                         |
 | clock_skew     | integer       | optional    | 0           |                                             | The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking `Date`                                                                                    |
 | signed_headers | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
+
+Note: The request headers related to the `hmac-auth` plugin will be removed during the authentication process and will not appear in the upstream service.
 
 ## How To Enable
 

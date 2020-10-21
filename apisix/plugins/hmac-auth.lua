@@ -291,6 +291,7 @@ local function validate(ctx, params)
     return consumer
 end
 
+
 local function get_params(ctx)
     local params = {}
     local local_conf = core.config.local_conf()
@@ -316,9 +317,17 @@ local function get_params(ctx)
     local signed_headers = core.request.header(ctx, signed_headers_key)
     core.log.info("signature_key: ", signature_key)
 
+    core.request.set_header(access_key, nil)
+    core.request.set_header(signature_key, nil)
+    core.request.set_header(algorithm_key, nil)
+    core.request.set_header(date_key, nil)
+    core.request.set_header(signed_headers_key, nil)
+
     -- get params from header `Authorization`
     if not app_key then
         local auth_string = core.request.header(ctx, "Authorization")
+        core.request.set_header("Authorization", nil)
+
         if not auth_string then
             return params
         end
@@ -342,6 +351,12 @@ local function get_params(ctx)
     params.signature  = signature
     params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
+
+    if params.signed_headers then
+        for _, header in ipairs(params.signed_headers) do
+            core.request.set_header(header, nil)
+        end
+    end
 
     core.log.info("params: ", core.json.delay_encode(params))
 
