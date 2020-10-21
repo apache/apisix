@@ -89,7 +89,7 @@ local function report()
     local local_conf = core.config.local_conf()
     local host, port
     local timeout = 3
-    local keepalive = 30
+    local keepalive = 3
     local level = "warn"
     if try_attr(local_conf, "plugin_attr", plugin_name) then
         local attr = local_conf.plugin_attr[plugin_name]
@@ -112,22 +112,29 @@ local function report()
         core.log.error("failed to init the socket " .. soc_err)
         return
     end
-    sock:settimeout(timeout)
-    sock:setkeepalive(keepalive)
+    sock:settimeout(timeout*1000)
     local ok, err = sock:connect(host, port)
     if not ok then
-        core.log.warn("connect to the server failed for " .. err)
+        core.log.info("connect to the server failed for " .. err)
+        return
+    end
+    ok, err =  sock:setkeepalive(keepalive*1000)
+    if not ok then
+        core.log.info("set keepalive failed for " .. err)
+    else
+        core.log.info("set keepalive success ")
     end
     local logs = errlog.get_logs(10)
 
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
             if logs[i] <= level then --ommit the lower log producted at the initial
-                local bytes
-                bytes, err = sock:send(logs[i + 2])
+                local bytes, err = sock:send(logs[i + 2])
                 if not bytes then
-                    core.log.warn("send data  failed for " , err, ", the data:", logs[i + 2] )
+                    core.log.info("send data  failed for " , err, ", the data:", logs[i + 2] )
                     return
+                else
+                    core.log.info("send data success")
                 end
             end
         end
