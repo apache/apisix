@@ -419,7 +419,7 @@ nginx_config:
 
 make init
 
-count=`grep -c "worker_cpu_affinity" conf/nginx.conf`
+count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
 if [ $count -ne 0 ]; then
     echo "failed: nginx.conf file disable cpu affinity"
     exit 1
@@ -430,11 +430,11 @@ echo "passed: nginx.conf file disable cpu affinity"
 # set worker processes with env
 git checkout conf/config.yaml
 
-export APIX_WORKER_PROCESSES=4
+export APIX_WORKER_PROCESSES=8
 
 make init
 
-count=`grep -c "worker_processes 8;" conf/nginx.conf`
+count=`grep -c "worker_processes 8;" conf/nginx.conf || true`
 if [ $count -ne 1 ]; then
     echo "failed: worker_processes is not 8 when using env to set worker processes"
     exit 1
