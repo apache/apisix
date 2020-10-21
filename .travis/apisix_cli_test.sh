@@ -23,6 +23,12 @@
 
 set -ex
 
+clean_up() {
+    git checkout conf/config.yaml
+}
+
+trap clean_up EXIT
+
 git checkout conf/config.yaml
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
@@ -382,3 +388,23 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "pass: show WARNING message if the user used default token and allow any IP to access"
+
+# allow to merge configuration without middle layer
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    lua_shared_dicts:
+      my_dict: 1m
+' > conf/config.yaml
+
+make init
+
+if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'my_dict' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found 'my_dict' in nginx.conf"
