@@ -134,57 +134,10 @@ GET /t
 {"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 --- no_error_log
 [error]
---- LAST
 
 
 
-=== TEST 5: add plugin
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "api-breaker": {
-                            "break_response_code": 502,
-                            "unhealthy": {
-                                "http_statuses": [500, 503],
-                                "failures": 3
-                            },
-                            "healthy": {
-                                "http_statuses": [200, 206],
-                                "successes": 3
-                            }
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/api_breaker"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 6: bad break_response_code
+=== TEST 5: bad break_response_code
 --- config
     location /t {
         content_by_lua_block {
@@ -218,18 +171,20 @@ passed
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say(body)
+            ngx.print(body)
         }
     }
 --- request
 GET /t
 --- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"break_response_code\" validation failed: expected 199 to be greater than 200"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 7: bad max_breaker_sec
+=== TEST 6: bad max_breaker_sec
 --- config
     location /t {
         content_by_lua_block {
@@ -267,7 +222,7 @@ GET /t
 
 
 
-=== TEST 8: bad unhealthy.http_statuses
+=== TEST 7: bad unhealthy.http_statuses
 --- config
     location /t {
         content_by_lua_block {
@@ -313,7 +268,7 @@ GET /t
 
 
 
-=== TEST 9: dup http_statuses
+=== TEST 8: same http_statuses in healthy
 --- config
     location /t {
         content_by_lua_block {
@@ -323,8 +278,7 @@ GET /t
                 [[{
                     "plugins": {
                         "api-breaker": {
-                            "break_response_code": 200,
-                            "max_breaker_sec": -1,
+                            "break_response_code": 500,
                             "unhealthy": {
                                 "http_statuses": [500, 503],
                                 "failures": 3
@@ -348,12 +302,60 @@ GET /t
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say(body)
+            ngx.print(body)
         }
     }
 --- request
 GET /t
 --- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 2 and 1 are equal"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: set route, http_statuses: [500, 503]
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "api-breaker": {
+                            "break_response_code": 599,
+                            "unhealthy": {
+                                "http_statuses": [500, 503],
+                                "failures": 3
+                            },
+                            "healthy": {
+                                "http_statuses": [200, 206],
+                                "successes": 3
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/api_breaker"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
 
@@ -361,9 +363,13 @@ GET /t
 
 === TEST 10: trigger breaker
 --- request eval
-["GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=503", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
+[
+    "GET /api_breaker?code=200", "GET /api_breaker?code=500",
+    "GET /api_breaker?code=503", "GET /api_breaker?code=500",
+    "GET /api_breaker?code=500", "GET /api_breaker?code=500"
+]
 --- error_code eval
-[200, 500, 503, 500, 502, 502]
+[200, 500, 503, 500, 599, 599]
 --- no_error_log
 [error]
 
@@ -371,21 +377,75 @@ GET /t
 
 === TEST 11: trigger reset status
 --- request eval
-["GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
+[
+    "GET /api_breaker?code=500", "GET /api_breaker?code=500",
+
+    "GET /api_breaker?code=200", "GET /api_breaker?code=200",
+    "GET /api_breaker?code=200",
+
+    "GET /api_breaker?code=500", "GET /api_breaker?code=500"
+]
 --- error_code eval
-[500, 500, 200, 200, 200, 500, 500]
+[
+    500, 500,
+    200, 200, 200,
+    500, 500
+]
 --- no_error_log
 [error]
+--- error_log
+chagne to normal, healthy-localhost
 
 
 
 === TEST 12: trigger del healthy numeration
---- request eval
-["GET /api_breaker?code=500", "GET /api_breaker?code=200", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500", "GET /api_breaker?code=500"]
---- error_code eval
-[500, 200, 500, 500, 502, 502, 502]
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("lib.json_sort")
+
+        -- trigger to unhealth
+        for i = 1, 4 do
+            local code = t('/api_breaker?code=500', ngx.HTTP_GET)
+            ngx.say("code: ", code)
+        end
+
+        -- break for two seconds
+        ngx.sleep(2)
+
+        -- make a try
+        for i = 1, 4 do
+            local code = t('/api_breaker?code=200', ngx.HTTP_GET)
+            ngx.say("code: ", code)
+        end
+
+        for i = 1, 4 do
+            local code = t('/api_breaker?code=500', ngx.HTTP_GET)
+            ngx.say("code: ", code)
+        end
+    }
+}
+--- request
+GET /t
+--- response_body
+code: 500
+code: 500
+code: 500
+code: 599
+code: 599
+code: 200
+code: 200
+code: 200
+code: 500
+code: 500
+code: 500
+code: 599
 --- no_error_log
 [error]
+breaker_time: 4
+--- error_log
+breaker_time: 2
 
 
 
@@ -560,7 +620,7 @@ passed
 
 
 
-=== TEST 19: hit route 20 times
+=== TEST 19: hit route 20 times, confirm the breaker time
 --- config
     location /t {
         content_by_lua_block {
