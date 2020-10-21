@@ -118,14 +118,7 @@ local function report()
         core.log.info("connect to the server failed for " .. err)
         return
     end
-    ok, err =  sock:setkeepalive(keepalive*1000)
-    if not ok then
-        core.log.info("set keepalive failed for " .. err)
-    else
-        core.log.info("set keepalive success ")
-    end
     local logs = errlog.get_logs(10)
-
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
             if logs[i] <= level then --ommit the lower log producted at the initial
@@ -133,13 +126,12 @@ local function report()
                 if not bytes then
                     core.log.info("send data  failed for " , err, ", the data:", logs[i + 2] )
                     return
-                else
-                    core.log.info("send data success")
                 end
             end
         end
         logs = errlog.get_logs(10)
 	end
+    sock:setkeepalive(keepalive*1000)
 end
 
 function _M.init()
