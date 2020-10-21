@@ -21,16 +21,13 @@
 
 # Summary
 
-- [Summary](#summary)
-  - [Name](#name)
-  - [Attributes](#attributes)
-  - [How To Enable](#how-to-enable)
-  - [Test Plugin](#test-plugin)
-    - [generate signature:](#generate-signature)
-    - [Use the generated signature to try the request](#use-the-generated-signature-to-try-the-request)
-  - [Custom header key](#custom-header-key)
-  - [Disable Plugin](#disable-plugin)
+  - [**Name**](#name)
+  - [**Attributes**](#attributes)
+  - [**How To Enable**](#how-to-enable)
+  - [**Test Plugin**](#test-plugin)
+  - [**Disable Plugin**](#disable-plugin)
 
+  
 ## Name
 
 `hmac-auth` is an authentication plugin that need to work with `consumer`. Add HMAC Authentication to a `service` or `route`.

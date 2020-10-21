@@ -1025,7 +1025,6 @@ GET /t
 
 
 
-
 === TEST 28: verify pass, and remove the `Authorization` request header 
 --- config
 location /t {
