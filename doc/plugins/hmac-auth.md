@@ -27,7 +27,6 @@
   - [**Test Plugin**](#test-plugin)
   - [**Disable Plugin**](#disable-plugin)
 
-  
 ## Name
 
 `hmac-auth` is an authentication plugin that need to work with `consumer`. Add HMAC Authentication to a `service` or `route`.
