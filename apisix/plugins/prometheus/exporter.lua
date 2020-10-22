@@ -144,7 +144,8 @@ function _M.log(conf, ctx)
     end
 
     metrics.status:inc(1,
-        gen_arr(vars.status, route_id, matched_uri, matched_host, service_id, consumer_id, balancer_ip))
+        gen_arr(vars.status, route_id, matched_uri, matched_host,
+                service_id, consumer_id, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
