@@ -440,4 +440,4 @@ if [ $count -ne 1 ]; then
     exit 1
 fi
 
-echo "passed: worker_processes is not 8 when using env to set worker processes"
+echo "passed: using env to set worker processes"
