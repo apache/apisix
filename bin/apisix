@@ -196,8 +196,6 @@ http {
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
-    lua_shared_dict error-log            64k; # control the error-log-logger plugin
-    
 
     # for custom shared dict
     {% if http.lua_shared_dicts then %}
