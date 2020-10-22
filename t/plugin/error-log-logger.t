@@ -83,8 +83,8 @@ __DATA__
 --- request
 GET /t
 --- response_body
---- error_log
-[Server] receive data:this a warning message for test.
+--- error_log eval
+qr/\[Server\] receive data:.*this a warning message for test./
 
 
 
@@ -99,8 +99,8 @@ GET /t
 --- request
 GET /t
 --- response_body
---- error_log
-[Server] receive data:this an error message for test.
+--- error_log eval
+qr/\[Server\] receive data:.*this an error message for test./
 
 
 
