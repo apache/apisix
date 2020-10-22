@@ -61,7 +61,7 @@ add_block_preprocessor(sub {
 
     my $stream_default_server = <<_EOC_;
 	    content_by_lua_block {
-	    	echo "hello";
+	    	ngx.log(ngx.INFO, "a stream server")
 	    }
 _EOC_
 
@@ -74,46 +74,49 @@ __DATA__
 
 === TEST 1: log a warn level message
 --- config
-    location /t {
+    location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.warn("this a warning message for test.")
+            core.log.warn("this is a warning message for test.\n")
         }
     }
 --- request
-GET /t
+GET /tg
 --- response_body
 --- error_log eval
-qr/\[Server\] receive data:.*this a warning message for test./
+qr/\[Server\] receive data:.*this is a warning message for test./
+--- wait: 1
 
 
 
 === TEST 2: log an error level message
 --- config
-    location /t {
+    location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.error("this an error message for test.")
+            core.log.error("this is an error message for test.\n")
         }
     }
 --- request
-GET /t
+GET /tg
 --- response_body
 --- error_log eval
-qr/\[Server\] receive data:.*this an error message for test./
+qr/\[Server\] receive data:.*this is an error message for test./
+--- wait: 1
 
 
 
 === TEST 3: log an info level message
 --- config
-    location /t {
+    location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.info("this an info message for test.")
+            core.log.info("this is an info message for test.\n")
         }
     }
 --- request
-GET /t
+GET /tg
 --- response_body
 --- no_error_log
-[Server] receive data
+qr/\[Server\] receive data:.*this is an info message for test./
+--- wait: 1
