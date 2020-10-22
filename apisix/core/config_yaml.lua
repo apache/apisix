@@ -56,8 +56,8 @@ local mt = {
 }
 
 
-    local apisix_yaml
-    local apisix_yaml_ctime
+local apisix_yaml
+local apisix_yaml_ctime
 local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
@@ -80,17 +80,10 @@ local function read_apisix_yaml(premature, pre_mtime)
         return
     end
 
-    local found_end_flag
-    for i = 1, 10 do
-        f:seek('end', -i)
-
-        local end_flag = f:read("*a")
-        -- log.info(i, " flag: ", end_flag)
-        if re_find(end_flag, [[#END\s*]], "jo") then
-            found_end_flag = true
-            break
-        end
-    end
+    f:seek('end', -10)
+    local end_flag = f:read("*a")
+    -- log.info("flag: ", end_flag)
+    local found_end_flag = re_find(end_flag, [[#END\s*$]], "jo")
 
     if not found_end_flag then
         f:close()
