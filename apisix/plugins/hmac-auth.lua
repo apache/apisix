@@ -67,6 +67,11 @@ local consumer_schema = {
                 maxLength = 50,
             }
         },
+        keep_headers = {
+            type = "boolean",
+            title = "whether to keep the http request header",
+            default = false,
+        }
     },
     required = {"access_key", "secret_key"},
     additionalProperties = false,
@@ -115,6 +120,17 @@ local function array_to_map(arr)
     end
 
     return map
+end
+
+
+local function remove_headers(...)
+    local headers = { ... }
+    if headers and #headers > 0 then
+        for _, header in ipairs(headers) do
+            core.log.info("remove_header: ", header)
+            core.request.set_header(header, nil)
+        end
+    end
 end
 
 
@@ -292,6 +308,16 @@ local function validate(ctx, params)
 end
 
 
+local function get_keep_headers(access_key)
+    local consumer, err = get_consumer(access_key)
+    if err then
+        return false, err
+    end
+
+    return consumer.auth_conf.keep_headers
+end
+
+
 local function get_params(ctx)
     local params = {}
     local local_conf = core.config.local_conf()
@@ -317,16 +343,9 @@ local function get_params(ctx)
     local signed_headers = core.request.header(ctx, signed_headers_key)
     core.log.info("signature_key: ", signature_key)
 
-    core.request.set_header(access_key, nil)
-    core.request.set_header(signature_key, nil)
-    core.request.set_header(algorithm_key, nil)
-    core.request.set_header(date_key, nil)
-    core.request.set_header(signed_headers_key, nil)
-
     -- get params from header `Authorization`
     if not app_key then
         local auth_string = core.request.header(ctx, "Authorization")
-        core.request.set_header("Authorization", nil)
 
         if not auth_string then
             return params
@@ -352,9 +371,16 @@ local function get_params(ctx)
     params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
 
-    if params.signed_headers then
-        for _, header in ipairs(params.signed_headers) do
-            core.request.set_header(header, nil)
+    local keep_headers = get_keep_headers(params.access_key)
+    core.log.info("keep_headers: ", keep_headers)
+
+    if not keep_headers then
+        remove_headers(signature_key, algorithm_key, signed_headers_key)
+
+        if params.signed_headers then
+            for _, header in ipairs(params.signed_headers) do
+                remove_headers(header)
+            end
         end
     end
 
