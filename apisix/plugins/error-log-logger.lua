@@ -17,10 +17,12 @@
 
 local core = require("apisix.core")
 local plugin_name = "error-log-logger"
+local errlog = require "ngx.errlog"
 local ngx = ngx
 local tcp = ngx.socket.tcp
---local exiting = ngx.worker.exiting
-local errlog = require "ngx.errlog"
+local select = select
+local type = type
+local string = string
 
 local timer
 local schema = {
@@ -28,22 +30,6 @@ local schema = {
     properties = {},
     additionalProperties = false,
 }
--- local schema = {
---     type = "object",
---     properties = {
---         host = {type = "string"},
---         port = {type = "integer"},
---         loglevel = {type = "string", default = "WARN"},
---         uri_path = {type = "string"},
---         name = {type = "string", default = "error logger"},
---         timeout = {type = "integer", minimum = 1, default = 3},
---         protocol_type = {type = "string", default = "tcp", enum = {"tcp", "http"}},
---         max_retry_times = {type = "integer", minimum = 1, default = 1},
---         retry_interval = {type = "integer", minimum = 0, default = 1},
---         tls = {type = "boolean", default = false}
---     },
---     required = {"host", "port"}
--- }
 
 local log_level = {
     STDERR =    ngx.STDERR,
