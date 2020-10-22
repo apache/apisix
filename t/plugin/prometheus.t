@@ -934,7 +934,7 @@ qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="
 
 
 
-=== TEST 51: set route(id: 1)
+=== TEST 51: set route(id: 9)
 --- config
     location /t {
         content_by_lua_block {
