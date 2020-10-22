@@ -64,7 +64,7 @@ local _M = {
     version = 0.1,
 }
 
-
+--获取服务信息
 local function service_info()
     local host = local_conf.eureka and local_conf.eureka.host
     if not host then
@@ -94,7 +94,7 @@ local function service_info()
     return url, basic_auth
 end
 
-
+--连接eureka服务器
 local function request(request_uri, basic_auth, method, path, query, body)
     log.info("eureka uri:", request_uri, ".")
     local url = request_uri .. path
@@ -134,7 +134,7 @@ local function request(request_uri, basic_auth, method, path, query, body)
     })
 end
 
-
+--解析eureka数据,为Apisix数据做准备
 local function parse_instance(instance)
     local status = instance.status
     local overridden_status = instance.overriddenstatus or instance.overriddenStatus
@@ -164,7 +164,7 @@ local function parse_instance(instance)
     return ip, port, instance.metadata
 end
 
-
+--获取注册信息
 local function fetch_full_registry(premature)
     if premature then
         return
@@ -219,7 +219,7 @@ local function fetch_full_registry(premature)
     applications = up_apps
 end
 
-
+--获取服务实例节点列表函数
 function _M.nodes(service_name)
     if not applications then
         log.error("failed to fetch nodes for : ", service_name)
@@ -229,7 +229,7 @@ function _M.nodes(service_name)
     return applications[service_name]
 end
 
-
+--初始化函数
 function _M.init_worker()
     if not local_conf.eureka or not local_conf.eureka.host or #local_conf.eureka.host == 0 then
         error("do not set eureka.host")
