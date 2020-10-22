@@ -24,6 +24,10 @@ UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 
+SHELL := /bin/bash -o pipefail
+
+VERSION ?= latest
+RELEASE_SRC = apache-apisix-${VERSION}-src
 
 .PHONY: default
 default:
@@ -190,3 +194,29 @@ ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
 endif
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 
+release-src:
+	tar -zcvf $(RELEASE_SRC).tgz \
+	--exclude .github \
+	--exclude .git \
+	--exclude .gitattributes \
+	--exclude .idea \
+	--exclude .travis \
+	--exclude .gitignore \
+	--exclude .DS_Store \
+	--exclude benchmark \
+	--exclude doc \
+	--exclude kubernetes \
+	--exclude logos \
+	--exclude deps \
+	--exclude logs \
+	--exclude t \
+	--exclude release \
+	.
+
+	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
+	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
+
+	mkdir -p release
+	mv $(RELEASE_SRC).tgz release/$(RELEASE_SRC).tgz
+	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
+	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512
