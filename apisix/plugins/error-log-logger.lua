@@ -89,19 +89,19 @@ local function report()
 
     local status, err = errlog.set_filter_level(level)
     if not status then
-        core.log.error("failed to set filter level by ngx.errlog, the error is :", err)
+        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
         return
     end
 
     local sock, soc_err = tcp()
     if not sock then
-        core.log.error("failed to init the socket " .. soc_err)
+        core.log.warn("failed to init the socket " .. soc_err)
         return
     end
     sock:settimeout(timeout*1000)
     local ok, err = sock:connect(host, port)
     if not ok then
-        core.log.info("connect to the server failed for " .. err)
+        core.log.warn("connect to the server failed for " .. err)
         return
     end
     local logs = errlog.get_logs(10)
