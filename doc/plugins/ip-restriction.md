@@ -31,14 +31,14 @@
 
 The `ip-restriction` can restrict access to a Service or a Route by either
 whitelisting or blacklisting IP addresses. Single IPs, multiple IPs or ranges
-in CIDR notation like 10.10.10.0/24 can be used(will support IPv6 soon).
+in CIDR notation like 10.10.10.0/24 can be used.
 
 ## Attributes
 
-|Name     |Requirement  |Description|
-|---------|--------|-----------|
-|whitelist|optional  |List of IPs or CIDR ranges to whitelist|
-|blacklist|optional  |List of IPs or CIDR ranges to blacklist|
+| Name      | Type          | Requirement | Default | Valid | Description                              |
+| --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
+| whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
+| blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
 
 One of `whitelist` or `blacklist` must be specified, and they can not work
 together.
@@ -70,18 +70,18 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-Requests to `127.0.0.1`:
+Requests from `127.0.0.1`:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+$ curl http://127.0.0.1:9080/index.html -i
 HTTP/1.1 200 OK
 ...
 ```
 
-Requests to `127.0.0.2`:
+Requests from `127.0.0.2`:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -i
+$ curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
 HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
@@ -116,15 +116,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin after restriction change
 
-Requests to `127.0.0.2`:
+Requests from `127.0.0.2`:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html
+$ curl http://127.0.0.2:9080/index.html -i --interface 127.0.0.2
 HTTP/1.1 200 OK
 ...
 ```
 
-Requests to `127.0.0.1`:
+Requests from `127.0.0.1`:
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -i

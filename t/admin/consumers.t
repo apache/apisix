@@ -223,3 +223,166 @@ GET /t
 {"error_msg":"missing consumer name"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: add consumer with labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username":"jack",
+                     "desc": "new consumer",
+                     "labels": {
+                         "build":"16",
+                         "env":"production",
+                         "version":"v2"
+                     }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "jack",
+                            "desc": "new consumer",
+                            "labels": {
+                                "build":"16",
+                                "env":"production",
+                                "version":"v2"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: invalid format of label value: set consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                 ngx.HTTP_PUT,
+                 [[{
+                     "username":"jack",
+                     "desc": "new consumer",
+                     "labels": {
+                        "env": ["production", "release"]
+                     }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: post consumers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                 ngx.HTTP_POST,
+                 ""
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 405
+--- response_body
+{"error_msg":"not supported `POST` method for consumer"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: add consumer with create_time and update_time(pony)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username":"pony",
+                     "desc": "new consumer",
+                     "create_time": 1602883670,
+                     "update_time": 1602893670
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "pony",
+                            "desc": "new consumer",
+                            "create_time": 1602883670,
+                            "update_time": 1602893670
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: delete test consumer(pony)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/pony',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{"action": "delete"}]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

@@ -37,9 +37,11 @@
 
 ## 属性
 
-* `endpoint`: Skywalking 的 http 节点，例如`http://127.0.0.1:12800`。
-* `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
-* `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
+| 名称         | 类型   | 必选项 | 默认值   | 有效值       | 描述                                                  |
+| ------------ | ------ | ------ | -------- | ------------ | ----------------------------------------------------- |
+| endpoint     | string | 必须   |          |              | Skywalking 的 http 节点，例如`http://127.0.0.1:12800` |
+| sample_ratio | number | 必须   | 1        | [0.00001, 1] | 监听的比例                                            |
+| service_name | string | 可选   | "APISIX" |              | 标记当前服务的名称                                    |
 
 ## 如何启用
 
@@ -107,7 +109,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
         sudo docker run --name skywalking-ui -d -p 8080:8080 --link skywalking:skywalking -e SW_OAP_ADDRESS=skywalking:12800 --restart always apache/skywalking-ui
         ```
     2. 打开管理页面
-        在浏览器里面输入http://10.110.149.175:8080,出现了如下界面，则表示安装成功
+        在浏览器里面输入http://10.110.149.175:8080，出现了如下界面，则表示安装成功
         ![](../../images/plugin/skywalking-3.png)
 
 3. 测试示例:

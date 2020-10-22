@@ -14,15 +14,26 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local log_util = require("apisix.utils.log-util")
+
 local batch_processor = require("apisix.utils.batch-processor")
-local plugin_name = "http-logger"
-local ngx = ngx
+local log_util        = require("apisix.utils.log-util")
+local core            = require("apisix.core")
+local http            = require("resty.http")
+local url             = require("net.url")
+local plugin          = require("apisix.plugin")
+local ngx      = ngx
 local tostring = tostring
-local http = require "resty.http"
-local url = require "net.url"
+local pairs    = pairs
+local ipairs = ipairs
+local str_byte = string.byte
+
+
+local plugin_name = "http-logger"
 local buffers = {}
+local lru_log_format = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
 
 local schema = {
     type = "object",
@@ -36,9 +47,27 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        concat_method = {type = "string", default = "json",
+                         enum = {"json", "new_line"}}
     },
     required = {"uri"}
+}
+
+
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = {
+            type = "object",
+            default = {
+                ["host"] = "$host",
+                ["@timestamp"] = "$time_iso8601",
+                ["client_ip"] = "$remote_addr",
+            },
+        },
+    },
+    additionalProperties = false,
 }
 
 
@@ -47,6 +76,7 @@ local _M = {
     priority = 410,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
@@ -110,23 +140,56 @@ local function send_http_data(conf, log_message)
             .. "body[" .. httpc_res:read_body() .. "]"
     end
 
-    -- keep the connection alive
-    ok, err = httpc:set_keepalive(conf.keepalive)
-
-    if not ok then
-        core.log.debug("failed to keep the connection alive", err)
-    end
-
     return res, err_msg
 end
 
 
-function _M.log(conf)
-    local entry = log_util.get_full_log(ngx, conf)
+local function gen_log_format(metadata)
+    local log_format = {}
+    if metadata == nil then
+        return log_format
+    end
+
+    for k, var_name in pairs(metadata.value.log_format) do
+        if var_name:byte(1, 1) == str_byte("/") then
+            log_format[k] = {true, var_name:sub(2)}
+        else
+            log_format[k] = {false, var_name}
+        end
+    end
+    core.log.info("log_format: ", core.json.delay_encode(log_format))
+    return log_format
+end
+
+
+function _M.log(conf, ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
+    local entry
+    local log_format = lru_log_format(metadata or "", nil, gen_log_format,
+                                      metadata)
+    if core.table.nkeys(log_format) > 0 then
+        entry = core.table.new(0, core.table.nkeys(log_format))
+        for k, var_attr in pairs(log_format) do
+            if var_attr[1] then
+                entry[k] = ctx.var[var_attr[2]]
+            else
+                entry[k] = var_attr[2]
+            end
+        end
+
+        local matched_route = ctx.matched_route and ctx.matched_route.value
+        if matched_route then
+            entry.service_id = matched_route.service_id
+            entry.route_id = matched_route.id
+        end
+    else
+        entry = log_util.get_full_log(ngx, conf)
+    end
 
     if not entry.route_id then
-        core.log.error("failed to obtain the route id for http logger")
-        return
+        entry.route_id = "no-matched"
     end
 
     local log_buffer = buffers[entry.route_id]
@@ -139,10 +202,26 @@ function _M.log(conf)
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
-        if batch_max_size == 1 then
-            data, err = core.json.encode(entries[1]) -- encode as single {}
-        else
-            data, err = core.json.encode(entries) -- encode as array [{}]
+        if conf.concat_method == "json" then
+            if batch_max_size == 1 then
+                data, err = core.json.encode(entries[1]) -- encode as single {}
+            else
+                data, err = core.json.encode(entries) -- encode as array [{}]
+            end
+
+        elseif conf.concat_method == "new_line" then
+            if batch_max_size == 1 then
+                data, err = core.json.encode(entries[1]) -- encode as single {}
+            else
+                local t = core.table.new(#entries, 0)
+                for i, entrie in ipairs(entries) do
+                    t[i], err = core.json.encode(entrie)
+                    if err then
+                        break
+                    end
+                end
+                data = core.table.concat(t, "\n") -- encode as multiple string
+            end
         end
 
         if not data then
@@ -172,5 +251,6 @@ function _M.log(conf)
     buffers[entry.route_id] = log_buffer
     log_buffer:push(entry)
 end
+
 
 return _M

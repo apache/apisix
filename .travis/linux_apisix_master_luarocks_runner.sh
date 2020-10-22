@@ -40,6 +40,8 @@ do_install() {
     sudo make install > build.log 2>&1 || (cat build.log && exit 1)
     cd ..
     rm -rf luarocks-2.4.4
+
+    ./utils/install-etcd.sh
 }
 
 script() {
@@ -48,7 +50,7 @@ script() {
     openresty -V
     sudo service etcd stop
     mkdir -p ~/etcd-data
-    /usr/bin/etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
+    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
     etcd --version
     sleep 5
 

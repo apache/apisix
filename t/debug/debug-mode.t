@@ -52,10 +52,12 @@ loaded plugin and sort by priority: 10000 name: serverless-pre-function
 loaded plugin and sort by priority: 4010 name: batch-requests
 loaded plugin and sort by priority: 4000 name: cors
 loaded plugin and sort by priority: 3000 name: ip-restriction
+loaded plugin and sort by priority: 2990 name: referer-restriction
 loaded plugin and sort by priority: 2900 name: uri-blocker
 loaded plugin and sort by priority: 2800 name: request-validation
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2555 name: wolf-rbac
+loaded plugin and sort by priority: 2530 name: hmac-auth
 loaded plugin and sort by priority: 2520 name: basic-auth
 loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth

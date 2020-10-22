@@ -96,6 +96,19 @@ etcd:
 _EOC_
 }
 
+my $custom_hmac_auth = $ENV{"CUSTOM_HMAC_AUTH"} || "false";
+if ($custom_hmac_auth eq "true") {
+    $user_yaml_config .= <<_EOC_;
+plugin_attr:
+  hmac-auth:
+    signature_key: X-APISIX-HMAC-SIGNATURE
+    algorithm_key: X-APISIX-HMAC-ALGORITHM
+    date_key: X-APISIX-DATE
+    access_key: X-APISIX-HMAC-ACCESS-KEY
+    signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
+_EOC_
+}
+
 
 my $profile = $ENV{"APISIX_PROFILE"};
 
@@ -124,12 +137,16 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 _EOC_
 
+    # set default `timeout` to 5sec
+    my $timeout = $block->timeout // 5;
+    $block->set_value("timeout", $timeout);
+
     $block->set_value("main_config", $main_config);
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "./?.lua;./?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "./?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 
     lua_socket_log_errors off;
 
@@ -209,8 +226,8 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "./?.lua;./?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "./?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
@@ -223,6 +240,7 @@ _EOC_
     lua_shared_dict balancer_ewma         1m;
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;

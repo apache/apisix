@@ -53,6 +53,7 @@
 * [grpc-transcode](plugins/grpc-transcode.md)：REST <--> gRPC 转码。
 * [serverless](plugins/serverless.md)：允许在 APISIX 中的不同阶段动态运行 Lua 代码。
 * [ip-restriction](plugins/ip-restriction.md): IP 黑白名单。
+* [referer-restriction](plugins/referer-restriction.md): Referer 白名单。
 * [openid-connect](plugins/openid-connect.md)
 * [redirect](plugins/redirect.md): URI 重定向。
 * [response-rewrite](plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。

@@ -133,6 +133,30 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 
 注：项目已经提供了 __core.schema.check__ 公共方法，直接使用即可完成配置参数校验。
 
+另外，如果插件需要使用一些元数据，可以定义插件的 `metadata_schema` ，然后就可以通过 `admin api` 动态的管理这些元数据了。如：
+
+```lua
+local metadata_schema = {
+    type = "object",
+    properties = {
+        ikey = {type = "number", minimum = 0},
+        skey = {type = "string"},
+    },
+    required = {"ikey", "skey"},
+    additionalProperties = false,
+}
+
+local plugin_name = "example-plugin"
+
+local _M = {
+    version = 0.1,
+    priority = 0,        -- TODO: add a type field, may be a good idea
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
+
 ## 确定执行阶段
 
 根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，只要在请求进来之后业务响应之前完成认证即可。

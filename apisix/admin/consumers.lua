@@ -43,7 +43,7 @@ local function check_conf(consumer_name, conf)
     end
 
     if conf.plugins then
-        ok, err = plugins.check_schema(conf.plugins)
+        ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
@@ -103,7 +103,7 @@ end
 
 
 function _M.post(consumer_name, conf)
-    return 400, {error_msg = "not support `POST` method for consumer"}
+    return 405, {error_msg = "not supported `POST` method for consumer"}
 end
 
 

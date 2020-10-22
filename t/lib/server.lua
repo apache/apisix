@@ -20,6 +20,15 @@ local json_encode = require("cjson").encode
 local _M = {}
 
 
+local function inject_headers()
+    local hdrs = ngx.req.get_headers()
+    for k, v in pairs(hdrs) do
+        if k:sub(1, 5) == "resp-" then
+            ngx.header[k:sub(6)] = v
+        end
+    end
+end
+
 function _M.hello()
     ngx.say("hello world")
 end
@@ -154,7 +163,8 @@ function _M.mock_zipkin()
             ngx.exit(400)
         end
 
-        if span.localEndpoint.serviceName ~= 'APISIX' and span.localEndpoint.serviceName ~= 'apisix' then
+        if span.localEndpoint.serviceName ~= 'APISIX'
+          and span.localEndpoint.serviceName ~= 'apisix' then
             ngx.exit(400)
         end
 
@@ -205,7 +215,9 @@ function _M.wolf_rbac_access_check()
     local args = ngx.req.get_uri_args()
     local resName = args.resName
     if resName == '/hello' or resName == '/wolf/rbac/custom/headers' then
-        ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator",username="admin", id="100"} }}))
+        ngx.say(json_encode({ok=true,
+                            data={ userInfo={nickname="administrator",
+                                username="admin", id="100"} }}))
     else
         ngx.status = 401
         ngx.say(json_encode({ok=false, reason="no permission to access"}))
@@ -220,7 +232,8 @@ function _M.wolf_rbac_user_info()
         ngx.exit(0)
     end
 
-    ngx.say(json_encode({ok=true, data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
+    ngx.say(json_encode({ok=true,
+                        data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
 end
 
 function _M.wolf_rbac_change_pwd()
@@ -237,7 +250,8 @@ end
 
 function _M.wolf_rbac_custom_headers()
     local headers = ngx.req.get_headers()
-    ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username'] .. ',nickname:' .. headers['X-Nickname'])
+    ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username']
+            .. ',nickname:' .. headers['X-Nickname'])
 end
 
 function _M.websocket_handshake()
@@ -250,6 +264,13 @@ function _M.websocket_handshake()
 end
 _M.websocket_handshake_route = _M.websocket_handshake
 
+local function print_uri()
+    ngx.say(ngx.var.uri)
+end
+for i = 1, 100 do
+    _M["print_uri_" .. i] = print_uri
+end
+
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
     action = string.gsub(action, "[/\\.]", "_")
@@ -257,6 +278,7 @@ function _M.go()
         return ngx.exit(404)
     end
 
+    inject_headers()
     return _M[action]()
 end
 
@@ -268,6 +290,12 @@ function _M.headers()
     end
 
     ngx.say("/headers")
+end
+
+function _M.log()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    ngx.log(ngx.WARN, "request log: ", body or "nil")
 end
 
 return _M

@@ -79,7 +79,7 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         if domain == "test.com" then
             return {address = "127.0.0.2"}
         end
@@ -104,7 +104,7 @@ hello world
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" then
@@ -192,7 +192,7 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0.2"}
         end
@@ -217,7 +217,7 @@ hello world
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" or domain == "test2.com" then
@@ -338,7 +338,7 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" then
@@ -425,7 +425,7 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" or domain == "test2.com" then
@@ -487,7 +487,7 @@ proxy request to 127.0.0.5:1980
 
     local utils = require("apisix.core.utils")
     local count = 1
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0.1"}
         end
@@ -579,7 +579,7 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0." .. count}

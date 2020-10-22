@@ -17,15 +17,18 @@
 #
 -->
 
-[English](README.md)
+- [English](README.md)
+
 ## APISIX
 
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- **QQ 交流群**: 552030619
 - 邮件列表: 发邮件到 dev-subscribe@apisix.apache.org, 然后跟着回复邮件操作即可。
+- **QQ 交流群**: 578997126(推荐), 552030619
+- 加入 [Apache Slack](http://s.apache.org/slack-invite) 的 `apisix` 频道。 如果前面的链接失效，请在这里获取最新的邀请地址 [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
+- [bilibili B站 视频](https://space.bilibili.com/551921247)
 
 ## Apache APISIX 是什么？
 Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 网络库和 etcd 实现，
@@ -83,6 +86,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 - **安全防护**
     - 多种身份认证方式: [key-auth](doc/zh-cn/plugins/key-auth.md), [JWT](doc/zh-cn/plugins/jwt-auth.md), [basic-auth](doc/zh-cn/plugins/basic-auth.md), [wolf-rbac](doc/zh-cn/plugins/wolf-rbac.md)。
     - [IP 黑白名单](doc/zh-cn/plugins/ip-restriction.md)
+    - [Referer 白名单](doc/zh-cn/plugins/referer-restriction.md)
     - [IdP 支持](doc/plugins/openid-connect.md): 支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
     - [限制速率](doc/zh-cn/plugins/limit-req.md)
     - [限制请求数](doc/zh-cn/plugins/limit-count.md)
@@ -136,7 +140,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         ./bin/apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         ./bin/apisix start
         ```
@@ -160,16 +164,12 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
         ```shell
         apisix version
         ```
-    - 启动 APISIX (请先确保已经启动了 etcd，并打开了 v2 协议):
+    - 启动 APISIX:
         ```shell
         apisix start
         ```
 
-**注意**：Apache APISIX 现在还不支持 etcd 的 v3 协议，所以启动 etcd 时需要开启 v2 协议的支持。
-我们正在做 etcd v3 协议的支持。
-```shell
-etcd --enable-v2=true &
-```
+**注意**：Apache APISIX 从 v2.0 开始不再支持 etcd v2 协议，并且 etcd 最低支持版本为 v3.4.0，如果有需要请进行升级。如果需要将数据迁移至 etcd v3，请按照 [etcd 迁移指南](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/) 进行迁移。
 
 ## 针对开发者
 
@@ -263,6 +263,10 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
+## 开发计划
+- [2.0](https://github.com/apache/apisix/milestone/7)
+- [2.1](https://github.com/apache/apisix/milestone/8)
+
 ## 视频和文章
 - 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
 - 2019.12.14 [从 0 到 1：Apache APISIX 的 Apache 之路](https://zhuanlan.zhihu.com/p/99620158)
@@ -274,6 +278,7 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 - 2019.7.6 [APISIX 高性能实战](https://www.upyun.com/opentalk/429.html)
 
 ## 用户实际使用案例
+- [欧盟数字工厂平台: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/zHF_vlMaPOSoiNvqw60tVw)
 - [HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
@@ -294,11 +299,10 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
 
-## 参与社区
+## Logo
 
-如果你对 APISIX 的开发和使用感兴趣，欢迎加入我们的 QQ 群来交流:
-
-<img src="doc/images/qq-group.png" width="302" height="302">
+- [Apache APISIX logo(PNG)](logos/apache-apisix.png)
+- [Apache APISIX logo 源文件](https://apache.org/logos/#apisix)
 
 ## 致谢
 
