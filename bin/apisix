@@ -90,7 +90,7 @@ local ngx_tpl = [=[
 master_process on;
 
 worker_processes {* worker_processes *};
-{% if os_name == "Linux" then %}
+{% if os_name == "Linux" and enable_cpu_affinity == true then %}
 worker_cpu_affinity auto;
 {% end %}
 
@@ -966,6 +966,11 @@ Please modify "admin_key" in conf/config.yaml .
             error("local DNS is empty")
         end
         sys_conf["dns_resolver"] = dns_addrs
+    end
+
+    local env_worker_processes = os.getenv("APIX_WORKER_PROCESSES")
+    if env_worker_processes then
+        sys_conf["worker_processes"] = math.floor(tonumber(env_worker_processes))
     end
 
     local conf_render = template.compile(ngx_tpl)
