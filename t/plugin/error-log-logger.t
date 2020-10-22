@@ -93,7 +93,7 @@ qr/\[Server\] receive data:.*this a warning message for test./
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.warn("this an error message for test.")
+            core.log.error("this an error message for test.")
         }
     }
 --- request
