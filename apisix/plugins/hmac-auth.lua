@@ -346,7 +346,6 @@ local function get_params(ctx)
     -- get params from header `Authorization`
     if not app_key then
         local auth_string = core.request.header(ctx, "Authorization")
-
         if not auth_string then
             return params
         end
