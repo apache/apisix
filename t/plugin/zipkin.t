@@ -438,8 +438,6 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
     }
 --- pipelined_requests eval
 ["GET /t", "GET /opentracing", "GET /opentracing", "GET /opentracing"]
---- more_headers
-apikey: auth-jack
 --- error_code eval
 [200, 200, 200, 403]
 --- no_error_log
