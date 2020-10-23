@@ -17,14 +17,10 @@
 
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
-import sys
 import os
 import time
-import json
 import subprocess
-import signal
 import random
-import string
 import urllib
 import re
 import requests
@@ -34,8 +30,7 @@ import grequests
 
 def get_pid_byname():
     name = "apisix"
-    cmd = "ps -ef | grep %s/conf | grep master | grep -v grep| awk \
-    '{print $2}'" % name
+    cmd = "ps -ef | grep %s/conf | grep master | grep -v grep| awk '{print $2}'" % name
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
                          stdout=subprocess.PIPE, shell=True)
     p.wait()
@@ -70,13 +65,17 @@ def setup_module():
     apisixpid = int(get_pid_byname())
     apisixpath = psutil.Process(apisixpid).cwd()
     os.chdir(apisixpath)
+    
     subprocess.call("./bin/apisix stop", shell=True, stdout=subprocess.PIPE)
     time.sleep(1)
+
     subprocess.Popen("> logs/error.log", shell=True, stdout=subprocess.PIPE)
     subprocess.call("etcd &", shell=True, stdout=subprocess.PIPE)
     time.sleep(5)
+
     subprocess.call("./bin/apisix start", shell=True, stdout=subprocess.PIPE)
     time.sleep(1)
+
     apisixpid = int(get_pid_byname())
     print("=============APISIX's pid:", apisixpid)
     apisixhost = "http://127.0.0.1:9080"

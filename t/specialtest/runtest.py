@@ -53,15 +53,5 @@ def env_prepare(casedirpath):
     r_exc_case_cmd.wait()
     err = r_exc_case_cmd.stderr.read()
 
-    # exc_case_cmd3='pytest --force-flaky --max-runs=3
-    # --no-flaky-report -v -s "%s" '%(casedirpath)
-    # r_exc_case_cmd = subprocess.Popen(exc_case_cmd3,
-    # stderr=subprocess.PIPE,shell=True)
-    # r_exc_case_cmd.wait()
-    # err = r_exc_case_cmd.stderr.read()
-
-    # shutil.rmtree(cur_file_dir()+r'/.pytest_cache')
-    # shutil.rmtree(casedirpath+r'/__pycache__')
-
 casepath = cur_file_dir()+"/cases"
 env_prepare(casepath)
