@@ -24,6 +24,7 @@
 - [**Description**](#Description)
 - [**Attributes**](#Attributes)
 - [**How To Enable**](#how-to-Enable)
+- [**How To Configure**](#how-to-configure)
 - [**Batch Api Request/Response**](#batch-api-request/response)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
@@ -48,6 +49,21 @@ You may need to use [interceptors](plugin-interceptors.md) to protect it.
 ## How To Enable
 
 Default enabled
+
+## How To Configure
+
+By default, the maximun body size sent to the `/apisix/batch-requests` can't be larger than 1 MiB.
+You can configure it via `apisix/admin/plugin_metadata/batch-requests`:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "max_body_size": 4194304
+}'
+```
+
+The unit of `max_body_size` is byte, and the value should be larger than zero.
+
 
 ## Batch API Request/Response
 The plugin will create a API in `apisix` to handle your batch request.
