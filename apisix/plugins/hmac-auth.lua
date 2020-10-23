@@ -375,12 +375,6 @@ local function get_params(ctx)
 
     if not keep_headers then
         remove_headers(signature_key, algorithm_key, signed_headers_key)
-
-        if params.signed_headers then
-            for _, header in ipairs(params.signed_headers) do
-                remove_headers(header)
-            end
-        end
     end
 
     core.log.info("params: ", core.json.delay_encode(params))

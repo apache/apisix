@@ -998,7 +998,10 @@ location /t {
             headers
         )
         
-        ngx.status = code
+        if code >= 300 then
+            ngx.status = code
+        end
+
         local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
             if i ~= 4 then      -- skip date
@@ -1012,11 +1015,13 @@ GET /t
 --- response_body
 uri: /uri
 host: 127.0.0.1
-content-length: 52
+content-type: application/x-www-form-urlencoded
 x-real-ip: 127.0.0.1
+content-length: 52
+x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
 user-agent: lua-resty-http/0.14 (Lua) ngx_lua/10017
-content-type: application/x-www-form-urlencoded
+x-custom-header-a: asld$%dfasf
 --- no_error_log
 [error]
 
@@ -1041,7 +1046,9 @@ content-type: application/x-www-form-urlencoded
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -1107,7 +1114,10 @@ location /t {
             headers
         )
 
-        ngx.status = code
+        if code >= 300 then
+            ngx.status = code
+        end
+
         local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
             if i ~= 4 then      -- skip date
@@ -1121,11 +1131,13 @@ GET /t
 --- response_body
 uri: /uri
 host: 127.0.0.1
-content-length: 52
+content-type: application/x-www-form-urlencoded
 x-real-ip: 127.0.0.1
+content-length: 52
+x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
 user-agent: lua-resty-http/0.14 (Lua) ngx_lua/10017
-content-type: application/x-www-form-urlencoded
+x-custom-header-a: asld$%dfasf
 --- no_error_log
 [error]
 
@@ -1150,7 +1162,9 @@ content-type: application/x-www-form-urlencoded
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -1216,7 +1230,10 @@ location /t {
             headers
         )
 
-        ngx.status = code
+        if code >= 300 then
+            ngx.status = code
+        end
+        
         local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
             if i ~= 4 and i ~= 12 then      -- skip date and x-hmac-signature
