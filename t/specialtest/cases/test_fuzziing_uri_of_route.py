@@ -65,7 +65,7 @@ def setup_module():
     apisixpid = int(get_pid_byname())
     apisixpath = psutil.Process(apisixpid).cwd()
     os.chdir(apisixpath)
-    
+
     subprocess.call("./bin/apisix stop", shell=True, stdout=subprocess.PIPE)
     time.sleep(1)
 
