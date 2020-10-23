@@ -98,7 +98,6 @@ script() {
     cd t/specialtest/
     sudo python runtest.py
     pytest --force-flaky --max-runs=3 --no-flaky-report -v -s "cases"
-
 }
 
 
@@ -115,6 +114,4 @@ do_install)
 script)
     script "$@"
     ;;
-
-
 esac
