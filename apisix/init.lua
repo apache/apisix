@@ -692,6 +692,10 @@ function _M.http_log_phase()
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
+    if api_ctx.curr_req_matched then
+        core.tablepool.release("match_opts_matched", api_ctx.curr_req_matched)
+    end
+
     core.tablepool.release("api_ctx", api_ctx)
 end
 

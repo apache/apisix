@@ -131,7 +131,7 @@ function _M.match(api_ctx)
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
     match_opts.host = api_ctx.var.host
-    match_opts.matched = {}
+    match_opts.matched = core.tablepool.fetch("match_opts_matched", 0, 4)
 
     if host_router then
         local host_uri = api_ctx.var.host
