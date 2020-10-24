@@ -109,7 +109,13 @@ function _M.get(name)
         return 400, {error_msg = "failed to load plugin " .. name}
     end
 
-    local json_schema = plugin.schema
+    local arg = ngx.req.get_uri_args()
+    if arg and arg["schema_type"] == "consumer" then
+        json_schema = plugin.consumer_schema
+    else
+        json_schema = plugin.schema
+    end
+
     if not json_schema then
         return 400, {error_msg = "not found schema"}
     end

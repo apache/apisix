@@ -74,3 +74,24 @@ GET /apisix/admin/plugins/prometheus
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: get plugin basic-auth schema
+--- request
+GET /apisix/admin/plugins/basic-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: get plugin basic-auth schema by schema_type
+--- request
+GET /apisix/admin/plugins/basic-auth?schema_type=consumer
+--- response_body
+{"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+--- no_error_log
+[error]
+
