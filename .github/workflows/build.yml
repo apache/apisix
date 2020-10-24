@@ -22,6 +22,18 @@ jobs:
       SERVER_NAME: ${{ matrix.os_name }}
 
 
+    services:
+      etcd:
+        image: bitnami/etcd:3.4.0
+        ports: 
+          - 2379:2379
+          - 2380:2380
+        env: 
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+
+
     steps:
       - name: Check out code
         uses: actions/checkout@v2
