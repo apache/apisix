@@ -18,12 +18,14 @@
 local core = require("apisix.core")
 local plugin_name = "error-log-logger"
 local errlog = require "ngx.errlog"
+local batch_processor = require("apisix.utils.batch-processor")
+local table = core.table
 local ngx = ngx
 local tcp = ngx.socket.tcp
 local select = select
 local type = type
 local string = string
-
+local buffers
 local timer
 local schema = {
     type = "object",
@@ -44,6 +46,12 @@ local log_level = {
     DEBUG  =    ngx.DEBUG
 }
 
+local config = {
+    name = plugin_name,
+    timeout = 3,
+    keepalive = 30,
+    level = "WARN"
+}
 local _M = {
     version = 0.1,
     priority = 1091,
@@ -70,58 +78,105 @@ local function try_attr(t, ...)
     return true
 end
 
-
-local function report()
+local function load_attr()
     local local_conf = core.config.local_conf()
-    local host, port
-    local timeout = 3
-    local keepalive = 3
-    local level = "warn"
     if try_attr(local_conf, "plugin_attr", plugin_name) then
         local attr = local_conf.plugin_attr[plugin_name]
-        host = attr.host
-        port = attr.port
-        level = attr.loglevel or level
-        timeout = attr.timeout or timeout
-        keepalive = attr.keepalive or keepalive
+        config.host = attr.host
+        config.port = attr.port
+        config.level = attr.level or config.level
+        config.timeout = attr.timeout or config.timeout
+        config.keepalive = attr.keepalive or config.keepalive
     end
-    level = log_level[string.upper(level)]
+end
 
-    local status, err = errlog.set_filter_level(level)
-    if not status then
-        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
-        return
-    end
-
+local function send_to_server(data)
+    local res = false
+    local err_msg
     local sock, soc_err = tcp()
     if not sock then
-        core.log.warn("failed to init the socket " .. soc_err)
-        return
+        err_msg = "failed to init the socket " .. soc_err
+        return res, err_msg
     end
-    sock:settimeout(timeout*1000)
-    local ok, err = sock:connect(host, port)
+    sock:settimeout(config.timeout*1000)
+    local ok, err = sock:connect(config.host, config.port)
     if not ok then
-        core.log.warn("connect to the server failed for " .. err)
-        return
+        err_msg = "failed to connect the TCP server: host[" .. config.host
+                  .. "] port[" .. tostring(config.port) .. "] err: " .. err
+        return res, err_msg
     end
+    local bytes, err = sock:send(data)
+    if not bytes then
+        sock:close()
+        err_msg = "failed to send data to TCP server: host[" .. config.host
+                  .. "] port[" .. tostring(config.port) .. "] err: " .. err
+        return res, err_msg
+    end
+
+    sock:setkeepalive(config.keepalive * 1000)
+    return true
+end
+
+local function process()
+    local entries = {}
     local logs = errlog.get_logs(10)
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
-            if logs[i] <= level then --ommit the lower log producted at the initial
-                local bytes, err = sock:send(logs[i + 2])
-                if not bytes then
-                    core.log.info("send data  failed for " , err, ", the data:", logs[i + 2] )
-                    return
-                end
-            end
+            table.insert(entries, logs[i + 2])
         end
         logs = errlog.get_logs(10)
-	end
-    sock:setkeepalive(keepalive*1000)
-end
+    end
+    if #entries == 0 then
+        return
+    end
+    local log_buffer = buffers[config.id]
+    if log_buffer then
+        for i = 1, #entries do
+            log_buffer:push(entries[i])
+        end
+        return
+    end
+    -- Generate a function to be executed by the batch processor
+    local func = function(entries)
+        return send_to_server(entries)
+    end
+    local config_bat = {
+        name = config.name,
+        retry_delay = config.retry_delay,
+        batch_max_size = config.batch_max_size or 1,
+        max_retry_count = config.max_retry_count,
+        buffer_duration = config.buffer_duration,
+        inactive_timeout = config.inactive_timeout,
+    }
 
+    local err
+    log_buffer, err = batch_processor:new(func, config_bat)
+
+    if not log_buffer then
+        core.log.error("error when creating the batch processor: ", err)
+        return
+    end
+    buffers[config.id] = log_buffer
+    for i = 1, #entries do
+        log_buffer:push(entries[i])
+    end
+
+end
 function _M.init()
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        return
+    end
+    buffers = {}
+    config.id = ngx.worker.id()
+    load_attr(config)
+    if not (config.host and config.port) then
+        core.log.warn("please set the host and port of server when enable the error-log-logger.")
+        return
+    end
+    local level = log_level[string.upper(config.level)]
+    local status, err = errlog.set_filter_level(level)
+    if not status then
+        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
         return
     end
 
@@ -129,7 +184,7 @@ function _M.init()
         return
     end
     local err
-    timer, err = core.timer.new("error-log-logger", report)
+    timer, err = core.timer.new("error-log-logger", process)
     if not timer then
         core.log.error("failed to create timer error-log-logger: ", err)
     else
