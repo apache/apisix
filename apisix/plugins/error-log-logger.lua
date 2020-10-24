@@ -25,6 +25,7 @@ local tcp = ngx.socket.tcp
 local select = select
 local type = type
 local string = string
+local tostring = tostring
 local buffers
 local timer
 local schema = {
