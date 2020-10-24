@@ -25,6 +25,7 @@
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
+- [**Metadata**](#metadata)
 - [**Disable Plugin**](#disable-plugin)
 
 
@@ -81,6 +82,34 @@ $ curl -i http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
 ...
 hello, world
+```
+
+## Metadata
+
+| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
+| ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
+| log_format       | object  | optional    |               |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, the value is [Nginx variable](http://nginx.org/en/docs/varindex.html). |
+
+ Note that the metadata configuration is applied in global scope, which means it will take effect on all Route or Service which use http-logger plugin.
+
+### Example
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+It is expected to see some logs like that:
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
 ## Disable Plugin
