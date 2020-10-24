@@ -67,6 +67,11 @@ local consumer_schema = {
                 maxLength = 50,
             }
         },
+        keep_headers = {
+            type = "boolean",
+            title = "whether to keep the http request header",
+            default = false,
+        }
     },
     required = {"access_key", "secret_key"},
     additionalProperties = false,
@@ -115,6 +120,17 @@ local function array_to_map(arr)
     end
 
     return map
+end
+
+
+local function remove_headers(...)
+    local headers = { ... }
+    if headers and #headers > 0 then
+        for _, header in ipairs(headers) do
+            core.log.info("remove_header: ", header)
+            core.request.set_header(header, nil)
+        end
+    end
 end
 
 
@@ -291,6 +307,17 @@ local function validate(ctx, params)
     return consumer
 end
 
+
+local function get_keep_headers(access_key)
+    local consumer, err = get_consumer(access_key)
+    if err then
+        return false, err
+    end
+
+    return consumer.auth_conf.keep_headers
+end
+
+
 local function get_params(ctx)
     local params = {}
     local local_conf = core.config.local_conf()
@@ -342,6 +369,13 @@ local function get_params(ctx)
     params.signature  = signature
     params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
+
+    local keep_headers = get_keep_headers(params.access_key)
+    core.log.info("keep_headers: ", keep_headers)
+
+    if not keep_headers then
+        remove_headers(signature_key, algorithm_key, signed_headers_key)
+    end
 
     core.log.info("params: ", core.json.delay_encode(params))
 

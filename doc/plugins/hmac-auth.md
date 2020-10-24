@@ -21,11 +21,11 @@
 
 # Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+  - [**Name**](#name)
+  - [**Attributes**](#attributes)
+  - [**How To Enable**](#how-to-enable)
+  - [**Test Plugin**](#test-plugin)
+  - [**Disable Plugin**](#disable-plugin)
 
 ## Name
 
@@ -42,6 +42,7 @@ The `consumer` then adds its key to request header to verify its request.
 | algorithm      | string        | optional    | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | Encryption algorithm.                                                                                                                                                                                                                                                         |
 | clock_skew     | integer       | optional    | 0           |                                             | The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking `Date`                                                                                    |
 | signed_headers | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
+| keep_headers | boolean | optional    |     false       |           [ true, false ]                  | Whether it is necessary to keep the request headers of `X-HMAC-SIGNATURE`, `X-HMAC-ALGORITHM` and `X-HMAC-SIGNED-HEADERS` in the http request after successful authentication. true: means to keep the http request header, false: means to remove the http request header. |
 
 ## How To Enable
 
