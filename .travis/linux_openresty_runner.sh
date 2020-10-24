@@ -129,7 +129,6 @@ script() {
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
 
-    sleep 5
 
     ./build-cache/grpc_server_example &
 

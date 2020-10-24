@@ -40,11 +40,7 @@ jobs:
 
 #----------------------------------------------------------------------------
       - name: Linux Get dependencies
-        if: matrix.platform == 'ubuntu-18.04' && matrix.os_name != 'linux_openresty' && matrix.os_name != 'linux_tengine'
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd
-
-      - name: Linux Get dependencies
-        if: matrix.platform == 'ubuntu-18.04' && (matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_tengine')
+        if: matrix.platform == 'ubuntu-18.04'
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd-client
 
       - name: Linux Before install
