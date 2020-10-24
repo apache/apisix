@@ -260,7 +260,7 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
-    ./utils/install-etcd.sh
+    # ./utils/install-etcd.sh
 
     git clone https://github.com/iresty/test-nginx.git test-nginx
     make utils
