@@ -193,7 +193,7 @@ plugins:                          # plugin list
   - proxy-mirror
   - request-id
   - hmac-auth
-  - error-log-logger
+#  - error-log-logger
 
 stream_plugins:
   - mqtt-proxy
@@ -202,9 +202,9 @@ plugin_attr:
   log-rotate:
     interval: 3600    # rotate interval (unit: second)
     max_kept: 168     # max number of log files will be kept
-  error-log-logger:
-    host: "127.0.0.1"
-    port: 33333
-    loglevel: "warn"
-
-
+#  error-log-logger:
+#    host: "127.0.0.1" # the tcp server's ip
+#    port: 33333       # the tcp server's port
+#    level: "warn"     # the filter's loglevel, default warn, chose the level in {"STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG" }
+#    timeout: 3        # the timout of cosocket (unit: second), default: 3
+#    keepalive: 30      # the keepalive period of cosocket (unit: second), default: 30

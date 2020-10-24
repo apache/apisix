@@ -23,16 +23,34 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $user_yaml_config = <<_EOC_;
+plugins:                          # plugin list
+  - error-log-logger
+
+plugin_attr:
+  error-log-logger:
+    host: "127.0.0.1"
+    port: 1999 
+    level: "warn"
+    timeout: 3
+_EOC_
+
+    $block->set_value("yaml_config", $user_yaml_config);
+});
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
     my $stream_single_server = <<_EOC_;
     # fake server, only for test
     server {
-        listen 33333;
+        listen 1999;
 
         content_by_lua_block {
             local exiting = ngx.worker.exiting
             local sock, err = ngx.req.socket(true)
             if not sock then
-                ngx.log(ngx.WARN, "socket error:" .. err)
+                ngx.log(ngx.WARN, "socket error:", err)
                 return
             end
             sock:settimeout(30 * 1000)
@@ -40,10 +58,10 @@ add_block_preprocessor(sub {
             do
                 local data, err =  sock:receive()
                 if (data) then
-                    ngx.log(ngx.INFO, "[Server] receive data:" .. data)
+                    ngx.log(ngx.INFO, "[Server] receive data:", data)
                 else 
                     if err ~= "timeout" then
-                        ngx.log(ngx.WARN, "socket error:" .. err)
+                        ngx.log(ngx.WARN, "socket error:", err)
                         return
                     end
                 end
@@ -85,7 +103,7 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/\[Server\] receive data:.*this is a warning message for test./
---- wait: 1
+--- wait: 2
 
 
 
@@ -102,7 +120,7 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/\[Server\] receive data:.*this is an error message for test./
---- wait: 1
+--- wait: 2
 
 
 
@@ -119,4 +137,4 @@ GET /tg
 --- response_body
 --- no_error_log
 qr/\[Server\] receive data:.*this is an info message for test./
---- wait: 1
+--- wait: 2
