@@ -26,6 +26,7 @@ jobs:
           - 2379:2379
           - 2380:2380
         env: 
+          ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
 
