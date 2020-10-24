@@ -16,7 +16,7 @@
 --
 
 local lfs = require("lfs")
-local log = require "apisix.core.log"
+local log = require("apisix.core.log")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local clear_header = ngx.req.clear_header
@@ -129,8 +129,8 @@ local function check_size(size, max_size)
 end
 
 
-local function test_expect(ctx)
-    local expect = ctx.var.http_expect
+local function test_expect(var)
+    local expect = var.http_expect
     return expect and str_lower(expect) == "100-continue"
 end
 
@@ -147,7 +147,7 @@ function _M.get_body(max_size, ctx)
                 -- When client_max_body_size is exceeded, Nginx will set r->expect_tested = 1 to
                 -- avoid sending the 100 CONTINUE.
                 -- We use trick below to imitate this behavior.
-                if test_expect(ctx) then
+                if test_expect(var) then
                     clear_header("expect")
                 end
 
