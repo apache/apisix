@@ -25,6 +25,7 @@
 - [**Attributes**](#Attributes)
 - [**How To Enable**](#how-to-Enable)
 - [**How To Configure**](#how-to-configure)
+- [**Metadata**](#metadata)
 - [**Batch Api Request/Response**](#batch-api-request/response)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
@@ -62,7 +63,11 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 }'
 ```
 
-The unit of `max_body_size` is byte, and the value should be larger than zero.
+## Metadata
+
+| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| max_body_size       | integer  | required   |  1048576  |    > 0  | the maximun of request body size in bytes |
 
 
 ## Batch API Request/Response
