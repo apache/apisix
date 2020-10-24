@@ -35,9 +35,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-#----------------------------------------------------------------------------
       - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl etcd-client
+        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
 
       - name: Linux Before install
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install

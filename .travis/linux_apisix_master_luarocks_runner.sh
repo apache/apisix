@@ -42,6 +42,7 @@ do_install() {
     rm -rf luarocks-2.4.4
 
     # ./utils/install-etcd.sh
+    ./utils/install-etcd-client.sh
 }
 
 script() {
