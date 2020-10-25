@@ -30,7 +30,20 @@ local buffers
 local timer
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        host = {type = "string"},
+        port = {type = "integer", minimum = 0},
+        tls = {type = "boolean", default = false},
+        tls_options = {type = "string"},
+        timeout = {type = "integer", minimum = 1, default= 3},
+        keepalive = {type = "integer", minimum = 1, default= 30},
+        name = {type = "string", default = "tcp logger"},
+        level = {type = "string", default = "WARN"},
+        max_retry_count = {type = "integer", minimum = 0, default = 0},
+        retry_delay = {type = "integer", minimum = 0, default = 1},
+        buffer_duration = {type = "integer", minimum = 1, default = 60},
+        inactive_timeout = {type = "integer", minimum = 1, default = 5},
+    },
     additionalProperties = false,
 }
 
@@ -51,7 +64,13 @@ local config = {
     name = plugin_name,
     timeout = 3,
     keepalive = 30,
-    level = "WARN"
+    level = "WARN",
+    tls = false,
+    retry_delay = 1,
+    batch_max_size = 1,
+    max_retry_count = 0,
+    buffer_duration = 60,
+    inactive_timeout = 5,
 }
 local _M = {
     version = 0.1,
@@ -88,6 +107,12 @@ local function load_attr()
         config.level = attr.level or config.level
         config.timeout = attr.timeout or config.timeout
         config.keepalive = attr.keepalive or config.keepalive
+        config.tls = attr.tls or config.tls
+        config.tls_options = attr.tls_options
+        config.retry_delay = attr.retry_delay or config.retry_delay
+        config.max_retry_count = attr.max_retry_count or config.max_retry_count
+        config.buffer_duration = attr.buffer_duration or config.buffer_duration
+        config.inactive_timeout = attr.inactive_timeout or config.inactive_timeout
     end
 end
 
@@ -95,17 +120,29 @@ local function send_to_server(data)
     local res = false
     local err_msg
     local sock, soc_err = tcp()
+
     if not sock then
         err_msg = "failed to init the socket " .. soc_err
         return res, err_msg
     end
+
     sock:settimeout(config.timeout*1000)
+
     local ok, err = sock:connect(config.host, config.port)
     if not ok then
         err_msg = "failed to connect the TCP server: host[" .. config.host
                   .. "] port[" .. tostring(config.port) .. "] err: " .. err
         return res, err_msg
     end
+
+    if config.tls then
+        ok, err = sock:sslhandshake(true, config.tls_options, false)
+        if not ok then
+            return false, "failed to to perform TLS handshake to TCP server: host["
+                          .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
+        end
+    end
+
     local bytes, err = sock:send(data)
     if not bytes then
         sock:close()
@@ -144,7 +181,7 @@ local function process()
     local config_bat = {
         name = config.name,
         retry_delay = config.retry_delay,
-        batch_max_size = config.batch_max_size or 1,
+        batch_max_size = config.batch_max_size,
         max_retry_count = config.max_retry_count,
         buffer_duration = config.buffer_duration,
         inactive_timeout = config.inactive_timeout,

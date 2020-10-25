@@ -30,7 +30,7 @@ plugins:                          # plugin list
 plugin_attr:
   error-log-logger:
     host: "127.0.0.1"
-    port: 1999 
+    port: 1999
     level: "warn"
     timeout: 3
 _EOC_
