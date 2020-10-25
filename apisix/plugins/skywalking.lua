@@ -24,8 +24,26 @@ local type = type
 local require = require
 
 local plugin_name = "skywalking"
-local DEFAULT_ENDPOINT_ADDR = "http://127.0.0.1:12800"
-
+local metadata_schema = {
+    type = "object",
+    properties = {
+        service_name = {
+            type = "string",
+            description = "service name for skywalking",
+            default = "APISIX",
+        },
+        service_instance_name = {
+            type = "string",
+            description = "User Service Instance Name",
+            default = "APISIX Instance Name",
+        },
+        endpoint_addr = {
+            type = "string",
+            default = "http://127.0.0.1:12800",
+        },
+    },
+    additionalProperties = false,
+}
 
 local schema = {
     type = "object",
@@ -46,6 +64,7 @@ local _M = {
     priority = -1100, -- last running plugin, but before serverless post func
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
@@ -109,12 +128,20 @@ function _M.init()
     metadata_buffer:set('serviceInstanceName', 'User Service Instance Name')
 
     local local_conf = core.config.local_conf()
-    local local_endpoint_addr = try_read_attr(local_conf, "plugin_attr",
-                                              plugin_name)
+    local local_plugin_info = try_read_attr(local_conf, "plugin_attr",
+                                            plugin_name) or {}
+    local_plugin_info = core.table.clone(local_plugin_info)
+    local ok, err = core.schema.check(metadata_schema, local_plugin_info)
+    if not ok then
+        core.log.error("failed to check the plugin_attr[", plugin_name, "]",
+                       ": ", err)
+        return
+    end
 
-    local endpoint_addr = local_endpoint_addr or DEFAULT_ENDPOINT_ADDR
-    require("skywalking.client"):startBackendTimer(endpoint_addr)
-    core.log.info("start backend timer, endpoint_addr: ", endpoint_addr)
+    core.log.info("plugin attribute: ",
+                  core.json.delay_encode(local_plugin_info))
+    local sk_cli = require("skywalking.client")
+    sk_cli:startBackendTimer(local_plugin_info.endpoint_addr)
 end
 
 

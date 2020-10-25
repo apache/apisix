@@ -105,7 +105,7 @@ segments reported
 
 
 
-=== TEST 3: test heartbeat(need to update skywalking library)
+=== TEST 3: test heartbeat(TODO: need to update skywalking library)
 --- request
 GET /opentracing
 --- response_body
