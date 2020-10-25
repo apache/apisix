@@ -21,14 +21,13 @@
 
 # Summary
 
-- [**Summary**](#Summary)
-  - [**Name**](#Name)
-  - [**Attributes**](#Attributes)
-  - [**How To Enable**](#How-To-Enable)
-  - [**Test Plugin**](#Test-Plugin)
-    - [**Run Skywalking Example**](#Run-Skywalking-Example)
-  - [**Disable Plugin**](#Disable-Plugin)
-  - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
+- [**Name**](#Name)
+- [**Attributes**](#Attributes)
+- [**How To Enable**](#How-To-Enable)
+- [**Test Plugin**](#Test-Plugin)
+  - [**Run Skywalking Example**](#Run-Skywalking-Example)
+- [**Disable Plugin**](#Disable-Plugin)
+- [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
 ## Name
 
@@ -39,9 +38,7 @@ The skywalking server can supports both http and grpc protocols . The APISIX cli
 
 | Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
 | ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
-| endpoint     | string | required    |          |              | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
 | sample_ratio | number | required    | 1        | [0.00001, 1] | the ratio of sample                                                  |
-| service_name | string | optional    | "APISIX" |              | service name for skywalking reporter                                 |
 
 ## How To Enable
 
@@ -56,9 +53,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     ],
     "plugins": {
         "skywalking": {
-            "endpoint": "http://10.110.149.175:12800",
-            "sample_ratio": 1,
-            "service_name": "APISIX_SERVER"
+            "sample_ratio": 1
         }
     },
     "upstream": {
@@ -74,6 +69,26 @@ You can open dashboard with a browser:`http://127.0.0.1:9080/apisix/dashboard/`ï
 ![ ](../images/plugin/skywalking-1.png)\
 Then add skywalking plugin:\
 ![ ](../images/plugin/skywalking-2.png)
+
+## How to set endpoint
+
+We can set the endpoint by specified the configuration in `conf/config.yaml`.
+
+| Name         | Type   | Default  | Description                                                          |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| service_name | string | "APISIX" | service name for skywalking reporter                                 |
+|service_instance_name|string|"APISIX Instance Name" | service instance name for skywalking reporter |
+| endpoint     | string | "http://127.0.0.1:12800" | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
+
+Here is an example:
+
+```yaml
+plugin_attr:
+  skywalking:
+    service_name: APISIX
+    service_instance_name: "APISIX Instance Name"
+    endpoint_addr: http://127.0.0.1:12800
+```
 
 ## Test Plugin
 
@@ -166,7 +181,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 ```
 
 The skywalking plugin has been disabled now. It works for other plugins.
-
 
 ## Upstream services(Code With SpringBoot)
 
