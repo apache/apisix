@@ -122,11 +122,6 @@ function _M.init()
         return
     end
 
-    --todo: maybe need to fetch them from plugin-metadata
-    local metadata_buffer = ngx.shared.tracing_buffer
-    metadata_buffer:set('serviceName', 'User Service Name')
-    metadata_buffer:set('serviceInstanceName', 'User Service Instance Name')
-
     local local_conf = core.config.local_conf()
     local local_plugin_info = try_read_attr(local_conf, "plugin_attr",
                                             plugin_name) or {}
@@ -140,6 +135,12 @@ function _M.init()
 
     core.log.info("plugin attribute: ",
                   core.json.delay_encode(local_plugin_info))
+
+    -- TODO: maybe need to fetch them from plugin-metadata
+    local metadata_shdict = ngx.shared.tracing_buffer
+    metadata_shdict:set('serviceName', local_plugin_info.service_name)
+    metadata_shdict:set('serviceInstanceName', local_plugin_info.service_instance_name)
+
     local sk_cli = require("skywalking.client")
     sk_cli:startBackendTimer(local_plugin_info.endpoint_addr)
 end
