@@ -1065,33 +1065,33 @@ passed
 
 === TEST 28: not exceeding the burst
 --- config
-location /access_root_dir {
-    content_by_lua_block {
-        local port = ngx.var.server_port
-        local httpc = require "resty.http"
-        local hc = httpc:new()
+    location /access_root_dir {
+        content_by_lua_block {
+            local port = ngx.var.server_port
+            local httpc = require "resty.http"
+            local hc = httpc:new()
 
-        local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
-            headers = {["apikey"] = "auth-jack"}
-        })
-        if res then
-            ngx.exit(res.status)
-        end
+            local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
+                headers = {["apikey"] = "auth-jack"}
+            })
+            if res then
+                ngx.exit(res.status)
+            end
+        }
     }
-}
 
-location /test_concurrency {
-    content_by_lua_block {
-        local reqs = {}
-        for i = 1, 10 do
-            reqs[i] = { "/access_root_dir" }
-        end
-        local resps = { ngx.location.capture_multi(reqs) }
-        for i, resp in ipairs(resps) do
-            ngx.say(resp.status)
-        end
+    location /test_concurrency {
+        content_by_lua_block {
+            local reqs = {}
+            for i = 1, 10 do
+                reqs[i] = { "/access_root_dir" }
+            end
+            local resps = { ngx.location.capture_multi(reqs) }
+            for i, resp in ipairs(resps) do
+                ngx.say(resp.status)
+            end
+        }
     }
-}
 --- request
 GET /test_concurrency
 --- timeout: 10s
@@ -1156,33 +1156,33 @@ passed
 
 === TEST 30: exceeding the burst
 --- config
-location /access_root_dir {
-    content_by_lua_block {
-        local port = ngx.var.server_port
-        local httpc = require "resty.http"
-        local hc = httpc:new()
+    location /access_root_dir {
+        content_by_lua_block {
+            local port = ngx.var.server_port
+            local httpc = require "resty.http"
+            local hc = httpc:new()
 
-        local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
-            headers = {["apikey"] = "auth-jack"}
-        })
-        if res then
-            ngx.exit(res.status)
-        end
+            local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
+                headers = {["apikey"] = "auth-jack"}
+            })
+            if res then
+                ngx.exit(res.status)
+            end
+        }
     }
-}
 
-location /test_concurrency {
-    content_by_lua_block {
-        local reqs = {}
-        for i = 1, 10 do
-            reqs[i] = { "/access_root_dir" }
-        end
-        local resps = { ngx.location.capture_multi(reqs) }
-        for i, resp in ipairs(resps) do
-            ngx.say(resp.status)
-        end
+    location /test_concurrency {
+        content_by_lua_block {
+            local reqs = {}
+            for i = 1, 10 do
+                reqs[i] = { "/access_root_dir" }
+            end
+            local resps = { ngx.location.capture_multi(reqs) }
+            for i, resp in ipairs(resps) do
+                ngx.say(resp.status)
+            end
+        }
     }
-}
 --- request
 GET /test_concurrency
 --- timeout: 10s
