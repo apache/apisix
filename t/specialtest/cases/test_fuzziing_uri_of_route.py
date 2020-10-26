@@ -102,16 +102,16 @@ def test_fuzzing_uri_of_route():
     # you can setting the numbers of test uris
     fuzzing_uri_nums = 1000 if not os.getenv('FUZZING_URI')\
         else os.getenv('FUZZING_URI')
-    # not spupport * :
-    orgin_char = '''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
-                 0123456789/-_~!();@&=+$,?#'.[]'''
+    # not spupport *:.#'
+    orgin_char = '''ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\
+0123456789/-_~!( );@&=+$,?[]'''
     for i in range(int(fuzzing_uri_nums)):
         length = random.randint(1, 4080)
         tmpuri = "".join(random.sample(list(orgin_char) *
                          (length//len(orgin_char) + 1), length))
         tmpuri = re.sub(r"/(\.+)/", "", tmpuri)
         tmpuri = re.sub(r"/+", "/", tmpuri)
-        uri = "/%s" % tmpuri
+        uri = "/%s" % tmpuri.strip("/")
         assert len("/%s" % uri) <= 4096
         cfgdata = {
                     "uri": uri,
@@ -131,6 +131,7 @@ def test_fuzzing_uri_of_route():
         uri = urllib.quote(uri)
         r = requests.get("%s%s" % (apisixhost, uri))
         if r.status_code != 200 or "Hello, World!" not in r.content:
+            print(tmpuri)
             print(uri, r.status_code, r.content)
             raise AssertionError('assertError')
 
