@@ -107,12 +107,11 @@ function _M.get(name)
         core.log.warn("failed to load plugin [", name, "] err: ", plugin)
         return 400, {error_msg = "failed to load plugin " .. name}
     end
-    local json_schema
+
     local arg = ngx.req.get_uri_args()
+    local json_schema = plugin.schema
     if arg and arg["schema_type"] == "consumer" then
         json_schema = plugin.consumer_schema
-    else
-        json_schema = plugin.schema
     end
 
     if not json_schema then
