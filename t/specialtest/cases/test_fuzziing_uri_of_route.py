@@ -111,7 +111,7 @@ def test_fuzzing_uri_of_route():
                          (length//len(orgin_char) + 1), length))
         tmpuri = re.sub(r"/(\.+)/", "", tmpuri)
         tmpuri = re.sub(r"/+", "/", tmpuri)
-        uri = "/%s" % tmpuri.strip("/")
+        uri = "/%s" % tmpuri.strip("/ ")
         assert len("/%s" % uri) <= 4096
         cfgdata = {
                     "uri": uri,
