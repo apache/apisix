@@ -26,7 +26,6 @@ local table_remove = table.remove
 local table_sort = table.sort
 local table_insert = table.insert
 
-
 local _M = {}
 
 
@@ -108,7 +107,7 @@ function _M.get(name)
         core.log.warn("failed to load plugin [", name, "] err: ", plugin)
         return 400, {error_msg = "failed to load plugin " .. name}
     end
-
+    local json_schema
     local arg = ngx.req.get_uri_args()
     if arg and arg["schema_type"] == "consumer" then
         json_schema = plugin.consumer_schema
