@@ -480,3 +480,42 @@ GET /t
 property "key" is required
 --- no_error_log
 [error]
+
+
+
+=== TEST 24: enable jwt auth plugin with extra field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "123"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like
+\{"error_msg":"failed to check the configuration of plugin jwt-auth err: additional properties forbidden, found key"\}
+--- no_error_log
+[error]
