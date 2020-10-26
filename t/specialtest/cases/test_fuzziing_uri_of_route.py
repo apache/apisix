@@ -134,8 +134,7 @@ def test_fuzzing_uri_of_route():
             print(uri, r.status_code, r.content)
             raise AssertionError('assertError')
 
-    print("====APISIX's resource occupation\
-        (after set route and request test):")
+    print("====APISIX's resource occupation ( after set route and request test ):")
     get_workerres(apisixpid)
     print("====APISIX's error log:")
     with open(apisixpath+r"/logs/error.log") as fh:
