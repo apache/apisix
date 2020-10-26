@@ -468,7 +468,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
                         .. "/server_port"
 
             local ports_count = {}
-            for i = 1, 1 do
+            for i = 1, 2 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri,
                     {method = "GET", keepalive = false}

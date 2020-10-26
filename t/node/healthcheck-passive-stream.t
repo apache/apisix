@@ -1,3 +1,7 @@
+#!/bin/bash
+
+export PATH=/usr/local/openresty/nginx/sbin:$PATH
+exec prove "$@"
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -37,7 +41,6 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
-                    "uri": "/server_port",
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
@@ -86,7 +89,6 @@ GET /t
 passed
 
 
-
 === TEST 2: hit routes (two healthy nodes)
 --- config
     location /tt {
@@ -102,21 +104,21 @@ passed
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
-                    ngx.say(err)
-                    return
+                    ports_count["502"] = (ports_count["502"] or 0) + 1
+                else
+                    local status = tostring(res.status)
+                    ports_count[status] = (ports_count[status] or 0) + 1
                 end
-
-                local status = tostring(res.status)
-                ports_count[status] = (ports_count[status] or 0) + 1
             end
 
             ngx.say(json_sort.encode(ports_count))
             ngx.exit(200)
         }
     }
+--- stream_enable
 --- request
 GET /tt
 --- response_body
 {"200":5,"502":1}
 --- error_log
-(upstream#/apisix/routes/1) unhealthy HTTP increment (1/1)
+(upstream#/apisix/stream_routes/1) unhealthy HTTP increment (1/1)
