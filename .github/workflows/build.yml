@@ -30,7 +30,6 @@ jobs:
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
 
-
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -46,8 +45,3 @@ jobs:
 
       - name: Linux Script
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script
-
-#       - name: Linux After success
-#         if: matrix.platform == 'ubuntu-18.04'
-#         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh after_success
-#----------------------------------------------------------------------------
