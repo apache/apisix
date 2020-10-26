@@ -20,8 +20,8 @@ version = "master-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
-    url = "git://github.com/tokers/apisix",
-    branch = "improve/cmd_refactoring",
+    url = "git://github.com/apache/apisix",
+    branch = "master",
 }
 
 description = {
