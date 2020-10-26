@@ -19,7 +19,7 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
-log_level("info");
+log_level("debug");
 
 run_tests;
 
@@ -776,5 +776,218 @@ passed
 GET /aggregate
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: exceed default body limit size (check header)
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 ("1234"):rep(1024 * 1024)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 413
+--- response_body eval
+qr/\{"error_msg":"request size 4194304 is greater than the maximum size 1048576 allowed"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: exceed default body limit size (check file size)
+--- request eval
+"POST /apisix/batch-requests
+" . ("1000\r
+" . ("11111111" x 512) . "\r
+") x 257 . "0\r
+\r
+"
+--- more_headers
+Transfer-Encoding: chunked
+--- error_code: 413
+--- response_body eval
+qr/\{"error_msg":"request size 1052672 is greater than the maximum size 1048576 allowed"\}/
+--- no_error_log
+[error]
+--- error_log
+attempt to read body from file
+
+
+
+=== TEST 18: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                    "max_body_size": 2048
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: exceed body limit size
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 ("1234"):rep(1024)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 413
+--- response_body eval
+qr/\{"error_msg":"request size 4096 is greater than the maximum size 2048 allowed"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: exceed body limit size (expected)
+--- config
+    location = /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, res_data = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 ("1234"):rep(1024),
+                 nil,
+                 {EXPECT = "100-CONTINUE", ["content-length"] = 4096}
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 413
+--- response_body eval
+qr/\{"error_msg":"request size 4096 is greater than the maximum size 2048 allowed"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: don't exceed body limit size
+--- config
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/batch-requests',
+                 ngx.HTTP_POST,
+                 [=[{
+                    "headers": {
+                        "Base-Header": "base"
+                    },
+                    "pipeline":[
+                    {
+                        "path": "/a",
+                        "headers": {
+                            "Header1": "hello",
+                            "Header2": "world"
+                        }
+                    }
+                    ]
+                }]=],
+                [=[[
+                {
+                    "status": 200,
+                    "body":"A",
+                    "headers": {
+                        "Base-Header": "base",
+                        "X-Res": "a",
+                        "X-Header1": "hello",
+                        "X-Header2": "world"
+                    }
+                }
+                ]]=])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+    location = /a {
+        content_by_lua_block {
+            ngx.status = 200
+            ngx.header["Base-Header"] = ngx.req.get_headers()["Base-Header"]
+            ngx.header["X-Header1"] = ngx.req.get_headers()["Header1"]
+            ngx.header["X-Header2"] = ngx.req.get_headers()["Header2"]
+            ngx.header["X-Res"] = "a"
+            ngx.print("A")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: invalid body size
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                    "max_body_size": 0
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: property \\"max_body_size\\" validation failed: expected 0 to be sctrictly greater than 0"\}/
 --- no_error_log
 [error]
