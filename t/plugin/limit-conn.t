@@ -1106,8 +1106,8 @@ GET /test_concurrency
 200
 200
 200
---- error_log
-limit key: consumer_jackroute
+--- error_log_like eval
+qr/limit key: consumer_jackroute&consumer\d+/
 
 
 
@@ -1197,8 +1197,8 @@ GET /test_concurrency
 503
 503
 503
---- error_log
-limit key: consumer_jackroute
+--- error_log_like eval
+qr/limit key: consumer_jackroute&consumer\d+/
 
 
 
