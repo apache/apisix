@@ -25,6 +25,7 @@ local type      = type
 local table_remove = table.remove
 local table_sort = table.sort
 local table_insert = table.insert
+local get_uri_args = ngx.req.get_uri_args
 
 local _M = {}
 
@@ -108,7 +109,7 @@ function _M.get(name)
         return 400, {error_msg = "failed to load plugin " .. name}
     end
 
-    local arg = ngx.req.get_uri_args()
+    local arg = get_uri_args()
     local json_schema = plugin.schema
     if arg and arg["schema_type"] == "consumer" then
         json_schema = plugin.consumer_schema

@@ -896,7 +896,8 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
                     "uri": "/uri"
                 }]]
                 )
-            if code >= 300 then
+            
+	    if code >= 300 then
                 ngx.status = code
             end
             ngx.say(body)
@@ -955,16 +956,19 @@ location /t {
         local hmac = require("resty.hmac")
         local ngx_re = require("ngx.re")
         local ngx_encode_base64 = ngx.encode_base64
-        local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
+        
+	local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
         local req_body = core.json.encode(data)
         req_body = req_body or ""
-        local secret_key = "my-secret-key4"
+        
+	local secret_key = "my-secret-key4"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key4"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
-        local signing_string = {
+        
+	local signing_string = {
             "PUT",
             "/uri",
             "",
@@ -975,7 +979,8 @@ location /t {
         }
         signing_string = core.table.concat(signing_string, "\n")
         core.log.info("signing_string:", signing_string)
-        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        
+	local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
@@ -985,7 +990,8 @@ location /t {
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-b"] = custom_header_b
-        local code, _, body = t.test('/uri',
+        
+	local code, _, body = t.test('/uri',
             ngx.HTTP_PUT,
             req_body,
             nil,
@@ -995,7 +1001,8 @@ location /t {
         if code >= 300 then
             ngx.status = code
         end
-        local headers_arr = ngx_re.split(body, "\n")
+        
+	local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
             if i ~= 4 then      -- skip date
                 ngx.say(v)
@@ -1038,7 +1045,8 @@ x-custom-header-a: asld$%dfasf
                     }
                 }]]
                 )
-            if code >= 300 then
+            
+	    if code >= 300 then
                 ngx.status = code
             end
             ngx.say(body)
@@ -1064,10 +1072,12 @@ location /t {
         local hmac = require("resty.hmac")
         local ngx_re = require("ngx.re")
         local ngx_encode_base64 = ngx.encode_base64
-        local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
+        
+	local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
         local req_body = core.json.encode(data)
         req_body = req_body or ""
-        local secret_key = "my-secret-key4"
+        
+	local secret_key = "my-secret-key4"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key4"
@@ -1084,9 +1094,10 @@ location /t {
         }
         signing_string = core.table.concat(signing_string, "\n")
         core.log.info("signing_string:", signing_string)
-        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        
+	local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
-        local headers = {}
+	local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
         headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["Date"] = gmt
@@ -1094,16 +1105,19 @@ location /t {
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-b"] = custom_header_b
-        local code, _, body = t.test('/uri',
+        
+	local code, _, body = t.test('/uri',
             ngx.HTTP_PUT,
             req_body,
             nil,
             headers
         )
-        if code >= 300 then
+        
+	if code >= 300 then
             ngx.status = code
         end
-        local headers_arr = ngx_re.split(body, "\n")
+        
+	local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
             if i ~= 4 then      -- skip date
                 ngx.say(v)
@@ -1146,7 +1160,8 @@ x-custom-header-a: asld$%dfasf
                     }
                 }]]
                 )
-            if code >= 300 then
+            
+	    if code >= 300 then
                 ngx.status = code
             end
             ngx.say(body)
@@ -1172,16 +1187,19 @@ location /t {
         local hmac = require("resty.hmac")
         local ngx_re = require("ngx.re")
         local ngx_encode_base64 = ngx.encode_base64
-        local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
+        
+	local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
         local req_body = core.json.encode(data)
         req_body = req_body or ""
-        local secret_key = "my-secret-key4"
+        
+	local secret_key = "my-secret-key4"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
         local access_key = "my-access-key4"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
-        local signing_string = {
+        
+	local signing_string = {
             "PUT",
             "/uri",
             "",
@@ -1192,7 +1210,8 @@ location /t {
         }
         signing_string = core.table.concat(signing_string, "\n")
         core.log.info("signing_string:", signing_string)
-        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        
+	local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
         headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
@@ -1202,13 +1221,15 @@ location /t {
         headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-b"] = custom_header_b
-        local code, _, body = t.test('/uri',
-            ngx.HTTP_PUT,
+        
+	local code, _, body = t.test('/uri',
+        	ngx.HTTP_PUT,
             req_body,
             nil,
             headers
         )
-        if code >= 300 then
+        
+	if code >= 300 then
             ngx.status = code
         end
         
