@@ -854,7 +854,11 @@ end
 function _M.stream_log_phase()
     core.log.info("enter stream_log_phase")
     -- core.ctx.release_vars(api_ctx)
-    run_plugin("log")
+    local api_ctx = run_plugin("log")
+    if api_ctx then
+        healcheck_passive(api_ctx)
+    end
+
 end
 
 
