@@ -68,8 +68,8 @@ def setup_module():
 
     subprocess.call("./bin/apisix stop", shell=True, stdout=subprocess.PIPE)
     time.sleep(1)
-
     subprocess.Popen("> logs/error.log", shell=True, stdout=subprocess.PIPE)
+    
     subprocess.call("etcd &", shell=True, stdout=subprocess.PIPE)
     time.sleep(5)
 
