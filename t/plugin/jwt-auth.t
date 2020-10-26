@@ -29,9 +29,10 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
-            local conf = {}
+            local core = require("apisix.core")
+            local conf = {key = "123"}
 
-            local ok, err = plugin.check_schema(conf)
+            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -42,7 +43,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/{"algorithm":"HS256","secret":"[a-zA-Z0-9+\\\/]+={0,2}","exp":86400}/
+qr/{"algorithm":"HS256","secret":"[a-zA-Z0-9+\\\/]+={0,2}","key":"123","exp":86400}/
 --- no_error_log
 [error]
 
@@ -52,8 +53,9 @@ qr/{"algorithm":"HS256","secret":"[a-zA-Z0-9+\\\/]+={0,2}","exp":86400}/
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.jwt-auth")
-            local ok, err = plugin.check_schema({key = 123})
+            local ok, err = plugin.check_schema({key = 123}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -452,5 +454,68 @@ GET /hello
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0._kNmXeH1uYVAvApFTONk2Z3Gh-a4XfGrjmqd_ahoOI0
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: without key
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.jwt-auth")
+            local ok, err = plugin.check_schema({}, core.schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "key" is required
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: enable jwt auth plugin with extra field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "123"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like
+\{"error_msg":"failed to check the configuration of plugin jwt-auth err: additional properties forbidden, found key"\}
 --- no_error_log
 [error]
