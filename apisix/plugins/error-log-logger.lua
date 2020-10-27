@@ -162,6 +162,7 @@ local function process()
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
             table.insert(entries, logs[i + 2])
+            table.insert(entries, "\n")
         end
         logs = errlog.get_logs(10)
     end
