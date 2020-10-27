@@ -339,7 +339,7 @@ CNCF API Gateway Landscape.</a>
 
 We welcome all kinds of contributions from the open-source community, individuals and partners.
 
-- [Contributing guidelines](CONTRIBUTING.md)
+- [Contributing Guide](CONTRIBUTING.md)
 
 ## Acknowledgments
 
