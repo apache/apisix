@@ -1,7 +1,3 @@
-#!/bin/bash
-
-export PATH=/usr/local/openresty/nginx/sbin:$PATH
-exec prove "$@"
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
