@@ -393,8 +393,6 @@ passed
 ]
 --- no_error_log
 [error]
---- error_log
-chagne to normal, healthy-localhost
 
 
 
@@ -411,8 +409,8 @@ location /t {
             ngx.say("code: ", code)
         end
 
-        -- break for two seconds
-        ngx.sleep(2)
+        -- break for 3 seconds
+        ngx.sleep(3)
 
         -- make a try
         for i = 1, 4 do
@@ -433,7 +431,7 @@ code: 500
 code: 500
 code: 500
 code: 599
-code: 599
+code: 200
 code: 200
 code: 200
 code: 200
