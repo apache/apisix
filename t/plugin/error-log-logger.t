@@ -96,7 +96,7 @@ __DATA__
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.warn("this is a warning message for test.")
+            core.log.warn("this is a warning message for test.\n")
         }
     }
 --- request
@@ -113,7 +113,7 @@ qr/\[Server\] receive data:.*this is a warning message for test./
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.error("this is an error message for test.")
+            core.log.error("this is an error message for test.\n")
         }
     }
 --- request
@@ -130,7 +130,7 @@ qr/\[Server\] receive data:.*this is an error message for test./
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.info("this is an info message for test.")
+            core.log.info("this is an info message for test.\n")
         }
     }
 --- request

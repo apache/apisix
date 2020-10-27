@@ -158,19 +158,11 @@ local function send_to_server(data)
 end
 
 local function process()
-    local level = log_level[string.upper(config.level)]
-    local status, err = errlog.set_filter_level(level)
-    if not status then
-        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
-        return
-    end
-
     local entries = {}
     local logs = errlog.get_logs(10)
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
             table.insert(entries, logs[i + 2])
-            table.insert(entries, "\n")
         end
         logs = errlog.get_logs(10)
     end
@@ -219,6 +211,12 @@ function _M.init()
     load_attr(config)
     if not (config.host and config.port) then
         core.log.warn("please set the host and port of server when enable the error-log-logger.")
+        return
+    end
+    local level = log_level[string.upper(config.level)]
+    local status, err = errlog.set_filter_level(level)
+    if not status then
+        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
         return
     end
 
