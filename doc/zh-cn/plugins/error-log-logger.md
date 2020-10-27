@@ -48,6 +48,7 @@
 | tls              | boolean | 可选   | false  |         | 用于控制是否执行SSL验证                          |
 | tls_options      | string  | 可选   |        |         | TLS 选项                                         |
 | inactive_timeout | integer | 可选   | 5      | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
+| batch_max_size   | integer | 可选   | 1000   | [1,...] | 每批的最大大小                                   |
 | buffer_duration  | integer | 可选   | 60     | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位） |
 | max_retry_count  | integer | 可选   | 0      | [0,...] | 从处理管道中移除之前的最大重试次数               |
 | retry_delay      | integer | 可选   | 1      | [0,...] | 如果执行失败，则应延迟执行流程的秒数             |

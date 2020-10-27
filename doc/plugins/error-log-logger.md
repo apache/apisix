@@ -47,6 +47,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | level            | string  | optional    | WARN    |         | The filter's log level, default warn, chose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
 | tls              | boolean | optional    | false   |         | Control whether to perform SSL verification                                              |
 | tls_options      | string  | optional    |         |         | tls options                                                                              |
+| batch_max_size   | integer | optional    | 1000    | [1,...] | Max size of each batch                                                                   |
 | inactive_timeout | integer | optional    | 5       | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
 | buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
 | max_retry_count  | integer | optional    | 0       | [0,...] | Maximum number of retries before removing from the processing pipe line                  |

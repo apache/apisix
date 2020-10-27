@@ -33,6 +33,7 @@ plugin_attr:
     port: 1999
     level: "warn"
     timeout: 3
+    inactive_timeout: 1
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);
@@ -103,7 +104,7 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/\[Server\] receive data:.*this is a warning message for test./
---- wait: 2
+--- wait: 3
 
 
 
@@ -120,7 +121,7 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/\[Server\] receive data:.*this is an error message for test./
---- wait: 2
+--- wait: 3
 
 
 
@@ -137,4 +138,4 @@ GET /tg
 --- response_body
 --- no_error_log
 qr/\[Server\] receive data:.*this is an info message for test./
---- wait: 2
+--- wait: 3

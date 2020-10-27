@@ -67,7 +67,7 @@ local config = {
     level = "WARN",
     tls = false,
     retry_delay = 1,
-    batch_max_size = 1,
+    batch_max_size = 1000,
     max_retry_count = 0,
     buffer_duration = 60,
     inactive_timeout = 5,
@@ -110,6 +110,7 @@ local function load_attr()
         config.tls = attr.tls or config.tls
         config.tls_options = attr.tls_options
         config.retry_delay = attr.retry_delay or config.retry_delay
+        config.batch_max_size = attr.batch_max_size or config.batch_max_size
         config.max_retry_count = attr.max_retry_count or config.max_retry_count
         config.buffer_duration = attr.buffer_duration or config.buffer_duration
         config.inactive_timeout = attr.inactive_timeout or config.inactive_timeout
