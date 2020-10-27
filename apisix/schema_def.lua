@@ -25,7 +25,6 @@ local plugins_schema = {
     type = "object"
 }
 
-
 local id_schema = {
     anyOf = {
         {
@@ -35,7 +34,6 @@ local id_schema = {
         {type = "integer", minimum = 1}
     }
 }
-
 
 local host_def_pat = "^\\*?[0-9a-zA-Z-.]+$"
 local host_def = {
@@ -49,19 +47,32 @@ local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
 local ipv6_def = "([a-fA-F0-9]{0,4}:){0,8}(:[a-fA-F0-9]{0,4}){0,8}"
                  .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
-    {pattern = "^" .. ipv4_def .. "$"},
-    {pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
-    {pattern = "^" .. ipv6_def .. "$"},
-    {pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
+    {title = "IPv4", type = "string", pattern = "^" .. ipv4_def .. "$"},
+    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
+    {title = "IPv6", type = "string", pattern = "^" .. ipv6_def .. "$"},
+    {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
 _M.ip_def = ip_def
 
+local timestamp_def = {
+    type = "integer",
+}
 
 local remote_addr_def = {
     description = "client IP",
     type = "string",
     anyOf = ip_def,
 }
+
+
+local label_value_def = {
+    description = "value of label",
+    type = "string",
+    pattern = [[^[a-zA-Z0-9-_.]+$]],
+    maxLength = 64,
+    minLength = 1
+}
+_M.label_value_def = label_value_def
 
 
 local health_checker = {
@@ -275,6 +286,8 @@ local nodes_schema = {
 local upstream_schema = {
     type = "object",
     properties = {
+        create_time = timestamp_def,
+        update_time = timestamp_def,
         nodes = nodes_schema,
         retries = {
             type = "integer",
@@ -332,6 +345,21 @@ local upstream_schema = {
             description = "enable websocket for request",
             type        = "boolean"
         },
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        },
+        pass_host = {
+            description = "mod of host passing",
+            type = "string",
+            enum = {"pass", "node", "rewrite"},
+            default = "pass"
+        },
+        upstream_host = host_def,
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         service_name = {type = "string", maxLength = 50},
@@ -366,6 +394,8 @@ _M.upstream_hash_header_schema = {
 _M.route = {
     type = "object",
     properties = {
+        create_time = timestamp_def,
+        update_time = timestamp_def,
         uri = {type = "string", minLength = 1, maxLength = 4096},
         uris = {
             type = "array",
@@ -427,6 +457,15 @@ _M.route = {
         plugins = plugins_schema,
         upstream = upstream_schema,
 
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        },
+
         service_id = id_schema,
         upstream_id = id_schema,
         service_protocol = {
@@ -465,12 +504,16 @@ _M.service = {
         name = {type = "string", maxLength = 50},
         desc = {type = "string", maxLength = 256},
         script = {type = "string", minLength = 10, maxLength = 102400},
-    },
-    anyOf = {
-        {required = {"upstream"}},
-        {required = {"upstream_id"}},
-        {required = {"plugins"}},
-        {required = {"script"}},
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        },
+        create_time = timestamp_def,
+        update_time = timestamp_def
     },
     additionalProperties = false,
 }
@@ -485,6 +528,16 @@ _M.consumer = {
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
         plugins = plugins_schema,
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
+        },
+        create_time = timestamp_def,
+        update_time = timestamp_def,
         desc = {type = "string", maxLength = 256}
     },
     required = {"username"},
@@ -516,16 +569,44 @@ _M.ssl = {
                 pattern = [[^\*?[0-9a-zA-Z-.]+$]],
             }
         },
+        certs = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 128,
+                maxLength = 64*1024,
+            }
+        },
+        keys = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 128,
+                maxLength = 64*1024,
+            }
+        },
         exptime = {
             type = "integer",
             minimum = 1588262400,  -- 2020/5/1 0:0:0
+        },
+        labels = {
+            description = "key/value pairs to specify attributes",
+            type = "object",
+            patternProperties = {
+                [".*"] = label_value_def
+            },
+            maxProperties = 16
         },
         status = {
             description = "ssl status, 1 to enable, 0 to disable",
             type = "integer",
             enum = {1, 0},
             default = 1
-        }
+        },
+        validity_end = timestamp_def,
+        validity_start = timestamp_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def
     },
     oneOf = {
         {required = {"sni", "key", "cert"}},
@@ -581,6 +662,11 @@ _M.stream_route = {
 
 
 _M.id_schema = id_schema
+
+
+_M.plugin_disable_schema = {
+    disable = {type = "boolean"}
+}
 
 
 setmetatable(_M, {

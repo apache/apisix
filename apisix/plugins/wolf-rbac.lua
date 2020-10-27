@@ -18,6 +18,7 @@
 local core     = require("apisix.core")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
+local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
 local ipairs   = ipairs
@@ -206,7 +207,7 @@ local function check_url_permission(server, appid, action, resName, client_ip, w
             else
                 core.log.info("request [curl -v ", url, "] failed! status:", res.status)
                 if i < retry_max then
-                    ngx.sleep(0.1)
+                    sleep(0.1)
                 end
             end
         end

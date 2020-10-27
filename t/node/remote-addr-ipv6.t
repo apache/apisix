@@ -78,7 +78,7 @@ location /t {
 --- request
 GET /t
 --- response_body eval
-qr/"error_msg":"failed to match any routes"/
+qr/"error_msg":"404 Route Not Found"/
 --- no_error_log
 [error]
 
@@ -90,7 +90,7 @@ qr/"error_msg":"failed to match any routes"/
 GET /not_found
 --- error_code: 404
 --- response_body eval
-qr/"error_msg":"failed to match any routes"/
+qr/"error_msg":"404 Route Not Found"/
 --- no_error_log
 [error]
 
@@ -114,6 +114,7 @@ request sent: 59
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
 received: Connection: close
+received: Server: APISIX/\d\.\d+(\.\d+)?
 received: Server: \w+
 received: 
 received: hello world
@@ -130,6 +131,6 @@ close: 1 nil}
 GET /hello
 --- error_code: 404
 --- response_body
-{"error_msg":"failed to match any routes"}
+{"error_msg":"404 Route Not Found"}
 --- no_error_log
 [error]

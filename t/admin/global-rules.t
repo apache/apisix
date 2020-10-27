@@ -189,7 +189,7 @@ passed
                         },
                         "key": "/apisix/global_rules/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
                 )
 
@@ -235,7 +235,7 @@ passed
                         },
                         "key": "/apisix/global_rules/1"
                     },
-                    "action": "set"
+                    "action": "compareAndSwap"
                 }]]
                 )
 

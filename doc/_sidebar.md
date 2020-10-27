@@ -54,7 +54,7 @@
     - [Key Auth](plugins/key-auth.md)
     - [Basic Auth](plugins/basic-auth.md)
     - [JWT Auth](plugins/jwt-auth.md)
-    - [Opend ID Connect](plugins/oauth.md)
+    - [Opend ID Connect](plugins/openid-connect.md)
 
   - General
 
@@ -81,6 +81,7 @@
     -  [Limit Request](plugins/limit-req.md)
     -  [CORS](plugins/cors.md)
     -  [IP Restriction](plugins/ip-restriction.md)
+    -  [Referer Restriction](plugins/referer-restriction.md)
     -  [Keycloak Authorization](plugins/authz-keycloak.md)
     -  [RBAC Wolf](plugins/wolf-rbac.md)
 

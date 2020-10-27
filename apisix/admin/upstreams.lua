@@ -54,6 +54,18 @@ local function check_upstream_conf(conf)
         return false, "invalid configuration: " .. err
     end
 
+    if conf.pass_host == "node" and conf.nodes and
+        core.table.nkeys(conf.nodes) ~= 1
+    then
+        return false, "only support single node for `node` mode currently"
+    end
+
+    if conf.pass_host == "rewrite" and
+        (conf.upstream_host == nil or conf.upstream_host == "")
+    then
+        return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+    end
+
     if conf.type ~= "chash" then
         return true
     end
@@ -77,6 +89,7 @@ local function check_upstream_conf(conf)
             return false, "invalid configuration: " .. err
         end
     end
+
     return true
 end
 
@@ -240,6 +253,7 @@ function _M.patch(id, conf, sub_path)
                   core.json.delay_encode(res_old, true))
 
     local new_value = res_old.body.node.value
+    local modified_index = res_old.body.node.modifiedIndex
 
     if sub_path and sub_path ~= "" then
         local code, err, node_val = core.table.patch(new_value, sub_path, conf)
@@ -258,8 +272,7 @@ function _M.patch(id, conf, sub_path)
         return 400, err
     end
 
-    -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, new_value)
+    local res, err = core.etcd.atomic_set(key, new_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new upstream[", key, "]: ", err)
         return 500, {error_msg = err}

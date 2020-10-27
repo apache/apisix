@@ -418,3 +418,155 @@ GET /t
 --- error_code: 401
 --- error_log
 jwt signature verification failed
+
+
+
+=== TEST 11: Update route with keycloak config for introspection
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "redirect_uri": "http://localhost:3000",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "bearer_only": true,
+                                "realm": "University",
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "openid-connect": {
+                                    "client_id": "course_management",
+                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                    "redirect_uri": "http://localhost:3000",
+                                    "ssl_verify": "no",
+                                    "timeout": 10000,
+                                    "bearer_only": true,
+                                    "realm": "University",
+                                    "introspection_endpoint_auth_method": "client_secret_post",
+                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: Access keycloak with correct token
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("cjson").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if res.status == 200 then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: Access keycloak with wrong token
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+
+            if res.status == 200 then
+                ngx.say(true)
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+false
+--- error_log
+failed to introspect in openidc: invalid token

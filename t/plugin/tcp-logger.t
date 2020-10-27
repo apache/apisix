@@ -161,7 +161,7 @@ GET /hello
 hello world
 --- no_error_log
 [error]
---- wait: 0.2
+--- wait: 1
 
 
 
@@ -233,4 +233,4 @@ GET /t
 --- error_log
 failed to connect to TCP server: host[312.0.0.1] port[2000]
 [error]
---- wait: 1.5
+--- wait: 3

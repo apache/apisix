@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [1.5.0](#150)
 - [1.4.1](#141)
 - [1.4.0](#140)
 - [1.3.0](#130)
@@ -29,6 +30,54 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+
+## 1.5.0
+
+### Core
+- Admin API：支持使用SSL证书进行身份验证。[1747](https://github.com/apache/apisix/pull/1747)
+- Admin API：同时支持标准的PATCH和子路径PATCH。[1930](https://github.com/apache/apisix/pull/1930)
+- HealthCheck：支持自定义检查端口。[1914](https://github.com/apache/apisix/pull/1914)
+- Upstream：支持禁用 `Nginx` 默认重试机制。[1919](https://github.com/apache/apisix/pull/1919)
+- URI：支持以配置方式删除 `URI` 末尾的 `/` 符号。[1766](https://github.com/apache/apisix/pull/1766)
+
+### New Plugin
+- :sunrise: **新增 请求验证器 插件** [1709](https://github.com/apache/apisix/pull/1709)
+
+### Improvements
+- 变更：nginx `worker_shutdown_timeout` 配置默认值由 `3s` 变更为推荐值 `240s`。[1883](https://github.com/apache/apisix/pull/1883)
+- 变更：`healthcheck` 超时时间类型 由 `integer ` 变更为 `number`。[1892](https://github.com/apache/apisix/pull/1892)
+- 变更：`request-validation` 插件输入参数支持 `JsonSchema` 验证。[1920](https://github.com/apache/apisix/pull/1920)
+- 变更：为 Makefile `install` 命令添加注释。[1912](https://github.com/apache/apisix/pull/1912)
+- 变更：更新 config.yaml `etcd.timeout` 默认配置的注释。[1929](https://github.com/apache/apisix/pull/1929)
+- 变更：为 `prometheus` 添加更多度量指标，以更好地了解 `APISIX` 节点的情况。[1888](https://github.com/apache/apisix/pull/1888)
+- 变更：为 `cors` 插件添加更多配置选项。[1963](https://github.com/apache/apisix/pull/1963)
+
+### Bugfix
+- 修复：`healthcheck` 获取 `host` 配置失败。 [1871](https://github.com/apache/apisix/pull/1871)
+- 修复：插件运行时数据保存到 `etcd`。 [1910](https://github.com/apache/apisix/pull/1910)
+- 修复：多次运行 `apisix start` 将启动多个 `Nginx` 进程。[1913](https://github.com/apache/apisix/pull/1913)
+- 修复：从临时文件读取请求正文（如果已缓存）。[1863](https://github.com/apache/apisix/pull/1863)
+- 修复：批处理器名称和错误返回类型。[1927](https://github.com/apache/apisix/pull/1927)
+- 修复：`limit-count` 插件 `redis.ttl` 读取异常。[1928](https://github.com/apache/apisix/pull/1928)
+- 修复：被动健康检查不能提供健康报告。[1918](https://github.com/apache/apisix/pull/1918)
+- 修复：避免插件中直接修改或使用原始配置数据。[1958](https://github.com/apache/apisix/pull/1958)
+- 修复：`invalid-upstream` 测试用例稳定性问题。[1925](https://github.com/apache/apisix/pull/1925)
+
+### Doc
+- 文档：添加 `APISIX Lua` 代码风格指南。[1874](https://github.com/apache/apisix/pull/1874)
+- 文档：修正 `README` 中语法错误。[1894](https://github.com/apache/apisix/pull/1894)
+- 文档：修正 `benchmark` 文档中图片链接错误。[1896](https://github.com/apache/apisix/pull/1896)
+- 文档：修正 `FAQ`、`admin-api`、`architecture-design`、`discovery`、`prometheus`、`proxy-rewrite`、`redirect`、`http-logger` 文档中错别字。[1916](https://github.com/apache/apisix/pull/1916)
+- 文档：更新 `request-validation` 插件示例。[1926](https://github.com/apache/apisix/pull/1926)
+- 文档：修正 `architecture-design` 文档中错别字。[1938](https://github.com/apache/apisix/pull/1938)
+- 文档：添加 `how-to-build` 文档中在 `Linux` 和 `macOS` 系统中单元测试 `Nginx` 的默认引入路径。[1936](https://github.com/apache/apisix/pull/1936)
+- 文档：添加 `request-validation` 插件中文文档。[1932](https://github.com/apache/apisix/pull/1932)
+- 文档：修正 `README` 中 `gRPC transcoding` 文档路径。[1945](https://github.com/apache/apisix/pull/1945)
+- 文档：修正 `README` 中 `uri-blocker` 文档路径。[1950](https://github.com/apache/apisix/pull/1950)
+- 文档：修正 `README` 中 `grpc-transcode` 文档路径。[1946](https://github.com/apache/apisix/pull/1946)
+- 文档: 删除 `k8s` 文档中不必要的配置。[1891](https://github.com/apache/apisix/pull/1891)
+
 
 ## 1.4.1
 
