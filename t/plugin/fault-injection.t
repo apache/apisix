@@ -523,3 +523,115 @@ GET /hello HTTP/1.1
 Fault Injection!
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: set route (abort injection but with zero percentage)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "fault-injection": {
+                                   "abort": {
+                                      "http_status": 200,
+                                      "body": "Fault Injection!\n",
+                                      "percentage": 0
+                                   }
+                               },
+                               "redirect": {
+                                   "uri": "/hello/world",
+                                   "ret_code": 302
+                               }
+                           },
+                           "upstream": {
+                               "nodes": {
+                                   "127.0.0.1:1980": 1
+                               },
+                               "type": "roundrobin"
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: hit route (redirect)
+--- request
+GET /hello HTTP/1.1
+--- error_code: 302
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: set route (delay injection but with zero percentage)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "fault-injection": {
+                                   "delay": {
+                                       "duration": 1,
+                                       "percentage": 0
+                                   }
+                               },
+                               "proxy-rewrite": {
+                                   "uri": "/hello1"
+                               }
+                           },
+                           "upstream": {
+                               "nodes": {
+                                   "127.0.0.1:1980": 1
+                               },
+                               "type": "roundrobin"
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: hit route (no wait and return hello1 world)
+--- request
+GET /hello HTTP/1.1
+--- error_code: 200
+--- response_body
+hello1 world
+--- no_error_log
+[error]
