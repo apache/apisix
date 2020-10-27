@@ -129,8 +129,8 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
     - Download the latest source code release package:
         ```shell
-        wget http://www.apache.org/dist/apisix/2.0/apache-apisix-2.0-src.tar.gz
-        tar zxvf apache-apisix-2.0-src.tar.gz
+        wget https://downloads.apache.org/apisix/2.0/apache-apisix-2.0-src.tgz
+        tar zxvf apache-apisix-2.0-src.tgz
         ```
     - Install the dependencies：
         ```shell
