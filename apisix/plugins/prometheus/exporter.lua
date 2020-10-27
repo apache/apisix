@@ -96,22 +96,26 @@ function _M.init()
             {"key"})
 
     -- per service
+
+    -- The consumer label indicates the name of consumer corresponds to the
+    -- request to the route/service, it will be an empty string if there is
+    -- no consumer in request.
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "route", "service", "node"})
+            {"code", "route", "service", "consumer", "node"})
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "service", "node"}, DEFAULT_BUCKETS)
+        {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
 
     metrics.overhead = prometheus:histogram("http_overhead",
         "HTTP request overhead added by APISIX in milliseconds per service " ..
         "in APISIX",
-        {"type", "service", "node"}, DEFAULT_BUCKETS)
+        {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "route", "service", "node"})
+            {"type", "route", "service", "consumer", "node"})
 
 end
 
@@ -122,6 +126,7 @@ function _M.log(conf, ctx)
     local route_id = ""
     local balancer_ip = ctx.balancer_ip or ""
     local service_id
+    local consumer_id = ctx.consumer_id or ""
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
@@ -132,24 +137,24 @@ function _M.log(conf, ctx)
     end
 
     metrics.status:inc(1,
-        gen_arr(vars.status, route_id, service_id, balancer_ip))
+        gen_arr(vars.status, route_id, service_id, consumer_id, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
-        gen_arr("request", service_id, balancer_ip))
+        gen_arr("request", service_id, consumer_id, balancer_ip))
 
     local overhead = latency
     if ctx.var.upstream_response_time then
         overhead =  overhead - tonumber(ctx.var.upstream_response_time) * 1000
     end
     metrics.overhead:observe(overhead,
-        gen_arr("request", service_id, balancer_ip))
+        gen_arr("request", service_id, consumer_id, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
-        gen_arr("ingress", route_id, service_id, balancer_ip))
+        gen_arr("ingress", route_id, service_id, consumer_id, balancer_ip))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-        gen_arr("egress", route_id, service_id, balancer_ip))
+        gen_arr("egress", route_id, service_id, consumer_id, balancer_ip))
 end
 
 

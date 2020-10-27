@@ -110,7 +110,10 @@ apisix:
 nginx_config:                     # config for render the template to genarate nginx.conf
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
-  worker_processes: auto
+  worker_processes: auto          # one worker will get best performance, you can use "auto", but remember it is just work well only on physical machine
+                                  # no more than 8 workers, otherwise competition between workers will consume a lot of resources
+                                  # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APIX_WORKER_PROCESSES"
+  enable_cpu_affinity: true       # enbale cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s     # timeout for a graceful shutdown of worker processes
   event:
