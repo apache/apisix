@@ -33,7 +33,7 @@ plugin_attr:
     port: 1999
     level: "warn"
     timeout: 3
-    inactive_timeout: 1
+    batch_max_size: 1
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);

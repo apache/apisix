@@ -39,6 +39,7 @@ local schema = {
         keepalive = {type = "integer", minimum = 1, default= 30},
         name = {type = "string", default = "tcp logger"},
         level = {type = "string", default = "WARN"},
+        batch_max_size = {type = "integer", minimum = 0, default = 1000},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
         retry_delay = {type = "integer", minimum = 0, default = 1},
         buffer_duration = {type = "integer", minimum = 1, default = 60},
@@ -157,6 +158,13 @@ local function send_to_server(data)
 end
 
 local function process()
+    local level = log_level[string.upper(config.level)]
+    local status, err = errlog.set_filter_level(level)
+    if not status then
+        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
+        return
+    end
+
     local entries = {}
     local logs = errlog.get_logs(10)
     while ( logs and #logs>0 ) do
@@ -211,12 +219,6 @@ function _M.init()
     load_attr(config)
     if not (config.host and config.port) then
         core.log.warn("please set the host and port of server when enable the error-log-logger.")
-        return
-    end
-    local level = log_level[string.upper(config.level)]
-    local status, err = errlog.set_filter_level(level)
-    if not status then
-        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
         return
     end
 
