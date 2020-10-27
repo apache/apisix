@@ -17,18 +17,22 @@
 #
 -->
 
-- [Chinese](README_CN.md)
-
-## APISIX
+# Apache APISIX
 
 [![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-- Mail list: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mail list.
-- **QQ Group**: 578997126(recommended), 552030619
-- Join in `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).
-- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social)
-- [bilibili video](https://space.bilibili.com/551921247)
+<p align="center">
+  <a href="https://github.com/apache/apisix">English</a> •
+  <a href="https://github.com/apache/apisix/blob/master/README_CN.md">中文</a>
+</p>
+
+<p align="center">
+  <a href="https://apisix.apache.org/">Website</a> •
+  <a href="https://github.com/apache/apisix/tree/master/doc">Docs</a> •
+  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a> •
+  <a href="https://twitter.com/apacheapisix">Twitter</a>
+</p>
 
 ## What's Apache APISIX?
 Apache APISIX is a dynamic, real-time, high-performance API gateway, based on the Nginx library and etcd.
@@ -42,6 +46,25 @@ It can also be used as a k8s ingress controller.
 The technical architecture of Apache APISIX:
 
 ![](doc/images/apisix.png)
+
+## Contents
+
+- [Features](#features)
+- [Documentation](#documentation)
+- [Get Started](#get-started)
+- [Dashboard](#dashboard)
+- [Benchmark](#benchmark)
+- [Apache APISIX vs Kong](#apache-apisix-vs-kong)
+- [Open Governance](#open-governance)
+- [Community](#community)
+- [Videos And Articles](#videos-and-articles)
+- [User Stories](#user-stories)
+- [Who Uses APISIX?](#who-uses-apisix)
+- [Landscape](#landscape)
+- [Logos](#logos)
+- [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
 
 ## Features
 You can use Apache APISIX as a traffic entrance to process all business data, including dynamic routing, dynamic upstream, dynamic certificates,
@@ -118,7 +141,11 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
     - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
     - Custom routing: Support users to implement routing algorithms themselves.
 
-## Configure and Installation
+## Documentation
+[Document Indexing for Apache APISIX](doc/README.md)
+
+## Get Started
+### Configure and Installation
 
 APISIX Installed and tested in the following systems:
 
@@ -172,7 +199,7 @@ There are several ways to install the Apache Release version of APISIX:
 
 **Note**: Apache APISIX would not support the v2 protocol of etcd anymore since APISIX v2.0, and the minimum etcd version supported is v3.4.0. Please update etcd when needed. If you need to migrate your data from etcd v2 to v3, please follow [etcd migration guide](https://etcd.io/docs/v3.4.0/op-guide/v2-migration/).
 
-## For Developer
+### For Developer
 
 1. For developers, you can use the latest master branch to experience more features
 
@@ -220,9 +247,6 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 [benckmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
 
-## Document
-[Document Indexing for Apache APISIX](doc/README.md)
-
 ## Apache APISIX vs Kong
 
 #### Both of them have been covered core features of API gateway
@@ -265,8 +289,19 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
-## Milestones
-- [2.1](https://github.com/apache/apisix/milestone/8)
+## Open Governance
+[GitHub milestones](https://github.com/apache/apisix/milestones) lay out the path to Apache APISIX's future improvements.
+
+## Community
+- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
+- QQ Group - 578997126, 552030619
+- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
+- [bilibili video](https://space.bilibili.com/551921247)
+
+### Contributor Over Time
+
+![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## Videos And Articles
 - [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
@@ -287,10 +322,6 @@ A wide variety of companies and organizations use APISIX for research, productio
 
 Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) page.
 
-## Contributor Over Time
-
-![contributor-over-time](./doc/images/contributor-over-time.png)
-
 ## Landscape
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
@@ -306,8 +337,13 @@ CNCF API Gateway Landscape.</a>
 
 ## Contributing
 
-See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
+We welcome all kinds of contributions from the open-source community, individuals and partners.
+
+- [Contributing guidelines](CONTRIBUTING.md)
 
 ## Acknowledgments
 
 Inspired by Kong and Orange.
+
+## License
+[Apache 2.0 License](LICENSE)
