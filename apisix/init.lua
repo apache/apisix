@@ -693,7 +693,7 @@ function _M.http_log_phase()
     end
 
     if api_ctx.curr_req_matched then
-        core.tablepool.release("match_opts_matched", api_ctx.curr_req_matched)
+        core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
 
     core.tablepool.release("api_ctx", api_ctx)

@@ -95,7 +95,7 @@ function _M.match(api_ctx)
     match_opts.host = api_ctx.var.host
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
-    match_opts.matched = core.tablepool.fetch("match_opts_matched", 0, 4)
+    match_opts.matched = core.tablepool.fetch("matched_route_record", 0, 4)
 
     local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
     return ok
