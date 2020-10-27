@@ -191,6 +191,7 @@ http {
     lua_shared_dict balancer_ewma_locks  10m;
     lua_shared_dict balancer_ewma_last_touched_at 10m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
+    lua_shared_dict plugin-api-breaker 10m;
 
     # for openid-connect plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
