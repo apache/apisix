@@ -128,8 +128,8 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
     - 下载最新的源码发布包：
         ```shell
-        wget http://www.apache.org/dist/apisix/2.0/apache-apisix-2.0-src.tar.gz
-        tar zxvf apache-apisix-2.0-src.tar.gz
+        wget http://www.apache.org/dist/apisix/2.0/apache-apisix-2.0-src.tgz
+        tar zxvf apache-apisix-2.0-src.tgz
         ```
     - 安装运行时依赖的 Lua 库：
         ```shell
