@@ -291,6 +291,10 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 欢迎用户把自己加入到 [Powered By](doc/powered-by.md) 页面。
 
+## 贡献者变化
+
+![contributor-over-time](./doc/images/contributor-over-time.png)
+
 ## 全景图
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
