@@ -858,7 +858,6 @@ function _M.stream_log_phase()
     if api_ctx then
         healcheck_passive(api_ctx)
     end
-
 end
 
 
