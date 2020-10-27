@@ -129,12 +129,12 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
     - Download the latest source code release package:
         ```shell
-        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
-        tar zxvf apache-apisix-1.5-src.tar.gz
+        wget http://www.apache.org/dist/apisix/2.0/apache-apisix-2.0-src.tar.gz
+        tar zxvf apache-apisix-2.0-src.tar.gz
         ```
     - Install the dependencies：
         ```shell
-        cd apache-apisix-1.5
+        cd apache-apisix-2.0
         make deps
         ```
     - check version of APISIX:
@@ -159,7 +159,7 @@ There are several ways to install the Apache Release version of APISIX:
     - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
     - install APISIX：
     ```shell
-    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
+    sudo yum install -y https://github.com/apache/apisix/releases/download/2.0/apisix-2.0-0.el7.noarch.rpm
     ```
     - check version of APISIX:
         ```shell
@@ -266,7 +266,6 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
 ## Milestones
-- [2.0](https://github.com/apache/apisix/milestone/7)
 - [2.1](https://github.com/apache/apisix/milestone/8)
 
 ## Videos And Articles

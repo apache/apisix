@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
 - [1.4.0](#140)
@@ -31,6 +32,33 @@
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.0.0
+
+这是一个 release candidate。
+
+### Core
+- :sunrise: **从 etcd v2 协议迁移到 v3，这是不向下兼容的修改。Apache APISIX 只支持 etcd 3.4 以及后续的版本。** [#2036](https://github.com/apache/apisix/pull/2036)
+- 支持为上游对象增加标签。[#2279](https://github.com/apache/apisix/pull/2279)
+- 为上游、路由等资源增加更多字段，比如 create_time 和 update_time。[#2444](https://github.com/apache/apisix/pull/2444)
+- 使用拦截器来保护插件的路由。[#2416](https://github.com/apache/apisix/pull/2416)
+- 支持 http 和 https 监听多个端口。[#2409](https://github.com/apache/apisix/pull/2409)
+- 实现 `core.sleep` 函数。[#2397](https://github.com/apache/apisix/pull/2397]
+
+## Plugin
+- :sunrise: **增加 AK/SK(HMAC) 认证插件。**[#2192](https://github.com/apache/apisix/pull/2192)
+- :sunrise: 增加 referer-restriction 插件。[#2352](https://github.com/apache/apisix/pull/2352)
+- `limit-count` 插件支持 `redis` cluster。[#2406](https://github.com/apache/apisix/pull/2406)
+- proxy-cache 插件支持存储临时文件。[#2317](https://github.com/apache/apisix/pull/2317)
+- http-logger 插件支持通过 admin API 来指定文件格式。[#2309](https://github.com/apache/apisix/pull/2309)
+
+## Bugfix
+- :bug: **`高优先级`** 当数据平面接收到删除某一个资源(路由、上游等)的指令时，没有正确的清理缓存，导致存在的资源也会找不到。这个问题在长时间、频繁删除操作的情况下才会出现。(#2168)[https://github.com/apache/apisix/pull/2168]
+- 修复路由优先级不生效的问题。(#2447)[https://github.com/apache/apisix/pull/2447]
+- 在 `init_worker` 阶段设置随机数, 而不是 `init` 阶段。(#2357)[https://github.com/apache/apisix/pull/2357]
+- 删除 jwt 插件中不支持的算法。(#2356)[https://github.com/apache/apisix/pull/2356]
+- 当重定向插件的 `http_to_https` 开启时，返回正确的响应码。[#2311](https://github.com/apache/apisix/pull/2311)
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/7)
 
 ## 1.5.0
 

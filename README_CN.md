@@ -128,12 +128,12 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
     - 下载最新的源码发布包：
         ```shell
-        wget http://www.apache.org/dist/apisix/1.5/apache-apisix-1.5-src.tar.gz
-        tar zxvf apache-apisix-1.5-src.tar.gz
+        wget http://www.apache.org/dist/apisix/2.0/apache-apisix-2.0-src.tar.gz
+        tar zxvf apache-apisix-2.0-src.tar.gz
         ```
     - 安装运行时依赖的 Lua 库：
         ```shell
-        cd apache-apisix-1.5
+        cd apache-apisix-2.0
         make deps
         ```
     - 检查 APISIX 的版本号：
@@ -158,7 +158,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
     - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
     - 安装 APISIX：
     ```shell
-    sudo yum install -y https://github.com/apache/apisix/releases/download/1.5/apisix-1.5-0.el7.noarch.rpm
+    sudo yum install -y https://github.com/apache/apisix/releases/download/2.0/apisix-2.0-0.el7.noarch.rpm
     ```
     - 检查 APISIX 的版本号：
         ```shell
@@ -264,7 +264,6 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
 ## 开发计划
-- [2.0](https://github.com/apache/apisix/milestone/7)
 - [2.1](https://github.com/apache/apisix/milestone/8)
 
 ## 视频和文章
