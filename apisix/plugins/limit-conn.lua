@@ -28,7 +28,7 @@ local schema = {
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
         key = {type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for"},
+                    "http_x_forwarded_for", "consumer_name"},
         },
         rejected_code = {type = "integer", minimum = 200, default = 503},
     },
