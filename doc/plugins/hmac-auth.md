@@ -111,7 +111,7 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 HeaderKey1 + ":" + HeaderValue1 + "\n"\+
 HeaderKey2 + ":" + HeaderValue2 + "\n"\+
 ...
-HeaderKeyN + ":" + HeaderValueN
+HeaderKeyN + ":" + HeaderValueN + "\n"
 ```
 
 Here is a full example：
