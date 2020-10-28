@@ -241,7 +241,7 @@ local function generate_signature(ctx, secret_key, params)
         end
     end
 
-    local signing_string = core.table.concat(signing_string_items, "\n")
+    local signing_string = core.table.concat(signing_string_items, "\n") .. "\n"
 
     core.log.info("signing_string: ", signing_string,
                   " params.signed_headers:",
