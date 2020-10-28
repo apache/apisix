@@ -85,11 +85,34 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            -- hit again
+            local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "skey": "val2",
+                    "ikey": 2
+                 }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "skey": "val2",
+                            "ikey": 2
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.say(code)
+            ngx.say(body)
         }
     }
 --- request
 GET /t
 --- response_body
+passed
+200
 passed
 --- no_error_log
 [error]
@@ -309,7 +332,7 @@ passed
 === TEST 10: hit prometheus route
 --- request
 GET /apisix/prometheus/metrics
--- error_code: 403
+--- error_code: 403
 
 
 
@@ -350,7 +373,7 @@ passed
 === TEST 12: hit prometheus route again
 --- request
 GET /apisix/prometheus/metrics
--- error_code: 200
+--- error_code: 200
 
 
 

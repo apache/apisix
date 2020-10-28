@@ -253,7 +253,7 @@ Steps:
 
 1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
 
-2. Restart APISIX
+2. Reload or restart APISIX
 
 Now you can trace the info level log in logs/error.log.
 
@@ -296,4 +296,4 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
           - 9445
     ```
 
-2. Restart APISIX
+2. Reload or restart APISIX

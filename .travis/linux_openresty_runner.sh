@@ -26,7 +26,8 @@ create_lua_deps() {
     echo "Create lua deps cache"
 
     make deps
-    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+    # maybe reopen this feature later
+    # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
 
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -174,8 +175,9 @@ script() {
 }
 
 after_success() {
-    cat luacov.stats.out
-    luacov-coveralls
+    # cat luacov.stats.out
+    # luacov-coveralls
+    echo "done"
 }
 
 case_opt=$1
