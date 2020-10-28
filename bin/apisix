@@ -90,7 +90,7 @@ local ngx_tpl = [=[
 master_process on;
 
 worker_processes {* worker_processes *};
-{% if os_name == "Linux" then %}
+{% if os_name == "Linux" and enable_cpu_affinity == true then %}
 worker_cpu_affinity auto;
 {% end %}
 
@@ -192,6 +192,7 @@ http {
     lua_shared_dict balancer_ewma_last_touched_at 10m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m; # plugin: skywalking
+    lua_shared_dict plugin-api-breaker   10m;
 
     # for openid-connect plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
@@ -389,6 +390,10 @@ http {
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
+
+        {% if ssl.ssl_trusted_certificate ~= nil then %}
+        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+        {% end %}
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
@@ -588,6 +593,17 @@ local function read_file(file_path)
     local data = file:read("*all")
     file:close()
     return data
+end
+
+
+local function is_file_exist(file_path)
+    local file, err = io.open(file_path)
+    if not file then
+        return false, "failed to open file: " .. file_path .. ", error info: " .. err
+    end
+
+    file:close()
+    return true
 end
 
 
@@ -905,6 +921,14 @@ Please modify "admin_key" in conf/config.yaml .
         yaml_conf.apisix.ssl.listen_port = listen_port
     end
 
+    if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
+        local ok, err = is_file_exist(yaml_conf.apisix.ssl.ssl_trusted_certificate)
+        if not ok then
+            io.stderr:write(err, "\n")
+            os.exit(1)
+        end
+    end
+
 
     -- Using template.render
     local sys_conf = {
@@ -967,6 +991,11 @@ Please modify "admin_key" in conf/config.yaml .
             error("local DNS is empty")
         end
         sys_conf["dns_resolver"] = dns_addrs
+    end
+
+    local env_worker_processes = os.getenv("APIX_WORKER_PROCESSES")
+    if env_worker_processes then
+        sys_conf["worker_processes"] = math.floor(tonumber(env_worker_processes))
     end
 
     local conf_render = template.compile(ngx_tpl)

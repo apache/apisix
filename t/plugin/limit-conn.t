@@ -974,7 +974,6 @@ GET /test_concurrency
                     ngx.say(err)
                 end
             end
-
             ngx.say("done")
         }
     }
@@ -983,6 +982,247 @@ GET /t
 --- response_body
 property "conn" validation failed: expected 0 to be sctrictly greater than 0
 property "default_conn_delay" validation failed: expected 0 to be sctrictly greater than 0
+done
+--- no_error_log
+[error]
+
+
+
+
+=== TEST 26: create consumer and bind key-auth plugin
+--- config 
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "consumer_jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: create route and enable plugin 'key-auth' 
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "key-auth": {},
+                            "limit-conn": {
+                                "conn": 100,
+                                "burst": 50,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "consumer_name"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: not exceeding the burst
+--- config
+    location /access_root_dir {
+        content_by_lua_block {
+            local port = ngx.var.server_port
+            local httpc = require "resty.http"
+            local hc = httpc:new()
+
+            local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
+                headers = {["apikey"] = "auth-jack"}
+            })
+            if res then
+                ngx.exit(res.status)
+            end
+        }
+    }
+
+    location /test_concurrency {
+        content_by_lua_block {
+            local reqs = {}
+            for i = 1, 10 do
+                reqs[i] = { "/access_root_dir" }
+            end
+            local resps = { ngx.location.capture_multi(reqs) }
+            for i, resp in ipairs(resps) do
+                ngx.say(resp.status)
+            end
+        }
+    }
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+200
+200
+200
+200
+200
+200
+200
+200
+200
+--- error_log_like eval
+qr/limit key: consumer_jackroute&consumer\d+/
+
+
+
+=== TEST 29: update plugin "limit-conn" configuration "conn" and "burst"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "key-auth": {},
+                            "limit-conn": {
+                                "conn": 2,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "consumer_name"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: exceeding the burst
+--- config
+    location /access_root_dir {
+        content_by_lua_block {
+            local port = ngx.var.server_port
+            local httpc = require "resty.http"
+            local hc = httpc:new()
+
+            local res, err = hc:request_uri('http://127.0.0.1:' .. port .. '/limit_conn', {
+                headers = {["apikey"] = "auth-jack"}
+            })
+            if res then
+                ngx.exit(res.status)
+            end
+        }
+    }
+
+    location /test_concurrency {
+        content_by_lua_block {
+            local reqs = {}
+            for i = 1, 10 do
+                reqs[i] = { "/access_root_dir" }
+            end
+            local resps = { ngx.location.capture_multi(reqs) }
+            for i, resp in ipairs(resps) do
+                ngx.say(resp.status)
+            end
+        }
+    }
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+200
+200
+200
+503
+503
+503
+503
+503
+503
+503
+--- error_log_like eval
+qr/limit key: consumer_jackroute&consumer\d+/
+
+
+
+=== TEST 31: plugin limit-conn uses the wrong value of key
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.limit-conn")
+            local ok, err = plugin.check_schema({
+                conn = 1, 
+                default_conn_delay = 0.1, 
+                rejected_code = 503, 
+                key = 'consumer_name'
+                    })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "burst" is required
 done
 --- no_error_log
 [error]
