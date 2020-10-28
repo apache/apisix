@@ -50,22 +50,30 @@ The technical architecture of Apache APISIX:
 
 ## Contents
 
-- [Features](#features)
-- [Documentation](#documentation)
-- [Get Started](#get-started)
-- [Dashboard](#dashboard)
-- [Benchmark](#benchmark)
-- [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-- [Open Governance](#open-governance)
-- [Community](#community)
-- [Videos And Articles](#videos-and-articles)
-- [User Stories](#user-stories)
-- [Who Uses APISIX?](#who-uses-apisix)
-- [Landscape](#landscape)
-- [Logos](#logos)
-- [Contributing](#contributing)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
+- [Apache APISIX](#apache-apisix)
+  - [What's Apache APISIX?](#whats-apache-apisix)
+  - [Contents](#contents)
+  - [Features](#features)
+  - [Documentation](#documentation)
+  - [Get Started](#get-started)
+    - [Configure and Installation](#configure-and-installation)
+    - [For Developer](#for-developer)
+  - [Dashboard](#dashboard)
+  - [Benchmark](#benchmark)
+  - [Apache APISIX vs Kong](#apache-apisix-vs-kong)
+      - [Both of them have been covered core features of API gateway](#both-of-them-have-been-covered-core-features-of-api-gateway)
+      - [The advantages of Apache APISIX](#the-advantages-of-apache-apisix)
+  - [Open Governance](#open-governance)
+  - [Community](#community)
+    - [Contributor Over Time](#contributor-over-time)
+  - [Videos And Articles](#videos-and-articles)
+  - [User Stories](#user-stories)
+  - [Who Uses APISIX?](#who-uses-apisix)
+  - [Landscape](#landscape)
+  - [Logos](#logos)
+  - [Contributing](#contributing)
+  - [Acknowledgments](#acknowledgments)
+  - [License](#license)
 
 ## Features
 
@@ -167,12 +175,13 @@ There are several ways to install the Apache Release version of APISIX:
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
    - Download the latest source code release package:
      ```shell
+     $ mkdir apisix-2.0
+     $ cd apisix-2.0
      $ wget https://downloads.apache.org/apisix/2.0/apache-apisix-2.0-src.tgz
      $ tar zxvf apache-apisix-2.0-src.tgz
      ```
    - Install the dependencies：
      ```shell
-     $ cd apache-apisix-2.0
      $ make deps
      ```
    - check version of APISIX:
