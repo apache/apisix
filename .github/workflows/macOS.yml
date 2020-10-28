@@ -1,0 +1,36 @@
+name: CI macOS
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest]
+        os_name: [osx_openresty]
+
+    runs-on: ${{ matrix.platform }}
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: MacOS Before install
+        if: matrix.platform == 'macos-latest'
+        run: ./.travis/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: MacOS Install
+        if: matrix.platform == 'macos-latest'
+        run: ./.travis/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: MacOS Script
+        if: matrix.platform == 'macos-latest'
+        run: ./.travis/${{ matrix.os_name }}_runner.sh script
