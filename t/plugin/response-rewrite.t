@@ -240,11 +240,22 @@ passed
 === TEST 7: check body and header not changed
 --- request
 GET /with_header
+--- more_headers
+resp-X-Server-id: 100
+resp-Content-Type: application/xml
+resp-Content-Encoding: gzip
+resp-Content-Length: 4
+resp-Last-Modified: Wed, 21 Oct 2015 07:28:00 GMT
+resp-ETag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
 --- response_body
 new body2
 --- response_headers
 X-Server-id: 100
 Content-Type: application/xml
+Content-Length:
+Content-Encoding:
+Last-Modified:
+ETag:
 --- no_error_log
 [error]
 

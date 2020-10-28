@@ -191,6 +191,7 @@ http {
     lua_shared_dict balancer_ewma_locks  10m;
     lua_shared_dict balancer_ewma_last_touched_at 10m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
+    lua_shared_dict plugin-api-breaker 10m;
 
     # for openid-connect plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
@@ -388,6 +389,10 @@ http {
         ssl_certificate_key  cert/apisix.key;
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
+
+        {% if ssl.ssl_trusted_certificate ~= nil then %}
+        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+        {% end %}
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
@@ -587,6 +592,17 @@ local function read_file(file_path)
     local data = file:read("*all")
     file:close()
     return data
+end
+
+
+local function is_file_exist(file_path)
+    local file, err = io.open(file_path)
+    if not file then
+        return false, "failed to open file: " .. file_path .. ", error info: " .. err
+    end
+
+    file:close()
+    return true
 end
 
 
@@ -902,6 +918,14 @@ Please modify "admin_key" in conf/config.yaml .
     if type(yaml_conf.apisix.ssl.listen_port) == "number" then
         local listen_port = {yaml_conf.apisix.ssl.listen_port}
         yaml_conf.apisix.ssl.listen_port = listen_port
+    end
+
+    if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
+        local ok, err = is_file_exist(yaml_conf.apisix.ssl.ssl_trusted_certificate)
+        if not ok then
+            io.stderr:write(err, "\n")
+            os.exit(1)
+        end
     end
 
 
