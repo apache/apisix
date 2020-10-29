@@ -40,15 +40,21 @@ CentOS 7
 wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 sudo rpm -ivh epel-release-latest-7.noarch.rpm
 
+# 安装 etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
 # 添加 OpenResty 源
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
+# 安装 OpenResty 和 编译工具
+sudo yum install -y openresty curl git gcc luarocks lua-devel
 
 # 开启 etcd server
-sudo service etcd start
+nohup etcd &
 ```
 
 Fedora 31 & 32
@@ -59,11 +65,17 @@ Fedora 31 & 32
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
+# 安装 etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# 安装 OpenResty 和 编译工具
+sudo yum install -y openresty curl git gcc luarocks lua-devel
 
 # 开启 etcd server
-sudo etcd &
+nohup etcd &
 ```
 
 Ubuntu 16.04 & 18.04
@@ -77,11 +89,17 @@ sudo apt-get -y install software-properties-common
 sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
 sudo apt-get update
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo apt-get install -y git etcd openresty curl luarocks
+# 安装 etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# 安装 OpenResty 和 编译工具
+sudo apt-get install -y git openresty curl luarocks
 
 # 开启 etcd server
-sudo service etcd start
+nohup etcd &
 ```
 
 Debian 9 & 10
@@ -106,8 +124,8 @@ tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
     cd etcd-v3.3.13-linux-amd64 && \
     sudo cp -a etcd etcdctl /usr/bin/
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo apt-get install -y git openresty curl luarocks make
+# 安装 OpenResty 和 编译工具
+sudo apt-get install -y git openresty curl luarocks
 
 # 开启 etcd server
 nohup etcd &
