@@ -26,7 +26,8 @@ apisix:
   node_listen: 1984
   config_center: yaml
   enable_admin: false
-  discovery: eureka
+  discovery:
+    - eureka
 
 eureka:
   host:
@@ -52,6 +53,7 @@ routes:
     uri: /eureka/*
     upstream:
       service_name: APISIX-EUREKA
+      discovery_type: eureka
       type: roundrobin
 
 #END
@@ -78,6 +80,7 @@ routes:
     uri: /eureka/*
     upstream:
       service_name: APISIX-EUREKA-DEMO
+      discovery_type: eureka
       type: roundrobin
 
 #END
@@ -100,6 +103,7 @@ routes:
         regex_uri: ["^/eureka-test/(.*)", "/${1}"]
     upstream:
       service_name: APISIX-EUREKA
+      discovery_type: eureka
       type: roundrobin
 
 #END
