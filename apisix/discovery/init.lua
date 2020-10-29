@@ -28,6 +28,14 @@ if discovery_type then
     end
 end
 
+function discovery.init_worker()
+    if discovery_type then
+        for i = 1, #(discovery_type) do
+            discovery[discovery_type[i]].init_worker()
+        end
+    end
+end
+
 return {
     version = 0.1,
     discovery = discovery
