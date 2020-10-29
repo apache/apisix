@@ -103,9 +103,9 @@ plugin_attr:
         sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always apache/skywalking-oap-server
         ```
 
-    - Of Course,you can use elasticsearch storage
+    - Of Course, you can use Elasticsearch storage
 
-        1. Firstly, you should install elasticsearch:
+        1. Firstly, you should install Elasticsearch:
 
             ```shell
             sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --restart always -e "discovery.type=single-node" elasticsearch:6.7.2

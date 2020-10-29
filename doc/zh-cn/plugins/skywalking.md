@@ -102,33 +102,33 @@ plugin_attr:
 
 #### 例子
 
-1. 启动Skywalking Server:
-    - 默认使用H2存储，直接启动skywalking即可
+1. 启动 Skywalking Server:
+    - 默认使用 H2 存储，直接启动 skywalking 即可
 
         ```shell
         sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always apache/skywalking-oap-server
         ```
 
-    - 如果使用elasticsearch存储
-        1. 则需要先安装elasticsearch:
+    - 如果使用 Elasticsearch 存储
+        1. 则需要先安装 Elasticsearch:
 
             ```shell
             sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --restart always -e "discovery.type=single-node" elasticsearch:6.7.2
             ```
 
-        2. 安装 ElasticSearch管理界面elasticsearch-hq
+        2. 安装 ElasticSearch 管理界面 elasticsearch-hq
 
             ```shell
             sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq
             ```
 
-        3. 启动skywalking：
+        3. 启动 skywalking：
 
             ```shell
             sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server
             ```
 
-2. Skywalking管理系统：
+2. Skywalking 管理系统：
     1. 启动管理系统：
 
         ```shell
@@ -185,7 +185,7 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 
 现在就已经移除了 Skywalking 插件了。其他插件的开启和移除也是同样的方法。
 
-## 上游服务是java的SpringBoot示例代码
+## 上游服务是 java 的 SpringBoot 示例代码
 
 ```java
 package com.lenovo.ai.controller;
