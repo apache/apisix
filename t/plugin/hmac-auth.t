@@ -1258,3 +1258,33 @@ x-hmac-access-key: my-access-key4
 x-custom-header-a: asld$%dfasf
 --- no_error_log
 [error]
+
+
+
+=== TEST 32: get the default schema
+--- request
+GET /apisix/admin/schema/plugins/hmac-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: get the schema by schema_type
+--- request
+GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer
+--- response_body
+{"title":"work with consumer object","additionalProperties":false,"required":["access_key","secret_key"],"properties":{"clock_skew":{"default":0,"type":"integer"},"keep_headers":{"title":"whether to keep the http request header","default":false,"type":"boolean"},"secret_key":{"minLength":1,"maxLength":256,"type":"string"},"algorithm":{"type":"string","default":"hmac-sha256","enum":["hmac-sha1","hmac-sha256","hmac-sha512"]},"signed_headers":{"items":{"minLength":1,"maxLength":50,"type":"string"},"type":"array"},"access_key":{"minLength":1,"maxLength":256,"type":"string"}},"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: get the schema by error schema_type
+--- request
+GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer123123
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
