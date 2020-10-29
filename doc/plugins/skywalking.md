@@ -97,7 +97,7 @@ Then add skywalking plugin:\
             ```
 2. Skywalking WebUI:
     1. Run SkyWalking webUI Server:
-        ```
+        ```shell
         sudo docker run --name skywalking-ui -d -p 8080:8080 --link skywalking:skywalking -e SW_OAP_ADDRESS=skywalking:12800 --restart always apache/skywalking-ui
         ```
     2. Open the webUI of  skywalking:
