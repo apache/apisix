@@ -35,9 +35,9 @@ local schema = {
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
         tls_options = {type = "string"},
-        timeout = {type = "integer", minimum = 1, default= 3},
-        keepalive = {type = "integer", minimum = 1, default= 30},
-        name = {type = "string", default = "tcp logger"},
+        timeout = {type = "integer", minimum = 1, default = 3},
+        keepalive = {type = "integer", minimum = 1, default = 30},
+        name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN"},
         batch_max_size = {type = "integer", minimum = 0, default = 1000},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
@@ -45,6 +45,7 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 5},
     },
+    required = {"host", "port"},
     additionalProperties = false,
 }
 
@@ -62,16 +63,6 @@ local log_level = {
 }
 
 local config = {
-    name = plugin_name,
-    timeout = 3,
-    keepalive = 30,
-    level = "WARN",
-    tls = false,
-    retry_delay = 1,
-    batch_max_size = 1000,
-    max_retry_count = 0,
-    buffer_duration = 60,
-    inactive_timeout = 5,
 }
 local _M = {
     version = 0.1,
@@ -81,7 +72,7 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
+local function check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
@@ -99,24 +90,6 @@ local function try_attr(t, ...)
     return true
 end
 
-local function load_attr()
-    local local_conf = core.config.local_conf()
-    if try_attr(local_conf, "plugin_attr", plugin_name) then
-        local attr = local_conf.plugin_attr[plugin_name]
-        config.host = attr.host
-        config.port = attr.port
-        config.level = attr.level or config.level
-        config.timeout = attr.timeout or config.timeout
-        config.keepalive = attr.keepalive or config.keepalive
-        config.tls = attr.tls or config.tls
-        config.tls_options = attr.tls_options
-        config.retry_delay = attr.retry_delay or config.retry_delay
-        config.batch_max_size = attr.batch_max_size or config.batch_max_size
-        config.max_retry_count = attr.max_retry_count or config.max_retry_count
-        config.buffer_duration = attr.buffer_duration or config.buffer_duration
-        config.inactive_timeout = attr.inactive_timeout or config.inactive_timeout
-    end
-end
 
 local function send_to_server(data)
     local res = false
@@ -128,7 +101,7 @@ local function send_to_server(data)
         return res, err_msg
     end
 
-    sock:settimeout(config.timeout*1000)
+    sock:settimeout(config.timeout * 1000)
 
     local ok, err = sock:connect(config.host, config.port)
     if not ok then
@@ -166,9 +139,11 @@ local function process()
         end
         logs = errlog.get_logs(10)
     end
+
     if #entries == 0 then
         return
     end
+
     local log_buffer = buffers[config.id]
     if log_buffer then
         for i = 1, #entries do
@@ -176,6 +151,7 @@ local function process()
         end
         return
     end
+
     -- Generate a function to be executed by the batch processor
     local func = function(entries)
         return send_to_server(entries)
@@ -196,6 +172,7 @@ local function process()
         core.log.error("error when creating the batch processor: ", err)
         return
     end
+
     buffers[config.id] = log_buffer
     for i = 1, #entries do
         log_buffer:push(entries[i])
@@ -206,13 +183,24 @@ function _M.init()
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
         return
     end
+
     buffers = {}
-    config.id = ngx.worker.id()
-    load_attr(config)
+    local local_conf = core.config.local_conf()
+    if try_attr(local_conf, "plugin_attr", plugin_name) then
+        config = local_conf.plugin_attr[plugin_name]
+    end
+
+    if not check_schema(config) then
+        core.log.info("check_schema failed.")
+        return
+    end
+
     if not (config.host and config.port) then
         core.log.warn("please set the host and port of server when enable the error-log-logger.")
         return
     end
+
+    config.id = ngx.worker.id()
     local level = log_level[string.upper(config.level)]
     local status, err = errlog.set_filter_level(level)
     if not status then
@@ -223,6 +211,7 @@ function _M.init()
     if timer then
         return
     end
+
     local err
     timer, err = core.timer.new("error-log-logger", process)
     if not timer then
@@ -230,6 +219,7 @@ function _M.init()
     else
         core.log.notice("succeed to create timer: error-log-logger")
     end
+
 end
 
 return _M

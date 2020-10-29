@@ -37,10 +37,6 @@ plugin_attr:
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);
-});
-
-add_block_preprocessor(sub {
-    my ($block) = @_;
 
     my $stream_single_server = <<_EOC_;
     # fake server, only for test
@@ -54,6 +50,7 @@ add_block_preprocessor(sub {
                 ngx.log(ngx.WARN, "socket error:", err)
                 return
             end
+
             sock:settimeout(30 * 1000)
             while(not exiting())
             do
@@ -67,16 +64,12 @@ add_block_preprocessor(sub {
                     end
                 end
             end
+
         }
     }
 _EOC_
 
     $block->set_value("stream_config", $stream_single_server);
-});
-
-
-add_block_preprocessor(sub {
-    my ($block) = @_;
 
     my $stream_default_server = <<_EOC_;
 	    content_by_lua_block {

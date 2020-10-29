@@ -223,7 +223,9 @@ http {
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
+    {% if enabled_plugins["error-log-logger"] then %}
     lua_capture_error_log     128k; # cache for  capture the error log
+    {% end %}
 
     {% if http.underscores_in_headers then %}
     underscores_in_headers {* http.underscores_in_headers *};
