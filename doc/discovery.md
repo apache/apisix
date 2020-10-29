@@ -47,7 +47,7 @@ Common registries: Eureka, Etcd, Consul, Zookeeper, Nacos etc.
 
 ### Basic steps
 
-It is very easy for APISIX to extend the discovery client. , the basic steps are as follows
+It is very easy for APISIX to extend the discovery client, the basic steps are as follows
 
 1. Add the implementation of registry client in the 'apisix/discovery/' directory;
 
