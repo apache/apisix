@@ -23,6 +23,7 @@ local discovery = {}
 
 if discovery_type then
     for i = 1, #(discovery_type) do
+        log.info("use discovery: ", discovery_type[i])
         discovery[discovery_type[i]] = require("apisix.discovery." .. discovery_type[i])
     end
 end
