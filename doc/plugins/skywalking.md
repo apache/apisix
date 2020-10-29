@@ -32,7 +32,7 @@
 ## Name
 
 [**Skywalking**](https://github.com/apache/skywalking) is an OpenTracing plugin.\
-The skywalking server can supports both http and grpc protocols . The APISIX client only support http protocols.
+The skywalking server can supports both http and grpc protocols. The APISIX client only support http protocols.
 
 ## Attributes
 
@@ -97,7 +97,7 @@ plugin_attr:
 #### e.g.
 
 1. Run Skywalking Server:
-    - By default, use H2 storage , start skywalking directly
+    - By default, use H2 storage, start skywalking directly
 
         ```shell
         sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always apache/skywalking-oap-server
@@ -131,7 +131,7 @@ plugin_attr:
         ```
 
     2. Open the webUI of  skywalking:
-        You can open dashboard with a browser: http://10.110.149.175:8080 .it will be a successful install as follow:
+        You can open dashboard with a browser: http://10.110.149.175:8080. It will be a successful install as follow:
         ![ ](../images/plugin/skywalking-3.png)
 
 3. Test:
