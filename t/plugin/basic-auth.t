@@ -287,3 +287,34 @@ GET /t
 {"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [basic-auth]"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: get the default schema
+--- request
+GET /apisix/admin/schema/plugins/basic-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: get the schema by schema_type
+--- request
+GET /apisix/admin/schema/plugins/basic-auth?schema_type=consumer
+--- response_body
+{"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: get the schema by error schema_type
+--- request
+GET /apisix/admin/schema/plugins/basic-auth?schema_type=consumer123123
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
