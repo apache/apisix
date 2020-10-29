@@ -35,6 +35,7 @@ local interceptors = {
 
 
 _M.interceptors_schema = {
+    ["$comment"] = "this is the mark for our interceptors schema",
     type = "array",
     items = {
         type = "object",
@@ -90,8 +91,8 @@ function fetch_api_router()
                             local code, body
 
                             local metadata = plugin_mod.plugin_metadata(name)
-                            if metadata and metadata.interceptors then
-                                for _, rule in ipairs(metadata.interceptors) do
+                            if metadata and metadata.value.interceptors then
+                                for _, rule in ipairs(metadata.value.interceptors) do
                                     local f = interceptors[rule.name]
                                     if f == nil then
                                         core.log.error("unknown interceptor: ", rule.name)

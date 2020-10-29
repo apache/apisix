@@ -242,6 +242,7 @@ _EOC_
     lua_shared_dict balancer_ewma_last_touched_at  1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_capture_error_log     128k;
+    lua_shared_dict plugin-api-breaker 10m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;

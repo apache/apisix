@@ -16,19 +16,19 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
-local sleep = ngx.sleep
+local sleep = core.sleep
 local plugin_name = "limit-conn"
 
 
 local schema = {
     type = "object",
     properties = {
-        conn = {type = "integer", minimum = 0},
+        conn = {type = "integer", exclusiveMinimum = 0},
         burst = {type = "integer",  minimum = 0},
-        default_conn_delay = {type = "number", minimum = 0},
+        default_conn_delay = {type = "number", exclusiveMinimum = 0},
         key = {type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
-                    "http_x_forwarded_for"},
+                    "http_x_forwarded_for", "consumer_name"},
         },
         rejected_code = {type = "integer", minimum = 200, default = 503},
     },

@@ -33,6 +33,8 @@
 
 This plugin addresses the corresponding functionality in the common phases such as init, rewrite, access, balancer, header filer, body filter and log.
 
+**NOTE: `echo` plugin is written as an example. There are some unhandled cases and you should not use it in the production!**
+
 ## Attributes
 
 | Name        | Type   | Requirement | Default | Valid | Description                                  |

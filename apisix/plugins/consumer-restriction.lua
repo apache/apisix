@@ -19,27 +19,41 @@ local core      = require("apisix.core")
 
 local schema = {
     type = "object",
-    properties = {
-        type = {
-            type = "string",
-            enum = {"consumer_name", "service_id"},
-            default = "consumer_name"
-        },
-        whitelist = {
-            type = "array",
-            items = {type = "string"},
-            minItems = 1
-        },
-        blacklist = {
-            type = "array",
-            items = {type = "string"},
-            minItems = 1
-        },
-        rejected_code = {type = "integer", minimum = 200, default = 403}
-    },
     oneOf = {
-        {required = {"whitelist"}},
-        {required = {"blacklist"}}
+        {
+            title = "blacklist",
+            properties = {
+                type = {
+                    type = "string",
+                    enum = {"consumer_name", "service_id"},
+                    default = "consumer_name"
+               },
+		blacklist = {
+                    type = "array",
+                    minItems = 1,
+                    items = {type = "string"}
+                },
+                rejected_code = {type = "integer", minimum = 200, default = 403}
+            },
+            required = {"blacklist"},
+        },
+        {
+            title = "whitelist",
+            properties = {
+	        type = {
+                    type = "string",
+                    enum = {"consumer_name", "service_id"},
+                    default = "consumer_name"
+               },
+                whitelist = {
+                    type = "array",
+                    minItems = 1,
+                    items = {type = "string"}
+	       },
+               rejected_code = {type = "integer", minimum = 200, default = 403}
+            },
+            required = {"whitelist"},
+        }
     }
 }
 

@@ -203,7 +203,7 @@ Server: APISIX web server
 
 1、修改conf/config.yaml中的nginx log配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
 
-2、重启APISIX
+2、重启抑或 reload APISIX
 
 之后便可以在logs/error.log中查看到info的日志了。
 
@@ -246,4 +246,4 @@ apisix reload
           - 9445
     ```
 
-2. 重启 APISIX
+2.重启抑或 reload APISIX

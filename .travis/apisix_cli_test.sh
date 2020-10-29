@@ -23,6 +23,12 @@
 
 set -ex
 
+clean_up() {
+    git checkout conf/config.yaml
+}
+
+trap clean_up EXIT
+
 git checkout conf/config.yaml
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
@@ -382,3 +388,56 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "pass: show WARNING message if the user used default token and allow any IP to access"
+
+# allow to merge configuration without middle layer
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    lua_shared_dicts:
+      my_dict: 1m
+' > conf/config.yaml
+
+make init
+
+if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'my_dict' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found 'my_dict' in nginx.conf"
+
+# check disable cpu affinity
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  enable_cpu_affinity: false
+' > conf/config.yaml
+
+make init
+
+count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
+if [ $count -ne 0 ]; then
+    echo "failed: nginx.conf file found worker_cpu_affinity when disable it"
+    exit 1
+fi
+
+echo "passed: nginx.conf file disable cpu affinity"
+
+# set worker processes with env
+git checkout conf/config.yaml
+
+export APIX_WORKER_PROCESSES=8
+
+make init
+
+count=`grep -c "worker_processes 8;" conf/nginx.conf || true`
+if [ $count -ne 1 ]; then
+    echo "failed: worker_processes is not 8 when using env to set worker processes"
+    exit 1
+fi
+
+echo "passed: using env to set worker processes"
