@@ -30,7 +30,17 @@ local function inject_headers()
 end
 
 function _M.hello()
-    ngx.say("hello world")
+    local s = "hello world"
+    ngx.header['Content-Length'] = #s + 1
+    ngx.say(s)
+end
+
+function _M.hello_chunked()
+    ngx.print("hell")
+    ngx.flush(true)
+    ngx.print("o w")
+    ngx.flush(true)
+    ngx.say("orld")
 end
 
 function _M.hello1()
