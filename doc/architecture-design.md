@@ -599,7 +599,7 @@ HTTP/1.1 403
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
 
-​```shell
+```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \

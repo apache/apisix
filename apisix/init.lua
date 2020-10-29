@@ -45,6 +45,7 @@ local ver_header    = "APISIX/" .. core.version.VERSION
 
 local function parse_args(args)
     dns_resolver = args and args["dns_resolver"]
+    core.utils.set_resolver(dns_resolver)
     core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
 end
 
@@ -82,7 +83,7 @@ function _M.http_init_worker()
     end
     math.randomseed(seed)
     -- for testing only
-    core.log.info("random test in [1, 10000]: ", math.random(1, 1000000))
+    core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
@@ -177,7 +178,7 @@ end
 
 
 local function parse_domain(host)
-    local ip_info, err = core.utils.dns_parse(dns_resolver, host)
+    local ip_info, err = core.utils.dns_parse(host)
     if not ip_info then
         core.log.error("failed to parse domain: ", host, ", error: ",err)
         return nil, err
@@ -218,6 +219,7 @@ local function parse_domain_for_nodes(nodes)
     end
     return new_nodes
 end
+
 
 local function compare_upstream_node(old_t, new_t)
     if type(old_t) ~= "table" then
@@ -690,6 +692,10 @@ function _M.http_log_phase()
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
+    if api_ctx.curr_req_matched then
+        core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
+    end
+
     core.tablepool.release("api_ctx", api_ctx)
 end
 
@@ -772,7 +778,7 @@ function _M.stream_init_worker()
     end
     math.randomseed(seed)
     -- for testing only
-    core.log.info("random stream test in [1, 10000]: ", math.random(1, 1000000))
+    core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
     router.stream_init_worker()
     plugin.init_worker()

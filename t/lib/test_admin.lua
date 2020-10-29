@@ -105,13 +105,20 @@ end
 
 
 function _M.comp_tab(left_tab, right_tab)
+    local err
     dir_names = {}
 
     if type(left_tab) == "string" then
-        left_tab = json.decode(left_tab)
+        left_tab, err = json.decode(left_tab)
+        if not left_tab then
+            return false, "failed to decode expected data: " .. err
+        end
     end
     if type(right_tab) == "string" then
-        right_tab = json.decode(right_tab)
+        right_tab, err  = json.decode(right_tab)
+        if not right_tab then
+            return false, "failed to decode expected data: " .. err
+        end
     end
 
     local ok, err = com_tab(left_tab, right_tab)

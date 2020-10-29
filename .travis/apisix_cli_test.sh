@@ -23,6 +23,12 @@
 
 set -ex
 
+clean_up() {
+    git checkout conf/config.yaml
+}
+
+trap clean_up EXIT
+
 git checkout conf/config.yaml
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
@@ -77,6 +83,49 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "passed: change default ssl port"
+
+# check support multiple ports listen in http and https
+
+echo "
+apisix:
+  node_listen:
+    - 9080
+    - 9081
+    - 9082
+  ssl:
+    listen_port:
+      - 9443
+      - 9444
+      - 9445
+" > conf/config.yaml
+
+make init
+
+count_http_ipv4=`grep -c "listen 908." conf/nginx.conf || true`
+if [ $count_http_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv4"
+    exit 1
+fi
+
+count_http_ipv6=`grep -c "listen \[::\]:908." conf/nginx.conf || true`
+if [ $count_http_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in http with ipv6"
+    exit 1
+fi
+
+count_https_ipv4=`grep -c "listen 944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv4 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv4"
+    exit 1
+fi
+
+count_https_ipv6=`grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true`
+if [ $count_https_ipv6 -ne 3 ]; then
+    echo "failed: failed to support multiple ports listen in https with ipv6"
+    exit 1
+fi
+
+echo "passed: support multiple ports listen in http and https"
 
 # check default env
 echo "
@@ -211,8 +260,40 @@ fi
 
 echo "passed: worker_shutdown_timeout in nginx.conf is ok"
 
+# set allow_admin in conf/config.yaml
+
+echo "
+apisix:
+    allow_admin:
+        - 127.0.0.9
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow 127.0.0.9" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow 127.0.0.9;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "
+apisix:
+    allow_admin: ~
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow all;" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow all;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "passed: empty allow_admin in conf/config.yaml"
+
 # check the 'client_max_body_size' in 'nginx.conf' .
 
+git checkout conf/config.yaml
 sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
 
 make init
@@ -245,7 +326,6 @@ fi
 
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
-
 
 # log format
 
@@ -308,3 +388,56 @@ if [ ! $? -eq 0 ]; then
 fi
 
 echo "pass: show WARNING message if the user used default token and allow any IP to access"
+
+# allow to merge configuration without middle layer
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    lua_shared_dicts:
+      my_dict: 1m
+' > conf/config.yaml
+
+make init
+
+if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'my_dict' not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found 'my_dict' in nginx.conf"
+
+# check disable cpu affinity
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  enable_cpu_affinity: false
+' > conf/config.yaml
+
+make init
+
+count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
+if [ $count -ne 0 ]; then
+    echo "failed: nginx.conf file found worker_cpu_affinity when disable it"
+    exit 1
+fi
+
+echo "passed: nginx.conf file disable cpu affinity"
+
+# set worker processes with env
+git checkout conf/config.yaml
+
+export APIX_WORKER_PROCESSES=8
+
+make init
+
+count=`grep -c "worker_processes 8;" conf/nginx.conf || true`
+if [ $count -ne 1 ]; then
+    echo "failed: worker_processes is not 8 when using env to set worker processes"
+    exit 1
+fi
+
+echo "passed: using env to set worker processes"

@@ -19,6 +19,7 @@ local jwt      = require("resty.jwt")
 local ck       = require("resty.cookie")
 local consumer = require("apisix.consumer")
 local resty_random = require("resty.random")
+
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local ipairs   = ipairs
@@ -30,6 +31,13 @@ local plugin_name = "jwt-auth"
 
 local schema = {
     type = "object",
+    additionalProperties = false,
+    properties = {},
+}
+
+local consumer_schema = {
+    type = "object",
+    additionalProperties = false,
     properties = {
         key = {type = "string"},
         secret = {type = "string"},
@@ -43,7 +51,8 @@ local schema = {
             type = "boolean",
             default = false
         }
-    }
+    },
+    required = {"key"},
 }
 
 
@@ -53,6 +62,7 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema
 }
 
 
@@ -74,20 +84,28 @@ do
 end -- do
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
     core.log.info("input conf: ", core.json.delay_encode(conf))
 
-    local ok, err = core.schema.check(schema, conf)
+    local ok, err
+    if schema_type == core.schema.TYPE_CONSUMER then
+        ok, err = core.schema.check(consumer_schema, conf)
+    else
+        ok, err = core.schema.check(schema, conf)
+    end
+
     if not ok then
         return false, err
     end
 
-    if not conf.secret then
-        conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
-    end
+    if schema_type == core.schema.TYPE_CONSUMER then
+        if not conf.secret then
+            conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
+        end
 
-    if not conf.exp then
-        conf.exp = 60 * 60 * 24
+        if not conf.exp then
+            conf.exp = 60 * 60 * 24
+        end
     end
 
     return true
@@ -101,6 +119,7 @@ local function fetch_jwt_token(ctx)
         if prefix == 'Bearer ' or prefix == 'bearer ' then
             return sub_str(token, 8)
         end
+
         return token
     end
 
@@ -118,12 +137,15 @@ local function fetch_jwt_token(ctx)
     return val, err
 end
 
+
 local function get_secret(conf)
     if conf.base64_secret then
         return ngx_decode_base64(conf.secret)
     end
-        return conf.secret
+
+    return conf.secret
 end
+
 
 function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)

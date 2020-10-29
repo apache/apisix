@@ -41,7 +41,7 @@ dependencies = {
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.2",
+    "lua-resty-radixtree = 2.4",
     "lua-protobuf = 0.3.1",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
@@ -51,9 +51,10 @@ dependencies = {
     "lua-resty-ipmatcher = 0.6",
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
-    "skywalking-nginx-lua-plugin = 1.0-0",
+    "skywalking-nginx-lua = 0.3-0",
     "base64 = 1.5-2",
     "dkjson = 2.5-2",
+    "resty-redis-cluster = 1.02-4",
 }
 
 build = {

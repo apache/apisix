@@ -96,22 +96,26 @@ function _M.init()
             {"key"})
 
     -- per service
+
+    -- The consumer label indicates the name of consumer corresponds to the
+    -- request to the route/service, it will be an empty string if there is
+    -- no consumer in request.
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "route", "service", "node"})
+            {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node"})
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "service", "node"}, DEFAULT_BUCKETS)
+        {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
 
     metrics.overhead = prometheus:histogram("http_overhead",
         "HTTP request overhead added by APISIX in milliseconds per service " ..
         "in APISIX",
-        {"type", "service", "node"}, DEFAULT_BUCKETS)
+        {"type", "service", "consumer", "node"}, DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "route", "service", "node"})
+            {"type", "route", "service", "consumer", "node"})
 
 end
 
@@ -122,6 +126,7 @@ function _M.log(conf, ctx)
     local route_id = ""
     local balancer_ip = ctx.balancer_ip or ""
     local service_id
+    local consumer_id = ctx.consumer_id or ""
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
@@ -131,25 +136,33 @@ function _M.log(conf, ctx)
         service_id = vars.host
     end
 
+    local matched_uri = ""
+    local matched_host = ""
+    if ctx.curr_req_matched then
+        matched_uri = ctx.curr_req_matched._path or ""
+        matched_host = ctx.curr_req_matched._host or ""
+    end
+
     metrics.status:inc(1,
-        gen_arr(vars.status, route_id, service_id, balancer_ip))
+        gen_arr(vars.status, route_id, matched_uri, matched_host,
+                service_id, consumer_id, balancer_ip))
 
     local latency = (ngx.now() - ngx.req.start_time()) * 1000
     metrics.latency:observe(latency,
-        gen_arr("request", service_id, balancer_ip))
+        gen_arr("request", service_id, consumer_id, balancer_ip))
 
     local overhead = latency
     if ctx.var.upstream_response_time then
         overhead =  overhead - tonumber(ctx.var.upstream_response_time) * 1000
     end
     metrics.overhead:observe(overhead,
-        gen_arr("request", service_id, balancer_ip))
+        gen_arr("request", service_id, consumer_id, balancer_ip))
 
     metrics.bandwidth:inc(vars.request_length,
-        gen_arr("ingress", route_id, service_id, balancer_ip))
+        gen_arr("ingress", route_id, service_id, consumer_id, balancer_ip))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-        gen_arr("egress", route_id, service_id, balancer_ip))
+        gen_arr("egress", route_id, service_id, consumer_id, balancer_ip))
 end
 
 
@@ -276,32 +289,36 @@ function _M.collect()
     -- across all services
     nginx_status()
 
-    -- etcd modify index
-    etcd_modify_index()
+    local config = core.config.new()
 
     -- config server status
     local vars = ngx.var or {}
     local hostname = vars.hostname or ""
-    local config = core.config.new()
-    local version, err = config:server_version()
-    if version then
-        metrics.etcd_reachable:set(1)
 
-    else
-        metrics.etcd_reachable:set(0)
-        core.log.error("prometheus: failed to reach config server while ",
-                       "processing metrics endpoint: ", err)
+    if config.type == "etcd" then
+        -- etcd modify index
+        etcd_modify_index()
+
+        local version, err = config:server_version()
+        if version then
+            metrics.etcd_reachable:set(1)
+
+        else
+            metrics.etcd_reachable:set(0)
+            core.log.error("prometheus: failed to reach config server while ",
+                           "processing metrics endpoint: ", err)
+        end
+
+        local res, _ = config:getkey("/routes")
+        if res and res.headers then
+            clear_tab(key_values)
+            -- global max
+            key_values[1] = "x_etcd_index"
+            metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
+        end
     end
 
     metrics.node_info:set(1, gen_arr(hostname))
-
-    local res, _ = config:getkey("/routes")
-    if res and res.headers then
-        clear_tab(key_values)
-        -- global max
-        key_values[1] = "x_etcd_index"
-        metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
-    end
 
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())

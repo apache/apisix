@@ -57,25 +57,22 @@ This will provide the ability to send Log data requests as JSON objects.
 The following is an example on how to enable the sys-logger for a specific route.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "foo",
     "plugins": {
-          "plugins": {
-                "syslog": {
-                     "host" : "127.0.0.1",
-                     "port" : 5044,
-                     "flush_limit" : 1
-                  }
-           },
-          "upstream": {
-               "type": "roundrobin",
-               "nodes": {
-                   "127.0.0.1:1980": 1
-               }
-          },
-          "uri": "/hello"
-    }
+        "syslog": {
+                "host" : "127.0.0.1",
+                "port" : 5044,
+                "flush_limit" : 1
+            }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "uri": "/hello"
 }'
 ```
 
@@ -96,7 +93,7 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

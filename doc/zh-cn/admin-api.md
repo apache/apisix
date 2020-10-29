@@ -423,7 +423,7 @@ HTTP/1.1 200 OK
 
 *地址*：/apisix/admin/consumers/{id}
 
-*说明*：Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
+*说明*：Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。Consumer 使用 `username` 作为唯一标识，只支持使用 HTTP `PUT` 方法创建 Consumer。
 
 > 请求方法：
 
@@ -431,7 +431,6 @@ HTTP/1.1 200 OK
 |---------|-------------------------|--|------|
 |GET      |/apisix/admin/consumers/{id}|无|获取资源|
 |PUT      |/apisix/admin/consumers/{id}|{...}|根据 id 创建资源|
-|POST     |/apisix/admin/consumers     |{...}|创建资源，id 由后台服务自动生成|
 |DELETE   |/apisix/admin/consumers/{id}|无|删除资源|
 
 > body 请求参数：

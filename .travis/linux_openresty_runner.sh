@@ -26,7 +26,8 @@ create_lua_deps() {
     echo "Create lua deps cache"
 
     make deps
-    luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+    # maybe reopen this feature later
+    # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
 
     sudo rm -rf build-cache/deps
     sudo cp -r deps build-cache/
@@ -50,6 +51,9 @@ before_install() {
     docker run --name eureka -d -p 8761:8761 --env ENVIRONMENT=apisix --env spring.application.name=apisix-eureka --env server.port=8761 --env eureka.instance.ip-address=127.0.0.1 --env eureka.client.registerWithEureka=true --env eureka.client.fetchRegistry=false --env eureka.client.serviceUrl.defaultZone=http://127.0.0.1:8761/eureka/ bitinit/eureka
     sleep 5
     docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
+
+    # start skywalking
+    docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
 }
 
 do_install() {
@@ -74,7 +78,7 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
-    ./utils/install-etcd.sh
+    ./utils/linux-install-etcd-client.sh
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -127,11 +131,7 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
-    sudo service etcd stop
-    mkdir -p ~/etcd-data
-    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcdctl version
-    sleep 5
+
 
     ./build-cache/grpc_server_example &
 
@@ -169,12 +169,14 @@ script() {
     sudo bash ./utils/check-plugins-code.sh
 
     make lint && make license-check || exit 1
-    APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
+    PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
 after_success() {
-    cat luacov.stats.out
-    luacov-coveralls
+    # cat luacov.stats.out
+    # luacov-coveralls
+    echo "done"
 }
 
 case_opt=$1

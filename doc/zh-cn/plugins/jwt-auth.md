@@ -46,6 +46,11 @@
 | exp           | integer | 可选   | 86400   | [1,...]                                       | token 的超时时间                                                                                              |
 | base64_secret | boolean | 可选   | false   |                                               | 密钥是否为 base64 编码                                                                                        |
 
+## 接口
+
+插件会增加 `/apisix/plugin/jwt/sign` 这个接口，你可能需要通过 [interceptors](plugin-interceptors.md)
+来保护它。
+
 ## 如何启用
 
 1. 创建一个 consumer 对象，并设置插件 `jwt-auth` 的值。

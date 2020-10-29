@@ -33,7 +33,7 @@
 
 The `consumer` then adds its key to the request header to verify its request.
 
-For more information on Basic authentication, refer to [Wiki](https://en.wikipedia.org/wiki/Basic_access_authenticatio) for more information.
+For more information on Basic authentication, refer to [Wiki](https://en.wikipedia.org/wiki/Basic_access_authentication) for more information.
 
 ## Attributes
 
