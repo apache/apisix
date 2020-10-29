@@ -77,7 +77,7 @@ Then add skywalking plugin:\
 
 #### e.g.
 1. Run Skywalking Server:
-    - By default,use H2 storage, start skywalking directly
+    - By default, use H2 storage, start skywalking directly
         ```
         sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always apache/skywalking-oap-server
         ```
