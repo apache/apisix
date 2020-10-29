@@ -59,6 +59,22 @@ function _M.set(tab, ...)
 end
 
 
+function _M.try_read_attr(tab, ...)
+    local count = select('#', ...)
+
+    for i = 1, count do
+        local attr = select(i, ...)
+        if type(tab) ~= "table" then
+            return nil
+        end
+
+        tab = tab[attr]
+    end
+
+    return tab
+end
+
+
 -- only work under lua51 or luajit
 function _M.setmt__gc(t, mt)
     local prox = newproxy(true)
