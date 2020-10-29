@@ -539,3 +539,13 @@ GET /apisix/admin/schema/plugins/jwt-auth?schema_type=consumer123123
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 27: get the schema by default schema_type
+--- request
+GET /apisix/admin/schema/plugins/jwt-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
