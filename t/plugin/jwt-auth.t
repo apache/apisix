@@ -519,3 +519,33 @@ GET /t
 \{"error_msg":"failed to check the configuration of plugin jwt-auth err: additional properties forbidden, found key"\}
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: get the schema by schema_type
+--- request
+GET /apisix/admin/schema/plugins/jwt-auth?schema_type=consumer
+--- response_body
+{"required":["key"],"properties":{"exp":{"minimum":1,"type":"integer"},"algorithm":{"type":"string","default":"HS256","enum":["HS256","HS512","RS256"]},"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"key":{"type":"string"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: get the schema by error schema_type
+--- request
+GET /apisix/admin/schema/plugins/jwt-auth?schema_type=consumer123123
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: get the schema by default schema_type
+--- request
+GET /apisix/admin/schema/plugins/jwt-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
