@@ -441,3 +441,34 @@ if [ $count -ne 1 ]; then
 fi
 
 echo "passed: using env to set worker processes"
+
+# access log with JSON format
+
+echo '
+nginx_config:
+  http:
+    access_log_format: |-
+      {"@timestamp": "$time_iso8601", "client_ip": "$remote_addr", "status": "$status"}
+    access_log_format_escape: json
+' > conf/config.yaml
+
+make init
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hello2
+sleep 4
+tail -n 1 logs/access.log > output.log
+
+if [ `grep -c '"client_ip": "127.0.0.1"' output.log` -eq '0' ]; then
+    echo "failed: invalid JSON log in access log"
+    exit 1
+fi
+
+if [ `grep -c 'main escape=json' conf/nginx.conf` -eq '0' ]; then
+    echo "failed: not found \"escape=json\" in conf/nginx.conf"
+    exit 1
+fi
+
+make stop
+
+echo "passed: access log with JSON format"
