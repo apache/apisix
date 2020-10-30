@@ -239,7 +239,7 @@ http {
     lua_regex_match_limit 100000;
     lua_regex_cache_max_entries 8192;
 
-    log_format main '{* http.access_log_format *}';
+    log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
     open_file_cache  max=1000 inactive=60;
@@ -993,7 +993,7 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["dns_resolver"] = dns_addrs
     end
 
-    local env_worker_processes = os.getenv("APIX_WORKER_PROCESSES")
+    local env_worker_processes = os.getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = math.floor(tonumber(env_worker_processes))
     end
