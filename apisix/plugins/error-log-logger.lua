@@ -16,23 +16,24 @@
 --
 
 local core = require("apisix.core")
+local nproc = require("ngx.process")
 local plugin_name = "error-log-logger"
 local errlog = require "ngx.errlog"
 local batch_processor = require("apisix.utils.batch-processor")
+local plugin_metadata = require("apisix.admin.plugin_metadata")
 local table = core.table
 local ngx = ngx
 local tcp = ngx.socket.tcp
-local select = select
-local type = type
 local string = string
 local tostring = tostring
 local buffers
-local timer
+local loaded_flag
+
 local schema = {
     type = "object",
     properties = {
-        host = {type = "string"},
-        port = {type = "integer", minimum = 0},
+        host = {type = "string", default = "127.0.0.1"},
+        port = {type = "integer", minimum = 0, default = 9200},
         tls = {type = "boolean", default = false},
         tls_options = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -43,11 +44,11 @@ local schema = {
         max_retry_count = {type = "integer", minimum = 0, default = 0},
         retry_delay = {type = "integer", minimum = 0, default = 1},
         buffer_duration = {type = "integer", minimum = 1, default = 60},
-        inactive_timeout = {type = "integer", minimum = 1, default = 5},
+        inactive_timeout = {type = "integer", minimum = 1, default = 3},
     },
-    required = {"host", "port"},
     additionalProperties = false,
 }
+
 
 local log_level = {
     STDERR =    ngx.STDERR,
@@ -62,33 +63,23 @@ local log_level = {
     DEBUG  =    ngx.DEBUG
 }
 
+
 local config = {
 }
+
 
 local _M = {
     version = 0.1,
     priority = 1091,
     name = plugin_name,
     schema = schema,
+    metadata_schema = schema,
+    timer = nil
 }
 
 
 local function check_schema(conf)
     return core.schema.check(schema, conf)
-end
-
-
-local function try_attr(t, ...)
-    local count = select('#', ...)
-    for i = 1, count do
-        local attr = select(i, ...)
-        t = t[attr]
-        if type(t) ~= "table" then
-            return false
-        end
-    end
-
-    return true
 end
 
 
@@ -119,6 +110,7 @@ local function send_to_server(data)
         end
     end
 
+    table.insert(data, "\n")
     local bytes, err = sock:send(data)
     if not bytes then
         sock:close()
@@ -131,7 +123,34 @@ local function send_to_server(data)
     return true
 end
 
+
 local function process()
+    if not loaded_flag then
+        local code, body = plugin_metadata.get(plugin_name)
+        if code == 200 then
+            config = body.node.value
+        else
+            core.log.info("there is no config for ", plugin_name, ", use the default config")
+        end
+
+        if not check_schema(config) then
+            core.log.info("check_schema failed, the config:", core.json.delay_encode(config))
+            return
+        end
+
+        local level = log_level[string.upper(config.level)]
+        local status, err = errlog.set_filter_level(level)
+        if not status then
+            core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
+            return
+        else
+            core.log.info("set the filter_level to ", config.level)
+        end
+
+        loaded_flag = true
+    end
+
+    local id = ngx.worker.id()
     local entries = {}
     local logs = errlog.get_logs(10)
     while ( logs and #logs>0 ) do
@@ -145,7 +164,7 @@ local function process()
         return
     end
 
-    local log_buffer = buffers[config.id]
+    local log_buffer = buffers[id]
     if log_buffer then
         for i = 1, #entries do
             log_buffer:push(entries[i])
@@ -174,48 +193,28 @@ local function process()
         return
     end
 
-    buffers[config.id] = log_buffer
+    buffers[id] = log_buffer
     for i = 1, #entries do
         log_buffer:push(entries[i])
     end
 
 end
+
+
 function _M.init()
-    if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+    if nproc.type() ~= "privileged agent" and nproc.type() ~= "single" then
         return
     end
 
     buffers = {}
-    local local_conf = core.config.local_conf()
-    if try_attr(local_conf, "plugin_attr", plugin_name) then
-        config = local_conf.plugin_attr[plugin_name]
-    end
-
-    if not check_schema(config) then
-        core.log.info("check_schema failed.")
-        return
-    end
-
-    if not (config.host and config.port) then
-        core.log.warn("please set the host and port of server when enable the error-log-logger.")
-        return
-    end
-
-    config.id = ngx.worker.id()
-    local level = log_level[string.upper(config.level)]
-    local status, err = errlog.set_filter_level(level)
-    if not status then
-        core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
-        return
-    end
-
-    if timer then
+    loaded_flag = false
+    if _M.timer then
         return
     end
 
     local err
-    timer, err = core.timer.new("error-log-logger", process)
-    if not timer then
+    _M.timer, err = core.timer.new("error-log-logger", process)
+    if not _M.timer then
         core.log.error("failed to create timer error-log-logger: ", err)
     else
         core.log.notice("succeed to create timer: error-log-logger")

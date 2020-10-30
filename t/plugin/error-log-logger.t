@@ -23,21 +23,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    my $user_yaml_config = <<_EOC_;
-plugins:                          # plugin list
-  - error-log-logger
-
-plugin_attr:
-  error-log-logger:
-    host: "127.0.0.1"
-    port: 1999
-    level: "warn"
-    timeout: 3
-    batch_max_size: 1
-_EOC_
-
-    $block->set_value("yaml_config", $user_yaml_config);
-
     my $stream_single_server = <<_EOC_;
     # fake server, only for test
     server {
@@ -84,12 +69,87 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: log a warn level message
+=== TEST 1: not enable the plugin
 --- config
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.warn("this is a warning message for test.\n")
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log
+error-log-logger
+--- wait: 2
+
+
+
+=== TEST 2: test unreachable server, not set server, using 127.0.0.1:9200 as default
+--- yaml_config
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- error_log eval
+qr/failed to connect the TCP server: host\[127.0.0.1\] port\[9200\] err: connection refused/
+--- wait: 6
+
+
+
+=== TEST 3: test unreachable server, default: batch_max_size=1000, inactive_timeout = 3, not exec batch
+--- yaml_config
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log eval
+qr/failed to connect the TCP server: host\[127.0.0.1\] port\[9200\] err: connection refused/
+--- wait: 2
+
+
+
+=== TEST 4: log a warn level message
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "port": 1999,
+                    "inactive_timeout": 1
+                }]]
+                )
+            -- reload
+            code, body = t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+            core.log.warn("this is a warning message for test.")
         }
     }
 --- request
@@ -97,16 +157,20 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/\[Server\] receive data:.*this is a warning message for test./
---- wait: 3
+--- wait: 5
 
 
 
-=== TEST 2: log an error level message
+=== TEST 5: log an error level message
+--- yaml_config
+plugins:
+  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.error("this is an error message for test.\n")
+            ngx.sleep(0.2)
+            core.log.error("this is an error message for test.")
         }
     }
 --- request
@@ -114,21 +178,56 @@ GET /tg
 --- response_body
 --- error_log eval
 qr/\[Server\] receive data:.*this is an error message for test./
---- wait: 3
+--- wait: 5
 
 
 
-=== TEST 3: log an info level message
+=== TEST 6: log an info level message
+--- yaml_config
+plugins:
+  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            core.log.info("this is an info message for test.\n")
+            ngx.sleep(0.2)
+            core.log.info("this is an info message for test.")
         }
     }
 --- request
 GET /tg
 --- response_body
---- no_error_log
+--- no_error_log eval
 qr/\[Server\] receive data:.*this is an info message for test./
---- wait: 3
+--- wait: 5
+
+
+
+=== TEST 7: delete metadata for the plugin, recover to the default
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /tg
+--- response_body
+passed
+--- no_error_log
+[error]

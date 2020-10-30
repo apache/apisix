@@ -24,6 +24,7 @@
 - [**定义**](#定义)
 - [**属性列表**](#属性列表)
 - [**如何开启和禁用**](#如何开启和禁用)
+- [**如何更新**](#如何更新)
 
 ## 定义
 
@@ -78,3 +79,24 @@ plugin_attr:
 ### 禁用插件
 
 在 `conf/config.yaml` 中删除插件 `error-log-logger`即可。
+
+## 如何更新
+
+步骤1：更新插件属性
+
+```shell
+
+curl http://127.0.0.1:9080//apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "host": "127.0.0.1",
+  "port": 1999,
+  "inactive_timeout": 1
+}'
+```
+
+步骤2：重新加载
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+
+```
