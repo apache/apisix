@@ -430,7 +430,7 @@ echo "passed: nginx.conf file disable cpu affinity"
 # set worker processes with env
 git checkout conf/config.yaml
 
-export APIX_WORKER_PROCESSES=8
+export APISIX_WORKER_PROCESSES=8
 
 make init
 
