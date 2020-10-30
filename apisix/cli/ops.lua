@@ -245,11 +245,7 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["dns_resolver"] = dns_addrs
     end
 
-<<<<<<< HEAD
-    local env_worker_processes = os.getenv("APISIX_WORKER_PROCESSES")
-=======
-    local env_worker_processes = getenv("APIX_WORKER_PROCESSES")
->>>>>>> change: tweaked code according to the code review comments
+    local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
     end

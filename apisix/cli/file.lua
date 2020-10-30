@@ -139,7 +139,7 @@ end
 
 
 function _M.is_file_exist(file_path)
-    local file, err = io.open(file_path)
+    local file, err = open(file_path)
     if not file then
         return false, "failed to open file: " .. file_path .. ", error info: " .. err
     end
