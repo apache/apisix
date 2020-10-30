@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](zh-cn/grpc-proxy.md)
+[中文](zh-cn/grpc-proxy.md)
 
 # grpc-proxy
 
