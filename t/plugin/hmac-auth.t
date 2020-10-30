@@ -347,7 +347,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
@@ -579,7 +579,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
@@ -644,7 +644,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         core.log.info("signing_string:", signing_string)
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
@@ -815,7 +815,7 @@ location /t {
             gmt,
             "x-custom-header-a:" .. custom_header_a
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -977,7 +977,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
@@ -1093,7 +1093,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
@@ -1209,7 +1209,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
@@ -1256,5 +1256,35 @@ x-custom-header-b: 23879fmsldfk
 x-hmac-algorithm: hmac-sha256
 x-hmac-access-key: my-access-key4
 x-custom-header-a: asld$%dfasf
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: get the default schema
+--- request
+GET /apisix/admin/schema/plugins/hmac-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: get the schema by schema_type
+--- request
+GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer
+--- response_body
+{"title":"work with consumer object","additionalProperties":false,"required":["access_key","secret_key"],"properties":{"clock_skew":{"default":0,"type":"integer"},"keep_headers":{"title":"whether to keep the http request header","default":false,"type":"boolean"},"secret_key":{"minLength":1,"maxLength":256,"type":"string"},"algorithm":{"type":"string","default":"hmac-sha256","enum":["hmac-sha1","hmac-sha256","hmac-sha512"]},"signed_headers":{"items":{"minLength":1,"maxLength":50,"type":"string"},"type":"array"},"access_key":{"minLength":1,"maxLength":256,"type":"string"}},"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: get the schema by error schema_type
+--- request
+GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer123123
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]

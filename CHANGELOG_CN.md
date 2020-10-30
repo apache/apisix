@@ -42,7 +42,7 @@
 - 为上游、路由等资源增加更多字段，比如 create_time 和 update_time。[#2444](https://github.com/apache/apisix/pull/2444)
 - 使用拦截器来保护插件的路由。[#2416](https://github.com/apache/apisix/pull/2416)
 - 支持 http 和 https 监听多个端口。[#2409](https://github.com/apache/apisix/pull/2409)
-- 实现 `core.sleep` 函数。[#2397](https://github.com/apache/apisix/pull/2397]
+- 实现 `core.sleep` 函数。[#2397](https://github.com/apache/apisix/pull/2397)
 
 ## Plugin
 - :sunrise: **增加 AK/SK(HMAC) 认证插件。**[#2192](https://github.com/apache/apisix/pull/2192)
@@ -52,10 +52,10 @@
 - http-logger 插件支持通过 admin API 来指定文件格式。[#2309](https://github.com/apache/apisix/pull/2309)
 
 ## Bugfix
-- :bug: **`高优先级`** 当数据平面接收到删除某一个资源(路由、上游等)的指令时，没有正确的清理缓存，导致存在的资源也会找不到。这个问题在长时间、频繁删除操作的情况下才会出现。(#2168)[https://github.com/apache/apisix/pull/2168]
-- 修复路由优先级不生效的问题。(#2447)[https://github.com/apache/apisix/pull/2447]
-- 在 `init_worker` 阶段设置随机数, 而不是 `init` 阶段。(#2357)[https://github.com/apache/apisix/pull/2357]
-- 删除 jwt 插件中不支持的算法。(#2356)[https://github.com/apache/apisix/pull/2356]
+- :bug: **`高优先级`** 当数据平面接收到删除某一个资源(路由、上游等)的指令时，没有正确的清理缓存，导致存在的资源也会找不到。这个问题在长时间、频繁删除操作的情况下才会出现。[#2168](https://github.com/apache/apisix/pull/2168)
+- 修复路由优先级不生效的问题。[#2447](https://github.com/apache/apisix/pull/2447)
+- 在 `init_worker` 阶段设置随机数, 而不是 `init` 阶段。[#2357](https://github.com/apache/apisix/pull/2357)
+- 删除 jwt 插件中不支持的算法。[#2356](https://github.com/apache/apisix/pull/2356)
 - 当重定向插件的 `http_to_https` 开启时，返回正确的响应码。[#2311](https://github.com/apache/apisix/pull/2311)
 
 更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/7)

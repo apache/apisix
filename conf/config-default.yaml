@@ -115,7 +115,7 @@ nginx_config:                     # config for render the template to genarate n
   error_log_level: "warn"         # warn,error
   worker_processes: auto          # one worker will get best performance, you can use "auto", but remember it is just work well only on physical machine
                                   # no more than 8 workers, otherwise competition between workers will consume a lot of resources
-                                  # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APIX_WORKER_PROCESSES"
+                                  # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APISIX_WORKER_PROCESSES"
   enable_cpu_affinity: true       # enbale cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s     # timeout for a graceful shutdown of worker processes
@@ -126,6 +126,7 @@ nginx_config:                     # config for render the template to genarate n
   http:
     access_log: "logs/access.log"
     access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time"
+    access_log_format_escape: default       # allows setting json or default characters escaping in variables
     keepalive_timeout: 60s         # timeout during which a keep-alive client connection will stay open on the server side.
     client_header_timeout: 60s     # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
     client_body_timeout: 60s       # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
@@ -209,9 +210,7 @@ plugin_attr:
   log-rotate:
     interval: 3600    # rotate interval (unit: second)
     max_kept: 168     # max number of log files will be kept
-#  error-log-logger:
-#    host: "127.0.0.1" # the tcp server's ip
-#    port: 33333       # the tcp server's port
-#    level: "warn"     # the filter's loglevel, default warn, chose the level in {"STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG" }
-#    timeout: 3        # the timout of cosocket (unit: second), default: 3
-#    keepalive: 30      # the keepalive period of cosocket (unit: second), default: 30
+  skywalking:
+    service_name: APISIX
+    service_instance_name: "APISIX Instance Name"
+    endpoint_addr: http://127.0.0.1:12800
