@@ -34,7 +34,17 @@ jobs:
         env: 
           ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-
+      etcd_tls:
+        image: bitnami/etcd:3.4.0
+        ports:
+          - 12379:12379
+          - 12380:12380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: https://0.0.0.0:12379
+          ETCD_LISTEN_PEER_URLS: https://0.0.0.0:12380
+          ETCD_CERT_FILE: ./t/certs/etcd.pem
+          ETCD_KEY_FILE: ./t/certs/etcd.key
 
     steps:
       - name: Check out code

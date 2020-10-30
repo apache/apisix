@@ -47,3 +47,99 @@ GET /t
 qr{failed to fetch data from etcd: connection refused,  etcd key: .*routes}
 --- grep_error_log_out eval
 qr/(failed to fetch data from etcd: connection refused,  etcd key: .*routes\n){1,}/
+
+
+
+=== TEST 2: originate TLS connection to etcd cluster without TLS configuration
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "https://127.0.0.1:2379"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(4)
+            ngx.say("ok")
+        }
+    }
+--- timeout: 5
+--- request
+GET /t
+--- grep_error_log chop
+failed to fetch data from etcd: handshake failed
+--- grep_error_log_out eval
+qr/(failed to fetch data from etcd: handshake failed){1,}/
+
+
+
+=== TEST 3: originate plain connection to etcd cluster which enables TLS
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "http://127.0.0.1:12379"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(4)
+            ngx.say("ok")
+        }
+    }
+--- timeout: 5
+--- request
+GET /t
+--- grep_error_log chop
+failed to fetch data from etcd: closed
+--- grep_error_log_out eval
+qr/(failed to fetch data from etcd: closed){1,}/
+
+
+
+=== TEST 4: originate TLS connection to etcd cluster and verify TLS certificate (default behavior)
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "https://127.0.0.1:12379"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(4)
+            ngx.say("ok")
+        }
+    }
+--- timeout: 5
+--- request
+GET /t
+--- grep_error_log chop
+failed to fetch data from etcd: 18: self signed certificate
+--- grep_error_log_out eval
+qr/(failed to fetch data from etcd: 18: self signed certificate){1,}/
+
+
+
+=== TEST 5: originate TLS connection to etcd cluster success
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "https://127.0.0.1:12379"
+  tls:
+    verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(4)
+            ngx.say("ok")
+        }
+    }
+--- timeout: 5
+--- request
+GET /t
+--- no_error_log
+[error]
