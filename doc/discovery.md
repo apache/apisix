@@ -174,12 +174,12 @@ discovery:
       - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
       - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
-    fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
+    fetch_interval: 30               # 30s
     weight: 100                      # default weight for node
     timeout:
-      connect: 2000                  # 连接 eureka 的超时时间，默认2000ms
-      send: 2000                     # 向 eureka 发送数据的超时时间，默认2000ms
-      read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
+      connect: 2000                  # 2000ms
+      send: 2000                     # 2000ms
+      read: 5000                     # 5000ms
 ```
 
 
