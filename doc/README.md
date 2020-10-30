@@ -76,6 +76,7 @@ Plugins
 * [proxy-cache](plugins/proxy-cache.md): Provides the ability to cache upstream response data.
 * [request-validation](plugins/request-validation.md): Validates requests before forwarding to upstream.
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+* [api-breaker](plugins/api-breaker.md): Circuit Breaker for API that stops requests forwarding to upstream in case of unhealthy state.
 
 **Monitoring**
 * [prometheus](plugins/prometheus.md): Expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.
