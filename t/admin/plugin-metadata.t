@@ -333,6 +333,9 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 403
+--- no_error_log
+--- timeout: 6
+--- ONLY
 
 
 

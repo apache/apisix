@@ -367,6 +367,8 @@ end
 
 
 function _M.plugin_metadata(name)
+    ngx.sleep(5)
+    core.log.error("sleep 5s to make sure data were synced")
     return _M.plugin_metadatas:get(name)
 end
 
