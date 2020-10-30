@@ -27,7 +27,7 @@
         * [**Implementation of eureka.lua**](#implementation-of-eurekalua)
         * [**How convert Eureka's instance data to APISIX's node?**](#how-convert-eurekas-instance-data-to-apisixs-node)
 * [**Configuration for discovery client**](#configuration-for-discovery-client)
-    * [**Select discovery client**](#select-discovery-client)
+    * [**Initial service discovery**](#initial-service-discovery)
     * [**Configuration for Eureka**](#configuration-for-eureka)
 * [**Upstream setting**](#upstream-setting)
 
@@ -149,13 +149,14 @@ The result of this example is as follows:
 
 ## Configuration for discovery client
 
-### Select discovery client
+### Initial service discovery
 
-Add the following configuration to `conf/config.yaml` and select one discovery client type which you want:
+Add the following configuration to `conf/config.yaml` to add different service discovery clients for dynamic selection during use:
 
 ```yaml
-apisix:
-  discovery: eureka
+discovery:
+  eureka:
+      ...
 ```
 
 This name should be consistent with the file name of the implementation registry in the `apisix/discovery/` directory.
@@ -167,23 +168,24 @@ The supported discovery client: Eureka.
 Add following configuration in `conf/config.yaml` ：
 
 ```yaml
-eureka:
-  host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-    - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
-    - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
-  prefix: "/eureka/"
-  fetch_interval: 30               # 30s
-  weight: 100                      # default weight for node
-  timeout:
-    connect: 2000                  # 2000ms
-    send: 2000                     # 2000ms
-    read: 5000                     # 5000ms
+discovery:
+  eureka:
+    host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+      - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
+      - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+    prefix: "/eureka/"
+    fetch_interval: 30               # 30s
+    weight: 100                      # default weight for node
+    timeout:
+      connect: 2000                  # 2000ms
+      send: 2000                     # 2000ms
+      read: 5000                     # 5000ms
 ```
 
 
 ## Upstream setting
 
-Here is an example of routing a request with a URL of "/user/*" to a service which named "user-service"  in the registry :
+Here is an example of routing a request with a URL of "/user/*" to a service which named "user-service" and use eureka discovery client in the registry :
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -191,7 +193,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/user/*",
     "upstream": {
         "service_name": "USER-SERVICE",
-        "type": "roundrobin"
+        "type": "roundrobin",
+        "discovery_type": "eureka"
     }
 }'
 
@@ -202,7 +205,7 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 Server: APISIX web server
 
-{"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
+{"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin", "discovery_type": "eureka"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
 Because the upstream interface URL may have conflict, usually in the gateway by prefix to distinguish:
@@ -218,7 +221,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
     "upstream": {
         "service_name": "A-SERVICE",
-        "type": "roundrobin"
+        "type": "roundrobin",
+        "discovery_type": "eureka"
     }
 }'
 
@@ -232,7 +236,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
     }
     "upstream": {
         "service_name": "B-SERVICE",
-        "type": "roundrobin"
+        "type": "roundrobin",
+        "discovery_type": "eureka"
     }
 }'
 ```
