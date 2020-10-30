@@ -20,6 +20,7 @@ local setmetatable = setmetatable
 local select       = select
 local new_tab      = require("table.new")
 local nkeys        = require("table.nkeys")
+local ipairs       = ipairs
 local pairs        = pairs
 local type         = type
 local ngx_re       = require("ngx.re")
@@ -56,6 +57,17 @@ function _M.set(tab, ...)
     for i = 1, select('#', ...) do
         tab[i] = select(i, ...)
     end
+end
+
+
+function _M.array_find(array, val)
+    for i, v in ipairs(array) do
+        if v == val then
+            return i
+        end
+    end
+
+    return nil
 end
 
 
