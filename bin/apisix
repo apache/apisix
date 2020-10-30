@@ -993,7 +993,7 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["dns_resolver"] = dns_addrs
     end
 
-    local env_worker_processes = os.getenv("APIX_WORKER_PROCESSES")
+    local env_worker_processes = os.getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = math.floor(tonumber(env_worker_processes))
     end
