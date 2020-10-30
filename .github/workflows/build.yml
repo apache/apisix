@@ -11,8 +11,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-18.04]
-        os_name: [linux_openresty, linux_tengine, linux_apisix_master_luarocks, linux_apisix_current_luarocks, linux_openresty_mtls]
+        platform:
+          - ubuntu-18.04
+        os_name:
+          - linux_openresty
+          - linux_tengine
+          - linux_apisix_master_luarocks
+          - linux_apisix_current_luarocks
+          - linux_openresty_mtls
 
     runs-on: ${{ matrix.platform }}
     env:
