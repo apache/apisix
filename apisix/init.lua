@@ -83,7 +83,7 @@ function _M.http_init_worker()
     end
     math.randomseed(seed)
     -- for testing only
-    core.log.info("random test in [1, 10000]: ", math.random(1, 1000000))
+    core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
@@ -692,6 +692,10 @@ function _M.http_log_phase()
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
+    if api_ctx.curr_req_matched then
+        core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
+    end
+
     core.tablepool.release("api_ctx", api_ctx)
 end
 
@@ -774,7 +778,7 @@ function _M.stream_init_worker()
     end
     math.randomseed(seed)
     -- for testing only
-    core.log.info("random stream test in [1, 10000]: ", math.random(1, 1000000))
+    core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
     router.stream_init_worker()
     plugin.init_worker()

@@ -30,7 +30,17 @@ local function inject_headers()
 end
 
 function _M.hello()
-    ngx.say("hello world")
+    local s = "hello world"
+    ngx.header['Content-Length'] = #s + 1
+    ngx.say(s)
+end
+
+function _M.hello_chunked()
+    ngx.print("hell")
+    ngx.flush(true)
+    ngx.print("o w")
+    ngx.flush(true)
+    ngx.say("orld")
 end
 
 function _M.hello1()
@@ -113,8 +123,6 @@ function _M.opentracing()
 end
 
 function _M.with_header()
-    ngx.header['Content-Type'] = 'application/xml'
-    ngx.header['X-Server-id'] = 100
     --split into multiple chunk
     ngx.say("hello")
     ngx.say("world")
@@ -263,6 +271,15 @@ function _M.websocket_handshake()
     end
 end
 _M.websocket_handshake_route = _M.websocket_handshake
+
+function _M.api_breaker()
+    ngx.exit(tonumber(ngx.var.arg_code))
+end
+
+function _M.mysleep()
+    ngx.sleep(tonumber(ngx.var.arg_seconds))
+    ngx.say(ngx.var.arg_seconds)
+end
 
 local function print_uri()
     ngx.say(ngx.var.uri)

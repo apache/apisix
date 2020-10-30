@@ -21,11 +21,11 @@
 
 # Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
+  - [Name](#name)
+  - [Attributes](#attributes)
+  - [How To Enable](#how-to-enable)
+  - [Test Plugin](#test-plugin)
+  - [Disable Plugin](#disable-plugin)
 
 ## Name
 
@@ -37,7 +37,7 @@ Limit request rate by a fixed number of requests in a given time window.
 | -------------- | ------- | -------------------- | ------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count          | integer | required             |         | [0,...]                                                                  | the specified number of requests threshold.                                                                                                                                                                                                                                                                 |
 | time_window    | integer | required             |         | [0,...]                                                                  | the time window in seconds before the request count is reset.                                                                                                                                                                                                                                               |
-| key            | string  | required             |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | the user specified key to limit the count. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username).                                                                                                                                                                                                                                                                   |
+| key            | string  | required             |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name", "service_id"] | The user specified key to limit the count. <br> Now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username) and "service_id".                                                                                                                                                                                                                                                                   |
 | rejected_code  | integer | optional             | 503     | [200,600]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected, default 503.                                                                                                                                                                                                              |
 | policy         | string  | optional             | "local" | ["local", "redis", "redis-cluster"]                                                       | The rate-limiting policies to use for retrieving and incrementing the limits. Available values are `local`(the counters will be stored locally in-memory on the node) and `redis`(counters are stored on a Redis server and will be shared across the nodes, usually use it to do the global speed limit). |
 | redis_host     | string  | required for `redis` |         |                                                                          | When using the `redis` policy, this property specifies the address of the Redis server.                                                                                                                                                                                                                     |

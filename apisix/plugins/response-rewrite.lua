@@ -112,9 +112,7 @@ function _M.header_filter(conf, ctx)
     end
 
     if conf.body then
-        ngx.header.content_length = nil
-        -- in case of upstream content is compressed content
-        ngx.header.content_encoding = nil
+        core.response.clear_header_as_body_modified()
     end
 
     if not conf.headers then
