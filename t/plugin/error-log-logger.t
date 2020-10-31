@@ -231,3 +231,80 @@ GET /tg
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: want to reload the plugin by route
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                        "plugins": {
+                            "error-log-logger": {
+                                "host": "127.0.0.1",
+                                "port": 1999,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]]
+                )
+            -- reload
+            code, body = t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log eval
+qr/failed to connect the TCP server: host\[127.0.0.1\] port\[9200\] err: connection refused/
+--- wait: 2
+
+
+
+=== TEST 9: delete the route
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /tg
+--- response_body
+passed
+--- no_error_log
+[error]

@@ -29,7 +29,7 @@ local tostring = tostring
 local buffers
 local loaded_flag
 
-local schema = {
+local metadata_schema = {
     type = "object",
     properties = {
         host = {type = "string", default = "127.0.0.1"},
@@ -72,14 +72,13 @@ local _M = {
     version = 0.1,
     priority = 1091,
     name = plugin_name,
-    schema = schema,
-    metadata_schema = schema,
+    metadata_schema = metadata_schema,
     timer = nil
 }
 
 
-local function check_schema(conf)
-    return core.schema.check(schema, conf)
+local function check_metadata_schema(conf)
+    return core.schema.check(metadata_schema, conf)
 end
 
 
@@ -133,8 +132,8 @@ local function process()
             core.log.info("there is no config for ", plugin_name, ", use the default config")
         end
 
-        if not check_schema(config) then
-            core.log.info("check_schema failed, the config:", core.json.delay_encode(config))
+        if not check_metadata_schema(config) then
+            core.log.info("check metadata failed, the config:", core.json.delay_encode(config))
             return
         end
 
