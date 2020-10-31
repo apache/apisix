@@ -74,7 +74,7 @@ you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Cons
 then add jwt-auth plugin in the Consumer page:
 ![](../images/plugin/jwt-auth-2.png)
 
-2. add a Route or add a Service , and enable the `jwt-auth` plugin
+2. add a Route or add a Service, and enable the `jwt-auth` plugin
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

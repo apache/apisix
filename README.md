@@ -167,12 +167,13 @@ There are several ways to install the Apache Release version of APISIX:
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
    - Download the latest source code release package:
      ```shell
+     $ mkdir apisix-2.0
+     $ cd apisix-2.0
      $ wget https://downloads.apache.org/apisix/2.0/apache-apisix-2.0-src.tgz
      $ tar zxvf apache-apisix-2.0-src.tgz
      ```
    - Install the dependencies：
      ```shell
-     $ cd apache-apisix-2.0
      $ make deps
      ```
    - check version of APISIX:
@@ -319,7 +320,8 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 ![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## Videos And Articles
-
+- [Apache APISIX: How to implement plugin orchestration in API Gateway](https://www.youtube.com/watch?v=iEegNXOtEhQ)
+- [Improve Apache APISIX observability with Apache Skywalking](https://www.youtube.com/watch?v=DleVJwPs4i4)
 - [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
 - [Analysis of Excellent Performance of Apache APISIX Microservices Gateway](https://medium.com/@ming_wen/analysis-of-excellent-performance-of-apache-apisix-microservices-gateway-fc77db4090b5)
 

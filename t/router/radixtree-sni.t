@@ -159,6 +159,7 @@ ssl handshake: userdata
 sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
+received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
 received: Server: \w+
@@ -313,6 +314,7 @@ ssl handshake: userdata
 sent http request: 62 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
+received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
 received: Server: \w+
@@ -427,6 +429,7 @@ ssl handshake: userdata
 sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
+received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
 received: Server: \w+

@@ -48,7 +48,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = -1000,
+    priority = 11011,
     name = plugin_name,
     schema = schema,
 }
@@ -186,8 +186,10 @@ function _M.header_filter(conf, ctx)
     local opentracing = ctx.opentracing
 
     ctx.HEADER_FILTER_END_TIME = opentracing.tracer:time()
-    opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
+    if  opentracing.proxy_span then
+        opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
             "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
+    end
 end
 
 
@@ -199,11 +201,16 @@ function _M.log(conf, ctx)
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
-    opentracing.body_filter_span:finish(log_end_time)
+    if opentracing.body_filter_span then
+        opentracing.body_filter_span:finish(log_end_time)
+    end
 
     local upstream_status = core.response.get_upstream_status(ctx)
     opentracing.request_span:set_tag("http.status_code", upstream_status)
-    opentracing.proxy_span:finish(log_end_time)
+    if opentracing.proxy_span then
+        opentracing.proxy_span:finish(log_end_time)
+    end
+
     opentracing.request_span:finish(log_end_time)
 
     local reporter = opentracing.tracer.reporter

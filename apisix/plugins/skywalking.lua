@@ -14,28 +14,48 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local sw_tracer = require("skywalking.tracer")
 local core = require("apisix.core")
+local process = require("ngx.process")
 local ngx = ngx
 local math = math
-
-local sw_client = require("apisix.plugins.skywalking.client")
-local sw_tracer = require("apisix.plugins.skywalking.tracer")
+local select = select
+local type = type
+local require = require
 
 local plugin_name = "skywalking"
-
+local metadata_schema = {
+    type = "object",
+    properties = {
+        service_name = {
+            type = "string",
+            description = "service name for skywalking",
+            default = "APISIX",
+        },
+        service_instance_name = {
+            type = "string",
+            description = "User Service Instance Name",
+            default = "APISIX Instance Name",
+        },
+        endpoint_addr = {
+            type = "string",
+            default = "http://127.0.0.1:12800",
+        },
+    },
+    additionalProperties = false,
+}
 
 local schema = {
     type = "object",
     properties = {
-        endpoint = {type = "string"},
-        sample_ratio = {type = "number", minimum = 0.00001, maximum = 1, default = 1}
+        sample_ratio = {
+            type = "number",
+            minimum = 0.00001,
+            maximum = 1,
+            default = 1
+        }
     },
-    service_name = {
-        type = "string",
-        description = "service name for skywalking",
-        default = "APISIX",
-    },
-    required = {"endpoint"}
+    additionalProperties = false,
 }
 
 
@@ -44,6 +64,7 @@ local _M = {
     priority = -1100, -- last running plugin, but before serverless post func
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
@@ -55,26 +76,74 @@ end
 function _M.rewrite(conf, ctx)
     core.log.debug("rewrite phase of skywalking plugin")
     ctx.skywalking_sample = false
-    if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
+    if conf.sample_ratio == 1 or math.random() <= conf.sample_ratio then
         ctx.skywalking_sample = true
-        sw_client.heartbeat(conf)
-        -- Currently, we can not have the upstream real network address
-        sw_tracer.start(ctx, conf.endpoint, "upstream service")
+        sw_tracer:start("upstream service")
+        core.log.info("tracer start")
+        return
     end
+
+    core.log.info("miss sampling, ignore")
 end
 
 
 function _M.body_filter(conf, ctx)
     if ctx.skywalking_sample and ngx.arg[2] then
-        sw_tracer.finish(ctx)
+        sw_tracer:finish()
+        core.log.info("tracer finish")
     end
 end
 
 
 function _M.log(conf, ctx)
     if ctx.skywalking_sample then
-        sw_tracer.prepareForReport(ctx, conf.endpoint)
+        sw_tracer:prepareForReport()
+        core.log.info("tracer prepare for report")
     end
 end
+
+
+local function try_read_attr(t, ...)
+    local count = select('#', ...)
+    for i = 1, count do
+        local attr = select(i, ...)
+        if type(t) ~= "table" then
+            return nil
+        end
+        t = t[attr]
+    end
+
+    return t
+end
+
+
+function _M.init()
+    if process.type() ~= "worker" and process.type() ~= "single" then
+        return
+    end
+
+    local local_conf = core.config.local_conf()
+    local local_plugin_info = try_read_attr(local_conf, "plugin_attr",
+                                            plugin_name) or {}
+    local_plugin_info = core.table.clone(local_plugin_info)
+    local ok, err = core.schema.check(metadata_schema, local_plugin_info)
+    if not ok then
+        core.log.error("failed to check the plugin_attr[", plugin_name, "]",
+                       ": ", err)
+        return
+    end
+
+    core.log.info("plugin attribute: ",
+                  core.json.delay_encode(local_plugin_info))
+
+    -- TODO: maybe need to fetch them from plugin-metadata
+    local metadata_shdict = ngx.shared.tracing_buffer
+    metadata_shdict:set('serviceName', local_plugin_info.service_name)
+    metadata_shdict:set('serviceInstanceName', local_plugin_info.service_instance_name)
+
+    local sk_cli = require("skywalking.client")
+    sk_cli:startBackendTimer(local_plugin_info.endpoint_addr)
+end
+
 
 return _M

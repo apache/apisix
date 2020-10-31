@@ -111,7 +111,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 HeaderKey1 + ":" + HeaderValue1 + "\n"\+
 HeaderKey2 + ":" + HeaderValue2 + "\n"\+
 ...
-HeaderKeyN + ":" + HeaderValueN
+HeaderKeyN + ":" + HeaderValueN + "\n"
 ```
 
 拼接后的示例：

@@ -521,7 +521,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="3",service="",consumer="",node="127.0.0.1"\} 2/
+qr/apisix_http_status\{code="404",route="3",matched_uri="\/hello3",matched_host="",service="",consumer="",node="127.0.0.1"\} 2/
 --- no_error_log
 [error]
 
@@ -928,6 +928,111 @@ apikey: auth-one
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="1",service="",consumer="jack",node="127.0.0.1"\} \d+/
+qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="",service="",consumer="jack",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 51: set route(id: 9)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "hosts": ["foo.com", "bar.com"],
+                        "uris": ["/foo*", "/bar*"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 52: 404 Route Not Found
+--- request
+GET /not_found
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 53: fetch the prometheus metric data: 404 Route Not Found
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="localhost",consumer="",node=""\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 54: hit routes(uri = "/foo*", host = "foo.com")
+--- request
+GET /foo1
+--- more_headers
+Host: foo.com
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 55: fetch the prometheus metric data: hit routes(uri = "/foo*", host = "foo.com")
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_status\{code="404",route="9",matched_uri="\/foo\*",matched_host="foo.com",service="",consumer="",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 56: hit routes(uri = "/bar*", host = "bar.com")
+--- request
+GET /bar1
+--- more_headers
+Host: bar.com
+--- error_code: 404
+--- response_body eval
+qr/404 Not Found/
+--- no_error_log
+[error]
+
+
+
+=== TEST 57: fetch the prometheus metric data: hit routes(uri = "/bar*", host = "bar.com")
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1"\} \d+/
 --- no_error_log
 [error]

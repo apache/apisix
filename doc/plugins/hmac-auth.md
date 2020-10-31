@@ -63,7 +63,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-2. add a Route or add a Service , and enable the `hmac-auth` plugin
+2. add a Route or add a Service, and enable the `hmac-auth` plugin
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -111,7 +111,7 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 HeaderKey1 + ":" + HeaderValue1 + "\n"\+
 HeaderKey2 + ":" + HeaderValue2 + "\n"\+
 ...
-HeaderKeyN + ":" + HeaderValueN
+HeaderKeyN + ":" + HeaderValueN + "\n"
 ```
 
 Here is a full example：

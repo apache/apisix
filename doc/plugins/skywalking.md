@@ -20,26 +20,25 @@
 - [中文](../zh-cn/plugins/skywalking.md)
 
 # Summary
-- [**Summary**](#Summary)
-  - [**Name**](#Name)
-  - [**Attributes**](#Attributes)
-  - [**How To Enable**](#How-To-Enable)
-  - [**Test Plugin**](#Test-Plugin)
-    - [**Run Skywalking Example**](#Run-Skywalking-Example)
-  - [**Disable Plugin**](#Disable-Plugin)
-  - [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
+
+- [**Name**](#Name)
+- [**Attributes**](#Attributes)
+- [**How To Enable**](#How-To-Enable)
+- [**Test Plugin**](#Test-Plugin)
+  - [**Run Skywalking Example**](#Run-Skywalking-Example)
+- [**Disable Plugin**](#Disable-Plugin)
+- [**Upstream services(Code With SpringBoot)**](#Upstream-services(Code-With-SpringBoot))
 
 ## Name
 
-**Skywalking**(https://github.com/apache/skywalking) is an OpenTracing plugin.\
-The skywalking server can supports both http and grpc protocols . The APISIX client only support http protocols.
+[**Skywalking**](https://github.com/apache/skywalking) is an OpenTracing plugin.\
+The skywalking server can supports both http and grpc protocols. The APISIX client only support http protocols.
+
 ## Attributes
 
 | Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
 | ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
-| endpoint     | string | required    |          |              | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
 | sample_ratio | number | required    | 1        | [0.00001, 1] | the ratio of sample                                                  |
-| service_name | string | optional    | "APISIX" |              | service name for skywalking reporter                                 |
 
 ## How To Enable
 
@@ -54,9 +53,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     ],
     "plugins": {
         "skywalking": {
-            "endpoint": "http://10.110.149.175:12800",
-            "sample_ratio": 1,
-            "service_name": "APISIX_SERVER"
+            "sample_ratio": 1
         }
     },
     "upstream": {
@@ -67,59 +64,97 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
 You can open dashboard with a browser:`http://127.0.0.1:9080/apisix/dashboard/`，to complete the above operation through the web interface, first add a route:\
-![](../images/plugin/skywalking-1.png)\
+![ ](../images/plugin/skywalking-1.png)\
 Then add skywalking plugin:\
-![](../images/plugin/skywalking-2.png)
+![ ](../images/plugin/skywalking-2.png)
+
+## How to set endpoint
+
+We can set the endpoint by specified the configuration in `conf/config.yaml`.
+
+| Name         | Type   | Default  | Description                                                          |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| service_name | string | "APISIX" | service name for skywalking reporter                                 |
+|service_instance_name|string|"APISIX Instance Name" | service instance name for skywalking reporter |
+| endpoint     | string | "http://127.0.0.1:12800" | the http endpoint of Skywalking, for example: http://127.0.0.1:12800 |
+
+Here is an example:
+
+```yaml
+plugin_attr:
+  skywalking:
+    service_name: APISIX
+    service_instance_name: "APISIX Instance Name"
+    endpoint_addr: http://127.0.0.1:12800
+```
+
 ## Test Plugin
 
 ### Run-Skywalking-Example
 
 #### e.g.
+
 1. Run Skywalking Server:
-    - By default,use H2 storage , start skywalking directly
-        ```
+    - By default, use H2 storage, start skywalking directly
+
+        ```shell
         sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always apache/skywalking-oap-server
         ```
 
-    -  Of Course,you can use elasticsearch storage
-        1. Firstly, you should install elasticsearch:
-            ```
+    - Of Course, you can use Elasticsearch storage
+
+        1. Firstly, you should install Elasticsearch:
+
+            ```shell
             sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --restart always -e "discovery.type=single-node" elasticsearch:6.7.2
             ```
+
         2. You can install ElasticSearch management page: elasticsearch-hq(Optional)
-            ```
+
+            ```shell
             sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq
             ```
+
         3. Run skywalking server:
-            ```
+
+            ```shell
             sudo docker run --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server
             ```
+
 2. Skywalking WebUI:
     1. Run SkyWalking webUI Server:
-        ```
+
+        ```shell
         sudo docker run --name skywalking-ui -d -p 8080:8080 --link skywalking:skywalking -e SW_OAP_ADDRESS=skywalking:12800 --restart always apache/skywalking-ui
         ```
+
     2. Open the webUI of  skywalking:
-        You can open dashboard with a browser: http://10.110.149.175:8080 .it will be a successful install as follow:
-        ![](../images/plugin/skywalking-3.png)
+        You can open dashboard with a browser: http://10.110.149.175:8080. It will be a successful install as follow:
+        ![ ](../images/plugin/skywalking-3.png)
 
 3. Test:
-    -  Access to upstream services through access apisix:
+
+    - Access to upstream services through access apisix:
+
         ```bash
         $ curl -v http://10.110.149.192:9080/uid/12
         HTTP/1.1 200 OK
         OK
         ...
         ```
+
     - Open the webUI of skyWalking:
-        ```
+
+        ```shell
         http://10.110.149.175:8080/
         ```
+
         You can see the topology of all service\
-        ![](../../doc/images/plugin/skywalking-4.png)\
+        ![ ](../../doc/images/plugin/skywalking-4.png)\
         You can also see the tracer of all service\
-        ![](../../doc/images/plugin/skywalking-5.png)
+        ![ ](../../doc/images/plugin/skywalking-5.png)
 
 ## Disable Plugin
 
@@ -147,7 +182,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 
 The skywalking plugin has been disabled now. It works for other plugins.
 
-
 ## Upstream services(Code With SpringBoot)
 
 ```java
@@ -172,17 +206,20 @@ public class TestController {
     }
 }
 ```
+
 Configuring the skywalking agent, when starting the service.
 update the file of agent/config/agent.config
-```
+
+```shell
 agent.service_name=yourservername
 collector.backend_service=10.110.149.175:11800
 ```
+
 Run the script:
-```
+
+```shell
 nohup java -javaagent:/root/skywalking/app/agent/skywalking-agent.jar \
 -jar /root/skywalking/app/app.jar \
 --server.port=8089 \
 2>&1 > /root/skywalking/app/logs/nohup.log &
 ```
-
