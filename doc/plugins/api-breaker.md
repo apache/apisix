@@ -17,7 +17,7 @@
 #
 -->
 
-- [中文](../zh-cn/plugins/api-blocker.md)
+- [中文](../zh-cn/plugins/api-breaker.md)
 
 # Summary
 
