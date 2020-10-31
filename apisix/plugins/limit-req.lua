@@ -68,7 +68,6 @@ function _M.access(conf, ctx)
     end
 
     local key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version
-
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
