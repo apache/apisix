@@ -247,3 +247,22 @@ apisix reload
     ```
 
 2.重启抑或 reload APISIX
+
+## APISIX利用etcd如何实现毫秒级别的配置同步
+etcd提供接口wait、waitdir接口用于监听指定关键字、目录是否发生变更，如果发生变更，返回更新的数据。
+
+以waitdir接口为例：
+`syntax: res, err = cli:waitdir(dir:string [, modified_index:uint [, timeout:uint] ])`
+其中timeout参数表示调用进程和etcd长连接的时间，值为0时表示无长连接。
+
+APISIX关于etcd长连接时间的配置如下：
+```
+etcd:
+  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+    - "http://127.0.0.1:2379"     # multiple etcd address
+  prefix: "/apisix"               # apisix configurations prefix
+  timeout: 30                     # 30 seconds
+```
+APISIX使用waitdir接口监视目录的变更，timeout默认配置为30秒，即APISIX调用进程和etcd保持30秒的长连接。
+
+若APISIX进程调用该函数时，监听的目录没有更新，函数直接返回，长连接保持，调用进程可处理其他事件。30秒内有数据更新，etcd通过该函数返回更新结果，调用进程处理更新数据，30秒内无数据返回，到达超时时间30秒时，etcd通过该函数返回一条超时消息，调用进程处理超时信息，然后再次调用waitdir函数监听指定目录。APISIX通过以上过程实现配置的实时更新。
