@@ -19,8 +19,6 @@ local core = require("apisix.core")
 local process = require("ngx.process")
 local ngx = ngx
 local math = math
-local select = select
-local type = type
 local require = require
 
 local plugin_name = "skywalking"
@@ -103,28 +101,15 @@ function _M.log(conf, ctx)
 end
 
 
-local function try_read_attr(t, ...)
-    local count = select('#', ...)
-    for i = 1, count do
-        local attr = select(i, ...)
-        if type(t) ~= "table" then
-            return nil
-        end
-        t = t[attr]
-    end
-
-    return t
-end
-
-
 function _M.init()
     if process.type() ~= "worker" and process.type() ~= "single" then
         return
     end
 
     local local_conf = core.config.local_conf()
-    local local_plugin_info = try_read_attr(local_conf, "plugin_attr",
-                                            plugin_name) or {}
+    local local_plugin_info = core.table.try_read_attr(local_conf,
+                                                       "plugin_attr",
+                                                       plugin_name) or {}
     local_plugin_info = core.table.clone(local_plugin_info)
     local ok, err = core.schema.check(metadata_schema, local_plugin_info)
     if not ok then

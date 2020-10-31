@@ -23,8 +23,6 @@ local lfs = require("lfs")
 local io = io
 local os = os
 local table = table
-local select = select
-local type = type
 local string = string
 local local_conf
 
@@ -152,26 +150,13 @@ local function scan_log_folder()
 end
 
 
-local function try_attr(t, ...)
-    local count = select('#', ...)
-    for i = 1, count do
-        local attr = select(i, ...)
-        t = t[attr]
-        if type(t) ~= "table" then
-            return false
-        end
-    end
-
-    return true
-end
-
-
 local function rotate()
     local local_conf = core.config.local_conf()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
-    if try_attr(local_conf, "plugin_attr", "log-rotate") then
-        local attr = local_conf.plugin_attr["log-rotate"]
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
+                                          "log-rotate")
+    if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
     end
