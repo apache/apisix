@@ -60,6 +60,22 @@ function _M.set(tab, ...)
 end
 
 
+function _M.try_read_attr(tab, ...)
+    local count = select('#', ...)
+
+    for i = 1, count do
+        local attr = select(i, ...)
+        if type(tab) ~= "table" then
+            return nil
+        end
+
+        tab = tab[attr]
+    end
+
+    return tab
+end
+
+
 function _M.array_find(array, val)
     for i, v in ipairs(array) do
         if v == val then
