@@ -91,7 +91,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [SSL](doc/https.md): Dynamically load an SSL certificate.
 
 - **Full dynamic**
-
   - [Hot Updates And Hot Plugins](doc/plugins.md): Continuously updates its configurations and plugins without restarts!
   - [Proxy Rewrite](doc/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
   - [Response Rewrite](doc/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
