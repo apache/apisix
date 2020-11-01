@@ -91,7 +91,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [SSL](doc/https.md): Dynamically load an SSL certificate.
 
 - **Full dynamic**
-<<<<<<< HEAD
 
   - [Hot Updates And Hot Plugins](doc/plugins.md): Continuously updates its configurations and plugins without restarts!
   - [Proxy Rewrite](doc/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
@@ -102,17 +101,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
   - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
   - [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
-=======
-    - [Hot Updates And Hot Plugins](doc/plugins.md): Continuously updates its configurations and plugins without restarts!
-    - [Proxy Rewrite](doc/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `headers` of the request before send to upstream.
-    - [Response Rewrite](doc/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
-    - [Serverless](doc/plugins/serverless.md): Invoke functions in each phase in APISIX.
-    - Dynamic Load Balancing: Round-robin load balancing with weight.
-    - Hash-based Load Balancing: Load balance with consistent hashing sessions.
-    - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
-    - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
-    - [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
->>>>>>> enable web socket
 
 - **Fine-grained routing**
 
