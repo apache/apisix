@@ -341,10 +341,6 @@ local upstream_schema = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
         },
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean"
-        },
         labels = {
             description = "key/value pairs to specify attributes",
             type = "object",
@@ -475,6 +471,12 @@ _M.route = {
         service_protocol = {
             enum = {"grpc", "http"}
         },
+
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
+
         id = id_schema,
     },
     anyOf = {
@@ -517,7 +519,12 @@ _M.service = {
             maxProperties = 16
         },
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
+
     },
     additionalProperties = false,
 }
