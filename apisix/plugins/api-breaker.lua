@@ -20,7 +20,6 @@ local plugin_name = "api-breaker"
 local ngx = ngx
 local math = math
 local error = error
-local ipairs = ipairs
 
 local shared_buffer = ngx.shared['plugin-'.. plugin_name]
 if not shared_buffer then
@@ -88,18 +87,6 @@ local schema = {
     },
     required = {"break_response_code"},
 }
-
-
--- todo: we can move this into `core.talbe`
-local function array_find(array, val)
-    for i, v in ipairs(array) do
-        if v == val then
-            return i
-        end
-    end
-
-    return nil
-end
 
 
 local function gen_healthy_key(ctx)
@@ -188,7 +175,9 @@ function _M.log(conf, ctx)
     end
 
     -- unhealth process
-    if array_find(conf.unhealthy.http_statuses, upstream_status) then
+    if core.table.array_find(conf.unhealthy.http_statuses,
+                             upstream_status)
+    then
         local unhealthy_count, err = shared_buffer:incr(unhealthy_key, 1, 0)
         if err then
             core.log.warn("failed to incr unhealthy_key: ", unhealthy_key,
@@ -212,7 +201,7 @@ function _M.log(conf, ctx)
     end
 
     -- health process
-    if not array_find(conf.healthy.http_statuses, upstream_status) then
+    if not core.table.array_find(conf.healthy.http_statuses, upstream_status) then
         return
     end
 
