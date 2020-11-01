@@ -17,8 +17,6 @@
 -- limitations under the License.
 --
 
-local ngx_tpl = require "apisix.cli.ngx_tpl"
-
 local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
@@ -82,6 +80,7 @@ do
     end
 end
 
+local ngx_tpl = require("apisix.cli.ngx_tpl")
 local yaml = require("tinyyaml")
 local template = require("resty.template")
 
