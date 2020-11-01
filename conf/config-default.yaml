@@ -203,6 +203,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - consumer-restriction
   - cors
   - echo
+  #- error-log-logger
   #- example-plugin
   - fault-injection
   - grpc-transcode
