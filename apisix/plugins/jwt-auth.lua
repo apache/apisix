@@ -41,6 +41,8 @@ local consumer_schema = {
     properties = {
         key = {type = "string"},
         secret = {type = "string"},
+        public_key = {type = "string"},
+        private_key= {type = "string"},
         algorithm = {
             type = "string",
             enum = {"HS256", "HS512", "RS256"},
@@ -98,7 +100,7 @@ function _M.check_schema(conf, schema_type)
     end
 
     if schema_type == core.schema.TYPE_CONSUMER then
-        if not conf.secret then
+        if conf.algorithm ~= "RS256" and not conf.secret then
             conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
         end
 
@@ -183,6 +185,9 @@ function _M.rewrite(conf, ctx)
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local auth_secret = get_secret(consumer.auth_conf)
+    if consumer.auth_conf.algorithm and consumer.auth_conf.algorithm == "RS256" then
+        auth_secret = consumer.auth_conf.public_key
+    end
     jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.verified then
@@ -222,6 +227,9 @@ local function gen_token()
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local auth_secret = get_secret(consumer.auth_conf)
+    if consumer.auth_conf.algorithm and consumer.auth_conf.algorithm == "RS256" then
+        auth_secret = consumer.auth_conf.private_key
+    end
     local jwt_token = jwt:sign(
         auth_secret,
         {
