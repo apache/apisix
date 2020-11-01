@@ -27,7 +27,7 @@
         * [**实现 eureka.lua**](#实现-eurekalua)
         * [**Eureka 与 APISIX 之间数据转换逻辑**](#Eureka-与-APISIX-之间数据转换逻辑)
 * [**注册中心配置**](#注册中心配置)
-    * [**选择注册中心**](#选择注册中心)
+    * [**初始化服务发现**](#初始化服务发现)
     * [**Eureka 的配置**](#Eureka-的配置)
 * [**upstream 配置**](#upstream-配置)
 
@@ -147,13 +147,14 @@ APISIX是通过 `upstream.nodes` 来配置上游服务的，所以使用注册�
 
 ## 注册中心配置
 
-### 选择注册中心
+### 初始化服务发现
 
-首先要在 `conf/config.yaml` 文件中增加如下配置，以选择注册中心的类型：
+首先要在 `conf/config.yaml` 文件中增加如下配置，添加不同的服务发现客户端，以便在使用过程中动态选择：
 
 ```yaml
-apisix:
-  discovery: eureka
+discovery:
+  eureka:
+      ...
 ```
 
 此名称要与 `apisix/discovery/` 目录中实现对应注册中心的文件名保持一致。
@@ -165,33 +166,35 @@ apisix:
 在 `conf/config.yaml` 增加如下格式的配置：
 
 ```yaml
-eureka:
-  host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-    - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
-    - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
-  prefix: "/eureka/"
-  fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
-  weight: 100                      # default weight for node
-  timeout:
-    connect: 2000                  # 连接 eureka 的超时时间，默认2000ms
-    send: 2000                     # 向 eureka 发送数据的超时时间，默认2000ms
-    read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
+discovery:
+  eureka:
+    host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+      - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
+      - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+    prefix: "/eureka/"
+    fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
+    weight: 100                      # default weight for node
+    timeout:
+      connect: 2000                  # 连接 eureka 的超时时间，默认2000ms
+      send: 2000                     # 向 eureka 发送数据的超时时间，默认2000ms
+      read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
 ```
 
-通过 `eureka.host ` 配置 eureka 的服务器地址。
+通过 `discovery.eureka.host ` 配置 eureka 的服务器地址。
 
 如果 eureka 的地址是 `http://127.0.0.1:8761/` ，并且不需要用户名和密码验证的话，配置如下：
 
 ```yaml
-eureka:
-  host:
-    - "http://127.0.0.1:8761"
-  prefix: "/eureka/"
+discovery:
+  eureka:
+    host:
+      - "http://127.0.0.1:8761"
+    prefix: "/eureka/"
 ```
 
 ## upstream 配置
 
-APISIX是通过 `upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
+APISIX是通过 `upstream.discovery_type`选择使用的服务发现， `upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -199,7 +202,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/user/*",
     "upstream": {
         "service_name": "USER-SERVICE",
-        "type": "roundrobin"
+        "type": "roundrobin",
+        "discovery_type": "eureka"
     }
 }'
 
@@ -210,7 +214,7 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 Server: APISIX web server
 
-{"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
+{"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin", "discovery_type": "eureka"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
 ```
 
 因为上游的接口 URL 可能会有冲突，通常会在网关通过前缀来进行区分：
@@ -226,7 +230,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
     "upstream": {
         "service_name": "A-SERVICE",
-        "type": "roundrobin"
+        "type": "roundrobin",
+        "discovery_type": "eureka"
     }
 }'
 
@@ -240,7 +245,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
     }
     "upstream": {
         "service_name": "B-SERVICE",
-        "type": "roundrobin"
+        "type": "roundrobin",
+        "discovery_type": "eureka"
     }
 }'
 ```

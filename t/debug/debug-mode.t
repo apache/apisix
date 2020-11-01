@@ -46,6 +46,7 @@ done
 --- grep_error_log eval
 qr/loaded plugin and sort by priority: [-\d]+ name: [\w-]+/
 --- grep_error_log_out
+loaded plugin and sort by priority: 11011 name: zipkin
 loaded plugin and sort by priority: 11010 name: request-id
 loaded plugin and sort by priority: 11000 name: fault-injection
 loaded plugin and sort by priority: 10000 name: serverless-pre-function
@@ -66,6 +67,7 @@ loaded plugin and sort by priority: 2000 name: authz-keycloak
 loaded plugin and sort by priority: 1010 name: proxy-mirror
 loaded plugin and sort by priority: 1009 name: proxy-cache
 loaded plugin and sort by priority: 1008 name: proxy-rewrite
+loaded plugin and sort by priority: 1005 name: api-breaker
 loaded plugin and sort by priority: 1003 name: limit-conn
 loaded plugin and sort by priority: 1002 name: limit-count
 loaded plugin and sort by priority: 1001 name: limit-req
@@ -81,7 +83,6 @@ loaded plugin and sort by priority: 403 name: kafka-logger
 loaded plugin and sort by priority: 401 name: syslog
 loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
-loaded plugin and sort by priority: -1000 name: zipkin
 loaded plugin and sort by priority: -1100 name: skywalking
 loaded plugin and sort by priority: -2000 name: serverless-post-function
 

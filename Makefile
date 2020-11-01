@@ -138,6 +138,9 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/cli
+	$(INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
 	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
 
@@ -161,9 +164,6 @@ install: default
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
 	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
-
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
-	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/ssl/router
 	$(INSTALL) apisix/ssl/router/*.lua $(INST_LUADIR)/apisix/ssl/router/

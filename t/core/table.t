@@ -77,3 +77,29 @@ GET /t
 ok
 --- no_error_log
 [error]
+
+
+
+=== TEST 3: try_read_attr
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local try_read_attr = core.table.try_read_attr
+
+            local t = {level1 = {level2 = "value"}}
+
+            local v = try_read_attr(t, "level1", "level2")
+            ngx.say(v)
+
+            local v2 = try_read_attr(t, "level1", "level3")
+            ngx.say(v2)
+        }
+    }
+--- request
+GET /t
+--- response_body
+value
+nil
+--- no_error_log
+[error]

@@ -16,7 +16,6 @@
 --
 local ngx        = ngx
 local type       = type
-local select     = select
 local abs        = math.abs
 local ngx_time   = ngx.time
 local ngx_re     = require("ngx.re")
@@ -83,6 +82,7 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema
 }
 
 local hmac_funcs = {
@@ -96,21 +96,6 @@ local hmac_funcs = {
         return hmac:new(secret_key, hmac.ALGOS.SHA512):final(message)
     end,
 }
-
-
-local function try_attr(t, ...)
-    local tbl = t
-    local count = select('#', ...)
-    for i = 1, count do
-        local attr = select(i, ...)
-        tbl = tbl[attr]
-        if type(tbl) ~= "table" then
-            return false
-        end
-    end
-
-    return true
-end
 
 
 local function array_to_map(arr)
@@ -241,7 +226,7 @@ local function generate_signature(ctx, secret_key, params)
         end
     end
 
-    local signing_string = core.table.concat(signing_string_items, "\n")
+    local signing_string = core.table.concat(signing_string_items, "\n") .. "\n"
 
     core.log.info("signing_string: ", signing_string,
                   " params.signed_headers:",
@@ -327,8 +312,9 @@ local function get_params(ctx)
     local date_key = DATE_KEY
     local signed_headers_key = SIGNED_HEADERS_KEY
 
-    if try_attr(local_conf, "plugin_attr", "hmac-auth") then
-        local attr = local_conf.plugin_attr["hmac-auth"]
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
+                                          "hmac-auth")
+    if attr then
         access_key = attr.access_key or access_key
         signature_key = attr.signature_key or signature_key
         algorithm_key = attr.algorithm_key or algorithm_key

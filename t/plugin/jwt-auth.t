@@ -522,7 +522,37 @@ GET /t
 
 
 
-=== TEST 25: add consumer with username and plugins with public_key, private_key
+=== TEST 25: get the schema by schema_type
+--- request
+GET /apisix/admin/schema/plugins/jwt-auth?schema_type=consumer
+--- response_body
+{"required":["key"],"properties":{"exp":{"minimum":1,"type":"integer"},"algorithm":{"type":"string","default":"HS256","enum":["HS256","HS512","RS256"]},"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"key":{"type":"string"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: get the schema by error schema_type
+--- request
+GET /apisix/admin/schema/plugins/jwt-auth?schema_type=consumer123123
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: get the schema by default schema_type
+--- request
+GET /apisix/admin/schema/plugins/jwt-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: add consumer with username and plugins with public_key, private_key
 --- config
     location /t {
         content_by_lua_block {
@@ -570,7 +600,7 @@ passed
 
 
 
-=== TEST 26: JWT sign and verify RS256
+=== TEST 29: JWT sign and verify RS256
 --- config
     location /t {
         content_by_lua_block {
@@ -606,7 +636,7 @@ passed
 
 
 
-=== TEST 27: sign
+=== TEST 30: sign
 --- request
 GET /apisix/plugin/jwt/sign?key=user-key-rs256
 --- response_body_like eval
@@ -616,7 +646,7 @@ qr/eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
 
 
 
-=== TEST 28: verify (in argument)
+=== TEST 31: verify (in argument)
 --- request
 GET /hello?jwt=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsImV4cCI6MTYwNDMzNjQ4N30.U3TMjJjuHBH5mqOEyvh3WGy08DP0FHq_H62XprcOZfpywTByLCxK_bTKQf5jrXQlCudW_azIm4qV_TQJ2IFIag
 --- response_body

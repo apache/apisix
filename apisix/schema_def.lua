@@ -353,6 +353,10 @@ local upstream_schema = {
             },
             maxProperties = 16
         },
+        discovery_type = {
+            description = "discovery type",
+            type = "string",
+        },
         pass_host = {
             description = "mod of host passing",
             type = "string",
