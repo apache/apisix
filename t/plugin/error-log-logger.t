@@ -249,20 +249,20 @@ plugins:
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                        "plugins": {
-                            "error-log-logger": {
-                                "host": "127.0.0.1",
-                                "port": 1999,
-                                "inactive_timeout": 1
-                            }
+                    "plugins": {
+                        "error-log-logger": {
+                            "host": "127.0.0.1",
+                            "port": 1999,
+                            "inactive_timeout": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1982": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello1"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello1"
                 }]]
                 )
             -- reload

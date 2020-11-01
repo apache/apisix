@@ -17,10 +17,10 @@
 
 local core = require("apisix.core")
 local nproc = require("ngx.process")
-local plugin_name = "error-log-logger"
-local errlog = require "ngx.errlog"
+local errlog = require ("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin_metadata = require("apisix.admin.plugin_metadata")
+local plugin_name = "error-log-logger"
 local table = core.table
 local ngx = ngx
 local tcp = ngx.socket.tcp
@@ -171,10 +171,6 @@ local function process()
         return
     end
 
-    -- Generate a function to be executed by the batch processor
-    local func = function(entries)
-        return send_to_server(entries)
-    end
     local config_bat = {
         name = config.name,
         retry_delay = config.retry_delay,
@@ -185,7 +181,7 @@ local function process()
     }
 
     local err
-    log_buffer, err = batch_processor:new(func, config_bat)
+    log_buffer, err = batch_processor:new(send_to_server, config_bat)
 
     if not log_buffer then
         core.log.error("error when creating the batch processor: ", err)
