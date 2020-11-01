@@ -59,8 +59,9 @@ script() {
     sudo mkdir -p /usr/local/apisix/deps
     sudo PATH=$PATH ./utils/install-apisix.sh install > build.log 2>&1 || (cat build.log && exit 1)
 
+    which apisix
     # TODO: DELETE ME AFTER https://github.com/apache/apisix/pull/2588 merged
-    sudo cp ../bin/apisix /usr/local/apisix/deps/bin/apisix
+    sudo cp ../bin/apisix /usr/bin/apisix
 
     # run test
     sudo PATH=$PATH apisix help
@@ -74,7 +75,7 @@ script() {
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
 
     # TODO: DELETE ME AFTER https://github.com/apache/apisix/pull/2588 merged
-    sudo cp ../bin/apisix /usr/local/apisix/deps/bin/apisix
+    sudo cp ../bin/apisix /usr/bin/apisix
 
     # show install files
     luarocks show apisix
