@@ -36,6 +36,10 @@ local ACCESS_KEY    = "X-HMAC-ACCESS-KEY"
 local SIGNED_HEADERS_KEY = "X-HMAC-SIGNED-HEADERS"
 local plugin_name   = "hmac-auth"
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     title = "work with route or service object",
@@ -158,9 +162,8 @@ local function get_consumer(access_key)
         return nil, {message = "Missing related consumer"}
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consumer_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consumer_cache, consumer_conf)
 
     local consumer = consumers[access_key]
     if not consumer then

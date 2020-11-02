@@ -26,6 +26,10 @@ local tonumber = tonumber
 local plugin_name = "zipkin"
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -108,8 +112,8 @@ function _M.rewrite(plugin_conf, ctx)
         conf.server_addr = ctx.var["server_addr"]
     end
 
-    local tracer = core.lrucache.plugin_ctx(plugin_name .. '#' .. conf.server_addr, ctx,
-                                            create_tracer, conf, ctx)
+    local tracer = core.lrucache.plugin_ctx(lrucache, ctx, conf.server_addr,
+                            create_tracer, conf, ctx)
 
     ctx.opentracing_sample = tracer.sampler:sample()
     if not ctx.opentracing_sample then

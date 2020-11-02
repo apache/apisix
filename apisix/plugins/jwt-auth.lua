@@ -29,6 +29,10 @@ local sub_str  = string.sub
 local plugin_name = "jwt-auth"
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     additionalProperties = false,
@@ -173,9 +177,8 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing related consumer"}
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     local consumer = consumers[user_key]
     if not consumer then
@@ -210,9 +213,8 @@ local function gen_token()
         return core.response.exit(404)
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     core.log.info("consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[key]

@@ -23,6 +23,9 @@ local consumer = require("apisix.consumer")
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+local consumers_lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -143,9 +146,9 @@ function _M.access(conf, ctx)
         return 401, { message = "Missing related consumer" }
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = consumers_lrucache("consumers_key",
+        consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     -- 3. check user exists
     local cur_consumer = consumers[username]
