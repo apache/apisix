@@ -139,7 +139,8 @@ stream_plugins:
     - mqtt-proxy
 --- apisix_yaml
 plugins:
-  - stream: ip-restriction
+  - name: xxx
+    stream: ip-restriction
 --- request
 GET /hello
 --- response_body
