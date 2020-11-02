@@ -103,3 +103,36 @@ value
 nil
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: set_eq
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local cases = {
+                {expect = true, a = {}, b = {}},
+                {expect = true, a = {a = 1}, b = {a = 1}},
+                {expect = true, a = {a = 1}, b = {a = 2}},
+                {expect = false, a = {b = 1}, b = {a = 1}},
+                {expect = false, a = {a = 1, b = 1}, b = {a = 1}},
+                {expect = false, a = {a = 1}, b = {a = 1, b = 2}},
+            }
+            for _, t in ipairs(cases) do
+                local actual = core.table.set_eq(t.a, t.b)
+                local expect = t.expect
+                if actual ~= expect then
+                    ngx.say("expect ", expect, ", actual ", actual)
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- request
+GET /t
+--- no_error_log
+[error]

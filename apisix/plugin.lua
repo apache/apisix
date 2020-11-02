@@ -108,7 +108,7 @@ local function load(plugin_names)
     end
 
     -- the same configure may be synchronized more than one
-    if core.set.eq(local_plugins_hash, processed) then
+    if core.table.set_eq(local_plugins_hash, processed) then
         core.log.info("plugins not changed")
         return true
     end
@@ -152,7 +152,7 @@ local function load_stream(plugin_names)
     end
 
     -- the same configure may be synchronized more than one
-    if core.set.eq(stream_local_plugins_hash, processed) then
+    if core.table.set_eq(stream_local_plugins_hash, processed) then
         core.log.info("plugins not changed")
         return true
     end
