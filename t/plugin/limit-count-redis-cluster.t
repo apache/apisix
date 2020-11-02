@@ -192,16 +192,27 @@ passed
 
 
 === TEST 4: up the limit
+--- request
+GET /hello
+--- no_error_log
+[error]
+--- error_log
+try to lock with key route#1#redis-cluster
+unlock with key route#1#redis-cluster
+
+
+
+=== TEST 5: up the limit
 --- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 200, 503, 503]
+[200, 503, 503]
 --- no_error_log
 [error]
 
 
 
-=== TEST 5: up the limit again
+=== TEST 6: up the limit again
 --- pipelined_requests eval
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -211,7 +222,7 @@ passed
 
 
 
-=== TEST 6: set route, four redis nodes, only one is valid
+=== TEST 7: set route, four redis nodes, only one is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -258,7 +269,7 @@ passed
 
 
 
-=== TEST 7: hit route
+=== TEST 8: hit route
 --- config
     location /t {
         content_by_lua_block {
@@ -299,7 +310,7 @@ code: 200
 
 
 
-=== TEST 8: update route, use new limit configuration
+=== TEST 9: update route, use new limit configuration
 --- config
     location /t {
         content_by_lua_block {

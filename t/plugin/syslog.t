@@ -263,4 +263,7 @@ passed
 hello world
 --- no_error_log
 [error]
+--- error_log
+try to lock with key route#1
+unlock with key route#1
 --- timeout: 5
