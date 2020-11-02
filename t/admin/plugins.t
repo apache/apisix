@@ -94,4 +94,3 @@ GET /apisix/admin/plugins/basic-auth?schema_type=consumer
 {"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
 --- no_error_log
 [error]
-
