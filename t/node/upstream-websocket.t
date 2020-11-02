@@ -42,7 +42,8 @@ __DATA__
                     },
                     "enable_websocket": true,
                     "uri": "/websocket_handshake"
-                )
+                }]]
+            )
 
             if code >= 300 then
                 ngx.status = code
