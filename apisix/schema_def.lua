@@ -671,11 +671,13 @@ _M.plugins = {
         type = "object",
         properties = {
             name = {
-                type = "string"
+                type = "string",
+                minLength = 1,
             },
             stream = {
                 type = "boolean"
             },
+            additionalProperties = false,
         },
         required = {"name"}
     }
