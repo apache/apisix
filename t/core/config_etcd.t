@@ -122,10 +122,11 @@ qr/(failed to fetch data from etcd: 18: self signed certificate){1,}/
 
 
 
-=== TEST 5: originate TLS connection to etcd cluster success
+=== TEST 5: set route(id: 1) to etcd cluster with TLS
 --- yaml_config
 apisix:
   node_listen: 1984
+  admin_key: null
 etcd:
   host:
     - "https://127.0.0.1:12379"
@@ -134,12 +135,99 @@ etcd:
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(4)
-            ngx.say("ok")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "desc": "new route",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
         }
     }
---- timeout: 5
 --- request
 GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: get route(id: 1) from etcd cluster with TLS
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+etcd:
+  host:
+    - "https://127.0.0.1:12379"
+  tls:
+    verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_GET,
+                 nil,
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "desc": "new route",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "get"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]
