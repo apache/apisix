@@ -147,7 +147,7 @@ do
         nil,
     }
 
-    function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_fun, ...)
+    function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
         key_buf[1] = api_ctx.conf_type
         key_buf[2] = api_ctx.conf_id
 
@@ -159,7 +159,7 @@ do
             key = concat(key_buf, "#", 1, 2)
         end
 
-        return lrucache(key, api_ctx.conf_version, create_obj_fun, ...)
+        return lrucache(key, api_ctx.conf_version, create_obj_func, ...)
     end
 end
 
