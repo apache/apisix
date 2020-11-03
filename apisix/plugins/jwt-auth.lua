@@ -112,7 +112,8 @@ function _M.check_schema(conf, schema_type)
 
         if conf.algorithm == "RS256" then
             if not conf.public_key or not conf.private_key then
-                return false, "when using RS256 algorithm, the parameter 'public_key' and 'private_key' is both required."
+                return false, "when using RS256 algorithm, "
+                        .."the parameter 'public_key' and 'private_key' is both required."
             end
         end
 
@@ -235,7 +236,7 @@ end
 
 
 local function sign_jwt_with_RS256(key, auth_conf)
-    local ok, jwt_token = pcall(jwt.sign, self, auth_conf.private_key,
+    local ok, jwt_token = pcall(jwt.sign, _M, auth_conf.private_key,
             {
         header = {
             typ = "JWT",
@@ -250,7 +251,8 @@ local function sign_jwt_with_RS256(key, auth_conf)
         }
     })
     if not ok then
-        core.log.warn("failed to sign jwt, check the private key and public key of the consumer to whom the key belongs.")
+        core.log.warn("failed to sign jwt, " ..
+                "check the private key and public key of the consumer to whom the key belongs.")
         core.response.exit(500, "failed to sign jwt")
     end
     return jwt_token
