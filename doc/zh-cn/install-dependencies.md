@@ -27,11 +27,9 @@
 
 注意
 ====
-- Apache APISIX 不再支持 `v2` 版本的 etcd。在 etcd 版本低于 3.4 时，默认 API 协议仍为 v2，因此需要添加 `ETCDCTL_API=3` 至环境变量以启动 v3 协议。
+- Apache APISIX 从 v2.0 开始不再支持 `v2` 版本的 etcd，并且 etcd 最低支持版本为 v3.4.0。
 
-```shell
-export ETCDCTL_API=3
-```
+- 目前 Apache APISIX 默认使用 HTTP 协议与 etcd 集群通信，这并不安全，如果希望保障数据的安全性和完整性。 请为您的 etcd 集群配置证书及对应私钥，并在您的 Apache APISIX etcd endpoints 配置列表中明确使用 `https` 协议前缀。请查阅 `conf/config-default.yaml` 中 etcd 一节相关的配置来了解更多细节。
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
@@ -44,15 +42,21 @@ CentOS 7
 wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 sudo rpm -ivh epel-release-latest-7.noarch.rpm
 
+# 安装 etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
 # 添加 OpenResty 源
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
+# 安装 OpenResty 和 编译工具
+sudo yum install -y openresty curl git gcc luarocks lua-devel
 
 # 开启 etcd server
-sudo service etcd start
+nohup etcd &
 ```
 
 Fedora 31 & 32
@@ -63,11 +67,17 @@ Fedora 31 & 32
 sudo yum install yum-utils
 sudo yum-config-manager --add-repo https://openresty.org/package/fedora/openresty.repo
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo yum install -y etcd openresty curl git gcc luarocks lua-devel
+# 安装 etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# 安装 OpenResty 和 编译工具
+sudo yum install -y openresty curl git gcc luarocks lua-devel
 
 # 开启 etcd server
-sudo etcd &
+nohup etcd &
 ```
 
 Ubuntu 16.04 & 18.04
@@ -81,11 +91,17 @@ sudo apt-get -y install software-properties-common
 sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
 sudo apt-get update
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo apt-get install -y git etcd openresty curl luarocks
+# 安装 etcd
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
+    sudo cp -a etcd etcdctl /usr/bin/
+
+# 安装 OpenResty 和 编译工具
+sudo apt-get install -y git openresty curl luarocks
 
 # 开启 etcd server
-sudo service etcd start
+nohup etcd &
 ```
 
 Debian 9 & 10
@@ -110,8 +126,8 @@ tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
     cd etcd-v3.3.13-linux-amd64 && \
     sudo cp -a etcd etcdctl /usr/bin/
 
-# 安装 OpenResty, etcd 和 编译工具
-sudo apt-get install -y git openresty curl luarocks make
+# 安装 OpenResty 和 编译工具
+sudo apt-get install -y git openresty curl luarocks
 
 # 开启 etcd server
 nohup etcd &
@@ -126,4 +142,7 @@ brew install openresty/brew/openresty etcd luarocks curl git
 
 # 开启 etcd server
 etcd &
+
+# 为 etcd 服务启用 TLS
+etcd --cert-file=/path/to/cert --key-file=/path/to/pkey --advertise-client-urls https://127.0.0.1:2379
 ```

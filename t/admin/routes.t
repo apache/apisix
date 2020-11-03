@@ -2185,3 +2185,218 @@ GET /t
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 60: set route(with labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "labels": {
+                        "build": "16",
+                        "env": "production",
+                        "version": "v2"
+                    },
+
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "labels": {
+                                "build": "16",
+                                "env": "production",
+                                "version": "v2"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 61: patch route(change labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "labels": {
+                        "build": "17"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "labels": {
+                                "env": "production",
+                                "version": "v2",
+                                "build": "17"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "compareAndSwap"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 62: invalid format of label value: set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "uri": "/index.html",
+                        "labels": {
+	                        "env": ["production", "release"]
+                        }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 63: create route with create_time and update_time(id : 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html",
+                    "create_time": 1602883670,
+                    "update_time": 1602893670
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "create_time": 1602883670,
+                            "update_time": 1602893670
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 64: delete test route(id : 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/routes/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{
+                    "action": "delete"
+                }]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: passed
+--- no_error_log
+[error]

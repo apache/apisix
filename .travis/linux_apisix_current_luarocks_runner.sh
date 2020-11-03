@@ -40,25 +40,21 @@ do_install() {
     cd ..
     rm -rf luarocks-2.4.4
 
-    ./utils/install-etcd.sh
+    ./utils/linux-install-etcd-client.sh
 }
 
 script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
-    sudo service etcd start
-    sudo service etcd stop
-    mkdir -p ~/etcd-data
-    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcdctl version
-    sleep 5
 
     sudo rm -rf /usr/local/apisix
 
     # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps  > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
+
+    mkdir cli_tmp && cd cli_tmp
 
     # show install file
     luarocks show apisix
@@ -68,15 +64,17 @@ script() {
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
-    # apisix cli test
-    sudo PATH=$PATH .travis/apisix_cli_test.sh
-
     cat /usr/local/apisix/logs/error.log | grep '\[error\]' > /tmp/error.log | true
     if [ -s /tmp/error.log ]; then
         echo "=====found error log====="
         cat /usr/local/apisix/logs/error.log
         exit 1
     fi
+
+    cd ..
+
+    # apisix cli test
+    sudo PATH=$PATH .travis/apisix_cli_test.sh
 }
 
 case_opt=$1

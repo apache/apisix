@@ -101,7 +101,7 @@ done
 
 
 
-=== TEST 4: add plugin
+=== TEST 4: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -255,3 +255,187 @@ GET /t
 failed to send data to Kafka topic
 [error]
 --- wait: 1
+
+
+
+=== TEST 7: set route(meta_format = origin, include_req_body = true)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "include_req_body": true,
+                                "meta_format": "origin"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: hit route, report log to kafka
+--- request
+GET /hello?ab=cd
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log
+send data to kafka: GET /hello?ab=cd HTTP/1.1
+host: localhost
+content-length: 6
+connection: close
+
+abcdef
+--- wait: 2
+
+
+
+=== TEST 9: set route(meta_format = origin, include_req_body = false)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "include_req_body": false,
+                                "meta_format": "origin"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: hit route, report log to kafka
+--- request
+GET /hello?ab=cd
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log
+send data to kafka: GET /hello?ab=cd HTTP/1.1
+host: localhost
+content-length: 6
+connection: close
+--- wait: 2
+
+
+
+=== TEST 11: set route(meta_format = default)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "include_req_body": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit route, report log to kafka
+--- request
+GET /hello?ab=cd
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log_like eval
+qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
+--- wait: 2

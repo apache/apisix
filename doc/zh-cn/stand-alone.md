@@ -26,7 +26,7 @@
 这种方式比较适合两类用户：
 
 1. kubernetes(k8s)：声明式 API 场景，通过全量 yaml 配置来动态更新修改路由规则。
-2. 不同配置中心：配置中心的实现有很多，比如 Consule 等，使用全量 yaml 做中间转换桥梁。
+2. 不同配置中心：配置中心的实现有很多，比如 Consul 等，使用全量 yaml 做中间转换桥梁。
 
 APISIX 节点服务启动后会立刻加载 `conf/apisix.yaml` 文件中的路由规则到内存，并且每间隔一定时间
 （默认 1 秒钟），都会尝试检测文件内容是否有更新，如果有更新则重新加载规则。
@@ -153,4 +153,15 @@ upstreams:
             "127.0.0.1:1980": 1
         type: roundrobin
 #END
+```
+
+#### 配置 Plugins
+
+```yml
+# 列出的插件会被热加载并覆盖掉启动时的配置
+plugins:
+  - name: ip-restriction
+  - name: jwt-auth
+  - name: mqtt-proxy
+    stream: true # stream 插件需要设置 stream 属性为 true
 ```

@@ -20,8 +20,27 @@ local json_encode = require("cjson").encode
 local _M = {}
 
 
+local function inject_headers()
+    local hdrs = ngx.req.get_headers()
+    for k, v in pairs(hdrs) do
+        if k:sub(1, 5) == "resp-" then
+            ngx.header[k:sub(6)] = v
+        end
+    end
+end
+
 function _M.hello()
-    ngx.say("hello world")
+    local s = "hello world"
+    ngx.header['Content-Length'] = #s + 1
+    ngx.say(s)
+end
+
+function _M.hello_chunked()
+    ngx.print("hell")
+    ngx.flush(true)
+    ngx.print("o w")
+    ngx.flush(true)
+    ngx.say("orld")
 end
 
 function _M.hello1()
@@ -104,8 +123,6 @@ function _M.opentracing()
 end
 
 function _M.with_header()
-    ngx.header['Content-Type'] = 'application/xml'
-    ngx.header['X-Server-id'] = 100
     --split into multiple chunk
     ngx.say("hello")
     ngx.say("world")
@@ -255,6 +272,15 @@ function _M.websocket_handshake()
 end
 _M.websocket_handshake_route = _M.websocket_handshake
 
+function _M.api_breaker()
+    ngx.exit(tonumber(ngx.var.arg_code))
+end
+
+function _M.mysleep()
+    ngx.sleep(tonumber(ngx.var.arg_seconds))
+    ngx.say(ngx.var.arg_seconds)
+end
+
 local function print_uri()
     ngx.say(ngx.var.uri)
 end
@@ -269,6 +295,7 @@ function _M.go()
         return ngx.exit(404)
     end
 
+    inject_headers()
     return _M[action]()
 end
 
@@ -280,6 +307,12 @@ function _M.headers()
     end
 
     ngx.say("/headers")
+end
+
+function _M.log()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    ngx.log(ngx.WARN, "request log: ", body or "nil")
 end
 
 return _M

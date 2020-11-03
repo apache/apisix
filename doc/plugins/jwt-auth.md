@@ -41,9 +41,14 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 | ------------- | ------- | ----------- | ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | key           | string  | required    |         |                                               | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
 | secret        | string  | optional    |         |                                               | encryption key. if you do not specify, the value is auto-generated in the background.                                                            |
-| algorithm     | string  | optional    | "HS256" | ["HS256", "HS384", "HS512", "RS256", "ES256"] | encryption algorithm.                                                                                                                            |
+| algorithm     | string  | optional    | "HS256" | ["HS256", "HS512", "RS256"] | encryption algorithm.                                                                                                                            |
 | exp           | integer | optional    | 86400   | [1,...]                                       | token's expire time, in seconds                                                                                                                  |
 | base64_secret | boolean | optional    | false   |                                               | whether secret is base64 encoded                                                                                                                 |
+
+## API
+
+This plugin will add `/apisix/plugin/jwt/sign` to sign.
+You may need to use [interceptors](plugin-interceptors.md) to protect it.
 
 ## How To Enable
 
@@ -69,7 +74,7 @@ you can visit Dashboard `http://127.0.0.1:9080/apisix/dashboard/` and add a Cons
 then add jwt-auth plugin in the Consumer page:
 ![](../images/plugin/jwt-auth-2.png)
 
-2. add a Route or add a Service , and enable the `jwt-auth` plugin
+2. add a Route or add a Service, and enable the `jwt-auth` plugin
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

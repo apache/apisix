@@ -27,7 +27,7 @@ gRPC client -> APISIX -> gRPC server
 ## Parameters
 
 * `service_protocol`:  the route's option `service_protocol` must be `grpc`
-* `uri`:   format likes /service/method , Example：/helloworld.Greeter/SayHello
+* `uri`:   format likes /service/method, Example：/helloworld.Greeter/SayHello
 
 ### Example
 

@@ -66,7 +66,8 @@ local _M = {
 
 
 local function service_info()
-    local host = local_conf.eureka and local_conf.eureka.host
+    local host = local_conf.discovery and
+        local_conf.discovery.eureka and local_conf.discovery.eureka.host
     if not host then
         log.error("do not set eureka.host")
         return
@@ -84,8 +85,8 @@ local function service_info()
         url = protocol .. other
         basic_auth = "Basic " .. ngx.encode_base64(user_and_password)
     end
-    if local_conf.eureka.prefix then
-        url = url .. local_conf.eureka.prefix
+    if local_conf.discovery.eureka.prefix then
+        url = url .. local_conf.discovery.eureka.prefix
     end
     if string_sub(url, #url) ~= "/" then
         url = url .. "/"
@@ -117,7 +118,7 @@ local function request(request_uri, basic_auth, method, path, query, body)
     end
 
     local httpc = http.new()
-    local timeout = local_conf.eureka.timeout
+    local timeout = local_conf.discovery.eureka.timeout
     local connect_timeout = timeout and timeout.connect or 2000
     local send_timeout = timeout and timeout.send or 2000
     local read_timeout = timeout and timeout.read or 5000
@@ -231,19 +232,20 @@ end
 
 
 function _M.init_worker()
-    if not local_conf.eureka or not local_conf.eureka.host or #local_conf.eureka.host == 0 then
+    if not local_conf.discovery.eureka or
+        not local_conf.discovery.eureka.host or #local_conf.discovery.eureka.host == 0 then
         error("do not set eureka.host")
         return
     end
 
-    local ok, err = core.schema.check(schema, local_conf.eureka)
+    local ok, err = core.schema.check(schema, local_conf.discovery.eureka)
     if not ok then
         error("invalid eureka configuration: " .. err)
         return
     end
-    default_weight = local_conf.eureka.weight or 100
+    default_weight = local_conf.discovery.eureka.weight or 100
     log.info("default_weight:", default_weight, ".")
-    local fetch_interval = local_conf.eureka.fetch_interval or 30
+    local fetch_interval = local_conf.discovery.eureka.fetch_interval or 30
     log.info("fetch_interval:", fetch_interval, ".")
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)

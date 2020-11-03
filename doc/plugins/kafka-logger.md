@@ -20,13 +20,13 @@
 - [中文](../zh-cn/plugins/kafka-logger.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**Info**](#info)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-
 
 ## Name
 
@@ -48,12 +48,32 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | key              | string  | required    |                |         | Key for the message.                                                                     |
 | timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
 | name             | string  | optional    | "kafka logger" |         | A  unique identifier to identity the batch processor                                     |
+| meta_format       | string  | optional    | "default"      | enum: `default`, `origin`| `default`: collect the request information with detfault JSON way. `origin`: collect the request information with original HTTP request. [example](#examples-of-meta_format)|
 | batch_max_size   | integer | optional    | 1000           | [1,...] | Max size of each batch                                                                   |
 | inactive_timeout | integer | optional    | 5              | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
 | buffer_duration  | integer | optional    | 60             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
 | max_retry_count  | integer | optional    | 0              | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
 | retry_delay      | integer | optional    | 1              | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
 | include_req_body | boolean | optional    | false          |         | Whether to include the request body                                                      |
+
+### examples of meta_format
+
+- **default**:
+
+    ```json
+    {"upstream":"127.0.0.1:1980","start_time":1602211788041,"client_ip":"127.0.0.1","service_id":"","route_id":"1","request":{"querystring":{"ab":"cd"},"size":90,"uri":"\/hello?ab=cd","url":"http:\/\/localhost:1984\/hello?ab=cd","headers":{"host":"localhost","content-length":"6","connection":"close"},"body":"abcdef","method":"GET"},"response":{"headers":{"content-type":"text\/plain","server":"APISIX\/1.5","connection":"close","transfer-encoding":"chunked"},"status":200,"size":153},"latency":99.000215530396}
+    ```
+
+- **origin**:
+
+    ```http
+    GET /hello?ab=cd HTTP/1.1
+    host: localhost
+    content-length: 6
+    connection: close
+
+    abcdef
+    ```
 
 ## Info
 
@@ -64,7 +84,7 @@ or every `buffer_duration` flush the buffer.
 In case of success, returns `true`.
 In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
 
-##### Sample broker list
+### Sample broker list
 
 This plugin supports to push in to more than one broker at a time. Specify the brokers of the external kafka servers as below
 sample to take effect of this functionality.
@@ -107,7 +127,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Test Plugin
 
-* success:
+*success:
 
 ```shell
 $ curl -i http://127.0.0.1:9080/hello

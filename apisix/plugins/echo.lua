@@ -77,16 +77,17 @@ end
 function _M.body_filter(conf, ctx)
     if conf.body then
         ngx.arg[1] = conf.body
+        ngx.arg[2] = true
     end
 
-    if conf.before_body then
+    if conf.before_body and not ctx.plugin_echo_body_set then
         ngx.arg[1] = conf.before_body ..  ngx.arg[1]
+        ctx.plugin_echo_body_set = true
     end
 
-    if conf.after_body then
+    if ngx.arg[2] and conf.after_body then
         ngx.arg[1] = ngx.arg[1] .. conf.after_body
     end
-    ngx.arg[2] = true
 end
 
 
@@ -101,6 +102,10 @@ end
 
 
 function _M.header_filter(conf, ctx)
+    if conf.body or conf.before_body or conf.after_body then
+        core.response.clear_header_as_body_modified()
+    end
+
     if not conf.headers then
         return
     end

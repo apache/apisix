@@ -37,7 +37,7 @@ __DATA__
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "baidu.com:80": 0
+                                "github.com:80": 0
                             },
                             "type": "roundrobin"
                         },
@@ -65,7 +65,7 @@ passed
 GET /not_found
 --- error_code: 404
 --- response_body
-{"error_msg":"failed to match any routes"}
+{"error_msg":"404 Route Not Found"}
 --- no_error_log
 [error]
 
@@ -79,7 +79,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/dns resolver domain: baidu.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: github.com to \d+.\d+.\d+.\d+/
 
 
 

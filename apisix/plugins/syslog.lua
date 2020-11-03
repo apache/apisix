@@ -37,7 +37,7 @@ local schema = {
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
-        sock_type = {type = "string", default = "tcp"},
+        sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
         max_retry_times = {type = "integer", minimum = 1, default = 1},
         retry_interval = {type = "integer", minimum = 0, default = 1},
         pool_size = {type = "integer", minimum = 5, default = 5},
@@ -51,7 +51,7 @@ local schema = {
 
 
 local lrucache = core.lrucache.new({
-    ttl = 300, count = 512
+    ttl = 300, count = 512, serial_creating = true,
 })
 
 
@@ -83,10 +83,8 @@ local function send_syslog_data(conf, log_message, api_ctx)
     local res = true
 
     -- fetch it from lrucache
-    local logger, err =  lrucache(
-        api_ctx.conf_type .. "#" .. api_ctx.conf_id,
-        api_ctx.conf_version,
-        logger_socket.new, logger_socket, {
+    local logger, err = core.lrucache.plugin_ctx(
+        lrucache, api_ctx, nil, logger_socket.new, logger_socket, {
             host = conf.host,
             port = conf.port,
             flush_limit = conf.flush_limit,

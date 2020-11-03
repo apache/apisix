@@ -18,6 +18,7 @@
 local core     = require("apisix.core")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
+local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
 local ipairs   = ipairs
@@ -31,6 +32,10 @@ local string   = string
 
 local plugin_name = "wolf-rbac"
 
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -206,7 +211,7 @@ local function check_url_permission(server, appid, action, resName, client_ip, w
             else
                 core.log.info("request [curl -v ", url, "] failed! status:", res.status)
                 if i < retry_max then
-                    ngx.sleep(0.1)
+                    sleep(0.1)
                 end
             end
         end
@@ -273,9 +278,8 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Missing related consumer")
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]
@@ -343,9 +347,8 @@ local function get_consumer(appid)
         core.response.exit(500)
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]

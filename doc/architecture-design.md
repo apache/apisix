@@ -267,6 +267,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |enable_websocket|optional| enable `websocket`(boolean), default `false`.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |desc     |optional|Identifies route names, usage scenarios, and more.|
+|labels   |optional|The key/value pairs to specify attributes. |
 |pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
 |upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
 
@@ -476,7 +477,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 * `apisix.router.http`: HTTP Request Route。
     * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
+        * `Absolute match `: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
@@ -517,7 +518,7 @@ In addition, you can refer to the [key-auth](./plugins/key-auth.md) authenticati
 How to enable a specific plugin for a Consumer, you can see the following example:
 
 ```shell
-# Create a Consumer , specify the authentication plugin key-auth, and enable the specific plugin limit-count
+# Create a Consumer, specify the authentication plugin key-auth, and enable the specific plugin limit-count
 $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -600,7 +601,7 @@ HTTP/1.1 403
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
 
-​```shell
+```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \

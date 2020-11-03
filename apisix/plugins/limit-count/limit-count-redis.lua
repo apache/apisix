@@ -97,12 +97,13 @@ function _M.incoming(self, key)
                 return false, "failed to unlock: " .. err
             end
 
-            ret, err = red:set(key, limit -1, "EX", window)
+            limit = limit -1
+            ret, err = red:set(key, limit, "EX", window)
             if not ret then
                 return nil, err
             end
 
-            return 0, limit -1
+            return 0, limit
         end
 
         ok, err = lock:unlock()

@@ -31,6 +31,7 @@ Reference Documentation
 * [Router radixtree](router-radixtree.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
 * [Stream Proxy](stream-proxy.md)
+* [gRPC Proxy](grpc-proxy.md)
 * [Admin API](admin-api.md)
 * [Changelog](../CHANGELOG.md)
 * [Code Style](../CODE_STYLE.md)
@@ -66,6 +67,7 @@ Plugins
 * [cors](plugins/cors.md): Enable CORS(Cross-origin resource sharing) for your API.
 * [uri-blocker](plugins/uri-blocker.md): Block client request by URI.
 * [ip-restriction](plugins/ip-restriction.md): IP whitelist/blacklist.
+* [referer-restriction](plugins/referer-restriction.md): Referer whitelist.
 
 **Traffic**
 * [limit-req](plugins/limit-req.md): Request rate limiting and adjustment based on the "leaky bucket" method.
@@ -74,6 +76,7 @@ Plugins
 * [proxy-cache](plugins/proxy-cache.md): Provides the ability to cache upstream response data.
 * [request-validation](plugins/request-validation.md): Validates requests before forwarding to upstream.
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+* [api-breaker](plugins/api-breaker.md): Circuit Breaker for API that stops requests forwarding to upstream in case of unhealthy state.
 
 **Monitoring**
 * [prometheus](plugins/prometheus.md): Expose metrics related to APISIX and proxied upstream services in Prometheus exposition format, which can be scraped by a Prometheus Server.

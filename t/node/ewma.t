@@ -121,6 +121,7 @@ GET /t
 [error]
 
 
+
 === TEST 3: about frequency
 --- timeout: 30
 --- config
@@ -214,4 +215,3 @@ GET /t
 --- error_code: 200
 --- no_error_log
 [error]
-

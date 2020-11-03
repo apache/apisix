@@ -29,6 +29,7 @@
 * [路由 radixtree](../router-radixtree.md)
 * [独立运行模型](stand-alone.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy.md)
+* [gRPC 代理](grpc-proxy.md)
 * [管理 API](admin-api.md)
 * [变更日志](../../CHANGELOG_CN.md)
 * [代码风格](../../CODE_STYLE_CN.md)
@@ -53,6 +54,7 @@
 * [grpc-transcode](plugins/grpc-transcode.md)：REST <--> gRPC 转码。
 * [serverless](plugins/serverless.md)：允许在 APISIX 中的不同阶段动态运行 Lua 代码。
 * [ip-restriction](plugins/ip-restriction.md): IP 黑白名单。
+* [referer-restriction](plugins/referer-restriction.md): Referer 白名单。
 * [openid-connect](plugins/openid-connect.md)
 * [redirect](plugins/redirect.md): URI 重定向。
 * [response-rewrite](plugins/response-rewrite.md): 支持自定义修改返回内容的 `status code`、`body`、`headers`。
@@ -68,6 +70,7 @@
 * [uri-blocker](plugins/uri-blocker.md): 根据 URI 拦截用户请求。
 * [oauth](plugins/openid-connect.md): 提供 OAuth 2 身份验证和自省。
 * [log-rotate](plugins/log-rotate.md): 日志文件定期切分。
+* [api-breaker](plugins/api-breaker.md): API的断路器，在状态不正常的情况下停止将请求转发到上游。
 
 部署
 =======

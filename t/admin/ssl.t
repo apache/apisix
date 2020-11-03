@@ -530,3 +530,164 @@ GET /t
 {"error_msg":"invalid configuration: value should match only one schema, but matches none"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: set ssl(with labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { version = "v2", build = "16", env = "production"}}
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com",
+                            "labels": {
+                                "version": "v2",
+                                "build": "16",
+                                "env": "production"
+                            }
+                        },
+
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: invalid format of label value: set ssl
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { env = {"production", "release"}}}
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com",
+                            "labels": {
+                                "env": ["production", "release"]
+                            }
+                        },
+
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: create ssl with manage fields(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("conf/cert/apisix.crt")
+            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local data = {
+                cert = ssl_cert, 
+                key = ssl_key, 
+                sni = "test.com",
+                create_time = 1602883670,
+                update_time = 1602893670,
+                validity_start = 1602873670,
+                validity_end = 1603893670
+            }
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "value": {
+                            "sni": "test.com",
+                            "create_time": 1602883670,
+                            "update_time": 1602893670,
+                            "validity_start": 1602873670,
+                            "validity_end": 1603893670
+                        },
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: delete test ssl(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/ssl/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{
+                    "action": "delete"
+                }]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: passed
+--- no_error_log
+[error]
