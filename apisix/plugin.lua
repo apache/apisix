@@ -56,12 +56,26 @@ local function sort_plugin(l, r)
 end
 
 
+local function unload_plugin(name, is_stream_plugin)
+    local pkg_name = "apisix.plugins." .. name
+    if is_stream_plugin then
+        pkg_name = "apisix.stream.plugins." .. name
+    end
+
+    local old_plugin = pkg_loaded[pkg_name]
+    if old_plugin and type(old_plugin.destory) == "function" then
+        old_plugin.destory()
+    end
+
+    pkg_loaded[pkg_name] = nil
+end
+
+
 local function load_plugin(name, plugins_list, is_stream_plugin)
     local pkg_name = "apisix.plugins." .. name
     if is_stream_plugin then
         pkg_name = "apisix.stream.plugins." .. name
     end
-    pkg_loaded[pkg_name] = nil
 
     local ok, plugin = pcall(require, pkg_name)
     if not ok then
@@ -115,6 +129,10 @@ local function load(plugin_names)
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
+    for name in pairs(local_plugins_hash) do
+        unload_plugin(name)
+    end
+
     core.table.clear(local_plugins)
     core.table.clear(local_plugins_hash)
 
@@ -158,6 +176,10 @@ local function load_stream(plugin_names)
     end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
+
+    for name in pairs(stream_local_plugins_hash) do
+        unload_plugin(name, true)
+    end
 
     core.table.clear(stream_local_plugins)
     core.table.clear(stream_local_plugins_hash)
