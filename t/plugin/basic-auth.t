@@ -317,4 +317,3 @@ GET /apisix/admin/schema/plugins/basic-auth?schema_type=consumer123123
 {"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]
-
