@@ -297,3 +297,22 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
     ```
 
 2. Reload or restart APISIX
+
+## How does APISIX use etcd to achieve millisecond-level configuration synchronization
+Etcd provides interfaces wait and waitdir to monitor whether the specified keywords and directories have changed, and if they change, return updated data.
+
+Take the waitdir interface as an example:
+`syntax: res, err = cli:waitdir(dir:string [, modified_index:uint [, timeout:uint] ])`
+The timeout parameter indicates the connection timeout seconds between the calling process and etcd, set 0 to disable timeout.
+
+APISIX configuration of etcd long connection time is as follows:
+```
+etcd:
+  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+    - "http://127.0.0.1:2379"     # multiple etcd address
+  prefix: "/apisix"               # apisix configurations prefix
+  timeout: 30                     # 30 seconds
+```
+APISIX uses the waitdir interface to monitor directory changes. The default configuration of timeout is 30 seconds, so APISIX calling process maintains a long connection with etcd for 30 seconds.
+
+If the listening directory is not updated when the APISIX process calls this function, the function returns directly, the long connection is maintained, and the calling process can handle other events. If there is data update within 30 seconds, etcd returns the update result through this function, the calling process handle updated data. If no data returned within 30 seconds, when the timeout period reaches 30 seconds, etcd returns a timeout message through this function, and the calling process handle timeout message, then call the waitdir function again to monitor the specified directory. APISIX realizes real-time configuration updates through the above process.
