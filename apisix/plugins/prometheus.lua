@@ -29,7 +29,6 @@ local _M = {
     version = 0.2,
     priority = 500,
     name = plugin_name,
-    init = exporter.init,
     log  = exporter.log,
     schema = schema,
 }

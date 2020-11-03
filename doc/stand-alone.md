@@ -155,3 +155,13 @@ upstreams:
 #END
 ```
 
+#### How to config Plugins
+
+```yml
+# plugins listed here will be hot reloaded and override the boot configuration
+plugins:
+  - name: ip-restriction
+  - name: jwt-auth
+  - name: mqtt-proxy
+    stream: true # set 'stream' to true for stream plugins
+```
