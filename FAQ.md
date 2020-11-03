@@ -302,7 +302,9 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
 Etcd provides interfaces wait and waitdir to monitor whether the specified keywords and directories have changed, and if they change, return updated data.
 
 Take the waitdir interface as an example:
+
 `syntax: res, err = cli:waitdir(dir:string [, modified_index:uint [, timeout:uint] ])`
+
 The timeout parameter indicates the connection timeout seconds between the calling process and etcd, set 0 to disable timeout.
 
 APISIX configuration of etcd long connection time is as follows:
