@@ -173,4 +173,20 @@ end
 _M.patch = patch
 
 
+-- Compare two tables as if they are sets (only compare the key part)
+function _M.set_eq(a, b)
+    if nkeys(a) ~= nkeys(b) then
+        return false
+    end
+
+    for k in pairs(a) do
+        if b[k] == nil then
+            return false
+        end
+    end
+
+    return true
+end
+
+
 return _M
