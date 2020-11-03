@@ -23,6 +23,11 @@ local type = type
 return function(plugin_name, priority)
     local core = require("apisix.core")
 
+
+    local lrucache = core.lrucache.new({
+        type = "plugin",
+    })
+
     local schema = {
         type = "object",
         properties = {
@@ -66,7 +71,7 @@ return function(plugin_name, priority)
             return
         end
 
-        local functions = core.lrucache.plugin_ctx(plugin_name, ctx,
+        local functions = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                                    load_funcs, conf.functions)
 
         for _, func in ipairs(functions) do

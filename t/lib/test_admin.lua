@@ -130,6 +130,13 @@ function _M.comp_tab(left_tab, right_tab)
 end
 
 
+function _M.set_config_yaml(data)
+    local f = assert(io.open(os.getenv("TEST_NGINX_HTML_DIR") .. "/../conf/config.yaml", 'w'))
+    assert(f:write(data))
+    f:close()
+end
+
+
 function _M.test(uri, method, body, pattern, headers)
     if not headers then
         headers = {}

@@ -26,6 +26,7 @@
   - [**How To Enable**](#how-to-enable)
   - [**Test Plugin**](#test-plugin)
   - [**Disable Plugin**](#disable-plugin)
+  - [**Generate Signature Examples**](#generate-signature-examples)
 
 ## Name
 
@@ -126,8 +127,10 @@ x-custom-header:value
 
 ### Use the generated signature to try the request
 
-**Note: ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS respectively represent the corresponding variables**
-**Note: SIGNED_HEADERS is the headers specified by the client to join the encryption calculation**
+**Note:**
+1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS respectively represent the corresponding variables**
+2. **SIGNED_HEADERS is the headers specified by the client to join the encryption calculation. If there are multiple headers, they must be separated by ";": `x-custom-header-a;x-custom-header-b`**
+3. **SIGNATURE needs to use base64 for encryption: `base64_encode(SIGNATURE)`**
 
 * The signature information is put together in the request header `Authorization` field:
 
@@ -205,3 +208,23 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
+
+## Generate Signature Examples
+
+Take HMAC SHA256 as an example to introduce the signature generation examples in different languages.
+
+Example inputs:
+
+Variable | Value
+---|---
+secret | this is secret key
+message | this is signature string
+
+Example outputs:
+
+Type | Hash
+---|---
+hexit | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345
+base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=
+
+Please refer to [**HMAC Generate Signature Examples**](../examples/plugins-hmac-auth-generate-signature.md)

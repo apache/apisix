@@ -20,6 +20,10 @@ local plugin_name = "limit-req"
 local sleep = core.sleep
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -60,8 +64,8 @@ end
 
 
 function _M.access(conf, ctx)
-    local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
-                                               create_limit_obj, conf)
+    local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                              create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.req object: ", err)
         return 500

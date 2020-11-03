@@ -26,6 +26,7 @@
 - [**如何启用**](#如何启用)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
+- [**签名生成示例**](#签名生成示例)
 
 ## 名字
 
@@ -127,8 +128,10 @@ x-custom-header:value
 
 ### 使用生成好的签名进行请求尝试
 
-**注： ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
-**注： SIGNED_HEADERS 为客户端指定的加入加密计算的 headers**
+**注:**
+1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
+2. **SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`**
+3. **SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`**
 
 * 签名信息拼一起放到请求头 `Authorization` 字段中：
 
@@ -206,3 +209,23 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
+
+## 签名生成示例
+
+以 HMAC SHA256 为例，介绍一下各种语言的签名生成示例。
+
+示例入参说明:
+
+Variable | Value
+---|---
+secret | this is secret key
+message | this is signature string
+
+示例出参说明：
+
+Type | Hash
+---|---
+hexit | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345
+base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=
+
+具体代码请参考：[**HMAC Generate Signature Examples**](../../examples/plugins-hmac-auth-generate-signature.md)

@@ -20,6 +20,11 @@ local plugin_name = "cors"
 local str_find    = string.find
 local re_gmatch   = ngx.re.gmatch
 
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -160,7 +165,7 @@ function _M.header_filter(conf, ctx)
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
     end
-    local multiple_origin, err = core.lrucache.plugin_ctx(plugin_name, ctx,
+    local multiple_origin, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                                 create_mutiple_origin_cache, conf)
     if err then
         return 500, {message = "get mutiple origin cache failed: " .. err}

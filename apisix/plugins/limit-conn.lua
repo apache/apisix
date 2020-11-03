@@ -20,6 +20,10 @@ local sleep = core.sleep
 local plugin_name = "limit-conn"
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -61,7 +65,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
-    local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
+    local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                               create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.conn object: ", err)

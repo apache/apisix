@@ -154,3 +154,14 @@ upstreams:
         type: roundrobin
 #END
 ```
+
+#### 配置 Plugins
+
+```yml
+# 列出的插件会被热加载并覆盖掉启动时的配置
+plugins:
+  - name: ip-restriction
+  - name: jwt-auth
+  - name: mqtt-proxy
+    stream: true # stream 插件需要设置 stream 属性为 true
+```

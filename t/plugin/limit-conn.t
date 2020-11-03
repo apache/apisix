@@ -988,7 +988,6 @@ done
 
 
 
-
 === TEST 26: create consumer and bind key-auth plugin
 --- config 
     location /t {
