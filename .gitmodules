@@ -1,4 +1,0 @@
-[submodule "dashboard"]
-	path = dashboard
-	url = https://github.com/apache/incubator-apisix-dashboard.git
-
