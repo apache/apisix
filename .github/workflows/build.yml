@@ -35,7 +35,6 @@ jobs:
           ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
-
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -64,6 +63,20 @@ jobs:
           docker ps -a
           redis-cli -h 127.0.0.1 -p 5000 ping
           redis-cli -h 127.0.0.1 -p 5000 cluster nodes
+
+      - name: Running etcd server with TLS
+        if: matrix.os_name == 'linux_openresty'
+        run: |
+            sudo docker run -d -p 12379:12379 -p 12380:12380 \
+            -e ALLOW_NONE_AUTHENTICATION=yes \
+            -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
+            -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
+            -e ETCD_CERT_FILE=/certs/etcd.pem \
+            -e ETCD_KEY_FILE=/certs/etcd.key \
+            -e GITHUB_ACTIONS=true \
+            -e CI=true \
+            -v ${{ github.workspace }}/t/certs:/certs \
+            bitnami/etcd:3.4.0
 
       - name: Linux Install
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh do_install

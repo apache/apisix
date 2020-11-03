@@ -560,6 +560,22 @@ local function init_etcd(show_output)
     end
 
     local host_count = #(yaml_conf.etcd.host)
+    local scheme
+    for i = 1, host_count do
+        local host = yaml_conf.etcd.host[i]
+        local fields = split(host, "://")
+        if not fields then
+            io.stderr:write("malformed etcd endpoint: ", host, "\n")
+            os.exit(1)
+        end
+
+        if not scheme then
+            scheme = fields[1]
+        elseif scheme ~= fields[1] then
+            print([[WARNING: mixed protocols among etcd endpoints]])
+        end
+    end
+
     local dkjson = require("dkjson")
 
     -- check the etcd cluster version
