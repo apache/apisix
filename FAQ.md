@@ -299,7 +299,7 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
 2. Reload or restart APISIX
 
 ## How does APISIX use etcd to achieve millisecond-level configuration synchronization
-Etcd provides interfaces wait and waitdir to monitor whether the specified keywords and directories have changed, and if they change, return updated data.
+Etcd provides interfaces wait and waitdir to monitor whether the specified keywords and directories have changed, and return updated data if they change.
 
 Take the waitdir interface as an example:
 
