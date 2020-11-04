@@ -667,18 +667,18 @@ function _M.start()
     local argparse = require "argparse"
     local parser = argparse()
     parser:argument("_", "Placeholder")
-    parser:option("-c --config-path", "location of customed config.yaml")
+    parser:option("-c --config-path", "location of customized config.yaml")
     local args = parser:parse()
-    local customed_yaml = args["config"]
+    local customized_yaml = args["config"]
 
     local profile = require("apisix.core.profile")
     profile.apisix_home = apisix_home .. "/"
     local local_conf_path = profile:yaml_path("config")
 
-    if customed_yaml then
+    if customized_yaml then
         os.execute("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
-        os.execute("ln " .. customed_yaml .. " " .. local_conf_path)
-        print("Use customed yaml: ", customed_yaml)
+        os.execute("ln " .. customized_yaml .. " " .. local_conf_path)
+        print("Use customized yaml: ", customized_yaml)
     end
 
     init()
