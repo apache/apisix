@@ -531,7 +531,7 @@ Please modify "admin_key" in conf/config.yaml .
 end
 _M.init = init
 
-local function init_etcd(show_output)
+local function init_etcd()
     -- read_yaml_conf
     local yaml_conf, err = read_yaml_conf()
     if not yaml_conf then
@@ -631,10 +631,6 @@ local function init_etcd(show_output)
                 break
             end
 
-            if show_output and show_output ~= "-c" then
-                print(cmd)
-                print(res)
-            end
         end
 
         if is_success then
@@ -652,7 +648,7 @@ _M.init_etcd = init_etcd
 local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
                        .. apisix_home .. [[/conf/nginx.conf]]
 
-function _M.start(...)
+function _M.start()
 
     local cmd_logs = "mkdir -p " ..  apisix_home .. "/logs"
     os.execute(cmd_logs)
@@ -671,7 +667,7 @@ function _M.start(...)
     local argparse = require "argparse"
     local parser = argparse()
     parser:argument("_", "Placeholder")
-    parser:option("-c --config", "location of customed config.yaml")
+    parser:option("-c --config-path", "location of customed config.yaml")
     local args = parser:parse()
     local customed_yaml = args["config"]
 
@@ -685,8 +681,8 @@ function _M.start(...)
         print("Use customed yaml: ", customed_yaml)
     end
 
-    init(...)
-    init_etcd(...)
+    init()
+    init_etcd()
 
     local cmd = openresty_args
     -- print(cmd)
