@@ -97,3 +97,24 @@ GET /hello
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: stream route
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+stream_routes:
+  - server_addr: 127.0.0.1
+    server_port: 1985
+    upstream:
+      nodes:
+        "127.0.0.1:1995": 1
+      type: roundrobin
+#END
+--- stream_enable
+--- stream_request eval
+mmm
+--- stream_response
+hello world
+--- no_error_log
+[error]
