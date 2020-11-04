@@ -17,69 +17,8 @@
 -- limitations under the License.
 --
 
-local function trim(s)
-    return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
--- Note: The `execute_cmd` return value will have a line break at the end,
--- it is recommended to use the `trim` function to handle the return value.
-local function execute_cmd(cmd)
-    local t, err = io.popen(cmd)
-    if not t then
-        return nil, "failed to execute command: " .. cmd .. ", error info:" .. err
-    end
-    local data = t:read("*all")
-    t:close()
-    return data
-end
-
-local pkg_cpath_org = package.cpath
-local pkg_path_org = package.path
-
-local apisix_home = "/usr/local/apisix"
-local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
-                  .. apisix_home .. "/deps/lib/lua/5.1/?.so;;"
-local pkg_path  = apisix_home ..    "/deps/share/lua/5.1/?.lua;;"
-local min_etcd_version = "3.4.0"
-
-
--- only for developer, use current folder as working space
-local is_root_path = false
-local script_path = arg[0]
-if script_path:sub(1, 2) == './' then
-    apisix_home = trim(execute_cmd("pwd"))
-    if not apisix_home then
-        error("failed to fetch current path")
-    end
-
-    if string.match(apisix_home .. "/", '^/root/') then
-            is_root_path = true
-    end
-
-    pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
-                .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
-    pkg_path  = apisix_home .. "/?/init.lua;"
-                .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
-end
--- print("apisix_home: ", apisix_home)
-
-package.cpath = pkg_cpath .. pkg_cpath_org
-package.path  = pkg_path .. pkg_path_org
-
-do
-    -- skip luajit environment
-    local ok = pcall(require, "table.new")
-    if not ok then
-        local ok, json = pcall(require, "cjson")
-        if ok and json then
-            io.stderr:write("please remove the cjson library in Lua, it may "
-                            .. "conflict with the cjson library in openresty. "
-                            .. "\n luarocks remove cjson\n")
-            return
-        end
-    end
-end
-
+local env = require("apisix.cli.env")
+local util = require("apisix.cli.util")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
 local yaml = require("tinyyaml")
 local template = require("resty.template")
@@ -154,7 +93,7 @@ end
 
 local function read_yaml_conf()
     local profile = require("apisix.core.profile")
-    profile.apisix_home = apisix_home .. "/"
+    profile.apisix_home = env.apisix_home .. "/"
     local local_conf_path = profile:yaml_path("config-default")
     local default_conf_yaml, err = read_file(local_conf_path)
     if not default_conf_yaml then
@@ -195,14 +134,14 @@ end
 
 local function get_openresty_version()
     local str = "nginx version: openresty/"
-    local ret = execute_cmd("openresty -v 2>&1")
+    local ret = util.execute_cmd("openresty -v 2>&1")
     local pos = string.find(ret,str)
     if pos then
         return string.sub(ret, pos + string.len(str))
     end
 
     str = "nginx version: nginx/"
-    ret = execute_cmd("openresty -v 2>&1")
+    ret = util.execute_cmd("openresty -v 2>&1")
     pos = string.find(ret, str)
     if pos then
         return string.sub(ret, pos + string.len(str))
@@ -218,7 +157,7 @@ local function is_32bit_arch()
         -- LuaJIT
         return ffi.abi("32bit")
     end
-    local ret = execute_cmd("getconf LONG_BIT")
+    local ret = util.execute_cmd("getconf LONG_BIT")
     local bits = tonumber(ret)
     return bits <= 32
 end
@@ -346,7 +285,7 @@ end
 
 local checked_admin_key = false
 local function init()
-    if is_root_path then
+    if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for development environments'
             .. ' and it is dangerous to do so. It is recommended to run APISIX in a directory other than /root.')
     end
@@ -403,7 +342,7 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    local or_ver = execute_cmd("openresty -V 2>&1")
+    local or_ver = util.execute_cmd("openresty -V 2>&1")
     local with_module_status = true
     if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
         io.stderr:write("'http_stub_status_module' module is missing in ",
@@ -443,10 +382,10 @@ Please modify "admin_key" in conf/config.yaml .
 
     -- Using template.render
     local sys_conf = {
-        lua_path = pkg_path_org,
-        lua_cpath = pkg_cpath_org,
-        os_name = trim(execute_cmd("uname")),
-        apisix_lua_home = apisix_home,
+        lua_path = env.pkg_path_org,
+        lua_cpath = env.pkg_cpath_org,
+        os_name = util.trim(util.execute_cmd("uname")),
+        apisix_lua_home = env.apisix_home,
         with_module_status = with_module_status,
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
@@ -512,7 +451,7 @@ Please modify "admin_key" in conf/config.yaml .
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
 
-    local ok, err = write_file(apisix_home .. "/conf/nginx.conf", ngxconf)
+    local ok, err = write_file(env.apisix_home .. "/conf/nginx.conf", ngxconf)
     if not ok then
         error("failed to update nginx.conf: " .. err)
     end
@@ -582,7 +521,7 @@ local function init_etcd(show_output)
     for index, host in ipairs(yaml_conf.etcd.host) do
         uri = host .. "/version"
         local cmd = string.format("curl -s -m %d %s", timeout * 2, uri)
-        local res = execute_cmd(cmd)
+        local res = util.execute_cmd(cmd)
         local errmsg = string.format("got malformed version message: \"%s\" from etcd\n", res)
         local body, _, err = dkjson.decode(res)
         if err then
@@ -596,7 +535,7 @@ local function init_etcd(show_output)
             os.exit(1)
         end
 
-        if compare_semantic_version(cluster_version, min_etcd_version) then
+        if compare_semantic_version(cluster_version, env.min_etcd_version) then
             io.stderr:write("etcd cluster version ".. cluster_version ..
                             " is less than the required version ".. min_etcd_version ..
                             ", please upgrade your etcd cluster\n")
@@ -621,7 +560,7 @@ local function init_etcd(show_output)
                         .. "' --connect-timeout " .. timeout
                         .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
-            local res = execute_cmd(cmd)
+            local res = util.execute_cmd(cmd)
             if res:find("OK", 1, true) then
                 is_success = false
                 if (index == host_count) then
@@ -649,15 +588,12 @@ local function init_etcd(show_output)
 end
 _M.init_etcd = init_etcd
 
-local openresty_args = [[openresty  -p ]] .. apisix_home .. [[ -c ]]
-                       .. apisix_home .. [[/conf/nginx.conf]]
 
 function _M.start(...)
-
-    local cmd_logs = "mkdir -p " ..  apisix_home .. "/logs"
-    os.execute(cmd_logs)
+    local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
+    util.execute_cmd(cmd_logs)
     -- check running
-    local pid_path = apisix_home .. "/logs/nginx.pid"
+    local pid_path = env.apisix_home .. "/logs/nginx.pid"
     local pid, err = read_file(pid_path)
     if pid then
         local hd = io.popen("lsof -p " .. pid)
@@ -671,13 +607,11 @@ function _M.start(...)
     init(...)
     init_etcd(...)
 
-    local cmd = openresty_args
-    -- print(cmd)
-    os.execute(cmd)
+    os.execute(env.openresty_args)
 end
 
 function _M.stop()
-    local cmd = openresty_args .. [[ -s stop]]
+    local cmd = env.openresty_args .. [[ -s stop]]
     -- print(cmd)
     os.execute(cmd)
 end
@@ -691,13 +625,13 @@ function _M.reload()
     -- reinit nginx.conf
     init()
 
-    local test_cmd = openresty_args .. [[ -t -q ]]
+    local test_cmd = env.openresty_args .. [[ -t -q ]]
     -- When success,
     -- On linux, os.execute returns 0,
     -- On macos, os.execute returns 3 values: true, exit, 0, and we need the first.
     local test_ret = os.execute((test_cmd))
     if (test_ret == 0 or test_ret == true) then
-        local cmd = openresty_args .. [[ -s reload]]
+        local cmd = env.openresty_args .. [[ -s reload]]
         -- print(cmd)
         os.execute(cmd)
         return
