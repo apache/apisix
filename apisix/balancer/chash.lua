@@ -68,8 +68,15 @@ function _M.new(up_nodes, upstream)
     return {
         upstream = upstream,
         get = function (ctx)
-            local chash_key = fetch_chash_hash_key(ctx, upstream)
-            local id = picker:find(chash_key)
+            local id, index
+            local last_index = ctx.chash_last_server_index
+            if ctx.chash_last_server_index then
+                id, index = picker:next(last_index)
+            else
+                local chash_key = fetch_chash_hash_key(ctx, upstream)
+                id, index = picker:find(chash_key)
+            end
+            ctx.chash_last_server_index = index
             -- core.log.warn("chash id: ", id, " val: ", servers[id])
             return servers[id]
         end
