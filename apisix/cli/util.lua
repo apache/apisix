@@ -30,12 +30,12 @@ function _M.execute_cmd(cmd)
     end
 
     local data, err = t:read("*all")
+    t:close()
+
     if err ~= nil then
         return nil, "failed to read execution result of: "
                     .. cmd .. ", error info: " .. err
     end
-
-    t:close()
 
     return data
 end
