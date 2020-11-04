@@ -60,6 +60,9 @@ script() {
     sudo PATH=$PATH ./utils/install-apisix.sh install > build.log 2>&1 || (cat build.log && exit 1)
 
     which apisix
+    # TODO: DELETE ME AFTER
+    sudo cp ../bin/apisix /usr/bin/apisix
+    lua -e 'print(package.path)'
 
     # run test
     sudo PATH=$PATH apisix help
@@ -71,6 +74,10 @@ script() {
 
     # install APISIX by luarocks
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
+
+    # TODO: DELETE ME AFTER
+    sudo cp ../bin/apisix /usr/bin/apisix
+    lua -e 'print(package.path)'
 
     # show install files
     luarocks show apisix
