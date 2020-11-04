@@ -14,4 +14,36 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-return require("apisix.plugins.serverless.init")("serverless-pre-function", 10000)
+
+local popen = io.popen
+
+local _M = {}
+
+
+-- Note: The `execute_cmd` return value will have a line break at the end,
+-- it is recommended to use the `trim` function to handle the return value.
+function _M.execute_cmd(cmd)
+    local t, err = popen(cmd)
+    if not t then
+        return nil, "failed to execute command: "
+                    .. cmd .. ", error info: " .. err
+    end
+
+    local data, err = t:read("*all")
+    t:close()
+
+    if err ~= nil then
+        return nil, "failed to read execution result of: "
+                    .. cmd .. ", error info: " .. err
+    end
+
+    return data
+end
+
+
+function _M.trim(s)
+    return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+
+return _M
