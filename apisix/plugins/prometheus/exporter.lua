@@ -178,8 +178,13 @@ local function set_modify_index(key, items, items_ver, global_max_index)
     local max_idx = 0
     if items_ver and items then
         for _, item in ipairs(items) do
-            if type(item) == "table" and item.modifiedIndex > max_idx then
-                max_idx = item.modifiedIndex
+            if type(item) == "table" then
+                if type(item.modifiedIndex) == 'string' then
+                  item.modifiedIndex = tonumber(item.modifiedIndex)
+                end
+                if item.modifiedIndex > max_idx then
+                  max_idx = item.modifiedIndex
+                end
             end
         end
     end
