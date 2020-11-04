@@ -70,7 +70,7 @@ function _M.new(up_nodes, upstream)
         get = function (ctx)
             local id, index
             local last_index = ctx.chash_last_server_index
-            if ctx.chash_last_server_index then
+            if last_index then
                 id, index = picker:next(last_index)
             else
                 local chash_key = fetch_chash_hash_key(ctx, upstream)
