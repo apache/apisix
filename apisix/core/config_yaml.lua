@@ -18,7 +18,6 @@ local config_local = require("apisix.core.config_local")
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
-local process      = require("ngx.process")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
@@ -342,12 +341,7 @@ end
 
 
 function _M.init_worker()
-    if process.type() ~= "worker"
-      and process.type() ~= "single"
-      and process.type() ~= "privileged agent" then
-        return
-    end
-
+    -- sync data in each non-master process
     read_apisix_yaml()
     ngx.timer.every(1, read_apisix_yaml)
 end
