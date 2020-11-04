@@ -110,13 +110,6 @@ function _M.check_schema(conf, schema_type)
             conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
         end
 
-        if conf.algorithm == "RS256" then
-            if not conf.public_key or not conf.private_key then
-                return false, "when using RS256 algorithm, "
-                        .."the parameter 'public_key' and 'private_key' is both required."
-            end
-        end
-
         if not conf.exp then
             conf.exp = 60 * 60 * 24
         end

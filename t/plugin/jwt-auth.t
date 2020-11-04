@@ -954,7 +954,7 @@ passed
 
 
 
-=== TEST 42: sign
+=== TEST 42: sign failed
 --- request
 GET /apisix/plugin/jwt/sign?key=user-key-rs256
 --- error_code: 500
@@ -988,7 +988,7 @@ qr/{"algorithm":"HS512","secret":"[a-zA-Z0-9+\\\/]+={0,2}","key":"123","exp":864
 
 
 
-=== TEST 44: add consumer with username and plugins use HS256 algorithm
+=== TEST 44: add consumer with username and plugins use HS512 algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -1035,7 +1035,7 @@ passed
 
 
 
-=== TEST 45: JWT sign and verify use HS256 algorithm
+=== TEST 45: JWT sign and verify use HS512 algorithm
 --- config
     location /t {
         content_by_lua_block {
