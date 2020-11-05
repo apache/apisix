@@ -32,8 +32,15 @@ add_block_preprocessor(sub {
         server_tokens off;
 
         location / {
-            content_by_lua_block {
-                ngx.log(ngx.ERR, "uri: ", ngx.var.uri)
+            content_by_lua_block {            
+                local core = require("apisix.core")
+
+                local headers_tab = ngx.req.get_headers()               
+                for k, v in pairs(headers_tab) do
+                    core.log.info(k, ": ", v)
+                end
+
+                core.log.info("uri: ", ngx.var.uri)
                 ngx.say("hello world")
             }
         }
@@ -289,3 +296,66 @@ GET /hello
 hello world
 --- error_log
 uri: /hello
+
+
+
+=== TEST 8: sanity check (normal case), and uri is "/uri"
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://127.0.0.1:1986"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/uri"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+        }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: the request header does not change
+--- request
+GET /uri
+--- error_code: 200
+--- more_headers
+host: 127.0.0.2
+api-key: hello
+api-key2: world
+name: jake
+--- response_body
+uri: /uri
+host: 127.0.0.2
+x-real-ip: 127.0.0.1
+name: jake
+api-key: hello
+api-key2: world
+--- error_log
+host: 127.0.0.2
+api-key: hello
+name: jake
+api-key2: world

@@ -436,6 +436,7 @@ _EOC_
                 return 200;
             }
 
+            proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_host\$request_uri;
         }
 _EOC_
