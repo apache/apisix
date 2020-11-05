@@ -162,15 +162,6 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
 	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
 
-
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
-	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
-
-
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
-	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
-	
-  
 	$(INSTALL) -d $(INST_LUADIR)/apisix/ssl/router
 	$(INSTALL) apisix/ssl/router/*.lua $(INST_LUADIR)/apisix/ssl/router/
 
@@ -185,6 +176,9 @@ install: default
 
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
+
+    $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
+  	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
 
 ### test:             Run the test case
