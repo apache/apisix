@@ -194,10 +194,12 @@ function _M.rewrite(conf, ctx)
         local auth_secret = get_secret(consumer.auth_conf)
         jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
     end
-    if consumer.auth_conf.algorithm and consumer.auth_conf.algorithm == "RS256" then
+
+    if consumer.auth_conf.algorithm == "RS256" then
         jwt_obj = jwt:verify_jwt_obj(consumer.auth_conf.public_key, jwt_obj)
     end
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
+
     if not jwt_obj.verified then
         return 401, {message = jwt_obj.reason}
     end
@@ -229,20 +231,22 @@ end
 
 
 local function sign_jwt_with_RS256(key, auth_conf)
-    local ok, jwt_token = pcall(jwt.sign, _M, auth_conf.private_key,
+    local ok, jwt_token = pcall(jwt.sign, _M,
+            auth_conf.private_key,
             {
-        header = {
-            typ = "JWT",
-            alg = auth_conf.algorithm,
-            x5c={
-                auth_conf.public_key,
+                header = {
+                    typ = "JWT",
+                    alg = auth_conf.algorithm,
+                    x5c={
+                        auth_conf.public_key,
+                    }
+                },
+                payload = {
+                    key = key,
+                    exp = ngx_time() + auth_conf.exp
+                }
             }
-        },
-        payload = {
-            key = key,
-            exp = ngx_time() + auth_conf.exp
-        }
-    })
+    )
     if not ok then
         core.log.warn("failed to sign jwt, " ..
                 "check the private key and public key of the consumer to whom the key belongs.")
