@@ -16,7 +16,6 @@
 --
 local ngx        = ngx
 local type       = type
-local select     = select
 local abs        = math.abs
 local ngx_time   = ngx.time
 local ngx_re     = require("ngx.re")
@@ -36,6 +35,10 @@ local DATE_KEY = "Date"
 local ACCESS_KEY    = "X-HMAC-ACCESS-KEY"
 local SIGNED_HEADERS_KEY = "X-HMAC-SIGNED-HEADERS"
 local plugin_name   = "hmac-auth"
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -99,21 +102,6 @@ local hmac_funcs = {
 }
 
 
-local function try_attr(t, ...)
-    local tbl = t
-    local count = select('#', ...)
-    for i = 1, count do
-        local attr = select(i, ...)
-        tbl = tbl[attr]
-        if type(tbl) ~= "table" then
-            return false
-        end
-    end
-
-    return true
-end
-
-
 local function array_to_map(arr)
     local map = core.table.new(0, #arr)
     for _, v in ipairs(arr) do
@@ -174,9 +162,8 @@ local function get_consumer(access_key)
         return nil, {message = "Missing related consumer"}
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consumer_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consumer_cache, consumer_conf)
 
     local consumer = consumers[access_key]
     if not consumer then
@@ -328,8 +315,9 @@ local function get_params(ctx)
     local date_key = DATE_KEY
     local signed_headers_key = SIGNED_HEADERS_KEY
 
-    if try_attr(local_conf, "plugin_attr", "hmac-auth") then
-        local attr = local_conf.plugin_attr["hmac-auth"]
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr",
+                                          "hmac-auth")
+    if attr then
         access_key = attr.access_key or access_key
         signature_key = attr.signature_key or signature_key
         algorithm_key = attr.algorithm_key or algorithm_key

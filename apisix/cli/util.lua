@@ -15,29 +15,35 @@
 -- limitations under the License.
 --
 
-local log          = require("apisix.core.log")
-local local_conf   = require("apisix.core.config_local").local_conf()
-local pairs        = pairs
+local popen = io.popen
 
-local discovery_type = local_conf.discovery
-local discovery = {}
+local _M = {}
 
-if discovery_type then
-    for discovery_name, _ in pairs(discovery_type) do
-        log.info("use discovery: ", discovery_name)
-        discovery[discovery_name] = require("apisix.discovery." .. discovery_name)
+
+-- Note: The `execute_cmd` return value will have a line break at the end,
+-- it is recommended to use the `trim` function to handle the return value.
+function _M.execute_cmd(cmd)
+    local t, err = popen(cmd)
+    if not t then
+        return nil, "failed to execute command: "
+                    .. cmd .. ", error info: " .. err
     end
+
+    local data, err = t:read("*all")
+    t:close()
+
+    if err ~= nil then
+        return nil, "failed to read execution result of: "
+                    .. cmd .. ", error info: " .. err
+    end
+
+    return data
 end
 
-function discovery.init_worker()
-    if discovery_type then
-        for discovery_name, _ in pairs(discovery_type) do
-            discovery[discovery_name].init_worker()
-        end
-    end
+
+function _M.trim(s)
+    return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-return {
-    version = 0.1,
-    discovery = discovery
-}
+
+return _M

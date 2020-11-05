@@ -164,7 +164,15 @@ local function pick_server(route, ctx)
         if not discovery then
             return nil, "discovery is uninitialized"
         end
-        up_conf.nodes = discovery.nodes(up_conf.service_name)
+        if not up_conf.discovery_type then
+            return nil, "discovery server need appoint"
+        end
+
+        local dis = discovery[up_conf.discovery_type]
+        if not dis then
+            return nil, "discovery is uninitialized"
+        end
+        up_conf.nodes = dis.nodes(up_conf.service_name)
     end
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0

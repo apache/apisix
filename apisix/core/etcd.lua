@@ -37,6 +37,12 @@ local function new()
     etcd_conf.prefix = nil
     etcd_conf.protocol = "v3"
     etcd_conf.api_prefix = "/v3"
+    etcd_conf.ssl_verify = true
+
+    -- default to verify etcd cluster certificate
+    if etcd_conf.tls and etcd_conf.tls.verify == false then
+        etcd_conf.ssl_verify = false
+    end
 
     local etcd_cli
     etcd_cli, err = etcd.new(etcd_conf)

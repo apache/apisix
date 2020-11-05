@@ -783,6 +783,10 @@ function _M.stream_init_worker()
     router.stream_init_worker()
     plugin.init_worker()
 
+    if core.config == require("apisix.core.config_yaml") then
+        core.config.init_worker()
+    end
+
     load_balancer = require("apisix.balancer").run
 
     local_conf = core.config.local_conf()
