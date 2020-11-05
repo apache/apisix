@@ -32,12 +32,20 @@ add_block_preprocessor(sub {
         server_tokens off;
 
         location / {
-            content_by_lua_block {            
+            content_by_lua_block {
                 local core = require("apisix.core")
 
-                local headers_tab = ngx.req.get_headers()               
-                for k, v in pairs(headers_tab) do
-                    core.log.info(k, ": ", v)
+                core.log.info("upstream_http_version: ", ngx.req.http_version())
+
+                local headers_tab = ngx.req.get_headers()
+                local headers_key = {}
+                for k in pairs(headers_tab) do
+                    core.table.insert(headers_key, k)
+                end
+                core.table.sort(headers_key)
+
+                for _, v in pairs(headers_key) do
+                    core.log.info(v, ": ", headers_tab[v])
                 end
 
                 core.log.info("uri: ", ngx.var.uri)
@@ -355,7 +363,85 @@ name: jake
 api-key: hello
 api-key2: world
 --- error_log
+api-key: hello
+api-key2: world
+host: 127.0.0.2
+name: jake
+
+
+
+=== TEST 10: sanity check (normal case), used to test http version
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://127.0.0.1:1986"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+        }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: after the mirroring request, the upstream http version is 1.1
+--- request
+GET /hello
+--- error_code: 200
+--- more_headers
 host: 127.0.0.2
 api-key: hello
-name: jake
-api-key2: world
+--- response_body
+hello world
+--- error_log
+upstream_http_version: 1.1
+api-key: hello
+host: 127.0.0.2
+
+
+
+=== TEST 12: delete route
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+        }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
