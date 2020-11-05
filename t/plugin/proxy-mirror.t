@@ -36,9 +36,16 @@ add_block_preprocessor(sub {
                 local core = require("apisix.core")
 
                 core.log.info("upstream_http_version: ", ngx.req.http_version())
+
                 local headers_tab = ngx.req.get_headers()
-                for k, v in pairs(headers_tab) do
-                    core.log.info(k, ": ", v)
+                local headers_key = {}
+                for k in pairs(headers_tab) do
+                    core.table.insert(headers_key, k)
+                end
+                core.table.sort(headers_key)
+
+                for _, v in pairs(headers_key) do
+                    core.log.info(v, ": ", headers_tab[v])
                 end
 
                 core.log.info("uri: ", ngx.var.uri)
@@ -356,10 +363,10 @@ name: jake
 api-key: hello
 api-key2: world
 --- error_log
-host: 127.0.0.2
 api-key: hello
-name: jake
 api-key2: world
+host: 127.0.0.2
+name: jake
 
 
 
@@ -413,8 +420,8 @@ api-key: hello
 hello world
 --- error_log
 upstream_http_version: 1.1
-host: 127.0.0.2
 api-key: hello
+host: 127.0.0.2
 
 
 
