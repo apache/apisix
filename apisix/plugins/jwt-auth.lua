@@ -110,6 +110,15 @@ function _M.check_schema(conf, schema_type)
             conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
         end
 
+        if conf.algorithm == "RS256" then
+            if not conf.public_key then
+                return false, "missing valid public key"
+            end
+            if not conf.private_key then
+                return false, "missing valid private key"
+            end
+        end
+
         if not conf.exp then
             conf.exp = 60 * 60 * 24
         end
@@ -154,6 +163,64 @@ local function get_secret(conf)
 end
 
 
+local function sign_jwt_with_HS(key, auth_conf)
+    local auth_secret = get_secret(auth_conf)
+    local ok, jwt_token = pcall(jwt.sign, _M,
+            auth_secret,
+            {
+                header = {
+                    typ = "JWT",
+                    alg = auth_conf.algorithm
+                },
+                payload = {
+                    key = key,
+                    exp = ngx_time() + auth_conf.exp
+                }
+            }
+    )
+    if not ok then
+        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
+        core.response.exit(500, "failed to sign jwt")
+    end
+    return jwt_token
+end
+
+
+local function sign_jwt_with_RS256(key, auth_conf)
+    local ok, jwt_token = pcall(jwt.sign, _M,
+            auth_conf.private_key,
+            {
+                header = {
+                    typ = "JWT",
+                    alg = auth_conf.algorithm,
+                    x5c = {
+                        auth_conf.public_key,
+                    }
+                },
+                payload = {
+                    key = key,
+                    exp = ngx_time() + auth_conf.exp
+                }
+            }
+    )
+    if not ok then
+        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
+        core.response.exit(500, "failed to sign jwt")
+    end
+    return jwt_token
+end
+
+
+local function algorithm_handler(consumer)
+    if not consumer.auth_conf.algorithm or consumer.auth_conf.algorithm == "HS256"
+            or consumer.auth_conf.algorithm == "HS512" then
+        return sign_jwt_with_HS, get_secret(consumer.auth_conf)
+    elseif consumer.auth_conf.algorithm == "RS256" then
+        return sign_jwt_with_RS256, consumer.auth_conf.public_key
+    end
+end
+
+
 function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
@@ -189,15 +256,8 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    if not consumer.auth_conf.algorithm or consumer.auth_conf.algorithm == "HS256"
-            or consumer.auth_conf.algorithm == "HS512" then
-        local auth_secret = get_secret(consumer.auth_conf)
-        jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
-    end
-
-    if consumer.auth_conf.algorithm == "RS256" then
-        jwt_obj = jwt:verify_jwt_obj(consumer.auth_conf.public_key, jwt_obj)
-    end
+    local _, auth_secret = algorithm_handler(consumer)
+    jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
@@ -208,51 +268,6 @@ function _M.rewrite(conf, ctx)
     ctx.consumer_id = consumer.consumer_id
     ctx.consumer_ver = consumer_conf.conf_version
     core.log.info("hit jwt-auth rewrite")
-end
-
-
-local function sign_jwt_with_HS(key, auth_conf)
-    local auth_secret = get_secret(auth_conf)
-    local jwt_token = jwt:sign(
-            auth_secret,
-            {
-                header = {
-                    typ = "JWT",
-                    alg = auth_conf.algorithm
-                },
-                payload = {
-                    key = key,
-                    exp = ngx_time() + auth_conf.exp
-                }
-            }
-    )
-    return jwt_token
-end
-
-
-local function sign_jwt_with_RS256(key, auth_conf)
-    local ok, jwt_token = pcall(jwt.sign, _M,
-            auth_conf.private_key,
-            {
-                header = {
-                    typ = "JWT",
-                    alg = auth_conf.algorithm,
-                    x5c={
-                        auth_conf.public_key,
-                    }
-                },
-                payload = {
-                    key = key,
-                    exp = ngx_time() + auth_conf.exp
-                }
-            }
-    )
-    if not ok then
-        core.log.warn("failed to sign jwt, " ..
-                "check the private key and public key of the consumer to whom the key belongs.")
-        core.response.exit(500, "failed to sign jwt")
-    end
-    return jwt_token
 end
 
 
@@ -280,14 +295,9 @@ local function gen_token()
 
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    if not consumer.auth_conf.algorithm or consumer.auth_conf.algorithm == "HS256"
-            or consumer.auth_conf.algorithm == "HS512" then
-        local jwt_token = sign_jwt_with_HS(key,consumer.auth_conf)
-        core.response.exit(200, jwt_token)
-    end
-
-    if consumer.auth_conf.algorithm == "RS256" then
-        local jwt_token = sign_jwt_with_RS256(key,consumer.auth_conf)
+    local sign_handler, _ = algorithm_handler(consumer)
+    local jwt_token = sign_handler(key, consumer.auth_conf)
+    if jwt_token then
         core.response.exit(200, jwt_token)
     end
 
