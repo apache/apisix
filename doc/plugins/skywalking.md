@@ -51,7 +51,7 @@ plugins:
   - skywalking
 ```
 
-Then reload APISIX, a background timer will be created to report data to skywalking server. 
+Then reload APISIX, a background timer will be created to report data to skywalking server.
 
 Here's an example, enable the skywalking plugin on the specified route:
 
