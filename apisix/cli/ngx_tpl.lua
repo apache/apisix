@@ -250,6 +250,11 @@ http {
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
         ssl_prefer_server_ciphers on;
+        {% if ssl.ssl_session_tickets then %}
+        ssl_session_tickets on;
+        {% else %}
+        ssl_session_tickets off;
+        {% end %}
 
         {% else %}
         listen {* port_admin *};
@@ -330,6 +335,11 @@ http {
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
         ssl_prefer_server_ciphers on;
+        {% if ssl.ssl_session_tickets then %}
+        ssl_session_tickets on;
+        {% else %}
+        ssl_session_tickets off;
+        {% end %}
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
