@@ -23,7 +23,7 @@
 
 - [**插件简介**](#插件简介)
 - [**插件属性**](#插件属性)
-- [**插件接口**](#接口插件)
+- [**插件接口**](#插件接口)
 - [**启用插件**](#启用插件)
 - [**测试插件**](#测试插件)
 - [**禁用插件**](#禁用插件)
@@ -36,7 +36,7 @@
 
 ## 插件属性
 
-插件属性为空。
+无。
 
 
 ## 插件接口
@@ -62,7 +62,7 @@ plugins:                          # plugin list
 
 2. 在创建 route 时添加插件 `node-status`
 
-```
+```sh
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
@@ -85,7 +85,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 1. 发送请求
 
-```
+```sh
 $ curl localhost:9080/apisix/status -i
 HTTP/1.1 200 OK
 Date: Tue, 03 Nov 2020 11:12:55 GMT
@@ -127,7 +127,7 @@ plugins:                          # plugin list
 
 2. 删除 route 中的 `node-status` 插件信息
 
-```
+```sh
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
