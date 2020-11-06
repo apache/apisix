@@ -1113,3 +1113,30 @@ PATCH /apisix/plugin/jwt/sign?key=user-key
 GET /t
 --- response_body_like eval
 qr/property "algorithm" validation failed/
+
+
+
+=== TEST 49: wrong format of secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.jwt-auth")
+            local ok, err = plugin.check_schema({
+                key = "123",
+                secret = "{^c0j4&]2!=J=",
+                base64_secret = true,
+            }, core.schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- response_body
+base64_secret required but the secret is not in base64 format
+--- no_error_log
+[error]
+--- request
+GET /t
