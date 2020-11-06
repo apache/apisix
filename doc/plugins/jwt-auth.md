@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/jwt-auth.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -37,13 +38,15 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 
 ## Attributes
 
-| Name          | Type    | Requirement | Default | Valid                                         | Description                                                                                                                                      |
-| ------------- | ------- | ----------- | ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| key           | string  | required    |         |                                               | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
-| secret        | string  | optional    |         |                                               | encryption key. if you do not specify, the value is auto-generated in the background.                                                            |
+| Name          | Type    | Requirement | Default | Valid                       | Description                                                                                                                                      |
+|:--------------|:--------|:------------|:--------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
+| key           | string  | required    |         |                             | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
+| secret        | string  | optional    |         |                             | encryption key. if you do not specify, the value is auto-generated in the background.                                                            |
+| public_key    | string  | optional    |         |                             | RSA public key, required when `algorithm` attribute selects `RS256` algorithm.                                                                   |
+| private_key   | string  | optional    |         |                             | RSA private key, required when `algorithm` attribute selects `RS256` algorithm.                                                                  |
 | algorithm     | string  | optional    | "HS256" | ["HS256", "HS512", "RS256"] | encryption algorithm.                                                                                                                            |
-| exp           | integer | optional    | 86400   | [1,...]                                       | token's expire time, in seconds                                                                                                                  |
-| base64_secret | boolean | optional    | false   |                                               | whether secret is base64 encoded                                                                                                                 |
+| exp           | integer | optional    | 86400   | [1,...]                     | token's expire time, in seconds                                                                                                                  |
+| base64_secret | boolean | optional    | false   |                             | whether secret is base64 encoded                                                                                                                 |
 
 ## API
 
@@ -62,6 +65,23 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
         "jwt-auth": {
             "key": "user-key",
             "secret": "my-secret-key"
+        }
+    }
+}'
+```
+
+`jwt-auth` uses the `HS256` algorithm by default, and if you use the `RS256` algorithm, you need to specify the algorithm and configure the public key and private key, as follows:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "kerouac",
+    "plugins": {
+        "jwt-auth": {
+            "key": "user-key",
+            "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----",
+            "private_key": "-----BEGIN RSA PRIVATE KEY-----\n……\n-----END RSA PRIVATE KEY-----",
+            "algorithm": "RS256"
         }
     }
 }'
@@ -168,8 +188,8 @@ Accept-Ranges: bytes
 ## Disable Plugin
 
 When you want to disable the `jwt-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+you can delete the corresponding json configuration in the plugin configuration,
+no need to restart the service, it will take effect immediately:
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
@@ -186,3 +206,4 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -X PUT -d value='
     }
 }'
 ```
+
