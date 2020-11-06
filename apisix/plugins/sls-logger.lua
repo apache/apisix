@@ -72,13 +72,13 @@ local function send_tcp_data(route_conf, log_message)
     local ok, err = sock:connect(route_conf.host, route_conf.port)
     if not ok then
         return false, "failed to connect to TCP server: host[" .. route_conf.host
-        .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
+                      .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
     end
 
     ok, err = sock:sslhandshake(true, nil, false)
     if not ok then
         return false, "failed to to perform TLS handshake to TCP server: host["
-        .. route_conf.host .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
+                      .. route_conf.host .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
     end
 
     core.log.debug("sls logger send data ", log_message)
@@ -93,7 +93,7 @@ local function send_tcp_data(route_conf, log_message)
         if not ok then
             can_close = true
             core.log.warn("failed to set socket keepalive: host[" .. route_conf.host
-            .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err)
+                          .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err)
         end
     end
 
@@ -101,7 +101,7 @@ local function send_tcp_data(route_conf, log_message)
         ok, err = sock:close()
         if not ok then
             core.log.warn("failed to close the TCP connection, host[",
-            route_conf.host, "] port[", route_conf.port, "] ", err)
+                          route_conf.host, "] port[", route_conf.port, "] ", err)
         end
     end
 
