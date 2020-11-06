@@ -78,7 +78,8 @@ local function send_tcp_data(route_conf, log_message)
     ok, err = sock:sslhandshake(true, nil, false)
     if not ok then
         return false, "failed to to perform TLS handshake to TCP server: host["
-                      .. route_conf.host .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
+                      .. route_conf.host .. "] port[" .. tostring(route_conf.port)
+                      .. "] err: " .. err
     end
 
     core.log.debug("sls logger send data ", log_message)
