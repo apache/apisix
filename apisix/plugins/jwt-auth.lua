@@ -298,7 +298,7 @@ local function gen_token()
     local sign_handler, _ = algorithm_handler(consumer)
     local jwt_token = sign_handler(key, consumer.auth_conf)
     if jwt_token then
-        core.response.exit(200, jwt_token)
+        return core.response.exit(200, jwt_token)
     end
 
     return core.response.exit(404)
