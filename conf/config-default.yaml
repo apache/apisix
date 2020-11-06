@@ -39,7 +39,7 @@ apisix:
   #  enable_tcp_pp: true           # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
   #  enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
 
-  enable_server_tokens: true       # Whether the APISIX version number will be showed in Server header.
+  enable_server_tokens: true       # Whether the APISIX version number should be shown in Server header.
                                    # It's enabled by default.
 
   proxy_cache:                     # Proxy Caching configuration
