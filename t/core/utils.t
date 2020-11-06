@@ -117,6 +117,7 @@ qr/"address":.+,"name":"github.com"/
 [error]
 
 
+
 === TEST 5: enable_server_tokens false
 --- yaml_config
 apisix:
