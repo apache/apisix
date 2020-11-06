@@ -65,41 +65,34 @@ local function send_tcp_data(route_conf, log_message)
     local can_close
 
     if not sock then
-        err_msg = "failed to init the socket" .. soc_err
-        core.log.error(err_msg)
-        return false, err_msg
+        return false, "failed to init the socket" .. soc_err
     end
 
     sock:settimeout(route_conf.timeout)
     local ok, err = sock:connect(route_conf.host, route_conf.port)
     if not ok then
-        err_msg = "failed to connect to TCP server: host[" .. route_conf.host
+        return false, "failed to connect to TCP server: host[" .. route_conf.host
         .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
-        core.log.error(err_msg)
-        return false, err_msg
     end
 
     ok, err = sock:sslhandshake(true, nil, false)
     if not ok then
-        err_msg = "failed to to perform TLS handshake to TCP server: host["
+        return false, "failed to to perform TLS handshake to TCP server: host["
         .. route_conf.host .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
-        core.log.error(err_msg)
-        return false, err_msg
     end
 
-    core.log.info("sls logger send data ", log_message)
+    core.log.debug("sls logger send data ", log_message)
     ok, err = sock:send(log_message)
     if not ok then
         res = false
         can_close = true
         err_msg = "failed to send data to TCP server: host[" .. route_conf.host
                   .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
-        core.log.error(err_msg)
     else
         ok, err = sock:setkeepalive(120 * 1000, 20)
         if not ok then
             can_close = true
-            core.log.error("failed to set socket keepalive: host[" .. route_conf.host
+            core.log.warn("failed to set socket keepalive: host[" .. route_conf.host
             .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err)
         end
     end
@@ -107,7 +100,7 @@ local function send_tcp_data(route_conf, log_message)
     if  can_close then
         ok, err = sock:close()
         if not ok then
-            core.log.error("failed to close the TCP connection, host[",
+            core.log.warn("failed to close the TCP connection, host[",
             route_conf.host, "] port[", route_conf.port, "] ", err)
         end
     end
@@ -156,7 +149,7 @@ local function handle_log(entries)
 end
 
 -- log phase in APISIX
-function _M.log(conf)
+function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
     if not entry.route_id then
         core.log.error("failed to obtain the route id for sys logger")
@@ -169,10 +162,9 @@ function _M.log(conf)
         return
     end
 
-    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ngx.var.host
-    , "apisix", ngx.var.pid, conf.project, conf.logstore
-    , conf.access_key_id, conf.access_key_secret
-    , json_str)
+    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var["host"],
+                                      "apisix", ngx.var.pid, conf.project, conf.logstore,
+                                      conf.access_key_id, conf.access_key_secret, json_str)
 
     local process_context = {
         data = rf5424_data,

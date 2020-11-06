@@ -87,7 +87,7 @@ local rfc5424_format = "<%d>1 %s %s %s %d - [logservice project=\"%s\" logstore=
 local _M = { version = 0.1 }
 
 function _M.encode(facility, severity, hostname, appname, pid, project,
-    logstore, access_key_id, access_key_secret, msg)
+                   logstore, access_key_id, access_key_secret, msg)
     local pri = (Facility[facility] * 8 + Severity[severity])
     ngx.update_time()
     local t = os_date(rfc5424_timestamp_format, ngx.now())
@@ -101,7 +101,7 @@ function _M.encode(facility, severity, hostname, appname, pid, project,
     end
 
     return string_format(rfc5424_format, pri, t, hostname, appname, pid, project,
-     logstore, access_key_id, access_key_secret, msg)
+                         logstore, access_key_id, access_key_secret, msg)
 end
 
 return _M
