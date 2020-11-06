@@ -108,6 +108,10 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
         if conf.algorithm ~= "RS256" and not conf.secret then
             conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
+        elseif conf.base64_secret then
+            if ngx_decode_base64(conf.secret) == nil then
+                return false, "base64_secret required but the secret is not in base64 format"
+            end
         end
 
         if conf.algorithm == "RS256" then
