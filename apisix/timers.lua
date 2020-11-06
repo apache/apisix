@@ -25,8 +25,7 @@ local thread_wait = ngx.thread.wait
 local timers = {}
 
 
-local _M = {
-}
+local _M = {}
 
 
 local function background_timer()
