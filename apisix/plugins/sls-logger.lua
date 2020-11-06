@@ -163,8 +163,8 @@ function _M.log(conf, ctx)
         return
     end
 
-    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var["host"],
-                                      "apisix", ngx.var.pid, conf.project, conf.logstore,
+    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host,"apisix",
+                                      ngx.var.pid, conf.project, conf.logstore,
                                       conf.access_key_id, conf.access_key_secret, json_str)
 
     local process_context = {
