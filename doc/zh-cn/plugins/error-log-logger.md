@@ -74,7 +74,7 @@ plugins:                          # plugin list
 
 ## 如何更新
 
-步骤1：更新插件属性
+步骤：更新插件属性
 
 ```shell
 
@@ -84,11 +84,4 @@ curl http://127.0.0.1:9080//apisix/admin/plugin_metadata/error-log-logger -H 'X-
   "port": 1999,
   "inactive_timeout": 1
 }'
-```
-
-步骤2：重新加载
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
-
 ```

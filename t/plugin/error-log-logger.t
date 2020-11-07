@@ -86,7 +86,7 @@ error-log-logger
 
 
 
-=== TEST 2: test unreachable server, not set server, using 127.0.0.1:9200 as default
+=== TEST 2: enable the plugin, but not init the metadata
 --- yaml_config
 plugins:
   - error-log-logger
@@ -101,32 +101,77 @@ plugins:
 GET /tg
 --- response_body
 --- error_log eval
-qr/failed to connect the TCP server: host\[127.0.0.1\] port\[9200\] err: connection refused/
---- wait: 6
+qr/please set the correct plugin_metadata for error-log-logger/
+--- wait: 2
 
 
 
-=== TEST 3: test unreachable server, default: batch_max_size=1000, inactive_timeout = 3, not exec batch
+=== TEST 3: set a wrong metadata
 --- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
 plugins:
   - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "port": 1999,
+                    "inactive_timeout": 1
+                }]]
+                )
+
             core.log.warn("this is a warning message for test.")
         }
     }
 --- request
 GET /tg
 --- response_body
---- no_error_log eval
-qr/failed to connect the TCP server: host\[127.0.0.1\] port\[9200\] err: connection refused/
+--- error_log eval
+qr/please set the correct plugin_metadata for error-log-logger/
 --- wait: 2
 
 
 
-=== TEST 4: log a warn level message
+=== TEST 4: test unreachable server
+--- yaml_config
+apisix:
+    enable_admin: true
+    admin_key: null
+plugins:
+  - error-log-logger
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "port": 9999,
+                    "inactive_timeout": 1
+                }]]
+                )
+
+            core.log.warn("this is a warning message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- error_log eval
+qr/failed to connect the TCP server/
+--- wait: 3
+
+
+
+=== TEST 5: log a warn level message
 --- yaml_config
 apisix:
     enable_admin: true
@@ -146,9 +191,7 @@ plugins:
                     "inactive_timeout": 1
                 }]]
                 )
-            -- reload
-            code, body = t('/apisix/admin/plugins/reload',
-                                    ngx.HTTP_PUT)
+            ngx.sleep(2)
             core.log.warn("this is a warning message for test.")
         }
     }
@@ -161,7 +204,7 @@ qr/\[Server\] receive data:.*this is a warning message for test./
 
 
 
-=== TEST 5: log an error level message
+=== TEST 6: log an error level message
 --- yaml_config
 plugins:
   - error-log-logger
@@ -169,7 +212,7 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            ngx.sleep(0.2)
+            ngx.sleep(2)
             core.log.error("this is an error message for test.")
         }
     }
@@ -182,7 +225,7 @@ qr/\[Server\] receive data:.*this is an error message for test./
 
 
 
-=== TEST 6: log an info level message
+=== TEST 7: log an info level message
 --- yaml_config
 plugins:
   - error-log-logger
@@ -190,7 +233,7 @@ plugins:
     location /tg {
         content_by_lua_block {
             local core = require("apisix.core")
-            ngx.sleep(0.2)
+            ngx.sleep(2)
             core.log.info("this is an info message for test.")
         }
     }
@@ -203,7 +246,7 @@ qr/\[Server\] receive data:.*this is an info message for test./
 
 
 
-=== TEST 7: delete metadata for the plugin, recover to the default
+=== TEST 8: delete metadata for the plugin, recover to the default
 --- yaml_config
 apisix:
     enable_admin: true
@@ -234,7 +277,7 @@ passed
 
 
 
-=== TEST 8: want to reload the plugin by route
+=== TEST 9: want to reload the plugin by route
 --- yaml_config
 apisix:
     enable_admin: true
@@ -274,13 +317,13 @@ plugins:
 --- request
 GET /tg
 --- response_body
---- no_error_log eval
-qr/failed to connect the TCP server: host\[127.0.0.1\] port\[9200\] err: connection refused/
+--- error_log eval
+qr/please set the correct plugin_metadata for error-log-logger/
 --- wait: 2
 
 
 
-=== TEST 9: delete the route
+=== TEST 10: delete the route
 --- yaml_config
 apisix:
     enable_admin: true

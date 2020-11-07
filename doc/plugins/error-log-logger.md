@@ -76,7 +76,7 @@ Remove the plugin `error-log-logger` from `conf/config.yaml`.
 
 ## How To Update
 
-step 1: update the attributes of the plugin
+step: update the attributes of the plugin
 
 ```shell
 
@@ -86,11 +86,4 @@ curl http://127.0.0.1:9080//apisix/admin/plugin_metadata/error-log-logger -H 'X-
   "port": 1999,
   "inactive_timeout": 1
 }'
-```
-
-step 2: reload
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
-
 ```

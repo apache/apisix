@@ -17,9 +17,9 @@
 
 local core = require("apisix.core")
 local nproc = require("ngx.process")
-local errlog = require ("ngx.errlog")
+local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
-local plugin_metadata = require("apisix.admin.plugin_metadata")
+local plugin = require("apisix.plugin")
 local plugin_name = "error-log-logger"
 local table = core.table
 local ngx = ngx
@@ -27,13 +27,17 @@ local tcp = ngx.socket.tcp
 local string = string
 local tostring = tostring
 local buffers
-local loaded_flag
+local timer
+local lrucache = core.lrucache.new({
+    ttl = 300, count = 32
+})
+
 
 local metadata_schema = {
     type = "object",
     properties = {
-        host = {type = "string", default = "127.0.0.1"},
-        port = {type = "integer", minimum = 0, default = 9200},
+        host = {type = "string"},
+        port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
         tls_options = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -46,7 +50,7 @@ local metadata_schema = {
         buffer_duration = {type = "integer", minimum = 1, default = 60},
         inactive_timeout = {type = "integer", minimum = 1, default = 3},
     },
-    additionalProperties = false,
+    required = {"host", "port"}
 }
 
 
@@ -64,8 +68,7 @@ local log_level = {
 }
 
 
-local config = {
-}
+local config = {}
 
 
 local _M = {
@@ -73,32 +76,22 @@ local _M = {
     priority = 1091,
     name = plugin_name,
     metadata_schema = metadata_schema,
-    timer = nil
 }
 
 
-local function check_metadata_schema(conf)
-    return core.schema.check(metadata_schema, conf)
-end
-
-
 local function send_to_server(data)
-    local res = false
-    local err_msg
     local sock, soc_err = tcp()
 
     if not sock then
-        err_msg = "failed to init the socket " .. soc_err
-        return res, err_msg
+        return false, "failed to init the socket " .. soc_err
     end
 
     sock:settimeout(config.timeout * 1000)
 
     local ok, err = sock:connect(config.host, config.port)
     if not ok then
-        err_msg = "failed to connect the TCP server: host[" .. config.host
-                  .. "] port[" .. tostring(config.port) .. "] err: " .. err
-        return res, err_msg
+        return false, "failed to connect the TCP server: host[" .. config.host
+                         .. "] port[" .. tostring(config.port) .. "] err: " .. err
     end
 
     if config.tls then
@@ -109,13 +102,11 @@ local function send_to_server(data)
         end
     end
 
-    table.insert(data, "\n")
     local bytes, err = sock:send(data)
     if not bytes then
         sock:close()
-        err_msg = "failed to send data to TCP server: host[" .. config.host
-                  .. "] port[" .. tostring(config.port) .. "] err: " .. err
-        return res, err_msg
+        return false, "failed to send data to TCP server: host[" .. config.host
+                        .. "] port[" .. tostring(config.port) .. "] err: " .. err
     end
 
     sock:setkeepalive(config.keepalive * 1000)
@@ -123,30 +114,33 @@ local function send_to_server(data)
 end
 
 
+local function update_config(value)
+    local level = log_level[string.upper(value.level)]
+    local status, err = errlog.set_filter_level(level)
+    if not status then
+        return nil, "failed to set filter level by ngx.errlog, the error is :" .. err
+    else
+        core.log.debug("set the filter_level to ", config.level)
+    end
+
+    return value
+end
+
+
 local function process()
-    if not loaded_flag then
-        local code, body = plugin_metadata.get(plugin_name)
-        if code == 200 then
-            config = body.node.value
-        else
-            core.log.info("there is no config for ", plugin_name, ", use the default config")
-        end
-
-        if not check_metadata_schema(config) then
-            core.log.info("check metadata failed, the config:", core.json.delay_encode(config))
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if not (metadata and metadata.value and metadata.modifiedIndex) then
+        core.log.info("please set the correct plugin_metadata for ", plugin_name)
+        return
+    else
+        local err
+        config, err = lrucache(plugin_name .. "#" .. metadata.modifiedIndex, nil, update_config,
+                                 metadata.value)
+        if not config then
+            core.log.warn("set log filter failed for ", err)
             return
         end
 
-        local level = log_level[string.upper(config.level)]
-        local status, err = errlog.set_filter_level(level)
-        if not status then
-            core.log.warn("failed to set filter level by ngx.errlog, the error is :", err)
-            return
-        else
-            core.log.info("set the filter_level to ", config.level)
-        end
-
-        loaded_flag = true
     end
 
     local id = ngx.worker.id()
@@ -155,6 +149,7 @@ local function process()
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
             table.insert(entries, logs[i + 2])
+            table.insert(entries, "\n")
         end
         logs = errlog.get_logs(10)
     end
@@ -165,8 +160,8 @@ local function process()
 
     local log_buffer = buffers[id]
     if log_buffer then
-        for i = 1, #entries do
-            log_buffer:push(entries[i])
+        for _, v in ipairs(entries) do
+            log_buffer:push(v)
         end
         return
     end
@@ -184,13 +179,13 @@ local function process()
     log_buffer, err = batch_processor:new(send_to_server, config_bat)
 
     if not log_buffer then
-        core.log.error("error when creating the batch processor: ", err)
+        core.log.warn("error when creating the batch processor: ", err)
         return
     end
 
     buffers[id] = log_buffer
-    for i = 1, #entries do
-        log_buffer:push(entries[i])
+    for _, v in ipairs(entries) do
+        log_buffer:push(v)
     end
 
 end
@@ -202,17 +197,15 @@ function _M.init()
     end
 
     buffers = {}
-    loaded_flag = false
-    if _M.timer then
+
+    if timer then
         return
     end
 
     local err
-    _M.timer, err = core.timer.new("error-log-logger", process)
-    if not _M.timer then
-        core.log.error("failed to create timer error-log-logger: ", err)
-    else
-        core.log.notice("succeed to create timer: error-log-logger")
+    timer, err = core.timer.new("error-log-logger", process)
+    if not timer then
+        core.log.warn("failed to create timer error-log-logger: ", err)
     end
 
 end
