@@ -54,11 +54,6 @@ end
 
 
 function _M.init_worker()
-    -- currently only log-rotate needs the timer
-    if not is_privileged() then
-        return
-    end
-
     local timer, err = core.timer.new("background", background_timer, {check_interval = 0.5})
     if not timer then
         core.log.error("failed to create background timer: ", err)
