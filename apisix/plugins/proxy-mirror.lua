@@ -52,6 +52,7 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("proxy mirror plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
+    ctx.var.upstream_host = ctx.var.host
     ctx.var.upstream_mirror_host = conf.host
 end
 

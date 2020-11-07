@@ -115,3 +115,88 @@ resolvers: ["8.8.8.8","114.114.114.114"]
 qr/"address":.+,"name":"github.com"/
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: enable_server_tokens false
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_server_tokens: false
+  admin_key: null
+
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+             [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say("failed")
+            return
+        end
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
+            local bytes, err = sock:send(req)
+            if not bytes then
+                ngx.say("failed to send http request: ", err)
+                return
+            end
+
+            ngx.say("sent http request: ", bytes, " bytes.")
+
+            while true do
+                local line, err = sock:receive()
+                if not line then
+                    -- ngx.say("failed to receive response status line: ", err)
+                    break
+                end
+
+                ngx.say("received: ", line)
+            end
+
+            local ok, err = sock:close()
+            ngx.say("close: ", ok, " ", err)
+        end  -- do
+    }
+}
+--- request
+GET /t
+--- response_body eval
+qr{connected: 1
+sent http request: 62 bytes.
+received: HTTP/1.1 200 OK
+received: Content-Type: text/plain
+received: Content-Length: 12
+received: Connection: close
+received: Server: APISIX
+received: Server: openresty
+received: \nreceived: hello world
+close: 1 nil}
+--- no_error_log
+[error]
