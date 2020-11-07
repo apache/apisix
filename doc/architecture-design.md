@@ -45,7 +45,7 @@
 
 ## APISIX Config
 
-There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument using `-c` or `--config-path` flag when start APISIX like `apisix start -c /opts/apisix/config.yaml`
+There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument using `-c` or `--config` flag when start APISIX like `apisix start -c /opts/apisix/config.yaml`
 
 For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
