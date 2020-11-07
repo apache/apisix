@@ -115,7 +115,7 @@ local function send_to_server(data)
 end
 
 
-local function update_config(value)
+local function update_filter(value)
     local level = log_level[string.upper(value.level)]
     local status, err = errlog.set_filter_level(level)
     if not status then
@@ -135,7 +135,7 @@ local function process()
         return
     else
         local err
-        config, err = lrucache(plugin_name .. "#" .. metadata.modifiedIndex, nil, update_config,
+        config, err = lrucache(plugin_name, metadata.modifiedIndex, update_filter,
                                  metadata.value)
         if not config then
             core.log.warn("set log filter failed for ", err)

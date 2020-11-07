@@ -158,15 +158,15 @@ plugins:
                     "inactive_timeout": 1
                 }]]
                 )
-
+            ngx.sleep(2)
             core.log.warn("this is a warning message for test.")
         }
     }
 --- request
 GET /tg
 --- response_body
---- error_log eval
-qr/failed to connect the TCP server/
+--- no_error_log eval
+qr/\[Server\] receive data:.*this is a warning message for test./
 --- wait: 3
 
 
