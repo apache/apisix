@@ -26,6 +26,7 @@ local ngx = ngx
 local tcp = ngx.socket.tcp
 local string = string
 local tostring = tostring
+local ipairs  = ipairs
 local buffers
 local timer
 local lrucache = core.lrucache.new({
