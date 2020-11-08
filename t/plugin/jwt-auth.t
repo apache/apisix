@@ -1143,7 +1143,7 @@ GET /t
 
 
 
-=== TEST 50: when the exp value is not set,make sure the default value(86400) works
+=== TEST 50: when the exp value is not set, make sure the default value(86400) works
 --- config
     location /t {
         content_by_lua_block {
@@ -1154,7 +1154,7 @@ GET /t
                     "username": "kerouac",
                     "plugins": {
                         "jwt-auth": {
-                            "key": "user-key",
+                            "key": "exp-not-set",
                             "secret": "my-secret-key"
                         }
                     }
@@ -1165,7 +1165,7 @@ GET /t
                             "username": "kerouac",
                             "plugins": {
                                 "jwt-auth": {
-                                    "key": "user-key",
+                                    "key": "exp-not-set",
                                     "secret": "my-secret-key"
                                 }
                             }
@@ -1183,5 +1183,30 @@ GET /t
 GET /t
 --- response_body_like eval
 qr/"exp":86400/
+--- no_error_log
+[error]
+
+
+
+=== TEST 51: when the exp value is not set, sign jwt use the default value(86400)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, res_data = t('/apisix/plugin/jwt/sign?key=exp-not-set',
+                ngx.HTTP_GET, nil, nil)
+
+            local jwt = require("resty.jwt")
+            local jwt_obj = jwt:load_jwt(res_data)
+            local exp_in_jwt = jwt_obj.payload.exp
+            local ngx_time = ngx.time
+            local use_default_exp = ngx_time() + 86400 - 1 <= exp_in_jwt and exp_in_jwt <= ngx_time() + 86400
+            ngx.say(use_default_exp)
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
 --- no_error_log
 [error]
