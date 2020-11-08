@@ -526,7 +526,7 @@ GET /t
 --- request
 GET /apisix/admin/schema/plugins/jwt-auth?schema_type=consumer
 --- response_body
-{"required":["key"],"properties":{"exp":{"minimum":1,"type":"integer"},"private_key":{"type":"string"},"public_key":{"type":"string"},"algorithm":{"type":"string","default":"HS256","enum":["HS256","HS512","RS256"]},"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"key":{"type":"string"}},"additionalProperties":false,"type":"object"}
+{"required":["key"],"properties":{"exp":{"type":"integer","default":86400,"minimum":1},"private_key":{"type":"string"},"public_key":{"type":"string"},"algorithm":{"type":"string","default":"HS256","enum":["HS256","HS512","RS256"]},"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"key":{"type":"string"}},"additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]
 
