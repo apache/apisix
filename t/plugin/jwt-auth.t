@@ -1194,7 +1194,7 @@ qr/"exp":86400/
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body, res_data = t('/apisix/plugin/jwt/sign?key=exp-not-set',
-                ngx.HTTP_GET, nil, nil)
+                ngx.HTTP_GET)
 
             local jwt = require("resty.jwt")
             local jwt_obj = jwt:load_jwt(res_data)
