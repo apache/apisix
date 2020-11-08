@@ -1140,3 +1140,48 @@ base64_secret required but the secret is not in base64 format
 [error]
 --- request
 GET /t
+
+
+
+=== TEST 50: when the exp value is not set,make sure the default value(86400) works
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, res_data = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "kerouac",
+                            "plugins": {
+                                "jwt-auth": {
+                                    "key": "user-key",
+                                    "secret": "my-secret-key"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(require("cjson").encode(res_data))
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/"exp":86400/
+--- no_error_log
+[error]
