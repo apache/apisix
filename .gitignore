@@ -57,6 +57,11 @@ default.etcd/
 .idea/
 *.iml
 \.*
+/conf/apisix.yaml
+/conf/apisix-*.yaml
+/conf/config-*.yaml
+!/conf/config-default.yaml
+/conf/debug-*.yaml
 
 # .travis
 !.travis/*.sh
