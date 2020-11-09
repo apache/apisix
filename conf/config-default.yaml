@@ -109,6 +109,8 @@ apisix:
                                                 # with external services (e.g. etcd)
     ssl_protocols: "TLSv1.2 TLSv1.3"
     ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+    ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.
+                                            #  ref: https://github.com/mozilla/server-side-tls/issues/135
     key_encrypt_salt: "edd1c9f0985e76a2"    #  If not set, will save origin ssl key into etcd.
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
