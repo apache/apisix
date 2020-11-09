@@ -16,10 +16,10 @@
 --
 
 local core = require("apisix.core")
-local nproc = require("ngx.process")
 local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
+local timers = require("apisix.timers")
 local plugin_name = "error-log-logger"
 local table = core.table
 local ngx = ngx
@@ -27,8 +27,6 @@ local tcp = ngx.socket.tcp
 local string = string
 local tostring = tostring
 local ipairs  = ipairs
-local buffers
-local timer
 local lrucache = core.lrucache.new({
     ttl = 300, count = 32
 })
@@ -70,6 +68,7 @@ local log_level = {
 
 
 local config = {}
+local buffers = {}
 
 
 local _M = {
@@ -193,22 +192,13 @@ end
 
 
 function _M.init()
-    if nproc.type() ~= "privileged agent" and nproc.type() ~= "single" then
-        return
-    end
-
-    buffers = {}
-
-    if timer then
-        return
-    end
-
-    local err
-    timer, err = core.timer.new("error-log-logger", process)
-    if not timer then
-        core.log.warn("failed to create timer error-log-logger: ", err)
-    end
-
+    timers.register_timer("plugin#error-log-logger", process, true)
 end
+
+
+function _M.destory()
+    timers.unregister_timer("plugin#error-log-logger", true)
+end
+
 
 return _M
