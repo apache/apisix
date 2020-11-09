@@ -447,7 +447,7 @@ git checkout conf/config.yaml
 
 make init
 
-count=`grep "ssl_session_tickets off;" conf/nginx.conf | wc -l `
+count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
 if [ $count -eq 0 ]; then
     echo "failed: ssl_session_tickets is off when ssl.ssl_session_tickets is false."
     exit 1
@@ -456,7 +456,7 @@ fi
 sed -i 's/ssl_session_tickets: false/ssl_session_tickets: true/' conf/config-default.yaml
 make init
 
-count=`grep "ssl_session_tickets on;" conf/nginx.conf | wc -l `
+count=`grep -c "ssl_session_tickets on;" conf/nginx.conf || true `
 if [ $count -eq 0 ]; then
     echo "failed: ssl_session_tickets is on when ssl.ssl_session_tickets is true."
     exit 1
