@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local timers = require("apisix.timers")
 local process = require("ngx.process")
 local signal = require("resty.signal")
 local ngx = ngx
@@ -27,7 +28,6 @@ local string = string
 local local_conf
 
 
-local timer
 local plugin_name = "log-rotate"
 local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
@@ -205,23 +205,12 @@ end
 
 
 function _M.init()
-    core.log.info("enter log-rotate plugin, process type: ", process.type())
+    timers.register_timer("plugin#log-rotate", rotate, true)
+end
 
-    if process.type() ~= "privileged agent" and process.type() ~= "single" then
-        return
-    end
 
-    if timer then
-        return
-    end
-
-    local err
-    timer, err = core.timer.new("logrotate", rotate, {check_interval = 0.5})
-    if not timer then
-        core.log.error("failed to create timer log rotate: ", err)
-    else
-        core.log.notice("succeed to create timer: log rotate")
-    end
+function _M.destory()
+    timers.unregister_timer("plugin#log-rotate", true)
 end
 
 
