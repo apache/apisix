@@ -61,6 +61,16 @@ function _M.check_schema(conf)
 end
 
 
+function _M.init()
+    -- call this function when plugin is loaded
+end
+
+
+function _M.destory()
+    -- call this function when plugin is unloaded
+end
+
+
 function _M.rewrite(conf, ctx)
     core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf))
     -- core.log.warn(" ctx: ", core.json.encode(ctx, true))

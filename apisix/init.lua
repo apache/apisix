@@ -98,6 +98,8 @@ function _M.http_init_worker()
     load_balancer = require("apisix.balancer").run
     require("apisix.admin.init").init_worker()
 
+    require("apisix.timers").init_worker()
+
     router.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin.init_worker()
@@ -117,6 +119,10 @@ function _M.http_init_worker()
     lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
+
+    if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
+        ver_header = "APISIX"
+    end
 end
 
 

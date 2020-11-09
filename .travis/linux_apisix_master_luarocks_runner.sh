@@ -30,7 +30,7 @@ do_install() {
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
 
     sudo apt-get update
-    sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
+    sudo apt-get install openresty-debug=1.17.8.2\* lua5.1 liblua5.1-0-dev
 
     wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
     tar -xf v2.4.4.tar.gz

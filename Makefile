@@ -165,7 +165,6 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/serverless
 	$(INSTALL) apisix/plugins/serverless/*.lua $(INST_LUADIR)/apisix/plugins/serverless/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/limit-count
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
 	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
 
