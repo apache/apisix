@@ -526,7 +526,7 @@ GET /t
 --- request
 GET /apisix/admin/schema/plugins/jwt-auth?schema_type=consumer
 --- response_body
-{"required":["key"],"properties":{"exp":{"minimum":1,"type":"integer"},"private_key":{"type":"string"},"public_key":{"type":"string"},"algorithm":{"type":"string","default":"HS256","enum":["HS256","HS512","RS256"]},"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"key":{"type":"string"}},"additionalProperties":false,"type":"object"}
+{"required":["key"],"properties":{"exp":{"type":"integer","default":86400,"minimum":1},"private_key":{"type":"string"},"public_key":{"type":"string"},"algorithm":{"type":"string","default":"HS256","enum":["HS256","HS512","RS256"]},"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"key":{"type":"string"}},"additionalProperties":false,"type":"object"}
 --- no_error_log
 [error]
 
@@ -1140,3 +1140,73 @@ base64_secret required but the secret is not in base64 format
 [error]
 --- request
 GET /t
+
+
+
+=== TEST 50: when the exp value is not set, make sure the default value(86400) works
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, res_data = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "exp-not-set",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "kerouac",
+                            "plugins": {
+                                "jwt-auth": {
+                                    "key": "exp-not-set",
+                                    "secret": "my-secret-key"
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(require("cjson").encode(res_data))
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/"exp":86400/
+--- no_error_log
+[error]
+
+
+
+=== TEST 51: when the exp value is not set, sign jwt use the default value(86400)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body, res_data = t('/apisix/plugin/jwt/sign?key=exp-not-set',
+                ngx.HTTP_GET)
+
+            local jwt = require("resty.jwt")
+            local jwt_obj = jwt:load_jwt(res_data)
+            local exp_in_jwt = jwt_obj.payload.exp
+            local ngx_time = ngx.time
+            local use_default_exp = ngx_time() + 86400 - 1 <= exp_in_jwt and exp_in_jwt <= ngx_time() + 86400
+            ngx.say(use_default_exp)
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
