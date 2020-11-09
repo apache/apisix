@@ -453,6 +453,11 @@ _EOC_
     }
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
+
+    if ($block->extra_yaml_config) {
+        $yaml_config .= $block->extra_yaml_config;
+    }
+
     my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;
