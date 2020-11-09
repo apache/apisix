@@ -36,9 +36,12 @@ local function background_timer()
         local th, err = thread_spawn(timer)
         if not th then
             core.log.error("failed to spawn thread for timer [", name, "]: ", err)
+            goto continue
         end
 
         core.table.insert(threads, th)
+
+::continue::
     end
 
     local ok, err = thread_wait(unpack(threads))
@@ -57,9 +60,10 @@ function _M.init_worker()
     local timer, err = core.timer.new("background", background_timer, {check_interval = 0.5})
     if not timer then
         core.log.error("failed to create background timer: ", err)
-    else
-        core.log.notice("succeed to create background timer")
+        return
     end
+
+    core.log.notice("succeed to create background timer")
 end
 
 
