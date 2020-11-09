@@ -42,6 +42,17 @@ The skywalking server can supports both http and grpc protocols. The APISIX clie
 
 ## How To Enable
 
+First of all, enable the skyWalking plugin in the `config.yaml`:
+
+```
+# Add this in config.yaml
+plugins:
+  - ... # plugin you need
+  - skywalking
+```
+
+Then reload APISIX, a background timer will be created to report data to skywalking server.
+
 Here's an example, enable the skywalking plugin on the specified route:
 
 ```shell
@@ -158,7 +169,7 @@ plugin_attr:
 
 ## Disable Plugin
 
-When you want to disable the skyWalking plugin, it is very simple,
+When you want to disable the skyWalking plugin on a route/service, it is very simple,
  you can delete the corresponding json configuration in the plugin configuration,
   no need to restart the service, it will take effect immediately:
 
@@ -181,6 +192,17 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 ```
 
 The skywalking plugin has been disabled now. It works for other plugins.
+
+If you want to disable skywalking plugin totally, for example, stop the background repor timer,
+you need to comment out in the `config.yaml`:
+
+```yaml
+plugins:
+  - ... # plugin you need
+  #- skywalking
+```
+
+And then reload APISIX.
 
 ## Upstream services(Code With SpringBoot)
 

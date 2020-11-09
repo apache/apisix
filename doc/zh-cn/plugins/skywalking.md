@@ -43,6 +43,17 @@
 
 ## 如何启用
 
+首先，你需要在 `config.yaml` 里面启用 Skywalking 插件：
+
+```
+# 加到 config.yaml
+plugins:
+  - ... # plugin you need
+  - skywalking
+```
+
+然后重载 APISIX，这样会创建一个后台定时器，向 skywalking 服务器定期上报数据。
+
 下面是一个示例，在指定的 route 上开启了 skywalking 插件:
 
 ```shell
@@ -163,7 +174,7 @@ plugin_attr:
 
 ## 禁用插件
 
-当你想去掉插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你想去掉路由上的插件规则的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
@@ -184,6 +195,17 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 ```
 
 现在就已经移除了 Skywalking 插件了。其他插件的开启和移除也是同样的方法。
+
+如果你想完全禁用 skywalking 插件，比如停掉后台上报数据的定时器，需要在 `config.yaml`
+里把插件注释掉：
+
+```yaml
+plugins:
+  - ... # plugin you need
+  #- skywalking
+```
+
+然后重载 APISIX。
 
 ## 上游服务是 java 的 SpringBoot 示例代码
 

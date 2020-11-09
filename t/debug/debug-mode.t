@@ -83,7 +83,6 @@ loaded plugin and sort by priority: 403 name: kafka-logger
 loaded plugin and sort by priority: 401 name: syslog
 loaded plugin and sort by priority: 400 name: udp-logger
 loaded plugin and sort by priority: 0 name: example-plugin
-loaded plugin and sort by priority: -1100 name: skywalking
 loaded plugin and sort by priority: -2000 name: serverless-post-function
 
 
