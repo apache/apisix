@@ -199,7 +199,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 优先级更高。
 
 一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
-插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../../apisix/plugins/example-plugin.lua#L37)。
+插件运行先后顺序是根据插件自身的优先级来决定的，例如：
+
+```lua
+local _M = {
+    version = 0.1,
+    priority = 0, -- 这个插件的优先级为 0
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
 
 插件配置作为 Route 或 Service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
 名字作为哈希的 key 来保存不同插件的配置项。

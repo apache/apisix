@@ -194,7 +194,17 @@ The configuration of the plugin can be directly bound to the specified Route, or
 
 A plugin will only be executed once in a single request, even if it is bound to multiple different objects (such as Route or Service).
 
-The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../apisix/plugins/example-plugin.lua#L37).
+The order in which plugins are run is determined by the priority of the plugin itself, for example:
+
+```lua
+local _M = {
+    version = 0.1,
+    priority = 0, -- the priority of this plugin will be 0
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
 
 The plugin configuration is submitted as part of Route or Service and placed under `plugins`. It internally uses the plugin name as the hash's key to hold configuration items for different plugins.
 
@@ -475,7 +485,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 * `apisix.router.http`: HTTP Request Route。
     * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
+        * `Absolute match `: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
@@ -516,7 +526,7 @@ In addition, you can refer to the [key-auth](./plugins/key-auth.md) authenticati
 How to enable a specific plugin for a Consumer, you can see the following example:
 
 ```shell
-# Create a Consumer , specify the authentication plugin key-auth, and enable the specific plugin limit-count
+# Create a Consumer, specify the authentication plugin key-auth, and enable the specific plugin limit-count
 $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",

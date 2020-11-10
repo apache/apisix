@@ -98,6 +98,8 @@ function _M.http_init_worker()
     load_balancer = require("apisix.balancer").run
     require("apisix.admin.init").init_worker()
 
+    require("apisix.timers").init_worker()
+
     router.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin.init_worker()
@@ -117,6 +119,10 @@ function _M.http_init_worker()
     lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
+
+    if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
+        ver_header = "APISIX"
+    end
 end
 
 
@@ -692,6 +698,10 @@ function _M.http_log_phase()
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
+    if api_ctx.curr_req_matched then
+        core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
+    end
+
     core.tablepool.release("api_ctx", api_ctx)
 end
 
@@ -778,6 +788,10 @@ function _M.stream_init_worker()
 
     router.stream_init_worker()
     plugin.init_worker()
+
+    if core.config == require("apisix.core.config_yaml") then
+        core.config.init_worker()
+    end
 
     load_balancer = require("apisix.balancer").run
 

@@ -353,6 +353,10 @@ local upstream_schema = {
             },
             maxProperties = 16
         },
+        discovery_type = {
+            description = "discovery type",
+            type = "string",
+        },
         pass_host = {
             description = "mod of host passing",
             type = "string",
@@ -657,6 +661,25 @@ _M.stream_route = {
         upstream = upstream_schema,
         upstream_id = id_schema,
         plugins = plugins_schema,
+    }
+}
+
+
+_M.plugins = {
+    type = "array",
+    items = {
+        type = "object",
+        properties = {
+            name = {
+                type = "string",
+                minLength = 1,
+            },
+            stream = {
+                type = "boolean"
+            },
+            additionalProperties = false,
+        },
+        required = {"name"}
     }
 }
 

@@ -51,7 +51,7 @@ local schema = {
 
 
 local lrucache = core.lrucache.new({
-    ttl = 300, count = 512
+    ttl = 300, count = 512, serial_creating = true,
 })
 
 
@@ -83,10 +83,8 @@ local function send_syslog_data(conf, log_message, api_ctx)
     local res = true
 
     -- fetch it from lrucache
-    local logger, err =  lrucache(
-        api_ctx.conf_type .. "#" .. api_ctx.conf_id,
-        api_ctx.conf_version,
-        logger_socket.new, logger_socket, {
+    local logger, err = core.lrucache.plugin_ctx(
+        lrucache, api_ctx, nil, logger_socket.new, logger_socket, {
             host = conf.host,
             port = conf.port,
             flush_limit = conf.flush_limit,

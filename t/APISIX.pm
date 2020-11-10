@@ -24,6 +24,7 @@ repeat_each(1);
 log_level('info');
 no_long_string();
 no_shuffle();
+no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
@@ -70,6 +71,8 @@ if ($enable_local_dns) {
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
+$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
+
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");
@@ -135,6 +138,7 @@ add_block_preprocessor(sub {
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env TEST_NGINX_HTML_DIR;
 _EOC_
 
     # set default `timeout` to 5sec
@@ -241,7 +245,8 @@ _EOC_
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
-    lua_shared_dict plugin-api-breaker 10m;
+    lua_shared_dict tracing_buffer       10m;    # plugin skywalking
+    lua_shared_dict plugin-api-breaker   10m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -433,6 +438,8 @@ _EOC_
                 return 200;
             }
 
+            proxy_http_version 1.1;
+            proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_host\$request_uri;
         }
 _EOC_
@@ -448,6 +455,11 @@ _EOC_
     }
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
+
+    if ($block->extra_yaml_config) {
+        $yaml_config .= $block->extra_yaml_config;
+    }
+
     my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;

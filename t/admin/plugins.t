@@ -30,7 +30,7 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","tcp-logger","kafka-logger","syslog","udp-logger","zipkin","skywalking","serverless-post-function"\]/
+qr/\["zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","tcp-logger","kafka-logger","syslog","udp-logger","serverless-post-function"\]/
 --- no_error_log
 [error]
 
@@ -72,5 +72,25 @@ GET /apisix/admin/plugins/node-status
 GET /apisix/admin/plugins/prometheus
 --- response_body
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: get plugin basic-auth schema
+--- request
+GET /apisix/admin/plugins/basic-auth
+--- response_body
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: get plugin basic-auth schema by schema_type
+--- request
+GET /apisix/admin/plugins/basic-auth?schema_type=consumer
+--- response_body
+{"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
 --- no_error_log
 [error]

@@ -26,6 +26,9 @@ do
     local cluster_src = "apisix.plugins.limit-count.limit-count-redis-cluster"
     limit_redis_cluster_new = require(cluster_src).new
 end
+local lrucache = core.lrucache.new({
+    type = 'plugin', serial_creating = true,
+})
 
 
 local schema = {
@@ -154,8 +157,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
-    local lim, err = core.lrucache.plugin_ctx(plugin_name, ctx,
-                                              create_limit_obj, conf)
+    local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, conf.policy, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
         return 500

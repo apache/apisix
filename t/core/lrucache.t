@@ -58,44 +58,7 @@ obj: {"idx":2}
 
 
 
-=== TEST 2: plugin
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-
-            local idx = 0
-            local function create_obj()
-                idx = idx + 1
-                return {idx = idx}
-            end
-
-            local obj = core.lrucache.plugin("plugin-a", "key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-
-            obj = core.lrucache.plugin("plugin-a", "key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-
-            obj = core.lrucache.plugin("plugin-a", "key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-
-            obj = core.lrucache.plugin("plugin-b", "key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-        }
-    }
---- request
-GET /t
---- response_body
-obj: {"idx":1}
-obj: {"idx":1}
-obj: {"idx":2}
-obj: {"idx":3}
---- no_error_log
-[error]
-
-
-
-=== TEST 3: new
+=== TEST 2: new
 --- config
     location /t {
         content_by_lua_block {
@@ -138,7 +101,7 @@ obj: {"idx":3}
 
 
 
-=== TEST 4: cache the non-table object, eg: number or string
+=== TEST 3: cache the non-table object, eg: number or string
 --- config
     location /t {
         content_by_lua_block {
@@ -171,7 +134,7 @@ obj: 2
 
 
 
-=== TEST 5: sanity
+=== TEST 4: sanity
 --- config
     location /t {
         content_by_lua_block {
@@ -207,7 +170,7 @@ obj: {"name":"bbb"}
 
 
 
-=== TEST 6: invalid_stale = true
+=== TEST 5: invalid_stale = true
 --- config
     location /t {
         content_by_lua_block {
@@ -244,7 +207,7 @@ obj: {"idx":2}
 
 
 
-=== TEST 7: when creating cached objects, use resty-lock to avoid repeated creation.
+=== TEST 6: when creating cached objects, use resty-lock to avoid repeated creation.
 --- config
     location /t {
         content_by_lua_block {
@@ -258,7 +221,7 @@ obj: {"idx":2}
             end
 
             local lru_get = core.lrucache.new({
-                ttl = 1, count = 256, invalid_stale = true,
+                ttl = 1, count = 256, invalid_stale = true, serial_creating = true,
             })
 
             local function f()
@@ -282,7 +245,7 @@ obj: {"idx":1}
 
 
 
-=== TEST 8: different `key` and `ver`, cached same one table
+=== TEST 7: different `key` and `ver`, cached same one table
 --- config
     location /t {
         content_by_lua_block {

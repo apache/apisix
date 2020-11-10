@@ -46,7 +46,7 @@ do_install() {
     sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
 
     sudo apt-get update
-    sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
+    sudo apt-get install openresty-debug=1.17.8.2\* lua5.1 liblua5.1-0-dev
 
     wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
     tar -xf v2.4.4.tar.gz
@@ -59,7 +59,7 @@ do_install() {
 
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
-    ./utils/install-etcd.sh
+    ./utils/linux-install-etcd-client.sh
 
     if [ ! -f "build-cache/apisix-master-0.rockspec" ]; then
         create_lua_deps
@@ -91,11 +91,6 @@ script() {
     export_or_prefix
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
-    sudo service etcd stop
-    mkdir -p ~/etcd-data
-    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcdctl version
-    sleep 5
 
 
     # enable mTLS
