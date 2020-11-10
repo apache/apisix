@@ -27,8 +27,9 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 'test-key'})
+            local ok, err = plugin.check_schema({key = 'test-key'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -49,8 +50,9 @@ done
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 123})
+            local ok, err = plugin.check_schema({key = 123}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -247,24 +249,13 @@ apikey: auth-13
                 )
 
             ngx.status = code
-            ngx.say(body)
+            ngx.print(body)
         }
     }
 --- request
 GET /t
+--- error_code: 400
 --- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 10: valid consumer
---- request
-GET /hello
---- more_headers
-apikey: auth-one
---- response_body
-hello world
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin key-auth err: property \"key\" is required"}
 --- no_error_log
 [error]
