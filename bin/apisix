@@ -31,9 +31,10 @@ package.path  = pkg_path .. pkg_path_org
 
 -- pass path to construct the final result
 local env = require("apisix.cli.env")(apisix_home, pkg_cpath_org, pkg_path_org)
+local file = require("apisix.cli.file")
 local util = require("apisix.cli.util")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
-local yaml = require("tinyyaml")
+local etcd = require("apisix.cli.etcd")
 local template = require("resty.template")
 
 local function write_file(file_path, data)
@@ -47,18 +48,6 @@ local function write_file(file_path, data)
     return true
 end
 
-local function read_file(file_path)
-    local file, err = io.open(file_path, "rb")
-    if not file then
-        return false, "failed to open file: " .. file_path .. ", error info:" .. err
-    end
-
-    local data = file:read("*all")
-    file:close()
-    return data
-end
-
-
 local function is_file_exist(file_path)
     local file, err = io.open(file_path)
     if not file then
@@ -67,115 +56,6 @@ local function is_file_exist(file_path)
 
     file:close()
     return true
-end
-
-
-local function is_empty_yaml_line(line)
-    return line == '' or string.find(line, '^%s*$') or
-           string.find(line, '^%s*#')
-end
-
-
-local function tab_is_array(t)
-    local count = 0
-    for k,v in pairs(t) do
-        count = count + 1
-    end
-
-    return #t == count
-end
-
-
-local function resolve_conf_var(conf)
-    for key, val in pairs(conf) do
-        if type(val) == "table" then
-            resolve_conf_var(val)
-        elseif type(val) == "string" then
-            local var_used = false
-            -- we use '${{var}}' because '$var' and '${var}' are taken
-            -- by Nginx
-            local new_val = val:gsub("%$%{%{%s*([%w_]+)%s*%}%}", function(var)
-                local v = os.getenv(var)
-                if v then
-                    var_used = true
-                    return v
-                end
-                error("failed to handle configuration: can't find environment variable " .. var)
-            end)
-
-            if var_used then
-                if tonumber(new_val) ~= nil then
-                    new_val = tonumber(new_val)
-                elseif new_val == "true" then
-                    new_val = true
-                elseif new_val == "false" then
-                    new_val = false
-                end
-            end
-
-            conf[key] = new_val
-        end
-    end
-end
-
-
-local function merge_conf(base, new_tab)
-    for key, val in pairs(new_tab) do
-        if type(val) == "table" then
-            if tab_is_array(val) then
-                base[key] = val
-            elseif base[key] == nil then
-                base[key] = val
-            else
-                merge_conf(base[key], val)
-            end
-        else
-            base[key] = val
-        end
-    end
-    return base
-end
-
-
-local function read_yaml_conf()
-    local profile = require("apisix.core.profile")
-    profile.apisix_home = env.apisix_home .. "/"
-    local local_conf_path = profile:yaml_path("config-default")
-    local default_conf_yaml, err = read_file(local_conf_path)
-    if not default_conf_yaml then
-        return nil, err
-    end
-
-    local default_conf = yaml.parse(default_conf_yaml)
-    if not default_conf then
-        return nil, "invalid config-default.yaml file"
-    end
-
-    local_conf_path = profile:yaml_path("config")
-    local user_conf_yaml, err = read_file(local_conf_path)
-    if not user_conf_yaml then
-        return nil, err
-    end
-
-    local is_empty_file = true
-    for line in string.gmatch(user_conf_yaml .. '\n', '(.-)\r?\n') do
-        if not is_empty_yaml_line(line) then
-            is_empty_file = false
-            break
-        end
-    end
-
-    if not is_empty_file then
-        local user_conf = yaml.parse(user_conf_yaml)
-        if not user_conf then
-            return nil, "invalid config.yaml file"
-        end
-
-        resolve_conf_var(user_conf)
-        merge_conf(default_conf, user_conf)
-    end
-
-    return default_conf
 end
 
 
@@ -210,73 +90,9 @@ local function is_32bit_arch()
 end
 
 
-local function split(self, sep)
-    local sep, fields = sep or ":", {}
-    local pattern = string.format("([^%s]+)", sep)
-    self:gsub(pattern, function(c) fields[#fields + 1] = c end)
-    return fields
-end
-
-
-local function parse_semantic_version(ver)
-    local errmsg = "invalid semantic version: " .. ver
-
-    local parts = split(ver, "-")
-    if #parts > 2 then
-        return nil, errmsg
-    end
-
-    if #parts == 2 then
-        ver = parts[1]
-    end
-
-    local fields = split(ver, ".")
-    if #fields ~= 3 then
-        return nil, errmsg
-    end
-
-    local major = tonumber(fields[1])
-    local minor = tonumber(fields[2])
-    local patch = tonumber(fields[3])
-
-    if not (major and minor and patch) then
-        return nil, errmsg
-    end
-
-    return {
-        major = major,
-        minor = minor,
-        patch = patch,
-    }
-end
-
-
-local function compare_semantic_version(v1, v2)
-    local ver1, err = parse_semantic_version(v1)
-    if not ver1 then
-        return nil, err
-    end
-
-    local ver2, err = parse_semantic_version(v2)
-    if not ver2 then
-        return nil, err
-    end
-
-    if ver1.major ~= ver2.major then
-        return ver1.major < ver2.major
-    end
-
-    if ver1.minor ~= ver2.minor then
-        return ver1.minor < ver2.minor
-    end
-
-    return ver1.patch < ver2.patch
-end
-
-
 local function check_version(cur_ver_s, need_ver_s)
-    local cur_vers = split(cur_ver_s, [[.]])
-    local need_vers = split(need_ver_s, [[.]])
+    local cur_vers = util.split(cur_ver_s, [[.]])
+    local need_vers = util.split(need_ver_s, [[.]])
     local len = math.max(#cur_vers, #need_vers)
 
     for i = 1, len do
@@ -338,7 +154,7 @@ local function init()
     end
 
     -- read_yaml_conf
-    local yaml_conf, err = read_yaml_conf()
+    local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
     if not yaml_conf then
         error("failed to read local yaml config of apisix: " .. err)
     end
@@ -530,151 +346,12 @@ Please modify "admin_key" in conf/config.yaml .
 end
 _M.init = init
 
-local function init_etcd(show_output)
-    -- read_yaml_conf
-    local yaml_conf, err = read_yaml_conf()
-    if not yaml_conf then
-        error("failed to read local yaml config of apisix: " .. err)
-    end
-
-    if not yaml_conf.apisix then
-        error("failed to read `apisix` field from yaml file when init etcd")
-    end
-
-    if yaml_conf.apisix.config_center ~= "etcd" then
-        return true
-    end
-
-    if not yaml_conf.etcd then
-        error("failed to read `etcd` field from yaml file when init etcd")
-    end
-
-    local etcd_conf = yaml_conf.etcd
-
-    local timeout = etcd_conf.timeout or 3
-    local uri
-    --convert old single etcd config to multiple etcd config
-    if type(yaml_conf.etcd.host) == "string" then
-        yaml_conf.etcd.host = {yaml_conf.etcd.host}
-    end
-
-    local host_count = #(yaml_conf.etcd.host)
-    local scheme
-    for i = 1, host_count do
-        local host = yaml_conf.etcd.host[i]
-        local fields = split(host, "://")
-        if not fields then
-            io.stderr:write("malformed etcd endpoint: ", host, "\n")
-            os.exit(1)
-        end
-
-        if not scheme then
-            scheme = fields[1]
-        elseif scheme ~= fields[1] then
-            print([[WARNING: mixed protocols among etcd endpoints]])
-        end
-    end
-
-    local dkjson = require("dkjson")
-
-    -- check the etcd cluster version
-    for index, host in ipairs(yaml_conf.etcd.host) do
-        uri = host .. "/version"
-        local cmd = string.format("curl -s -m %d %s", timeout * 2, uri)
-        local res = util.execute_cmd(cmd)
-        local errmsg = string.format("got malformed version message: \"%s\" from etcd\n", res)
-        local body, _, err = dkjson.decode(res)
-        if err then
-            io.stderr:write(errmsg)
-            os.exit(1)
-        end
-
-        local cluster_version = body["etcdcluster"]
-        if not cluster_version then
-            io.stderr:write(errmsg)
-            os.exit(1)
-        end
-
-        if compare_semantic_version(cluster_version, env.min_etcd_version) then
-            io.stderr:write("etcd cluster version ".. cluster_version ..
-                            " is less than the required version ".. env.min_etcd_version ..
-                            ", please upgrade your etcd cluster\n")
-            os.exit(1)
-        end
-    end
-
-    local etcd_ok = false
-    for index, host in ipairs(yaml_conf.etcd.host) do
-        local is_success = true
-
-        local token_head = ""
-        if etcd_conf.user and etcd_conf.password then
-            local uri_auth = host .. "/v3/auth/authenticate"
-            local json_auth = {
-                name =  etcd_conf.user,
-                password = etcd_conf.password
-            }
-            local post_json_auth = dkjson.encode(json_auth)
-            local cmd_auth = "curl -s " .. uri_auth .. " -X POST -d '" .. post_json_auth
-                             .. "' --connect-timeout " .. timeout
-                             .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
-
-            local res_auth = util.execute_cmd(cmd_auth)
-            local body_auth, _, err_auth = dkjson.decode(res_auth)
-            if err_auth then
-                error(cmd_auth .. "\n" .. res_auth)
-            end
-            token_head = " -H 'Authorization: " .. body_auth.token .. "'"
-        end
-
-        for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
-                                   "/plugins", "/consumers", "/node_status",
-                                   "/ssl", "/global_rules", "/stream_routes",
-                                   "/proto", "/plugin_metadata"}) do
-            local key =  (etcd_conf.prefix or "") .. dir_name .. "/"
-
-            local base64_encode = require("base64").encode
-            local uri = host .. "/v3/kv/put"
-            local post_json = '{"value":"' .. base64_encode("init_dir") ..  '", "key":"' .. base64_encode(key) .. '"}'
-            local cmd = "curl " .. uri .. token_head .. " -X POST -d '" .. post_json
-                        .. "' --connect-timeout " .. timeout
-                        .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
-
-            local res = util.execute_cmd(cmd)
-            if res:find("OK", 1, true) then
-                is_success = false
-                if (index == host_count) then
-                    error(cmd .. "\n" .. res)
-                end
-
-                break
-            end
-
-            if show_output then
-                print(cmd)
-                print(res)
-            end
-        end
-
-        if is_success then
-            etcd_ok = true
-            break
-        end
-    end
-
-    if not etcd_ok then
-        error("none of the configured etcd works well")
-    end
-end
-_M.init_etcd = init_etcd
-
-
 function _M.start(...)
     local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
     util.execute_cmd(cmd_logs)
     -- check running
     local pid_path = env.apisix_home .. "/logs/nginx.pid"
-    local pid, err = read_file(pid_path)
+    local pid, err = util.read_file(pid_path)
     if pid then
         local hd = io.popen("lsof -p " .. pid)
         local res = hd:read("*a")
@@ -685,7 +362,7 @@ function _M.start(...)
     end
 
     init(...)
-    init_etcd(...)
+    _M.init_etcd(...)
 
     os.execute(env.openresty_args)
 end
@@ -722,6 +399,10 @@ end
 function _M.version()
     local ver = require("apisix.core.version")
     print(ver['VERSION'])
+end
+
+_M.init_etcd = function(show_output)
+    etcd.init(env, show_output)
 end
 
 local cmd_action = arg[1]
