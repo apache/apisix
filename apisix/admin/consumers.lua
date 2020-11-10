@@ -25,15 +25,10 @@ local _M = {
 }
 
 
-local function check_conf(consumer_name, conf)
+local function check_conf(conf)
     -- core.log.error(core.json.encode(conf))
     if not conf then
         return nil, {error_msg = "missing configurations"}
-    end
-
-    local consumer_name = conf.username or consumer_name
-    if not consumer_name then
-        return nil, {error_msg = "missing consumer name"}
     end
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.consumer))
@@ -65,12 +60,12 @@ local function check_conf(consumer_name, conf)
         end
     end
 
-    return consumer_name
+    return conf.username
 end
 
 
-function _M.put(consumer_name, conf)
-    local consumer_name, err = check_conf(consumer_name, conf)
+function _M.put(_, conf)
+    local consumer_name, err = check_conf(conf)
     if not consumer_name then
         return 400, err
     end

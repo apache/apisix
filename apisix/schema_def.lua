@@ -544,7 +544,6 @@ _M.service = {
 _M.consumer = {
     type = "object",
     properties = {
-        id = id_schema,
         username = {
             type = "string", minLength = 1, maxLength = 32,
             pattern = [[^[a-zA-Z0-9_]+$]]

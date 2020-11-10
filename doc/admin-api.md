@@ -417,7 +417,7 @@ Return response from etcd currently.
 
 ## Consumer
 
-*API*：/apisix/admin/consumers/{id}
+*API*：/apisix/admin/consumers/{username}
 
 *Description*：Consumers are consumers of certain types of services and can only be used in conjunction with a user authentication system. Consumer regards the `username` property as the identity, so only the HTTP `PUT` method is supported for creating a new consumer.
 
@@ -425,9 +425,9 @@ Return response from etcd currently.
 
 |Method      |Request URI|Request Body|Description        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/consumers/{id}|NULL|Fetch resource|
-|PUT      |/apisix/admin/consumers/{id}|{...}|Create resource by ID|
-|DELETE   |/apisix/admin/consumers/{id}|NULL|Remove resource|
+|GET      |/apisix/admin/consumers/{username}|NULL|Fetch resource|
+|PUT      |/apisix/admin/consumers|{...}|Create resource by username|
+|DELETE   |/apisix/admin/consumers/{username}|NULL|Remove resource|
 
 > Request Body Parameters：
 
@@ -444,7 +444,6 @@ Config Example:
 
 ```shell
 {
-    "id": "1",              # id
     "plugins": {},          # Bound plugin
     "username": "name",     # Consumer name
     "desc": "hello world",  # Consumer desc
@@ -456,9 +455,8 @@ The binding authentication and authorization plug-in is a bit special. When it n
 Example:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/2  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "username": "jack",
     "plugins": {
         "key-auth": {
             "key": "auth-one"
@@ -511,7 +509,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |nodes           |required if `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
 |k8s_deployment_info|required if `nodes` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
-|key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
+|key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value. `0` means disable retry mechanism.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |

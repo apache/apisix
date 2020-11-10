@@ -484,7 +484,7 @@ consumer_name: consumer_name is nil
 
 
 
-=== TEST 19: create route and consumer_id is consumer_jack
+=== TEST 19: create route and consumer_name is consumer_jack
 --- config
     location /t {
         content_by_lua_block {
@@ -504,7 +504,7 @@ consumer_name: consumer_name is nil
                         "key-auth": {},
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_id: \", ngx.ctx.api_ctx.var.consumer_id) end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_name: \", ngx.ctx.api_ctx.var.consumer_name) end"]
                         }
                     }
                 }]]
@@ -525,7 +525,7 @@ passed
 
 
 
-=== TEST 20: consumer_id is `consumer_jack`
+=== TEST 20: consumer_name is `consumer_jack`
 --- request
 GET /hello
 --- more_headers
@@ -533,13 +533,13 @@ apikey: auth-jack
 --- response_body
 hello world
 --- error_log
-consumer_id: consumer_jack
+consumer_name: consumer_jack
 --- no_error_log
 [error]
 
 
 
-=== TEST 21: update the route, and the consumer_id is nil
+=== TEST 21: update the route, and the consumer_name is nil
 --- config
     location /t {
         content_by_lua_block {
@@ -558,7 +558,7 @@ consumer_id: consumer_jack
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_id: \", ngx.ctx.api_ctx.var.consumer_id or 'consumer_id is nil') end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_name: \", ngx.ctx.api_ctx.var.consumer_name or 'consumer_name is nil') end"]
                         }
                     }
                 }]]
@@ -579,12 +579,12 @@ passed
 
 
 
-=== TEST 22: consumer_id is nil
+=== TEST 22: consumer_name is nil
 --- request
 GET /hello
 --- response_body
 hello world
 --- error_log
-consumer_id: consumer_id is nil
+consumer_name: consumer_name is nil
 --- no_error_log
 [error]
