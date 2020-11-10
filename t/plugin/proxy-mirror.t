@@ -357,11 +357,11 @@ api-key2: world
 name: jake
 --- response_body
 uri: /uri
-host: 127.0.0.2
-x-real-ip: 127.0.0.1
-name: jake
 api-key: hello
 api-key2: world
+host: 127.0.0.2
+name: jake
+x-real-ip: 127.0.0.1
 --- error_log
 api-key: hello
 api-key2: world
