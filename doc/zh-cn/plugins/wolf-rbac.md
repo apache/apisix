@@ -50,7 +50,7 @@ rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更�
 * /apisix/plugin/wolf-rbac/change_pwd
 * /apisix/plugin/wolf-rbac/user_info
 
-你可能需要通过 [interceptors](plugin-interceptors.md) 来保护它们。
+你可能需要通过 [interceptors](../../plugin-interceptors.md) 来保护它们。
 
 ## 依赖项
 
