@@ -71,6 +71,8 @@ if ($enable_local_dns) {
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
+$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
+
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("conf/cert/apisix.crt");
 my $ssl_key = read_file("conf/cert/apisix.key");

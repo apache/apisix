@@ -172,7 +172,7 @@ etcd:
 #       read: 5000                    # default 5000ms
 
 plugins:                          # plugin list
-  - example-plugin
+  #- example-plugin
   - limit-req
   - limit-count
   - limit-conn
