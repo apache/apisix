@@ -1389,3 +1389,27 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 38: limit the length of service's name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 require("cjson").encode({name = ("1"):rep(101)})
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"name\" validation failed: string too long, expected at most 100, got 101"}
+--- no_error_log
+[error]
