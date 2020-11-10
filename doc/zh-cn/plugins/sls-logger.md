@@ -62,24 +62,24 @@
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-      "plugins": {
-            "sls-logger": {
-                    "host": "100.100.99.135",
-                    "port": 10009,
-                    "project": "your_project",
-                    "logstore": "your_logstore",
-                    "access_key_id": "your_access_key_id",
-                    "access_key_secret": "your_access_key_secret",
-                    "timeout": 30000
-            }
-       },
-      "upstream": {
-           "type": "roundrobin",
-           "nodes": {
-               "127.0.0.1:1980": 1
-           }
-      },
-      "uri": "/hello"
+    "plugins": {
+        "sls-logger": {
+            "host": "100.100.99.135",
+            "port": 10009,
+            "project": "your_project",
+            "logstore": "your_logstore",
+            "access_key_id": "your_access_key_id",
+            "access_key_secret": "your_access_key_secret",
+            "timeout": 30000
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "uri": "/hello"
 }'
 ```
 ```
@@ -96,7 +96,7 @@ HTTP/1.1 200 OK
 hello, world
 ```
 * 查看阿里云日志服务上传记录
-![](../../images/plugin/sls-logger-1.png)
+![阿里云日志服务预览](../../images/plugin/sls-logger-1.png)
 
 ## 禁用插件
 
@@ -105,7 +105,6 @@ hello, world
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
 {
-    "methods": ["GET"],
     "uri": "/hello",
     "plugins": {},
     "upstream": {

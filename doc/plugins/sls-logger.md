@@ -33,7 +33,7 @@
 
 This plugin provides the ability to push Log data as a batch to ali cloud log service. In case if you did not recieve the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
 
-For more info on Batch-Processor in Apache APISIX please refer.
+For more info on Batch-Processor in Apache APISIX please refer
 [Batch-Processor](../batch-processor.md)
 
 ## Attributes
@@ -45,15 +45,15 @@ For more info on Batch-Processor in Apache APISIX please refer.
 |timeout        |optional       |Timeout for the upstream to send data.|
 | project |required|Ali cloud log service project name，please creat in sls before us this plugin.|
 | logstore | required |Ali cloud log service  logstore name，please creat in sls before us this plugin.|
-| access_key_id | required | Ali cloud AccessKey ID, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
-| access_key_secret | required |Ali cloud AccessKey Secret, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
+| access_key_id | required | Ali cloud AccessKey ID, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
+| access_key_secret | required |Ali cloud AccessKey Secret, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
 | include_req_body | required| Boolean value. |
-|name           |optional       |A unique identifier to identity the batch processor|
+|name           |optional       |A unique identifier to identity the batch processor.|
 |batch_max_size |optional       |Max size of each batch.|
 |inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive.|
 |buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
-|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
-|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
+|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero.|
+|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1.|
 
 ## How To Enable
 
@@ -62,26 +62,27 @@ The following is an example on how to enable the sls-logger for a specific route
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-      "plugins": {
-            "sls-logger": {
-                    "host": "100.100.99.135",
-                    "port": 10009,
-                    "project": "your_project",
-                    "logstore": "your_logstore",
-                    "access_key_id": "your_access_key_id",
-                    "access_key_secret": "your_access_key_secret",
-                    "timeout": 30000
+    "plugins": {
+        "sls-logger": {
+            "host": "100.100.99.135",
+            "port": 10009,
+            "project": "your_project",
+            "logstore": "your_logstore",
+            "access_key_id": "your_access_key_id",
+            "access_key_secret": "your_access_key_secret",
+            "timeout": 30000
             }
        },
-      "upstream": {
-           "type": "roundrobin",
-           "nodes": {
-               "127.0.0.1:1980": 1
-           }
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
       },
       "uri": "/hello"
 }'
 
+```
 ## Test Plugin
 
 * success:
@@ -95,7 +96,7 @@ hello, world
 
 * check log in ali cloud log service
 
-![](../images/plugin/sls-logger-1.png)
+![sls logger view](../images/plugin/sls-logger-1.png)
 
 ## Disable Plugin
 
@@ -103,9 +104,8 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d value='
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "methods": ["GET"],
     "uri": "/hello",
     "plugins": {},
     "upstream": {
@@ -116,3 +116,4 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
+

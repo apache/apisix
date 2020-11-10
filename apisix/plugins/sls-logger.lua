@@ -93,8 +93,8 @@ local function send_tcp_data(route_conf, log_message)
         ok, err = sock:setkeepalive(120 * 1000, 20)
         if not ok then
             can_close = true
-            core.log.warn("failed to set socket keepalive: host[" .. route_conf.host
-                          .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err)
+            core.log.warn("failed to set socket keepalive: host[", route_conf.host,
+                          "] port[", tostring(route_conf.port), "] err: ", err)
         end
     end
 
@@ -133,7 +133,7 @@ local function combine_syslog(entries)
         end
 
         data = data .. entry.data
-        core.log.info(entry.data)
+        core.log.info("buffered logs:", entry.data)
     end
 
     return data
@@ -164,7 +164,7 @@ function _M.log(conf, ctx)
     end
 
     local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host,"apisix",
-                                      ngx.var.pid, conf.project, conf.logstore,
+                                      ctx.var.pid, conf.project, conf.logstore,
                                       conf.access_key_id, conf.access_key_secret, json_str)
 
     local process_context = {
