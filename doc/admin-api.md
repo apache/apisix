@@ -71,6 +71,7 @@
 |service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
 |service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+|enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 
 For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will response an error.
 
@@ -107,6 +108,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "hosts": ["foo.com", "*.bar.com"],
     "remote_addrs": ["127.0.0.0/8"],
     "methods": ["PUT", "GET"],
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -290,6 +292,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |name     |False |Auxiliary   |Identifies service names.|customer-xxxx|
 |desc     |False |Auxiliary   |service usage scenarios, and more.|customer xxxx|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+|enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 
 Config Example:
 
@@ -301,6 +304,7 @@ Config Example:
     "upstream": {},     # upstream, not recommended
     "name": "service-test",
     "desc": "hello world",
+    "enable_websocket": true,
 }
 ```
 
@@ -317,6 +321,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
             "key": "remote_addr"
         }
     },
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -503,7 +508,6 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value. `0` means disable retry mechanism.|
-|enable_websocket|optional| enable `websocket`(boolean), default `false`.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |name     |optional|Identifies upstream names|
 |desc     |optional|upstream usage scenarios, and more.|
@@ -523,7 +527,6 @@ Config Example:
         "send":15,
         "read":15,
     },
-    "enable_websocket": true,
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
     "k8s_deployment_info": {    # kubernetes deployment info
         "namespace": "test-namespace",

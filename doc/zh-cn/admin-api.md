@@ -75,6 +75,7 @@
 |vars       |可选  |匹配规则|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
 
 有两点需要特别注意：
 
@@ -114,6 +115,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "hosts": ["foo.com", "*.bar.com"],
     "remote_addrs": ["127.0.0.0/8"],
     "methods": ["PUT", "GET"],
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -300,6 +302,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |name     |可选 |辅助   |标识服务名称。||
 |desc     |可选 |辅助   |服务描述、使用场景等。||
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
 
 serivce 对象 json 配置内容：
 
@@ -311,6 +314,7 @@ serivce 对象 json 配置内容：
     "upstream": {},         # upstream 信息对象，不建议使用
     "name": "测试svc",  # service 名称
     "desc": "hello world",  # service 描述
+    "enable_websocket": true, #启动 websocket 功能
 }
 ```
 
@@ -328,6 +332,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
             "key": "remote_addr"
         }
     },
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -517,7 +522,6 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](../health-check.md)||
 |retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制||
 |timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
-|enable_websocket     |可选 |辅助|是否允许启用 websocket 能力||
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
 |name     |可选 |辅助|标识上游服务名称、使用场景等。||
 |desc     |可选 |辅助|上游服务描述、使用场景等。||
@@ -536,7 +540,6 @@ upstream 对象 json 配置内容：
         "send":15,
         "read":15,
     },
-    "enable_websocket": true,
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + Port`
     "k8s_deployment_info": {    # k8s deployment 信息
         "namespace": "test-namespace",
