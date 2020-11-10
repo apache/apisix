@@ -56,7 +56,6 @@ Plugins
 * [key-auth](plugins/key-auth.md): User authentication based on Key Authentication.
 * [JWT-auth](plugins/jwt-auth.md): User authentication based on [JWT](https://jwt.io/) (JSON Web Tokens) Authentication.
 * [basic-auth](plugins/basic-auth.md): User authentication based on Basic Authentication.
-* [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
 
 **Authorization**
 * [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.

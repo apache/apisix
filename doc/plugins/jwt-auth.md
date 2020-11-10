@@ -48,7 +48,7 @@ For more information on JWT, refer to [JWT](https://jwt.io/) for more informatio
 ## API
 
 This plugin will add `/apisix/plugin/jwt/sign` to sign.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
+You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How To Enable
 
