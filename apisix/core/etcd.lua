@@ -123,6 +123,7 @@ function _M.watch_format(v3res)
     if compact_revision and tonumber(compact_revision) > 0 then
         -- When the revisions are compacted, there might be compacted changes
         -- which are unsynced. So we need to do a fully sync.
+        -- TODO: cover this branch in CI
         return nil, "compacted"
     end
 
