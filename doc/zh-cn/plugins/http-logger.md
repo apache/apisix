@@ -59,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
       "plugins": {
             "http-logger": {
-                "uri": "127.0.0.1:80/postendpoint?param=1"
+                "uri": "http://127.0.0.1:80/postendpoint?param=1"
             }
        },
       "upstream": {

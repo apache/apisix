@@ -54,6 +54,10 @@ local ip_def = {
 }
 _M.ip_def = ip_def
 
+
+_M.uri_def = {type = "string", pattern = [=[^[^\/]+:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?]=]}
+
+
 local timestamp_def = {
     type = "integer",
 }
