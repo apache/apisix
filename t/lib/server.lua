@@ -102,14 +102,14 @@ function _M.uri()
     ngx.say("uri: ", ngx.var.uri)
     local headers = ngx.req.get_headers()
 
-    local headers_key = {}
+    local keys = {}
     for k, _ in pairs(headers) do
-        table.insert(headers_key, k)
+        table.insert(keys, k)
     end
-    table.sort(headers_key)
+    table.sort(keys)
 
-    for _, v in pairs(headers_key) do
-        ngx.say(v, ": ", headers[v])
+    for _, key in pairs(keys) do
+        ngx.say(key, ": ", headers[key])
     end
 end
 _M.uri_plugin_proxy_rewrite = _M.uri
@@ -120,14 +120,14 @@ function _M.old_uri()
     ngx.say("uri: ", ngx.var.uri)
     local headers = ngx.req.get_headers()
 
-    local headers_key = {}
+    local keys = {}
     for k, _ in pairs(headers) do
-        table.insert(headers_key, k)
+        table.insert(keys, k)
     end
-    table.sort(headers_key)
+    table.sort(keys)
 
-    for _, v in pairs(headers_key) do
-        ngx.say(v, ": ", headers[v])
+    for _, key in pairs(keys) do
+        ngx.say(key, ": ", headers[key])
     end
 end
 
