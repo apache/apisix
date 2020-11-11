@@ -164,4 +164,16 @@ plugins:
   - name: jwt-auth
   - name: mqtt-proxy
     stream: true # set 'stream' to true for stream plugins
+#END
+```
+
+#### How to enable SSL
+
+```yml
+ssl:
+    -
+        cert: "...",
+        key: "...",
+        sni: "yourdomain.com"
+#END
 ```

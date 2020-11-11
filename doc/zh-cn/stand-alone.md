@@ -164,4 +164,16 @@ plugins:
   - name: jwt-auth
   - name: mqtt-proxy
     stream: true # stream 插件需要设置 stream 属性为 true
+#END
+```
+
+#### 启用 SSL
+
+```yml
+ssl:
+    -
+        cert: "...",
+        key: "...",
+        sni: "yourdomain.com"
+#END
 ```
