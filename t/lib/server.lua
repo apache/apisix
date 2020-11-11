@@ -103,12 +103,12 @@ function _M.uri()
     local headers = ngx.req.get_headers()
 
     local keys = {}
-    for k, _ in pairs(headers) do
+    for k in pairs(headers) do
         table.insert(keys, k)
     end
     table.sort(keys)
 
-    for _, key in pairs(keys) do
+    for _, key in ipairs(keys) do
         ngx.say(key, ": ", headers[key])
     end
 end
@@ -121,12 +121,12 @@ function _M.old_uri()
     local headers = ngx.req.get_headers()
 
     local keys = {}
-    for k, _ in pairs(headers) do
+    for k in pairs(headers) do
         table.insert(keys, k)
     end
     table.sort(keys)
 
-    for _, key in pairs(keys) do
+    for _, key in ipairs(keys) do
         ngx.say(key, ": ", headers[key])
     end
 end
