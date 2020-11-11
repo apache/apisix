@@ -103,7 +103,7 @@ done
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -125,7 +125,7 @@ done
                                 "openid-connect": {
                                     "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                     "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                    "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": "no",
                                     "timeout": 10000,
@@ -171,7 +171,7 @@ passed
             local res, err = httpc:request_uri(uri, {method = "GET"})
             ngx.status = res.status
             local location = res.headers['Location']
-            if string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+            if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
                 string.find(location, 'scope=apisix') ~= -1 and
                 string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
                 string.find(location, 'response_type=code') ~= -1 and
@@ -512,6 +512,11 @@ passed
                         ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
                 })
+
+            if not res then
+                ngx.say(err)
+                return
+            end
 
             if res.status == 200 then
                 local body = json_decode(res.body)
