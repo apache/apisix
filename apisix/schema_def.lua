@@ -75,6 +75,13 @@ local label_value_def = {
 _M.label_value_def = label_value_def
 
 
+local rule_name_def = {
+    type = "string",
+    maxLength = 100,
+    minLength = 1,
+}
+
+
 local health_checker = {
     type = "object",
     properties = {
@@ -360,9 +367,9 @@ local upstream_schema = {
             default = "pass"
         },
         upstream_host = host_def,
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
-        service_name = {type = "string", maxLength = 50},
+        service_name = rule_name_def,
         id = id_schema
     },
     anyOf = {
@@ -405,7 +412,7 @@ _M.route = {
             },
             uniqueItems = true,
         },
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         priority = {type = "integer", default = 0},
 
@@ -507,7 +514,7 @@ _M.service = {
         plugins = plugins_schema,
         upstream = upstream_schema,
         upstream_id = id_schema,
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         script = {type = "string", minLength = 10, maxLength = 102400},
         labels = {
