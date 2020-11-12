@@ -151,7 +151,7 @@ local function gen_log_format(metadata)
     end
 
     for k, var_name in pairs(metadata.value.log_format) do
-        if var_name:byte(1, 1) == str_byte("/") then
+        if var_name:byte(1, 1) == str_byte("$") then
             log_format[k] = {true, var_name:sub(2)}
         else
             log_format[k] = {false, var_name}
