@@ -99,8 +99,10 @@ function _M.encode(facility, severity, hostname, appname, pid, project,
         appname = "-"
     end
 
-    return string_format(rfc5424_format, pri, t, hostname, appname, pid, project,
-                         logstore, access_key_id, access_key_secret, msg)
+    return "<" .. pri .. ">1 " .. t .. " " .. hostname .. " " .. appname .. " " .. pid
+           .. " - [logservice project=\"" .. project .. "\" logstore=\"" .. logstore
+           .. "\" access-key-id=\"" .. access_key_id .. "\" access-key-secret=\""
+           .. access_key_secret .. "\"] " .. msg .. "\n"
 end
 
 return _M
