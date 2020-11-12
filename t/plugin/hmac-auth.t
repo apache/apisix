@@ -1004,7 +1004,7 @@ location /t {
 
         local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
-            if i ~= 4 then      -- skip date
+            if i ~= 4 and i ~= 6 then      -- skip date and user-agent field
                 ngx.say(v)
             end
         end
@@ -1017,7 +1017,6 @@ uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
 host: 127.0.0.1
-user-agent: lua-resty-http/0.14 (Lua) ngx_lua/10017
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
@@ -1120,7 +1119,7 @@ location /t {
 
         local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
-            if i ~= 4 then      -- skip date
+            if i ~= 4 and i ~= 6 then      -- skip date and user-agent field
                 ngx.say(v)
             end
         end
@@ -1133,7 +1132,6 @@ uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
 host: 127.0.0.1
-user-agent: lua-resty-http/0.14 (Lua) ngx_lua/10017
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
@@ -1236,7 +1234,7 @@ location /t {
         
         local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
-            if i ~= 4 and i ~= 11 then      -- skip date and x-hmac-signature
+            if i ~= 4 and and i ~= 6 and i ~= 11 then      -- skip date, user-agent and x-hmac-signature field
                 ngx.say(v)
             end
         end
@@ -1249,7 +1247,6 @@ uri: /uri
 content-length: 52
 content-type: application/x-www-form-urlencoded
 host: 127.0.0.1
-user-agent: lua-resty-http/0.14 (Lua) ngx_lua/10017
 x-custom-header-a: asld$%dfasf
 x-custom-header-b: 23879fmsldfk
 x-hmac-access-key: my-access-key4
