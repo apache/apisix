@@ -622,7 +622,7 @@ end
 
 function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
-    
+
     common_phase("header_filter")
 end
 
