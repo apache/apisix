@@ -42,15 +42,13 @@ function _M.new(conf)
     local service_name = conf.service_name
     local server_port = conf.server_port
     local server_addr = conf.server_addr
-    local processor
     assert(type(endpoint) == "string", "invalid http endpoint")
     return setmetatable({
         endpoint = endpoint,
         service_name = service_name,
         server_addr = server_addr,
         server_port = server_port,
-        pending_spans_n = 0,
-        processor = processor
+        pending_spans_n = 0
     }, mt)
 end
 
@@ -120,7 +118,8 @@ local function send_span(pending_spans, report)
             ["content-type"] = "application/json",
         },
         body = pending_spans,
-        keepalive = 5000
+        keepalive = 5000,
+        keepalive_pool = 5
     })
 
     if not res then
