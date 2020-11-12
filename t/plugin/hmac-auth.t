@@ -1231,10 +1231,10 @@ location /t {
         if code >= 300 then
             ngx.status = code
         end
-        
+
         local headers_arr = ngx_re.split(body, "\n")
         for i, v in ipairs(headers_arr) do
-            if i ~= 4 and and i ~= 6 and i ~= 11 then      -- skip date, user-agent and x-hmac-signature field
+            if i ~= 4 and i ~= 6 and i ~= 11 then      -- skip date, user-agent and x-hmac-signature field
                 ngx.say(v)
             end
         end
