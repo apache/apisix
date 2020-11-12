@@ -51,6 +51,14 @@ local _M = {
 }
 
 
+local function plugin_attr(name)
+    -- TODO: get attr from synchronized data
+    local local_conf = core.config.local_conf()
+    return core.table.try_read_attr(local_conf, "plugin_attr", name)
+end
+_M.plugin_attr = plugin_attr
+
+
 local function sort_plugin(l, r)
     return l.priority > r.priority
 end
@@ -103,6 +111,7 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
     end
 
     plugin.name = name
+    plugin.attr = plugin_attr(name)
     core.table.insert(plugins_list, plugin)
 
     if plugin.init then
@@ -110,6 +119,25 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
     end
 
     return
+end
+
+
+local function plugins_eq(old, new)
+    local eq = core.table.set_eq(old, new)
+    if not eq then
+        core.log.info("plugin list changed")
+        return false
+    end
+
+    for name, plugin in pairs(old) do
+        eq = core.table.deep_eq(plugin.attr, plugin_attr(name))
+        if not eq then
+            core.log.info("plugin_attr of ", name, " changed")
+            return false
+        end
+    end
+
+    return true
 end
 
 
@@ -122,7 +150,7 @@ local function load(plugin_names)
     end
 
     -- the same configure may be synchronized more than one
-    if core.table.set_eq(local_plugins_hash, processed) then
+    if plugins_eq(local_plugins_hash, processed) then
         core.log.info("plugins not changed")
         return true
     end
@@ -170,7 +198,7 @@ local function load_stream(plugin_names)
     end
 
     -- the same configure may be synchronized more than one
-    if core.table.set_eq(stream_local_plugins_hash, processed) then
+    if plugins_eq(stream_local_plugins_hash, processed) then
         core.log.info("plugins not changed")
         return true
     end
@@ -216,10 +244,12 @@ function _M.load(config)
     local stream_plugin_names
 
     if not config then
+        -- called during starting or hot reload in admin
         local_conf = core.config.local_conf(true)
         http_plugin_names = local_conf.plugins
         stream_plugin_names = local_conf.stream_plugins
     else
+        -- called during synchronizing plugin data
         http_plugin_names = {}
         stream_plugin_names = {}
         for _, conf_value in config_util.iterate_values(config.values) do

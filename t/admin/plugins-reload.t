@@ -123,3 +123,75 @@ reload plugins on node
 reload plugins on node
 --- error_log
 filter(): [{"name":"jwt-auth"},{"name":"mqtt-proxy","stream":true}]
+
+
+
+=== TEST 3: reload plugins when attributes changed
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+    - example-plugin
+plugin_attr:
+    example-plugin:
+        val: 0
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require "apisix.core"
+        local data = [[
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+    - example-plugin
+plugin_attr:
+    example-plugin:
+        val: 1
+        ]]
+        require("lib.test_admin").set_config_yaml(data)
+
+        local t = require("lib.test_admin").test
+        local code, _, org_body = t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+
+        ngx.status = code
+        ngx.say(org_body)
+        ngx.sleep(0.1)
+
+        local data = [[
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+    - example-plugin
+plugin_attr:
+    example-plugin:
+        val: 1
+        ]]
+        require("lib.test_admin").set_config_yaml(data)
+
+        local t = require("lib.test_admin").test
+        local code, _, org_body = t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+        ngx.say(org_body)
+    }
+}
+--- request
+GET /t
+--- response_body
+done
+done
+--- grep_error_log eval
+qr/example-plugin get plugin attr val: \d+/
+--- grep_error_log_out
+example-plugin get plugin attr val: 0
+example-plugin get plugin attr val: 0
+example-plugin get plugin attr val: 0
+example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
+--- error_log
+plugin_attr of example-plugin changed
+plugins not changed
