@@ -16,23 +16,7 @@
 # limitations under the License.
 #
 
-set -ex
-
-export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
-}
-
-create_lua_deps() {
-    echo "Create lua deps cache"
-
-    make deps
-    # maybe reopen this feature later
-    # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
-
-    sudo rm -rf build-cache/deps
-    sudo cp -r deps build-cache/
-    sudo cp rockspec/apisix-master-0.rockspec build-cache/
-}
+. ./.travis/common.sh
 
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
@@ -59,23 +43,9 @@ before_install() {
 do_install() {
     export_or_prefix
 
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-    sudo apt-get -y update --fix-missing
-    sudo apt-get -y install software-properties-common
-    sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+    ./utils/linux-install-openresty.sh
 
-    sudo apt-get update
-    sudo apt-get install openresty-debug=1.17.8.2\* lua5.1 liblua5.1-0-dev
-
-    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
-    tar -xf v2.4.4.tar.gz
-    cd luarocks-2.4.4
-    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
-    make build > build.log 2>&1 || (cat build.log && exit 1)
-    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
-    cd ..
-    rm -rf luarocks-2.4.4
-
+    ./utils/linux-install-luarocks.sh
     sudo luarocks install luacheck > build.log 2>&1 || (cat build.log && exit 1)
 
     ./utils/linux-install-etcd-client.sh
@@ -129,7 +99,6 @@ do_install() {
 
 script() {
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
 
 
