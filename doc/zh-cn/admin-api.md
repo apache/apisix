@@ -76,6 +76,8 @@
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
+|create_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
 
 有两点需要特别注意：
 
@@ -303,6 +305,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |desc     |可选 |辅助   |服务描述、使用场景等。||
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
+|create_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
 
 serivce 对象 json 配置内容：
 
@@ -446,6 +450,8 @@ HTTP/1.1 200 OK
 |plugins|可选|Plugin|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。||
 |desc     |可选 |辅助|consumer描述||
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
 
 consumer 对象 json 配置内容：
 
@@ -528,6 +534,8 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。||
 |upstream_host    |可选|辅助|只在 `pass_host` 配置为 `rewrite` 时有效。||
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
 
 upstream 对象 json 配置内容：
 
@@ -668,6 +676,8 @@ HTTP/1.1 200 OK
 |key|必需|私钥|https 证书私钥||
 |sni|必需|匹配规则|https 证书SNI||
 |labels|可选|匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳|1602883670|
 
 ssl 对象 json 配置内容：
 
