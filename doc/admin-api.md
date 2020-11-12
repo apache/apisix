@@ -72,6 +72,8 @@
 |service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
+|create_time|False| Auxiliary|epoch timestamp in second| 1602883670|
+|update_time|False| Auxiliary|epoch timestamp in second| 1602883670|
 
 For the same type of parameters, such as `host` and `hosts`, `remote_addr` and `remote_addrs` cannot exist at the same time, only one of them can be selected. If enabled at the same time, the API will response an error.
 
@@ -293,6 +295,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |desc     |False |Auxiliary   |service usage scenarios, and more.|customer xxxx|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
+|create_time|False| Auxiliary|epoch timestamp in second| 1602883670|
+|update_time|False| Auxiliary|epoch timestamp in second| 1602883670|
 
 Config Example:
 
@@ -433,6 +437,8 @@ Return response from etcd currently.
 |plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
 |desc     |False |Auxiliary   |Identifies route names, usage scenarios, and more.|customer xxxx|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+|create_time|False| Auxiliary|epoch timestamp in second| 1602883670|
+|update_time|False| Auxiliary|epoch timestamp in second| 1602883670|
 
 Config Example:
 
@@ -513,7 +519,9 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |desc     |optional|upstream usage scenarios, and more.|
 |pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
 |upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
-|labels|False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+|labels|optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+|create_time|optional| epoch timestamp in second, like `1602883670`|
+|update_time|optional| epoch timestamp in second, like `1602883670`|
 
 
 Config Example:
@@ -656,6 +664,8 @@ Return response from etcd currently.
 |key|True|Private key|https Private key||
 |sni|True|Match Rules|https SNI||
 |labels|False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
+|create_time|False| Auxiliary|epoch timestamp in second| 1602883670|
+|update_time|False| Auxiliary|epoch timestamp in second| 1602883670|
 
 Config Example:
 
