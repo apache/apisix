@@ -394,8 +394,8 @@ passed
 GET /uri
 --- response_body
 uri: /uri
-host: localhost
 connection: close
+host: localhost
 x-real-ip: 127.0.0.1
 --- no_error_log
 [error]
