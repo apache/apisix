@@ -136,3 +136,38 @@ ok
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 5: deep_eq
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local cases = {
+                {expect = true, a = {}, b = {}},
+                {expect = true, a = nil, b = nil},
+                {expect = false, a = nil, b = {}},
+                {expect = false, a = {}, b = nil},
+                {expect = true, a = {a = {b = 1}}, b = {a = {b = 1}}},
+                {expect = false, a = {a = {b = 1}}, b = {a = {b = 1, c = 2}}},
+                {expect = false, a = {a = {b = 1}}, b = {a = {b = 2}}},
+                {expect = true, a = {{a = {b = 1}}}, b = {{a = {b = 1}}}},
+            }
+            for _, t in ipairs(cases) do
+                local actual = core.table.deep_eq(t.a, t.b)
+                local expect = t.expect
+                if actual ~= expect then
+                    ngx.say("expect ", expect, ", actual ", actual)
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- request
+GET /t
+--- no_error_log
+[error]
