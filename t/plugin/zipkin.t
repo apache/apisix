@@ -181,9 +181,9 @@ passed
 --- request
 GET /opentracing
 --- error_log
-failed to report request:http://127.0.0.1:9999/mock_zipkin
+Batch Processor[zipkin_report] failed to process entries: failed: http://127.0.0.1:9999/mock_zipkin
 [error]
---- wait: 5
+--- wait: 10
 
 
 
@@ -214,7 +214,7 @@ failed to report request:http://127.0.0.1:9999/mock_zipkin
                         "value": {
                             "plugins": {
                                 "zipkin": {
-                                    "endpoint": "http://127.0.0.1:1982/mock_zipkin",
+                                    "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                     "sample_ratio": 0.00001
                                 }
                             },
@@ -363,12 +363,10 @@ passed
 === TEST 12: tiger zipkin
 --- request
 GET /opentracing
---- response_body
-opentracing
 --- error_log
-failed to report request:http://127.0.0.1:9999/mock_zipkin
+Batch Processor[zipkin_report] failed to process entries: failed: http://127.0.0.1:9999/mock_zipkin
 [error]
---- wait: 5
+--- wait: 10
 
 
 
@@ -408,7 +406,7 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=127.0.0.1",
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                 "sample_ratio": 1,
                                 "service_name": "APISIX"
                             },

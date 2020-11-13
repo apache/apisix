@@ -124,12 +124,11 @@ local function send_span(pending_spans, report)
     })
 
     if not res then
-        core.log.error("failed to report request:", report.endpoint)
-        return nil, "failed to request: " .. err
+        return nil, "failed: " .. report.endpoint
     elseif res.status < 200 or res.status >= 300 then
-        core.log.error("failed to report request:", report.endpoint)
         return nil, "failed: " .. res.status .. " " .. res.reason
     end
+
    return true
 end
 
@@ -159,7 +158,7 @@ function _M.init_processor(self)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        send_span(pending_spans, self)
+        return send_span(pending_spans, self)
     end
 
     local processor, err = batch_processor:new(flush, process_conf)
