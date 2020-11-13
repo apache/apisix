@@ -24,7 +24,6 @@ local setmetatable = setmetatable
 local math = math
 local tostring = tostring
 local batch_processor = require("apisix.utils.batch-processor")
-local core = require("apisix.core")
 
 local _M = {}
 local mt = { __index = _M }
@@ -113,7 +112,7 @@ end
 
 local function send_span(pending_spans, report)
     local httpc = resty_http.new()
-    local res, err = httpc:request_uri(report.endpoint, {
+    local res = httpc:request_uri(report.endpoint, {
         method = "POST",
         headers = {
             ["content-type"] = "application/json",
