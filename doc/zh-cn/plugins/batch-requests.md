@@ -108,7 +108,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
---d '{
+--data '{
     "headers": {
         "Content-Type": "application/json",
         "admin-jwt":"xxxx"
