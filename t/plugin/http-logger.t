@@ -607,20 +607,22 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
                "127.0.0.1", 
                "127.0.0.1:1024", 
             }
-            for _, bad in ipairs(bad_uris) do
-                local ok, err = plugin.check_schema({uri = bad})
+            for _, bad_uri in ipairs(bad_uris) do
+                local ok, err = plugin.check_schema({uri = bad_uri})
                 if ok then
                     ngx.say("mismatched ", bad)
                 end
             end
 
             local good_uris = {
+               "http://127.0.0.1:1024/x?aa=b", 
+               "http://127.0.0.1:1024?aa=b", 
                "http://127.0.0.1:1024", 
                "http://x.con", 
                "https://x.con", 
             }
-            for _, good in ipairs(good_uris) do
-                local ok, err = plugin.check_schema({uri = good})
+            for _, good_uri in ipairs(good_uris) do
+                local ok, err = plugin.check_schema({uri = good_uri})
                 if not ok then
                     ngx.say("mismatched ", good)
                 end
