@@ -181,7 +181,7 @@ passed
 --- request
 GET /opentracing
 --- error_log
-Batch Processor[zipkin_report] failed to process entries: failed: connection refused
+Batch Processor[zipkin_report] failed to process entries: failed: http://127.0.0.1:9999/mock_zipkin connection refused
 [error]
 --- wait: 10
 
@@ -364,7 +364,7 @@ passed
 --- request
 GET /opentracing
 --- error_log
-Batch Processor[zipkin_report] failed to process entries: failed: connection refused
+Batch Processor[zipkin_report] failed to process entries: failed: http://127.0.0.1:9999/mock_zipkin connection refused
 [error]
 --- wait: 10
 

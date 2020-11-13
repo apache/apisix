@@ -24,6 +24,7 @@ local setmetatable = setmetatable
 local math = math
 local tostring = tostring
 local batch_processor = require("apisix.utils.batch-processor")
+local core = require("apisix.core")
 
 local _M = {}
 local mt = { __index = _M }
@@ -123,9 +124,11 @@ local function send_span(pending_spans, report)
     })
 
     if not res then
-        return nil, "failed: " .. err
+        core.log.error("report span error: ", err)
+        return nil, "failed: " .. report.endpoint
     elseif res.status < 200 or res.status >= 300 then
-        return nil, "failed: " .. res.status .. " " .. res.reason
+        return nil, "failed: " .. report.endpoint .. " "
+               .. res.status .. " " .. res.reason
     end
 
     return true
