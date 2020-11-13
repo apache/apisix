@@ -16,6 +16,7 @@
 --
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
+local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
 local pairs   = pairs
 
@@ -76,6 +77,19 @@ function _M.put(consumer_name, conf)
 
     local key = "/consumers/" .. consumer_name
     core.log.info("key: ", key)
+
+    local res, err = core.etcd.get(key)
+    if not res or (res.status ~= 200 and res.status ~= 404) then
+        core.log.error("failed to get consumer[", key, "] from etcd: ", err or res.status)
+        return 500, {error_msg = err}
+    end
+
+    if res.status == 404 then
+        utils.inject_timestamp(conf)
+    else
+        utils.inject_timestamp(conf, res.body)
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put consumer[", key, "]: ", err)

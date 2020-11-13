@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local upstreams = require("apisix.admin.upstreams")
+local utils = require("apisix.admin.utils")
 local tostring = tostring
 local type = type
 local loadstring = loadstring
@@ -147,6 +148,19 @@ function _M.put(id, conf, sub_path, args)
     end
 
     local key = "/routes/" .. id
+
+    local res, err = core.etcd.get(key)
+    if not res or (res.status ~= 200 and res.status ~= 404) then
+        core.log.error("failed to get route[", key, "] from etcd: ", err or res.status)
+        return 500, {error_msg = err}
+    end
+
+    if res.status == 404 then
+        utils.inject_timestamp(conf)
+    else
+        utils.inject_timestamp(conf, res.body)
+    end
+
     local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
         core.log.error("failed to put route[", key, "] to etcd: ", err)
@@ -181,6 +195,7 @@ function _M.post(id, conf, sub_path, args)
 
     local key = "/routes"
     -- core.log.info("key: ", key)
+    utils.inject_timestamp(conf)
     local res, err = core.etcd.push("/routes", conf, args.ttl)
     if not res then
         core.log.error("failed to post route[", key, "] to etcd: ", err)
@@ -252,6 +267,8 @@ function _M.patch(id, conf, sub_path, args)
     else
         node_value = core.table.merge(node_value, conf);
     end
+
+    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 

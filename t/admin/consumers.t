@@ -66,6 +66,13 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/consumers/jack'))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
             local code, body = t('/apisix/admin/consumers',
                  ngx.HTTP_PUT,
                  [[{
@@ -95,6 +102,12 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/consumers/jack'))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request

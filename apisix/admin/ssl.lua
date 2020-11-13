@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core              = require("apisix.core")
+local utils             = require("apisix.admin.utils")
 local tostring          = tostring
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
@@ -103,6 +104,20 @@ function _M.put(id, conf)
     end
 
     local key = "/ssl/" .. id
+
+    local res, err = core.etcd.get(key)
+    if not res or (res.status ~= 200 and res.status ~= 404) then
+        core.log.error("failed to get ssl[", key, "] from etcd: ",
+                       err or res.status)
+        return 500, {error_msg = err}
+    end
+
+    if res.status == 404 then
+        utils.inject_timestamp(conf)
+    else
+        utils.inject_timestamp(conf, res.body)
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put ssl[", key, "]: ", err)
@@ -151,6 +166,7 @@ function _M.post(id, conf)
 
     local key = "/ssl"
     -- core.log.info("key: ", key)
+    utils.inject_timestamp(conf)
     local res, err = core.etcd.push("/ssl", conf)
     if not res then
         core.log.error("failed to post ssl[", key, "]: ", err)
@@ -213,6 +229,8 @@ function _M.patch(id, conf)
     local modified_index = res_old.body.node.modifiedIndex
 
     node_value = core.table.merge(node_value, conf);
+
+    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new ssl conf: ", core.json.delay_encode(node_value, true))
 
