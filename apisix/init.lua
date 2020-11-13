@@ -365,8 +365,8 @@ function _M.http_access_phase()
         api_ctx.global_rules = router.global_rules
     end
 
+    local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
-        local uri = api_ctx.var.uri
         if str_byte(uri, #uri) == str_byte("/") then
             api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
             core.log.info("remove the end of uri '/', current uri: ",
@@ -374,10 +374,14 @@ function _M.http_access_phase()
         end
     end
 
-    local user_defined_route_matched = router.router_http.match(api_ctx)
-    if not user_defined_route_matched then
-        router.api.match(api_ctx)
+    if core.string.has_prefix(uri, "/apisix/") then
+        local matched = router.api.match(api_ctx)
+        if matched then
+            return
+        end
     end
+
+    router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then

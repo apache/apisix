@@ -20,7 +20,10 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     $block->set_value("no_error_log", "[error]");
-    $block->set_value("request", "GET /t");
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
 
     $block;
 });
@@ -52,3 +55,107 @@ __DATA__
     }
 --- response_body
 ok
+
+
+
+=== TEST 2: define route for /*
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 3: sign
+--- request
+GET /apisix/plugin/jwt/sign?key=user-key
+--- response_body_like eval
+qr/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\w+.\w+/
+
+
+
+=== TEST 4: delete /* and define route for /apisix/plugin/blah
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1', "DELETE")
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/apisix/plugin/blah"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: hit
+--- request
+GET /apisix/plugin/blah
+--- error_code: 401
+--- response_body
+{"message":"Missing JWT token in request"}
