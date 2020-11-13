@@ -125,7 +125,7 @@ done
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=127.0.0.1",
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                 "sample_ratio": 1,
                                 "service_name": "APISIX"
                             }
@@ -143,7 +143,7 @@ done
                         "value": {
                             "plugins": {
                                 "zipkin": {
-                                    "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=127.0.0.1",
+                                    "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                     "sample_ratio": 1,
                                     "service_name":"APISIX"
                                 }
@@ -180,13 +180,10 @@ passed
 === TEST 6: tiger zipkin
 --- request
 GET /opentracing
---- response_body
-opentracing
+--- error_log
+failed to report request:http://127.0.0.1:9999/mock_zipkin
+[error]
 --- wait: 5
---- grep_error_log eval
-qr/\[info\].*/
---- grep_error_log_out eval
-qr{batch report2endpoint ok}
 
 
 
@@ -200,7 +197,7 @@ qr{batch report2endpoint ok}
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin",
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                 "sample_ratio": 0.00001
                             }
                         },
@@ -256,7 +253,7 @@ GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
-batch report2endpoint ok
+[error]
 
 
 
@@ -318,7 +315,7 @@ GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
-batch report2endpoint ok
+[error]
 
 
 
@@ -332,7 +329,7 @@ batch report2endpoint ok
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=1.2.3.4",
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                 "sample_ratio": 1,
                                 "service_name": "apisix",
                                 "server_addr": "1.2.3.4"
@@ -368,11 +365,10 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- wait: 3
---- grep_error_log eval
-qr/\[info\].*/
---- grep_error_log_out eval
-qr{batch report2endpoint ok}
+--- error_log
+failed to report request:http://127.0.0.1:9999/mock_zipkin
+[error]
+--- wait: 5
 
 
 

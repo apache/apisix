@@ -124,12 +124,12 @@ local function send_span(pending_spans, report)
     })
 
     if not res then
+        core.log.error("failed to report request:", report.endpoint)
         return nil, "failed to request: " .. err
     elseif res.status < 200 or res.status >= 300 then
+        core.log.error("failed to report request:", report.endpoint)
         return nil, "failed: " .. res.status .. " " .. res.reason
     end
-
-    core.log.info("batch report2endpoint ok")
    return true
 end
 
