@@ -24,6 +24,7 @@ local setmetatable = setmetatable
 local math = math
 local tostring = tostring
 local batch_processor = require("apisix.utils.batch-processor")
+local core = require("apisix.core")
 
 local _M = {}
 local mt = { __index = _M }
@@ -128,6 +129,7 @@ local function send_span(pending_spans, report)
         return nil, "failed: " .. res.status .. " " .. res.reason
     end
 
+    core.log.info("batch report2endpoint ok")
    return true
 end
 

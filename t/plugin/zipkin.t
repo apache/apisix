@@ -182,10 +182,11 @@ passed
 GET /opentracing
 --- response_body
 opentracing
+--- wait: 5
 --- grep_error_log eval
 qr/\[info\].*/
 --- grep_error_log_out eval
-qr{report2endpoint ok}
+qr{batch report2endpoint ok}
 
 
 
@@ -255,7 +256,7 @@ GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
-report2endpoint ok
+batch report2endpoint ok
 
 
 
@@ -317,7 +318,7 @@ GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
-report2endpoint ok
+batch report2endpoint ok
 
 
 
@@ -367,10 +368,11 @@ passed
 GET /opentracing
 --- response_body
 opentracing
+--- wait: 3
 --- grep_error_log eval
 qr/\[info\].*/
 --- grep_error_log_out eval
-qr{report2endpoint ok}
+qr{batch report2endpoint ok}
 
 
 
