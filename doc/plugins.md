@@ -30,7 +30,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 ```
 
 Note: if you disable a plugin which has been configured as part of your rule (in the `plugins` field of `route`, etc.),
-the execution of it will be skipped.
+the its execution will be skipped.
 
 ### Hot reload in stand-alone mode
 
