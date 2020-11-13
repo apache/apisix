@@ -112,7 +112,7 @@ end
 
 local function send_span(pending_spans, report)
     local httpc = resty_http.new()
-    local res = httpc:request_uri(report.endpoint, {
+    local res, err = httpc:request_uri(report.endpoint, {
         method = "POST",
         headers = {
             ["content-type"] = "application/json",
@@ -123,12 +123,12 @@ local function send_span(pending_spans, report)
     })
 
     if not res then
-        return nil, "failed: " .. report.endpoint
+        return nil, "failed: " .. err
     elseif res.status < 200 or res.status >= 300 then
         return nil, "failed: " .. res.status .. " " .. res.reason
     end
 
-   return true
+    return true
 end
 
 function _M.init_processor(self)
@@ -150,7 +150,7 @@ function _M.init_processor(self)
         if batch_max_size == 1 then
             pending_spans, err = cjson.encode(entries[1])
         else
-           pending_spans, err = cjson.encode(entries)
+            pending_spans, err = cjson.encode(entries)
         end
 
         if not pending_spans then
