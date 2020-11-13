@@ -86,6 +86,39 @@ local function tab_is_array(t)
 end
 
 
+local function resolve_conf_var(conf)
+    for key, val in pairs(conf) do
+        if type(val) == "table" then
+            resolve_conf_var(val)
+        elseif type(val) == "string" then
+            local var_used = false
+            -- we use '${{var}}' because '$var' and '${var}' are taken
+            -- by Nginx
+            local new_val = val:gsub("%$%{%{([%w_]+)%}%}", function(var)
+                local v = os.getenv(var)
+                if v then
+                    var_used = true
+                    return v
+                end
+                error("failed to handle configuration: can't find environment variable " .. var)
+            end)
+
+            if var_used then
+                if tonumber(new_val) ~= nil then
+                    new_val = tonumber(new_val)
+                elseif new_val == "true" then
+                    new_val = true
+                elseif new_val == "false" then
+                    new_val = false
+                end
+            end
+
+            conf[key] = new_val
+        end
+    end
+end
+
+
 local function merge_conf(base, new_tab)
     for key, val in pairs(new_tab) do
         if type(val) == "table" then
@@ -138,6 +171,7 @@ local function read_yaml_conf()
             return nil, "invalid config.yaml file"
         end
 
+        resolve_conf_var(user_conf)
         merge_conf(default_conf, user_conf)
     end
 
