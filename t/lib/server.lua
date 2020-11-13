@@ -29,11 +29,13 @@ local function inject_headers()
     end
 end
 
+
 function _M.hello()
     local s = "hello world"
     ngx.header['Content-Length'] = #s + 1
     ngx.say(s)
 end
+
 
 function _M.hello_chunked()
     ngx.print("hell")
@@ -43,13 +45,16 @@ function _M.hello_chunked()
     ngx.say("orld")
 end
 
+
 function _M.hello1()
     ngx.say("hello1 world")
 end
 
+
 function _M.hello_()
     ngx.say("hello world")
 end
+
 
 function _M.server_port()
     ngx.print(ngx.var.server_port)
@@ -64,11 +69,13 @@ function _M.limit_conn()
     ngx.say("hello world")
 end
 
+
 function _M.plugin_proxy_rewrite()
     ngx.say("uri: ", ngx.var.uri)
     ngx.say("host: ", ngx.var.host)
     ngx.say("scheme: ", ngx.var.scheme)
 end
+
 
 function _M.plugin_proxy_rewrite_args()
     ngx.say("uri: ", ngx.var.uri)
@@ -78,14 +85,17 @@ function _M.plugin_proxy_rewrite_args()
     end
 end
 
+
 function _M.status()
     ngx.say("ok")
 end
+
 
 function _M.sleep1()
     ngx.sleep(1)
     ngx.say("ok")
 end
+
 
 function _M.ewma()
     if ngx.var.server_port == "1981"
@@ -96,6 +106,7 @@ function _M.ewma()
     end
     ngx.print(ngx.var.server_port)
 end
+
 
 function _M.uri()
     -- ngx.sleep(1)
@@ -114,6 +125,7 @@ function _M.uri()
 end
 _M.uri_plugin_proxy_rewrite = _M.uri
 _M.uri_plugin_proxy_rewrite_args = _M.uri
+
 
 function _M.old_uri()
     -- ngx.sleep(1)
@@ -136,6 +148,7 @@ function _M.opentracing()
     ngx.say("opentracing")
 end
 
+
 function _M.with_header()
     --split into multiple chunk
     ngx.say("hello")
@@ -143,9 +156,11 @@ function _M.with_header()
     ngx.say("!")
 end
 
+
 function _M.mock_skywalking_v2_service_register()
     ngx.say('[{"key":"APISIX","value":1}]')
 end
+
 
 function _M.mock_skywalking_v2_instance_register()
     ngx.req.read_body()
@@ -157,13 +172,16 @@ function _M.mock_skywalking_v2_instance_register()
     ngx.say(json_encode(ret))
 end
 
+
 function _M.mock_skywalking_v2_instance_heartbeat()
     ngx.say('skywalking heartbeat ok')
 end
 
+
 function _M.mock_skywalking_v2_segments()
     ngx.say('skywalking segments ok')
 end
+
 
 function _M.mock_zipkin()
     ngx.req.read_body()
@@ -201,6 +219,7 @@ function _M.mock_zipkin()
     end
 end
 
+
 function _M.wolf_rbac_login_rest()
     ngx.req.read_body()
     local data = ngx.req.get_body_data()
@@ -226,6 +245,7 @@ function _M.wolf_rbac_login_rest()
         userInfo={nickname="administrator",username="admin", id="100"}}}))
 end
 
+
 function _M.wolf_rbac_access_check()
     local headers = ngx.req.get_headers()
     local token = headers['x-rbac-token']
@@ -246,6 +266,7 @@ function _M.wolf_rbac_access_check()
     end
 end
 
+
 function _M.wolf_rbac_user_info()
     local headers = ngx.req.get_headers()
     local token = headers['x-rbac-token']
@@ -257,6 +278,7 @@ function _M.wolf_rbac_user_info()
     ngx.say(json_encode({ok=true,
                         data={ userInfo={nickname="administrator", username="admin", id="100"} }}))
 end
+
 
 function _M.wolf_rbac_change_pwd()
     ngx.req.read_body()
@@ -270,11 +292,13 @@ function _M.wolf_rbac_change_pwd()
     ngx.say(json_encode({ok=true, data={ }}))
 end
 
+
 function _M.wolf_rbac_custom_headers()
     local headers = ngx.req.get_headers()
     ngx.say('id:' .. headers['X-UserId'] .. ',username:' .. headers['X-Username']
             .. ',nickname:' .. headers['X-Nickname'])
 end
+
 
 function _M.websocket_handshake()
     local websocket = require "resty.websocket.server"
@@ -286,14 +310,17 @@ function _M.websocket_handshake()
 end
 _M.websocket_handshake_route = _M.websocket_handshake
 
+
 function _M.api_breaker()
     ngx.exit(tonumber(ngx.var.arg_code))
 end
+
 
 function _M.mysleep()
     ngx.sleep(tonumber(ngx.var.arg_seconds))
     ngx.say(ngx.var.arg_seconds)
 end
+
 
 local function print_uri()
     ngx.say(ngx.var.uri)
@@ -301,6 +328,7 @@ end
 for i = 1, 100 do
     _M["print_uri_" .. i] = print_uri
 end
+
 
 function _M.go()
     local action = string.sub(ngx.var.uri, 2)
@@ -313,6 +341,7 @@ function _M.go()
     return _M[action]()
 end
 
+
 function _M.headers()
     local args = ngx.req.get_uri_args()
     for name, val in pairs(args) do
@@ -323,10 +352,12 @@ function _M.headers()
     ngx.say("/headers")
 end
 
+
 function _M.log()
     ngx.req.read_body()
     local body = ngx.req.get_body_data()
     ngx.log(ngx.WARN, "request log: ", body or "nil")
 end
+
 
 return _M
