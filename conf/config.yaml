@@ -21,6 +21,13 @@
 #     host:
 #       - "http://127.0.0.1:2379"
 #
+# To configure via environment variables, you can use `${{VAR}}` syntax. For instance:
+#
+# etcd:
+#     host:
+#       - "http://${{ETCD_HOST}}:2379"
+#
+# If the configured environment variable can't be found, an error will be thrown.
 apisix:
   admin_key:
     -
