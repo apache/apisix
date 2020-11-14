@@ -144,6 +144,50 @@ fi
 
 echo "passed: change default env"
 
+# support environment variables
+echo '
+nginx_config:
+    envs:
+        - ${{var_test}}_${{FOO}}
+' > conf/config.yaml
+
+var_test=TEST FOO=bar make init
+
+if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables"
+    exit 1
+fi
+
+echo "passed: resolve variables"
+
+echo '
+nginx_config:
+    worker_rlimit_nofile: ${{nofile9}}
+' > conf/config.yaml
+
+nofile9=99999 make init
+
+if ! grep "worker_rlimit_nofile 99999;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables as integer"
+    exit 1
+fi
+
+echo "passed: resolve variables as integer"
+
+echo '
+apisix:
+    enable_admin: ${{admin}}
+' > conf/config.yaml
+
+admin=false make init
+
+if grep "location /apisix/admin" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables as boolean"
+    exit 1
+fi
+
+echo "passed: resolve variables as boolean"
+
 # check nameserver imported
 git checkout conf/config.yaml
 
