@@ -118,17 +118,9 @@ function _M.put(id, conf)
     local key = "/services/" .. id
     core.log.info("key: ", key)
 
-    local res, err = core.etcd.get(key)
-    if not res or (res.status ~= 200 and res.status ~= 404) then
-        core.log.error("failed to get service[", key, "] from etcd: ",
-                       err or res.status)
+    local ok, err = utils.inject_conf_with_prev_conf("service", key, conf)
+    if not ok then
         return 500, {error_msg = err}
-    end
-
-    if res.status == 404 then
-        utils.inject_timestamp(conf)
-    else
-        utils.inject_timestamp(conf, res.body)
     end
 
     local res, err = core.etcd.set(key, conf)
