@@ -48,7 +48,7 @@
 | clock_skew     | integer       | 可选   | 0           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
 | signed_headers | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
 | keep_headers | boolean | 可选   |      false        |           [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。 |
-| enable_encode | boolean | 可选   |      true        |           [ true, false ]                             | Whether to escape the uri parameter in the signature, for example: `params1=hello%2Cworld` is escaped, `params2=hello,world` is not escaped. true: means to escape the uri parameter in the signature, false: not to escape the uri parameter in the signature. |
+| enable_encode | boolean | 可选   |      true        |           [ true, false ]                             | 是否对签名中的 uri 参数进行转义,例如: `params1=hello%2Cworld` 进行了转义，`params2=hello,world` 没有进行转义。true: 表示对签名中的 uri 参数进行转义，false: 不对签名中的 uri 参数转义。 |
 
 ## 如何启用
 
