@@ -74,6 +74,11 @@ local consumer_schema = {
             type = "boolean",
             title = "whether to keep the http request header",
             default = false,
+        },
+        enable_encode = {
+            type = "boolean",
+            title = "Whether to escape the uri parameter",
+            default = true,
         }
     },
     required = {"access_key", "secret_key"},
@@ -175,6 +180,16 @@ local function get_consumer(access_key)
 end
 
 
+local function get_conf_field(access_key, field_name)
+    local consumer, err = get_consumer(access_key)
+    if err then
+        return false, err
+    end
+
+    return consumer.auth_conf[field_name]
+end
+
+
 local function generate_signature(ctx, secret_key, params)
     local canonical_uri = ctx.var.uri
     local canonical_query_string = ""
@@ -194,14 +209,28 @@ local function generate_signature(ctx, secret_key, params)
         end
         core.table.sort(keys)
 
+        local field_val = get_conf_field(params.access_key, "enable_encode")
+        core.log.info("enable_encode: ", field_val)
+
         for _, key in pairs(keys) do
             local param = args[key]
-            if type(param) == "table" then
-                for _, val in pairs(param) do
-                    core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(val))
+            -- whether to escape the uri parameters
+            if field_val then
+                if type(param) == "table" then
+                    for _, val in pairs(param) do
+                        core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(val))
+                    end
+                else
+                    core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(param))
                 end
             else
-                core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(param))
+                if type(param) == "table" then
+                    for _, val in pairs(param) do
+                        core.table.insert(query_tab, key .. "=" .. val)
+                    end
+                else                    
+                    core.table.insert(query_tab, key .. "=" .. param)
+                end
             end
         end
         canonical_query_string = core.table.concat(query_tab, "&")
@@ -296,16 +325,6 @@ local function validate(ctx, params)
 end
 
 
-local function get_keep_headers(access_key)
-    local consumer, err = get_consumer(access_key)
-    if err then
-        return false, err
-    end
-
-    return consumer.auth_conf.keep_headers
-end
-
-
 local function get_params(ctx)
     local params = {}
     local local_conf = core.config.local_conf()
@@ -359,7 +378,7 @@ local function get_params(ctx)
     params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
 
-    local keep_headers = get_keep_headers(params.access_key)
+    local keep_headers = get_conf_field(params.access_key, "keep_headers")
     core.log.info("keep_headers: ", keep_headers)
 
     if not keep_headers then
