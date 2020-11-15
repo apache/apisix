@@ -38,7 +38,7 @@ local lru_log_format = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
-        uri = {type = "string"},
+        uri = core.schema.uri_def,
         auth_header = {type = "string", default = ""},
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "http logger"},
