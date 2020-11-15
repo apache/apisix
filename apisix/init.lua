@@ -452,6 +452,8 @@ function _M.http_access_phase()
             end
 
             if upstream.value.enable_websocket then
+                core.log.warn("DEPRECATE: enable websocket in upstream will be removed soon. ",
+                              "Please enable it in route/service level.")
                 enable_websocket = true
             end
 
