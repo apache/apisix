@@ -288,3 +288,7 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
     ```
 
 2. Reload or restart APISIX
+
+## How could I only enable passive health check?
+
+To completely disable active health checks and only enable passive health check for an upstream, you need to set both `upstream.checks.active.healthy.interval` and `upstream.checks.active.unhealthy.interval` to 0.

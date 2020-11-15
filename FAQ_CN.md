@@ -258,3 +258,7 @@ etcd:
 APISIX使用waitdir接口监视目录的变更，timeout默认配置为30秒，即APISIX调用进程和etcd保持30秒的长连接。
 
 若APISIX进程调用该函数时，监听的目录没有更新，函数直接返回，长连接保持，调用进程可处理其他事件。30秒内有数据更新，etcd通过该函数返回更新结果，调用进程处理更新数据，30秒内无数据返回，到达超时时间30秒时，etcd通过该函数返回一条超时消息，调用进程处理超时信息，然后再次调用waitdir函数监听指定目录。APISIX通过以上过程实现配置的实时更新。
+
+## 如何只启用被动健康检查？
+
+要完全禁用上游的主动健康检查，只启用被动健康检查，需要将 `upstream.checks.active.health.interval` 和 `upstream.checks.active.unhealthy.interval` 都设置为0。
