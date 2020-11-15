@@ -131,7 +131,15 @@ end
 
 
 function _M.set_config_yaml(data)
-    local f = assert(io.open(os.getenv("TEST_NGINX_HTML_DIR") .. "/../conf/config.yaml", 'w'))
+    local fn
+    local profile = os.getenv("APISIX_PROFILE")
+    if profile then
+        fn = "config-" .. profile .. ".yaml"
+    else
+        fn = "config.yaml"
+    end
+
+    local f = assert(io.open(os.getenv("TEST_NGINX_HTML_DIR") .. "/../conf/" .. fn, 'w'))
     assert(f:write(data))
     f:close()
 end
