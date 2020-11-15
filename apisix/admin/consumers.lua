@@ -16,6 +16,7 @@
 --
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
+local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
 local pairs   = pairs
 
@@ -76,6 +77,12 @@ function _M.put(consumer_name, conf)
 
     local key = "/consumers/" .. consumer_name
     core.log.info("key: ", key)
+
+    local ok, err = utils.inject_conf_with_prev_conf("consumer", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put consumer[", key, "]: ", err)

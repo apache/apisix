@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
+local utils = require("apisix.admin.utils")
 local tostring = tostring
 local ipairs = ipairs
 local type = type
@@ -135,6 +136,12 @@ function _M.put(id, conf)
 
     local key = "/upstreams/" .. id
     core.log.info("key: ", key)
+
+    local ok, err = utils.inject_conf_with_prev_conf("upstream", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put upstream[", key, "]: ", err)
@@ -168,6 +175,7 @@ function _M.post(id, conf)
     end
 
     local key = "/upstreams"
+    utils.inject_timestamp(conf)
     local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post upstream[", key, "]: ", err)
@@ -264,6 +272,8 @@ function _M.patch(id, conf, sub_path)
     else
         new_value = core.table.merge(new_value, conf);
     end
+
+    utils.inject_timestamp(new_value, nil, conf)
 
     core.log.info("new value ", core.json.delay_encode(new_value, true))
 

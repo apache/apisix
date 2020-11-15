@@ -31,6 +31,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -57,6 +58,12 @@ __DATA__
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/upstreams/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -158,6 +165,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, message, res = t('/apisix/admin/upstreams',
                  ngx.HTTP_POST,
                  [[{
@@ -188,6 +196,12 @@ GET /t
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.node.key, #"/apisix/upstreams/" + 1)
+            local res = assert(etcd.get('/upstreams/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
             code, message = t('/apisix/admin/upstreams/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -652,6 +666,14 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+
+            local id = 1
+            local res = assert(etcd.get('/upstreams/' .. id))
+            local prev_create_time = res.body.node.value.create_time
+            local prev_update_time = res.body.node.value.update_time
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PATCH,
                 [[{
@@ -678,6 +700,12 @@ GET /t
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/upstreams/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -1806,7 +1834,115 @@ GET /t
 
 
 
-=== TEST 54: create upstream with create_time and update_time(id: 1)
+=== TEST 54: patch upstream(whole, create_time)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream",
+                    "create_time": 1705252779
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "desc": "new upstream",
+                            "create_time": 1705252779
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "compareAndSwap"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+
+            if code >= 300 then
+                return
+            end
+
+            local res = assert(etcd.get('/upstreams/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time == 1705252779, "create_time mismatched")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 55: patch upstream(whole, update_time)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "new upstream",
+                    "update_time": 1705252779
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "desc": "new upstream",
+                            "create_time": 1705252779
+                        },
+                        "key": "/apisix/upstreams/1"
+                    },
+                    "action": "compareAndSwap"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+
+            if code >= 300 then
+                return
+            end
+
+            local res = assert(etcd.get('/upstreams/1'))
+            local update_time = res.body.node.value.update_time
+            assert(update_time == 1705252779, "update_time mismatched")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 56: create upstream with create_time and update_time(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -1850,7 +1986,7 @@ passed
 
 
 
-=== TEST 55: delete test upstream(id: 1)
+=== TEST 57: delete test upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
