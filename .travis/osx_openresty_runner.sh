@@ -16,11 +16,7 @@
 # limitations under the License.
 #
 
-set -ex
-
-export_or_prefix() {
-    export OPENRESTY_PREFIX=$(brew --prefix openresty/brew/openresty-debug)
-}
+. ./.travis/common.sh
 
 before_install() {
     if [ "$TRAVIS_OS_NAME" == "" ]; then
@@ -63,7 +59,6 @@ script() {
     fi
 
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
     etcd &
     sleep 1
@@ -84,7 +79,8 @@ script() {
     sudo mkdir -p /usr/local/var/log/nginx/
     sudo touch /usr/local/var/log/nginx/error.log
     sudo chmod 777 /usr/local/var/log/nginx/error.log
-    APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t/admin/*.t
+    #APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t/admin/*.t
+    prove -Itest-nginx/lib -I./ -r t/admin/*.t
 }
 
 after_success() {
@@ -92,7 +88,8 @@ after_success() {
         exit 0
     fi
 
-    $PWD/deps/bin/luacov-coveralls
+    #$PWD/deps/bin/luacov-coveralls
+    echo "done"
 }
 
 case_opt=$1
