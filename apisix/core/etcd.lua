@@ -118,6 +118,15 @@ function _M.watch_format(v3res)
     v2res.body = {
         node = {}
     }
+
+    local compact_revision = v3res.result.compact_revision
+    if compact_revision and tonumber(compact_revision) > 0 then
+        -- When the revisions are compacted, there might be compacted changes
+        -- which are unsynced. So we need to do a fully sync.
+        -- TODO: cover this branch in CI
+        return nil, "compacted"
+    end
+
     for i, event in ipairs(v3res.result.events) do
         v2res.body.node[i] = kvs_to_node(event.kv)
         if event.type == "DELETE" then
