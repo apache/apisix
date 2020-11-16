@@ -1272,7 +1272,7 @@ GET /apisix/admin/schema/plugins/hmac-auth
 --- request
 GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer
 --- response_body
-{"title":"work with consumer object","additionalProperties":false,"required":["access_key","secret_key"],"properties":{"clock_skew":{"default":0,"type":"integer"},"enable_encode":{"title":"Whether to escape the uri parameter","default":true,"type":"boolean"},"keep_headers":{"title":"whether to keep the http request header","default":false,"type":"boolean"},"secret_key":{"minLength":1,"maxLength":256,"type":"string"},"algorithm":{"type":"string","default":"hmac-sha256","enum":["hmac-sha1","hmac-sha256","hmac-sha512"]},"signed_headers":{"items":{"minLength":1,"maxLength":50,"type":"string"},"type":"array"},"access_key":{"minLength":1,"maxLength":256,"type":"string"}},"type":"object"}
+{"title":"work with consumer object","additionalProperties":false,"required":["access_key","secret_key"],"properties":{"clock_skew":{"default":0,"type":"integer"},"encode_uri_params":{"title":"Whether to escape the uri parameter","default":true,"type":"boolean"},"keep_headers":{"title":"whether to keep the http request header","default":false,"type":"boolean"},"secret_key":{"minLength":1,"maxLength":256,"type":"string"},"algorithm":{"type":"string","default":"hmac-sha256","enum":["hmac-sha1","hmac-sha256","hmac-sha512"]},"signed_headers":{"items":{"minLength":1,"maxLength":50,"type":"string"},"type":"array"},"access_key":{"minLength":1,"maxLength":256,"type":"string"}},"type":"object"}
 --- no_error_log
 [error]
 
@@ -1324,7 +1324,7 @@ passed
 
 
 
-=== TEST 36: enable_encode field is true, the signature of uri enables escaping
+=== TEST 36: encode_uri_params field is true, the signature of uri enables escaping
 --- config
     location /t {
         content_by_lua_block {
@@ -1479,7 +1479,7 @@ passed
 
 
 
-=== TEST 39: enable_encode field is false, uri’s signature is enabled for escaping
+=== TEST 39: encode_uri_params field is false, uri’s signature is enabled for escaping
 --- config
     location /t {
         content_by_lua_block {
@@ -1492,7 +1492,7 @@ passed
                         "hmac-auth": {
                             "access_key": "my-access-key6",
                             "secret_key": "my-secret-key6",
-                            "enable_encode": false
+                            "encode_uri_params": false
                         }
                     }
                 }]]

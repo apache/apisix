@@ -75,7 +75,7 @@ local consumer_schema = {
             title = "whether to keep the http request header",
             default = false,
         },
-        enable_encode = {
+        encode_uri_params = {
             type = "boolean",
             title = "Whether to escape the uri parameter",
             default = true,
@@ -209,13 +209,13 @@ local function generate_signature(ctx, secret_key, params)
         end
         core.table.sort(keys)
 
-        local field_val = get_conf_field(params.access_key, "enable_encode")
-        core.log.info("enable_encode: ", field_val)
+        local encode_or_not = get_conf_field(params.access_key, "encode_uri_params")
+        core.log.info("encode_uri_params: ", encode_or_not)
 
         for _, key in pairs(keys) do
             local param = args[key]
-            -- whether to escape the uri parameters
-            if field_val then
+            -- whether to encode the uri parameters
+            if encode_or_not then
                 if type(param) == "table" then
                     for _, val in pairs(param) do
                         core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(val))
