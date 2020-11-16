@@ -71,15 +71,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "access_key_id": "your_access_key_id",
             "access_key_secret": "your_access_key_secret",
             "timeout": 30000
-            }
-       },
+        }
+    },
     "upstream": {
         "type": "roundrobin",
         "nodes": {
             "127.0.0.1:1980": 1
         }
-      },
-      "uri": "/hello"
+    },
+    "uri": "/hello"
 }'
 
 ```
