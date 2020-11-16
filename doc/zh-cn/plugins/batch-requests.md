@@ -44,7 +44,7 @@
 
 ## 接口
 
-插件会增加 `/apisix/batch-requests` 这个接口，你可能需要通过 [interceptors](plugin-interceptors.md)
+插件会增加 `/apisix/batch-requests` 这个接口，你可能需要通过 [interceptors](../../plugin-interceptors.md)
 来保护它。
 
 ## 如何启用
@@ -108,7 +108,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
---d '{
+--data '{
     "headers": {
         "Content-Type": "application/json",
         "admin-jwt":"xxxx"

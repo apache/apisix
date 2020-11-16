@@ -66,7 +66,7 @@ passed
 
 
 
-=== TEST 2: sanity, batch_max_size=1
+=== TEST 2: sanity, batch_max_size=1 and concat_method is new_line
 --- config
     location /t {
         content_by_lua_block {
@@ -118,12 +118,208 @@ hello world
 --- wait: 0.5
 --- no_error_log
 [error]
---- error_log
-request log: {
+--- error_log eval
+qr/request log: \{"host":"localhost","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\}/
 
 
 
-=== TEST 4: remove plugin metadata
+=== TEST 4: sanity, batch_max_size=2 and concat_method is new_line
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1980/log",
+                                "batch_max_size": 2,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "concat_method": "new_line"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: hit route and report http logger
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+
+        for i = 1, 2 do
+            t('/hello', ngx.HTTP_GET)
+        end
+
+        ngx.sleep(3)
+        ngx.say("done")
+    }
+}
+--- request
+GET /t
+--- error_code: 200
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/"host":"127.0.0.1","\@timestamp":/
+--- grep_error_log_out
+"host":"127.0.0.1","@timestamp":
+"host":"127.0.0.1","@timestamp":
+
+
+
+=== TEST 6: sanity, batch_max_size=1 and concat_method is json
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1980/log",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "concat_method": "json"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: hit route and report http logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- no_error_log
+[error]
+--- error_log eval
+qr/request log: \{"host":"localhost","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\}/
+
+
+
+=== TEST 8: sanity, batch_max_size=2 and concat_method is json
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1980/log",
+                                "batch_max_size": 2,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "concat_method": "json"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: hit route and report http logger
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+
+        for i = 1, 2 do
+            t('/hello', ngx.HTTP_GET)
+        end
+
+        ngx.sleep(3)
+        ngx.say("done")
+    }
+}
+--- request
+GET /t
+--- error_code: 200
+--- no_error_log
+[error]
+--- error_log eval
+qr/request log: \[\{"host":"127.0.0.1","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\},\{"host":"127.0.0.1","\@timestamp":.*,"client_ip":"127.0.0.1","route_id":"1"\}\]/
+
+
+
+=== TEST 10: remove plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -131,6 +327,29 @@ request log: {
             local code, body = t('/apisix/admin/plugin_metadata/http-logger',
                 ngx.HTTP_DELETE
             )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: remove route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
 
             if code >= 300 then
                 ngx.status = code

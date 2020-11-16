@@ -26,9 +26,17 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
+    additionalProperties = false,
+    properties = {},
+}
+
+local consumer_schema = {
+    type = "object",
+    additionalProperties = false,
     properties = {
         key = {type = "string"},
-    }
+    },
+    required = {"key"},
 }
 
 
@@ -38,6 +46,7 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema,
 }
 
 
@@ -50,9 +59,7 @@ do
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            if consumer.auth_conf.key then
-                consumer_ids[consumer.auth_conf.key] = consumer
-            end
+            consumer_ids[consumer.auth_conf.key] = consumer
         end
 
         return consumer_ids
@@ -61,8 +68,12 @@ do
 end -- do
 
 
-function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_CONSUMER then
+        return core.schema.check(consumer_schema, conf)
+    else
+        return core.schema.check(schema, conf)
+    end
 end
 
 

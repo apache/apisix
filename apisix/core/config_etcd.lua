@@ -290,6 +290,13 @@ local function sync_data(self)
     log.info("res: ", json.delay_encode(dir_res, true))
 
     if not dir_res then
+        if err == "compacted" then
+            self.need_reload = true
+            log.warn("waitdir [", self.key, "] err: ", err,
+                     ", need to fully reload")
+            return false
+        end
+
         return false, err
     end
 

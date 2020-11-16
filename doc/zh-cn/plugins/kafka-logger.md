@@ -43,8 +43,8 @@
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
 | broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
 | kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
-| key              | string  | 必须   |                |         | 发送数据的超时时间。                             |
-| timeout          | integer | 可选   | 3              | [1,...] | 用于加密消息的密钥。                             |
+| key              | string  | 必须   |                |         | 用于加密消息的密钥。                             |
+| timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
 | name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
 | meta_format       | string  | 可选   | "default"      | 枚举：`default`，`origin`| `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](#meta_format-参考示例)|
 | batch_max_size   | integer | 可选   | 1000           | [1,...] | 每批的最大大小                                   |

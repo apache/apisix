@@ -144,6 +144,50 @@ fi
 
 echo "passed: change default env"
 
+# support environment variables
+echo '
+nginx_config:
+    envs:
+        - ${{var_test}}_${{FOO}}
+' > conf/config.yaml
+
+var_test=TEST FOO=bar make init
+
+if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables"
+    exit 1
+fi
+
+echo "passed: resolve variables"
+
+echo '
+nginx_config:
+    worker_rlimit_nofile: ${{nofile9}}
+' > conf/config.yaml
+
+nofile9=99999 make init
+
+if ! grep "worker_rlimit_nofile 99999;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables as integer"
+    exit 1
+fi
+
+echo "passed: resolve variables as integer"
+
+echo '
+apisix:
+    enable_admin: ${{admin}}
+' > conf/config.yaml
+
+admin=false make init
+
+if grep "location /apisix/admin" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables as boolean"
+    exit 1
+fi
+
+echo "passed: resolve variables as boolean"
+
 # check nameserver imported
 git checkout conf/config.yaml
 
@@ -441,6 +485,28 @@ if [ $count -ne 1 ]; then
 fi
 
 echo "passed: using env to set worker processes"
+
+# set worker processes with env
+git checkout conf/config.yaml
+
+make init
+
+count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
+if [ $count -eq 0 ]; then
+    echo "failed: ssl_session_tickets is off when ssl.ssl_session_tickets is false."
+    exit 1
+fi
+
+sed -i 's/ssl_session_tickets: false/ssl_session_tickets: true/' conf/config-default.yaml
+make init
+
+count=`grep -c "ssl_session_tickets on;" conf/nginx.conf || true `
+if [ $count -eq 0 ]; then
+    echo "failed: ssl_session_tickets is on when ssl.ssl_session_tickets is true."
+    exit 1
+fi
+
+echo "passed: disable ssl_session_tickets by default"
 
 # access log with JSON format
 
