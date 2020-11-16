@@ -55,7 +55,6 @@ end
 
 function _M.new(up_nodes, upstream)
     local str_null = str_char(0)
-    local last_server_index
 
     local servers, nodes = {}, {}
     for serv, weight in pairs(up_nodes) do
@@ -70,11 +69,11 @@ function _M.new(up_nodes, upstream)
         upstream = upstream,
         get = function (ctx)
             local id
-            if ctx.balancer_try_count > 1 then
-                id, last_server_index = picker:next(last_server_index)
+            if ctx.balancer_try_count > 1 and ctx.last_server_index then
+                id, ctx.last_server_index = picker:next(ctx.last_server_index)
             else
                 local chash_key = fetch_chash_hash_key(ctx, upstream)
-                id, last_server_index = picker:find(chash_key)
+                id, ctx.last_server_index = picker:find(chash_key)
             end
             -- core.log.warn("chash id: ", id, " val: ", servers[id])
             return servers[id]
