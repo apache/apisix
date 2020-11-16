@@ -179,7 +179,7 @@ plugins:                          # plugin list
   - key-auth
   - basic-auth
   - prometheus
-  - node-status
+  #- node-status
   - jwt-auth
   - zipkin
   - ip-restriction
