@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,24 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# If you want to set the specified configuration value, you can set the new
-# in this file. For example if you want to specify the etcd address:
-#
-# etcd:
-#     host:
-#       - "http://127.0.0.1:2379"
-#
-# To configure via environment variables, you can use `${{VAR}}` syntax. For instance:
-#
-# etcd:
-#     host:
-#       - "http://${{ETCD_HOST}}:2379"
-#
-# If the configured environment variable can't be found, an error will be thrown.
-apisix:
-  admin_key:
-    -
-      name: "admin"
-      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please
-                                            # update it when you deploy to production environment
-      role: admin
+
+wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
+tar -xf v2.4.4.tar.gz
+cd luarocks-2.4.4 || exit
+./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
+make build > build.log 2>&1 || (cat build.log && exit 1)
+sudo make install > build.log 2>&1 || (cat build.log && exit 1)
+cd .. || exit
+rm -rf luarocks-2.4.4

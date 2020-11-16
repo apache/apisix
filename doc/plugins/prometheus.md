@@ -30,7 +30,7 @@ none.
 ## API
 
 This plugin will add `/apisix/prometheus/metrics` to expose the metrics.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
+You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How to enable it
 

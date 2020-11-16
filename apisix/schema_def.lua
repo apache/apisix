@@ -54,6 +54,10 @@ local ip_def = {
 }
 _M.ip_def = ip_def
 
+
+_M.uri_def = {type = "string", pattern = [=[^[^\/]+:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?]=]}
+
+
 local timestamp_def = {
     type = "integer",
 }
@@ -73,6 +77,13 @@ local label_value_def = {
     minLength = 1
 }
 _M.label_value_def = label_value_def
+
+
+local rule_name_def = {
+    type = "string",
+    maxLength = 100,
+    minLength = 1,
+}
 
 
 local health_checker = {
@@ -341,10 +352,6 @@ local upstream_schema = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
         },
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean"
-        },
         labels = {
             description = "key/value pairs to specify attributes",
             type = "object",
@@ -364,9 +371,9 @@ local upstream_schema = {
             default = "pass"
         },
         upstream_host = host_def,
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
-        service_name = {type = "string", maxLength = 50},
+        service_name = rule_name_def,
         id = id_schema
     },
     anyOf = {
@@ -409,7 +416,7 @@ _M.route = {
             },
             uniqueItems = true,
         },
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         priority = {type = "integer", default = 0},
 
@@ -475,6 +482,12 @@ _M.route = {
         service_protocol = {
             enum = {"grpc", "http"}
         },
+
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
+
         id = id_schema,
     },
     anyOf = {
@@ -505,7 +518,7 @@ _M.service = {
         plugins = plugins_schema,
         upstream = upstream_schema,
         upstream_id = id_schema,
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         script = {type = "string", minLength = 10, maxLength = 102400},
         labels = {
@@ -517,7 +530,12 @@ _M.service = {
             maxProperties = 16
         },
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
+
     },
     additionalProperties = false,
 }

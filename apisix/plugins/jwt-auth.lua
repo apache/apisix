@@ -53,7 +53,7 @@ local consumer_schema = {
             enum = {"HS256", "HS512", "RS256"},
             default = "HS256"
         },
-        exp = {type = "integer", minimum = 1},
+        exp = {type = "integer", minimum = 1, default = 86400},
         base64_secret = {
             type = "boolean",
             default = false
@@ -121,10 +121,6 @@ function _M.check_schema(conf, schema_type)
             if not conf.private_key then
                 return false, "missing valid private key"
             end
-        end
-
-        if not conf.exp then
-            conf.exp = 60 * 60 * 24
         end
     end
 

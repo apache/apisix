@@ -29,7 +29,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.http-logger")
-            local ok, err = plugin.check_schema({uri = "127.0.0.1"})
+            local ok, err = plugin.check_schema({uri = "http://127.0.0.1"})
             if not ok then
                 ngx.say(err)
             end
@@ -51,7 +51,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.http-logger")
-            local ok, err = plugin.check_schema({uri = "127.0.0.1",
+            local ok, err = plugin.check_schema({uri = "http://127.0.0.1",
                                                  auth_header = "Basic 123",
                                                  timeout = 3,
                                                  name = "http-logger",
@@ -595,3 +595,45 @@ hello1 world
 --- error_log
 Batch Processor[http logger] failed to process entries: failed to connect to host[127.0.0.1] port[9991] connection refused
 --- wait: 1.5
+
+
+
+=== TEST 16: check uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.http-logger")
+            local bad_uris = {
+               "127.0.0.1", 
+               "127.0.0.1:1024", 
+            }
+            for _, bad_uri in ipairs(bad_uris) do
+                local ok, err = plugin.check_schema({uri = bad_uri})
+                if ok then
+                    ngx.say("mismatched ", bad)
+                end
+            end
+
+            local good_uris = {
+               "http://127.0.0.1:1024/x?aa=b", 
+               "http://127.0.0.1:1024?aa=b", 
+               "http://127.0.0.1:1024", 
+               "http://x.con", 
+               "https://x.con", 
+            }
+            for _, good_uri in ipairs(good_uris) do
+                local ok, err = plugin.check_schema({uri = good_uri})
+                if not ok then
+                    ngx.say("mismatched ", good)
+                end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]

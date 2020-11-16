@@ -17,7 +17,7 @@
 #
 -->
 
-- [中文](/doc/zh-cn/plugins/proxy-cache.md)
+- [中文](../zh-cn/plugins/proxy-cache.md)
 
 # proxy-cache
 

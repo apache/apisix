@@ -45,7 +45,7 @@ None
 ## API
 
 This plugin will add `/apisix/batch-requests` as the endpoint.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
+You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How To Enable
 
@@ -110,7 +110,7 @@ You can pass your request detail to batch API( `/apisix/batch-requests` ), `apis
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
---d '{
+--data '{
     "headers": {
         "Content-Type": "application/json",
         "admin-jwt":"xxxx"

@@ -14,24 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# If you want to set the specified configuration value, you can set the new
-# in this file. For example if you want to specify the etcd address:
-#
-# etcd:
-#     host:
-#       - "http://127.0.0.1:2379"
-#
-# To configure via environment variables, you can use `${{VAR}}` syntax. For instance:
-#
-# etcd:
-#     host:
-#       - "http://${{ETCD_HOST}}:2379"
-#
-# If the configured environment variable can't be found, an error will be thrown.
-apisix:
-  admin_key:
-    -
-      name: "admin"
-      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please
-                                            # update it when you deploy to production environment
-      role: admin
+
+set -ex
+
+export_or_prefix() {
+    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
+    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+}
+
+create_lua_deps() {
+    echo "Create lua deps cache"
+
+    make deps
+    # maybe reopen this feature later
+    # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
+
+    sudo rm -rf build-cache/deps
+    sudo cp -r deps build-cache/
+    sudo cp rockspec/apisix-master-0.rockspec build-cache/
+}

@@ -24,9 +24,10 @@ local _M = {
 
 function _M.yaml_path(self, file_name)
     local file_path = self.apisix_home  .. "conf/" .. file_name
-    if self.profile then
+    if self.profile and file_name ~= "config-default" then
         file_path = file_path .. "-" .. self.profile
     end
+
     return file_path .. ".yaml"
 end
 

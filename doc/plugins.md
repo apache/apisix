@@ -21,13 +21,16 @@
 
 ## Hot reload
 
-APISIX plug-ins are hot-loaded. No matter you add, delete or modify plug-ins, you don't need to restart the service.
+APISIX plugins are hot-loaded. No matter you add, delete or modify plugins, you don't need to restart the service.
 
 If your APISIX node has the Admin API turned on, just send an HTTP request through admin API:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
 ```
+
+Note: if you disable a plugin which has been configured as part of your rule (in the `plugins` field of `route`, etc.),
+the its execution will be skipped.
 
 ### Hot reload in stand-alone mode
 

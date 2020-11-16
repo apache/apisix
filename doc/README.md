@@ -58,7 +58,6 @@
 * [key-auth](plugins/key-auth.md): User authentication based on Key Authentication.
 * [JWT-auth](plugins/jwt-auth.md): User authentication based on [JWT](https://jwt.io/) (JSON Web Tokens) Authentication.
 * [basic-auth](plugins/basic-auth.md): User authentication based on Basic Authentication.
-* [oauth](plugins/oauth.md): Provides OAuth 2 authentication and introspection.
 * [authz-keycloak](plugins/authz-keycloak.md): Authorization with Keycloak Identity Server.
 * [wolf-rbac](plugins/wolf-rbac.md) User Authentication and Authorization based on *RBAC*.
 * [openid-connect](plugins/openid-connect.md)
@@ -100,8 +99,6 @@
 ### AWS
 
 The recommended approach is to deploy APISIX with [AWS CDK](https://aws.amazon.com/cdk/) on [AWS Fargate](https://aws.amazon.com/fargate/) which helps you decouple the APISIX layer and the upstream layer on top of a fully-managed and secure serverless container compute environment with autoscaling capabilities.
-
-See [this guide](https://github.com/pahud/cdk-samples/blob/master/typescript/apisix/README.md) by [Pahud Hsieh](https://github.com/pahud) and learn how to provision the recommended architecture 100% in AWS CDK.
 
 ### Kubernetes
 
