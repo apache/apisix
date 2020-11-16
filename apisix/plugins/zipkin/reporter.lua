@@ -124,8 +124,9 @@ local function send_span(pending_spans, report)
     })
 
     if not res then
-        core.log.error("report span error: ", err)
-        return nil, "failed: " .. report.endpoint
+        -- for zipkin test
+        core.log.error("report zipkin span failed")
+        return nil, "failed: " .. err .. ", url: " .. report.endpoint
     elseif res.status < 200 or res.status >= 300 then
         return nil, "failed: " .. report.endpoint .. " "
                .. res.status .. " " .. res.reason
