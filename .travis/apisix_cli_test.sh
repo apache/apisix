@@ -29,6 +29,8 @@ clean_up() {
 
 trap clean_up EXIT
 
+unset APISIX_PROFILE
+
 git checkout conf/config.yaml
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
