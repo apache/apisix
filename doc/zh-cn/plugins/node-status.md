@@ -17,7 +17,7 @@
 #
 -->
 
-
+- [English](../../plugins/node-status.md)
 
 # 目录
 
