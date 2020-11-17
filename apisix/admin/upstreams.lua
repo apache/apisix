@@ -158,7 +158,7 @@ function _M.get(id)
         key = key .. "/" .. id
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get upstream[", key, "]: ", err)
         return 500, {error_msg = err}

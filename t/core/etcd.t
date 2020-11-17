@@ -333,3 +333,41 @@ Host: foo.com
 --- no_error_log
 [error]
 --- timeout: 20
+
+
+
+=== TEST 5: get single
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/ab", "ab"))
+            local res, err = etcd.get("/a")
+            ngx.status = res.status
+        }
+    }
+--- request
+GET /t
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: get prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/ab", "ab"))
+            local res, err = etcd.get("/a", true)
+            ngx.status = res.status
+            ngx.say(res.body.node.value)
+        }
+    }
+--- request
+GET /t
+--- response_body
+ab
+--- no_error_log
+[error]
