@@ -140,6 +140,7 @@ plugin_attr:
 location /t {
     content_by_lua_block {
         local core = require "apisix.core"
+        ngx.sleep(0.1)
         local data = [[
 apisix:
   node_listen: 1984

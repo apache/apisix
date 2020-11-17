@@ -29,6 +29,8 @@ clean_up() {
 
 trap clean_up EXIT
 
+unset APISIX_PROFILE
+
 git checkout conf/config.yaml
 
 # check 'Server: APISIX' is not in nginx.conf. We already added it in Lua code.
@@ -264,7 +266,7 @@ fi
 
 make run
 
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: failed to enabled https for admin"
     exit 1
@@ -338,7 +340,12 @@ echo "passed: empty allow_admin in conf/config.yaml"
 # check the 'client_max_body_size' in 'nginx.conf' .
 
 git checkout conf/config.yaml
-sed -i 's/client_max_body_size: 0/client_max_body_size: 512m/'  conf/config-default.yaml
+
+echo '
+nginx_config:
+    http:
+        client_max_body_size: 512m
+' > conf/config.yaml
 
 make init
 
@@ -348,8 +355,6 @@ if ! grep -E "client_max_body_size 512m" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: client_max_body_size in nginx.conf is ok"
-
-git checkout conf/config-default.yaml
 
 # check worker processes number is configurable.
 
@@ -497,7 +502,13 @@ if [ $count -eq 0 ]; then
     exit 1
 fi
 
-sed -i 's/ssl_session_tickets: false/ssl_session_tickets: true/' conf/config-default.yaml
+echo '
+apisix:
+    ssl:
+        enable: true
+        ssl_session_tickets: true
+' > conf/config.yaml
+
 make init
 
 count=`grep -c "ssl_session_tickets on;" conf/nginx.conf || true `
