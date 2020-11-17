@@ -37,7 +37,7 @@ __DATA__
                 res.status = code
             end
 
-            ngx.print(core.json.encode(res.body))
+            ngx.print(require("toolkit.json").encode(res.body))
             ngx.sleep(1)
         }
     }

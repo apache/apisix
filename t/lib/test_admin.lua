@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local http              = require("resty.http")
-local json              = require("cjson.safe")
+local json              = require("toolkit.json")
 local core              = require("apisix.core")
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64

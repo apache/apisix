@@ -84,7 +84,7 @@ location /t {
                 for _, conf_value in config_util.iterate_values(plugins_conf.values) do
                     core.table.insert_tail(plugins, unpack(conf_value.value))
                 end
-                ngx.log(ngx.WARN, core.json.encode(plugins))
+                ngx.log(ngx.WARN, require("toolkit.json").encode(plugins))
             end,
         })
         if not plugins_conf then

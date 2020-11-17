@@ -51,13 +51,13 @@ __DATA__
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body
-{"whitelist":["10.255.254.0\/24","192.168.0.0\/16"]}
+{"whitelist":["10.255.254.0/24","192.168.0.0/16"]}
 --- no_error_log
 [error]
 
@@ -79,7 +79,7 @@ GET /t
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
@@ -107,7 +107,7 @@ qr/invalid ip address: 10.255.256.0\/24/
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
