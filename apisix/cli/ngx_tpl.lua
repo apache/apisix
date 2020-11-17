@@ -171,12 +171,12 @@ http {
     lua_regex_match_limit 100000;
     lua_regex_cache_max_entries 8192;
 
-    {% if http.access_log_switch == "off" then %}
-    access_log off;
-    {% else %}
+    {% if http.enable_access_log then %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
+    {% else %}
+    access_log off;
     {% end %}
     open_file_cache  max=1000 inactive=60;
     client_max_body_size {* http.client_max_body_size *};
