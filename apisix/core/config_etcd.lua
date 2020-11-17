@@ -71,7 +71,7 @@ local function getkey(etcd_cli, key)
         return nil, "failed to get key from etcd"
     end
 
-    res, err = etcd_apisix.get_format(res, key)
+    res, err = etcd_apisix.get_format(res, key, true)
     if not res then
         return nil, err
     end
@@ -95,7 +95,7 @@ local function readdir(etcd_cli, key)
         return nil, "failed to read etcd dir"
     end
 
-    res, err = etcd_apisix.get_format(res, key .. "/")
+    res, err = etcd_apisix.get_format(res, key .. '/', true)
     if not res then
         return nil, err
     end
