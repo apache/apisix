@@ -120,7 +120,6 @@ __DATA__
        }
 --- request
 GET /t
---- error_code: 200
 --- response_body
 passed
 --- no_error_log

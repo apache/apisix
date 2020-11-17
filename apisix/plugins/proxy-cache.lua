@@ -35,6 +35,7 @@ local schema = {
         cache_zone = {
             type = "string",
             minLength = 1,
+            maxLength = 100,
             default = "disk_cache_one",
         },
         cache_key = {
