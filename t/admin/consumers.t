@@ -72,6 +72,7 @@ passed
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
+            ngx.sleep(1)
 
             local code, body = t('/apisix/admin/consumers',
                  ngx.HTTP_PUT,

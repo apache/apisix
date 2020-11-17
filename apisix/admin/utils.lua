@@ -25,11 +25,11 @@ local function inject_timestamp(conf, prev_conf, patch_conf)
     if not conf.create_time then
         if prev_conf and prev_conf.node.value.create_time then
             conf.create_time = prev_conf.node.value.create_time
+        else
+            -- As we don't know existent data's create_time, we have to pretend
+            -- they are created now.
+            conf.create_time = ngx_time()
         end
-
-        -- As we don't know existent data's create_time, we have to pretend
-        -- they are created now.
-        conf.create_time = ngx_time()
     end
 
     -- For PATCH request, the modification is passed as 'patch_conf'
