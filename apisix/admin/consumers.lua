@@ -99,7 +99,7 @@ function _M.get(consumer_name)
         key = key .. "/" .. consumer_name
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not consumer_name)
     if not res then
         core.log.error("failed to get consumer[", key, "]: ", err)
         return 500, {error_msg = err}

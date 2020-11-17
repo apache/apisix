@@ -82,7 +82,9 @@ local function not_found(res)
 end
 
 
-function _M.get_format(res, realkey)
+-- When `is_dir` is true, returns the value of both the dir key and its descendants.
+-- Otherwise, return the value of key only.
+function _M.get_format(res, real_key, is_dir)
     if res.body.error == "etcdserver: user name is empty" then
         return nil, "insufficient credentials code: 401"
     end
@@ -92,17 +94,28 @@ function _M.get_format(res, realkey)
     if not res.body.kvs then
         return not_found(res)
     end
+
     res.body.action = "get"
 
-    -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
-    -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
-    res.body.node = kvs_to_node(res.body.kvs[1])
-    if not res.body.kvs[1].value then
-        -- remove last "/" when necesary
-        if string.sub(res.body.node.key, -1, -1) == "/" then
-            res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+    if not is_dir then
+        local key = res.body.kvs[1].key
+        if key ~= real_key then
+            return not_found(res)
         end
-        res = kvs_to_nodes(res)
+
+        res.body.node = kvs_to_node(res.body.kvs[1])
+
+    else
+        -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
+        -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
+        res.body.node = kvs_to_node(res.body.kvs[1])
+        if not res.body.kvs[1].value then
+            -- remove last "/" when necesary
+            if string.byte(res.body.node.key, -1) == 47 then
+                res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+            end
+            res = kvs_to_nodes(res)
+        end
     end
 
     res.body.kvs = nil
@@ -138,20 +151,22 @@ function _M.watch_format(v3res)
 end
 
 
-function _M.get(key)
+function _M.get(key, is_dir)
     local etcd_cli, prefix, err = new()
     if not etcd_cli then
         return nil, err
     end
 
+    key = prefix .. key
+
     -- in etcd v2, get could implicitly turn into readdir
     -- while in v3, we need to do it explicitly
-    local res, err = etcd_cli:readdir(prefix .. key)
+    local res, err = etcd_cli:readdir(key)
     if not res then
         return nil, err
     end
 
-    return _M.get_format(res, prefix .. key)
+    return _M.get_format(res, key, is_dir)
 end
 
 
