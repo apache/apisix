@@ -1427,7 +1427,7 @@ GET /t
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
-                 require("cjson").encode({name = ("1"):rep(101)})
+                 require("toolkit.json").encode({name = ("1"):rep(101)})
                 )
 
             ngx.status = code

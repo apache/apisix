@@ -30,7 +30,7 @@ add_block_preprocessor(sub {
     apisix = require("apisix")
     apisix.http_init()
 
-    json = require("cjson.safe")
+    json = require("toolkit.json")
     req_data = json.decode([[{
         "methods": ["GET"],
         "upstream": {

@@ -14,8 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local json_decode = require("cjson").decode
-local json_encode = require("cjson").encode
+local json_decode = require("toolkit.json").decode
+local json_encode = require("toolkit.json").encode
 
 local _M = {}
 
@@ -357,6 +357,7 @@ function _M.log()
     ngx.req.read_body()
     local body = ngx.req.get_body_data()
     local ct = ngx.var.content_type
+    print(ct)
     if ct ~= "text/plain" then
         body = json_decode(body)
         body = json_encode(body)
