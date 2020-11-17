@@ -30,7 +30,7 @@
 
 ## response-rewrite
 
-该插件支持修改上游服务返回的 body 和 header 信息。
+该插件支持修改上游服务或网关本身返回的 body 和 header 信息。
 
 使用场景：
 1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS （跨域资源共享）的功能。
