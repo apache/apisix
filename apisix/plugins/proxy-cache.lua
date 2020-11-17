@@ -34,7 +34,8 @@ local schema = {
     properties = {
         cache_zone = {
             type = "string",
-            minLength = 1
+            minLength = 1,
+            default = "disk_cache_one",
         },
         cache_key = {
             type = "array",
@@ -91,7 +92,6 @@ local schema = {
             },
         },
     },
-    required = {"cache_zone"},
 }
 
 local _M = {
