@@ -190,6 +190,11 @@ local function get_conf_field(access_key, field_name)
 end
 
 
+local function do_nothing(v)
+    return v
+end
+
+
 local function generate_signature(ctx, secret_key, params)
     local canonical_uri = ctx.var.uri
     local canonical_query_string = ""
@@ -209,28 +214,23 @@ local function generate_signature(ctx, secret_key, params)
         end
         core.table.sort(keys)
 
-        local encode_or_not = get_conf_field(params.access_key, "encode_uri_params")
-        core.log.info("encode_uri_params: ", encode_or_not)
+        local field_val = get_conf_field(params.access_key, "encode_uri_params")
+        core.log.info("encode_uri_params: ", field_val)
+
+        local encode_or_not = do_nothing
+        if field_val then
+            encode_or_not = escape_uri
+        end
 
         for _, key in pairs(keys) do
             local param = args[key]
             -- whether to encode the uri parameters
-            if encode_or_not then
-                if type(param) == "table" then
-                    for _, val in pairs(param) do
-                        core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(val))
-                    end
-                else
-                    core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(param))
+            if type(param) == "table" then
+                for _, val in pairs(param) do
+                    core.table.insert(query_tab, encode_or_not(key) .. "=" .. encode_or_not(val))
                 end
             else
-                if type(param) == "table" then
-                    for _, val in pairs(param) do
-                        core.table.insert(query_tab, key .. "=" .. val)
-                    end
-                else
-                    core.table.insert(query_tab, key .. "=" .. param)
-                end
+                core.table.insert(query_tab, encode_or_not(key) .. "=" .. encode_or_not(param))
             end
         end
         canonical_query_string = core.table.concat(query_tab, "&")
