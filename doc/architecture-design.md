@@ -269,7 +269,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |service_name    |required if `nodes` and `k8s_deployment_info` not configured |The name of the upstream service and used with the registry, refer to [Integration service discovery registry](discovery.md).|
 |k8s_deployment_info |required if `nodes` and `service_name` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
-|key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
+|key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
@@ -415,7 +415,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Test request, the `consumer_id` after authentication is passed will be used as the hash value of the load balancing hash algorithm:
+Test request, the `consumer_name` after authentication is passed will be used as the hash value of the load balancing hash algorithm:
 
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
@@ -512,7 +512,7 @@ In APISIX, the process of identifying a Consumer is as follows:
 <img src="./images/consumer-internal.png" width="50%" height="50%">
 
 1. Authorization certification: e.g [key-auth](./plugins/key-auth.md), [JWT](./plugins/jwt-auth.md), etc.
-2. Get consumer_id: By authorization, you can naturally get the corresponding Consumer `id`, which is the unique identifier of the Consumer object.
+2. Get consumer_name: By authorization, you can naturally get the corresponding Consumer `id`, which is the unique identifier of the Consumer object.
 3. Get the Plugin or Upstream information bound to the Consumer: Complete the different configurations for different Consumers.
 
 To sum up, Consumer is a consumer of certain types of services and needs to be used in conjunction with the user authentication system.
@@ -525,7 +525,7 @@ How to enable a specific plugin for a Consumer, you can see the following exampl
 
 ```shell
 # Create a Consumer, specify the authentication plugin key-auth, and enable the specific plugin limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {

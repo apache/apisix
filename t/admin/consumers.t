@@ -234,7 +234,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"missing consumer name"}
+{"error_msg":"invalid configuration: property \"username\" is required"}
 --- no_error_log
 [error]
 

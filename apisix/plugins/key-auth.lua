@@ -52,17 +52,17 @@ local _M = {
 
 local create_consume_cache
 do
-    local consumer_ids = {}
+    local consumer_names = {}
 
     function create_consume_cache(consumers)
-        core.table.clear(consumer_ids)
+        core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_ids[consumer.auth_conf.key] = consumer
+            consumer_names[consumer.auth_conf.key] = consumer
         end
 
-        return consumer_ids
+        return consumer_names
     end
 
 end -- do
@@ -98,7 +98,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     ctx.consumer = consumer
-    ctx.consumer_id = consumer.consumer_id
+    ctx.consumer_name = consumer.consumer_name
     ctx.consumer_ver = consumer_conf.conf_version
     core.log.info("hit key-auth rewrite")
 end

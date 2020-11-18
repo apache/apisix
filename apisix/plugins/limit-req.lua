@@ -73,11 +73,11 @@ function _M.access(conf, ctx)
 
     local key
     if conf.key == "consumer_name" then
-        if not ctx.consumer_id then
+        if not ctx.consumer_name then
             core.log.error("consumer not found.")
             return 500, { message = "Consumer not found."}
         end
-        key = ctx.consumer_id .. ctx.conf_type .. ctx.conf_version
+        key = ctx.consumer_name .. ctx.conf_type .. ctx.conf_version
 
     else
         key = (ctx.var[conf.key] or "") .. ctx.conf_type .. ctx.conf_version

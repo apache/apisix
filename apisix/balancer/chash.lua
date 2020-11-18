@@ -31,7 +31,7 @@ local function fetch_chash_hash_key(ctx, upstream)
     local chash_key
 
     if hash_on == "consumer" then
-        chash_key = ctx.consumer_id
+        chash_key = ctx.consumer_name
     elseif hash_on == "vars" then
         chash_key = ctx.var[key]
     elseif hash_on == "header" then
