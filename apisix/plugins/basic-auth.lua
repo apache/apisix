@@ -110,18 +110,18 @@ end
 
 local create_consume_cache
 do
-    local consumer_ids = {}
+    local consumer_names = {}
 
     function create_consume_cache(consumers)
-        core.table.clear(consumer_ids)
+        core.table.clear(consumer_names)
 
         for _, cur_consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ",
                           core.json.delay_encode(cur_consumer))
-            consumer_ids[cur_consumer.auth_conf.username] = cur_consumer
+            consumer_names[cur_consumer.auth_conf.username] = cur_consumer
         end
 
-        return consumer_ids
+        return consumer_names
     end
 end
 
@@ -164,7 +164,7 @@ function _M.access(conf, ctx)
     end
 
     ctx.consumer = cur_consumer
-    ctx.consumer_id = cur_consumer.consumer_id
+    ctx.consumer_name = cur_consumer.consumer_name
     ctx.consumer_ver = consumer_conf.conf_version
 
     core.log.info("hit basic-auth access")

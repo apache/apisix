@@ -436,7 +436,7 @@ function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
     api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
     api_ctx.conf_version = api_ctx.conf_version .. "&" ..
                            api_ctx.consumer_ver
-    api_ctx.conf_id = api_ctx.conf_id .. "&" .. api_ctx.consumer_id
+    api_ctx.conf_id = api_ctx.conf_id .. "&" .. api_ctx.consumer_name
 
     return new_conf, new_conf ~= route_conf
 end

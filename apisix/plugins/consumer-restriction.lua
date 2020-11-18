@@ -71,7 +71,7 @@ local fetch_val_funcs = {
         return ctx.service_id
     end,
     ["consumer_name"] = function(ctx)
-        return ctx.consumer_id
+        return ctx.consumer_name
     end
 }
 
