@@ -22,7 +22,7 @@ local config_util      = require("apisix.core.config_util")
 local ipairs	       = ipairs
 local type             = type
 local error            = error
-local str_find         = string.find
+local str_find         = core.string.find
 local aes              = require "resty.aes"
 local assert           = assert
 local str_gsub         = string.gsub
@@ -218,7 +218,7 @@ function _M.match_and_set(api_ctx)
     if type(api_ctx.matched_sni) == "table" then
         local matched = false
         for _, msni in ipairs(api_ctx.matched_sni) do
-            if sni_rev == msni or not str_find(sni_rev, ".", #msni, true) then
+            if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
                 matched = true
             end
         end
@@ -233,7 +233,7 @@ function _M.match_and_set(api_ctx)
             return false
         end
     else
-        if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
+        if str_find(sni_rev, ".", #api_ctx.matched_sni) then
             core.log.warn("failed to find any SSL certificate by SNI: ",
                           sni, " matched SNI: ", api_ctx.matched_sni:reverse())
             return false

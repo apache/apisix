@@ -22,7 +22,7 @@ local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
 local sub_str     = string.sub
-local find_str    = string.find
+local str_find    = core.string.find
 
 local schema = {
     type = "object",
@@ -158,7 +158,7 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    local index = find_str(upstream_uri, "?", 1, true)
+    local index = str_find(upstream_uri, "?")
     if index then
         upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index-1)) ..
                        sub_str(upstream_uri, index)
