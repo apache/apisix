@@ -34,3 +34,11 @@ create_lua_deps() {
     sudo cp -r deps build-cache/
     sudo cp rockspec/apisix-master-0.rockspec build-cache/
 }
+
+enable_ssl() {
+    echo "
+    apisix:
+        ssl:
+            enable: true
+    " > conf/config.yaml
+}

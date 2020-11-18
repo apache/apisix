@@ -67,6 +67,7 @@ echo "passed: nginx.conf file contains reuseport configuration"
 echo "
 apisix:
     ssl:
+        enable: true
         listen_port: 8443
 " > conf/config.yaml
 
@@ -95,6 +96,7 @@ apisix:
     - 9081
     - 9082
   ssl:
+    enable: true
     listen_port:
       - 9443
       - 9444

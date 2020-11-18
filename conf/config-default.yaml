@@ -101,7 +101,7 @@ apisix:
   dns_resolver_valid: 30          # valid time for dns result 30 seconds
   resolver_timeout: 5             # resolver timeout
   ssl:
-    enable: false
+    enable: false                 # ssl is disabled by default
     enable_http2: true
     listen_port: 9443
     # ssl_trusted_certificate: /path/to/ca-cert # Specifies a file path with trusted CA certificates in the PEM format
