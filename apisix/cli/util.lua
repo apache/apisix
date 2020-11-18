@@ -68,6 +68,7 @@ function _M.read_file(file_path)
 
     local data, err = file:read("*all")
     if err ~= nil then
+        file:close()
         return false, "failed to read file: " .. file_path .. ", error info:" .. err
     end
 
