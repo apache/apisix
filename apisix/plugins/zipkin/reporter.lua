@@ -111,6 +111,7 @@ function _M.report(self, span)
     end
 end
 
+
 local function send_span(pending_spans, report)
     local httpc = resty_http.new()
     local res, err = httpc:request_uri(report.endpoint, {
@@ -134,6 +135,7 @@ local function send_span(pending_spans, report)
 
     return true
 end
+
 
 function _M.init_processor(self)
     local process_conf = {
