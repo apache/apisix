@@ -256,6 +256,8 @@ echo "
 apisix:
     ssl:
         enable: true
+        ssl_cert: '../t/certs/apisix.crt'
+        ssl_cert_key: '../t/certs/apisix.key'
     port_admin: 9180
     https_admin: true
 " > conf/config.yaml
