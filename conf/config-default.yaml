@@ -98,7 +98,7 @@ apisix:
   dns_resolver_valid: 30          # valid time for dns result 30 seconds
   resolver_timeout: 5             # resolver timeout
   ssl:
-    enable: true
+    enable: false
     enable_http2: true
     listen_port: 9443
     ssl_protocols: "TLSv1.2 TLSv1.3"

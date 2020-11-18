@@ -436,17 +436,17 @@ $user_debug_config
 $default_yaml_config
 >>> ../conf/$config_file
 $yaml_config
->>> ../t/certs/apisix.crt
+>>> ../conf/cert/apisix.crt
 $ssl_crt
->>> ../t/certs/apisix.key
+>>> ../conf/cert/apisix.key
 $ssl_key
->>> ../t/certs/apisix_ecc.crt
+>>> ../conf/cert/apisix_ecc.crt
 $ssl_ecc_crt
->>> ../t/certs/apisix_ecc.key
+>>> ../conf/cert/apisix_ecc.key
 $ssl_ecc_key
->>> ../t/certs/test2.crt
+>>> ../conf/cert/test2.crt
 $test2_crt
->>> ../t/certs/test2.key
+>>> ../conf/cert/test2.key
 $test2_key
 $user_apisix_yaml
 _EOC_
