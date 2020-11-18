@@ -21,12 +21,12 @@
 
 # 目录
 
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-- [**签名生成示例**](#签名生成示例)
+  - [**名字**](#名字)
+  - [**属性**](#属性)
+  - [**如何启用**](#如何启用)
+  - [**测试插件**](#测试插件)
+  - [**禁用插件**](#禁用插件)
+  - [**签名生成示例**](#签名生成示例)
 
 ## 名字
 
@@ -44,6 +44,7 @@
 | clock_skew     | integer       | 可选   | 0           |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                        |
 | signed_headers | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
 | keep_headers | boolean | 可选   |      false        |           [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。 |
+| encode_uri_param | boolean | 可选   |      true        |           [ true, false ]                             | 是否对签名中的 uri 参数进行编码,例如: `params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
 
 ## 如何启用
 
@@ -63,6 +64,8 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
+默认 `keep_headers` 为 false，`encode_uri_param` 为 true。
 
 2. 创建 Route 或 Service 对象，并开启 `hmac-auth` 插件。
 
@@ -98,9 +101,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 * 提取 URL 中的 query 项，即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串。
 * 将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
-* 对拆开后的每一项进行编码处理，分以下两种情况:
+* 根据 uri 参数是否编码，有下面两种情况：
+* `encode_uri_param` 为 true 时：
+  * 对拆开后的每一项进行编码处理，分以下两种情况:
   * 当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
   * 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
+  * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
+* `encode_uri_param` 为 false 时:
+  * 对拆开后的每一项进行编码处理，分以下两种情况:
+  * 当该项只有 key 时，转换公式为 key + "=" 的形式。
+  * 当该项是 key=value 的形式时，转换公式为 key + "=" + value 的形式。这里 value 可以是空字符串。
   * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
 
 > signed_headers_string 生成步骤如下：
