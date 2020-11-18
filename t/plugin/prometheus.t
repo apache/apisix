@@ -874,7 +874,7 @@ qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="127.0.
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/1',
+            local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "jack",

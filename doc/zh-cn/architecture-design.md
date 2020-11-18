@@ -291,7 +291,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 1. 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)
 1. 设为 `header` 时, `key` 为必传参数，其值为自定义的 header name, 即 "http_`key`"
 1. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie_`key`"
-1. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_id`。
+1. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 1. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
 创建上游对象用例：
@@ -431,7 +431,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-测试请求，认证通过后的`consumer_id`将作为负载均衡哈希算法的哈希值：
+测试请求，认证通过后的`consumer_name`将作为负载均衡哈希算法的哈希值：
 
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
@@ -529,7 +529,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 <img src="../images/consumer-internal.png" width="50%" height="50%">
 
 1. 授权认证：比如有 [key-auth](../plugins/key-auth.md)、[JWT](plugins/jwt-auth.md) 等。
-2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
+2. 获取 consumer_name：通过授权认证，即可自然获取到对应的 Consumer name，它是 Consumer 对象的唯一识别标识。
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
@@ -541,7 +541,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 ```shell
 # 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {

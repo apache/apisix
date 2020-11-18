@@ -430,7 +430,7 @@ HTTP/1.1 200 OK
 
 ## Consumer
 
-*地址*：/apisix/admin/consumers/{id}
+*地址*：/apisix/admin/consumers/{username}
 
 *说明*：Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。Consumer 使用 `username` 作为唯一标识，只支持使用 HTTP `PUT` 方法创建 Consumer。
 
@@ -439,7 +439,7 @@ HTTP/1.1 200 OK
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
 |GET      |/apisix/admin/consumers/{id}|无|获取资源|
-|PUT      |/apisix/admin/consumers/{id}|{...}|根据 id 创建资源|
+|PUT      |/apisix/admin/consumers|{...}|创建资源|
 |DELETE   |/apisix/admin/consumers/{id}|无|删除资源|
 
 > body 请求参数：
@@ -457,7 +457,6 @@ consumer 对象 json 配置内容：
 
 ```shell
 {
-    "id": "1",              # id
     "plugins": {},          # 指定 consumer 绑定的插件
     "username": "name",     # 必填
     "desc": "hello world",  # consumer 描述
@@ -470,7 +469,7 @@ consumer 对象 json 配置内容：
 
 ```shell
 # 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/2  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
