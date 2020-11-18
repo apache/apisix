@@ -254,6 +254,8 @@ git checkout conf/config.yaml
 
 echo "
 apisix:
+    ssl:
+        enable: true
     port_admin: 9180
     https_admin: true
 " > conf/config.yaml
