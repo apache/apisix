@@ -459,10 +459,10 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
-            local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
-            local ssl_ecc_key = t.read_file("conf/cert/apisix_ecc.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local ssl_ecc_cert = t.read_file("t/certs/apisix_ecc.crt")
+            local ssl_ecc_key = t.read_file("t/certs/apisix_ecc.key")
             local data = {
                 cert = ssl_cert,
                 key = ssl_key,
@@ -505,7 +505,7 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_ecc_cert = t.read_file("conf/cert/apisix_ecc.crt")
+            local ssl_ecc_cert = t.read_file("t/certs/apisix_ecc.crt")
 
             local data = {
                 sni = "test.com",
@@ -548,8 +548,8 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { version = "v2", build = "16", env = "production"}}
 
             local code, body = t.test('/apisix/admin/ssl/1',
@@ -592,8 +592,8 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { env = {"production", "release"}}}
 
             local code, body = t.test('/apisix/admin/ssl/1',
@@ -635,8 +635,8 @@ GET /t
             local core = require("apisix.core")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {
                 cert = ssl_cert, 
                 key = ssl_key, 
@@ -710,8 +710,8 @@ GET /t
             local etcd = require("apisix.core.etcd")
             local t = require("lib.test_admin")
 
-            local ssl_cert = t.read_file("conf/cert/apisix.crt")
-            local ssl_key =  t.read_file("conf/cert/apisix.key")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
             local code, body, res = t.test('/apisix/admin/ssl',
