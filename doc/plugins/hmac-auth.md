@@ -44,6 +44,7 @@ The `consumer` then adds its key to request header to verify its request.
 | clock_skew     | integer       | optional    | 0           |                                             | The clock skew allowed by the signature in seconds. For example, if the time is allowed to skew by 10 seconds, then it should be set to `10`. especially, `0` means not checking `Date`                                                                                    |
 | signed_headers | array[string] | optional    |               |                                             | Restrict the headers that are added to the encrypted calculation. After the specified, the client request can only specify the headers within this range. When this item is empty, all the headers specified by the client request will be added to the encrypted calculation |
 | keep_headers | boolean | optional    |     false       |           [ true, false ]                  | Whether it is necessary to keep the request headers of `X-HMAC-SIGNATURE`, `X-HMAC-ALGORITHM` and `X-HMAC-SIGNED-HEADERS` in the http request after successful authentication. true: means to keep the http request header, false: means to remove the http request header. |
+| encode_uri_params | boolean | optional    |     true       |           [ true, false ]                  | Whether to encode the uri parameter in the signature, for example: `params1=hello%2Cworld` is encoded, `params2=hello,world` is not encoded. true: means to encode the uri parameter in the signature, false: not to encode the uri parameter in the signature. |
 
 ## How To Enable
 
@@ -63,6 +64,8 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
+The default `keep_headers` is false and `encode_uri_params` is true.
 
 2. add a Route or add a Service, and enable the `hmac-auth` plugin
 
@@ -94,13 +97,20 @@ The calculation formula of the signature is `signature = HMAC-SHAx-HEX(secret_ke
 4. **canonical_query_string** :`canonical_query_string` is the result of encoding the `query` in the URL (`query` is the string "key1 = valve1 & key2 = valve2" after the "?" in the URL).
 5. **signed_headers_string** :`signed_headers_string` is the result of obtaining the fields specified by the client from the request header and concatenating the strings in order.
 
-> The coding steps are as follows:
+> The coding steps of canonical_query_string are as follows:
 
 * Extract the `query` item in the URL, that is, the string "key1 = valve1 & key2 = valve2" after the "?" in the URL.
 * Split the `query` into several items according to the & separator, each item is in the form of key=value or only key.
-* Encoding each item after disassembly is divided into the following two situations.
-    * When the item has only key, the conversion formula is UriEncode(key) + "=".
-    * When the item is in the form of key=value, the conversion formula is in the form of UriEncode(key) + "=" + UriEncode(value). Here value can be an empty string.
+* According to whether the uri parameter is encoded, there are two situations:
+* When `encode_uri_params` is true:
+    * Encoding each item after disassembly is divided into the following two situations.
+    * When the item has only key, the conversion formula is uri_encode(key) + "=".
+    * When the item is in the form of key=value, the conversion formula is in the form of uri_encode(key) + "=" + uri_encode(value). Here value can be an empty string.
+    * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
+* When `encode_uri_params` is false:
+    * Encoding each item after disassembly is divided into the following two situations.
+    * When the item has only key, the conversion formula is key + "=".
+    * When the item is in the form of key=value, the conversion formula is in the form of key + "=" + value. Here value can be an empty string.
     * After converting each item, sort by key in lexicographic order (ASCII code from small to large), and connect them with the & symbol to generate the corresponding canonical_query_string.
 
 > The signed_headers_string generation steps are as follows:
