@@ -28,7 +28,7 @@ local ngx                = ngx
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local string_sub         = string.sub
-local string_find        = string.find
+local str_find           = core.string.find
 local log                = core.log
 
 local default_weight
@@ -76,9 +76,9 @@ local function service_info()
     local basic_auth
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
-    local auth_idx = string_find(url, "@", 1, true)
+    local auth_idx = str_find(url, "@")
     if auth_idx then
-        local protocol_idx = string_find(url, "://", 1, true)
+        local protocol_idx = str_find(url, "://")
         local protocol = string_sub(url, 1, protocol_idx + 2)
         local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
         local other = string_sub(url, auth_idx + 1)

@@ -25,6 +25,7 @@ local io = io
 local os = os
 local table = table
 local string = string
+local str_find = core.string.find
 local local_conf
 
 
@@ -57,7 +58,7 @@ end
 
 local function get_last_index(str, key)
     local rev = string.reverse(str)
-    local _, idx = string.find(rev, key, 1, true)
+    local _, idx = str_find(rev, key)
     local n
     if idx then
         n = string.len(rev) - idx + 1
