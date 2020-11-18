@@ -26,10 +26,11 @@
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
+- [**Attention**](#Attention)
 
 ## Name
 
-response rewrite plugin, rewrite the content from upstream.
+response rewrite plugin, rewrite the content returned by the upstream as well as Apache APISIX itself.
 
 **senario**:
 
@@ -116,3 +117,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 The `response rewrite` plugin has been disabled now. It works for other plugins.
+
+## Attention
+
+`ngx.exit` will interrupt the execution of the current request and return status code to Nginx.
+
+![](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+
+However, if you execute `ngx.exit` during the access phase, it only interrupts the request processing phase, and the response phase will still process it, i.e. if you configure the `response-rewrite` plugin, it will force overwriting of your response information (e.g. response status code).
