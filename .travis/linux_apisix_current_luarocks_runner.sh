@@ -27,6 +27,7 @@ do_install() {
 script() {
     export_or_prefix
     openresty -V
+    enable_ssl
 
     sudo rm -rf /usr/local/apisix
 
@@ -38,8 +39,6 @@ script() {
 
     # show install file
     luarocks show apisix
-
-    enable_ssl
 
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
