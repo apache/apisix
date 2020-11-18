@@ -356,6 +356,11 @@ end
 function _M.log()
     ngx.req.read_body()
     local body = ngx.req.get_body_data()
+    local ct = ngx.var.content_type
+    if ct ~= "text/plain" then
+        body = json_decode(body)
+        body = json_encode(body)
+    end
     ngx.log(ngx.WARN, "request log: ", body or "nil")
 end
 
