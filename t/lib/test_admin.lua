@@ -19,7 +19,7 @@ local json              = require("cjson.safe")
 local core              = require("apisix.core")
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
-local str_find          = string.find
+local str_find          = core.string.find
 local dir_names         = {}
 
 
