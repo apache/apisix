@@ -338,8 +338,6 @@ function _M.http_access_phase()
 
     core.ctx.set_vars_meta(api_ctx)
 
-    core.response.set_header("Server", ver_header)
-
     -- load and run global rule
     if router.global_rules and router.global_rules.values
        and #router.global_rules.values > 0 then
@@ -629,6 +627,8 @@ end
 
 
 function _M.http_header_filter_phase()
+    core.response.set_header("Server", ver_header)
+
     common_phase("header_filter")
 end
 
