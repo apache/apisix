@@ -17,7 +17,7 @@
 local core        = require("apisix.core")
 local ngx         = ngx
 local plugin_name = "cors"
-local str_find    = string.find
+local str_find    = core.string.find
 local re_gmatch   = ngx.re.gmatch
 
 
@@ -86,7 +86,7 @@ local _M = {
 
 
 local function create_mutiple_origin_cache(conf)
-    if not str_find(conf.allow_origins, ",", 1, true) then
+    if not str_find(conf.allow_origins, ",") then
         return nil
     end
     local origin_cache = {}
