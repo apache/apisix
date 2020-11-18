@@ -67,19 +67,31 @@ Here is an example of `conf/config.yaml`:
 
 ```yaml
 plugins:                          # plugin list
-  - error-log-logger
+  ... ...
+  - request-id
+  - hmac-auth
+  - api-breaker
+  - error-log-logger              # enable plugin `error-log-logger
 ```
 
 ### Disable plugin
 
-Remove the plugin `error-log-logger` from `conf/config.yaml`.
+Remove or comment out the plugin `error-log-logger` from `conf/config.yaml`.
 
-## How To Update
+```yaml
+plugins:                          # plugin list
+  ... ...
+  - request-id
+  - hmac-auth
+  - api-breaker
+  #- error-log-logger              # enable plugin `error-log-logger
+```
 
-step: update the attributes of the plugin
+## How to set the TCP server address
+
+Step: update the attributes of the plugin
 
 ```shell
-
 curl http://127.0.0.1:9080//apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "host": "127.0.0.1",

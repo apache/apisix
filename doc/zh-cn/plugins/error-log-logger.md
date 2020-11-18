@@ -65,19 +65,31 @@
 
 ```yaml
 plugins:                          # plugin list
-  - error-log-logger
+  ... ...
+  - request-id
+  - hmac-auth
+  - api-breaker
+  - error-log-logger              # enable plugin `error-log-logger
 ```
 
 ### 禁用插件
 
-在 `conf/config.yaml` 中删除插件 `error-log-logger`即可。
+在 `conf/config.yaml` 中删除或注释掉插件 `error-log-logger`即可。
 
-## 如何更新
+```yaml
+plugins:                          # plugin list
+  ... ...
+  - request-id
+  - hmac-auth
+  - api-breaker
+  #- error-log-logger              # enable plugin `error-log-logger
+```
+
+## 如何设置接收日志的 TCP 服务器
 
 步骤：更新插件属性
 
 ```shell
-
 curl http://127.0.0.1:9080//apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "host": "127.0.0.1",
