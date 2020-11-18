@@ -36,6 +36,7 @@ create_lua_deps() {
 }
 
 enable_ssl() {
+    pwd
     echo "
     apisix:
         ssl:
