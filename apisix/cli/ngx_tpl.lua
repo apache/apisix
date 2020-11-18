@@ -321,8 +321,8 @@ http {
         {% end %} {% -- if enable_ipv6 %}
 
         {% if ssl.enable then %}
-        ssl_certificate      t/certs/apisix.crt;
-        ssl_certificate_key  t/certs/apisix.key;
+        ssl_certificate      ../t/certs/apisix.crt;
+        ssl_certificate_key  ../t/certs/apisix.key;
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
 
