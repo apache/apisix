@@ -40,10 +40,10 @@ enable_ssl() {
     apisix:
         ssl:
             enable: true
-            ssl_cert: 't/certs/apisix.crt'
-            ssl_cert_key: 't/certs/apisix.key'
+            ssl_cert: '../t/certs/apisix.crt'
+            ssl_cert_key: '../t/certs/apisix.key'
         admin_api_mtls:
-            admin_ssl_cert: 't/certs/apisix_admin_ssl.crt'
-            admin_ssl_cert_key: 't/certs/apisix_admin_ssl.key'
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
     " > conf/config.yaml
 }
