@@ -209,6 +209,7 @@ plugins:                          # plugin list
   - proxy-cache
   - proxy-mirror
   - request-id
+  - sls-logger
   - hmac-auth
   - api-breaker
 
