@@ -23,25 +23,26 @@ local consumer = require("apisix.consumer")
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+local consumers_lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
-    oneOf = {
-        {
-            title = "work with route or service object",
-            properties = {
-                username = { type = "string" },
-                password = { type = "string" },
-            },
-            required = {"username", "password"},
-            additionalProperties = false,
-        },
-        {
-            title = "work with consumer object",
-            properties = {},
-            additionalProperties = false,
-        }
-    }
+    title = "work with route or service object",
+    properties = {},
+    additionalProperties = false,
+}
+
+local consumer_schema = {
+    type = "object",
+    title = "work with consumer object",
+    properties = {
+        username = { type = "string" },
+        password = { type = "string" },
+    },
+    required = {"username", "password"},
+    additionalProperties = false,
 }
 
 local plugin_name = "basic-auth"
@@ -52,10 +53,16 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema
 }
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
+function _M.check_schema(conf, schema_type)
+    local ok, err
+    if schema_type == core.schema.TYPE_CONSUMER then
+        ok, err = core.schema.check(consumer_schema, conf)
+    else
+        ok, err = core.schema.check(schema, conf)
+    end
 
     if not ok then
         return false, err
@@ -69,7 +76,7 @@ local function extract_auth_header(authorization)
     local function do_extract(auth)
         local obj = { username = "", password = "" }
 
-        local m, err = ngx.re.match(auth, "Basic\\s(.+)")
+        local m, err = ngx.re.match(auth, "Basic\\s(.+)", "jo")
         if err then
             -- error authorization
             return nil, err
@@ -83,8 +90,8 @@ local function extract_auth_header(authorization)
             return nil, "split authorization err:" .. err
         end
 
-        obj.username = ngx.re.gsub(res[1], "\\s+", "")
-        obj.password = ngx.re.gsub(res[2], "\\s+", "")
+        obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
+        obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
         core.log.info("plugin access phase, authorization: ",
                       obj.username, ": ", obj.password)
 
@@ -139,9 +146,9 @@ function _M.access(conf, ctx)
         return 401, { message = "Missing related consumer" }
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = consumers_lrucache("consumers_key",
+        consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     -- 3. check user exists
     local cur_consumer = consumers[username]

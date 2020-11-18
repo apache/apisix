@@ -253,20 +253,38 @@ Steps:
 
 1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml
 
-2. Restart APISIX
+2. Reload or restart APISIX
 
 Now you can trace the info level log in logs/error.log.
 
 ## How to reload your own plugin
 
-The Apache APISIX plugin supports hot reloading. If your APISIX node has the Admin API turned on, then for scenarios such as adding / deleting / modifying plugins, you can hot reload the plugin by calling the HTTP interface without restarting the service.
+The Apache APISIX plugin supports hot reloading.
+See the `Hot reload` section in [plugins](./doc/plugins.md) for how to do that.
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
-```
+## How to make APISIX listen on multiple ports when handling HTTP or HTTPS requests?
 
-If your APISIX node does not open the Admin API, then you can manually load the plug-in by reloading APISIX.
+By default, APISIX only listens on port 9080 when handling HTTP requests. If you want APISIX to listen on multiple ports, you need to modify the relevant parameters in the configuration file as follows:
 
-```shell
-apisix reload
-```
+1. Modify the parameter of HTTP port listen `node_listen` in `conf/config.yaml`, for example:
+
+   ```
+    apisix:
+      node_listen:
+        - 9080
+        - 9081
+        - 9082
+    ```
+
+   Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
+
+    ```
+    apisix:
+      ssl:
+        listen_port:
+          - 9443
+          - 9444
+          - 9445
+    ```
+
+2. Reload or restart APISIX

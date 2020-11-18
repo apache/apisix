@@ -135,7 +135,7 @@ end
 
 ## Maximum length per line
 
-Each line cannot exceed 80 characters. If it exceeds, you need to wrap and align:
+Each line cannot exceed 100 characters. If it exceeds, you need to wrap and align:
 
 ```lua
 --No
@@ -167,7 +167,7 @@ return limit_conn_new("plugin-limit-conn" .. "plugin-limit-conn"
 ```lua
 --Yes
 return "param1", "plugin-limit-conn"
-                 .. "plugin-limit-conn")
+                 .. "plugin-limit-conn"
 ```
 
 ## Variable

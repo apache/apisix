@@ -37,10 +37,10 @@ For more information on schema, refer to [JSON schema](https://github.com/api7/j
 
 ## Attributes
 
-|Name           |Requirement    |Description|
-|---------      |--------       |-----------|
-| header_schema |optional       |schema for the header data|
-| body_schema   |optional       |schema for the body data|
+| Name          | Type   | Requirement | Default | Valid | Description                |
+| ------------- | ------ | ----------- | ------- | ----- | -------------------------- |
+| header_schema | object | optional    |         |       | schema for the header data |
+| body_schema   | object | optional    |         |       | schema for the body data   |
 
 ## How To Enable
 
@@ -63,10 +63,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -94,10 +94,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```

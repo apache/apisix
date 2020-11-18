@@ -16,11 +16,7 @@
 # limitations under the License.
 #
 
-set -ex
-
-export_or_prefix() {
-    export OPENRESTY_PREFIX=$(brew --prefix openresty/brew/openresty-debug)
-}
+. ./.travis/common.sh
 
 before_install() {
     if [ "$TRAVIS_OS_NAME" == "" ]; then
@@ -28,12 +24,10 @@ before_install() {
     fi
 
     HOMEBREW_NO_AUTO_UPDATE=1 brew install perl cpanminus etcd luarocks openresty/brew/openresty-debug redis@3.2
-    brew upgrade go
 
     sudo sed -i "" "s/requirepass/#requirepass/g" /usr/local/etc/redis.conf
     brew services start redis@3.2
 
-    export GO111MOUDULE=on
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     export_or_prefix
     luarocks install --lua-dir=${OPENRESTY_PREFIX}/luajit luacov-coveralls --local --tree=deps
@@ -53,7 +47,7 @@ do_install() {
     wget -P utils https://raw.githubusercontent.com/openresty/openresty-devel-utils/master/lj-releng
     chmod a+x utils/lj-releng
 
-    wget https://github.com/iresty/grpc_server_example/releases/download/20200314/grpc_server_example-darwin-amd64.tar.gz
+    wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-darwin-amd64.tar.gz
     tar -xvf grpc_server_example-darwin-amd64.tar.gz
 
     brew install grpcurl
@@ -65,9 +59,8 @@ script() {
     fi
 
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
 
-    etcd --enable-v2=true &
+    etcd &
     sleep 1
 
     ./grpc_server_example &
@@ -86,7 +79,8 @@ script() {
     sudo mkdir -p /usr/local/var/log/nginx/
     sudo touch /usr/local/var/log/nginx/error.log
     sudo chmod 777 /usr/local/var/log/nginx/error.log
-    APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t/admin/*.t
+    #APISIX_ENABLE_LUACOV=1 prove -Itest-nginx/lib -I./ -r t/admin/*.t
+    prove -Itest-nginx/lib -I./ -r t/admin/*.t
 }
 
 after_success() {
@@ -94,7 +88,8 @@ after_success() {
         exit 0
     fi
 
-    $PWD/deps/bin/luacov-coveralls
+    #$PWD/deps/bin/luacov-coveralls
+    echo "done"
 }
 
 case_opt=$1

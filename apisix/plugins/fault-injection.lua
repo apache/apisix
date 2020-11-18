@@ -14,10 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core          = require("apisix.core")
-local sleep         = ngx.sleep
+local core = require("apisix.core")
+
+local sleep = core.sleep
+local random = math.random
 
 local plugin_name   = "fault-injection"
+
 
 local schema = {
     type = "object",
@@ -27,19 +30,22 @@ local schema = {
             properties = {
                 http_status = {type = "integer", minimum = 200},
                 body = {type = "string", minLength = 0},
+                percentage = {type = "integer", minimum = 0, maximum = 100}
             },
-            required = {"http_status"}
+            minProperties = 1,
         },
         delay = {
             type = "object",
             properties = {
                 duration = {type = "number", minimum = 0},
+                percentage = {type = "integer", minimum = 0, maximum = 100}
             },
-            required = {"duration"}
+            minProperties = 1,
         }
     },
     minProperties = 1,
 }
+
 
 local _M = {
     version = 0.1,
@@ -47,6 +53,16 @@ local _M = {
     name = plugin_name,
     schema = schema,
 }
+
+
+local function sample_hit(percentage)
+    if not percentage then
+        return true
+    end
+
+    return random(0, 100) <= percentage
+end
+
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -61,12 +77,18 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    if conf.delay and conf.delay.duration ~= nil then
+    if conf.delay
+       and conf.delay.duration ~= nil
+       and sample_hit(conf.delay.percentage)
+    then
         sleep(conf.delay.duration)
     end
 
-    if conf.abort and conf.abort.http_status ~= nil then
-        core.response.exit(conf.abort.http_status, conf.abort.body)
+    if conf.abort
+       and conf.abort.http_status ~= nil
+       and sample_hit(conf.abort.percentage)
+    then
+        return conf.abort.http_status, conf.abort.body
     end
 end
 

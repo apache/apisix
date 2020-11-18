@@ -33,7 +33,7 @@ APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者
 
 ## APISIX 的性能怎么样？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/doc/benchmark-cn.md)
+APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](https://github.com/apache/apisix/blob/master/doc/zh-cn/benchmark.md)
 
 APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
 
@@ -203,20 +203,58 @@ Server: APISIX web server
 
 1、修改conf/config.yaml中的nginx log配置参数`error_log_level: "warn"`为`error_log_level: "info"`。
 
-2、重启APISIX
+2、重启抑或 reload APISIX
 
 之后便可以在logs/error.log中查看到info的日志了。
 
 ## 如何加载自己编写的插件
 
-Apache APISIX 的插件支持热加载，如果你的 APISIX 节点打开了 Admin API，那么对于新增/删除/修改插件等场景，均可以通过调用 HTTP 接口的方式热加载插件，不需要重启服务。
+Apache APISIX 的插件支持热加载。
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+具体怎么做参考 [插件](./doc/zh-cn/plugins.md) 中关于“热加载”的部分。
+
+## 如何让 APISIX 在处理 HTTP 或 HTTPS 请求时监听多个端口
+
+默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。如果你想让 APISIX 监听多个端口，你需要修改配置文件中的相关参数，具体步骤如下：
+
+1. 修改`conf/config.yaml`中 HTTP 端口监听的参数`node_listen`，示例：
+
+    ```
+    apisix:
+      node_listen:
+        - 9080
+        - 9081
+        - 9082
+    ```
+
+    处理 HTTPS 请求也类似，修改`conf/config.yaml`中 HTTPS 端口监听的参数``ssl.listen_port``，示例：
+
+    ```
+    apisix:
+      ssl:
+        listen_port:
+          - 9443
+          - 9444
+          - 9445
+    ```
+
+2.重启抑或 reload APISIX
+
+## APISIX利用etcd如何实现毫秒级别的配置同步
+etcd提供接口wait、waitdir接口用于监听指定关键字、目录是否发生变更，如果发生变更，返回更新的数据。
+
+以waitdir接口为例：
+`syntax: res, err = cli:waitdir(dir:string [, modified_index:uint [, timeout:uint] ])`
+其中timeout参数表示调用进程和etcd长连接的时间。
+
+APISIX关于etcd长连接时间的配置如下：
 ```
-
-如果你的 APISIX 节点并没有打开 Admin API，那么你可以通过手动 reload APISIX 的方式加载插件。
-
-```shell
-apisix reload
+etcd:
+  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+    - "http://127.0.0.1:2379"     # multiple etcd address
+  prefix: "/apisix"               # apisix configurations prefix
+  timeout: 30                     # 30 seconds
 ```
+APISIX使用waitdir接口监视目录的变更，timeout默认配置为30秒，即APISIX调用进程和etcd保持30秒的长连接。
+
+若APISIX进程调用该函数时，监听的目录没有更新，函数直接返回，长连接保持，调用进程可处理其他事件。30秒内有数据更新，etcd通过该函数返回更新结果，调用进程处理更新数据，30秒内无数据返回，到达超时时间30秒时，etcd通过该函数返回一条超时消息，调用进程处理超时信息，然后再次调用waitdir函数监听指定目录。APISIX通过以上过程实现配置的实时更新。

@@ -16,6 +16,7 @@
 --
 local http              = require("resty.http")
 local json              = require("cjson.safe")
+local core              = require("apisix.core")
 local aes               = require "resty.aes"
 local ngx_encode_base64 = ngx.encode_base64
 local str_find          = string.find
@@ -104,13 +105,20 @@ end
 
 
 function _M.comp_tab(left_tab, right_tab)
+    local err
     dir_names = {}
 
     if type(left_tab) == "string" then
-        left_tab = json.decode(left_tab)
+        left_tab, err = json.decode(left_tab)
+        if not left_tab then
+            return false, "failed to decode expected data: " .. err
+        end
     end
     if type(right_tab) == "string" then
-        right_tab = json.decode(right_tab)
+        right_tab, err  = json.decode(right_tab)
+        if not right_tab then
+            return false, "failed to decode expected data: " .. err
+        end
     end
 
     local ok, err = com_tab(left_tab, right_tab)
@@ -119,6 +127,21 @@ function _M.comp_tab(left_tab, right_tab)
     end
 
     return true
+end
+
+
+function _M.set_config_yaml(data)
+    local fn
+    local profile = os.getenv("APISIX_PROFILE")
+    if profile then
+        fn = "config-" .. profile .. ".yaml"
+    else
+        fn = "config.yaml"
+    end
+
+    local f = assert(io.open(os.getenv("TEST_NGINX_HTML_DIR") .. "/../conf/" .. fn, 'w'))
+    assert(f:write(data))
+    f:close()
 end
 
 

@@ -20,11 +20,23 @@ local plugin_name = "key-auth"
 local ipairs   = ipairs
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
+    additionalProperties = false,
+    properties = {},
+}
+
+local consumer_schema = {
+    type = "object",
+    additionalProperties = false,
     properties = {
         key = {type = "string"},
-    }
+    },
+    required = {"key"},
 }
 
 
@@ -34,6 +46,7 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema,
 }
 
 
@@ -55,8 +68,12 @@ do
 end -- do
 
 
-function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_CONSUMER then
+        return core.schema.check(consumer_schema, conf)
+    else
+        return core.schema.check(schema, conf)
+    end
 end
 
 
@@ -71,9 +88,8 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing related consumer"}
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     local consumer = consumers[key]
     if not consumer then

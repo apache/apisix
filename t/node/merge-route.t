@@ -103,7 +103,7 @@ passed
 GET /not_found
 --- error_code: 404
 --- response_body
-{"error_msg":"failed to match any routes"}
+{"error_msg":"404 Route Not Found"}
 --- no_error_log
 [error]
 
@@ -176,6 +176,10 @@ qr/1980/
                 [[{
                     "plugins": {
                         "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
                             "disable": true
                         }
                     },
@@ -280,8 +284,7 @@ passed
                     "host": "httpbin.org",
                     "plugins": {
                         "proxy-rewrite": {
-                                "scheme": "https"
-
+                            "scheme": "https"
                         }
                     },
                     "service_id": "1"
@@ -322,5 +325,102 @@ GET /get
 --- more_headers
 host: httpbin.orgxxx
 --- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: enabled websocket in service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "enable_websocket": true,
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: set route(bind service 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/33',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/uri",
+                    "service_id": "1"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: hit route
+--- request
+GET /uri
+--- response_body
+uri: /uri
+connection: close
+host: localhost
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
+--- error_log
+enabled websocket for route: 33
+
+
+
+=== TEST 17: delete rout
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/33',
+                ngx.HTTP_DELETE
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

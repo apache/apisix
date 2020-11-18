@@ -16,6 +16,7 @@
 --
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
+local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
 local pairs   = pairs
 
@@ -43,7 +44,7 @@ local function check_conf(consumer_name, conf)
     end
 
     if conf.plugins then
-        ok, err = plugins.check_schema(conf.plugins)
+        ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
@@ -76,6 +77,12 @@ function _M.put(consumer_name, conf)
 
     local key = "/consumers/" .. consumer_name
     core.log.info("key: ", key)
+
+    local ok, err = utils.inject_conf_with_prev_conf("consumer", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put consumer[", key, "]: ", err)
@@ -92,7 +99,7 @@ function _M.get(consumer_name)
         key = key .. "/" .. consumer_name
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not consumer_name)
     if not res then
         core.log.error("failed to get consumer[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -103,7 +110,7 @@ end
 
 
 function _M.post(consumer_name, conf)
-    return 400, {error_msg = "not support `POST` method for consumer"}
+    return 405, {error_msg = "not supported `POST` method for consumer"}
 end
 
 

@@ -109,7 +109,7 @@ Server: APISIX web server
 
 When we receive a successful response, it indicates that the route was successfully created.
 
-For specific options of Route, please refer to [Admin API](zh-cn/admin-api.md#route).
+For specific options of Route, please refer to [Admin API](admin-api.md#route).
 
 [Back to top](#Table-of-contents)
 
@@ -194,7 +194,17 @@ The configuration of the plugin can be directly bound to the specified Route, or
 
 A plugin will only be executed once in a single request, even if it is bound to multiple different objects (such as Route or Service).
 
-The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../apisix/plugins/example-plugin.lua#L37).
+The order in which plugins are run is determined by the priority of the plugin itself, for example:
+
+```lua
+local _M = {
+    version = 0.1,
+    priority = 0, -- the priority of this plugin will be 0
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
 
 The plugin configuration is submitted as part of Route or Service and placed under `plugins`. It internally uses the plugin name as the hash's key to hold configuration items for different plugins.
 
@@ -262,9 +272,11 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
 |retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
-|enable_websocket|optional| enable `websocket`(boolean), default `false`.|
 |timeout|optional| Set the timeout for connection, sending and receiving messages. |
 |desc     |optional|Identifies route names, usage scenarios, and more.|
+|labels   |optional|The key/value pairs to specify attributes. |
+|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
+|upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
 
 Create an upstream object use case:
 
@@ -285,7 +297,6 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335
 {
     "type": "chash",
     "key": "remote_addr",
-    "enable_websocket": true,
     "nodes": {
         "127.0.0.1:80": 1,
         "foo.com:80": 2
@@ -472,7 +483,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 * `apisix.router.http`: HTTP Request Route。
     * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
+        * `Absolute match `: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
@@ -513,7 +524,7 @@ In addition, you can refer to the [key-auth](./plugins/key-auth.md) authenticati
 How to enable a specific plugin for a Consumer, you can see the following example:
 
 ```shell
-# Create a Consumer , specify the authentication plugin key-auth, and enable the specific plugin limit-count
+# Create a Consumer, specify the authentication plugin key-auth, and enable the specific plugin limit-count
 $ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -559,8 +570,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 
 ```
 
-Use the [consumer-restriction](zh-cn/plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
+Use the [consumer-restriction](plugins/consumer-restriction.md) plug-in to restrict the access of Jack to this API.
 
+```shell
 # Add Jack to the blacklist
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -613,7 +625,7 @@ curl -X PUT \
     }'
 ```
 
-Now, the `limit-count` plugin will work on all requets
+Now, the `limit-count` plugin will work on all requests
 
 we can list all `GlobalRule` via admin api as below:
 

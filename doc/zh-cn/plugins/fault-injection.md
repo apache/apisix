@@ -25,13 +25,15 @@
 
 ## 参数
 
-|名称    |必须|描述|
-|------- |-----|------|
-|abort.http_status|是|返回给客户端的 http 状态码|
-|abort.body|否|返回给客户端的响应数据|
-|delay.duration|是|延迟时间，可以指定小数|
+| 名称              | 类型    | 必选项 | 默认值 | 有效值     | 描述                       |
+| ----------------- | ------- | ------ | ------ | ---------- | -------------------------- |
+| abort.http_status | integer | 可选   |        | [200, ...] | 返回给客户端的 http 状态码 |
+| abort.body        | string  | 可选   |        |            | 返回给客户端的响应数据     |
+| abort.percentage  | integer | 可选   |        | [0, 100]   | 将被中断的请求占比         |
+| delay.duration    | number  | 可选   |        |            | 延迟时间，可以指定小数     |
+| delay.percentage  | integer | 可选   |        | [0, 100]   | 将被延迟的请求占比         |
 
-注：参数 abort 和 delay 至少要存在一个
+注：参数 abort 和 delay 至少要存在一个。
 
 ## 示例
 

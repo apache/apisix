@@ -19,7 +19,7 @@
 
 # Table of Contents
 
-
+- [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
 - [1.4.0](#140)
@@ -32,6 +32,33 @@
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.0.0
+
+This is release candidate.
+
+### Core
+- :sunrise: **Migrate from etcd v2 to v3 protocol, which is not backward compatible. Apache APISIX only supports etcd 3.4 and above versions.** [#2036](https://github.com/apache/apisix/pull/2036)
+- add labels for upstream object.[#2279](https://github.com/apache/apisix/pull/2279)
+- add managed fields in json schema for resources, such as create_time and update_time.[#2444](https://github.com/apache/apisix/pull/2444)
+- use interceptors to protect plugin's route[#2416](https://github.com/apache/apisix/pull/2416)
+- support multiple ports for http and https listen.[#2409](https://github.com/apache/apisix/pull/2409)
+- implement `core.sleep`.[#2397](https://github.com/apache/apisix/pull/2397)
+
+## Plugin
+- :sunrise: **add AK/SK(HMAC) auth plugin.**[#2192](https://github.com/apache/apisix/pull/2192)
+- :sunrise: add referer-restriction plugin.[#2352](https://github.com/apache/apisix/pull/2352)
+- `limit-count` support to use `redis` cluster.[#2406](https://github.com/apache/apisix/pull/2406)
+- feat(proxy-cache): store the temporary file under cache directory. [#2317](https://github.com/apache/apisix/pull/2317)
+- feat(http-logger): support for specified the log formats via admin API [#2309](https://github.com/apache/apisix/pull/2309)
+
+## Bugfix
+- :bug: **`high priority`** When the data plane receives an instruction to delete a resource(router or upstream etc.), it does not properly clean up the cache, resulting in the existing resources cannot be found. This problem only occurs in the case of long and frequent deletion operations.[#2168](https://github.com/apache/apisix/pull/2168)
+- fix routing priority does not take effect.[#2447](https://github.com/apache/apisix/pull/2447)
+- set random seed for each worker process at `init_worker` phase, only `init` phase is not enough.[#2357](https://github.com/apache/apisix/pull/2357)
+- remove unsupported algorithm in jwt plugin.[#2356](https://github.com/apache/apisix/pull/2356)
+- return correct response code when `http_to_https` enabled in redirect plugin.[#2311](https://github.com/apache/apisix/pull/2311)
+
+For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/7)
 
 ## 1.5.0
 

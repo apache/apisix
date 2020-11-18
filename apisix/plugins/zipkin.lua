@@ -26,6 +26,10 @@ local tonumber = tonumber
 local plugin_name = "zipkin"
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -48,7 +52,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = -1000,
+    priority = 11011,
     name = plugin_name,
     schema = schema,
 }
@@ -59,7 +63,25 @@ function _M.check_schema(conf)
 end
 
 
-local function create_tracer(conf)
+local function create_tracer(conf,ctx)
+
+    local headers = core.request.headers(ctx)
+
+-- X-B3-Sampled: if an upstream decided to sample this request, we do too.
+    local sample = headers["x-b3-sampled"]
+    if sample == "1" or sample == "true" then
+        conf.sample_ratio = 1
+    elseif sample == "0" or sample == "false" then
+        conf.sample_ratio = 0
+    end
+
+-- X-B3-Flags: if it equals '1' then it overrides sampling policy
+-- We still want to warn on invalid sample header, so do this after the above
+    local debug = headers["x-b3-flags"]
+    if debug == "1" then
+        conf.sample_ratio = 1
+    end
+
     local tracer = new_tracer(new_reporter(conf), new_random_sampler(conf))
     tracer:register_injector("http_headers", zipkin_codec.new_injector())
     tracer:register_extractor("http_headers", zipkin_codec.new_extractor())
@@ -90,8 +112,8 @@ function _M.rewrite(plugin_conf, ctx)
         conf.server_addr = ctx.var["server_addr"]
     end
 
-    local tracer = core.lrucache.plugin_ctx(plugin_name .. '#' .. conf.server_addr, ctx,
-                                            create_tracer, conf)
+    local tracer = core.lrucache.plugin_ctx(lrucache, ctx, conf.server_addr,
+                            create_tracer, conf, ctx)
 
     ctx.opentracing_sample = tracer.sampler:sample()
     if not ctx.opentracing_sample then
@@ -168,8 +190,10 @@ function _M.header_filter(conf, ctx)
     local opentracing = ctx.opentracing
 
     ctx.HEADER_FILTER_END_TIME = opentracing.tracer:time()
-    opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
+    if  opentracing.proxy_span then
+        opentracing.body_filter_span = opentracing.proxy_span:start_child_span(
             "apisix.body_filter", ctx.HEADER_FILTER_END_TIME)
+    end
 end
 
 
@@ -181,11 +205,16 @@ function _M.log(conf, ctx)
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
-    opentracing.body_filter_span:finish(log_end_time)
+    if opentracing.body_filter_span then
+        opentracing.body_filter_span:finish(log_end_time)
+    end
 
     local upstream_status = core.response.get_upstream_status(ctx)
     opentracing.request_span:set_tag("http.status_code", upstream_status)
-    opentracing.proxy_span:finish(log_end_time)
+    if opentracing.proxy_span then
+        opentracing.proxy_span:finish(log_end_time)
+    end
+
     opentracing.request_span:finish(log_end_time)
 
     local reporter = opentracing.tracer.reporter

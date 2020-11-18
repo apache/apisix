@@ -36,11 +36,10 @@
 
 ## 属性
 
-|名称           |必选项          |描述|
-|---------      |--------       |-----------|
-| header_schema |可选           |`header` 数据的 `schema` 数据结构|
-| body_schema   |可选           |`body` 数据的 `schema` 数据结构|
-
+| Name          | Type   | Requirement | Default | Valid | Description                       |
+| ------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
+| header_schema | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
+| body_schema   | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
 
 ## 如何启用
 
@@ -63,10 +62,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         }
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```
@@ -95,10 +94,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
     },
     "upstream": {
-    	"type": "roundrobin",
-    	"nodes": {
-        	"127.0.0.1:8080": 1
-    	}
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
     }
 }
 ```

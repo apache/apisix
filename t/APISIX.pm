@@ -24,6 +24,7 @@ repeat_each(1);
 log_level('info');
 no_long_string();
 no_shuffle();
+no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
@@ -70,6 +71,8 @@ if ($enable_local_dns) {
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
+$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
+
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
 my $ssl_key = read_file("t/certs/apisix.key");
@@ -93,6 +96,19 @@ if ($etcd_enable_auth eq "true") {
 etcd:
   user: root
   password: 5tHkHhYkjr6cQY
+_EOC_
+}
+
+my $custom_hmac_auth = $ENV{"CUSTOM_HMAC_AUTH"} || "false";
+if ($custom_hmac_auth eq "true") {
+    $user_yaml_config .= <<_EOC_;
+plugin_attr:
+  hmac-auth:
+    signature_key: X-APISIX-HMAC-SIGNATURE
+    algorithm_key: X-APISIX-HMAC-ALGORITHM
+    date_key: X-APISIX-DATE
+    access_key: X-APISIX-HMAC-ACCESS-KEY
+    signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
 _EOC_
 }
 
@@ -122,14 +138,19 @@ add_block_preprocessor(sub {
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env TEST_NGINX_HTML_DIR;
 _EOC_
+
+    # set default `timeout` to 5sec
+    my $timeout = $block->timeout // 5;
+    $block->set_value("timeout", $timeout);
 
     $block->set_value("main_config", $main_config);
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "./?.lua;./?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "./?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 
     lua_socket_log_errors off;
 
@@ -209,8 +230,8 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "./?.lua;./?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "./?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
@@ -220,6 +241,12 @@ _EOC_
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
     lua_shared_dict skywalking-tracing-buffer    100m;
+    lua_shared_dict balancer_ewma         1m;
+    lua_shared_dict balancer_ewma_locks   1m;
+    lua_shared_dict balancer_ewma_last_touched_at  1m;
+    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
+    lua_shared_dict tracing_buffer       10m;    # plugin skywalking
+    lua_shared_dict plugin-api-breaker   10m;
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -268,6 +295,14 @@ _EOC_
             }
 
             more_clear_headers Date;
+        }
+
+        location  = /.well-known/openid-configuration {
+            content_by_lua_block {
+                ngx.say([[
+{"issuer":"https://samples.auth0.com/","authorization_endpoint":"https://samples.auth0.com/authorize","token_endpoint":"https://samples.auth0.com/oauth/token","device_authorization_endpoint":"https://samples.auth0.com/oauth/device/code","userinfo_endpoint":"https://samples.auth0.com/userinfo","mfa_challenge_endpoint":"https://samples.auth0.com/mfa/challenge","jwks_uri":"https://samples.auth0.com/.well-known/jwks.json","registration_endpoint":"https://samples.auth0.com/oidc/register","revocation_endpoint":"https://samples.auth0.com/oauth/revoke","scopes_supported":["openid","profile","offline_access","name","given_name","family_name","nickname","email","email_verified","picture","created_at","identities","phone","address"],"response_types_supported":["code","token","id_token","code token","code id_token","token id_token","code token id_token"],"code_challenge_methods_supported":["S256","plain"],"response_modes_supported":["query","fragment","form_post"],"subject_types_supported":["public"],"id_token_signing_alg_values_supported":["HS256","RS256"],"token_endpoint_auth_methods_supported":["client_secret_basic","client_secret_post"],"claims_supported":["aud","auth_time","created_at","email","email_verified","exp","family_name","given_name","iat","identities","iss","name","nickname","phone_number","picture","sub"],"request_uri_parameter_supported":false}
+                ]])
+            }
         }
     }
 
@@ -411,6 +446,8 @@ _EOC_
                 return 200;
             }
 
+            proxy_http_version 1.1;
+            proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_host\$request_uri;
         }
 _EOC_
@@ -426,6 +463,11 @@ _EOC_
     }
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
+
+    if ($block->extra_yaml_config) {
+        $yaml_config .= $block->extra_yaml_config;
+    }
+
     my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;

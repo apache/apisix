@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
 
 local schema = {
@@ -29,6 +30,15 @@ local schema = {
     required = {"i"},
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        ikey = {type = "number", minimum = 0},
+        skey = {type = "string"},
+    },
+    required = {"ikey", "skey"},
+    additionalProperties = false,
+}
 
 local plugin_name = "example-plugin"
 
@@ -37,6 +47,7 @@ local _M = {
     priority = 0,        -- TODO: add a type field, may be a good idea
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
@@ -48,6 +59,20 @@ function _M.check_schema(conf)
     end
 
     return true
+end
+
+
+function _M.init()
+    -- call this function when plugin is loaded
+    local attr = plugin.plugin_attr(plugin_name)
+    if attr then
+        core.log.info(plugin_name, " get plugin attr val: ", attr.val)
+    end
+end
+
+
+function _M.destory()
+    -- call this function when plugin is unloaded
 end
 
 
