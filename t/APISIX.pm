@@ -399,7 +399,6 @@ _EOC_
             proxy_set_header   Upgrade           \$upstream_upgrade;
             proxy_set_header   Connection        \$upstream_connection;
             proxy_set_header   X-Real-IP         \$remote_addr;
-            proxy_pass_header  Server;
             proxy_pass_header  Date;
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;

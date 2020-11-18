@@ -195,7 +195,6 @@ received: Content-Type: text/plain
 received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX
-received: Server: openresty
 received: \nreceived: hello world
 close: 1 nil}
 --- no_error_log

@@ -671,7 +671,6 @@ received: Content-Type: text/plain
 received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
-received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- no_error_log
