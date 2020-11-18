@@ -115,6 +115,13 @@ local function send_http_data(conf, log_message)
         end
     end
 
+    local content_type
+    if conf.concat_method == "json" then
+        content_type = "application/json"
+    else
+        content_type = "text/plain"
+    end
+
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
         path = url_decoded.path,
@@ -122,7 +129,7 @@ local function send_http_data(conf, log_message)
         body = log_message,
         headers = {
             ["Host"] = url_decoded.host,
-            ["Content-Type"] = "application/json",
+            ["Content-Type"] = content_type,
             ["Authorization"] = conf.auth_header
         }
     })
@@ -217,11 +224,16 @@ function _M.log(conf, ctx)
                 for i, entrie in ipairs(entries) do
                     t[i], err = core.json.encode(entrie)
                     if err then
+                        core.log.warn("failed to encode http log: ", err, ", log data: ", entrie)
                         break
                     end
                 end
                 data = core.table.concat(t, "\n") -- encode as multiple string
             end
+
+        else
+            -- defensive programming check
+            err = "unknown concat_method " .. (conf.concat_method or "nil")
         end
 
         if not data then
