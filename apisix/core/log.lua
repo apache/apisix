@@ -59,7 +59,7 @@ function _M.new(prefix)
 
         -- cache the lazily generated method in our
         -- module table
-        m[cmd] = method
+        self[cmd] = method
         return method
     end})
 
@@ -82,7 +82,7 @@ setmetatable(_M, {__index = function(self, cmd)
 
     -- cache the lazily generated method in our
     -- module table
-    _M[cmd] = method
+    self[cmd] = method
     return method
 end})
 
