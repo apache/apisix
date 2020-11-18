@@ -426,6 +426,18 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    if https_admin and not (admin_api_mtls and
+        admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert ~= "" and
+        admin_api_mtls.admin_ssl_cert_key and admin_api_mtls.admin_ssl_cert_key ~= "" and
+        admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= "") then
+        error("missing ssl cert for https admin")
+    end
+
+    if ssl and ssl.enable and not (
+        ssl.ssl_cert and ssl.ssl_cert ~= "" and
+        ssl.ssl_cert_key and ssl.ssl_cert_key ~= "") then
+        error("missing ssl cert for ssl")
+    end
 
     -- Using template.render
     local sys_conf = {

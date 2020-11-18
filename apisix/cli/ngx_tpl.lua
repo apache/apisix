@@ -233,15 +233,10 @@ http {
         {%if https_admin then%}
         listen {* port_admin *} ssl;
 
-        {%if admin_api_mtls and admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert ~= "" and
-         admin_api_mtls.admin_ssl_cert_key and admin_api_mtls.admin_ssl_cert_key ~= "" and
-         admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= ""
-        then%}
         ssl_verify_client on;
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
         ssl_client_certificate {* admin_api_mtls.admin_ssl_ca_cert *};
-        {%end%}
 
         ssl_session_cache    shared:SSL:20m;
         ssl_protocols {* ssl.ssl_protocols *};
@@ -321,8 +316,8 @@ http {
         {% end %} {% -- if enable_ipv6 %}
 
         {% if ssl.enable then %}
-        ssl_certificate      ../t/certs/apisix.crt;
-        ssl_certificate_key  ../t/certs/apisix.key;
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
 

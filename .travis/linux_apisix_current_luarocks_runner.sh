@@ -39,6 +39,8 @@ script() {
     # show install file
     luarocks show apisix
 
+    enable_ssl
+
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
