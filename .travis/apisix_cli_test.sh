@@ -68,6 +68,8 @@ echo "
 apisix:
     ssl:
         enable: true
+        ssl_cert: '../t/certs/apisix.crt'
+        ssl_cert_key: '../t/certs/apisix.key'
         listen_port: 8443
 " > conf/config.yaml
 
@@ -97,6 +99,8 @@ apisix:
     - 9082
   ssl:
     enable: true
+    ssl_cert: '../t/certs/apisix.crt'
+    ssl_cert_key: '../t/certs/apisix.key'
     listen_port:
       - 9443
       - 9444
@@ -515,6 +519,8 @@ echo '
 apisix:
     ssl:
         enable: true
+        ssl_cert: "../t/certs/apisix.crt"
+        ssl_cert_key: "../t/certs/apisix.key"
         ssl_session_tickets: true
 ' > conf/config.yaml
 
