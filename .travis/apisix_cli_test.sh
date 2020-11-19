@@ -258,10 +258,13 @@ git checkout conf/config.yaml
 
 echo "
 apisix:
+    ssl:
+        enable: true
+        ssl_cert: '../t/certs/apisix.crt'
+        ssl_cert_key: '../t/certs/apisix.key'
     admin_api_mtls:
         admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
         admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-        admin_ssl_ca_cert: '../t/certs/mtls_ca.crt'
     port_admin: 9180
     https_admin: true
 " > conf/config.yaml
@@ -276,9 +279,9 @@ fi
 
 make run
 
-code=$(curl -i -o /dev/null -s -w %{http_code} --resolve 'admin.apisix.dev:9180:127.0.0.1' --cacert ../t/certs/mtls_ca.crt --key ../t/certs/mtls_client.key --cert ../t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
-    echo "failed: failed to enabled mTLS for admin"
+    echo "failed: failed to enabled https for admin"
     exit 1
 fi
 
