@@ -82,26 +82,13 @@ local function create_tracer(conf,ctx)
         conf.sample_ratio = 1
     end
 
-    local tracer = new_tracer(new_reporter(conf), new_random_sampler(conf))
+    local reporter = new_reporter(conf)
+    reporter:init_processor()
+    local tracer = new_tracer(reporter, new_random_sampler(conf))
     tracer:register_injector("http_headers", zipkin_codec.new_injector())
     tracer:register_extractor("http_headers", zipkin_codec.new_extractor())
     return tracer
 end
-
-local function report2endpoint(premature, reporter)
-    if premature then
-        return
-    end
-
-    local ok, err = reporter:flush()
-    if not ok then
-        core.log.error("reporter flush ", err)
-        return
-    end
-
-    core.log.info("report2endpoint ok")
-end
-
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -216,12 +203,6 @@ function _M.log(conf, ctx)
     end
 
     opentracing.request_span:finish(log_end_time)
-
-    local reporter = opentracing.tracer.reporter
-    local ok, err = ngx.timer.at(0, report2endpoint, reporter)
-    if not ok then
-        core.log.error("failed to create timer: ", err)
-    end
 end
 
 return _M
