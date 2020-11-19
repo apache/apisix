@@ -507,6 +507,14 @@ echo "passed: using env to set worker processes"
 # set worker processes with env
 git checkout conf/config.yaml
 
+echo '
+apisix:
+    ssl:
+        enable: true
+        ssl_cert: "../t/certs/apisix.crt"
+        ssl_cert_key: "../t/certs/apisix.key"
+' > conf/config.yaml
+
 make init
 
 count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
