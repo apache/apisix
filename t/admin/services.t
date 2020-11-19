@@ -1478,7 +1478,7 @@ GET /t
                 )
 
             ngx.status = code
-            ngx.print(body)
+            ngx.say(body)
         }
     }
 --- request
