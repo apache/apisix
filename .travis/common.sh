@@ -45,6 +45,5 @@ enable_ssl() {
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-            admin_ssl_ca_cert: '../t/certs/mtls_ca.crt'
     " > conf/config.yaml
 }
