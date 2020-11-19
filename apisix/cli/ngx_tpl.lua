@@ -236,9 +236,7 @@ http {
         ssl_verify_client on;
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
-        {%if admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= "" then%}
         ssl_client_certificate {* admin_api_mtls.admin_ssl_ca_cert *};
-        {% end %}
 
         ssl_session_cache    shared:SSL:20m;
         ssl_protocols {* ssl.ssl_protocols *};
