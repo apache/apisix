@@ -16,7 +16,7 @@
 --
 local resty_http = require "resty.http"
 local to_hex = require "resty.string".to_hex
-local cjson = require "cjson".new()
+local cjson = require "cjson.safe".new()
 cjson.encode_number_precision(16)
 local assert = assert
 local type = type
