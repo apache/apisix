@@ -29,10 +29,9 @@
 #
 # If the configured environment variable can't be found, an error will be thrown.
 apisix:
-    ssl:
-        enable: true
-        ssl_cert: '../t/certs/apisix.crt'
-        ssl_cert_key: '../t/certs/apisix.key'
-    admin_api_mtls:
-        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+  admin_key:
+    -
+      name: "admin"
+      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please
+                                            # update it when you deploy to production environment
+      role: admin

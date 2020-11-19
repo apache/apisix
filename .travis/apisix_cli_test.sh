@@ -265,7 +265,7 @@ apisix:
     admin_api_mtls:
         admin_ssl_cert: '../t/certs/mtls_client.crt'
         admin_ssl_cert_key: '../t/certs/mtls_client.key'
-        admin_ssl_ca_cert: '../t/certs/mtls_ca.key'
+        admin_ssl_ca_cert: '../t/certs/mtls_ca.crt'
     port_admin: 9180
     https_admin: true
 " > conf/config.yaml
