@@ -56,7 +56,7 @@
 默认本插件限制请求体的大小不能大于 1 MiB。这个限制可以通过 `apisix/admin/plugin_metadata/batch-requests` 来修改。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "max_body_size": 4194304
 }'
