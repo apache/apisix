@@ -154,11 +154,33 @@ passed
 
 
 
-=== TEST 5: sign
+=== TEST 5: sign / verify in argument
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
 --- request
-GET /apisix/plugin/jwt/sign?key=user-key
---- response_body_like eval
-qr/(eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9).\w+.\w+/
+GET /t
+--- response_body
+hello world
 --- no_error_log
 [error]
 
@@ -204,17 +226,7 @@ GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4
 
 
 
-=== TEST 10: verify (in argument)
---- request
-GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
---- response_body
-hello world
---- no_error_log
-[error]
-
-
-
-=== TEST 11: verify (in header)
+=== TEST 10: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -226,7 +238,7 @@ hello world
 
 
 
-=== TEST 12: verify (in cookie)
+=== TEST 11: verify (in cookie)
 --- request
 GET /hello
 --- more_headers
@@ -238,7 +250,7 @@ hello world
 
 
 
-=== TEST 13: verify (in header without Bearer)
+=== TEST 12: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -250,7 +262,7 @@ hello world
 
 
 
-=== TEST 14: verify (header with bearer)
+=== TEST 13: verify (header with bearer)
 --- request
 GET /hello
 --- more_headers
@@ -262,7 +274,7 @@ hello world
 
 
 
-=== TEST 15: verify (invalid bearer token)
+=== TEST 14: verify (invalid bearer token)
 --- request
 GET /hello
 --- more_headers
@@ -275,7 +287,7 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
 
 
 
-=== TEST 16: delete a exist consumer
+=== TEST 15: delete a exist consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -332,7 +344,7 @@ code: true body: passed
 
 
 
-=== TEST 17: add consumer with username and plugins with base64 secret
+=== TEST 16: add consumer with username and plugins with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -378,7 +390,7 @@ passed
 
 
 
-=== TEST 18: enable jwt auth plugin with base64 secret
+=== TEST 17: enable jwt auth plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -413,17 +425,39 @@ passed
 
 
 
-=== TEST 19: sign
+=== TEST 18: sign / verify
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
 --- request
-GET /apisix/plugin/jwt/sign?key=user-key
---- response_body_like eval
-qr/(eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9).\w+.\w+/
+GET /t
+--- response_body
+hello world
 --- no_error_log
 [error]
 
 
 
-=== TEST 20: verify: invalid JWT token
+=== TEST 19: verify: invalid JWT token
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -434,7 +468,7 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 
 
 
-=== TEST 21: verify: invalid signature
+=== TEST 20: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
@@ -447,7 +481,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 
 
 
-=== TEST 22: verify: happy path
+=== TEST 21: verify: happy path
 --- request
 GET /hello
 --- more_headers
@@ -459,7 +493,7 @@ hello world
 
 
 
-=== TEST 23: without key
+=== TEST 22: without key
 --- config
     location /t {
         content_by_lua_block {
@@ -483,7 +517,7 @@ property "key" is required
 
 
 
-=== TEST 24: enable jwt auth plugin with extra field
+=== TEST 23: enable jwt auth plugin with extra field
 --- config
     location /t {
         content_by_lua_block {
@@ -522,7 +556,7 @@ GET /t
 
 
 
-=== TEST 25: get the schema by schema_type
+=== TEST 24: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -545,7 +579,7 @@ GET /t
 
 
 
-=== TEST 26: get the schema by error schema_type
+=== TEST 25: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -567,7 +601,7 @@ GET /t
 
 
 
-=== TEST 27: get the schema by default schema_type
+=== TEST 26: get the schema by default schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -589,7 +623,7 @@ GET /t
 
 
 
-=== TEST 28: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
+=== TEST 27: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -637,7 +671,7 @@ passed
 
 
 
-=== TEST 29: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
+=== TEST 28: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -673,7 +707,7 @@ passed
 
 
 
-=== TEST 30: sign/verify use RS256 algorithm(private_key numbits = 512)
+=== TEST 29: sign/verify use RS256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -705,7 +739,7 @@ hello world
 
 
 
-=== TEST 31: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
+=== TEST 30: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -756,7 +790,7 @@ passed
 
 
 
-=== TEST 32: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
+=== TEST 31: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -792,7 +826,7 @@ passed
 
 
 
-=== TEST 33: sign/verify use RS256 algorithm(private_key numbits = 1024)
+=== TEST 32: sign/verify use RS256 algorithm(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -824,7 +858,7 @@ hello world
 
 
 
-=== TEST 34: add consumer with username and plugins with public_key, private_key(private_key numbits = 2048)
+=== TEST 33: add consumer with username and plugins with public_key, private_key(private_key numbits = 2048)
 --- config
     location /t {
         content_by_lua_block {
@@ -875,7 +909,7 @@ passed
 
 
 
-=== TEST 35: JWT sign and verify use RS256 algorithm(private_key numbits = 2048)
+=== TEST 34: JWT sign and verify use RS256 algorithm(private_key numbits = 2048)
 --- config
     location /t {
         content_by_lua_block {
@@ -911,7 +945,7 @@ passed
 
 
 
-=== TEST 36: sign/verify use RS256 algorithm(private_key numbits = 2048)
+=== TEST 35: sign/verify use RS256 algorithm(private_key numbits = 2048)
 --- config
     location /t {
         content_by_lua_block {
@@ -943,7 +977,7 @@ hello world
 
 
 
-=== TEST 37: JWT sign with the public key when using the RS256 algorithm
+=== TEST 36: JWT sign with the public key when using the RS256 algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -991,7 +1025,7 @@ passed
 
 
 
-=== TEST 38: JWT sign and verify RS256
+=== TEST 37: JWT sign and verify RS256
 --- config
     location /t {
         content_by_lua_block {
@@ -1027,7 +1061,7 @@ passed
 
 
 
-=== TEST 39: sign failed
+=== TEST 38: sign failed
 --- request
 GET /apisix/plugin/jwt/sign?key=user-key-rs256
 --- error_code: 500
@@ -1036,7 +1070,7 @@ qr/failed to sign jwt/
 
 
 
-=== TEST 40: sanity(algorithm = HS512)
+=== TEST 39: sanity(algorithm = HS512)
 --- config
     location /t {
         content_by_lua_block {
@@ -1061,7 +1095,7 @@ qr/{"algorithm":"HS512","exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2
 
 
 
-=== TEST 41: add consumer with username and plugins use HS512 algorithm
+=== TEST 40: add consumer with username and plugins use HS512 algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -1108,7 +1142,7 @@ passed
 
 
 
-=== TEST 42: JWT sign and verify use HS512 algorithm
+=== TEST 41: JWT sign and verify use HS512 algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -1144,19 +1178,31 @@ passed
 
 
 
-=== TEST 43: sign(algorithm = HS512)
+=== TEST 42: sign / verify (algorithm = HS512)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-HS512',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
 --- request
-GET /apisix/plugin/jwt/sign?key=user-key-HS512
---- response_body_like eval
-qr/(eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9|eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9).\w+.\w+/
---- no_error_log
-[error]
-
-
-
-=== TEST 44: verify (in argument) use HS512 algorithm
---- request
-GET /hello?jwt=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1IUzUxMiIsImV4cCI6MTkxOTc4NzU5OH0.zJAE-BDs6QtMvGbBmQL6hNbZ9seYSfZ9SDH3R3VSiOhY3UAjdrl3SUStTeCirlVzIV1eoEiW2jd_xHpKNw7nWA
+GET /t
 --- response_body
 hello world
 --- no_error_log
@@ -1164,7 +1210,7 @@ hello world
 
 
 
-=== TEST 45: test for unsupported algorithm
+=== TEST 43: test for unsupported algorithm
 --- request
 PATCH /apisix/plugin/jwt/sign?key=user-key
 --- config
@@ -1189,7 +1235,7 @@ qr/property "algorithm" validation failed/
 
 
 
-=== TEST 46: wrong format of secret
+=== TEST 44: wrong format of secret
 --- config
     location /t {
         content_by_lua_block {
@@ -1216,7 +1262,7 @@ GET /t
 
 
 
-=== TEST 47: when the exp value is not set, make sure the default value(86400) works
+=== TEST 45: when the exp value is not set, make sure the default value(86400) works
 --- config
     location /t {
         content_by_lua_block {
@@ -1261,7 +1307,7 @@ qr/"exp":86400/
 
 
 
-=== TEST 48: when the exp value is not set, sign jwt use the default value(86400)
+=== TEST 46: when the exp value is not set, sign jwt use the default value(86400)
 --- config
     location /t {
         content_by_lua_block {
