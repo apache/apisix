@@ -62,9 +62,10 @@ done
     }
 --- request
 GET /t
---- response_body
-additional properties forbidden, found username
+--- response_body_like eval
+qr/additional properties forbidden, found (username|password)
 done
+/
 --- no_error_log
 [error]
 

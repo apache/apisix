@@ -26,7 +26,7 @@ sudo apt-get update
 if [ "$OPENRESTY_VERSION" == "default" ]; then
     openresty='openresty-debug'
 else
-    openresty="openresty-debug=$OPENRESTY_VERSION\*"
+    openresty="openresty-debug=$OPENRESTY_VERSION*"
 fi
 
 sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
