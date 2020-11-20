@@ -271,8 +271,6 @@ apiSix.ApiSixServiceServiceURLF6EC7872 = http://apiSi-ApiSi-123HOROQKWZKA-126832
 
 Open the `apiSix.ApiSixDashboardURL` URL and log in to configure your **APISIX** in AWS China region.
 
-![](images/apisix-dashboard-prompt-ningxia.png)
-
 
 _TBD_
 
