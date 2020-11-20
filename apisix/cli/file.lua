@@ -36,7 +36,7 @@ end
 
 local function tab_is_array(t)
     local count = 0
-    for k,v in pairs(t) do
+    for k, v in pairs(t) do
         count = count + 1
     end
 
@@ -48,6 +48,7 @@ local function resolve_conf_var(conf)
     for key, val in pairs(conf) do
         if type(val) == "table" then
             resolve_conf_var(val)
+
         elseif type(val) == "string" then
             local var_used = false
             -- we use '${{var}}' because '$var' and '${var}' are taken
