@@ -426,6 +426,19 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    admin_api_mtls = yaml_conf.apisix.admin_api_mtls
+    if yaml_conf.apisix.https_admin and not (admin_api_mtls and
+        admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert ~= "" and
+        admin_api_mtls.admin_ssl_cert_key and admin_api_mtls.admin_ssl_cert_key ~= "" ) then
+        error("missing ssl cert for https admin")
+    end
+
+    ssl = yaml_conf.apisix.ssl
+    if ssl and ssl.enable and not (
+        ssl.ssl_cert and ssl.ssl_cert ~= "" and
+        ssl.ssl_cert_key and ssl.ssl_cert_key ~= "") then
+        error("missing ssl cert for ssl")
+    end
 
     -- Using template.render
     local sys_conf = {

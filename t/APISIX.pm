@@ -74,12 +74,12 @@ my $default_yaml_config = read_file("conf/config-default.yaml");
 $default_yaml_config =~ s/#- example-plugin/- example-plugin/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
-my $ssl_crt = read_file("conf/cert/apisix.crt");
-my $ssl_key = read_file("conf/cert/apisix.key");
-my $ssl_ecc_crt = read_file("conf/cert/apisix_ecc.crt");
-my $ssl_ecc_key = read_file("conf/cert/apisix_ecc.key");
-my $test2_crt = read_file("conf/cert/test2.crt");
-my $test2_key = read_file("conf/cert/test2.key");
+my $ssl_crt = read_file("t/certs/apisix.crt");
+my $ssl_key = read_file("t/certs/apisix.key");
+my $ssl_ecc_crt = read_file("t/certs/apisix_ecc.crt");
+my $ssl_ecc_key = read_file("t/certs/apisix_ecc.key");
+my $test2_crt = read_file("t/certs/test2.crt");
+my $test2_key = read_file("t/certs/test2.key");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984

@@ -27,6 +27,7 @@ do_install() {
 script() {
     export_or_prefix
     openresty -V
+    enable_ssl
 
     sudo rm -rf /usr/local/apisix
 

@@ -67,6 +67,9 @@ echo "passed: nginx.conf file contains reuseport configuration"
 echo "
 apisix:
     ssl:
+        enable: true
+        ssl_cert: '../t/certs/apisix.crt'
+        ssl_cert_key: '../t/certs/apisix.key'
         listen_port: 8443
 " > conf/config.yaml
 
@@ -95,6 +98,9 @@ apisix:
     - 9081
     - 9082
   ssl:
+    enable: true
+    ssl_cert: '../t/certs/apisix.crt'
+    ssl_cert_key: '../t/certs/apisix.key'
     listen_port:
       - 9443
       - 9444
@@ -252,6 +258,13 @@ git checkout conf/config.yaml
 
 echo "
 apisix:
+    ssl:
+        enable: true
+        ssl_cert: '../t/certs/apisix.crt'
+        ssl_cert_key: '../t/certs/apisix.key'
+    admin_api_mtls:
+        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
     port_admin: 9180
     https_admin: true
 " > conf/config.yaml
@@ -494,6 +507,14 @@ echo "passed: using env to set worker processes"
 # set worker processes with env
 git checkout conf/config.yaml
 
+echo '
+apisix:
+    ssl:
+        enable: true
+        ssl_cert: "../t/certs/apisix.crt"
+        ssl_cert_key: "../t/certs/apisix.key"
+' > conf/config.yaml
+
 make init
 
 count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
@@ -506,6 +527,8 @@ echo '
 apisix:
     ssl:
         enable: true
+        ssl_cert: "../t/certs/apisix.crt"
+        ssl_cert_key: "../t/certs/apisix.key"
         ssl_session_tickets: true
 ' > conf/config.yaml
 
