@@ -233,18 +233,12 @@ http {
         {%if https_admin then%}
         listen {* port_admin *} ssl;
 
-        {%if admin_api_mtls and admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert ~= "" and
-         admin_api_mtls.admin_ssl_cert_key and admin_api_mtls.admin_ssl_cert_key ~= "" and
-         admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= ""
-        then%}
-        ssl_verify_client on;
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
+        {%if admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= "" then%}
+        ssl_verify_client on;
         ssl_client_certificate {* admin_api_mtls.admin_ssl_ca_cert *};
-        {% else %}
-        ssl_certificate      cert/apisix_admin_ssl.crt;
-        ssl_certificate_key  cert/apisix_admin_ssl.key;
-        {%end%}
+        {% end %}
 
         ssl_session_cache    shared:SSL:20m;
         ssl_protocols {* ssl.ssl_protocols *};
@@ -323,8 +317,9 @@ http {
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
-        ssl_certificate      cert/apisix.crt;
-        ssl_certificate_key  cert/apisix.key;
+        {% if ssl.enable then %}
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
 
@@ -339,6 +334,7 @@ http {
         ssl_session_tickets on;
         {% else %}
         ssl_session_tickets off;
+        {% end %}
         {% end %}
 
         {% if with_module_status then %}
@@ -382,9 +378,11 @@ http {
         }
         {% end %}
 
+        {% if ssl.enable then %}
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
+        {% end %}
 
         location / {
             set $upstream_mirror_host        '';
