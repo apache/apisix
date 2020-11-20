@@ -439,3 +439,83 @@ hello world
 --- error_log_like eval
 qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 --- wait: 2
+
+
+
+=== TEST 13: set route(id: 1), missing keyz field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",                               
+                                "timeout" : 1,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                 "kafka-logger": {
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.1":9092
+                                      },
+                                    "kafka_topic" : "test2",                                    
+                                    "timeout" : 1,
+                                    "batch_max_size": 1
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: access, test key field is optional
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- wait: 2
