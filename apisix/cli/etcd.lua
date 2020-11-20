@@ -193,7 +193,7 @@ function _M.init(env, show_output)
 
             local uri = host .. "/v3/kv/put"
             local post_json = '{"value":"' .. base64_encode("init_dir")
-                              ..'", "key":"' .. base64_encode(key) .. '"}'
+                              .. '", "key":"' .. base64_encode(key) .. '"}'
             local cmd = "curl " .. uri .. token_head .. " -X POST -d '" .. post_json
                         .. "' --connect-timeout " .. timeout
                         .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
