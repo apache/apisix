@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.1.0](#210)
 - [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
@@ -31,6 +32,26 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+
+## 2.1.0
+
+### Core
+- :sunrise: **支持使用环境变量来配置参数.** [#2743](https://github.com/apache/apisix/pull/2743)
+- :sunrise: **支持使用 TLS 来连接 etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
+- 自动生成对象的创建和更新时间. [#2740](https://github.com/apache/apisix/pull/2740)
+- 在上游中开启 websocket 时，增加日志来提示此功能废弃.[#2691](https://github.com/apache/apisix/pull/2691)
+- consumer 中只支持用户名，移除 id，这是不向下兼容的修改。之前版本中的consumer需要在 etcd 中手工清理掉 id 字段，不然使用时 schema 校验会报错。[#2679](https://github.com/apache/apisix/pull/2679)
+
+## Plugin
+- :sunrise: **升级协议来 Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). 这个版本只支持 skywalking 8.0 协议。此插件默认关闭，需要修改 config.yaml 来开启。这是不向下兼容的修改。
+- proxy-cache: cache_zone 字段改为可选.[#2776](https://github.com/apache/apisix/pull/2776)
+
+## Bugfix
+- :bug: fix(etcd): 处理 etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
+- 将 `conf/cert` 中的测试证书移动到 `t/certs` 目录中，并且默认关闭 SSL。这是不向下兼容的修改。 [#2112](https://github.com/apache/apisix/pull/2112)
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/8)
 
 ## 2.0.0
 

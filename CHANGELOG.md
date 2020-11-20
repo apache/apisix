@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.1.0](#210)
 - [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
@@ -31,6 +32,25 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.1.0
+
+### Core
+- :sunrise: **support ENV variable in configuration.** [#2743](https://github.com/apache/apisix/pull/2743)
+- :sunrise: **support TLS connection with etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
+- generate create/update_time automatically. [#2740](https://github.com/apache/apisix/pull/2740)
+- add a deprecate log for enable_websocket in upstream.[#2691](https://github.com/apache/apisix/pull/2691)
+- refactor(consumer): remove id and use username only, which is not backward compatible. Consumers in the previous version need to manually clean up the id field in etcd, otherwise the schema check will report an error when used. [#2679](https://github.com/apache/apisix/pull/2679)
+
+## Plugin
+- :sunrise: **Upgrade protocol to support Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). So this version only supports skywalking 8.0 protocol. This plugin is disabled by default, you need to modify config.yaml to enable, which is not backward compatible.
+- proxy-cache: the cache_zone field in the schema should be optional.[#2776](https://github.com/apache/apisix/pull/2776)
+
+## Bugfix
+- :bug: fix(etcd): handle etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
+- fix: move `conf/cert` to `t/certs` and disable ssl by default, which is not backward compatible. [#2112](https://github.com/apache/apisix/pull/2112)
+
+For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/8)
 
 ## 2.0.0
 
