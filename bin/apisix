@@ -607,6 +607,26 @@ local function init_etcd(show_output)
     for index, host in ipairs(yaml_conf.etcd.host) do
         local is_success = true
 
+        local token_head = ""
+        if etcd_conf.user and etcd_conf.password then
+            local uri_auth = host .. "/v3/auth/authenticate"
+            local json_auth = {
+                name =  etcd_conf.user,
+                password = etcd_conf.password
+            }
+            local post_json_auth = dkjson.encode(json_auth)
+            local cmd_auth = "curl -s " .. uri_auth .. " -X POST -d '" .. post_json_auth
+                             .. "' --connect-timeout " .. timeout
+                             .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
+
+            local res_auth = util.execute_cmd(cmd_auth)
+            local body_auth, _, err_auth = dkjson.decode(res_auth)
+            if err_auth then
+                error(cmd_auth .. "\n" .. res_auth)
+            end
+            token_head = " -H 'Authorization: " .. body_auth.token .. "'"
+        end
+
         for _, dir_name in ipairs({"/routes", "/upstreams", "/services",
                                    "/plugins", "/consumers", "/node_status",
                                    "/ssl", "/global_rules", "/stream_routes",
@@ -616,7 +636,7 @@ local function init_etcd(show_output)
             local base64_encode = require("base64").encode
             local uri = host .. "/v3/kv/put"
             local post_json = '{"value":"' .. base64_encode("init_dir") ..  '", "key":"' .. base64_encode(key) .. '"}'
-            local cmd = "curl " .. uri .. " -X POST -d '" .. post_json
+            local cmd = "curl " .. uri .. token_head .. " -X POST -d '" .. post_json
                         .. "' --connect-timeout " .. timeout
                         .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 

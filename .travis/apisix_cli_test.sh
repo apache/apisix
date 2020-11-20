@@ -572,3 +572,68 @@ fi
 make stop
 
 echo "passed: access log with JSON format"
+
+# check etcd while enable auth
+git checkout conf/config.yaml
+
+export ETCDCTL_API=3
+etcdctl version
+etcdctl --endpoints=127.0.0.1:2379 user add "root:apache-api6"
+etcdctl --endpoints=127.0.0.1:2379 role add root
+etcdctl --endpoints=127.0.0.1:2379 user grant-role root root
+etcdctl --endpoints=127.0.0.1:2379 user get root
+etcdctl --endpoints=127.0.0.1:2379 auth enable
+etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
+
+echo '
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+  timeout: 30
+  user: root
+  password: apache-api6
+' > conf/config.yaml
+
+make init
+cmd_res=`etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 get /apisix --prefix`
+etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
+etcdctl --endpoints=127.0.0.1:2379 role delete root
+etcdctl --endpoints=127.0.0.1:2379 user delete root
+
+init_kv=(
+/apisix/consumers/
+init_dir
+/apisix/global_rules/
+init_dir
+/apisix/node_status/
+init_dir
+/apisix/plugin_metadata/
+init_dir
+/apisix/plugins/
+init_dir
+/apisix/proto/
+init_dir
+/apisix/routes/
+init_dir
+/apisix/services/
+init_dir
+/apisix/ssl/
+init_dir
+/apisix/stream_routes/
+init_dir
+/apisix/upstreams/
+init_dir
+)
+i=0
+
+for kv in $cmd_res
+do
+    if [ "${init_kv[$i]}" != "$kv" ]; then
+        echo "failed: index=$i, $kv is not equal to ${init_kv[$i]}"
+        exit 1
+    fi
+    let i=$i+1
+done
+
+echo "passed: etcd auth enabled and init kv has been set up correctly"
