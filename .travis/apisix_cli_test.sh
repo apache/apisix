@@ -196,6 +196,21 @@ fi
 
 echo "passed: resolve variables as boolean"
 
+echo '
+nginx_config:
+    envs:
+        - ${{ var_test}}_${{ FOO }}
+' > conf/config.yaml
+
+var_test=TEST FOO=bar make init
+
+if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables wrapped with whitespace"
+    exit 1
+fi
+
+echo "passed: resolve variables wrapped with whitespace"
+
 # check nameserver imported
 git checkout conf/config.yaml
 
