@@ -442,7 +442,7 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 
 
 
-=== TEST 13: set route(id: 1), missing keyz field
+=== TEST 13: set route(id: 1), missing key field
 --- config
     location /t {
         content_by_lua_block {
@@ -456,7 +456,7 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
                                   {
                                     "127.0.0.1":9092
                                   },
-                                "kafka_topic" : "test2",                               
+                                "kafka_topic" : "test2",
                                 "timeout" : 1,
                                 "batch_max_size": 1
                             }
@@ -478,7 +478,7 @@ qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
                                       {
                                         "127.0.0.1":9092
                                       },
-                                    "kafka_topic" : "test2",                                    
+                                    "kafka_topic" : "test2",
                                     "timeout" : 1,
                                     "batch_max_size": 1
                                 }
@@ -518,4 +518,61 @@ GET /hello
 hello world
 --- no_error_log
 [error]
+--- wait: 2
+
+
+
+=== TEST 15: set route(meta_format = default), missing key field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "kafka_topic" : "test2",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "include_req_body": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: hit route, report log to kafka
+--- request
+GET /hello?ab=cd
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log_like eval
+qr/send data to kafka: \{.*"upstream":"127.0.0.1:1980"/
 --- wait: 2
