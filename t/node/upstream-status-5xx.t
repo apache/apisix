@@ -60,7 +60,7 @@ passed
 
 
 
-=== TEST 2: hit the route and return a 200 status code
+=== TEST 2: hit the route and $upstream_status is 200
 --- request
 GET /hello
 --- response_body
@@ -274,7 +274,7 @@ passed
 
 
 
-=== TEST 11: hit routes
+=== TEST 11: hit routes, $upstream_status is 200
 --- request
 GET /hello
 --- grep_error_log eval
@@ -316,7 +316,7 @@ passed
 
 
 
-=== TEST 13: hit routes
+=== TEST 13: hit routes, $upstream_status is nil
 --- request
 GET /hello
 --- error_code: 502
