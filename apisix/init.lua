@@ -36,6 +36,7 @@ local type          = type
 local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
+local tonumber      = tonumber
 local load_balancer
 local local_conf
 local dns_resolver
