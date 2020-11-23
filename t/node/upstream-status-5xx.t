@@ -68,7 +68,7 @@ hello world
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/X-Apisix-Upstream-Status:/
+qr/X-APISIX-Upstream-Status:/
 --- grep_error_log_out
 
 
@@ -119,7 +119,7 @@ GET /sleep1
 --- response_body eval
 qr/504 Gateway Time-out/
 --- error_log
-X-Apisix-Upstream-Status: 504 
+X-APISIX-Upstream-Status: 504 
 
 
 
@@ -164,7 +164,7 @@ GET /hello
 --- response_body eval
 qr/502 Bad Gateway/
 --- error_log
-X-Apisix-Upstream-Status: 502
+X-APISIX-Upstream-Status: 502
 
 
 
@@ -209,7 +209,7 @@ GET /server_error
 --- response_body eval
 qr/>500 Internal Server Error/
 --- error_log
-X-Apisix-Upstream-Status: 500
+X-APISIX-Upstream-Status: 500
 
 
 
@@ -278,7 +278,7 @@ passed
 --- request
 GET /hello
 --- grep_error_log eval
-qr/X-Apisix-Upstream-Status:/
+qr/X-APISIX-Upstream-Status:/
 --- grep_error_log_out
 
 
@@ -317,12 +317,12 @@ passed
 
 
 
-=== TEST 13: hit routes, retry between upstream failed(TODO: The `X-Apisix-Upstream-Status: 502` response header should be added, but the value obtained by $upstream_status is nil.)
+=== TEST 13: hit routes, retry between upstream failed(TODO: The `X-APISIX-Upstream-Status: 502` response header should be added, but the value obtained by $upstream_status is nil.)
 --- request
 GET /hello
 --- error_code: 502
 --- grep_error_log eval
-qr/X-Apisix-Upstream-Status: 502/
+qr/X-APISIX-Upstream-Status: 502/
 --- grep_error_log_out
 
 
@@ -369,5 +369,5 @@ GET /hello
 --- response_body
 Fault Injection!
 --- grep_error_log eval
-qr/X-Apisix-Upstream-Status: 500/
+qr/X-APISIX-Upstream-Status: 500/
 --- grep_error_log_out
