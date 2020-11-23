@@ -406,8 +406,8 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
-grep "access_log off;" conf/nginx.conf > /dev/null
-if [ $? -eq 0 ]; then
+count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
+if [ $count_access_log_off -eq 2 ]; then
     echo "failed: nginx.conf file find access_log off; when enable access log"
     exit 1
 fi
@@ -429,8 +429,8 @@ if [ $? -eq 0 ]; then
     exit 1
 fi
 
-grep "access_log off;" conf/nginx.conf > /dev/null
-if [ ! $? -eq 0 ]; then
+count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
+if [ $count_access_log_off -ne 2 ]; then
     echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
     exit 1
 fi
