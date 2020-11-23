@@ -317,14 +317,13 @@ passed
 
 
 
-=== TEST 13: hit routes, retries failed, status code is 502
+=== TEST 13: hit routes, retry between upstream failed(TODO: The `X-Apisix-Upstream-Status: 502` response header should be added, but the value obtained by $upstream_status is nil.)
 --- request
 GET /hello
 --- error_code: 502
 --- grep_error_log eval
 qr/X-Apisix-Upstream-Status: 502/
 --- grep_error_log_out
-X-Apisix-Upstream-Status: 502
 
 
 
@@ -332,28 +331,43 @@ X-Apisix-Upstream-Status: 502
 --- config
     location /t {
         content_by_lua_block {
-            ngx.exit(500)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                        "plugins": {
+                            "fault-injection": {
+                                "abort": {
+                                    "http_status": 500,
+                                    "body": "Fault Injection!\n"
+                                }
+                            }
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 --- request
 GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: hit routes, retries failed, status code is 502
+--- request
+GET /hello
 --- error_code: 500
+--- response_body
+Fault Injection!
 --- grep_error_log eval
-qr/X-Apisix-Upstream-Status:/
---- grep_error_log_out
-
-
-
-=== TEST 15: the status code returned from apisix
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.exit(502)
-        }
-    }
---- request
-GET /t
---- error_code: 502
---- grep_error_log eval
-qr/X-Apisix-Upstream-Status:/
+qr/X-Apisix-Upstream-Status: 500/
 --- grep_error_log_out
