@@ -20,6 +20,7 @@ local plugin_mod = require("apisix.plugin")
 local ip_restriction = require("apisix.plugins.ip-restriction")
 local core = require("apisix.core")
 local ipairs = ipairs
+local type = type
 
 
 local _M = {}
