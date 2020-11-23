@@ -391,6 +391,52 @@ fi
 
 git checkout conf/config.yaml
 
+echo '
+nginx_config:
+  http:
+    enable_access_log: true
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_enable_access_log"
+' > conf/config.yaml
+
+make init
+
+grep "test_enable_access_log" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file doesn't find access_log_format when enable access log"
+    exit 1
+fi
+
+grep "access_log off;" conf/nginx.conf > /dev/null
+if [ $? -eq 0 ]; then
+    echo "failed: nginx.conf file find access_log off; when enable access log"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
+echo '
+nginx_config:
+  http:
+    enable_access_log: false
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_enable_access_log"
+' > conf/config.yaml
+
+make init
+
+grep "test_enable_access_log" conf/nginx.conf > /dev/null
+if [ $? -eq 0 ]; then
+    echo "failed: nginx.conf file find access_log_format when disable access log"
+    exit 1
+fi
+
+grep "access_log off;" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
+    exit 1
+fi
+
+git checkout conf/config.yaml
+
 echo "passed: worker_processes number is configurable"
 
 # missing admin key, allow any IP to access admin api
