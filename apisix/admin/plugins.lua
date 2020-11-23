@@ -125,10 +125,6 @@ end
 
 function _M.get_plugins_list()
     local plugins = core.config.local_conf().plugins
-    if plugins[1] == 'example-plugin' then
-        table_remove(plugins, 1)
-    end
-
     local priorities = {}
     local success = {}
     for i, name in ipairs(plugins) do
