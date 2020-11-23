@@ -60,7 +60,7 @@ passed
 
 
 
-=== TEST 2: hit the route and $upstream_status is 200
+=== TEST 2: hit the route and status code is 200
 --- request
 GET /hello
 --- response_body
@@ -241,7 +241,7 @@ passed
 
 
 
-=== TEST 10: set upstream(id: 1), has available upstream, retries = 2
+=== TEST 10: set upstream(id: 1, retries = 2), has available upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -274,7 +274,7 @@ passed
 
 
 
-=== TEST 11: hit routes, $upstream_status is 200
+=== TEST 11: hit routes, status code is 200
 --- request
 GET /hello
 --- grep_error_log eval
@@ -295,6 +295,7 @@ qr/X-Apisix-Upstream-Status:/
                         "127.0.0.3:1": 1,
                         "127.0.0.2:1": 1,
                         "127.0.0.1:1": 1
+
                     },
                     "retries": 2,
                     "type": "roundrobin"
@@ -316,17 +317,18 @@ passed
 
 
 
-=== TEST 13: hit routes, $upstream_status is nil
+=== TEST 13: hit routes, retries failed, status code is 502
 --- request
 GET /hello
 --- error_code: 502
 --- grep_error_log eval
-qr/X-Apisix-Upstream-Status:/
+qr/X-Apisix-Upstream-Status: 502/
 --- grep_error_log_out
+X-Apisix-Upstream-Status: 502
 
 
 
-=== TEST 14: the status code returned from apisix.
+=== TEST 14: the status code returned from apisix
 --- config
     location /t {
         content_by_lua_block {
@@ -336,6 +338,22 @@ qr/X-Apisix-Upstream-Status:/
 --- request
 GET /t
 --- error_code: 500
+--- grep_error_log eval
+qr/X-Apisix-Upstream-Status:/
+--- grep_error_log_out
+
+
+
+=== TEST 15: the status code returned from apisix
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.exit(502)
+        }
+    }
+--- request
+GET /t
+--- error_code: 502
 --- grep_error_log eval
 qr/X-Apisix-Upstream-Status:/
 --- grep_error_log_out

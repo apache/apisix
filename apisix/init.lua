@@ -630,7 +630,7 @@ end
 function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
 
-    local status_code = tonumber(get_var("upstream_status"))
+    local status_code = tonumber(get_var("status"))
     if status_code then
         if status_code >= 500 and status_code <= 599 then
             core.response.set_header("X-Apisix-Upstream-Status", status_code)
