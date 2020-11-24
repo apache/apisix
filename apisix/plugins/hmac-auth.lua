@@ -227,7 +227,7 @@ local function generate_signature(ctx, secret_key, params)
             -- when args without `=<value>`, value is treated as true.
             -- In order to be compatible with args lacking `=<value>`,
             -- we need to replace true with an empty string.
-            if param == true then
+            if type(param) == "boolean" then
                 param = ""
             end
 
