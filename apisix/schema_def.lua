@@ -374,7 +374,12 @@ local upstream_schema = {
         name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         service_name = rule_name_def,
-        id = id_schema
+        id = id_schema,
+        -- deprecate fields, will be removed soon
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
     },
     anyOf = {
         {required = {"type", "nodes"}},
