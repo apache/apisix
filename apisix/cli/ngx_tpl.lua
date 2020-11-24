@@ -69,8 +69,8 @@ stream {
     resolver_timeout {*resolver_timeout*};
 
     # stream configuration snippet starts
-    {% if stream.configuration_snippet then %}
-    {* stream.configuration_snippet *}
+    {% if stream_configuration_snippet then %}
+    {* stream_configuration_snippet *}
     {% end %}
     # stream configuration snippet ends
 
@@ -217,8 +217,8 @@ http {
     {% end %}
 
     # http configuration snippet starts
-    {% if http.configuration_snippet then %}
-    {* http.configuration_snippet *}
+    {% if http_configuration_snippet then %}
+    {* http_configuration_snippet *}
     {% end %}
     # http configuration snippet ends
 
@@ -280,8 +280,8 @@ http {
         log_not_found off;
 
         # admin configuration snippet starts
-        {% if admin.configuration_snippet then %}
-        {* admin.configuration_snippet *}
+        {% if http_admin_configuration_snippet then %}
+        {* http_admin_configuration_snippet *}
         {% end %}
         # admin configuration snippet ends
 
@@ -367,8 +367,8 @@ http {
         {% end %}
 
         # http server configuration snippet starts
-        {% if http.server_configuration_snippet then %}
-        {* http.server_configuration_snippet *}
+        {% if http_server_configuration_snippet then %}
+        {* http_server_configuration_snippet *}
         {% end %}
         # http server configuration snippet ends
 

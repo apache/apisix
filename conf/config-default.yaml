@@ -134,6 +134,18 @@ nginx_config:                     # config for render the template to genarate n
   main_configuration_snippet: |
     # Add custom Nginx main configuration to nginx.conf.
     # The configuration should be well indented!
+  http_configuration_snippet: |
+    # Add custom Nginx http configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_server_configuration_snippet: |
+    # Add custom Nginx http server configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_admin_configuration_snippet: |
+    # Add custom Nginx admin server configuration to nginx.conf.
+    # The configuration should be well indented!
+  stream_configuration_snippet: |
+    # Add custom Nginx stream configuration to nginx.conf.
+    # The configuration should be well indented!
 
   http:
     access_log: "logs/access.log"
@@ -154,20 +166,6 @@ nginx_config:                     # config for render the template to genarate n
       - 'unix:'
     #lua_shared_dicts:              # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m        # custom shared cache, format: `cache-key: cache-size`
-    configuration_snippet: |
-      # Add custom Nginx http configuration to nginx.conf.
-      # The configuration should be well indented!
-    server_configuration_snippet: |
-      # Add custom Nginx http server configuration to nginx.conf.
-      # The configuration should be well indented!
-  admin:
-    configuration_snippet: |
-      # Add custom Nginx admin server configuration to nginx.conf.
-      # The configuration should be well indented!
-  stream:
-    configuration_snippet: |
-      # Add custom Nginx stream configuration to nginx.conf.
-      # The configuration should be well indented!
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.

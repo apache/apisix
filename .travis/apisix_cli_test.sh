@@ -471,17 +471,14 @@ apisix:
 nginx_config:
     main_configuration_snippet: |
         daemon on;
-    http:
-        configuration_snippet: |
-            chunked_transfer_encoding on;
-        server_configuration_snippet: |
-            set $my "var";
-    admin:
-        configuration_snippet: |
-            log_format admin "$request_time $pipe";
-    stream:
-        configuration_snippet: |
-            tcp_nodelay off;
+    http_configuration_snippet: |
+        chunked_transfer_encoding on;
+    http_server_configuration_snippet: |
+        set $my "var";
+    http_admin_configuration_snippet: |
+        log_format admin "$request_time $pipe";
+    stream_configuration_snippet: |
+        tcp_nodelay off;
 ' > conf/config.yaml
 
 make init
