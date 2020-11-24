@@ -26,7 +26,7 @@ APISIX 的插件是热加载的，不管你是新增、删除还是修改插件�
 只需要通过 admin API 发送一个 HTTP 请求即可：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
 ```
 
 注意：如果你已经在路由规则里配置了某个插件（比如在 `route` 的 `plugins` 字段里面添加了它），然后
