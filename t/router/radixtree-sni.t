@@ -939,7 +939,7 @@ GET /t
 connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
-decrypt ssl key failed.
+decrypt ssl key failed and skipped.
 
 
 
@@ -1253,4 +1253,83 @@ GET /t
 connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
-decrypt ssl key failed.
+decrypt ssl key failed and skipped.
+
+
+
+=== TEST 28: set miss_head ssl certificate
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        --TODO: check the ssl certificate in admin ssl API
+        local ssl_cert = t.read_file("t/certs/incorrect.crt")
+        local ssl_key =  t.read_file("t/certs/incorrect.key")
+        local data = {cert = ssl_cert, key = ssl_key, sni = "www.test.com"}
+
+        local code, body = t.test('/apisix/admin/ssl/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "node": {
+                    "value": {
+                        "sni": "www.test.com"
+                    },
+                    "key": "/apisix/ssl/1"
+                },
+                "action": "set"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: test illegal ssl certificate
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "www.test.com", true)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- request
+GET /t
+--- response_body
+connected: 1
+failed to do SSL handshake: handshake failed
+--- error_log
+base64 decode ssl key failed and skipped.
