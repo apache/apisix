@@ -68,7 +68,7 @@ hello world
 --- no_error_log
 [error]
 --- grep_error_log eval
-qr/X-APISIX-Upstream-Status:/
+qr/X-APISIX-Upstream-Status: 200/
 --- grep_error_log_out
 
 
@@ -119,7 +119,7 @@ GET /sleep1
 --- response_body eval
 qr/504 Gateway Time-out/
 --- error_log
-X-APISIX-Upstream-Status: 504 
+X-APISIX-Upstream-Status: 504
 
 
 
@@ -207,41 +207,13 @@ passed
 GET /server_error
 --- error_code: 500
 --- response_body eval
-qr/>500 Internal Server Error/
+qr/500 Internal Server Error/
 --- error_log
 X-APISIX-Upstream-Status: 500
 
 
 
-=== TEST 9: set route(id: 1), and bind the upstream_id
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream_id": "1"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 10: set upstream(id: 1, retries = 2), has available upstream
+=== TEST 9: set upstream(id: 1, retries = 2), has available upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -273,9 +245,39 @@ passed
 
 
 
+=== TEST 10: set route(id: 1), and bind the upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
 === TEST 11: hit routes, upstream_status is `502, 200`
 --- request
 GET /hello
+--- response_body
+hello world
 --- error_log eval
 qr/X-APISIX-Upstream-Status: 502, 200/
 
