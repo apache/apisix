@@ -250,7 +250,6 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "127.0.0.3:1": 1,
                         "127.0.0.2:1": 1,
                         "127.0.0.1:1980": 1
                     },
@@ -274,12 +273,11 @@ passed
 
 
 
-=== TEST 11: hit routes, status code is 200
+=== TEST 11: hit routes, upstream_status is `502, 200`
 --- request
 GET /hello
---- grep_error_log eval
-qr/X-APISIX-Upstream-Status:/
---- grep_error_log_out
+--- error_log eval
+qr/X-APISIX-Upstream-Status: 502, 200/
 
 
 
@@ -317,17 +315,16 @@ passed
 
 
 
-=== TEST 13: hit routes, retry between upstream failed(TODO: The `X-APISIX-Upstream-Status: 502` response header should be added, but the value obtained by $upstream_status is nil.)
+=== TEST 13: hit routes, retry between upstream failed, $upstream_status is `502, 502, 502`
 --- request
 GET /hello
 --- error_code: 502
---- grep_error_log eval
-qr/X-APISIX-Upstream-Status: 502/
---- grep_error_log_out
+--- error_log eval
+qr/X-APISIX-Upstream-Status: 502, 502, 502/
 
 
 
-=== TEST 14: the status code returned from apisix
+=== TEST 14: return 500 status code from APISIX
 --- config
     location /t {
         content_by_lua_block {
@@ -362,7 +359,7 @@ passed
 
 
 
-=== TEST 15: hit routes, retries failed, status code is 502
+=== TEST 15: hit routes, status code is 500
 --- request
 GET /hello
 --- error_code: 500
@@ -370,4 +367,50 @@ GET /hello
 Fault Injection!
 --- grep_error_log eval
 qr/X-APISIX-Upstream-Status: 500/
+--- grep_error_log_out
+
+
+
+=== TEST 16: return 200 status code from APISIX
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                        "plugins": {
+                            "fault-injection": {
+                                "abort": {
+                                    "http_status": 200,
+                                    "body": "Fault Injection!\n"
+                                }
+                            }
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: hit routes, status code is 200
+--- request
+GET /hello
+--- response_body
+Fault Injection!
+--- grep_error_log eval
+qr/X-APISIX-Upstream-Status: 200/
 --- grep_error_log_out
