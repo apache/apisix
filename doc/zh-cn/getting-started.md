@@ -57,7 +57,7 @@ $ docker-compose -p docker-apisix up -d
 第一次下载源代码需要一段时间，之后将非常快。在 docker 容器启动后，请访问以下链接，检查您是否获得成功的响应。
 
 ```bash
-$ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9180/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 下面是 Admin API 的接口响应：
@@ -127,7 +127,7 @@ Service（服务）为上游服务提供了抽象。因此，您可以创建单�
 执行以下命令在 APISIX 中创建 id 为 50 的上游信息，并使用 round-robin 机制进行负载平衡。
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "roundrobin",
     "nodes": {
@@ -141,7 +141,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034
 默认情况下，Apache APISIX 通过 HTTP 协议代理请求。如果我们的后端托管在 HTTPS 环境中，让我们使用 proxy-rewrite 插件将方案更改为 HTTPS 。
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "host": "httpbin.org",
@@ -175,7 +175,7 @@ curl -i -k -X GET "https://127.0.0.1:9443/get?foo1=bar1&foo2=bar2" -H "Host: htt
 注：Apache APISIX 支持多种认证机制，查看插件文档了解更多。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "john",
     "plugins": {
@@ -189,7 +189,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 现在，让我们将服务配置为包含 KEY 验证插件。
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "host": "httpbin.org",
@@ -215,7 +215,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H 'apikey: supe
 现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用代理来完成。
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/samplePrefix/get",
     "plugins": {
