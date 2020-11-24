@@ -35,6 +35,15 @@ jobs:
           ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
+      old_etcd:
+        image: bitnami/etcd:3.3.8
+        ports: 
+          - 3379:2379
+          - 3380:2380
+        env: 
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
     steps:
       - name: Check out code
         uses: actions/checkout@v2
