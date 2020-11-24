@@ -45,6 +45,7 @@
 
 ## Plugin
 - :sunrise: **升级协议来 Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). 这个版本只支持 skywalking 8.0 协议。此插件默认关闭，需要修改 config.yaml 来开启。这是不向下兼容的修改。
+- :sunrise: 新增阿里云 sls 日志服务插件。[#2169](https://github.com/apache/apisix/issues/2169)
 - proxy-cache: cache_zone 字段改为可选.[#2776](https://github.com/apache/apisix/pull/2776)
 
 ## Bugfix
