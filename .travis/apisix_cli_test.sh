@@ -402,8 +402,8 @@ nginx_config:
 
 make init
 
-grep "test_enable_access_log" conf/nginx.conf > /dev/null
-if [ ! $? -eq 0 ]; then
+count_test_access_log=`grep -c "test_enable_access_log" conf/nginx.conf > /dev/null || true`
+if [ $count_test_access_log -eq 0 ]; then
     echo "failed: nginx.conf file doesn't find access_log_format when enable access log"
     exit 1
 fi
@@ -437,8 +437,8 @@ nginx_config:
 
 make init
 
-grep "test_enable_access_log" conf/nginx.conf > /dev/null
-if [ $? -eq 0 ]; then
+count_test_access_log=`grep -c "test_enable_access_log" conf/nginx.conf > /dev/null || true`
+if [ $count_test_access_log -eq 1 ]; then
     echo "failed: nginx.conf file find access_log_format when disable access log"
     exit 1
 fi
