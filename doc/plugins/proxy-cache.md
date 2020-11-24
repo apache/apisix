@@ -66,7 +66,7 @@ Example 1: The cache_zone parameter defaults to `disk_cache_one`
 1:  enable the proxy-cache plugin for a specific route :
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -140,7 +140,7 @@ proxy_cache:
 2. Enable the `proxy-cache` plugin for a specific route:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -202,7 +202,7 @@ hello
 Example 3: Specifying cache_zone as `invalid_disk_cache` is inconsistent with the cache area `disk_cache_one` specified in the `conf/config.yaml` file.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -274,7 +274,7 @@ Server: APISIX web server
 Remove the corresponding JSON in the plugin configuration to disable the plugin immediately without restarting the service:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},
