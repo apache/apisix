@@ -51,7 +51,7 @@ local schema = {
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false}
     },
-    required = {"broker_list", "kafka_topic", "key"}
+    required = {"broker_list", "kafka_topic"}
 }
 
 local _M = {
