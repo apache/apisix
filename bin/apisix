@@ -94,7 +94,7 @@ local function resolve_conf_var(conf)
             local var_used = false
             -- we use '${{var}}' because '$var' and '${var}' are taken
             -- by Nginx
-            local new_val = val:gsub("%$%{%{([%w_]+)%}%}", function(var)
+            local new_val = val:gsub("%$%{%{%s*([%w_]+)%s*%}%}", function(var)
                 local v = os.getenv(var)
                 if v then
                     var_used = true
