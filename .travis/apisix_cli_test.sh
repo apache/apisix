@@ -389,7 +389,9 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+echo "passed: access_log_format in nginx.conf is ok"
+
+# check enable access log
 
 echo '
 nginx_config:
@@ -412,7 +414,19 @@ if [ $count_access_log_off -eq 2 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hi
+sleep 4
+tail -n 1 logs/access.log > output.log
+
+grep "test_enable_access_log" output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: not found test_enable_access_log in access.log "
+    exit 1
+fi
+
+make stop
 
 echo '
 nginx_config:
@@ -435,11 +449,25 @@ if [ $count_access_log_off -ne 2 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hi
+sleep 4
+tail -n 1 logs/access.log > output.log
 
-echo "passed: worker_processes number is configurable"
+grep "test_enable_access_log" output.log > /dev/null
+if [ $? -eq 0 ]; then
+    echo "failed: found test_enable_access_log in access.log "
+    exit 1
+fi
+
+make stop
+
+echo "passed: enable_access_log is ok"
 
 # missing admin key, allow any IP to access admin api
+
+git checkout conf/config.yaml
 
 echo '
 apisix:
