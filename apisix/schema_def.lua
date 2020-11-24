@@ -559,7 +559,9 @@ _M.consumer = {
         },
         create_time = timestamp_def,
         update_time = timestamp_def,
-        desc = {type = "string", maxLength = 256}
+        desc = {type = "string", maxLength = 256},
+        -- deprecate fields, will be removed soon
+        id = id_schema,
     },
     required = {"username"},
     additionalProperties = false,
