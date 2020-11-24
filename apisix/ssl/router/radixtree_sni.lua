@@ -67,12 +67,18 @@ local function decrypt_priv_pkey(iv, key)
         return key
     end
 
-    local decrypted = iv:decrypt(ngx_decode_base64(key))
-    if decrypted then
-        return decrypted
+    local decoded_key = ngx_decode_base64(key)
+    if not decoded_key then
+        core.log.error("base64 decode ssl key failed and skipped. key[", key, "] ")
+        return
     end
 
-    core.log.error("decrypt ssl key failed. key[", key, "] ")
+    local decrypted = iv:decrypt(decoded_key)
+    if not decrypted then
+        core.log.error("decrypt ssl key failed and skipped. key[", key, "] ")
+    end
+
+    return decrypted
 end
 
 
