@@ -56,6 +56,7 @@ script() {
 
     # apisix cli test
     sudo PATH=$PATH .travis/apisix_cli_test.sh
+    sudo PATH=$PATH .travis/apisix_cli_test_in_ci.sh
 }
 
 case_opt=$1
