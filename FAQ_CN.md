@@ -242,7 +242,7 @@ Apache APISIX 的插件支持热加载。
 
 ## APISIX 利用 etcd 如何实现毫秒级别的配置同步
 
-etcd 提供订阅接口用于监听指定关键字、目录是否发生变更（比如： [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch)、[watchdir]()）。
+etcd 提供订阅接口用于监听指定关键字、目录是否发生变更（比如： [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch)、[watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)）。
 
 APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) 监视目录内容变更：
 
