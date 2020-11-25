@@ -305,6 +305,6 @@ etcd provides subscription funtions to monitor whether the specified keyword or 
 APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
 
 * If there is no data update in the monitoring directory: the process will be blocked until timeout or other errors occurred.
-* If the monitoring directory has data updates: etcd will immediately return the new data subscribed (in milliseconds), and APISIX will update it to the memory cache.
+* If the monitoring directory has data updates: etcd will return the new data subscribed (in milliseconds) immediately, and APISIX will update it to the memory cache.
 
 With the help of etcd which incremental notification feature is millisecond-level , APISIX achieve millisecond-level of configuration synchronization.
