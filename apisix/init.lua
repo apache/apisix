@@ -631,7 +631,7 @@ function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
-    local from, _ = re_find(up_status, "5[0-9]{2}", "jo")
+    local from, _ = re_find(up_status, "5[0-9]{2}$", "jo")
     if from then
         core.response.set_header("X-APISIX-Upstream-Status", up_status)
         core.log.info("X-APISIX-Upstream-Status: ", up_status)

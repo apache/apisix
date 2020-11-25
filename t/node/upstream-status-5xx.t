@@ -34,14 +34,14 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "uri": "/hello"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -81,19 +81,19 @@ qr/X-APISIX-Upstream-Status: 200/
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin",
-                            "timeout": {
-                                "connect": 0.5,
-                                "send": 0.5,
-                                "read": 0.5
-                            }
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "uri": "/sleep1"
+                        "type": "roundrobin",
+                        "timeout": {
+                            "connect": 0.5,
+                            "send": 0.5,
+                            "read": 0.5
+                        }
+                    },
+                    "uri": "/sleep1"
                 }]]
                 )
 
@@ -131,14 +131,14 @@ X-APISIX-Upstream-Status: 504
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1": 1
-                            },
-                            "type": "roundrobin"
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1": 1
                         },
-                        "uri": "/hello"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -176,14 +176,14 @@ X-APISIX-Upstream-Status: 502
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["GET"],
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
-                        "uri": "/server_error"
+                        "type": "roundrobin"
+                    },
+                    "uri": "/server_error"
                 }]]
                 )
 
@@ -253,8 +253,8 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "uri": "/hello",
-                        "upstream_id": "1"
+                    "uri": "/hello",
+                    "upstream_id": "1"
                 }]]
                 )
 
@@ -278,8 +278,9 @@ passed
 GET /hello
 --- response_body
 hello world
---- error_log eval
+--- grep_error_log eval
 qr/X-APISIX-Upstream-Status: 502, 200/
+--- grep_error_log_out
 
 
 
@@ -334,15 +335,15 @@ qr/X-APISIX-Upstream-Status: 502, 502, 502/
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                        "plugins": {
-                            "fault-injection": {
-                                "abort": {
-                                    "http_status": 500,
-                                    "body": "Fault Injection!\n"
-                                }
+                    "plugins": {
+                        "fault-injection": {
+                            "abort": {
+                                "http_status": 500,
+                                "body": "Fault Injection!\n"
                             }
-                        },
-                        "uri": "/hello"
+                        }
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -381,15 +382,15 @@ qr/X-APISIX-Upstream-Status: 500/
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                        "plugins": {
-                            "fault-injection": {
-                                "abort": {
-                                    "http_status": 200,
-                                    "body": "Fault Injection!\n"
-                                }
+                    "plugins": {
+                        "fault-injection": {
+                            "abort": {
+                                "http_status": 200,
+                                "body": "Fault Injection!\n"
                             }
-                        },
-                        "uri": "/hello"
+                        }
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
