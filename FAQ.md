@@ -307,4 +307,4 @@ APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/a
 * If there is no data update in the monitoring directory: the process will be blocked until timeout or other errors occurred.
 * If the monitoring directory has data updates: etcd will immediately return the new data subscribed (in milliseconds), and APISIX will update it to the memory cache.
 
-With the help of millisecond-levels of incremental notification of etcd, APISIX achieve millisecond-levels of configuration synchronization.
+With the help of etcd which incremental notification feature is millisecond-level , APISIX achieve millisecond-level of configuration synchronization.
