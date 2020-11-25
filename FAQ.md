@@ -300,7 +300,7 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
 
 ## How does APISIX use etcd to achieve millisecond-level configuration synchronization
 
-etcd provides subscription funtions to monitor whether the specified keyword or directory is changed (for example: [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch), [watchdir](https://github.com/apache/apisix/blob/9c32a51574c781f7ecedbf36a40eedee4c7a001d)).
+etcd provides subscription funtions to monitor whether the specified keyword or directory is changed (for example: [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch), [watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)).
 
 APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
 
