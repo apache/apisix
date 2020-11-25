@@ -144,4 +144,26 @@ function _M.get_plugins_list()
 end
 
 
+function _M.get_plugins_meta_attributes()
+    local plugins = core.config.local_conf().plugins
+    local priorities = {}
+    local success = {}
+    for i, name in ipairs(plugins) do
+        local plugin_name = "apisix.plugins." .. name
+        local ok, plugin = pcall(require, plugin_name)
+        if ok and plugin.priority then
+            priorities[name] = plugin.priority
+            table_insert(success, name)
+        end
+    end
+
+    local function cmp(x, y)
+        return priorities[x] > priorities[y]
+    end
+
+    table_sort(success, cmp)
+    return success
+end
+
+
 return _M

@@ -239,6 +239,21 @@ local function get_plugins_list()
 end
 
 
+local function get_plugins_meta_attributes()
+    local api_ctx = {}
+    core.ctx.set_vars_meta(api_ctx)
+
+    local ok, err = check_token(api_ctx)
+    if not ok then
+        core.log.warn("failed to check token: ", err)
+        core.response.exit(401)
+    end
+
+    local meta_attributes = resources.plugins.get_plugins_meta_attributes()
+    core.response.exit(200, meta_attributes)
+end
+
+
 local function post_reload_plugins()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
@@ -310,6 +325,11 @@ local uri_route = {
         paths = [[/apisix/admin/plugins/list]],
         methods = {"GET"},
         handler = get_plugins_list,
+    },
+    {
+        paths = [[/apisix/admin/plugins/meta_attributes]],
+        methods = {"GET"},
+        handler = get_plugins_meta_attributes,
     },
     {
         paths = reload_event,
