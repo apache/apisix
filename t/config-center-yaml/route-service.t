@@ -230,14 +230,14 @@ routes:
       id: 1
       plugins:
         response-rewrite:
-            body: hello
+            body: "hello\n"
     - uris:
         - /world
       service_id: 1
       id: 2
       plugins:
         response-rewrite:
-            body: workd
+            body: "world\n"
 services:
     -
         id: 1
