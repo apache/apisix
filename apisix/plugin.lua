@@ -396,7 +396,8 @@ function _M.merge_service_route(service_conf, route_conf)
     core.log.info("service conf: ", core.json.delay_encode(service_conf))
     core.log.info("  route conf: ", core.json.delay_encode(route_conf))
 
-    local route_service_key = route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
+    local route_service_key = route_conf.value.id .. "#"
+        .. route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
     return merged_route(route_service_key, service_conf,
                         merge_service_route,
                         service_conf, route_conf)

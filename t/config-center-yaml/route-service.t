@@ -39,6 +39,7 @@ routes:
     -
         uri: /hello
         service_id: 1
+        id: 1
 services:
     -
         id: 1
@@ -62,6 +63,7 @@ hello world
 routes:
     -
         uri: /hello
+        id: 1
         service_id: 1111
 services:
     -
@@ -84,6 +86,7 @@ failed to fetch service configuration by id: 1111
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         service_id: 1
 services:
@@ -115,6 +118,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         service_id: 1
         upstream:
@@ -149,6 +153,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         service_id: 1
         upstream:
@@ -184,6 +189,7 @@ hello world
 --- apisix_yaml
 routes:
     -
+        id: 1
         uri: /hello
         service_id: 1
         upstream:
@@ -209,5 +215,40 @@ upstreams:
 GET /hello
 --- response_body
 hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: two routes with the same service
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+    - uris:
+        - /hello
+      service_id: 1
+      id: 1
+      plugins:
+        response-rewrite:
+            body: "hello\n"
+    - uris:
+        - /world
+      service_id: 1
+      id: 2
+      plugins:
+        response-rewrite:
+            body: "world\n"
+services:
+    -
+        id: 1
+        upstream:
+            nodes:
+                "127.0.0.1:1980": 1
+            type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
+hello
 --- no_error_log
 [error]

@@ -37,6 +37,7 @@ __DATA__
 --- apisix_yaml
 routes:
   -
+    id: 1
     uri: /hello
     upstream:
         nodes:
@@ -82,6 +83,7 @@ use config_center: yaml
 --- apisix_yaml
 routes:
   -
+    id: 1
     uri: /hello
     host: foo.com
     upstream:
@@ -106,6 +108,7 @@ hello world
 stream_routes:
   - server_addr: 127.0.0.1
     server_port: 1985
+    id: 1
     upstream:
       nodes:
         "127.0.0.1:1995": 1
