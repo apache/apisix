@@ -130,6 +130,26 @@ nginx_config:                     # config for render the template to genarate n
     worker_connections: 10620
   #envs:                            # allow to get a list of environment variables
   #  - TEST_ENV
+
+  # As user can add arbitrary configurations in the snippet,
+  # it is user's responsibility to check the configurations
+  # don't conflict with APISIX.
+  main_configuration_snippet: |
+    # Add custom Nginx main configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_configuration_snippet: |
+    # Add custom Nginx http configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_server_configuration_snippet: |
+    # Add custom Nginx http server configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_admin_configuration_snippet: |
+    # Add custom Nginx admin server configuration to nginx.conf.
+    # The configuration should be well indented!
+  stream_configuration_snippet: |
+    # Add custom Nginx stream configuration to nginx.conf.
+    # The configuration should be well indented!
+
   http:
     enable_access_log: true        # enable access log or not, default true
     access_log: "logs/access.log"
