@@ -422,11 +422,85 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+echo "passed: access_log_format in nginx.conf is ok"
 
-echo "passed: worker_processes number is configurable"
+# check enable access log
+
+echo '
+nginx_config:
+  http:
+    enable_access_log: true
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_enable_access_log_true"
+' > conf/config.yaml
+
+make init
+
+count_test_access_log=`grep -c "test_enable_access_log_true" conf/nginx.conf || true`
+if [ $count_test_access_log -eq 0 ]; then
+    echo "failed: nginx.conf file doesn't find access_log_format when enable access log"
+    exit 1
+fi
+
+count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
+if [ $count_access_log_off -eq 2 ]; then
+    echo "failed: nginx.conf file find access_log off; when enable access log"
+    exit 1
+fi
+
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hi
+sleep 4
+tail -n 1 logs/access.log > output.log
+
+count_grep=`grep -c "test_enable_access_log_true" output.log || true`
+if [ $count_grep -eq 0 ]; then
+    echo "failed: not found test_enable_access_log in access.log "
+    exit 1
+fi
+
+make stop
+
+echo '
+nginx_config:
+  http:
+    enable_access_log: false
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_enable_access_log_false"
+' > conf/config.yaml
+
+make init
+
+count_test_access_log=`grep -c "test_enable_access_log_false" conf/nginx.conf || true`
+if [ $count_test_access_log -eq 1 ]; then
+    echo "failed: nginx.conf file find access_log_format when disable access log"
+    exit 1
+fi
+
+count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
+if [ $count_access_log_off -ne 2 ]; then
+    echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
+    exit 1
+fi
+
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hi
+sleep 4
+tail -n 1 logs/access.log > output.log
+
+count_grep=`grep -c "test_enable_access_log_false" output.log || true`
+if [ $count_grep -eq 1 ]; then
+    echo "failed: found test_enable_access_log in access.log "
+    exit 1
+fi
+
+make stop
+
+echo "passed: enable_access_log is ok"
 
 # missing admin key, allow any IP to access admin api
+
+git checkout conf/config.yaml
 
 echo '
 apisix:
