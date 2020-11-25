@@ -420,8 +420,8 @@ curl http://127.0.0.1:9080/hi
 sleep 4
 tail -n 1 logs/access.log > output.log
 
-grep "test_enable_access_log_true" output.log > /dev/null
-if [ ! $? -eq 0 ]; then
+count_grep=`grep -c "test_enable_access_log_true" output.log || true`
+if [ $count_grep -eq 0 ]; then
     echo "failed: not found test_enable_access_log in access.log "
     exit 1
 fi
@@ -455,8 +455,8 @@ curl http://127.0.0.1:9080/hi
 sleep 4
 tail -n 1 logs/access.log > output.log
 
-grep "test_enable_access_log_false" output.log > /dev/null
-if [ $? -eq 0 ]; then
+count_grep=`grep -c "test_enable_access_log_false" output.log || true`
+if [ $count_grep -eq 1 ]; then
     echo "failed: found test_enable_access_log in access.log "
     exit 1
 fi
