@@ -22,7 +22,6 @@ local pairs     = pairs
 local ipairs    = ipairs
 local pcall     = pcall
 local type      = type
-local table_remove = table.remove
 local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
@@ -125,10 +124,6 @@ end
 
 function _M.get_plugins_list()
     local plugins = core.config.local_conf().plugins
-    if plugins[1] == 'example-plugin' then
-        table_remove(plugins, 1)
-    end
-
     local priorities = {}
     local success = {}
     for i, name in ipairs(plugins) do
