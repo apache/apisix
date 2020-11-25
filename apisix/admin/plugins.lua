@@ -146,23 +146,27 @@ end
 
 function _M.get_plugins_meta_attributes()
     local plugins = core.config.local_conf().plugins
-    local priorities = {}
-    local success = {}
-    for i, name in ipairs(plugins) do
+    local meta_attributes = core.table.new(#plugins, 0)
+    for _, name in ipairs(plugins) do
         local plugin_name = "apisix.plugins." .. name
         local ok, plugin = pcall(require, plugin_name)
         if ok and plugin.priority then
-            priorities[name] = plugin.priority
-            table_insert(success, name)
+            local attribute = core.table.new(0, 5)
+            attribute.name = name
+            attribute.priority = plugin.priority
+            attribute.version = plugin.version
+            attribute.schema = plugin.schema
+            if plugin.type then
+                attribute.type = plugin.type
+            else
+                attribute.type = "other"
+            end
+
+            table_insert(meta_attributes, attribute)
         end
     end
 
-    local function cmp(x, y)
-        return priorities[x] > priorities[y]
-    end
-
-    table_sort(success, cmp)
-    return success
+    return meta_attributes
 end
 
 
