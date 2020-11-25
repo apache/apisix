@@ -324,7 +324,7 @@ X-HMAC-ACCESS-KEY: my-access-key
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -497,7 +497,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -617,7 +617,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time   = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -741,7 +741,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1361,7 +1361,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1423,7 +1423,7 @@ qr/name=LeBron\%2Cjames\&name2=\%2C\%3E/
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1517,7 +1517,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1579,7 +1579,7 @@ qr/\{"message":"Invalid signature"\}/
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1640,7 +1640,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1701,7 +1701,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
