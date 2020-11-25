@@ -300,24 +300,11 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
 
 ## How does APISIX use etcd to achieve millisecond-level configuration synchronization
 
-Etcd provides interfaces `wait` and `waitdir` to monitor whether the specified keywords and directories have changed, and return updated data if they have any changes.
+etcd provides subscription funtions to monitor whether the specified keyword or directory is changed (for example: [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch), [watchdir](https://github.com/apache/apisix/blob/9c32a51574c781f7ecedbf36a40eedee4c7a001d)).
 
-Take the `waitdir` interface as an example:
+APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
 
-`syntax: res, err = cli:waitdir(dir:string [, modified_index:uint [, timeout:uint] ])`
+* If there is no data update in the monitoring directory: the process will be blocked until timeout or returns other error.
+* If the monitoring directory has data updates: etcd will immediately return the new data subscribed (in milliseconds), and APISIX will update it to the memory cache.
 
-The `timeout` parameter indicates the connection `timeout` seconds between the calling process and etcd.
-
-APISIX configuration of etcd connection time is as follows:
-
-```yaml
-etcd:
-  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-    - "http://127.0.0.1:2379"     # multiple etcd address
-  prefix: "/apisix"               # apisix configurations prefix
-  timeout: 30                     # 30 seconds
-```
-
-APISIX uses the `waitdir` interface to monitor directory changes. The default configuration of timeout is `30` seconds, so APISIX calling process maintains keepalive connection with etcd for `30` seconds.
-
-If the listening directory is not updated when the APISIX process calls this function, the function returns directly, the long connection is maintained, and the calling process can handle other events. If there is data update within `30` seconds, etcd returns the update result through this function, the calling process handle updated data. If no data returned within `30` seconds, when the timeout period reaches 30 seconds, etcd returns a timeout message through this function, and the calling process handles timeout message, then calls the waitdir function to monitor the specified directory again. APISIX realizes real-time configuration updates through the above process.
+With the help of several levels of incremental notification of etcd, APISIX also completes several levels of configuration synchronization.
