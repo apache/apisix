@@ -68,7 +68,6 @@ local function get_openresty_version()
     end
 
     str = "nginx version: nginx/"
-    ret = util.execute_cmd("openresty -v 2>&1")
     pos = string.find(ret, str)
     if pos then
         return string.sub(ret, pos + string.len(str))
