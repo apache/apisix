@@ -224,6 +224,13 @@ local function generate_signature(ctx, secret_key, params)
 
         for _, key in pairs(keys) do
             local param = args[key]
+            -- when args without `=<value>`, value is treated as true.
+            -- In order to be compatible with args lacking `=<value>`,
+            -- we need to replace true with an empty string.
+            if type(param) == "boolean" then
+                param = ""
+            end
+
             -- whether to encode the uri parameters
             if type(param) == "table" then
                 for _, val in pairs(param) do

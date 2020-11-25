@@ -324,7 +324,7 @@ X-HMAC-ACCESS-KEY: my-access-key
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -497,7 +497,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -617,7 +617,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time   = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -741,7 +741,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1361,7 +1361,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1423,7 +1423,7 @@ qr/name=LeBron\%2Cjames\&name2=\%2C\%3E/
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1517,7 +1517,7 @@ passed
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1579,7 +1579,7 @@ qr/\{"message":"Invalid signature"\}/
 --- config
 location /t {
     content_by_lua_block {
-        local ngx_time   = ngx.time
+        local ngx_time = ngx.time
         local ngx_http_time = ngx.http_time
         local core = require("apisix.core")
         local t = require("lib.test_admin")
@@ -1617,6 +1617,128 @@ location /t {
         headers["x-custom-header-b"] = custom_header_b
 
         local code, body = t.test('/hello?name=LeBron%2Cjames&name2=%2c%3e',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: verify: ok, the request parameter is missing `=<value>`.
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key6"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key6"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "GET",
+            "/hello",
+            "age=&name=jack",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+        core.log.info("signing_string:", signing_string)
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello?name=jack&age',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: verify: ok, the value of the request parameter is true.
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key6"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key6"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "GET",
+            "/hello",
+            "age=true&name=jack",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+        core.log.info("signing_string:", signing_string)
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello?name=jack&age=true',
             ngx.HTTP_GET,
             "",
             nil,
