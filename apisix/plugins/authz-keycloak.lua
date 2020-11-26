@@ -149,7 +149,7 @@ local function fetch_jwt_token(ctx)
 end
 
 
-function _M.rewrite(conf, ctx)
+function _M.access(conf, ctx)
     core.log.debug("hit keycloak-auth rewrite")
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
