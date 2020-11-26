@@ -167,6 +167,9 @@ http {
     {% end %}
 
     lua_ssl_verify_depth 5;
+    {% if http.lua_ssl_trusted_certificate then %}
+    lua_ssl_trusted_certificate {* http.lua_ssl_trusted_certificate *};
+    {% end %}
     ssl_session_timeout 86400;
 
     {% if http.underscores_in_headers then %}
