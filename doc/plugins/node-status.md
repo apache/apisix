@@ -65,7 +65,7 @@ After starting `APISIX`, you can get status information through the API `/apisix
 2. Create a route object, and enable plugin `node-status`.
 
 ```sh
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {
@@ -134,7 +134,7 @@ you can delete the corresponding json configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately.
 
 ```sh
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {

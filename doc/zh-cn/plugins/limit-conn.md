@@ -40,7 +40,7 @@
 下面是一个示例，在指定的 route 上开启了 limit-conn 插件:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -93,7 +93,7 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 当你想去掉 limit-conn 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

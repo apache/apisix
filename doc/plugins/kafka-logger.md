@@ -45,7 +45,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | ---------------- | ------- | ----------- | -------------- | ------- | ---------------------------------------------------------------------------------------- |
 | broker_list      | object  | required    |                |         | An array of Kafka brokers.                                                               |
 | kafka_topic      | string  | required    |                |         | Target  topic to push data.                                                              |
-| key              | string  | required    |                |         | Key for the message.                                                                     |
+| key              | string  | optional    |                |         | Used for partition allocation of messages.                                               |
 | timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
 | name             | string  | optional    | "kafka logger" |         | A  unique identifier to identity the batch processor                                     |
 | meta_format       | string  | optional    | "default"      | enum: `default`, `origin`| `default`: collect the request information with detfault JSON way. `origin`: collect the request information with original HTTP request. [example](#examples-of-meta_format)|
@@ -101,7 +101,7 @@ sample to take effect of this functionality.
 The following is an example on how to enable the kafka-logger for a specific route.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "kafka-logger": {

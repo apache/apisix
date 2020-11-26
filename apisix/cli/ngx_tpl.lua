@@ -48,6 +48,12 @@ env {*name*};
 {% end %}
 {% end %}
 
+# main configuration snippet starts
+{% if main_configuration_snippet then %}
+{* main_configuration_snippet *}
+{% end %}
+# main configuration snippet ends
+
 {% if stream_proxy then %}
 stream {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
@@ -61,6 +67,12 @@ stream {
 
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
     resolver_timeout {*resolver_timeout*};
+
+    # stream configuration snippet starts
+    {% if stream_configuration_snippet then %}
+    {* stream_configuration_snippet *}
+    {% end %}
+    # stream configuration snippet ends
 
     upstream apisix_backend {
         server 127.0.0.1:80;
@@ -171,9 +183,13 @@ http {
     lua_regex_match_limit 100000;
     lua_regex_cache_max_entries 8192;
 
+    {% if http.enable_access_log == false then %}
+    access_log off;
+    {% else %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
+    {% end %}
     open_file_cache  max=1000 inactive=60;
     client_max_body_size {* http.client_max_body_size *};
     keepalive_timeout {* http.keepalive_timeout *};
@@ -203,6 +219,12 @@ http {
     set_real_ip_from {*real_ip*};
     {% end %}
     {% end %}
+
+    # http configuration snippet starts
+    {% if http_configuration_snippet then %}
+    {* http_configuration_snippet *}
+    {% end %}
+    # http configuration snippet ends
 
     upstream apisix_backend {
         server 0.0.0.1;
@@ -254,6 +276,13 @@ http {
         listen {* port_admin *};
         {%end%}
         log_not_found off;
+
+        # admin configuration snippet starts
+        {% if http_admin_configuration_snippet then %}
+        {* http_admin_configuration_snippet *}
+        {% end %}
+        # admin configuration snippet ends
+
         location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -336,6 +365,12 @@ http {
         ssl_session_tickets off;
         {% end %}
         {% end %}
+
+        # http server configuration snippet starts
+        {% if http_server_configuration_snippet then %}
+        {* http_server_configuration_snippet *}
+        {% end %}
+        # http server configuration snippet ends
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {

@@ -1,4 +1,5 @@
-<!--
+#!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,23 +16,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
--->
 
-[Chinese](zh-cn/plugins.md)
+# This file is like apisix_cli_test.sh, but requires extra dependencies which
+# you don't need them in daily development.
 
-## Hot reload
+set -ex
 
-APISIX plugins are hot-loaded. No matter you add, delete or modify plugins, you don't need to restart the service.
+clean_up() {
+    git checkout conf/config.yaml
+}
 
-If your APISIX node has the Admin API turned on, just send an HTTP request through admin API:
+trap clean_up EXIT
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
-```
+unset APISIX_PROFILE
 
-Note: if you disable a plugin which has been configured as part of your rule (in the `plugins` field of `route`, etc.),
-the its execution will be skipped.
+# check error handling when connecting to old etcd
+git checkout conf/config.yaml
 
-### Hot reload in stand-alone mode
+echo '
+etcd:
+  host:
+    - "http://127.0.0.1:3379"
+  prefix: "/apisix"
+' > conf/config.yaml
 
-For stand-alone mode, see plugin related section in [stand alone mode](stand-alone.md).
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'etcd cluster version 3.3.0 is less than the required version 3.4.0'; then
+    echo "failed: properly handle the error when connecting to old etcd"
+    exit 1
+fi
+
+echo "passed: properly handle the error when connecting to old etcd"

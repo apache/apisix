@@ -83,7 +83,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 可以这么做：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -96,7 +96,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -121,7 +121,7 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 有几种不同的方法来实现：
 1. 直接使用 `redirect` 插件的 `http_to_https` 功能：
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -136,7 +136,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. 结合高级路由规则 `vars` 和 `redirect` 插件一起使用：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -159,7 +159,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. 使用`serverless`插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -240,21 +240,13 @@ Apache APISIX 的插件支持热加载。
 
 2.重启抑或 reload APISIX
 
-## APISIX利用etcd如何实现毫秒级别的配置同步
-etcd提供接口wait、waitdir接口用于监听指定关键字、目录是否发生变更，如果发生变更，返回更新的数据。
+## APISIX 利用 etcd 如何实现毫秒级别的配置同步
 
-以waitdir接口为例：
-`syntax: res, err = cli:waitdir(dir:string [, modified_index:uint [, timeout:uint] ])`
-其中timeout参数表示调用进程和etcd长连接的时间。
+etcd 提供订阅接口用于监听指定关键字、目录是否发生变更（比如： [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch)、[watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)）。
 
-APISIX关于etcd长连接时间的配置如下：
-```
-etcd:
-  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-    - "http://127.0.0.1:2379"     # multiple etcd address
-  prefix: "/apisix"               # apisix configurations prefix
-  timeout: 30                     # 30 seconds
-```
-APISIX使用waitdir接口监视目录的变更，timeout默认配置为30秒，即APISIX调用进程和etcd保持30秒的长连接。
+APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) 监视目录内容变更：
 
-若APISIX进程调用该函数时，监听的目录没有更新，函数直接返回，长连接保持，调用进程可处理其他事件。30秒内有数据更新，etcd通过该函数返回更新结果，调用进程处理更新数据，30秒内无数据返回，到达超时时间30秒时，etcd通过该函数返回一条超时消息，调用进程处理超时信息，然后再次调用waitdir函数监听指定目录。APISIX通过以上过程实现配置的实时更新。
+* 如果监听目录没有数据更新：该调用会被阻塞，直到超时或其他错误返回。
+* 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
+
+借助 etcd 增量通知毫秒级特性，APISIX 也就完成了毫秒级的配置同步。

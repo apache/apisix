@@ -196,6 +196,21 @@ fi
 
 echo "passed: resolve variables as boolean"
 
+echo '
+nginx_config:
+    envs:
+        - ${{ var_test}}_${{ FOO }}
+' > conf/config.yaml
+
+var_test=TEST FOO=bar make init
+
+if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to resolve variables wrapped with whitespace"
+    exit 1
+fi
+
+echo "passed: resolve variables wrapped with whitespace"
+
 # check nameserver imported
 git checkout conf/config.yaml
 
@@ -407,11 +422,85 @@ if [ ! $? -eq 0 ]; then
     exit 1
 fi
 
-git checkout conf/config.yaml
+echo "passed: access_log_format in nginx.conf is ok"
 
-echo "passed: worker_processes number is configurable"
+# check enable access log
+
+echo '
+nginx_config:
+  http:
+    enable_access_log: true
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_enable_access_log_true"
+' > conf/config.yaml
+
+make init
+
+count_test_access_log=`grep -c "test_enable_access_log_true" conf/nginx.conf || true`
+if [ $count_test_access_log -eq 0 ]; then
+    echo "failed: nginx.conf file doesn't find access_log_format when enable access log"
+    exit 1
+fi
+
+count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
+if [ $count_access_log_off -eq 2 ]; then
+    echo "failed: nginx.conf file find access_log off; when enable access log"
+    exit 1
+fi
+
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hi
+sleep 4
+tail -n 1 logs/access.log > output.log
+
+count_grep=`grep -c "test_enable_access_log_true" output.log || true`
+if [ $count_grep -eq 0 ]; then
+    echo "failed: not found test_enable_access_log in access.log "
+    exit 1
+fi
+
+make stop
+
+echo '
+nginx_config:
+  http:
+    enable_access_log: false
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_enable_access_log_false"
+' > conf/config.yaml
+
+make init
+
+count_test_access_log=`grep -c "test_enable_access_log_false" conf/nginx.conf || true`
+if [ $count_test_access_log -eq 1 ]; then
+    echo "failed: nginx.conf file find access_log_format when disable access log"
+    exit 1
+fi
+
+count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
+if [ $count_access_log_off -ne 2 ]; then
+    echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
+    exit 1
+fi
+
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hi
+sleep 4
+tail -n 1 logs/access.log > output.log
+
+count_grep=`grep -c "test_enable_access_log_false" output.log || true`
+if [ $count_grep -eq 1 ]; then
+    echo "failed: found test_enable_access_log in access.log "
+    exit 1
+fi
+
+make stop
+
+echo "passed: enable_access_log is ok"
 
 # missing admin key, allow any IP to access admin api
+
+git checkout conf/config.yaml
 
 echo '
 apisix:
@@ -470,6 +559,61 @@ if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found 'my_dict' in nginx.conf"
+
+# allow injecting configuration snippets
+
+echo '
+apisix:
+    node_listen: 9080
+    enable_admin: true
+    port_admin: 9180
+    stream_proxy:
+        tcp:
+            - 9100
+nginx_config:
+    main_configuration_snippet: |
+        daemon on;
+    http_configuration_snippet: |
+        chunked_transfer_encoding on;
+    http_server_configuration_snippet: |
+        set $my "var";
+    http_admin_configuration_snippet: |
+        log_format admin "$request_time $pipe";
+    stream_configuration_snippet: |
+        tcp_nodelay off;
+' > conf/config.yaml
+
+make init
+
+grep "daemon on;" -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject main configuration"
+    exit 1
+fi
+
+grep "chunked_transfer_encoding on;" -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http configuration"
+    exit 1
+fi
+
+grep 'set $my "var";' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http server configuration"
+    exit 1
+fi
+
+grep 'log_format admin "$request_time $pipe";' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject admin server configuration"
+    exit 1
+fi
+
+grep 'tcp_nodelay off;' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject stream configuration"
+    exit 1
+fi
 
 # check disable cpu affinity
 git checkout conf/config.yaml

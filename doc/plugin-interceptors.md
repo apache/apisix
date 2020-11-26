@@ -31,7 +31,7 @@ Here is an example to limit the access of `/apisix/prometheus/metrics` (a route 
 to clients in `10.0.0.0/24`:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/prometheus -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/prometheus -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "interceptors": [
         {

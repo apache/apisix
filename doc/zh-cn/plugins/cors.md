@@ -35,7 +35,7 @@
 
 | 名称             | 类型    | 可选项 | 默认值 | 有效值 | 描述                                                         |
 | ---------------- | ------- | ------ | ------ | ------ | ------------------------------------------------------------ |
-| allow_origins    | string  | 可选   | "*"    |        | 允许跨域访问的 Origin，格式如：`scheme`://`host`:`port`，比如: https://somehost.com:8081。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Origin 都通过，但请注意这样存在安全隐患。 |
+| allow_origins    | string  | 可选   | "*"    |        | 允许跨域访问的 Origin，格式如：`scheme`://`host`:`port`，比如: https://somehost.com:8081 。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Origin 都通过，但请注意这样存在安全隐患。 |
 | allow_methods    | string  | 可选   | "*"    |        | 允许跨域访问的 Method，比如: `GET`，`POST`等。多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所有 Origin 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
 | allow_headers    | string  | 可选   | "*"    |        | 允许跨域访问时请求方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割，`allow_credential` 为 `false` 时可以使用 `*` 来表示所 有 Header 均允许通过。你也可以在启用了 `allow_credential` 后使用 `**` 强制允许所有 Method 都通过，但请注意这样存在安全隐患。 |
 | expose_headers   | string  | 可选   | "*"    |        | 允许跨域访问时响应方携带哪些非 `CORS规范` 以外的 Header， 多个值使用 `,` 分割。 |
@@ -52,7 +52,7 @@
 创建 `Route` 或 `Service` 对象，并配置 `cors` 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -86,7 +86,7 @@ curl http://127.0.0.1:9080/hello -v
 
 从配置中移除`cors`插件即可。
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

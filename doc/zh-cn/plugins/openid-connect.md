@@ -60,7 +60,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 通过自省请求标头中提供的令牌，此路由将保护 https://httpbin.org/get（echo 服务）。
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/get",
     "plugins":{
@@ -99,7 +99,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorizatio
 以下配置显示了如何向路由添加公钥自省。
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/get",
     "plugins":{

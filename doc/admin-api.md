@@ -104,7 +104,7 @@ Example：
 
 ```shell
 # Create a route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "hosts": ["foo.com", "*.bar.com"],
@@ -124,7 +124,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # Create a route expires after 60 seconds, then it's deleted automatically
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {
@@ -141,7 +141,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 
 
 # Add an upstream node to the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -160,7 +160,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Update the weight of an upstream node to the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -179,7 +179,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Delete an upstream node for the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -197,7 +197,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Replace methods of the Route  --  array
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
     "methods": ["GET", "POST"]
 }'
 HTTP/1.1 200 OK
@@ -208,7 +208,7 @@ After successful execution, methods will not retain the original data, and the e
 
 
 # Replace upstream nodes of the Route -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "39.97.63.200:80": 1
 }'
@@ -222,7 +222,7 @@ After successful execution, nodes will not retain the original data, and the ent
 
 
 # Replace methods of the Route -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/methods -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/methods -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
 HTTP/1.1 200 OK
 ...
 
@@ -248,7 +248,7 @@ Return response from etcd currently.
 Consider the following example: matching requests whose `request name` is equal to `json`, `age` is greater than `18`, and `address` begins with `China`:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -315,7 +315,7 @@ Config Example:
 Example：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "plugins": {
         "limit-count": {
@@ -339,7 +339,7 @@ HTTP/1.1 201 Created
 
 
 # Add an upstream node to the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -358,7 +358,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Update the weight of an upstream node to the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -377,7 +377,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Delete an upstream node for the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -395,7 +395,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Replace upstream nodes of the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "39.97.63.200:80": 1
 }'
@@ -455,7 +455,7 @@ The binding authentication and authorization plug-in is a bit special. When it n
 Example:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "plugins": {
         "key-auth": {
@@ -553,7 +553,7 @@ Config Example:
 Example：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type":"roundrobin",
     "nodes":{
@@ -569,7 +569,7 @@ Content-Type: text/plain
 
 
 # Add a node to the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "39.97.63.216:80": 1
@@ -586,7 +586,7 @@ After successful execution, nodes will be updated to:
 
 
 # Update the weight of a node to the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "39.97.63.216:80": 10
@@ -603,7 +603,7 @@ After successful execution, nodes will be updated to:
 
 
 # Delete a node for the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "39.97.63.215:80": null
@@ -619,7 +619,7 @@ After successful execution, nodes will be updated to:
 
 
 # Replace the nodes of the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "39.97.63.200:80": 1
 }'
@@ -699,7 +699,7 @@ A json object with a data structure defined according to `metadata_schema` of th
 Config Example:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "skey": "val",
     "ikey": 1
