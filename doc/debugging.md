@@ -17,19 +17,19 @@
 #
 -->
 
-[English](../upstream-status-5xx.md)
+[Chinese](zh-cn/debugging.md)
 
-## `5xx` 响应状态码
+## `5xx` response status code
 
-500、502、503等类似的 `5xx` 状态码，是由于服务器错误而响应的状态码，当一个请求出现 `5xx` 状态码时；它可能来源于 `APISIX` 或 `Upstream` 。如何识别这些响应状态码的来源，是一件很有意义的事，它能够快速的帮助我们确定确定问题的所在。
+Similar `5xx` status codes such as 500, 502, 503, etc., are the status codes in response to a server error. When a request has a `5xx` status code; it may come from `APISIX` or `Upstream`. How to identify the source of these response status codes is a very meaningful thing. It can quickly help us determine the problem.
 
-## 如何识别 `5xx` 响应状态码的来源
+## How to identify the source of the `5xx` response status code
 
-在请求的响应头中，通过 `X-APISIX-Upstream-Status` 这个响应头，我们可以有效的识别 `5xx` 状态码的来源。当 `5xx` 状态码来源于 `Upstream` 时，在响应头中可以看到 `X-APISIX-Upstream-Status` 这个响应头，并且这个响应头的值为响应的状态码。当 `5xx` 状态码来源于 `APISIX` 时，响应头中没有 `X-APISIX-Upstream-Status` 的响应头信息。也就是只有 `5xx` 状态码来源于 `Upstream` 时，才会有 `X-APISIX-Upstream-Status` 响应头。
+In the response header of the request, through the response header of `X-APISIX-Upstream-Status`, we can effectively identify the source of the `5xx` status code. When the `5xx` status code comes from `Upstream`, the response header `X-APISIX-Upstream-Status` can be seen in the response header, and the value of this response header is the response status code. When the `5xx` status code is derived from `APISIX`, there is no response header information of `X-APISIX-Upstream-Status` in the response header. That is, only when the status code of `5xx` is derived from Upstream will the `X-APISIX-Upstream-Status` response header appear.
 
-### 示例
+## Example
 
-示例1：`502` 响应状态码来源于 `Upstream` (IP地址不可用)
+>Example 1: `502` response status code comes from `Upstream` (IP address is not available)
 
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -45,7 +45,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-测试：
+Test:
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -v
@@ -68,9 +68,9 @@ $ curl http://127.0.0.1:9080/hello -v
 
 ```
 
-具有 `X-APISIX-Upstream-Status: 502` 的响应头。
+It has a response header of `X-APISIX-Upstream-Status: 502`.
 
-示例2: `502` 响应状态码来源于 `APISIX`
+>Example 2: `502` response status code comes from `APISIX`
 
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -87,7 +87,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-测试：
+Test：
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -v
@@ -102,9 +102,9 @@ $ curl http://127.0.0.1:9080/hello -v
 Fault Injection!
 ```
 
-没有 `X-APISIX-Upstream-Status` 的响应头。
+There is no response header for `X-APISIX-Upstream-Status`.
 
-示例3：`Upstream` 具有多节点，并且所有节点不可用
+>Example 3: `Upstream` has multiple nodes, and all nodes are unavailable
 
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -127,7 +127,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-测试：
+Test：
 
 ```shell
 $ curl http://127.0.0.1:9080/hello -v
@@ -148,4 +148,4 @@ $ curl http://127.0.0.1:9080/hello -v
 </html>
 ```
 
-具有 `X-APISIX-Upstream-Status: 502, 502, 502` 的响应头。
+It has a response header of `X-APISIX-Upstream-Status: 502, 502, 502`.

@@ -26,7 +26,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: set route(id: 1) and available upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -60,7 +60,7 @@ passed
 
 
 
-=== TEST 2: hit the route and status code is 200
+=== TEST 2: hit the route and $upstream_status is 200
 --- request
 GET /hello
 --- response_body
@@ -73,7 +73,7 @@ qr/X-APISIX-Upstream-Status: 200/
 
 
 
-=== TEST 3: set route(id: 1)
+=== TEST 3: set route(id: 1) and set the timeout field
 --- config
     location /t {
         content_by_lua_block {
@@ -112,7 +112,7 @@ passed
 
 
 
-=== TEST 4: hit routes (timeout)
+=== TEST 4: hit routes (timeout) and $upstream_status is 504
 --- request
 GET /sleep1
 --- error_code: 504
@@ -157,7 +157,7 @@ passed
 
 
 
-=== TEST 6: hit routes (502 Bad Gateway)
+=== TEST 6: hit routes and $upstream_status is 502
 --- request
 GET /hello
 --- error_code: 502
@@ -168,7 +168,7 @@ X-APISIX-Upstream-Status: 502
 
 
 
-=== TEST 7: set route(id: 1)
+=== TEST 7: set route(id: 1) and uri is `/server_error`
 --- config
     location /t {
         content_by_lua_block {
@@ -202,7 +202,7 @@ passed
 
 
 
-=== TEST 8: hit routes(500 Internal Server Error)
+=== TEST 8: hit routes and $upstream_status is 500
 --- request
 GET /server_error
 --- error_code: 500
@@ -245,7 +245,7 @@ passed
 
 
 
-=== TEST 10: set route(id: 1), and bind the upstream_id
+=== TEST 10: set route(id: 1) and bind the upstream_id
 --- config
     location /t {
         content_by_lua_block {
@@ -273,7 +273,7 @@ passed
 
 
 
-=== TEST 11: hit routes, upstream_status is `502, 200`
+=== TEST 11: hit routes and $upstream_status is `502, 200`
 --- request
 GET /hello
 --- response_body

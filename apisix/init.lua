@@ -36,7 +36,7 @@ local type          = type
 local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
-local re_find       = ngx.re.find
+local tonumber      = tonumber
 local load_balancer
 local local_conf
 local dns_resolver
@@ -630,11 +630,22 @@ end
 function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
 
-    local up_status = get_var("upstream_status")
-    local from, _ = re_find(up_status, "5[0-9]{2}$", "jo")
-    if from then
+    local function set_res_header(up_status)
         core.response.set_header("X-APISIX-Upstream-Status", up_status)
         core.log.info("X-APISIX-Upstream-Status: ", up_status)
+    end
+
+    local up_status = get_var("upstream_status")
+    if up_status and #up_status == 3
+       and tonumber(up_status) >= 500
+       and tonumber(up_status) <= 599
+    then
+        set_res_header(up_status)
+    elseif up_status and #up_status > 3 then
+        local last_status = str_sub(up_status, -3)
+        if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
+            set_res_header(up_status)
+        end
     end
 
     common_phase("header_filter")
