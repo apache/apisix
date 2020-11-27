@@ -500,7 +500,7 @@ end
 
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check plugin scheme, name: ", name, ", configurations: ",
+        core.log.info("check plugin schema, name: ", name, ", configurations: ",
                       core.json.delay_encode(plugin_conf, true))
         if type(plugin_conf) ~= "table" then
             return false, "invalid plugin conf " ..
@@ -540,7 +540,7 @@ _M.check_schema = check_schema
 
 local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check stream plugin scheme, name: ", name,
+        core.log.info("check stream plugin schema, name: ", name,
                       ": ", core.json.delay_encode(plugin_conf, true))
         if type(plugin_conf) ~= "table" then
             return false, "invalid plugin conf " ..
