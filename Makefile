@@ -86,6 +86,8 @@ run: default
 ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
+else ifeq ("$(shell lsof -p $(shell cat logs/nginx.pid))", "")
+	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 else
 	@echo "APISIX is running..."
 endif
