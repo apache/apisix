@@ -47,14 +47,14 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | kafka_topic      | string  | required    |                |         | Target  topic to push data.                                                              |
 | key              | string  | optional    |                |         | Used for partition allocation of messages.                                               |
 | timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
-| name             | string  | optional    | "kafka logger" |         | A  unique identifier to identity the batch processor                                     |
-| meta_format       | string  | optional    | "default"      | enum: `default`, `origin`| `default`: collect the request information with detfault JSON way. `origin`: collect the request information with original HTTP request. [example](#examples-of-meta_format)|
-| batch_max_size   | integer | optional    | 1000           | [1,...] | Max size of each batch                                                                   |
-| inactive_timeout | integer | optional    | 5              | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
-| buffer_duration  | integer | optional    | 60             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
-| max_retry_count  | integer | optional    | 0              | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
-| retry_delay      | integer | optional    | 1              | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
-| include_req_body | boolean | optional    | false          |         | Whether to include the request body                                                      |
+| name             | string  | optional    | "kafka logger" |         | A  unique identifier to identity the batch processor.                                     |
+| meta_format      | enum    | optional    | "default"      | ["default"，"origin"] | `default`: collect the request information with detfault JSON way. `origin`: collect the request information with original HTTP request. [example](#examples-of-meta_format)|
+| batch_max_size   | integer | optional    | 1000           | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the `Kafka` service.                         |
+| inactive_timeout | integer | optional    | 5              | [1,...] | The maximum time to refresh the buffer (in seconds). When the maximum refresh time is reached, all logs will be automatically pushed to the `Kafka` service regardless of whether the number of logs in the buffer reaches the set maximum number. |
+| buffer_duration  | integer | optional    | 60             | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
+| max_retry_count  | integer | optional    | 0              | [0,...] | Maximum number of retries before removing from the processing pipe line.                 |
+| retry_delay      | integer | optional    | 1              | [0,...] | Number of seconds the process execution should be delayed if the execution fails.        |
+| include_req_body | boolean | optional    | false          | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
 
 ### examples of meta_format
 
