@@ -94,3 +94,13 @@ GET /apisix/admin/plugins/basic-auth?schema_type=consumer
 {"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: get plugins' meta_attributes
+--- request
+GET /apisix/admin/plugins/meta_attributes
+--- response_body eval
+qr/{"priority":0,"type":"other","name":"example-plugin","schema":{"properties":{"i":{"minimum":0,"type":"number"},"port":{"type":"integer"},"ip":{"type":"string"},"t":{"minItems":1,"type":"array"},"s":{"type":"string"}},"required":\["i"\],"type":"object"},"version":0.1}/
+--- no_error_log
+[error]
