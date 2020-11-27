@@ -151,11 +151,14 @@ function _M.get_plugins_meta_attributes()
         local plugin_name = "apisix.plugins." .. name
         local ok, plugin = pcall(require, plugin_name)
         if ok and plugin.priority then
-            local attribute = core.table.new(0, 5)
+            local attribute = core.table.new(0, 6)
             attribute.name = name
             attribute.priority = plugin.priority
             attribute.version = plugin.version
             attribute.schema = plugin.schema
+            if plugin.consumer_schema then
+                attribute.consumer_schema = plugin.consumer_schema
+            end
             if plugin.type then
                 attribute.type = plugin.type
             else
