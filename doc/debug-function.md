@@ -17,7 +17,7 @@
 #
 -->
 
-[Chinese](zh-cn/debugging.md)
+[Chinese](zh-cn/debug-function.md)
 
 ## `5xx` response status code
 

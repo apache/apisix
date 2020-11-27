@@ -627,24 +627,25 @@ local function common_phase(phase_name)
 end
 
 
+local function set_resp_upstream_status(up_status)
+    core.response.set_header("X-APISIX-Upstream-Status", up_status)
+    core.log.info("X-APISIX-Upstream-Status: ", up_status)
+end
+
+
 function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
-
-    local function set_res_header(up_status)
-        core.response.set_header("X-APISIX-Upstream-Status", up_status)
-        core.log.info("X-APISIX-Upstream-Status: ", up_status)
-    end
 
     local up_status = get_var("upstream_status")
     if up_status and #up_status == 3
        and tonumber(up_status) >= 500
        and tonumber(up_status) <= 599
     then
-        set_res_header(up_status)
+        set_resp_upstream_status(up_status)
     elseif up_status and #up_status > 3 then
         local last_status = str_sub(up_status, -3)
         if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
-            set_res_header(up_status)
+            set_resp_upstream_status(up_status)
         end
     end
 

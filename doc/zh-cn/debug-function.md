@@ -17,7 +17,7 @@
 #
 -->
 
-[English](../debugging.md)
+[English](../debug-function.md)
 
 ## `5xx` 响应状态码
 
