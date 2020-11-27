@@ -30,6 +30,7 @@
 * [独立运行模型](stand-alone.md): 支持从本地 yaml 格式的配置文件启动，更适合 Kubernetes(k8s) 体系。
 * [TCP/UDP 动态代理](stream-proxy.md)
 * [gRPC 代理](grpc-proxy.md)
+* [自定义 Nginx 配置](./customize-nginx-configuration.md)
 * [变更日志](../../CHANGELOG_CN.md)
 * [压力测试](benchmark.md)
 * [代码风格](../../CODE_STYLE_CN.md)
