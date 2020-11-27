@@ -34,6 +34,7 @@
 * [变更日志](../../CHANGELOG_CN.md)
 * [压力测试](benchmark.md)
 * [代码风格](../../CODE_STYLE_CN.md)
+* [调试功能](./debug-function.md)
 * [常见问答](../../FAQ_CN.md)
 
 ## 插件
