@@ -127,7 +127,7 @@ done
                                     "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                                     "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "scope": "apisix"
                                 }
@@ -228,7 +228,7 @@ true
                                     "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "bearer_only": true,
                                     "scope": "apisix"
@@ -318,7 +318,7 @@ hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
                                     "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "bearer_only": true,
                                     "scope": "apisix",
@@ -460,7 +460,7 @@ jwt signature verification failed
                                     "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
                                     "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
                                     "redirect_uri": "http://localhost:3000",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "bearer_only": true,
                                     "realm": "University",
