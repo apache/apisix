@@ -16,6 +16,7 @@
 --
 local require = require
 local core    = require("apisix.core")
+local plugin_checker = require("apisix.plugin").plugin_checker
 local error   = error
 local pairs   = pairs
 local ipairs  = ipairs
@@ -88,7 +89,8 @@ function _M.http_init_worker()
 
     local global_rules, err = core.config.new("/global_rules", {
             automatic = true,
-            item_schema = core.schema.global_rule
+            item_schema = core.schema.global_rule,
+            checker = plugin_checker,
         })
     if not global_rules then
         error("failed to create etcd instance for fetching /global_rules : "

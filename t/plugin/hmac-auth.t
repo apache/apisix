@@ -1259,10 +1259,22 @@ x-real-ip: 127.0.0.1
 
 
 === TEST 32: get the default schema
---- request
-GET /apisix/admin/schema/plugins/hmac-auth
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/schema/plugins/hmac-auth',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+                ]]
+                )
+            ngx.status = code
+        }
+    }
+--- request
+GET /t
 --- no_error_log
 [error]
 
@@ -1279,10 +1291,22 @@ GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer
 
 
 === TEST 34: get the schema by error schema_type
---- request
-GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer123123
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/schema/plugins/hmac-auth?schema_type=consumer123123',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+                ]]
+                )
+            ngx.status = code
+        }
+    }
+--- request
+GET /t
 --- no_error_log
 [error]
 
