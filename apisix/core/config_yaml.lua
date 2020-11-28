@@ -157,6 +157,14 @@ local function sync_data(self)
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.delay_encode(item))
             end
+
+            if data_valid and self.checker then
+                data_valid, err = self.checker(item)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(item))
+                end
+            end
         end
 
         if data_valid then
@@ -180,8 +188,8 @@ local function sync_data(self)
             if type(item) ~= "table" then
                 data_valid = false
                 log.error("invalid item data of [", self.key .. "/" .. id,
-                            "], val: ", json.delay_encode(item),
-                            ", it shoud be a object")
+                          "], val: ", json.delay_encode(item),
+                          ", it shoud be a object")
             end
 
             local key = item.id or "arr_" .. i
@@ -192,7 +200,15 @@ local function sync_data(self)
                 data_valid, err = check_schema(self.item_schema, item)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                            "] err:", err, " ,val: ", json.delay_encode(item))
+                              "] err:", err, " ,val: ", json.delay_encode(item))
+                end
+            end
+
+            if data_valid and self.checker then
+                data_valid, err = self.checker(item)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(item))
                 end
             end
 
@@ -287,6 +303,7 @@ function _M.new(key, opts)
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
     local single_item = opts and opts.single_item
+    local checker = opts and opts.checker
 
     -- like /routes and /upstreams, remove first char `/`
     if key then
@@ -296,6 +313,7 @@ function _M.new(key, opts)
     local obj = setmetatable({
         automatic = automatic,
         item_schema = item_schema,
+        checker = checker,
         sync_times = 0,
         running = true,
         conf_version = 0,

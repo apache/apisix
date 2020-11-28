@@ -102,22 +102,104 @@ hello world
 
 
 
-=== TEST 4: stream route
+=== TEST 4: route with bad plugin
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
-stream_routes:
-  - server_addr: 127.0.0.1
-    server_port: 1985
+routes:
+  -
     id: 1
+    uri: /hello
+    plugins:
+        proxy-rewrite:
+            uri: 1
     upstream:
-      nodes:
-        "127.0.0.1:1995": 1
-      type: roundrobin
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
 #END
---- stream_enable
---- stream_request eval
-mmm
---- stream_response
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+property "uri" validation failed
+
+
+
+=== TEST 5: ignore unknown plugin
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    plugins:
+        x-rewrite:
+            uri: 1
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: route with bad plugin, radixtree_host_uri
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+    router:
+        http: "radixtree_host_uri"
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    plugins:
+        proxy-rewrite:
+            uri: 1
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+property "uri" validation failed
+
+
+
+=== TEST 7: fix route with default value
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+    router:
+        http: "radixtree_host_uri"
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    plugins:
+        uri-blocker:
+            block_rules:
+                - /h*
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 403
