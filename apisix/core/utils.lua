@@ -14,12 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local table    = require("apisix.core.table")
-local ngx_re   = require("ngx.re")
-local resolver = require("resty.dns.resolver")
-local ipmatcher= require("resty.ipmatcher")
-local ffi      = require("ffi")
-local base     = require("resty.core.base")
+local table     = require("apisix.core.table")
+local log       = require("apisix.core.log")
+local ngx_re    = require("ngx.re")
+local resolver  = require("resty.dns.resolver")
+local ipmatcher = require("resty.ipmatcher")
+local ffi       = require("ffi")
+local base      = require("resty.core.base")
+
 local open     = io.open
 local math     = math
 local sub_str  = string.sub
@@ -27,15 +29,21 @@ local str_byte = string.byte
 local tonumber = tonumber
 local type     = type
 local C        = ffi.C
-local ffi_string = ffi.string
+
+local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
-local exiting = ngx.worker.exiting
-local ngx_sleep    = ngx.sleep
+local exiting        = ngx.worker.exiting
+local ngx_sleep      = ngx.sleep
+
+local hostname
 local max_sleep_interval = 1
+local max_hostname_len = 256
 
 ffi.cdef[[
     int ngx_escape_uri(char *dst, const char *src,
         size_t size, int type);
+    int gethostname(char *name, size_t len);
+    int strlen(const char *s);
 ]]
 
 
@@ -200,6 +208,26 @@ function _M.validate_header_value(value)
         end
     end
     return true
+end
+
+
+function _M.gethostname()
+    if hostname then
+        return hostname
+    end
+
+    local buf = get_string_buf(max_hostname_len)
+
+    if C.gethostname(buf, max_hostname_len) == 0 then
+        buf[max_hostname_len - 1] = str_byte('\0')
+        hostname = ffi_string(buf, ffi.C.strlen(buf))
+
+    else
+        log.alert("ffi.C.gethostname() failed")
+        hostname = "unknown"
+    end
+
+    return hostname
 end
 
 

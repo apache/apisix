@@ -23,6 +23,7 @@ local service_fetch = require("apisix.http.service").get
 local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
+local server_info   = require("apisix.server_info")
 local set_upstream  = require("apisix.upstream").set_by_route
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
@@ -112,6 +113,8 @@ function _M.http_init_worker()
 
     require("apisix.debug").init_worker()
     require("apisix.upstream").init_worker()
+
+    server_info.init_worker()
 
     local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
@@ -830,6 +833,8 @@ function _M.stream_init_worker()
     if core.config == require("apisix.core.config_yaml") then
         core.config.init_worker()
     end
+
+    server_info.init_worker()
 
     load_balancer = require("apisix.balancer").run
 
