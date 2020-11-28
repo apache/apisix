@@ -723,3 +723,15 @@ Content-Type: text/plain
 ```
 
 [Back to TOC](#目录)
+
+*地址*：/apisix/admin/plugins/meta_attributes
+
+*说明*: 插件元属性，包括插件的 `name`, `priority`, `priority`, `schema`, `consumer_schema` and `version`。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/meta_attributes/{plugin_name}|无|获取资源|
+
+[Back to TOC](#目录)
