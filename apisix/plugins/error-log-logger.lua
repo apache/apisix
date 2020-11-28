@@ -39,8 +39,8 @@ local metadata_schema = {
         host = schema_def.host_def,
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
-        tls_options = {type = "string"},
-        timeout = {type = "integer", minimum = 1, default = 3},
+        tls_server_name = {type = "string"},
+        timeout = {type = "integer", minimum = 1, default = 5},
         keepalive = {type = "integer", minimum = 1, default = 30},
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
@@ -97,7 +97,7 @@ local function send_to_server(data)
     end
 
     if config.tls then
-        ok, err = sock:sslhandshake(true, config.tls_options, false)
+        ok, err = sock:sslhandshake(false, config.tls_server_name, false)
         if not ok then
             sock:close()
             return false, "failed to to perform TLS handshake to TCP server: host["

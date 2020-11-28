@@ -47,7 +47,7 @@
 | keepalive        | integer | 可选   | 30     | [1,...] | 复用连接时，连接保持的时间（以秒为单位）           |
 | level            | string  | 可选   | WARN   |         | 进行错误日志筛选的级别，缺省WARN，取值["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致                                     |
 | tls              | boolean | 可选   | false  |         | 用于控制是否执行SSL验证                          |
-| tls_options      | string  | 可选   |        |         | TLS 选项                                         |
+| tls_server_name  | string  | 可选   |        |         | TLS 服务名称标记                                 |
 | inactive_timeout | integer | 可选   | 5      | [1,...] | 刷新缓冲区的最大时间（以秒为单位）               |
 | batch_max_size   | integer | 可选   | 1000   | [1,...] | 每批的最大大小                                   |
 | buffer_duration  | integer | 可选   | 60     | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位） |

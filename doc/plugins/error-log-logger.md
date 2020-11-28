@@ -28,11 +28,11 @@
 
 ## Name
 
-`error-log-logger` is a plugin which push the log data of APISIX's error.log to TCP servers.
+`error-log-logger` is a plugin which pushes the log data of APISIX's error.log to TCP servers.
 
-This will provide the ability to send the log data which selected by the level to Monitoring tools and other TCP servers.
+This plugin will provide the ability to send the log data which selected by the level to Monitoring tools and other TCP servers.
 
-This plugin provides the ability to push the log data as a batch to your external TCP servers. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+This plugin provides the ability as a batch to push the log data to your external TCP servers. If not receive the log data, don't worry, it will automatically send the logs after the timer function expires in our Batch Processor.
 
 For more info on Batch-Processor in Apache APISIX please refer.
 [Batch-Processor](../batch-processor.md)
@@ -47,7 +47,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | keepalive        | integer | optional    | 30      | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
 | level            | string  | optional    | WARN    |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
 | tls              | boolean | optional    | false   |         | Control whether to perform SSL verification                                              |
-| tls_options      | string  | optional    |         |         | tls options                                                                              |
+| tls_server_name  | string  | optional    |         |         | The server name for the new TLS extension  SNI                                                            |
 | batch_max_size   | integer | optional    | 1000    | [1,...] | Max size of each batch                                                                   |
 | inactive_timeout | integer | optional    | 5       | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
 | buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
