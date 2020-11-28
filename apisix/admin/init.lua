@@ -18,6 +18,8 @@ local require = require
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
+local server_info = require("apisix.server_info")
+
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
@@ -258,6 +260,17 @@ local function post_reload_plugins()
 end
 
 
+local function get_server_info()
+    local server_info, err = server_info.get()
+    if not server_info then
+        core.log.error("failed to get server_info: ", err)
+        core.response.exit(500, err)
+    end
+
+    core.response.exit(200, server_info)
+end
+
+
 local function sync_local_conf_to_etcd()
     core.log.warn("sync local conf to etcd")
 
@@ -316,6 +329,11 @@ local uri_route = {
         methods = {"PUT"},
         handler = post_reload_plugins,
     },
+    {
+        paths = [[/apisix/admin/server_info]],
+        methods = {"GET"},
+        handler = get_server_info,
+    }
 }
 
 
