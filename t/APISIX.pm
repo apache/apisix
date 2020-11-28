@@ -180,6 +180,7 @@ _EOC_
         apisix.stream_init_worker()
     }
 
+
     # fake server, only for test
     server {
         listen 1995;
@@ -272,6 +273,8 @@ _EOC_
         require("apisix").http_init_worker()
     }
 
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
+
     # fake server, only for test
     server {
         listen 1980;
@@ -346,6 +349,10 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
+        set \$upstream_scheme             'http';
+        set \$upstream_host               \$host;
+        set \$upstream_uri                '';
+
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             access_log off;
@@ -360,11 +367,8 @@ _EOC_
 
         location / {
             set \$upstream_mirror_host        '';
-            set \$upstream_scheme             'http';
-            set \$upstream_host               \$host;
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
-            set \$upstream_uri                '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
