@@ -717,6 +717,53 @@ make stop
 
 echo "passed: access log with JSON format"
 
+# check uninitialized variable in access log
+git checkout conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to access admin"
+    exit 1
+fi
+
+if grep 'using uninitialized "upstream_host" variable while logging request' logs/error.log; then
+    echo "failed: uninitialized variable found during writing access log"
+    exit 1
+fi
+
+echo "pass: uninitialized variable not found during writing access log"
+
+# port_admin set
+echo '
+apisix:
+  port_admin: 9180
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to access admin"
+    exit 1
+fi
+
+if grep 'using uninitialized "upstream_host" variable while logging request' logs/error.log; then
+    echo "failed: uninitialized variable found during writing access log"
+    exit 1
+fi
+
+echo "pass: uninitialized variable not found during writing access log (port_admin set)"
+
 # check etcd while enable auth
 git checkout conf/config.yaml
 

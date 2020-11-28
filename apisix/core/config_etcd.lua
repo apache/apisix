@@ -216,6 +216,14 @@ local function sync_data(self)
                 end
             end
 
+            if data_valid and self.checker then
+                data_valid, err = self.checker(item.value)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(item.value))
+                end
+            end
+
             if data_valid then
                 changed = true
                 insert_tab(self.values, item)
@@ -253,6 +261,14 @@ local function sync_data(self)
                     if not data_valid then
                         log.error("failed to check item data of [", self.key,
                                   "] err:", err, " ,val: ", json.encode(item.value))
+                    end
+                end
+
+                if data_valid and self.checker then
+                    data_valid, err = self.checker(item.value)
+                    if not data_valid then
+                        log.error("failed to check item data of [", self.key,
+                                  "] err:", err, " ,val: ", json.delay_encode(item.value))
                     end
                 end
 
@@ -348,6 +364,16 @@ local function sync_data(self)
 
                 return false, "failed to check item data of ["
                                 .. self.key .. "] err:" .. err
+            end
+
+            if self.checker then
+                local ok, err = self.checker(res.value)
+                if not ok then
+                    self:upgrade_version(res.modifiedIndex)
+
+                    return false, "failed to check item data of ["
+                                    .. self.key .. "] err:" .. err
+                end
             end
         end
 
@@ -538,6 +564,7 @@ function _M.new(key, opts)
     local filter_fun = opts and opts.filter
     local timeout = opts and opts.timeout
     local single_item = opts and opts.single_item
+    local checker = opts and opts.checker
 
     local obj = setmetatable({
         etcd_cli = nil,
@@ -545,6 +572,7 @@ function _M.new(key, opts)
         key = key and prefix .. key,
         automatic = automatic,
         item_schema = item_schema,
+        checker = checker,
         sync_times = 0,
         running = true,
         conf_version = 0,

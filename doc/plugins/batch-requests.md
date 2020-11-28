@@ -57,7 +57,7 @@ By default, the maximun body size sent to the `/apisix/batch-requests` can't be 
 You can configure it via `apisix/admin/plugin_metadata/batch-requests`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "max_body_size": 4194304
 }'
