@@ -47,7 +47,7 @@ For more information on Basic authentication, refer to [Wiki](https://en.wikiped
 ### 1. set a consumer and config the value of the `basic-auth` option
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "foo",
     "plugins": {
@@ -70,7 +70,7 @@ then add basic-auth plugin in the Consumer page:
 ### 2. add a Route or add a Service, and enable the `basic-auth` plugin
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
