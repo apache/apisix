@@ -32,7 +32,7 @@
 
 This will provide the ability to send the log data which selected by the level to Monitoring tools and other TCP servers.
 
-This plugin provides the ability to push the log data as a batch to you're external TCP servers. In case if you did not recieve the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+This plugin provides the ability to push the log data as a batch to your external TCP servers. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
 
 For more info on Batch-Processor in Apache APISIX please refer.
 [Batch-Processor](../batch-processor.md)
@@ -45,7 +45,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | port             | integer | required    |         | [0,...] | Target upstream port.                                                                    |
 | timeout          | integer | optional    | 3       | [1,...] | Timeout for the upstream to connect and send, unit: second.                                                   |
 | keepalive        | integer | optional    | 30      | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
-| level            | string  | optional    | WARN    |         | The filter's log level, default warn, chose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
+| level            | string  | optional    | WARN    |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
 | tls              | boolean | optional    | false   |         | Control whether to perform SSL verification                                              |
 | tls_options      | string  | optional    |         |         | tls options                                                                              |
 | batch_max_size   | integer | optional    | 1000    | [1,...] | Max size of each batch                                                                   |

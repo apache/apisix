@@ -22,6 +22,7 @@ local plugin = require("apisix.plugin")
 local timers = require("apisix.timers")
 local plugin_name = "error-log-logger"
 local table = core.table
+local schema_def = core.schema
 local ngx = ngx
 local tcp = ngx.socket.tcp
 local string = string
@@ -35,14 +36,15 @@ local lrucache = core.lrucache.new({
 local metadata_schema = {
     type = "object",
     properties = {
-        host = {type = "string"},
+        host = schema_def.host_def,
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
         tls_options = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         keepalive = {type = "integer", minimum = 1, default = 30},
         name = {type = "string", default = plugin_name},
-        level = {type = "string", default = "WARN"},
+        level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
+                "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"}},
         batch_max_size = {type = "integer", minimum = 0, default = 1000},
         max_retry_count = {type = "integer", minimum = 0, default = 0},
         retry_delay = {type = "integer", minimum = 0, default = 1},
@@ -61,7 +63,7 @@ local log_level = {
     ERR    =    ngx.ERR,
     ERROR  =    ngx.ERR,
     WARN   =    ngx.WARN,
-    NOTICE =     ngx.NOTICE,
+    NOTICE =    ngx.NOTICE,
     INFO   =    ngx.INFO,
     DEBUG  =    ngx.DEBUG
 }
@@ -91,14 +93,15 @@ local function send_to_server(data)
     local ok, err = sock:connect(config.host, config.port)
     if not ok then
         return false, "failed to connect the TCP server: host[" .. config.host
-                         .. "] port[" .. tostring(config.port) .. "] err: " .. err
+            .. "] port[" .. tostring(config.port) .. "] err: " .. err
     end
 
     if config.tls then
         ok, err = sock:sslhandshake(true, config.tls_options, false)
         if not ok then
+            sock:close()
             return false, "failed to to perform TLS handshake to TCP server: host["
-                          .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
+                .. config.host .. "] port[" .. tostring(config.port) .. "] err: " .. err
         end
     end
 
@@ -106,7 +109,7 @@ local function send_to_server(data)
     if not bytes then
         sock:close()
         return false, "failed to send data to TCP server: host[" .. config.host
-                        .. "] port[" .. tostring(config.port) .. "] err: " .. err
+            .. "] port[" .. tostring(config.port) .. "] err: " .. err
     end
 
     sock:setkeepalive(config.keepalive * 1000)
@@ -134,8 +137,7 @@ local function process()
         return
     else
         local err
-        config, err = lrucache(plugin_name, metadata.modifiedIndex, update_filter,
-                                 metadata.value)
+        config, err = lrucache(plugin_name, metadata.modifiedIndex, update_filter, metadata.value)
         if not config then
             core.log.warn("set log filter failed for ", err)
             return
@@ -145,13 +147,13 @@ local function process()
 
     local id = ngx.worker.id()
     local entries = {}
-    local logs = errlog.get_logs(10)
+    local logs = errlog.get_logs(9)
     while ( logs and #logs>0 ) do
         for i = 1, #logs, 3 do
             table.insert(entries, logs[i + 2])
             table.insert(entries, "\n")
         end
-        logs = errlog.get_logs(10)
+        logs = errlog.get_logs(9)
     end
 
     if #entries == 0 then
