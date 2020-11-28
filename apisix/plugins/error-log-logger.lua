@@ -40,7 +40,7 @@ local metadata_schema = {
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
         tls_server_name = {type = "string"},
-        timeout = {type = "integer", minimum = 1, default = 5},
+        timeout = {type = "integer", minimum = 1, default = 3},
         keepalive = {type = "integer", minimum = 1, default = 30},
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",

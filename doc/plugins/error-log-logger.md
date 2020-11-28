@@ -49,7 +49,7 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | tls              | boolean | optional    | false   |         | Control whether to perform SSL verification                                              |
 | tls_server_name  | string  | optional    |         |         | The server name for the new TLS extension  SNI                                                            |
 | batch_max_size   | integer | optional    | 1000    | [1,...] | Max size of each batch                                                                   |
-| inactive_timeout | integer | optional    | 5       | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
+| inactive_timeout | integer | optional    | 3       | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
 | buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
 | max_retry_count  | integer | optional    | 0       | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
 | retry_delay      | integer | optional    | 1       | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
