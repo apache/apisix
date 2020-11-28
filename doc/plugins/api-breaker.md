@@ -63,7 +63,7 @@ Here's an example, enable the `api-breaker` plugin on the specified route.
 Response 500 or 503 three times in a row to trigger a unhealthy. Response 200 once in a row to restore healthy.
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "api-breaker": {
@@ -102,7 +102,7 @@ Server: APISIX/1.5
 When you want to disable the `api-breader` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "upstream": {
