@@ -713,7 +713,7 @@ Content-Type: text/plain
 
 *API*：/apisix/admin/plugins/meta_attributes
 
-*Description*: plugin meta attributes, include plug-in `name`, `priority`, `priority`, `schema`, `consumer_schema` and `version`. 
+*Description*: plugin meta attributes, include plug-in `name`, `priority`, `priority`, `schema`, `consumer_schema` and `version`.
 
 > Request Methods:
 
