@@ -148,14 +148,14 @@ apisix:
 When calling the Admin API, `key` can be used as a token.
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes?api_key=abcdefghabcdefgh -i
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh -i
 HTTP/1.1 200 OK
 Date: Fri, 28 Feb 2020 07:48:04 GMT
 Content-Type: text/plain
 ... ...
 {"node":{...},"action":"get"}
 
-$ curl http://127.0.0.1:9180/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
+$ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=abcdefghabcdefgh-invalid -i
 HTTP/1.1 401 Unauthorized
 Date: Fri, 28 Feb 2020 08:17:58 GMT
 Content-Type: text/html

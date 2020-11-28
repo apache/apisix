@@ -68,7 +68,7 @@ rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更�
 1. 创建一个 consumer 对象，并设置插件 `wolf-rbac` 的值。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "username":"wolf_rbac",
   "plugins":{
@@ -92,7 +92,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f
 2. 创建 Route 或 Service 对象，并开启 `wolf-rbac` 插件。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
@@ -241,7 +241,7 @@ HTTP/1.1 200 OK
 当你想去掉 `rbac-wolf` 插件的时候，很简单，在routes中的插件配置中把对应的 `插件` 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",

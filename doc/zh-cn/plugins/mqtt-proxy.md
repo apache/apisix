@@ -66,7 +66,7 @@
 下面是一个示例，在指定的 route 上开启了 mqtt-proxy 插件:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "remote_addr": "127.0.0.1",
     "plugins": {

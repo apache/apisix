@@ -60,7 +60,7 @@ It will take a while to download the source for the first time. But the conseque
 After the docker containers have started visit the following link to check if you are getting a successful response.
 
 ```bash
-$ curl "http://127.0.0.1:9180/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 The following will be the response from the Admin API.
@@ -130,7 +130,7 @@ Technically all this information(upstream or service, plugins) can be included i
 Execute the following command to create an upstream with the id of '50' in APISIX. Let's use the round-robin mechanism for load balancing.
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "roundrobin",
     "nodes": {
@@ -144,7 +144,7 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/50" -H 'X-API-KEY: edd1c9f034
 By default APISIX proxies the request via the HTTP protocol. As our backend is hosted in a HTTPS environment, let's use the proxy-rewrite plugin to change the scheme to HTTPS.
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/routes/5" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "host": "httpbin.org",
@@ -179,7 +179,7 @@ Execute the following command to create a user called John with a dedicated api-
 Note: APISIX supports multiple authentication mechanism, view the plugin docs to learn more.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "john",
     "plugins": {
@@ -193,7 +193,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Now, let's configure our endpoint to include the key-auth plugin.
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "host": "httpbin.org",
@@ -220,7 +220,7 @@ Now lets say you want to add a prefix (eg: samplePrefix) to the route and do not
 the proxy rewrite plugin to do it.
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/samplePrefix/get",
     "plugins": {
