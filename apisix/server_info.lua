@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local require = require
-local process = require("ngx.process")
 local core = require("apisix.core")
 
 local type = type
@@ -32,7 +31,8 @@ end
 
 
 local function is_privileged()
-    return process.type() == "privileged agent" or process.type() == "single"
+    local process_type = require("ngx.process").type()
+    return process_type == "privileged agent" or process_type == "single"
 end
 
 -- server information will be saved into shared memory only if the key
