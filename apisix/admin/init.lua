@@ -18,7 +18,6 @@ local require = require
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
-local server_info = require("apisix.server_info")
 
 local ngx = ngx
 local get_method = ngx.req.get_method
@@ -31,6 +30,8 @@ local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
 local events
+local server_info
+
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
 
 
@@ -342,6 +343,8 @@ function _M.init_worker()
     if not local_conf.apisix or not local_conf.apisix.enable_admin then
         return
     end
+
+    server_info = require("apisix.server_info")
 
     router = route.new(uri_route)
     events = require("resty.worker.events")
