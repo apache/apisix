@@ -111,7 +111,7 @@ function _M.http_init_worker()
 
     require("apisix.debug").init_worker()
     require("apisix.upstream").init_worker()
-    require("server_info").init_worker()
+    require("apisix.server_info").init_worker()
 
     local_conf = core.config.local_conf()
     local dns_resolver_valid = local_conf and local_conf.apisix and
