@@ -29,7 +29,7 @@
 - [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
-- [**Consumer**](#consumer)
+- [**Consumer**](#consumer1)
 - [**Global Rule**](#Global-Rule)
 - [**Debug mode**](#Debug-mode)
 
@@ -494,7 +494,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 [Back to top](#Table-of-contents)
 
-## Consumer
+## Consumer1
 
 For the API gateway, it is usually possible to identify a certain type of requester by using a domain name such as a request domain name, a client IP address, etc., and then perform plugin filtering and forward the request to the specified upstream, but sometimes the depth is insufficient.
 
