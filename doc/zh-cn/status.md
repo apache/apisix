@@ -17,7 +17,10 @@
 #
 -->
 
-[English](../status.md)
+# 目录
+
+- [**内部状态**](#内部状态)
+- [**服务信息**](#服务信息)
 
 ## 内部状态
 
@@ -54,3 +57,5 @@ curl http://127.0.0.1:9080/apisix/admin/server_info -s | jq
 
 注意服务信息将被周期性地上报到 etcd（目前的上报间隔是 5
 秒）并被 APISIX Dashboard 所收集，所以你也可以通过 APISIX Dashboard 来访问这些数据。
+
+[返回目录](#目录)
