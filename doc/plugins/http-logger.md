@@ -39,17 +39,17 @@ This will provide the ability to send Log data requests as JSON objects to Monit
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| uri              | string  | required    |               |         | URI of the server                                                                        |
-| auth_header      | string  | optional    | ""            |         | Any authorization headers                                                                |
-| timeout          | integer | optional    | 3             | [1,...] | Time to keep the connection alive after sending a request                                |
-| name             | string  | optional    | "http logger" |         | A unique identifier to identity the logger                                               |
-| batch_max_size   | integer | optional    | 1000          | [1,...] | Max size of each batch                                                                   |
-| inactive_timeout | integer | optional    | 5             | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
-| buffer_duration  | integer | optional    | 60            | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
-| max_retry_count  | integer | optional    | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
-| retry_delay      | integer | optional    | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
-| include_req_body | boolean | optional    | false         |         | Whether to include the request body                                                      |
-| concat_method    | string  | optional    | "json"        |         | Enum type, `json` and `new_line`. **json**: use `json.encode` for all pending logs. **new_line**: use `json.encode` for each pending log and concat them with "\n" line. |
+| uri              | string  | required    |               |         | The URI of the `HTTP/HTTPS` server.                                                      |
+| auth_header      | string  | optional    | ""            |         | Any authorization headers.                                                               |
+| timeout          | integer | optional    | 3             | [1,...] | Time to keep the connection alive after sending a request.                               |
+| name             | string  | optional    | "http logger" |         | A unique identifier to identity the logger.                                              |
+| batch_max_size   | integer | optional    | 1000          | [1,...] | Set the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the `HTTP/HTTPS` service. |
+| inactive_timeout | integer | optional    | 5             | [1,...] | The maximum time to refresh the buffer (in seconds). When the maximum refresh time is reached, all logs will be automatically pushed to the `HTTP/HTTPS` service regardless of whether the number of logs in the buffer reaches the maximum number set. |
+| buffer_duration  | integer | optional    | 60            | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
+| max_retry_count  | integer | optional    | 0             | [0,...] | Maximum number of retries before removing from the processing pipe line.                 |
+| retry_delay      | integer | optional    | 1             | [0,...] | Number of seconds the process execution should be delayed if the execution fails.        |
+| include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
+| concat_method    | string  | optional    | "json"        | ["json", "new_line"] | Enum type: `json` and `new_line`. **json**: use `json.encode` for all pending logs. **new_line**: use `json.encode` for each pending log and concat them with "\n" line. |
 
 ## How To Enable
 
@@ -88,7 +88,7 @@ hello, world
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    |               |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, the value is [Nginx variable](http://nginx.org/en/docs/varindex.html). |
+| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, the value is [Nginx variable](http://nginx.org/en/docs/varindex.html). |
 
  Note that the metadata configuration is applied in global scope, which means it will take effect on all Route or Service which use http-logger plugin.
 
