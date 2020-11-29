@@ -167,7 +167,7 @@ There are several ways to install the Apache Release version of APISIX:
      ```shell
      $ mkdir apisix-2.1
      $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
-     $ tar zxvf apache-apisix-2.1-src.tgz
+     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
      ```
    - Install the dependencies：
      ```shell
