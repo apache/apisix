@@ -15,10 +15,11 @@
 -- limitations under the License.
 --
 local fetch_local_conf = require("apisix.core.config_local").local_conf
-local log = require("apisix.core.log")
-local uuid = require('resty.jit-uuid')
-local smatch = string.match
-local open = io.open
+local try_read_attr    = require("apisix.core.table").try_read_attr
+local log              = require("apisix.core.log")
+local uuid             = require('resty.jit-uuid')
+local smatch           = string.match
+local open             = io.open
 
 
 local prefix = ngx.config.prefix()
@@ -68,7 +69,8 @@ function _M.init()
 
     --allow user to specify a meaningful id as apisix instance id
     local local_conf = fetch_local_conf()
-    if local_conf and local_conf.apisix and local_conf.apisix.id then
+    local id = try_read_attr(local_conf, "apisix", "id")
+    if id then
         apisix_uid = local_conf.apisix.id
     else
         uuid.seed()

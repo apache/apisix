@@ -291,9 +291,9 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
 
 ## How to customize the APISIX instance id?
 
-By default, APISIX uses `uuid` as instance id, stored in `/conf/apisix.uid`, generated when the APISIX first start, and does not change.
+By default, APISIX will read the instance id from `conf/apisix.uid`. If it is not found, and no id is configured, APISIX will generate a `uuid` as the instance id.
 
-If you want to specify a meaningful id to bind APISIX instance with your internal system, you can configure it in `conf/config.yaml`, for example:
+If you want to specify a meaningful id to bind APISIX instance to your internal system, you can configure it in `conf/config.yaml`, for example:
 
     ```
     apisix:

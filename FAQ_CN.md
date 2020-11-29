@@ -253,9 +253,9 @@ APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/
 
 ## 如何自定义 APISIX 实例 id
 
-默认情况下，APISIX 使用 `uuid` 作为实例 id，存储在`/conf/apisix.uid`中，在 APISIX 第一次启动时生成，不会改变。
+默认情况下，APISIX 会从 `conf/apisix.uid` 中读取实例 id。如果找不到，且没有配置 id，APISIX 会生成一个 `uuid` 作为实例 id。
 
-如果你想指定一个有意义的 id 来绑定 APISIX 实例与你的内部系统，你可以在`conf/config.yaml`中进行配置，示例：
+如果你想指定一个有意义的 id 来绑定 APISIX 实例到你的内部系统，你可以在 `conf/config.yaml` 中进行配置，示例：
 
     ```
     apisix:
