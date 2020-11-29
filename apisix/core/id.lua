@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local fetch_local_conf = require("apisix.core.config_local").local_conf
 local log = require("apisix.core.log")
 local uuid = require('resty.jit-uuid')
 local smatch = string.match
@@ -65,9 +66,15 @@ function _M.init()
         return
     end
 
-    uuid.seed()
-    apisix_uid = uuid.generate_v4()
-    log.notice("not found apisix uid, generate a new one: ", apisix_uid)
+    --allow user to specify a meaningful id as apisix instance id
+    local local_conf = fetch_local_conf()
+    if local_conf and local_conf.apisix and local_conf.apisix.id then
+        apisix_uid = local_conf.apisix.id
+    else
+        uuid.seed()
+        apisix_uid = uuid.generate_v4()
+        log.notice("not found apisix uid, generate a new one: ", apisix_uid)
+    end
 
     local ok, err = write_file(uid_file_path, apisix_uid)
     if not ok then

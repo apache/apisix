@@ -257,7 +257,7 @@ Steps:
 
 Now you can trace the info level log in logs/error.log.
 
-## How to reload your own plugin
+## How to reload your own plugin?
 
 The Apache APISIX plugin supports hot reloading.
 See the `Hot reload` section in [plugins](./doc/plugins.md) for how to do that.
@@ -274,7 +274,7 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
         - 9080
         - 9081
         - 9082
-    ```
+   ```
 
    Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
 
@@ -288,3 +288,14 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
     ```
 
 2. Reload or restart APISIX
+
+## How to customize the APISIX instance id?
+
+By default, APISIX uses `uuid` as instance id, stored in `/conf/apisix.uid`, generated when the APISIX first start, and does not change.
+
+If you want to specify a meaningful id to bind APISIX instance with your internal system, you can configure it in `conf/config.yaml`, for example:
+
+    ```
+    apisix:
+      id: "your-meaningful-id"
+    ```
