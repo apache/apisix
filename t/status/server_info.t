@@ -55,7 +55,7 @@ location /t {
 GET /t
 --- response_body eval
 qr{^etcd_version: [\d\.]+
-hostname: \w+
+hostname: [a-zA-Z\-0-9]+
 id: [a-zA-Z\-0-9]+
 last_report_time: \d+
 up_time: \d+
@@ -94,7 +94,7 @@ location /t {
 GET /t
 --- response_body eval
 qr{^etcd_version: unknown
-hostname: \w+
+hostname: [a-zA-Z\-0-9]+
 id: [a-zA-Z\-0-9]+
 last_report_time: -1
 up_time: \d+
