@@ -197,14 +197,16 @@ local function introspect(ctx, conf)
             end
         end
         if conf.bearer_only then
-            -- If we get here, the token could not be validated, but we always require a valid token in the request.
+            -- If we get here, the token could not be validated, but we always require a valid
+            -- token in the request.
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm
                                              .. '",error="' .. err .. '"'
             return ngx.HTTP_UNAUTHORIZED, err
         end
     end
 
-    -- Return nil to indicate that a token could not be extracted or validated, but that we don't want to fail quickly.
+    -- Return nil to indicate that a token could not be extracted or validated, but that we don't
+    --  want to fail quickly.
     return nil
 end
 
@@ -225,7 +227,8 @@ function _M.access(plugin_conf, ctx)
     end
 
     if not response then
-        -- A valid token was not in the request. Try to obtain one by authenticatin against the configured identity provider.
+        -- A valid token was not in the request. Try to obtain one by authenticatin against the
+        -- configured identity provider.
         local response, err = openidc.authenticate(conf)
         if err then
             core.log.error("failed to authenticate in openidc: ", err)
