@@ -42,6 +42,10 @@ local function save(data, excl)
 
     local ok, err = handler(internal_status, "server_info", data)
     if not ok then
+        if excl and err == "exists" then
+            return true
+        end
+
         return nil, err
     end
 
