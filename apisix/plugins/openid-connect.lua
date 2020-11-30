@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local string = require("string")
 local core = require("apisix.core")
 local ngx_re = require("ngx.re")
 local openidc = require("resty.openidc")
