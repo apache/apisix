@@ -245,7 +245,7 @@ passed
 --- request
 GET /apisix/admin/schema/plugins/udp-logger
 --- response_body  eval
-qr/{"properties":/
+qr/"properties":/
 --- no_error_log
 [error]
 
@@ -255,7 +255,7 @@ qr/{"properties":/
 --- request
 GET /apisix/admin/schema/plugins/grpc-transcode
 --- response_body eval
-qr/"proto_id".*additionalProperties/
+qr/("proto_id".*additionalProperties|additionalProperties.*"proto_id")/
 --- no_error_log
 [error]
 

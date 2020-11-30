@@ -230,7 +230,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local function test()
-                local json_encode = require("lib.json_sort").encode
+                local json_encode = require("toolkit.json").encode
                 local http = require "resty.http"
                 local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
 

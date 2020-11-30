@@ -27,7 +27,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local encode_json = require "cjson.safe" .encode
+            local encode_json = require("toolkit.json").encode
             local config = require("apisix.core").config.local_conf()
 
             ngx.say("etcd host: ", config.etcd.host)
@@ -46,7 +46,7 @@ first plugin: "api-breaker"
 --- config
     location /t {
         content_by_lua_block {
-            local encode_json = require "lib.json_sort" .encode
+            local encode_json = require("toolkit.json").encode
             local config = require("apisix.core").config.local_conf()
 
             ngx.say("etcd host: ", config.etcd.host)

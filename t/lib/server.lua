@@ -14,8 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local json_decode = require("cjson").decode
-local json_encode = require("cjson").encode
+local json_decode = require("toolkit.json").decode
+local json_encode = require("toolkit.json").encode
 
 local _M = {}
 

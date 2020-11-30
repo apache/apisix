@@ -32,10 +32,10 @@ __DATA__
             local t = {"first"}
             core.table.insert_tail(t, 'a', 1, true)
 
-            ngx.say("encode: ", core.json.encode(t))
+            ngx.say("encode: ", require("toolkit.json").encode(t))
 
             core.table.set(t, 'a', 1, true)
-            ngx.say("encode: ", core.json.encode(t))
+            ngx.say("encode: ", require("toolkit.json").encode(t))
         }
     }
 --- request

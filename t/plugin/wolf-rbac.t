@@ -39,13 +39,13 @@ __DATA__
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\\\/\\\/127\.0\.0\.1:10080"\}/
+qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:10080"\}/
 --- no_error_log
 [error]
 
@@ -232,14 +232,25 @@ qr/ERR_PASSWORD_ERROR/
 
 
 === TEST 11: login successfully
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[
+                {"appid": "wolf-rbac-app", "username": "admin","password": "123456"}
+                ]],
+                [[
+                {"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":{"nickname":"administrator","username":"admin","id":"100"}}
+                ]],
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.status = code
+        }
+    }
 --- request
-POST /apisix/plugin/wolf-rbac/login
-{"appid": "wolf-rbac-app", "username": "admin","password": "123456"}
---- more_headers
-Content-Type: application/json
---- error_code: 200
---- response_body_like eval
-qr/\{"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":\{"nickname":"administrator","username":"admin","id":"100"/
+GET /t
 --- no_error_log
 [error]
 
@@ -378,13 +389,25 @@ x-rbac-token: invalid-rbac-token
 
 
 === TEST 22: get userinfo
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/plugin/wolf-rbac/user_info',
+                ngx.HTTP_GET,
+                nil,
+                [[
+{"user_info":{"username":"admin","id":"100","nickname":"administrator"}}
+                ]],
+                {Cookie = "x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token"}
+                )
+            ngx.status = code
+        }
+    }
 --- request
-GET /apisix/plugin/wolf-rbac/user_info
---- more_headers
-Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
---- error_code: 200
---- response_body_like eval
-qr/\{"user_info":\{"nickname":"administrator","username":"admin","id":"100"/
+GET /t
+--- no_error_log
+[error]
 
 
 

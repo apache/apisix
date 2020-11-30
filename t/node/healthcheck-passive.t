@@ -92,7 +92,7 @@ passed
         content_by_lua_block {
             ngx.sleep(1) -- wait for sync
 
-            local json_sort = require("lib.json_sort")
+            local json_sort = require("toolkit.json")
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
 

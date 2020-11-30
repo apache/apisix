@@ -16,17 +16,6 @@
 # limitations under the License.
 #
 
-wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-sudo apt-get -y update --fix-missing
-sudo apt-get -y install software-properties-common
-sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
 
-sudo apt-get update
-
-if [ "$OPENRESTY_VERSION" == "default" ]; then
-    openresty='openresty-debug'
-else
-    openresty="openresty-debug=$OPENRESTY_VERSION*"
-fi
-
-sudo apt-get install "$openresty" lua5.1 liblua5.1-0-dev
+export OPENRESTY_VERSION=1.17.8.2
+. ./.travis/linux_openresty_runner.sh

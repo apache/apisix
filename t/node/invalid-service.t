@@ -38,7 +38,7 @@ __DATA__
                 return ngx.say(res.body)
             end
 
-            ngx.print(core.json.encode(res.body))
+            ngx.print(require("toolkit.json").encode(res.body))
             ngx.sleep(1)
         }
     }
@@ -86,7 +86,7 @@ qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it shoud
                 ngx.status = code
             end
 
-            ngx.print(core.json.encode(res.body))
+            ngx.print(require("toolkit.json").encode(res.body))
         }
     }
 --- request

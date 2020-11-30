@@ -42,13 +42,13 @@ __DATA__
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body
-{"type":"consumer_name","title":"whitelist","rejected_code":403,"whitelist":["jack1","jack2"]}
+{"rejected_code":403,"title":"whitelist","type":"consumer_name","whitelist":["jack1","jack2"]}
 --- no_error_log
 [error]
 

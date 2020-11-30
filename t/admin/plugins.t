@@ -22,6 +22,16 @@ no_root_location();
 no_shuffle();
 log_level("info");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    $block;
+});
+
 run_tests;
 
 __DATA__
@@ -48,49 +58,104 @@ GET /apisix/admin/plugins
 
 
 === TEST 3: get plugin schema
---- request
-GET /apisix/admin/plugins/limit-req
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugins/limit-req',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"properties":{"rate":{"minimum":0,"type":"number"},"burst":{"minimum":0,"type":"number"},"key":{"enum":["remote_addr","server_addr","http_x_real_ip","http_x_forwarded_for","consumer_name"],"type":"string"},"rejected_code":{"type":"integer","default":503,"minimum":200}},"required":["rate","burst","key"],"type":"object"}
+                ]]
+                )
+
+            ngx.status = code
+        }
+    }
 --- no_error_log
 [error]
 
 
 
 === TEST 4: get plugin node-status schema
---- request
-GET /apisix/admin/plugins/node-status
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugins/node-status',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+                ]]
+                )
+
+            ngx.status = code
+        }
+    }
 --- no_error_log
 [error]
 
 
 
 === TEST 5: get plugin prometheus schema
---- request
-GET /apisix/admin/plugins/prometheus
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugins/prometheus',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+                ]]
+                )
+
+            ngx.status = code
+        }
+    }
 --- no_error_log
 [error]
 
 
 
 === TEST 6: get plugin basic-auth schema
---- request
-GET /apisix/admin/plugins/basic-auth
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugins/basic-auth',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+                ]]
+                )
+
+            ngx.status = code
+        }
+    }
 --- no_error_log
 [error]
 
 
 
 === TEST 7: get plugin basic-auth schema by schema_type
---- request
-GET /apisix/admin/plugins/basic-auth?schema_type=consumer
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugins/basic-auth?schema_type=consumer',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+                ]]
+                )
+
+            ngx.status = code
+        }
+    }
 --- no_error_log
 [error]
