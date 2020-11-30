@@ -168,8 +168,8 @@ local _M = {
 Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin can be executed in the rewrite and access phases.
-In APISIX, the authentication logic is implemented in the access phase. Generally, IP access and interface
-permission are also completed in the access phase.
+In APISIX, the authentication logic is implemented in the rewrite phase. Generally, IP access and interface
+permission are completed in the access phase.
 
 The following code snippet shows how to implement any logic relevant to the plugin in the Openresty log phase.
 
