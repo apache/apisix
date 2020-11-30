@@ -16,6 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
+log_level('debug');
 repeat_each(2);
 no_long_string();
 no_root_location();
@@ -189,6 +190,7 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 === TEST 8: verify
+--- yaml_config eval: $::yaml_config
 --- request
 GET /hello
 --- more_headers
@@ -197,6 +199,8 @@ Authorization: Basic Zm9vOmJhcg==
 hello world
 --- no_error_log
 [error]
+--- error_log
+find consumer foo
 
 
 
