@@ -124,7 +124,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("cjson").encode(ports_arr))
+            ngx.say(require("toolkit.json").encode(ports_arr))
             ngx.exit(200)
         }
     }

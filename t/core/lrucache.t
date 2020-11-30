@@ -38,13 +38,13 @@ __DATA__
             end
 
             local obj = core.lrucache.global("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
@@ -73,19 +73,19 @@ obj: {"idx":2}
             local lru_get = core.lrucache.new()
 
             local obj = lru_get("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key-different", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
@@ -114,13 +114,13 @@ obj: {"idx":3}
             end
 
             local obj = core.lrucache.global("key", nil, create_num)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", nil, create_num)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", "1", create_num)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
@@ -141,7 +141,7 @@ obj: 2
             local core = require("apisix.core")
 
             local function server_release(self)
-                ngx.say("release: ", core.json.encode(self))
+                ngx.say("release: ", require("toolkit.json").encode(self))
             end
 
             local lrucache_server_picker = core.lrucache.new({
@@ -151,12 +151,12 @@ obj: 2
             local t1 = lrucache_server_picker("nnn", "t1",
                 function () return {name = "aaa"} end)
 
-            ngx.say("obj: ", core.json.encode(t1))
+            ngx.say("obj: ", require("toolkit.json").encode(t1))
 
             local t2 = lrucache_server_picker("nnn", "t2",
                 function () return {name = "bbb"} end)
 
-            ngx.say("obj: ", core.json.encode(t2))
+            ngx.say("obj: ", require("toolkit.json").encode(t2))
         }
     }
 --- request
@@ -187,13 +187,13 @@ obj: {"name":"bbb"}
             })
 
             local obj = lru_get("key", "ver", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
             local obj = lru_get("key", "ver", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             ngx.sleep(0.15)
             local obj = lru_get("key", "ver", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
@@ -226,7 +226,7 @@ obj: {"idx":2}
 
             local function f()
                 local obj = lru_get("key", "ver", create_obj)
-                ngx.say("obj: ", core.json.encode(obj))
+                ngx.say("obj: ", require("toolkit.json").encode(obj))
             end
 
             ngx.thread.spawn(f)

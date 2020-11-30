@@ -370,7 +370,7 @@ Batch Processor[log buffer] successfully processed the entries
                 retry_delay  = 0,
             }
             local func_to_send = function(elements)
-                core.log.info(core.json.encode(elements))
+                core.log.info(require("toolkit.json").encode(elements))
                 return true
             end
             local log_buffer, err = Batch:new(func_to_send, config)
@@ -412,7 +412,7 @@ Batch Processor[log buffer] activating flush due to no activity
                 inactive_timeout = 1
             }
             local func_to_send = function(elements)
-                core.log.info(core.json.encode(elements))
+                core.log.info(require("toolkit.json").encode(elements))
                 return true
             end
             local log_buffer, err = Batch:new(func_to_send, config)

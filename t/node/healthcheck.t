@@ -108,7 +108,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("cjson").encode(ports_arr))
+            ngx.say(require("toolkit.json").encode(ports_arr))
             ngx.exit(200)
         }
     }
@@ -209,7 +209,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("cjson").encode(ports_arr))
+            ngx.say(require("toolkit.json").encode(ports_arr))
             ngx.exit(200)
         }
     }
@@ -218,9 +218,10 @@ GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\[error\].*/
---- grep_error_log_out eval
-qr/Connection refused\) while connecting to upstream/
+qr/unhealthy .* for '.*'/
+--- grep_error_log_out
+unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
+unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'
 --- timeout: 10
 
 
@@ -306,7 +307,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("cjson").encode(ports_arr))
+            ngx.say(require("toolkit.json").encode(ports_arr))
             ngx.exit(200)
         }
     }
@@ -415,7 +416,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("cjson").encode(ports_arr))
+            ngx.say(require("toolkit.json").encode(ports_arr))
             ngx.exit(200)
         }
     }
