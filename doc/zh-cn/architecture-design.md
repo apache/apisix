@@ -27,7 +27,7 @@
 - [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
-- [**Consumer**](#consumer)
+- [**Consumer**](#consumer-1)
 - [**Global Rule**](#Global-Rule)
 - [**Debug mode**](#Debug-mode)
 
