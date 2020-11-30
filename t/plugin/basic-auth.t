@@ -16,19 +16,11 @@
 #
 use t::APISIX 'no_plan';
 
+log_level('debug');
 repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
-
-
-# Configuration fragment to enable debug error log.
-our $yaml_config = <<_EOC_;
-apisix:
-    nginx_config:
-        error_log_level: "debug"
-_EOC_
-
 run_tests;
 
 __DATA__
