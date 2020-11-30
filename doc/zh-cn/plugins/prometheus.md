@@ -87,6 +87,21 @@ scrape_configs:
 
 ![](../../images/plugin/prometheus02.png)
 
+## 如何修改暴露指标的uri
+
+我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的uri
+
+| 名称         | 类型   | 默认值   | 描述                                                  |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的uri |
+
+配置示例:
+
+```yaml
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
+```
 
 ### Grafana 面板
 
