@@ -373,7 +373,9 @@ function _M.http_access_phase()
         end
     end
 
-    if core.string.has_prefix(uri, "/apisix/") then
+    if router.api.has_route_not_under_apisix() or
+        core.string.has_prefix(uri, "/apisix/")
+    then
         local matched = router.api.match(api_ctx)
         if matched then
             return

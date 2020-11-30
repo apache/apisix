@@ -89,6 +89,21 @@ And we can check the status at prometheus console:
 
 ![](../../doc/images/plugin/prometheus02.png)
 
+## How to specify export uri
+
+We can change the default export uri in the `plugin_attr` section of `conf/config.yaml`.
+
+| Name         | Type   | Default  | Description                                                          |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | uri to get the prometheus metrics                  |
+
+Here is an example:
+
+```yaml
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
+```
 
 ### Grafana dashboard
 
