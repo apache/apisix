@@ -198,6 +198,7 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 === TEST 8: verify
+--- yaml_config eval: $::yaml_config
 --- request
 GET /hello
 --- more_headers
