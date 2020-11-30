@@ -62,9 +62,10 @@ done
     }
 --- request
 GET /t
---- response_body
-additional properties forbidden, found username
+--- response_body_like eval
+qr/additional properties forbidden, found (username|password)
 done
+/
 --- no_error_log
 [error]
 
@@ -254,8 +255,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"username\" is required"}
+--- response_body_like eval
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \\"(username|password)\\" is required"\}/
 --- no_error_log
 [error]
 

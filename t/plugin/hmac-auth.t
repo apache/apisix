@@ -870,7 +870,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"secret_key\\" is required"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"(access|secret)_key\\" is required"\}/
 --- no_error_log
 [error]
 
@@ -1281,10 +1281,22 @@ GET /t
 
 
 === TEST 33: get the schema by schema_type
---- request
-GET /apisix/admin/schema/plugins/hmac-auth?schema_type=consumer
---- response_body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/schema/plugins/hmac-auth?schema_type=consumer',
+                ngx.HTTP_GET,
+                nil,
+                [[
 {"title":"work with consumer object","additionalProperties":false,"required":["access_key","secret_key"],"properties":{"clock_skew":{"default":0,"type":"integer"},"encode_uri_params":{"title":"Whether to escape the uri parameter","default":true,"type":"boolean"},"keep_headers":{"title":"whether to keep the http request header","default":false,"type":"boolean"},"secret_key":{"minLength":1,"maxLength":256,"type":"string"},"algorithm":{"type":"string","default":"hmac-sha256","enum":["hmac-sha1","hmac-sha256","hmac-sha512"]},"signed_headers":{"items":{"minLength":1,"maxLength":50,"type":"string"},"type":"array"},"access_key":{"minLength":1,"maxLength":256,"type":"string"}},"type":"object"}
+                ]]
+                )
+            ngx.status = code
+        }
+    }
+--- request
+GET /t
 --- no_error_log
 [error]
 
