@@ -513,7 +513,7 @@ function _M.http_access_phase()
                 api_ctx.consumer,
                 api_ctx
             )
-            core.log.debug("find consumer ", api_ctx.consumer.username,
+            core.log.info("find consumer ", api_ctx.consumer.username,
                            ", config changed: ", changed)
             if changed then
                 core.table.clear(api_ctx.plugins)
