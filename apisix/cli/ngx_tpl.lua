@@ -166,6 +166,10 @@ http {
     }
     {% end %}
 
+    {% if enabled_plugins["error-log-logger"] then %}
+        lua_capture_error_log  10m;
+    {% end %}
+
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
