@@ -15,7 +15,11 @@
 -- limitations under the License.
 --
 
+local open = io.open
 local popen = io.popen
+local exit = os.exit
+local stderr = io.stderr
+local str_format = string.format
 
 local _M = {}
 
@@ -43,6 +47,39 @@ end
 
 function _M.trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+
+function _M.split(self, sep)
+    local sep, fields = sep or ":", {}
+    local pattern = str_format("([^%s]+)", sep)
+
+    self:gsub(pattern, function(c) fields[#fields + 1] = c end)
+
+    return fields
+end
+
+
+function _M.read_file(file_path)
+    local file, err = open(file_path, "rb")
+    if not file then
+        return false, "failed to open file: " .. file_path .. ", error info:" .. err
+    end
+
+    local data, err = file:read("*all")
+    if err ~= nil then
+        file:close()
+        return false, "failed to read file: " .. file_path .. ", error info:" .. err
+    end
+
+    file:close()
+    return data
+end
+
+
+function _M.die(...)
+    stderr:write(...)
+    exit(1)
 end
 
 

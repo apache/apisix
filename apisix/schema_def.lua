@@ -29,7 +29,7 @@ local id_schema = {
     anyOf = {
         {
             type = "string", minLength = 1, maxLength = 64,
-            pattern = [[^[a-zA-Z0-9-_]+$]]
+            pattern = [[^[a-zA-Z0-9-_.]+$]]
         },
         {type = "integer", minimum = 1}
     }
@@ -374,7 +374,12 @@ local upstream_schema = {
         name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         service_name = rule_name_def,
-        id = id_schema
+        id = id_schema,
+        -- deprecate fields, will be removed soon
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
     },
     anyOf = {
         {required = {"type", "nodes"}},
@@ -559,7 +564,9 @@ _M.consumer = {
         },
         create_time = timestamp_def,
         update_time = timestamp_def,
-        desc = {type = "string", maxLength = 256}
+        desc = {type = "string", maxLength = 256},
+        -- deprecate fields, will be removed soon
+        id = id_schema,
     },
     required = {"username"},
     additionalProperties = false,

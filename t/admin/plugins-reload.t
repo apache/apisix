@@ -109,7 +109,7 @@ stream_plugins:
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(0.2)
+        ngx.sleep(1)
     }
 }
 --- request

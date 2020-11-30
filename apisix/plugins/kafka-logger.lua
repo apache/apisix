@@ -23,7 +23,7 @@ local type     = type
 local table    = table
 local ipairs   = ipairs
 local plugin_name = "kafka-logger"
-local stale_timer_running = false;
+local stale_timer_running = false
 local timer_at = ngx.timer.at
 local tostring = tostring
 local ngx = ngx
@@ -51,7 +51,7 @@ local schema = {
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false}
     },
-    required = {"broker_list", "kafka_topic", "key"}
+    required = {"broker_list", "kafka_topic"}
 }
 
 local _M = {
@@ -181,5 +181,6 @@ function _M.log(conf, ctx)
     buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
+
 
 return _M

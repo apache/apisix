@@ -365,4 +365,9 @@ function _M.log()
 end
 
 
+function _M.server_error()
+    error("500 Internal Server Error")
+end
+
+
 return _M

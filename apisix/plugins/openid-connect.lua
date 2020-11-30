@@ -54,6 +54,11 @@ local _M = {
 }
 
 function _M.check_schema(conf)
+    if conf.ssl_verify == "no" then
+        -- we used to set 'ssl_verify' to "no"
+        conf.ssl_verify = false
+    end
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
@@ -63,7 +68,9 @@ function _M.check_schema(conf)
         conf.scope = "openid"
     end
     if not conf.ssl_verify then
-        conf.ssl_verify = "no"
+        -- we need to use a boolean default value here
+        -- so that the schema can pass check in the DP
+        conf.ssl_verify = false
     end
     if not conf.timeout then
         conf.timeout = 3
@@ -143,6 +150,10 @@ function _M.access(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
     if not conf.redirect_uri then
         conf.redirect_uri = ctx.var.request_uri
+    end
+    if not conf.ssl_verify then
+        -- openidc use "no" to disable ssl verification
+        conf.ssl_verify = "no"
     end
 
     local response, err

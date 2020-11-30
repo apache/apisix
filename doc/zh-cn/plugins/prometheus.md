@@ -69,7 +69,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
-把改uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
+把该uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
 
 例子如下:
 
