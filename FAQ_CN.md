@@ -250,3 +250,14 @@ APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/
 * 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
 
 借助 etcd 增量通知毫秒级特性，APISIX 也就完成了毫秒级的配置同步。
+
+## 如何自定义 APISIX 实例 id
+
+默认情况下，APISIX 会从 `conf/apisix.uid` 中读取实例 id。如果找不到，且没有配置 id，APISIX 会生成一个 `uuid` 作为实例 id。
+
+如果你想指定一个有意义的 id 来绑定 APISIX 实例到你的内部系统，你可以在 `conf/config.yaml` 中进行配置，示例：
+
+    ```
+    apisix:
+      id: "your-meaningful-id"
+    ```
