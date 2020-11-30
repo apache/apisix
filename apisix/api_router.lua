@@ -20,10 +20,12 @@ local plugin_mod = require("apisix.plugin")
 local ip_restriction = require("apisix.plugins.ip-restriction")
 local core = require("apisix.core")
 local ipairs = ipairs
+local type = type
 
 
 local _M = {}
 local match_opts = {}
+local has_route_not_under_apisix
 local interceptors = {
     ["ip-restriction"] = {
         run = function (conf, ctx)
@@ -76,6 +78,8 @@ do
 function fetch_api_router()
     core.table.clear(routes)
 
+    has_route_not_under_apisix = false
+
     for _, plugin in ipairs(plugin_mod.plugins) do
         local api_fun = plugin.api
         if api_fun then
@@ -84,6 +88,18 @@ function fetch_api_router()
             core.log.debug("fetched api routes: ",
                            core.json.delay_encode(api_routes, true))
             for _, route in ipairs(api_routes) do
+                local typ_uri = type(route.uri)
+                if typ_uri == "string" then
+                    has_route_not_under_apisix =
+                        not core.string.has_prefix(route.uri, "/apisix/")
+                else
+                    for _, uri in ipairs(route.uri) do
+                        if not core.string.has_prefix(route.uri, "/apisix/") then
+                            has_route_not_under_apisix = true
+                        end
+                    end
+                end
+
                 core.table.insert(routes, {
                         methods = route.methods,
                         paths = route.uri,
@@ -119,6 +135,15 @@ function fetch_api_router()
 end
 
 end -- do
+
+
+function _M.has_route_not_under_apisix()
+    if has_route_not_under_apisix == nil then
+        return true
+    end
+
+    return has_route_not_under_apisix
+end
 
 
 function _M.match(api_ctx)
