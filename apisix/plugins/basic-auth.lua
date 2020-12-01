@@ -125,7 +125,7 @@ do
     end
 end
 
-function _M.access(conf, ctx)
+function _M.rewrite(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
 
     -- 1. extract authorization from header
