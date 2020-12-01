@@ -23,7 +23,7 @@ local buffers = {}
 local ngx = ngx
 local tcp = ngx.socket.tcp
 local ipairs   = ipairs
-local stale_timer_running = false;
+local stale_timer_running = false
 local timer_at = ngx.timer.at
 
 local schema = {
