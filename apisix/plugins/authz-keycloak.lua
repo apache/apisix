@@ -60,7 +60,6 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2000,
-    type = 'auth',
     name = plugin_name,
     schema = schema,
 }
@@ -149,8 +148,8 @@ local function fetch_jwt_token(ctx)
 end
 
 
-function _M.rewrite(conf, ctx)
-    core.log.debug("hit keycloak-auth rewrite")
+function _M.access(conf, ctx)
+    core.log.debug("hit keycloak-auth access")
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
         core.log.error("failed to fetch JWT token: ", err)
