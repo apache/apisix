@@ -166,7 +166,7 @@ local function introspect(ctx, conf)
     local has_token, token, _ = check_bearer_access_token(ctx)
 
     -- Check if token was extracted or if we always require a token in the request.
-    if has_token(ctx) or conf.bearer_only then
+    if has_token or conf.bearer_only then
         local res, err
 
         if conf.public_key then
