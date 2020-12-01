@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.1.0](#210)
 - [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
@@ -31,6 +32,35 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.1.0
+
+### Core
+- :sunrise: **support ENV variable in configuration.** [#2743](https://github.com/apache/apisix/pull/2743)
+- :sunrise: **support TLS connection with etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
+- generate create/update_time automatically. [#2740](https://github.com/apache/apisix/pull/2740)
+- add a deprecate log for enable_websocket in upstream.[#2691](https://github.com/apache/apisix/pull/2691)
+- add a deprecate log for consumer id.[#2829](https://github.com/apache/apisix/pull/2829)
+- Added `X-APISIX-Upstream-Status` header to distinguish 5xx errors from upstream or APISIX itself. [#2817](https://github.com/apache/apisix/pull/2817)
+- support Nginx configuration snippet. [#2803](https://github.com/apache/apisix/pull/2803)
+
+## Plugin
+- :sunrise: **Upgrade protocol to support Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). So this version only supports skywalking 8.0 protocol. This plugin is disabled by default, you need to modify config.yaml to enable, which is not backward compatible.
+- :sunrise: add aliyun sls logging plugin.[#2169](https://github.com/apache/apisix/issues/2169)
+- proxy-cache: the cache_zone field in the schema should be optional.[#2776](https://github.com/apache/apisix/pull/2776)
+- fix: validate plugin configuration in the DP [#2856](https://github.com/apache/apisix/pull/2856)
+
+## Bugfix
+- :bug: fix(etcd): handle etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
+- fix: move `conf/cert` to `t/certs` and disable ssl by default, which is not backward compatible. [#2112](https://github.com/apache/apisix/pull/2112)
+- fix: check decrypt key to prevent lua thread aborted [#2815](https://github.com/apache/apisix/pull/2815)
+
+## Not downward compatible features in future versions
+-In the 2.3 release, the consumer will only support user names and discard the id. The consumer needs to manually clean up the id field in etcd, otherwise the schema verification will report an error during use
+-In the 2.3 release, opening websocket on upstream will no longer be supported
+-In version 3.0, the data plane and control plane will be separated into two independent ports, that is, the current port 9080 will only process data plane requests, and no longer process admin API requests
+
+For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/8)
 
 ## 2.0.0
 

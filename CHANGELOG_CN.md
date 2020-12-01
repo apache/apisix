@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.1.0](#210)
 - [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
@@ -31,6 +32,36 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+
+## 2.1.0
+
+### Core
+- :sunrise: **支持使用环境变量来配置参数.** [#2743](https://github.com/apache/apisix/pull/2743)
+- :sunrise: **支持使用 TLS 来连接 etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
+- 自动生成对象的创建和更新时间. [#2740](https://github.com/apache/apisix/pull/2740)
+- 在上游中开启 websocket 时，增加日志来提示此功能即将废弃.[#2691](https://github.com/apache/apisix/pull/2691)
+- 增加日志来提示 consumer id 即将废弃.[#2829](https://github.com/apache/apisix/pull/2829)
+- 增加 `X-APISIX-Upstream-Status` 头来区分 5xx 错误来自上游还是 APISIX 自身。[#2817](https://github.com/apache/apisix/pull/2817)
+- 支持 Nginx 配置片段。[#2803](https://github.com/apache/apisix/pull/2803)
+
+## Plugin
+- :sunrise: **升级协议来 Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). 这个版本只支持 skywalking 8.0 协议。此插件默认关闭，需要修改 config.yaml 来开启。这是不向下兼容的修改。
+- :sunrise: 新增阿里云 sls 日志服务插件。[#2169](https://github.com/apache/apisix/issues/2169)
+- proxy-cache: cache_zone 字段改为可选.[#2776](https://github.com/apache/apisix/pull/2776)
+- 在数据平面校验插件的配置。[#2856](https://github.com/apache/apisix/pull/2856)
+
+## Bugfix
+- :bug: fix(etcd): 处理 etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
+- 将 `conf/cert` 中的测试证书移动到 `t/certs` 目录中，并且默认关闭 SSL。这是不向下兼容的修改。 [#2112](https://github.com/apache/apisix/pull/2112)
+- 检查 decrypt key 来阻止 lua thread 中断。 [#2815](https://github.com/apache/apisix/pull/2815)
+
+## 不向下兼容特性预告
+- 在 2.3 发布版本中，consumer 将只支持用户名，废弃 id，consumer需要在 etcd 中手工清理掉 id 字段，不然使用时 schema 校验会报错
+- 在 2.3 发布版本中，将不再支持在 upstream 上开启 websocket
+- 在 3.0 版本中，数据平面和控制平面将分开为两个独立的端口，即现在的 9080 端口将只处理数据平面的请求，不再处理 admin API 的请求
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/8)
 
 ## 2.0.0
 
