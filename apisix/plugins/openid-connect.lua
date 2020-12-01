@@ -148,9 +148,21 @@ local function check_bearer_access_token(ctx)
 end
 
 
-local function add_user_header(user)
+local function set_header(ctx, name, value)
+    -- Set a request header to the given value and update the cached headers in the context as well.
+
+    -- Set header in request.
+    ngx.req.set_header(name, value)
+
+    -- Set header in cached table, maybe.
+    if ctx and ctx.headers then
+        ctx.headers[name] = value
+    end
+
+
+local function add_user_header(ctx, user)
     local userinfo = core.json.encode(user)
-    ngx.req.set_header("X-Userinfo", ngx_encode_base64(userinfo))
+    set_header(ctx, "X-Userinfo", ngx_encode_base64(userinfo))
 end
 
 
@@ -160,12 +172,12 @@ local function add_access_token_header(ctx, conf, token)
         if conf.access_token_in_authorization_header then
             if not core.request.header(ctx, "Authorization") then
                 -- Add Authorization header.
-                ngx.req.set_header("Authorization", "Bearer " .. token)
+                set_header(ctx, "Authorization", "Bearer " .. token)
             end
         else
             if not core.request.header(ctx, "X-Access-Token") then
                 -- Add X-Access-Token header.
-                ngx.req.set_header("X-Access-Token", token)
+                set_header(ctx, "X-Access-Token", token)
             end
         end
     end
@@ -200,7 +212,7 @@ local function introspect(ctx, conf)
 
                 if conf.set_userinfo_token_header then
                     -- Set X-Userinfo header to introspection endpoint response.
-                    add_user_header(res)
+                    add_user_header(ctx, res)
                 end
 
                 -- Add configured access token header, maybe.
@@ -254,7 +266,7 @@ function _M.rewrite(plugin_conf, ctx)
         if response then
             -- Add X-Userinfo header, maybe.
             if response.user and conf.set_userinfo_token_header then
-                add_user_header(response.user)
+                add_user_header(ctx, response.user)
             end
 
             -- Add configured access token header, maybe.
