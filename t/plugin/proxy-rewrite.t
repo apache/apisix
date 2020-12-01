@@ -515,10 +515,13 @@ passed
 === TEST 17: rewrite uri args
 --- request
 GET /hello?q=apisix&a=iresty HTTP/1.1
---- response_body
-uri: /plugin_proxy_rewrite_args
+--- response_body_like eval
+qr/uri: \/plugin_proxy_rewrite_args(
 q: apisix
+a: iresty|
 a: iresty
+q: apisix)
+/
 --- no_error_log
 [error]
 
@@ -1045,10 +1048,13 @@ passed
 === TEST 35: rewrite uri with args
 --- request
 GET /hello?a=iresty
---- response_body
-uri: /plugin_proxy_rewrite_args
+--- response_body_like eval
+qr/uri: \/plugin_proxy_rewrite_args(
 q: apisix
+a: iresty|
 a: iresty
+q: apisix)
+/
 --- no_error_log
 [error]
 
@@ -1060,7 +1066,7 @@ a: iresty
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local encode_with_keys_sorted = require("lib.json_sort").encode
+            local encode_with_keys_sorted = require("toolkit.json").encode
 
             local code, _, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,

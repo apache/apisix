@@ -312,7 +312,7 @@ make init
 
 set +ex
 
-grep "listen 9180 ssl" conf/nginx.conf > /dev/null
+grep "listen 9080 ssl" conf/nginx.conf > /dev/null
 if [ ! $? -eq 1 ]; then
     echo "failed: failed to rollback to the default admin config"
     exit 1
@@ -716,6 +716,53 @@ fi
 make stop
 
 echo "passed: access log with JSON format"
+
+# check uninitialized variable in access log
+git checkout conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to access admin"
+    exit 1
+fi
+
+if grep -E 'using uninitialized ".+" variable while logging request' logs/error.log; then
+    echo "failed: uninitialized variable found during writing access log"
+    exit 1
+fi
+
+echo "pass: uninitialized variable not found during writing access log"
+
+# port_admin set
+echo '
+apisix:
+  port_admin: 9180
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: failed to access admin"
+    exit 1
+fi
+
+if grep -E 'using uninitialized ".+" variable while logging request' logs/error.log; then
+    echo "failed: uninitialized variable found during writing access log"
+    exit 1
+fi
+
+echo "pass: uninitialized variable not found during writing access log (port_admin set)"
 
 # check etcd while enable auth
 git checkout conf/config.yaml

@@ -82,7 +82,7 @@ GET /t
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
-            ngx.say(core.json.encode(ip_info))
+            ngx.say(require("toolkit.json").encode(ip_info))
         }
     }
 --- request
@@ -103,8 +103,8 @@ qr/"address":.+,"name":"github.com"/
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
-            core.log.info("ip_info: ", core.json.encode(ip_info))
-            ngx.say("resolvers: ", core.json.encode(core.utils.resolvers))
+            core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
+            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.resolvers))
         }
     }
 --- request

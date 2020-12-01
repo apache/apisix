@@ -36,6 +36,7 @@ local type          = type
 local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
+local tonumber      = tonumber
 local load_balancer
 local local_conf
 local dns_resolver
@@ -372,7 +373,9 @@ function _M.http_access_phase()
         end
     end
 
-    if core.string.has_prefix(uri, "/apisix/") then
+    if router.api.has_route_not_under_apisix() or
+        core.string.has_prefix(uri, "/apisix/")
+    then
         local matched = router.api.match(api_ctx)
         if matched then
             return
@@ -513,6 +516,10 @@ function _M.http_access_phase()
                 api_ctx.consumer,
                 api_ctx
             )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
             if changed then
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
@@ -626,8 +633,27 @@ local function common_phase(phase_name)
 end
 
 
+local function set_resp_upstream_status(up_status)
+    core.response.set_header("X-APISIX-Upstream-Status", up_status)
+    core.log.info("X-APISIX-Upstream-Status: ", up_status)
+end
+
+
 function _M.http_header_filter_phase()
     core.response.set_header("Server", ver_header)
+
+    local up_status = get_var("upstream_status")
+    if up_status and #up_status == 3
+       and tonumber(up_status) >= 500
+       and tonumber(up_status) <= 599
+    then
+        set_resp_upstream_status(up_status)
+    elseif up_status and #up_status > 3 then
+        local last_status = str_sub(up_status, -3)
+        if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
+            set_resp_upstream_status(up_status)
+        end
+    end
 
     common_phase("header_filter")
 end

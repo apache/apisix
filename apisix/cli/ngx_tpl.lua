@@ -166,6 +166,10 @@ http {
     }
     {% end %}
 
+    {% if enabled_plugins["error-log-logger"] then %}
+        lua_capture_error_log  10m;
+    {% end %}
+
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
@@ -283,6 +287,10 @@ http {
         {% end %}
         # admin configuration snippet ends
 
+        set $upstream_scheme             'http';
+        set $upstream_host               $host;
+        set $upstream_uri                '';
+
         location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -372,6 +380,10 @@ http {
         {% end %}
         # http server configuration snippet ends
 
+        set $upstream_scheme             'http';
+        set $upstream_host               $host;
+        set $upstream_uri                '';
+
         {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
@@ -421,11 +433,8 @@ http {
 
         location / {
             set $upstream_mirror_host        '';
-            set $upstream_scheme             'http';
-            set $upstream_host               $host;
             set $upstream_upgrade            '';
             set $upstream_connection         '';
-            set $upstream_uri                '';
 
             access_by_lua_block {
                 apisix.http_access_phase()

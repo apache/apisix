@@ -63,7 +63,7 @@ proxy_cache:                       # 代理缓存配置
 1、为特定路由启用 `proxy-cache` 插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -139,7 +139,7 @@ proxy_cache:
 2、为特定路由启用 `proxy-cache` 插件：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -201,7 +201,7 @@ hello
 示例3：指定 cache_zone 为 `invalid_disk_cache` 与 `conf/config.yaml` 文件中指定的缓存区域 `disk_cache_one` 不一致。
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "proxy-cache": {
@@ -273,7 +273,7 @@ Server: APISIX web server
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

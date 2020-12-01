@@ -51,10 +51,8 @@ Apache APISIX 的技术架构如下图所示：
 - [特性](#特性)
 - [文档](#文档)
 - [立刻开始](#立刻开始)
-- [控制台](#控制台)
 - [性能测试](#性能测试)
 - [Apache APISIX 和 Kong 的比较](#apache-apisix-和-kong-的比较)
-- [开放治理](#开放治理)
 - [社区](#社区)
 - [视频和文章](#视频和文章)
 - [用户实际使用案例](#用户实际使用案例)
@@ -132,7 +130,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 监控和指标: [Prometheus](doc/zh-cn/plugins/prometheus.md)
   - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md)。
   - 高可用：支持配置同一个集群内的多个 etcd 地址。
-  - 控制台: 内置控制台来操作 APISIX 集群。
+  - [控制台](https://github.com/apache/apisix-dashboard): 操作 APISIX 集群。
   - 版本控制：支持操作的多次回滚。
   - CLI: 使用命令行来启动、关闭和重启 APISIX。
   - [单机模式](doc/zh-cn/stand-alone.md): 支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
@@ -165,10 +163,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
    - 下载最新的源码发布包：
      ```shell
-     $ mkdir apisix-2.0
-     $ cd apisix-2.0
-     $ wget https://downloads.apache.org/apisix/2.0/apache-apisix-2.0-src.tgz
-     $ tar zxvf apache-apisix-2.0-src.tgz
+     $ mkdir apisix-2.1
+     $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
+     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
      ```
    - 安装运行时依赖的 Lua 库：
      ```shell
@@ -196,7 +193,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
    - 安装 APISIX：
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.0/apisix-2.0-0.el7.noarch.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
    ```
    - 检查 APISIX 的版本号：
      ```shell
@@ -247,13 +244,6 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 更多文档请参考 [Apache APISIX 文档索引](doc/zh-cn/README.md)。
 
-## 控制台
-
-APISIX 提供了 [Dashboard 项目](https://github.com/apache/apisix-dashboard)，
-可以使用 docker compose 直接部署和体验。
-
-Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许访问 dashboard 的 IP 列表。
-
 ## 性能测试
 
 使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
@@ -302,9 +292,6 @@ Dashboard 默认只允许 127.0.0.1 访问。你可以自行修改 `conf/config.
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
-## 开放治理
-
-[GitHub 里程碑](https://github.com/apache/apisix/milestones) 布局了 Apache APISIX 未来的改进之路。
 
 ## 社区
 

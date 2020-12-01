@@ -15,6 +15,7 @@ jobs:
           - ubuntu-18.04
         os_name:
           - linux_openresty
+          - linux_openresty_1_17
           - linux_tengine
           - linux_apisix_master_luarocks
           - linux_apisix_current_luarocks
@@ -23,6 +24,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     env:
       SERVER_NAME: ${{ matrix.os_name }}
+      OPENRESTY_VERSION: default
 
 
     services:
@@ -47,6 +49,8 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name: Linux Get dependencies
         run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
@@ -55,7 +59,7 @@ jobs:
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Install Redis Cluster
-        if: matrix.os_name == 'linux_openresty'
+        if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'
         uses: vishnudxb/redis-cluster@1.0.5
         with:
           master1-port: 5000
@@ -66,7 +70,7 @@ jobs:
           slave3-port: 5005
 
       - name: Running Redis Cluster Test
-        if: matrix.os_name == 'linux_openresty'
+        if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'
         run: |
           sudo apt-get install -y redis-tools
           docker ps -a
@@ -74,7 +78,7 @@ jobs:
           redis-cli -h 127.0.0.1 -p 5000 cluster nodes
 
       - name: Running etcd server with TLS
-        if: matrix.os_name == 'linux_openresty'
+        if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'
         run: |
             sudo docker run -d -p 12379:12379 -p 12380:12380 \
             -e ALLOW_NONE_AUTHENTICATION=yes \
@@ -88,7 +92,9 @@ jobs:
             bitnami/etcd:3.4.0
 
       - name: Linux Install
-        run: sudo ./.travis/${{ matrix.os_name }}_runner.sh do_install
+        run: |
+            sudo --preserve-env=OPENRESTY_VERSION \
+            ./.travis/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh script

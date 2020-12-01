@@ -58,7 +58,7 @@ You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 1. set a consumer and config the value of the `jwt-auth` option
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -73,7 +73,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 `jwt-auth` uses the `HS256` algorithm by default, and if you use the `RS256` algorithm, you need to specify the algorithm and configure the public key and private key, as follows:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "kerouac",
     "plugins": {
@@ -97,7 +97,7 @@ then add jwt-auth plugin in the Consumer page:
 2. add a Route or add a Service, and enable the `jwt-auth` plugin
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

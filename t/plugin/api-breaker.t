@@ -71,7 +71,7 @@ done
                 ngx.say(err)
             end
 
-            ngx.say(require("lib.json_sort").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
@@ -98,7 +98,7 @@ GET /t
                 ngx.say(err)
             end
 
-            ngx.say(require("lib.json_sort").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
@@ -125,7 +125,7 @@ GET /t
                 ngx.say(err)
             end
 
-            ngx.say(require("lib.json_sort").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
@@ -309,7 +309,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 2 and 1 are equal"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 1 and 2 are equal"}
 --- no_error_log
 [error]
 
@@ -401,7 +401,7 @@ passed
 location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
-        local json = require("lib.json_sort")
+        local json = require("toolkit.json")
 
         -- trigger to unhealth
         for i = 1, 4 do
@@ -623,7 +623,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local json = require("lib.json_sort")
+            local json = require("toolkit.json")
 
             local status_count = {}
             for i = 1, 20 do

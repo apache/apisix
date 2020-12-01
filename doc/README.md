@@ -35,6 +35,7 @@
 * [Changelog](../CHANGELOG.md)
 * [Benchmark](benchmark.md)
 * [Code Style](../CODE_STYLE.md)
+* [Debug Function](./debug-function.md)
 * [FAQ](../FAQ.md)
 
 ## Plugins

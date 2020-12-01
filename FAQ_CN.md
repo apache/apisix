@@ -83,7 +83,7 @@ luarocks 服务。 运行 `luarocks config rocks_servers` 命令（这个命令�
 可以这么做：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -96,7 +96,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -121,7 +121,7 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 有几种不同的方法来实现：
 1. 直接使用 `redirect` 插件的 `http_to_https` 功能：
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -136,7 +136,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. 结合高级路由规则 `vars` 和 `redirect` 插件一起使用：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -159,7 +159,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. 使用`serverless`插件：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -250,3 +250,14 @@ APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/
 * 如果监听目录有数据更新：etcd 将立刻返回订阅(毫秒级)到的新数据，APISIX 将它更新到内存缓存。
 
 借助 etcd 增量通知毫秒级特性，APISIX 也就完成了毫秒级的配置同步。
+
+## 如何自定义 APISIX 实例 id
+
+默认情况下，APISIX 会从 `conf/apisix.uid` 中读取实例 id。如果找不到，且没有配置 id，APISIX 会生成一个 `uuid` 作为实例 id。
+
+如果你想指定一个有意义的 id 来绑定 APISIX 实例到你的内部系统，你可以在 `conf/config.yaml` 中进行配置，示例：
+
+    ```
+    apisix:
+      id: "your-meaningful-id"
+    ```
