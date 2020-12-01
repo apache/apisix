@@ -61,7 +61,7 @@ local schema = {
             default = true
         },
         access_token_in_authorization_header = {
-            description = "Whether the access token should be added in the Authorization " .. 
+            description = "Whether the access token should be added in the Authorization " ..
                 "header as opposed to the X-Access-Token header.",
             type = "boolean",
             default = false
