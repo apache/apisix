@@ -48,7 +48,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: sanity
 --- apisix_yaml
 stream_routes:
