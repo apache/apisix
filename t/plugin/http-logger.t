@@ -639,6 +639,7 @@ done
 [error]
 
 
+
 === TEST 17: check plugin configuration updating
 --- config
     location /t {

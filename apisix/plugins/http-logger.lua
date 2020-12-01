@@ -36,8 +36,6 @@ local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
 })
 
-local plugin_conf
-
 local schema = {
     type = "object",
     properties = {
@@ -227,12 +225,7 @@ function _M.log(conf, ctx)
         stale_timer_running = true
     end
 
-    -- always cache the latest plugin conf in the module to avoid the
-    -- closure (method `func`) references to the old conf, in case of
-    -- plugin configuration update, the closure cannot sense the change.
-    plugin_conf = conf
-
-    local log_buffer = buffers[entry.route_id]
+    local log_buffer = buffers[conf]
 
     if log_buffer then
         log_buffer:push(entry)
@@ -243,14 +236,14 @@ function _M.log(conf, ctx)
     local func = function(entries, batch_max_size)
         local data, err
 
-        if plugin_conf.concat_method == "json" then
+        if conf.concat_method == "json" then
             if batch_max_size == 1 then
                 data, err = core.json.encode(entries[1]) -- encode as single {}
             else
                 data, err = core.json.encode(entries) -- encode as array [{}]
             end
 
-        elseif plugin_conf.concat_method == "new_line" then
+        elseif conf.concat_method == "new_line" then
             if batch_max_size == 1 then
                 data, err = core.json.encode(entries[1]) -- encode as single {}
             else
@@ -267,14 +260,14 @@ function _M.log(conf, ctx)
 
         else
             -- defensive programming check
-            err = "unknown concat_method " .. (plugin_conf.concat_method or "nil")
+            err = "unknown concat_method " .. (conf.concat_method or "nil")
         end
 
         if not data then
             return false, 'error occurred while encoding the data: ' .. err
         end
 
-        return send_http_data(plugin_conf, data)
+        return send_http_data(conf, data)
     end
 
     local config = {
@@ -294,7 +287,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    buffers[entry.route_id] = log_buffer
+    buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
 
