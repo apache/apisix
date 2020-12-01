@@ -154,10 +154,11 @@ local function set_header(ctx, name, value)
     -- Set header in request.
     ngx.req.set_header(name, value)
 
-    -- Set header in cached table, maybe.
+    -- Set header in cache, maybe.
     if ctx and ctx.headers then
         ctx.headers[name] = value
     end
+end
 
 
 local function add_user_header(ctx, user)
@@ -277,7 +278,7 @@ function _M.rewrite(plugin_conf, ctx)
             -- Add X-ID-Token header, maybe.
             if response.id_token and conf.set_id_token_header then
                 local token = core.json.encode(response.id_token)
-                ngx.req.set_header("X-ID-Token", ngx.encode_base64(token))
+                set_header(ctx, "X-ID-Token", ngx.encode_base64(token))
             end
         end
     end
