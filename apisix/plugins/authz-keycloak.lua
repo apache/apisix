@@ -135,7 +135,7 @@ end
 
 
 local function fetch_jwt_token(ctx)
-    local token = core.request.header(ctx, "authorization")
+    local token = core.request.header(ctx, "Authorization")
     if not token then
         return nil, "authorization header not available"
     end
