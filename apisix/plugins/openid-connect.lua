@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local string = require("string")
+local string = string
 local core = require("apisix.core")
 local ngx_re = require("ngx.re")
 local openidc = require("resty.openidc")
@@ -42,10 +42,26 @@ local schema = {
         redirect_uri = {type = "string"}, -- default is ngx.var.request_uri
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
-        set_access_token_header = {type = "boolean"}, -- default is true
-        set_userinfo_token_header = {type = "boolean"}, -- default is true
-        set_id_token_header = {type = "boolean"}, -- default is true
-        access_token_in_authorization_header = {type = "boolean"} -- default is false
+        set_access_token_header = {
+            description = "Whether the access token should be added as a header to the request for downstream",
+            type = "boolean",
+            default = true
+        },
+        set_userinfo_token_header = {
+            description = "Whether the user info token should be added as a header to the request for downstream.",
+            type = "boolean",
+            default = true
+        },
+        set_id_token_header = {
+            description = "Whether the ID token should be added as a header to the request for downstream.",
+            type = "boolean",
+            default = true
+        },
+        access_token_in_authorization_header = {
+            description = "Whether the acces token should be added in the Authorization header as opposed to the X-Access-Token header.",
+            type = "boolean",
+            default = false
+        }
     },
     required = {"client_id", "client_secret", "discovery"}
 }
@@ -193,7 +209,7 @@ local function introspect(ctx, conf)
                 end
 
                 -- Add configured access token header, maybe.
-                add_access_token_header(token, conf)
+                add_access_token_header(ctx, conf, token)
                 return res
             end
         end
@@ -207,7 +223,7 @@ local function introspect(ctx, conf)
     end
 
     -- Return nil to indicate that a token could not be extracted or validated, but that we don't
-    --  want to fail quickly.
+    -- want to fail quickly.
     return nil
 end
 
@@ -238,15 +254,17 @@ function _M.access(plugin_conf, ctx)
 
         if response then
             -- Add X-Userinfo header, maybe.
-            if conf.set_userinfo_token_header and response.user then
+            if response.user and conf.set_userinfo_token_header then
                 add_user_header(response.user)
             end
 
             -- Add configured access token header, maybe.
-            add_access_token_header(ctx, conf, response.access_token)
+            if response.access_token then
+                add_access_token_header(ctx, conf, response.access_token)
+            end
 
             -- Add X-ID-Token header, maybe.
-            if conf.set_id_token_header and response.id_token then
+            if response.id_token and conf.set_id_token_header then
                 local token = core.json.encode(response.id_token)
                 ngx.req.set_header("X-ID-Token", ngx.encode_base64(token))
             end
