@@ -450,7 +450,7 @@ Config Example:
 }
 ```
 
-The binding authentication and authorization plug-in is a bit special. When it needs to be used in conjunction with the consumer, it needs to provide user name, password and other information; on the other hand, when it is bound with route / service, it does not require any parameters. Because at this time, it is based on the user request data to infer which consumer the user corresponds to.
+The binding authentication plug-in is a bit special. When it needs to be used in conjunction with the consumer, it needs to provide user name, password and other information; on the other hand, when it is bound with route / service, it does not require any parameters. Because at this time, it is based on the user request data to infer which consumer the user corresponds to.
 
 Example:
 
@@ -475,6 +475,8 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 {"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63},"action":"set"}
 ```
+
+Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
 > Response Parameters
 

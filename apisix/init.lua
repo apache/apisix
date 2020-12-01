@@ -516,6 +516,10 @@ function _M.http_access_phase()
                 api_ctx.consumer,
                 api_ctx
             )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
             if changed then
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)

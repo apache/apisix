@@ -57,8 +57,6 @@ local function plugin_consumer()
                 new_consumer.auth_conf = config
                 core.log.info("consumer:", core.json.delay_encode(new_consumer))
                 core.table.insert(plugins[name].nodes, new_consumer)
-
-                break
             end
         end
 
