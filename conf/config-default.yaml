@@ -215,6 +215,7 @@ plugins:                          # plugin list
   - sls-logger
   - hmac-auth
   - api-breaker
+  - server-info
 
 stream_plugins:
   - mqtt-proxy

@@ -16,13 +16,13 @@
 #
 use t::APISIX 'no_plan';
 
+master_on();
 repeat_each(1);
-log_level('info');
-worker_connections(256);
+no_long_string();
 no_root_location();
 no_shuffle();
 
-run_tests();
+run_tests;
 
 __DATA__
 
@@ -34,7 +34,7 @@ location /t {
         ngx.sleep(5.1)
         local json_decode = require("cjson.safe").decode
         local t = require("lib.test_admin").test
-        local code, _, body = t('/apisix/admin/server_info', ngx.HTTP_GET, nil, nil)
+        local code, _, body = t('/apisix/server_info', ngx.HTTP_GET)
         if code >= 300 then
             ngx.status = code
         end
@@ -67,38 +67,3 @@ $}
 
 
 
-=== TEST 2: uninitialized server info
---- config
-location /t {
-    content_by_lua_block {
-        local json_decode = require("cjson.safe").decode
-        local t = require("lib.test_admin").test
-        local code, _, body = t('/apisix/admin/server_info', ngx.HTTP_GET, nil, nil)
-        if code >= 300 then
-            ngx.status = code
-        end
-
-        local keys = {}
-        body = json_decode(body)
-        for k in pairs(body) do
-            keys[#keys + 1] = k
-        end
-
-        table.sort(keys)
-        for i = 1, #keys do
-            ngx.say(keys[i], ": ", body[keys[i]])
-        end
-    }
-}
---- request
-GET /t
---- response_body eval
-qr{^etcd_version: unknown
-hostname: [a-zA-Z\-0-9]+
-id: [a-zA-Z\-0-9]+
-last_report_time: -1
-up_time: \d+
-version: [\d\.]+
-$}
---- no_error_log
-[error]

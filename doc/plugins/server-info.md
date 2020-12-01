@@ -17,13 +17,50 @@
 #
 -->
 
-## Internal status
+- [中文](../zh-cn/plugins/server-info.md)
 
-The Apache APISIX exposes a series of internal data at runtime, which enhances the observability, and is useful for debugging, monitoring.
+# Summary
 
-## Server information
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**API**](#api)
+- [**How To Enable**](#how-to-enable)
+- [**Test Plugin**](#test-plugin)
+- [**Disable Plugin**](#disable-plugin)
+- [Note](#note)
 
-This is the basic information about APISIX instance, users can get it by asking the admin api `/apisix/admin/server_info` (be sure `allow_admin` is `true` in your config.yaml).
+## Name
+
+`server-info` is a plugin which we can get basic server information through it's API.
+
+## Attributes
+
+None
+
+## API
+
+This plugin now exposes only one API `/apisix/server_info` to get basic server information.
+You may need to use [interceptors](../plugin-interceptors.md) to protect it.
+
+
+## How to Enable
+
+Just configure `server-info` in the plugin list of the configuration file `apisix/conf/config.yaml`.
+
+```
+plugins:                          # plugin list
+  - example-plugin
+  - limit-req
+  - node-status
+  - server-info
+  - jwt-auth
+  - zipkin
+  ......
+```
+
+After starting APISIX and accessing `/apisix/server_info` then you can get server information.
+
+## Test Plugin
 
 ```bash
 curl http://127.0.0.1:9080/apisix/admin/server_info -s | jq
@@ -48,4 +85,20 @@ The meaning of each item in server information is following:
 | version | string | APISIX version. |
 | hostname | string | Hostname of the machine/pod that APISIX is deployed. |
 
-Note the server information is also reported to etcd periodically (for now the interval is `5s`) and collected by APISIX Dashboard, so you can also access it from APISIX Dashboard.
+## Disable Plugin
+
+By removing `server-info` in the plugin list of configure file `apisix/conf/config.yaml` and restart APISIX, you can diable `server-info` plugin easily.
+
+```
+plugins:                          # plugin list
+  - example-plugin
+  - limit-req
+  - node-status
+  - jwt-auth
+  - zipkin
+  ......
+```
+
+## Note
+
+When you use etcd as the data center for APISIX, the server information is also reported to etcd periodically (for now the interval is `5s`) and collected by APISIX Dashboard, so you can also access it from APISIX Dashboard.
