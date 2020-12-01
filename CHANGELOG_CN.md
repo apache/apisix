@@ -43,6 +43,7 @@
 - 在上游中开启 websocket 时，增加日志来提示此功能即将废弃.[#2691](https://github.com/apache/apisix/pull/2691)
 - 增加日志来提示 consumer id 即将废弃.[#2829](https://github.com/apache/apisix/pull/2829)
 - 增加 `X-APISIX-Upstream-Status` 头来区分 5xx 错误来自上游还是 APISIX 自身。[#2817](https://github.com/apache/apisix/pull/2817)
+- 支持 Nginx 配置片段。[#2803](https://github.com/apache/apisix/pull/2803)
 
 ## Plugin
 - :sunrise: **升级协议来 Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). 这个版本只支持 skywalking 8.0 协议。此插件默认关闭，需要修改 config.yaml 来开启。这是不向下兼容的修改。

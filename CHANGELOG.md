@@ -42,6 +42,7 @@
 - add a deprecate log for enable_websocket in upstream.[#2691](https://github.com/apache/apisix/pull/2691)
 - add a deprecate log for consumer id.[#2829](https://github.com/apache/apisix/pull/2829)
 - Added `X-APISIX-Upstream-Status` header to distinguish 5xx errors from upstream or APISIX itself. [#2817](https://github.com/apache/apisix/pull/2817)
+- support Nginx configuration snippet. [#2803](https://github.com/apache/apisix/pull/2803)
 
 ## Plugin
 - :sunrise: **Upgrade protocol to support Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). So this version only supports skywalking 8.0 protocol. This plugin is disabled by default, you need to modify config.yaml to enable, which is not backward compatible.
