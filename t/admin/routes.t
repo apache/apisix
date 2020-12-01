@@ -2428,3 +2428,109 @@ GET /t
 [delete] code: 200 message: passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 65: invalid route: bad remote_addrs
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "remote_addrs": [""],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/property \\"remote_addrs\\" validation failed:/
+--- no_error_log
+[error]
+
+
+
+=== TEST 66: invalid route: bad remote_addrs cidr
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "remote_addrs": ["/16"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/property \\"remote_addrs\\" validation failed:/
+--- no_error_log
+[error]
+
+
+
+=== TEST 67: valid route with remote_addrs
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "remote_addrs": ["::1/16", "::1", "::", "1.1.1.1", "1.1.1.1/32"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

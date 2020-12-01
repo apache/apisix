@@ -16,12 +16,10 @@
 --
 local require   = require
 local core = require("apisix.core")
-local local_plugins = require("apisix.plugin").plugins_hash
-local stream_local_plugins = require("apisix.plugin").stream_plugins_hash
-local pairs     = pairs
+local check_schema = require("apisix.plugin").check_schema
+local stream_check_schema = require("apisix.plugin").stream_check_schema
 local ipairs    = ipairs
 local pcall     = pcall
-local type      = type
 local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
@@ -30,68 +28,12 @@ local _M = {}
 
 
 function _M.check_schema(plugins_conf, schema_type)
-    for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check plugin scheme, name: ", name, ", configurations: ",
-                      core.json.delay_encode(plugin_conf, true))
-        if type(plugin_conf) ~= "table" then
-            return false, "invalid plugin conf " ..
-                core.json.encode(plugin_conf, true) ..
-                " for plugin [" .. name .. "]"
-        end
-
-        local plugin_obj = local_plugins[name]
-        if not plugin_obj then
-            return false, "unknown plugin [" .. name .. "]"
-        end
-
-        if plugin_obj.check_schema then
-            local disable = plugin_conf.disable
-            plugin_conf.disable = nil
-
-            local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
-            if not ok then
-                return false, "failed to check the configuration of plugin "
-                              .. name .. " err: " .. err
-            end
-
-            plugin_conf.disable = disable
-        end
-    end
-
-    return true
+    return check_schema(plugins_conf, schema_type, false)
 end
 
 
 function _M.stream_check_schema(plugins_conf, schema_type)
-    for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check stream plugin scheme, name: ", name,
-                      ": ", core.json.delay_encode(plugin_conf, true))
-        if type(plugin_conf) ~= "table" then
-            return false, "invalid plugin conf " ..
-                core.json.encode(plugin_conf, true) ..
-                " for plugin [" .. name .. "]"
-        end
-
-        local plugin_obj = stream_local_plugins[name]
-        if not plugin_obj then
-            return false, "unknown plugin [" .. name .. "]"
-        end
-
-        if plugin_obj.check_schema then
-            local disable = plugin_conf.disable
-            plugin_conf.disable = nil
-
-            local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
-            if not ok then
-                return false, "failed to check the configuration of "
-                              .. "stream plugin [" .. name .. "]: " .. err
-            end
-
-            plugin_conf.disable = disable
-        end
-    end
-
-    return true
+    return stream_check_schema(plugins_conf, schema_type, false)
 end
 
 

@@ -37,7 +37,7 @@ __DATA__
                 res.status = code
             end
 
-            ngx.print(core.json.encode(res.body))
+            ngx.print(require("toolkit.json").encode(res.body))
             ngx.sleep(1)
         }
     }
@@ -132,7 +132,7 @@ GET /t
             if res.status >= 300 then
                 res.status = code
             end
-            ngx.print(core.json.encode(res.body))
+            ngx.print(require("toolkit.json").encode(res.body))
             ngx.sleep(1)
         }
     }

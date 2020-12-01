@@ -84,7 +84,7 @@ location /t {
                 for _, conf_value in config_util.iterate_values(plugins_conf.values) do
                     core.table.insert_tail(plugins, unpack(conf_value.value))
                 end
-                ngx.log(ngx.WARN, core.json.encode(plugins))
+                ngx.log(ngx.WARN, require("toolkit.json").encode(plugins))
             end,
         })
         if not plugins_conf then
@@ -109,7 +109,7 @@ stream_plugins:
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(0.2)
+        ngx.sleep(1)
     }
 }
 --- request
@@ -196,3 +196,55 @@ example-plugin get plugin attr val: 1
 --- error_log
 plugin_attr of example-plugin changed
 plugins not changed
+
+
+
+=== TEST 4: reload plugins to change prometheus' export uri
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - prometheus
+plugin_attr:
+  prometheus:
+    export_uri: /metrics
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require "apisix.core"
+        ngx.sleep(0.1)
+        local t = require("lib.test_admin").test
+        local code, _, org_body = t('/apisix/metrics',
+                                    ngx.HTTP_GET)
+        ngx.say(code)
+
+        local data = [[
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - prometheus
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
+        ]]
+        require("lib.test_admin").set_config_yaml(data)
+
+        local code, _, org_body = t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+
+        ngx.say(org_body)
+
+        ngx.sleep(0.1)
+        local code, _, org_body = t('/apisix/metrics',
+                                    ngx.HTTP_GET)
+        ngx.say(code)
+    }
+}
+--- request
+GET /t
+--- response_body
+404
+done
+200
