@@ -43,22 +43,26 @@ local schema = {
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
         set_access_token_header = {
-            description = "Whether the access token should be added as a header to the request for downstream",
+            description = "Whether the access token should be added as a header to the request " ..
+                "for downstream",
             type = "boolean",
             default = true
         },
         set_userinfo_token_header = {
-            description = "Whether the user info token should be added in the X-Userinfo header to the request for downstream.",
+            description = "Whether the user info token should be added in the X-Userinfo " ..
+                "header to the request for downstream.",
             type = "boolean",
             default = true
         },
         set_id_token_header = {
-            description = "Whether the ID token should be added in the X-ID-Token header to the request for downstream.",
+            description = "Whether the ID token should be added in the X-ID-Token header to " ..
+                "the request for downstream.",
             type = "boolean",
             default = true
         },
         access_token_in_authorization_header = {
-            description = "Whether the access token should be added in the Authorization header as opposed to the X-Access-Token header.",
+            description = "Whether the access token should be added in the Authorization " .. 
+                "header as opposed to the X-Access-Token header.",
             type = "boolean",
             default = false
         }
