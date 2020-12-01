@@ -793,38 +793,27 @@ etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
 
 init_kv=(
-/apisix/consumers/
-init_dir
-/apisix/global_rules/
-init_dir
-/apisix/node_status/
-init_dir
-/apisix/plugin_metadata/
-init_dir
-/apisix/plugins/
-init_dir
-/apisix/proto/
-init_dir
-/apisix/routes/
-init_dir
-/apisix/services/
-init_dir
-/apisix/ssl/
-init_dir
-/apisix/stream_routes/
-init_dir
-/apisix/upstreams/
-init_dir
+"/apisix/consumers/ init_dir"
+"/apisix/global_rules/ init_dir"
+"/apisix/node_status/ init_dir"
+"/apisix/plugin_metadata/ init_dir"
+"/apisix/plugins/ init_dir"
+"/apisix/proto/ init_dir"
+"/apisix/routes/ init_dir"
+"/apisix/services/ init_dir"
+"/apisix/ssl/ init_dir"
+"/apisix/stream_routes/ init_dir"
+"/apisix/upstreams/ init_dir"
 )
-i=0
 
-for kv in $cmd_res
+IFS=$'\n'
+for kv in ${init_kv[@]}
 do
-    if [ "${init_kv[$i]}" != "$kv" ]; then
-        echo "failed: index=$i, $kv is not equal to ${init_kv[$i]}"
-        exit 1
-    fi
-    let i=$i+1
+count=`echo $cmd_res | grep -c ${kv} || true`
+if [ $count -ne 1 ]; then
+    echo "failed: failed to match ${kv}"
+    exit 1
+fi
 done
 
 echo "passed: etcd auth enabled and init kv has been set up correctly"
