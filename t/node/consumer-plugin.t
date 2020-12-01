@@ -151,47 +151,7 @@ apikey: auth-one
 
 
 
-=== TEST 6: two auth plugins (not allow)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "jack",
-                    "plugins": {
-                        "limit-count": {
-                            "count": 2,
-                            "time_window": 60,
-                            "rejected_code": 503,
-                            "key": "remote_addr"
-                        },
-                        "key-auth": {
-                            "key": "auth-one"
-                        },
-                        "jwt-auth": {
-                            "key": "auth-one"
-                        }
-                    }
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"only one auth plugin is allowed"}
---- no_error_log
-[error]
-
-
-
-=== TEST 7: missing auth plugins (not allow)
+=== TEST 6: missing auth plugins (not allow)
 --- config
     location /t {
         content_by_lua_block {
@@ -225,7 +185,7 @@ GET /t
 
 
 
-=== TEST 8: use the new configuration after the consumer's configuration is updated
+=== TEST 7: use the new configuration after the consumer's configuration is updated
 --- config
     location /t {
         content_by_lua_block {
@@ -289,3 +249,195 @@ GET /t
 {"200":4,"503":1}
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: consumer with multiple auth plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/consumers',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "username": "John_Doe",
+                    "desc": "new consumer",
+                    "plugins": {
+                            "key-auth": {
+                                "key": "consumer-plugin-John_Doe"
+                            },
+                            "hmac-auth": {
+                                "access_key": "my-access-key",
+                                "secret_key": "my-secret-key",
+                                "clock_skew": 1
+                            }
+                        }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "John_Doe",
+                            "desc": "new consumer",
+                            "plugins": {
+                                "key-auth": {
+                                    "key": "consumer-plugin-John_Doe"
+                                },
+                                "hmac-auth": {
+                                    "access_key": "my-access-key",
+                                    "secret_key": "my-secret-key",
+                                    "clock_skew": 1
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: bind to routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.log(ngx.ERR, "failed to bind route 1")
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/status"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: hit consumer, key-auth
+--- request
+GET /hello
+--- more_headers
+apikey: consumer-plugin-John_Doe
+--- response_body
+hello world
+--- error_log
+find consumer John_Doe
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit consumer, hmac-auth
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "GET",
+            "/status",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+        core.log.info("signing_string:", signing_string)
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/status',
+            ngx.HTTP_GET,
+            nil,
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+--- error_log
+find consumer John_Doe
