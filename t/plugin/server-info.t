@@ -27,6 +27,12 @@ run_tests;
 __DATA__
 
 === TEST 1: sanity check
+--- yaml_config
+plugins:
+    - server-info
+plugin_attr:
+    server-info:
+        report_interval: 5
 --- config
 location /t {
     content_by_lua_block {
@@ -55,15 +61,33 @@ location /t {
 GET /t
 --- response_body eval
 qr{^etcd_version: [\d\.]+
-hostname: [a-zA-Z\-0-9]+
+hostname: [a-zA-Z\-0-9\.]+
 id: [a-zA-Z\-0-9]+
 last_report_time: \d+
 up_time: \d+
 version: [\d\.]+
 $}
---- timeout: 6
+--- timeout: 5.5
 --- no_error_log
 [error]
+--- error_log
+timer created to report server info, interval: 5
 
 
 
+=== TEST 2: disable server info plugin
+--- yaml_config
+plugins: {}
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code = t('/apisix/server_info', ngx.HTTP_GET)
+        return ngx.exit(code)
+    }
+}
+--- request
+GET /t
+--- error_code: 404
+--- no_error_log
+[error]

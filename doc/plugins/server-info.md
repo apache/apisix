@@ -27,11 +27,10 @@
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
-- [Note](#note)
 
 ## Name
 
-`server-info` is a plugin which we can get basic server information through it's API.
+`server-info` is a plugin that reports basic server information to etcd periodically and allows us to get them in the data plane through it's API.
 
 ## Attributes
 
@@ -45,7 +44,7 @@ You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How to Enable
 
-Just configure `server-info` in the plugin list of the configuration file `apisix/conf/config.yaml`.
+Just configure `server-info` in the plugin list of the configuration file `conf/config.yaml`.
 
 ```
 plugins:                          # plugin list
@@ -59,6 +58,22 @@ plugins:                          # plugin list
 ```
 
 After starting APISIX and accessing `/apisix/server_info` then you can get server information.
+
+## How to customize the server info report interval
+
+We can change the report interval in the `plugin_attr` section of `conf/config.yaml`.
+
+| Name         | Type   | Default  | Description                                                          |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| report_interval | number | 60 | the interval (unit: second) to report server info to etcd.              |
+
+Here is an example, which modifies the report interval to 10 seconds.
+
+```yaml
+plugin_attr:
+  server-info:
+    report_interval: 10
+```
 
 ## Test Plugin
 
@@ -87,7 +102,7 @@ The meaning of each item in server information is following:
 
 ## Disable Plugin
 
-By removing `server-info` in the plugin list of configure file `apisix/conf/config.yaml` and restart APISIX, you can diable `server-info` plugin easily.
+Remove `server-info` in the plugin list of configure file `conf/config.yaml`.
 
 ```
 plugins:                          # plugin list
@@ -98,7 +113,3 @@ plugins:                          # plugin list
   - zipkin
   ......
 ```
-
-## Note
-
-When you use etcd as the data center for APISIX, the server information is also reported to etcd periodically (for now the interval is `5s`) and collected by APISIX Dashboard, so you can also access it from APISIX Dashboard.

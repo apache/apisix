@@ -253,3 +253,5 @@ plugin_attr:
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
+  server-info:
+    report_interval: 60 # server info report interval (unit: second)
