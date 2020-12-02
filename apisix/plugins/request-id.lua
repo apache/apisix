@@ -61,7 +61,7 @@ function _M.header_filter(conf, ctx)
 
     local headers = ngx.resp.get_headers()
     if not headers[conf.header_name] then
-        core.response.set_header(ctx, conf.header_name, ctx.x_request_id)
+        core.response.set_header(conf.header_name, ctx.x_request_id)
     end
 end
 
