@@ -18,7 +18,6 @@ local require = require
 local core = require("apisix.core")
 local route = require("resty.radixtree")
 local plugin = require("apisix.plugin")
-
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
@@ -30,7 +29,6 @@ local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
 local events
-
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
 
 
