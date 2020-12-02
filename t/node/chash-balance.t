@@ -19,6 +19,7 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 log_level('info');
 no_root_location();
+worker_connections(1024);
 no_shuffle();
 
 run_tests();
@@ -302,15 +303,22 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port?var=2&var2="
 
+            local t = {}
             local ports_count = {}
-            for i = 1, 18 do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri..i, {method = "GET"})
-                if not res then
-                    ngx.say(err)
-                    return
-                end
-                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+            for i = 1, 180 do
+                local th = assert(ngx.thread.spawn(function(i)
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri..i, {method = "GET"})
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                    ports_count[res.body] = (ports_count[res.body] or 0) + 1
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
             end
 
             local ports_arr = {}
@@ -319,18 +327,22 @@ passed
             end
 
             local function cmd(a, b)
-                return a.port > b.port
+                return a.count > b.count
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("toolkit.json").encode(ports_arr))
-            ngx.exit(200)
+            if (ports_arr[1].count - ports_arr[3].count) / ports_arr[2].count > 0.2 then
+                ngx.say(require("toolkit.json").encode(ports_arr))
+            else
+                ngx.say('ok')
+            end
         }
     }
 --- request
 GET /t
+--- wait: 5
 --- response_body
-[{"count":5,"port":"1982"},{"count":8,"port":"1981"},{"count":5,"port":"1980"}]
+ok
 --- no_error_log
 [error]
 
@@ -380,15 +392,22 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port?device_id="
 
+            local t = {}
             local ports_count = {}
-            for i = 1, 18 do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri..i, {method = "GET"})
-                if not res then
-                    ngx.say(err)
-                    return
-                end
-                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+            for i = 1, 180 do
+                local th = assert(ngx.thread.spawn(function(i)
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri..i, {method = "GET"})
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                    ports_count[res.body] = (ports_count[res.body] or 0) + 1
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
             end
 
             local ports_arr = {}
@@ -397,18 +416,22 @@ passed
             end
 
             local function cmd(a, b)
-                return a.port > b.port
+                return a.count > b.count
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("toolkit.json").encode(ports_arr))
-            ngx.exit(200)
+            if (ports_arr[1].count - ports_arr[3].count) / ports_arr[2].count > 0.2 then
+                ngx.say(require("toolkit.json").encode(ports_arr))
+            else
+                ngx.say('ok')
+            end
         }
     }
 --- request
 GET /t
+--- wait: 5
 --- response_body
-[{"count":5,"port":"1982"},{"count":7,"port":"1981"},{"count":6,"port":"1980"}]
+ok
 --- no_error_log
 [error]
 
