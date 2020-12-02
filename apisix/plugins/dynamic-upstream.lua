@@ -19,6 +19,8 @@ local upstream   = require("apisix.upstream")
 local roundrobin = require("resty.roundrobin")
 local ipmatcher  = require("resty.ipmatcher")
 local expr       = require("resty.expr.v1")
+local pairs      = pairs
+local ipairs     = ipairs
 local table_insert = table.insert
 
 local lrucache_rr_obj = core.lrucache.new({
