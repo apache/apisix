@@ -78,7 +78,7 @@ plugin_attr:
 ## Test Plugin
 
 ```bash
-curl http://127.0.0.1:9080/apisix/admin/server_info -s | jq
+curl http://127.0.0.1:9080/apisix/server_info -s | jq
 {
   "up_time": 5,
   "last_report_time": 1606551536,

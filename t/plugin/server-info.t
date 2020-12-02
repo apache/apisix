@@ -32,12 +32,10 @@ plugins:
     - server-info
 plugin_attr:
     server-info:
-        report_interval: 5
+        report_interval: 60
 --- config
 location /t {
     content_by_lua_block {
-        -- let the server info to be reported
-        ngx.sleep(5.1)
         local json_decode = require("cjson.safe").decode
         local t = require("lib.test_admin").test
         local code, _, body = t('/apisix/server_info', ngx.HTTP_GET)
@@ -67,11 +65,10 @@ last_report_time: \d+
 up_time: \d+
 version: [\d\.]+
 $}
---- timeout: 5.5
 --- no_error_log
 [error]
 --- error_log
-timer created to report server info, interval: 5
+timer created to report server info, interval: 60
 
 
 

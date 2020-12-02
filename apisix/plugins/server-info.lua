@@ -36,7 +36,8 @@ local attr_schema = {
             type = "integer",
             description = "server info reporting interval (unit: second)",
             default = 60,
-            minimum = 5,
+            minimum = 60,
+            maximum = 3600,
         }
     }
 }
