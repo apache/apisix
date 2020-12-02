@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local expr = require("resty.expr.v1")
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local upstreams = require("apisix.admin.upstreams")
@@ -110,6 +111,13 @@ local function check_conf(id, conf, need_id)
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
             return nil, {error_msg = err}
+        end
+    end
+
+    if conf.vars then
+        ok, err = expr.new(conf.vars)
+        if not ok then
+            return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
         end
     end
 
