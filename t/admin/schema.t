@@ -146,7 +146,7 @@ passed
 --- request
 GET /apisix/admin/schema/plugins/limit-count
 --- response_body eval
-qr/"required":\["count","time_window","key"\]/
+qr/"required":\["count","time_window"\]/
 --- no_error_log
 [error]
 
