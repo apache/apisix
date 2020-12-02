@@ -203,3 +203,31 @@ routes:
 --- request
 GET /hello
 --- error_code: 403
+
+
+
+=== TEST 8: invalid route, bad vars operator
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+    router:
+        http: "radixtree_host_uri"
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    vars:
+        - remote_addr
+        - =
+        - 1
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 404
