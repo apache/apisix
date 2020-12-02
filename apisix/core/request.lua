@@ -75,6 +75,8 @@ function _M.set_header(ctx, header_name, header_value)
         header_value = header_name
         header_name = ctx
         ctx = nil
+
+        log.warn("DEPRECATED: use set_header(ctx, header_name, header_value) instead")
     end
 
     local err
