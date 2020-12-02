@@ -14,14 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core_str     = require("apisix.core.string")
 local log          = require("apisix.core.log")
 local tablepool    = require("tablepool")
 local get_var      = require("resty.ngxvar").fetch
 local get_request  = require("resty.ngxvar").request
 local ck           = require "resty.cookie"
 local setmetatable = setmetatable
-local ffi          = require("ffi")
-local C            = ffi.C
 local sub_str      = string.sub
 local rawset       = rawset
 local ngx_var      = ngx.var
@@ -29,11 +28,6 @@ local re_gsub      = ngx.re.gsub
 local type         = type
 local error        = error
 local ngx          = ngx
-
-
-ffi.cdef[[
-int memcmp(const void *s1, const void *s2, size_t n);
-]]
 
 
 local _M = {version = 0.2}
@@ -74,7 +68,7 @@ do
             if method then
                 val = method()
 
-            elseif C.memcmp(key, "cookie_", 7) == 0 then
+            elseif core_str.has_prefix(key, "cookie_") then
                 local cookie = t.cookie
                 if cookie then
                     local err
@@ -85,7 +79,7 @@ do
                     end
                 end
 
-            elseif C.memcmp(key, "http_", 5) == 0 then
+            elseif core_str.has_prefix(key, "http_") then
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
                 val = get_var(key, t._request)
