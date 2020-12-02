@@ -354,3 +354,27 @@ X-Real-IP: 10.0.0.1
 1.1
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: set header
+--- config
+    location = /hello {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local h = core.request.header(nil, "Test")
+            local ctx = ngx.ctx.api_ctx
+            core.request.set_header(ctx, "Test", "t")
+            local h2 = core.request.header(ctx, "Test")
+            ngx.say(h)
+            ngx.say(h2)
+        }
+    }
+--- request
+GET /hello
+--- response_body
+nil
+t
+--- no_error_log
+[error]
