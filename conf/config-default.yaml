@@ -240,6 +240,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - wolf-rbac
   - zipkin
   #- server-info
+  - dynamic-upstream
 
 stream_plugins:
   - mqtt-proxy
