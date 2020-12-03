@@ -129,8 +129,13 @@ Makefile rules:
 
 **运行单个测试用例**
 
+由于 `apisix` 的测试用例依赖于 https://github.com/api7/test-toolkit 测试工具包。因此，在运行单个测试用例之前，需要执行 `make test` 自动下载测试工具包或手动 clone 这个工具包到 `apisix/t/` 目录下。
+
 - 使用以下命令运行指定的测试用例：
-  - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
+
+```shell
+prove -Itest-nginx/lib -r t/plugin/openid-connect.t
+```
 
 ## 5. 更新 Admin API 的 token ，保护 Apache APISIX
 

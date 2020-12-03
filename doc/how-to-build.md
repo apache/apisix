@@ -119,8 +119,10 @@ Makefile rules:
 ### Troubleshoot Testing
 
 **Set Nginx Path**
+
 - If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf`
 make sure to set openresty as default nginx. And export the path as below.
+
 * export PATH=/usr/local/openresty/nginx/sbin:$PATH
     - Linux default installation path:
         * export PATH=/usr/local/openresty/nginx/sbin:$PATH
@@ -128,8 +130,14 @@ make sure to set openresty as default nginx. And export the path as below.
         * export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
 
 **Run Individual Test Cases**
+
+Because the test case of `apisix` depends on the https://github.com/api7/test-toolkit test kit. Therefore, before running a single test case, you need to execute `make test` to automatically download the test kit or manually clone the kit to the `apisix/t/` directory.
+
 - Use the following command to run test cases constratined to a file:
-    - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
+
+```shell
+prove -Itest-nginx/lib -r t/plugin/openid-connect.t
+```
 
 ## 5. Update Admin API token to protect Apache APISIX
 
