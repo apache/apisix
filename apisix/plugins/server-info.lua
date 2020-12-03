@@ -16,15 +16,15 @@
 --
 local require = require
 local core = require("apisix.core")
+local timers = require("apisix.timers")
 
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
-local ngx_worker_id = ngx.worker.id
 local type = type
+local ceil = math.ceil
 
-local plugin_name = "server-info"
 local boot_time = os.time()
-local current_timer
+local plugin_name = "server-info"
 local schema = {
     type = "object",
     additionalProperties = false,
@@ -38,6 +38,13 @@ local attr_schema = {
             default = 60,
             minimum = 60,
             maximum = 3600,
+        },
+        report_ttl = {
+            type = "integer",
+            description = "live time for server info in etcd",
+            default = 7200,
+            minimum = 3600,
+            maximum = 86400,
         }
     }
 }
@@ -116,18 +123,11 @@ local function get()
 end
 
 
-local function get_server_info()
-    local server_info, err = get()
-    if not server_info then
-        core.log.error("failed to get server_info: ", err)
-        return 500, err
+local function report(premature, report_ttl)
+    if premature then
+        return
     end
 
-    return 200, core.json.encode(server_info)
-end
-
-
-local function report()
     local server_info, err = get()
     if not server_info then
         core.log.error("failed to get server_info: ", err)
@@ -158,7 +158,7 @@ local function report()
     end
 
     local key = "/data_plane/server_info/" .. server_info.id
-    local ok, err = core.etcd.set(key, data, 180)
+    local ok, err = core.etcd.set(key, data, report_ttl)
     if not ok then
         core.log.error("failed to report server info to etcd: ", err)
         return
@@ -183,11 +183,6 @@ end
 
 
 function _M.init()
-    if ngx_worker_id() ~= 0 then
-        -- only let the No.0 worker to launch timer for server info reporting.
-        return
-    end
-
     local ok, err = encode_and_save(uninitialized_server_info(), true)
     if not ok then
         core.log.error("failed to encode and save server info: ", err)
@@ -207,68 +202,33 @@ function _M.init()
         return
     end
 
-    local report_interval = attr.report_interval
+    local threshold = ceil(attr.report_interval / timers.check_interval())
+    local report_ttl = attr.report_ttl
+    local count = 0
 
-    -- we don't use core.timer and the apisix.timers here for:
-    -- 1. core.timer is not cancalable, timers will be leaked if plugin
-    -- reloading happens.
-    -- 2. the background timer in apisix.timers fires per 500 milliseconds, if
-    -- report_interval is not multiple of 0.5, the real report interval will be
-    -- inaccurate over time.
-    local fn
-    fn = function(premature, timer)
-        if premature or timer.cancelled then
-            return
-        end
-
-        report()
-
-        if not timer.cancelled then
-            local ok, err = ngx_timer_at(report_interval, fn, timer)
-            if not ok then
-                core.log.error("failed to create timer to report server info: ", err)
-            end
-
-        else
-            core.log.warn("server info report timer is cancelled")
+    local fn = function()
+        count = count + 1
+        if count == threshold then
+            report(nil, report_ttl)
+            count = 0
         end
     end
 
-    current_timer = {
-        cancelled = false
-    }
-
-    local ok, err = ngx_timer_at(0, fn, current_timer)
-    if ok then
-        core.log.info("timer created to report server info, interval: ",
-                      report_interval)
-    else
-        core.log.error("failed to create timer to report server info: ", err)
+    local ok, err = ngx_timer_at(0, report, report_ttl)
+    if not ok then
+        core.log.error("failed to create initial timer to report server info: ", err)
+        return
     end
+
+    timers.register_timer("plugin#server-info", fn, true)
+
+    core.log.info("timer created to report server info, interval: ",
+                  attr.report_interval)
 end
 
 
 function _M.destory()
-    if ngx_worker_id() ~= 0 then
-        -- timer exists only in the No.0 worker.
-        return
-    end
-
-    if current_timer then
-        current_timer.cancelled = true
-        current_timer = nil
-    end
-end
-
-
-function _M.api()
-    return {
-        {
-            methods = {"GET"},
-            uri = "/apisix/server_info",
-            handler = get_server_info,
-        },
-    }
+    timers.unregister_timer("plugin#server-info", true)
 end
 
 

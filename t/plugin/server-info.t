@@ -36,15 +36,19 @@ plugin_attr:
 --- config
 location /t {
     content_by_lua_block {
+        ngx.sleep(0.1)
         local json_decode = require("cjson.safe").decode
-        local t = require("lib.test_admin").test
-        local code, _, body = t('/apisix/server_info', ngx.HTTP_GET)
-        if code >= 300 then
-            ngx.status = code
+        local core = require("apisix.core")
+        local key = "/data_plane/server_info/" .. core.id.get()
+        local res, err = core.etcd.get(key)
+        if err ~= nil then
+            ngx.status = 500
+            ngx.say(err)
+            return
         end
 
         local keys = {}
-        body = json_decode(body)
+        local body = json_decode(res.body.node.value)
         for k in pairs(body) do
             keys[#keys + 1] = k
         end
@@ -69,22 +73,3 @@ $}
 [error]
 --- error_log
 timer created to report server info, interval: 60
-
-
-
-=== TEST 2: disable server info plugin
---- yaml_config
-plugins: {}
---- config
-location /t {
-    content_by_lua_block {
-        local t = require("lib.test_admin").test
-        local code = t('/apisix/server_info', ngx.HTTP_GET)
-        return ngx.exit(code)
-    }
-}
---- request
-GET /t
---- error_code: 404
---- no_error_log
-[error]
