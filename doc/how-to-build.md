@@ -131,7 +131,11 @@ make sure to set openresty as default nginx. And export the path as below.
 
 **Run Individual Test Cases**
 
-Because the test case of `apisix` depends on the https://github.com/api7/test-toolkit test kit. Therefore, before running a single test case, you need to execute `make test` to automatically download the test kit or manually clone the kit to the `apisix/t/` directory.
+Because the test case of `apisix` depends on the https://github.com/api7/test-toolkit test kit. Therefore, before running a single test case, you need to execute `make test` to automatically download the test kit or manually clone the `test-toolkit` to the `apisix/t/` directory:
+
+```shell
+git clone https://github.com/api7/test-toolkit/ t/toolkit
+```
 
 - Use the following command to run test cases constratined to a file:
 
