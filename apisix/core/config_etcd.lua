@@ -39,6 +39,8 @@ local xpcall       = xpcall
 local debug        = debug
 local error        = error
 local created_obj  = {}
+local math = math
+local ngx = ngx
 
 
 local _M = {
@@ -488,9 +490,7 @@ local function _automatic_fetch(premature, self)
         return
     end
 
-    local i = 0
-    while not exiting() and self.running and i <= 32 do
-        i = i + 1
+    if not exiting() and self.running then
 
         local ok, err = xpcall(function()
             if not self.etcd_cli then
@@ -528,14 +528,18 @@ local function _automatic_fetch(premature, self)
         if not ok then
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
-            ngx_sleep(3)
-            break
         end
     end
 
     if not exiting() and self.running then
-        ngx_timer_at(0, _automatic_fetch, self)
+        ngx_timer_at(10, _automatic_fetch, self)
     end
+end
+
+local function get_random_delay()
+    ngx.update_time()
+    math.randomseed(tonumber(tostring(ngx.now()*1000):reverse():sub(1, 9)))
+    return  math.random(10)
 end
 
 
@@ -592,6 +596,8 @@ function _M.new(key, opts)
             return nil, "missing `key` argument"
         end
 
+        local delay = get_random_delay()
+        log.info("delay to fetch key from: ", obj.key, " delay time: ", delay)
         ngx_timer_at(0, _automatic_fetch, obj)
 
     else
