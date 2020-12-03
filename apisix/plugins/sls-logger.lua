@@ -126,7 +126,7 @@ local function remove_stale_objects(premature)
     stale_timer_running = false
 end
 
-local function combine_syslog(entries)
+function _M.combine_syslog(entries)
     local data = {}
     for _, entry in ipairs(entries) do
         table.insert(data, entry.data)
@@ -137,7 +137,7 @@ local function combine_syslog(entries)
 end
 
 local function handle_log(entries)
-    local data = combine_syslog(entries)
+    local data = _M.combine_syslog(entries)
     if not data then
         return true
     end
@@ -199,5 +199,5 @@ function _M.log(conf, ctx)
     log_buffer:push(process_context)
 end
 
-_M.combine_syslog = combine_syslog
+
 return _M
