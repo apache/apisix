@@ -72,6 +72,7 @@
 |service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
+|status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 

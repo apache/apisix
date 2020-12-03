@@ -94,7 +94,14 @@ local function create_radixtree_router(routes)
     host_router = nil
 
     for _, route in ipairs(routes or {}) do
+        local status = core.table.try_read_attr(route, "value", "status")
+        if status and status ~= 1 then
+            goto CONTINUE
+        end
+
         push_host_router(route, host_routes, only_uri_routes)
+
+        ::CONTINUE::
     end
 
     -- create router: host_router
