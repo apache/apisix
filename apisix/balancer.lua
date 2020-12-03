@@ -118,6 +118,7 @@ local function create_checker(upstream, healthcheck_parent)
         end)
     end
 
+    checker:start()
     core.log.info("create new checker: ", tostring(checker))
     return checker
 end
