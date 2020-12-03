@@ -163,7 +163,7 @@ local _M = {
 该插件在 rewrite 、access 阶段执行都可以，项目中是用 rewrite 阶段执行认证逻辑，一般 IP 准入、接口权限是在 access 阶段
 完成的。
 
-**注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。**
+**注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。[例子](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
 
 ## 编写执行逻辑
 

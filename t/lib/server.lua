@@ -14,8 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local json_decode = require("cjson").decode
-local json_encode = require("cjson").encode
+local json_decode = require("toolkit.json").decode
+local json_encode = require("toolkit.json").encode
 
 local _M = {}
 
@@ -362,6 +362,11 @@ function _M.log()
         body = json_encode(body)
     end
     ngx.log(ngx.WARN, "request log: ", body or "nil")
+end
+
+
+function _M.server_error()
+    error("500 Internal Server Error")
 end
 
 

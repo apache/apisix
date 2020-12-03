@@ -21,19 +21,20 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
 local plugin          = require("apisix.plugin")
+
 local ngx      = ngx
 local tostring = tostring
 local pairs    = pairs
-local ipairs = ipairs
+local ipairs   = ipairs
 local str_byte = string.byte
-
+local timer_at = ngx.timer.at
 
 local plugin_name = "http-logger"
+local stale_timer_running = false
 local buffers = {}
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
 })
-
 
 local schema = {
     type = "object",
@@ -91,6 +92,8 @@ local function send_http_data(conf, log_message)
     local url_decoded = url.parse(conf.uri)
     local host = url_decoded.host
     local port = url_decoded.port
+
+    core.log.info("sending a batch logs to ", conf.uri)
 
     if ((not port) and url_decoded.scheme == "https") then
         port = 443
@@ -169,6 +172,23 @@ local function gen_log_format(metadata)
 end
 
 
+-- remove stale objects from the memory after timer expires
+local function remove_stale_objects(premature)
+    if premature then
+        return
+    end
+
+    for key, batch in ipairs(buffers) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.warn("removing batch processor stale object, route id:", tostring(key))
+            buffers[key] = nil
+        end
+    end
+
+    stale_timer_running = false
+end
+
+
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
@@ -199,7 +219,13 @@ function _M.log(conf, ctx)
         entry.route_id = "no-matched"
     end
 
-    local log_buffer = buffers[entry.route_id]
+    if not stale_timer_running then
+        -- run the timer every 30 mins if any log is present
+        timer_at(1800, remove_stale_objects)
+        stale_timer_running = true
+    end
+
+    local log_buffer = buffers[conf]
 
     if log_buffer then
         log_buffer:push(entry)
@@ -209,6 +235,7 @@ function _M.log(conf, ctx)
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
+
         if conf.concat_method == "json" then
             if batch_max_size == 1 then
                 data, err = core.json.encode(entries[1]) -- encode as single {}
@@ -260,7 +287,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    buffers[entry.route_id] = log_buffer
+    buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
 

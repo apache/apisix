@@ -17,6 +17,7 @@
 local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")
+local http_route = require("apisix.http.route")
 local ipairs = ipairs
 local type = type
 local error = error
@@ -116,6 +117,7 @@ function _M.init_worker(filter)
     user_routes, err = core.config.new("/routes", {
             automatic = true,
             item_schema = core.schema.route,
+            checker = http_route.check_route,
             filter = filter,
         })
     if not user_routes then

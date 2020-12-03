@@ -180,6 +180,7 @@ _EOC_
         apisix.stream_init_worker()
     }
 
+
     # fake server, only for test
     server {
         listen 1995;
@@ -248,6 +249,7 @@ _EOC_
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m;    # plugin skywalking
     lua_shared_dict plugin-api-breaker   10m;
+    lua_capture_error_log                 1m;    # plugin error-log-logger
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -271,6 +273,8 @@ _EOC_
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
     }
+
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
 
     # fake server, only for test
     server {
@@ -346,6 +350,10 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
+        set \$upstream_scheme             'http';
+        set \$upstream_host               \$host;
+        set \$upstream_uri                '';
+
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             access_log off;
@@ -360,11 +368,8 @@ _EOC_
 
         location / {
             set \$upstream_mirror_host        '';
-            set \$upstream_scheme             'http';
-            set \$upstream_host               \$host;
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
-            set \$upstream_uri                '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';

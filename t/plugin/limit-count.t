@@ -193,7 +193,7 @@ passed
 
 
 
-=== TEST 8: invalid route: missing key
+=== TEST 8: invalid route: missing count
 --- config
     location /t {
         content_by_lua_block {
@@ -203,7 +203,6 @@ passed
                  [[{
                         "plugins": {
                             "limit-count": {
-                                "count": 2,
                                 "time_window": 60,
                                 "rejected_code": 503
                             }
@@ -228,7 +227,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
 --- no_error_log
 [error]
 
@@ -328,7 +327,6 @@ GET /t
                  [[{
                         "plugins": {
                             "limit-count": {
-                                "count": 2,
                                 "time_window": 60,
                                 "rejected_code": 503
                             }
@@ -352,7 +350,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
 --- no_error_log
 [error]
 
@@ -1124,5 +1122,56 @@ passed
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: use 'remote_addr' as default key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
 --- no_error_log
 [error]

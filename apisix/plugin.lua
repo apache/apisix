@@ -498,4 +498,102 @@ function _M.get(name)
 end
 
 
+local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
+    for name, plugin_conf in pairs(plugins_conf) do
+        core.log.info("check plugin schema, name: ", name, ", configurations: ",
+                      core.json.delay_encode(plugin_conf, true))
+        if type(plugin_conf) ~= "table" then
+            return false, "invalid plugin conf " ..
+                core.json.encode(plugin_conf, true) ..
+                " for plugin [" .. name .. "]"
+        end
+
+        local plugin_obj = local_plugins_hash[name]
+        if not plugin_obj then
+            if skip_disabled_plugin then
+                goto CONTINUE
+            else
+                return false, "unknown plugin [" .. name .. "]"
+            end
+        end
+
+        if plugin_obj.check_schema then
+            local disable = plugin_conf.disable
+            plugin_conf.disable = nil
+
+            local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+            if not ok then
+                return false, "failed to check the configuration of plugin "
+                              .. name .. " err: " .. err
+            end
+
+            plugin_conf.disable = disable
+        end
+
+        ::CONTINUE::
+    end
+
+    return true
+end
+_M.check_schema = check_schema
+
+
+local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
+    for name, plugin_conf in pairs(plugins_conf) do
+        core.log.info("check stream plugin schema, name: ", name,
+                      ": ", core.json.delay_encode(plugin_conf, true))
+        if type(plugin_conf) ~= "table" then
+            return false, "invalid plugin conf " ..
+                core.json.encode(plugin_conf, true) ..
+                " for plugin [" .. name .. "]"
+        end
+
+        local plugin_obj = stream_local_plugins_hash[name]
+        if not plugin_obj then
+            if skip_disabled_plugin then
+                goto CONTINUE
+            else
+                return false, "unknown plugin [" .. name .. "]"
+            end
+        end
+
+        if plugin_obj.check_schema then
+            local disable = plugin_conf.disable
+            plugin_conf.disable = nil
+
+            local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+            if not ok then
+                return false, "failed to check the configuration of "
+                              .. "stream plugin [" .. name .. "]: " .. err
+            end
+
+            plugin_conf.disable = disable
+        end
+
+        ::CONTINUE::
+    end
+
+    return true
+end
+_M.stream_check_schema = stream_check_schema
+
+
+function _M.plugin_checker(item)
+    if item.plugins then
+        return check_schema(item.plugins, nil, true)
+    end
+
+    return true
+end
+
+
+function _M.stream_plugin_checker(item)
+    if item.plugins then
+        return stream_check_schema(item.plugins, nil, true)
+    end
+
+    return true
+end
+
+
 return _M

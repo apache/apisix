@@ -53,10 +53,8 @@ The technical architecture of Apache APISIX:
 - [Features](#features)
 - [Documentation](#documentation)
 - [Get Started](#get-started)
-- [Dashboard](#dashboard)
 - [Benchmark](#benchmark)
 - [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-- [Open Governance](#open-governance)
 - [Community](#community)
 - [Videos And Articles](#videos-and-articles)
 - [User Stories](#user-stories)
@@ -134,7 +132,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
   - High availability: support to configure multiple etcd addresses in the same cluster.
-  - Dashboard: Built-in dashboard to control APISIX.
+  - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
   - [Stand-alone mode](doc/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
@@ -167,10 +165,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
    - Download the latest source code release package:
      ```shell
-     $ mkdir apisix-2.0
-     $ cd apisix-2.0
-     $ wget https://downloads.apache.org/apisix/2.0/apache-apisix-2.0-src.tgz
-     $ tar zxvf apache-apisix-2.0-src.tgz
+     $ mkdir apisix-2.1
+     $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
+     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
      ```
    - Install the dependencies：
      ```shell
@@ -198,7 +195,7 @@ There are several ways to install the Apache Release version of APISIX:
    - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
    - install APISIX：
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.0/apisix-2.0-0.el7.noarch.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
    ```
    - check version of APISIX:
      ```shell
@@ -249,12 +246,6 @@ There are several ways to install the Apache Release version of APISIX:
 
 For more documents, please refer to [Apache APISIX Document Index](doc/README.md)
 
-## Dashboard
-
-APISIX has built-in support for [Dashboard](https://github.com/apache/apisix-dashboard), which could be directly deployed by docker compose.
-
-The dashboard only allows 127.0.0.1 by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
-
 ## Benchmark
 
 Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
@@ -303,9 +294,6 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
-## Open Governance
-
-[GitHub milestones](https://github.com/apache/apisix/milestones) lay out the path to Apache APISIX's future improvements.
 
 ## Community
 

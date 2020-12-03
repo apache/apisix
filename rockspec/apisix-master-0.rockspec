@@ -47,7 +47,7 @@ dependencies = {
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 1.0",
     "lua-resty-prometheus = 1.1",
-    "jsonschema = 0.8",
+    "jsonschema = 0.9.2",
     "lua-resty-ipmatcher = 0.6",
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
@@ -55,6 +55,7 @@ dependencies = {
     "base64 = 1.5-2",
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
+    "lua-resty-expr = 1.0.0",
 }
 
 build = {
