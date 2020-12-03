@@ -188,6 +188,7 @@ install: default
 
 ### test:             Run the test case
 test:
+	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
 
 ### license-check:    Check Lua source code for Apache License
