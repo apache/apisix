@@ -598,7 +598,7 @@ function _M.new(key, opts)
 
         local delay = get_random_delay()
         log.info("delay to fetch key from: ", obj.key, " delay time: ", delay)
-        ngx_timer_at(0, _automatic_fetch, obj)
+        ngx_timer_at(delay, _automatic_fetch, obj)
 
     else
         local etcd_cli, err = etcd.new(etcd_conf)
