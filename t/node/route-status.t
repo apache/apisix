@@ -34,21 +34,21 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: default enable route
+=== TEST 1: default enable route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/uri_status_test',
+            local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
+                        "uri": "/hello",
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
                             },
                             "type": "roundrobin"
-                        },
-                        "uri": "/route_status"
+                        }
                 }]]
                 )
 
@@ -69,9 +69,9 @@ passed
 
 === TEST 2: hit route
 --- request
-GET /route_status
+GET /hello
 --- response_body
-route status
+hello world
 --- no_error_log
 [error]
 
@@ -86,7 +86,7 @@ route status
 
             local data = {status = 0}
 
-            local code, body = t('/apisix/admin/routes/uri_status_test',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 core.json.encode(data),
                 [[{
@@ -94,7 +94,7 @@ route status
                         "value": {
                             "status": 0
                         },
-                        "key": "/apisix/routes/uri_status_test"
+                        "key": "/apisix/routes/1"
                     },
                     "action": "compareAndSwap"
                 }]]
@@ -117,7 +117,7 @@ passed
 
 === TEST 4: route not found, failed by disable
 --- request
-GET /route_status
+GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
@@ -126,40 +126,16 @@ GET /route_status
 
 
 
-=== TEST 5: delete route(id: uri_status_test)
+=== TEST 5: default enable route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/uri_status_test',
-                 ngx.HTTP_DELETE
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 6: default enable route
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/host_uri_status_test',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/route_status",
-                    "host": "status.test.com",
+                    "uri": "/hello",
+                    "host": "foo.com",
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -185,20 +161,20 @@ passed
 
 
 
-=== TEST 7: hit routes
+=== TEST 6: hit routes
 --- request
-GET /route_status
+GET /hello
 --- yaml_config eval: $::yaml_config
 --- more_headers
-Host: status.test.com
+Host: foo.com
 --- response_body
-route status
+hello world
 --- no_error_log
 [error]
 
 
 
-=== TEST 8: disable route
+=== TEST 7: disable route
 --- config
     location /t {
         content_by_lua_block {
@@ -207,7 +183,7 @@ route status
 
             local data = {status = 0}
 
-            local code, body = t('/apisix/admin/routes/host_uri_status_test',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 core.json.encode(data),
                 [[{
@@ -215,7 +191,7 @@ route status
                         "value": {
                             "status": 0
                         },
-                        "key": "/apisix/routes/host_uri_status_test"
+                        "key": "/apisix/routes/1"
                     },
                     "action": "compareAndSwap"
                 }]]
@@ -237,39 +213,14 @@ passed
 
 
 
-=== TEST 9: route not found, failed by disable
+=== TEST 8: route not found, failed by disable
 --- request
-GET /route_status
+GET /hello
 --- yaml_config eval: $::yaml_config
 --- more_headers
-Host: status.test.com
+Host: foo.com
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
-
-
-
-=== TEST 10: delete route(id: host_uri_status_test)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/host_uri_status_test',
-                 ngx.HTTP_DELETE
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- yaml_config eval: $::yaml_config
---- request
-GET /t
---- response_body
-passed
 --- no_error_log
 [error]

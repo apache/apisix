@@ -56,11 +56,6 @@ function _M.hello_()
 end
 
 
-function _M.route_status()
-    ngx.say("route status")
-end
-
-
 function _M.server_port()
     ngx.print(ngx.var.server_port)
 end
