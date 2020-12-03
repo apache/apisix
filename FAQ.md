@@ -299,3 +299,29 @@ If you want to specify a meaningful id to bind APISIX instance to your internal 
     apisix:
       id: "your-meaningful-id"
     ```
+
+## Why there are a lot of "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" errors in error.log?
+
+First please make sure the network between APISIX and etcd cluster is not partitioned.
+
+If the network is healthy, please check whether your etcd cluster enables the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/).  However, The default case for this feature is different when use command line options or configuration file to start etcd server.
+
+1. When command line options is in use, this feature is enabled by default, the related option is `--enable-grpc-gateway`.
+
+```sh
+etcd --enable-grpc-gateway --data-dir=/path/to/data
+```
+
+Note this option is not shown in the output of `etcd --help`.
+
+2. When configuration file is used, this feature is disabled by default, please enable `enable-grpc-gateway` explicitly.
+
+```json
+# etcd.json
+{
+    "enable-grpc-gateway": true,
+    "data-dir": "/path/to/data"
+}
+```
+
+Indeed this distinction was eliminated by etcd in their master branch, but not backport to announced versions, so be care when deploy your etcd cluster.
