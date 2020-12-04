@@ -16,6 +16,19 @@
 #
 use t::APISIX 'no_plan';
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - node-status
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
+
+    $block;
+});
+
 master_on();
 repeat_each(1);
 no_long_string();

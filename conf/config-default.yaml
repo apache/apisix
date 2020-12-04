@@ -217,7 +217,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - limit-count
   - limit-req
   #- log-rotate
-  - node-status
+  #- node-status
   - openid-connect
   - prometheus
   - proxy-cache
