@@ -410,9 +410,7 @@ function _M.rewrite(conf, ctx)
     end
 
     local consumer_conf = consumer.plugin(plugin_name)
-    ctx.consumer = validated_consumer
-    ctx.consumer_name = validated_consumer.consumer_name
-    ctx.consumer_ver = consumer_conf.conf_version
+    consumer.attach_consumer(ctx, validated_consumer, consumer_conf)
     core.log.info("hit hmac-auth rewrite")
 end
 
