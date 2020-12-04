@@ -180,6 +180,10 @@ function _M.init(env, show_output)
                 util.die(cmd_auth, "\n", res_auth)
             end
 
+            if not body_auth.token then
+                util.die(cmd_auth, "\n", res_auth)
+            end
+
             token_head = " -H 'Authorization: " .. body_auth.token .. "'"
         end
 
