@@ -127,13 +127,13 @@ local function remove_stale_objects(premature)
 end
 
 local function combine_syslog(entries)
-    local data = {}
+    local items = {}
     for _, entry in ipairs(entries) do
-        table.insert(data, entry.data)
+        table.insert(items, entry.data)
         core.log.info("buffered logs:", entry.data)
     end
 
-    return table.concat(data)
+    return table.concat(items)
 end
 
 _M.combine_syslog = combine_syslog
