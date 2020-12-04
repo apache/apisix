@@ -199,6 +199,11 @@ function _M.init(env, show_output)
                         .. " --max-time " .. timeout * 2 .. " --retry 1 2>&1"
 
             local res = util.execute_cmd(cmd)
+            if res:find("404 page not found", 1, true) then
+                util.die("gRPC gateway is not enabled in your etcd cluster, ",
+                         "which is required by Apache APISIX.", "\n")
+            end
+
             if res:find("error", 1, true) then
                 is_success = false
                 if (index == host_count) then
