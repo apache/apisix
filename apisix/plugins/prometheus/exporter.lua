@@ -329,5 +329,8 @@ function _M.metric_data()
     return prometheus:metric_data()
 end
 
+function _M.regist_metirc()
+    return nil
+end
 
 return _M
