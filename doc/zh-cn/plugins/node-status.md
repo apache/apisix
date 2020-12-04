@@ -46,7 +46,7 @@
 
 ## 启用插件
 
-1. 配置文件 `apisix/conf/config.yaml` 的 plugin list 中配置 `node-status`
+1. 配置文件 `conf/config.yaml` 的 plugin list 中配置 `node-status`
 
 ```
 plugins:                          # plugin list

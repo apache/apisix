@@ -272,6 +272,9 @@ qr/"disable":\{"type":"boolean"\}/
 
 
 === TEST 14: get plugin node-status schema
+--- extra_yaml_config
+plugins:
+    - node-status
 --- request
 GET /apisix/admin/schema/plugins/node-status
 --- response_body eval
