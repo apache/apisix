@@ -180,7 +180,8 @@ local function remove_stale_objects(premature)
 
     for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, route id:", tostring(key))
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
             buffers[key] = nil
         end
     end
