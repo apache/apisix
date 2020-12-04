@@ -192,6 +192,5 @@ hello world
 GET /t
 --- response_body
 123
-done
 --- no_error_log
 [error]
