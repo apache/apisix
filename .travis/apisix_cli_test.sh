@@ -817,3 +817,11 @@ fi
 done
 
 echo "passed: etcd auth enabled and init kv has been set up correctly"
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'authentication is not enabled'; then
+    echo "failed: properly handle the error when connecting to etcd without auth"
+    exit 1
+fi
+
+echo "passed: properly handle the error when connecting to etcd without auth"
