@@ -47,7 +47,7 @@ You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How To Enable
 
-1. Configure `node-status` in the plugin list of the configuration file `apisix/conf/config.yaml`,
+1. Configure `node-status` in the plugin list of the configuration file `conf/config.yaml`,
 then you can add this plugin in any route.
 
 ```
