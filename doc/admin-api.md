@@ -241,7 +241,7 @@ HTTP/1.1 200 OK
 
 After successful execution, status nodes will be updated to:
 {
-	"status": 0
+    "status": 0
 }
 
 
@@ -255,7 +255,7 @@ HTTP/1.1 200 OK
 
 After successful execution, status nodes will be updated to:
 {
-	"status": 1
+    "status": 1
 }
 
 

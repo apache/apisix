@@ -248,7 +248,7 @@ HTTP/1.1 200 OK
 
 执行成功后，status 将更新为：
 {
-	"status": 0
+    "status": 0
 }
 
 
@@ -262,7 +262,7 @@ HTTP/1.1 200 OK
 
 执行成功后，status 将更新为：
 {
-	"status": 1
+    "status": 1
 }
 
 
