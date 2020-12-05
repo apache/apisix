@@ -26,7 +26,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: set route(id: 1) with vars(user_agent ~* android)
 --- config
     location /t {
         content_by_lua_block {
@@ -59,7 +59,9 @@ passed
 --- no_error_log
 [error]
 
-=== TEST 2: /not_found
+
+
+=== TEST 2: not found because user_agent=ios
 --- request
 GET /hello
 --- more_headers
@@ -70,7 +72,9 @@ User-Agent: ios
 --- no_error_log
 [error]
 
-=== TEST 3: hit routes
+
+
+=== TEST 3: hit routes with user_agent=android
 --- request
 GET /hello
 --- more_headers
@@ -80,7 +84,9 @@ hello world
 --- no_error_log
 [error]
 
-=== TEST 4: hit routes
+
+
+=== TEST 4: hit routes with user_agent=Android
 --- request
 GET /hello
 --- more_headers
@@ -90,7 +96,9 @@ hello world
 --- no_error_log
 [error]
 
-=== TEST 5: set route(id: 1)
+
+
+=== TEST 5: set route(id: 1) with vars(user_agent ! ~* android)
 --- config
     location /t {
         content_by_lua_block {
@@ -123,7 +131,9 @@ passed
 --- no_error_log
 [error]
 
-=== TEST 6: /not_found
+
+
+=== TEST 6: not found because user_agent=android
 --- request
 GET /hello
 --- more_headers
@@ -134,7 +144,9 @@ User-Agent: android
 --- no_error_log
 [error]
 
-=== TEST 7: hit routes
+
+
+=== TEST 7: hit routes with user_agent=ios
 --- request
 GET /hello
 --- more_headers
