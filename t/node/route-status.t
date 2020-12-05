@@ -34,7 +34,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: default enable route(id: 1)
+=== TEST 1: default enable route(id: 1) with uri match
 --- config
     location /t {
         content_by_lua_block {
@@ -126,7 +126,7 @@ GET /hello
 
 
 
-=== TEST 5: default enable route(id: 1)
+=== TEST 5: default enable route(id: 1) with host_uri match
 --- config
     location /t {
         content_by_lua_block {
@@ -161,7 +161,7 @@ passed
 
 
 
-=== TEST 6: hit routes
+=== TEST 6: hit route
 --- request
 GET /hello
 --- yaml_config eval: $::yaml_config
@@ -222,5 +222,39 @@ Host: foo.com
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: specify an invalid status value
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "status": 100,
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: property \\"status\\" validation failed: matches non of the enum values"\}/
 --- no_error_log
 [error]

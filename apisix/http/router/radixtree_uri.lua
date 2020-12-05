@@ -39,7 +39,8 @@ local function create_radixtree_router(routes)
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             local status = core.table.try_read_attr(route, "value", "status")
-            if status and status ~= 1 then
+            -- check the status
+            if status and status == 0 then
                 goto CONTINUE
             end
 
