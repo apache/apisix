@@ -96,7 +96,7 @@ local function create_radixtree_router(routes)
     for _, route in ipairs(routes or {}) do
         local status = core.table.try_read_attr(route, "value", "status")
         -- check the status
-        if status == 1 then
+        if not status or status == 1 then
             push_host_router(route, host_routes, only_uri_routes)
         end
     end
