@@ -238,6 +238,34 @@ HTTP/1.1 200 OK
 ["POST", "DELETE", "PATCH"]
 
 
+# 禁用路由
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 0
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，status 将更新为：
+{
+	"status": 0
+}
+
+
+# 启用路由
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，status 将更新为：
+{
+	"status": 1
+}
+
+
 ```
 
 > 应答参数

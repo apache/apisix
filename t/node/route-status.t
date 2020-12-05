@@ -258,3 +258,47 @@ GET /t
 qr/\{"error_msg":"invalid configuration: property \\"status\\" validation failed: matches non of the enum values"\}/
 --- no_error_log
 [error]
+
+
+
+=== TEST 10: compatible with old data which not has status
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local res, err = core.etcd.set("/routes/1", core.json.decode([[{
+                    "uri": "/hello",
+                    "priority": 0,
+                    "id": "1",
+                    "upstream": {
+                        "hash_on": "vars",
+                        "pass_host": "pass",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]))  ---mock old route data in etcd
+            if res.status >= 300 then
+                res.status = code
+            end
+            ngx.print(require("toolkit.json").encode(res.body))
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- response_body_unlike eval
+qr/status/
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit route(old route data in etcd)
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]

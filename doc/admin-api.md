@@ -230,6 +230,35 @@ HTTP/1.1 200 OK
 After successful execution, methods will not retain the original data, and the entire update is:
 ["POST", "DELETE", "PATCH"]
 
+
+# disable route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 0
+}'
+HTTP/1.1 200 OK
+...
+
+After successful execution, status nodes will be updated to:
+{
+	"status": 0
+}
+
+
+# enable route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 1
+}'
+HTTP/1.1 200 OK
+...
+
+After successful execution, status nodes will be updated to:
+{
+	"status": 1
+}
+
+
 ```
 
 > Response Parameters
