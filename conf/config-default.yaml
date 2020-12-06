@@ -238,6 +238,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - uri-blocker
   - wolf-rbac
   - zipkin
+  - traffic-split
 
 stream_plugins:
   - mqtt-proxy
