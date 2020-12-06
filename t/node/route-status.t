@@ -261,7 +261,7 @@ qr/\{"error_msg":"invalid configuration: property \\"status\\" validation failed
 
 
 
-=== TEST 10: compatible with old rpote data in etcd which not has status
+=== TEST 10: compatible with old route data in etcd which not has status
 --- config
     location /t {
         content_by_lua_block {
