@@ -17,7 +17,7 @@
 #
 -->
 
-- [English](../../plugins/dynamic-upstream.md)
+- [English](../../plugins/traffic-split.md)
 
 # 目录
 
@@ -42,17 +42,16 @@
 
 | 参数名        | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
 | ------------ | ------------- | ------ | ------ | ------ | -------------------- |
-| rules        | array[object] | 必需  |       |        | 插件的配置列表 |
 | rules.match | array[object] | 可选  |        |        | 匹配规则列表  |
-| rules.match.vars | array   | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看下文的 `运算符列表` 部分。 |
+| rules.match.vars | array[array]   | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看下文的 `运算符列表` 部分。 |
 | rules.upstreams    | array[object] | 可选   |        |        | 上游配置规则列表。 |
-| rules.upstreams.upstream_id  | string | 可选   |        |        | 通过上游 id 绑定对应上游。 |
+| rules.upstreams.upstream_id  | string or integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
 | rules.upstreams.upstream     | object | 可选   |        |        | 上游配置信息。 |
 | rules.upstreams.upstream.type | enum | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的。 |
 | rules.upstreams.upstream.nodes | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
-| rules.upstreams.upstream.timeout | object | 可选   |        |        | 设置连接、发送消息、接收消息的超时时 间 |
+| rules.upstreams.upstream.timeout | object | 可选   |        |        | 设置连接、发送消息、接收消息的超时时间 |
 | rules.upstreams.upstream.enable_websocket | boolean | 可选   |        |        | 是否启用 websocket，默认不启用。 |
-| rules.upstreams.upstream.pass_host  | enum | 可选   |        | ["pass", "node", "rewrite"]  | pass 透传客户端请求的 host, node 不透传客户端请求的 host; 使用 upstream node 配置的 host, rewrite 使用 upstream_host 配置的值重写 host 。 |
+| rules.upstreams.upstream.pass_host  | enum | 可选   | "pass"   | ["pass", "node", "rewrite"]  | pass: 透传客户端请求的 host, node: 不透传客户端请求的 host; 使用 upstream node 配置的 host, rewrite: 使用 upstream_host 配置的值重写 host 。 |
 | rules.upstreams.upstream.name  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
 | rules.upstreams.upstream.upstream_host | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
 | rules.upstreams.weight       | integer | 可选   |   weight = 1     |        | 根据 weight 值来做流量切分。默认使用 roundrobin 算法，且目前只支持 roundrobin 算法。|
@@ -90,7 +89,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
     "uri": "/index.html",
     "plugins": {
-        "dynamic-upstream": {
+        "traffic-split": {
             "rules": [
                 {
                     "upstreams": [
@@ -135,13 +134,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
     "uri": "/index.html",
     "plugins": {
-        "dynamic-upstream": {
+        "traffic-split": {
             "rules": [
                 {
                     "match": [
                         {
                             "vars": [
-                                [ "http_new-release","==","blue" ]
+                                ["http_new-release","==","blue"]
                             ]
                         }
                     ],
@@ -178,15 +177,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
     "uri": "/index.html",
     "plugins": {
-        "dynamic-upstream": {
+        "traffic-split": {
             "rules": [
                 {
                     "match": [
                         {
                             "vars": [
-                                [ "arg_name","==","jack" ],
-                                [ "http_user-id",">=","23" ],
-                                [ "http_apisix-key","~~","[a-z]+" ]
+                                ["arg_name","==","jack"],
+                                ["http_user-id",">","23"],
+                                ["http_apisix-key","~~","[a-z]+"]
                             ]
                         }
                     ],
@@ -294,7 +293,7 @@ hello 1980
 
 ## 禁用插件
 
-当你想去掉 dynamic-upstream 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你想去掉 traffic-split 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

@@ -16,6 +16,7 @@
 --
 local core       = require("apisix.core")
 local upstream   = require("apisix.upstream")
+local schema_def = require("apisix.schema_def")
 local roundrobin = require("resty.roundrobin")
 local ipmatcher  = require("resty.ipmatcher")
 local expr       = require("resty.expr.v1")
@@ -23,32 +24,39 @@ local pairs      = pairs
 local ipairs     = ipairs
 local table_insert = table.insert
 
-local lrucache_rr_obj = core.lrucache.new({
-    ttl = 0, count = 512,
+local lrucache = core.lrucache.new({
+    ttl = 0, count = 512
 })
 
 
-local match_def = {
+local vars_schema = {
     type = "array",
     items = {
-        type = "object",
-        properties = {
-            vars = {
-                type = "array",
-                items = {
+        type = "array",
+        items = {
+            {
+                type = "string",
+                minLength = 1,
+                maxLength = 100
+            },
+            {
+                type = "string",
+                minLength = 1,
+                maxLength = 2
+            }
+        },
+        additionalItems = {
+            anyOf = {
+                {type = "string"},
+                {type = "number"},
+                {type = "boolean"},
+                {
                     type = "array",
                     items = {
-                        {
-                            type = "string"
-                        },
-                        {
-                            type = "string"
-                        }
-                    },
-                    additionalItems = {
                         anyOf = {
                             {
-                                type = "string"
+                            type = "string",
+                            minLength = 1, maxLength = 100
                             },
                             {
                                 type = "number"
@@ -58,10 +66,22 @@ local match_def = {
                             }
                         }
                     },
-                    minItems = 0,
-                    maxItems = 10
+                    uniqueItems = true
                 }
             }
+        },
+        minItems = 0,
+        maxItems = 10
+    }
+}
+
+
+local match_schema = {
+    type = "array",
+    items = {
+        type = "object",
+        properties = {
+            vars = vars_schema
         }
     },
     -- When there is no `match` rule, the default rule passes.
@@ -69,66 +89,34 @@ local match_def = {
     default = {{ vars = {{"server_port", ">", 0}}}}
 }
 
-local upstream_def = {
-    type = "object",
-    additionalProperties = false,
-    properties = {
-        name = { type = "string" },
-        type = {
-            type = "string",
-            enum = {
-                "roundrobin",
-                "chash"
-            },
-            default = "roundrobin"
-        },
-        nodes = { type = "object" },
-        timeout = { type = "object" },
-        enable_websocket = { type = "boolean" },
-        pass_host = {
-            type = "string",
-            enum = {
-                "pass", "node", "rewrite"
-            }
-        },
-        upstream_host = { type = "string" }
-    },
-    dependencies = {
-        pass_host = {
-            anyOf = {
-                {
-                    properties = {
-                        pass_host = { enum = { "rewrite" }}
-                    },
-                    required = { "upstream_host" }
-                },
-                {
-                    properties = {
-                        pass_host = { enum = { "pass", "node" }}
-                    },
-                }
-            }
-        }
-    }
-}
 
-local upstreams_def = {
+local upstreams_schema = {
     type = "array",
     items = {
         type = "object",
         properties = {
-            upstream_id = { type = "string" },
-            upstream = upstream_def,
+            upstream_id = schema_def.id_schema,    -- todo: support upstream_id method
+            upstream = schema_def.upstream,
             weight = {
+                description = "used to split traffic between different" ..
+                               "upstreams for plugin configuration",
                 type = "integer",
                 default = 1,
                 minimum = 0
             }
         }
     },
+    -- When the upstream configuration of the plugin is missing,
+    -- the upstream of `route` is used by default.
+    default = {
+        {
+            weight = 1
+        }
+    },
     minItems = 1,
     maxItems = 20
 }
+
 
 local schema = {
     type = "object",
@@ -138,19 +126,19 @@ local schema = {
             items = {
                 type = "object",
                 properties = {
-                    match = match_def,
-                    upstreams = upstreams_def
+                    match = match_schema,
+                    upstreams = upstreams_schema
                 }
             }
         }
     }
 }
 
-local plugin_name = "dynamic-upstream"
+local plugin_name = "traffic-split"
 
 local _M = {
     version = 0.1,
-    priority = 2523,        -- TODO: add a type field, may be a good idea
+    priority = 966,
     name = plugin_name,
     schema = schema
 }
@@ -200,8 +188,8 @@ local function parse_domain_for_node(node)
 end
 
 
-local function set_upstream_host(upstream_info, ctx)
-    local nodes = upstream_info["nodes"]
+local function set_upstream(upstream_info, ctx)
+    local nodes = upstream_info.nodes
     local new_nodes = {}
     for addr, weight in pairs(nodes) do
         local node = {}
@@ -212,27 +200,36 @@ local function set_upstream_host(upstream_info, ctx)
         node.port = port
         node.weight = weight
         table_insert(new_nodes, node)
-        core.log.info("node: ", core.json.delay_encode(node))
 
+        -- Currently only supports a single upstream of the domain name.
+        -- When the upstream is `IP`, do not do any `pass_host` operation.
         if not core.utils.parse_ipv4(host) and not core.utils.parse_ipv6(host) then
-            if upstream_info["pass_host"] == "pass" then    -- TODO: support rewrite method
+            local pass_host = upstream_info.pass_host or "pass"
+            if pass_host == "pass" then
                 ctx.var.upstream_host = ctx.var.host
-
-            elseif upstream_info["pass_host"] == "node" then
-                ctx.var.upstream_host = host
+                break
             end
 
-            core.log.info("upstream_host: ", ctx.var.upstream_host)
+            if pass_host == "rewrite" then
+                ctx.var.upstream_host = upstream_info.upstream_host
+                break
+            end
+
+            ctx.var.upstream_host = host
             break
         end
     end
-
-    core.log.info("new_node: ", core.json.delay_encode(new_nodes))
+    core.log.info("upstream_host: ", ctx.var.upstream_host)
 
     local up_conf = {
-        name = upstream_info["name"],
-        type = upstream_info["type"],
-        nodes = new_nodes
+        name = upstream_info.name,
+        type = upstream_info.type,
+        nodes = new_nodes,
+        timeout = {
+            send = upstream_info.timeout and upstream_info.timeout.send or 15,
+            read = upstream_info.timeout and upstream_info.timeout.read or 15,
+            connect = upstream_info.timeout and upstream_info.timeout.connect or 15
+        }
     }
 
     local ok, err = upstream.check_schema(up_conf)
@@ -253,7 +250,7 @@ local function new_rr_obj(upstreams)
         if not upstream_obj.upstream then
             -- If the `upstream` object has only the `weight` value, it means that
             -- the `upstream` weight value on the default `route` has been reached.
-            --  Need to set an identifier to mark the empty upstream.
+            -- Need to set an identifier to mark the empty upstream.
             upstream_obj.upstream = "empty_upstream"
         end
         server_list[upstream_obj.upstream] = upstream_obj.weight
@@ -264,13 +261,17 @@ end
 
 
 function _M.access(conf, ctx)
+    if not conf or not conf.rules then
+        return
+    end
+
     local upstreams, match_flag
     for _, rule in pairs(conf.rules) do
         match_flag = true
         for _, single_match in pairs(rule.match) do
             local expr, err = expr.new(single_match.vars)
             if err then
-                return 500, {"message: expr failed: ", err}
+                return 500, err
             end
 
             match_flag = expr:eval()
@@ -291,16 +292,16 @@ function _M.access(conf, ctx)
         return
     end
 
-    local rr_up, err = lrucache_rr_obj(upstreams, nil, new_rr_obj, upstreams)
+    local rr_up, err = lrucache(upstreams, nil, new_rr_obj, upstreams)
     if not rr_up then
-        core.log.error("lrucache_rr_obj faild: ", err)
+        core.log.error("lrucache roundrobin failed: ", err)
         return 500
     end
 
     local upstream = rr_up:find()
     if upstream and upstream ~= "empty_upstream" then
         core.log.info("upstream: ", core.json.encode(upstream))
-        return set_upstream_host(upstream, ctx)
+        return set_upstream(upstream, ctx)
     end
 
     return
