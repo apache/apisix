@@ -60,7 +60,7 @@ local function sample_hit(percentage)
         return true
     end
 
-    return random(0, 100) <= percentage
+    return random(1, 100) <= percentage
 end
 
 
