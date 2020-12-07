@@ -295,3 +295,15 @@ query {
 }
 --- response_body
 hello world
+
+
+
+=== TEST 14: root fields mismatch
+--- request
+POST /hello
+query {
+    repo {
+        name
+    }
+}
+--- error_code: 404
