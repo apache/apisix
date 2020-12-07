@@ -38,7 +38,7 @@ local tonumber     = tonumber
 local xpcall       = xpcall
 local debug        = debug
 local error        = error
-local rand         = math.random()
+local rand         = math.random
 local created_obj  = {}
 
 
