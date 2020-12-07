@@ -21,7 +21,6 @@ local timers = require("apisix.timers")
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
 local type = type
-local ceil = math.ceil
 
 local boot_time = os.time()
 local plugin_name = "server-info"
@@ -205,15 +204,14 @@ function _M.init()
         return
     end
 
-    local threshold = ceil(attr.report_interval / timers.check_interval())
     local report_ttl = attr.report_ttl
-    local count = 0
+    local start_at = ngx_time()
 
     local fn = function()
-        count = count + 1
-        if count == threshold then
+        local now = ngx_time()
+        if now - start_at >= attr.report_interval then
+            start_at = now
             report(nil, report_ttl)
-            count = 0
         end
     end
 
