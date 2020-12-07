@@ -117,12 +117,12 @@ local function array_to_map(arr)
 end
 
 
-local function remove_headers(...)
+local function remove_headers(ctx, ...)
     local headers = { ... }
     if headers and #headers > 0 then
         for _, header in ipairs(headers) do
             core.log.info("remove_header: ", header)
-            core.request.set_header(header, nil)
+            core.request.set_header(ctx, header, nil)
         end
     end
 end
@@ -389,7 +389,7 @@ local function get_params(ctx)
     core.log.info("keep_headers: ", keep_headers)
 
     if not keep_headers then
-        remove_headers(signature_key, algorithm_key, signed_headers_key)
+        remove_headers(ctx, signature_key, algorithm_key, signed_headers_key)
     end
 
     core.log.info("params: ", core.json.delay_encode(params))
