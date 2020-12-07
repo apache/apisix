@@ -38,6 +38,7 @@ local tonumber     = tonumber
 local xpcall       = xpcall
 local debug        = debug
 local error        = error
+local rand         = math.random
 local created_obj  = {}
 
 
@@ -518,8 +519,10 @@ local function _automatic_fetch(premature, self)
                         self.last_err = nil
                     end
                 end
-                ngx_sleep(0.5)
+
+                ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
             elseif not ok then
+                -- no error. reentry the sync with different state
                 ngx_sleep(0.05)
             end
 
@@ -528,7 +531,7 @@ local function _automatic_fetch(premature, self)
         if not ok then
             log.error("failed to fetch data from etcd: ", err, ", ",
                       tostring(self))
-            ngx_sleep(3)
+            ngx_sleep(self.resync_delay + rand() * 0.5 * self.resync_delay)
             break
         end
     end
@@ -559,6 +562,10 @@ function _M.new(key, opts)
         etcd_conf.ssl_verify = false
     end
 
+    if not etcd_conf.resync_delay or etcd_conf.resync_delay < 0 then
+        etcd_conf.resync_delay = 5
+    end
+
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
@@ -582,6 +589,7 @@ function _M.new(key, opts)
         prev_index = 0,
         last_err = nil,
         last_err_time = nil,
+        resync_delay = etcd_conf.resync_delay,
         timeout = timeout,
         single_item = single_item,
         filter = filter_fun,
