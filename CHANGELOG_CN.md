@@ -91,6 +91,9 @@
 
 更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/7)
 
+## CVE
+- 修复 Admin API 默认访问令牌漏洞
+
 ## 1.5.0
 
 ### Core
