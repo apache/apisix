@@ -37,6 +37,7 @@ The meaning of each item in server information is following:
 | Name    | Type | Description |
 |---------|------|-------------|
 | up_time | integer | Elapsed time since APISIX instance was launched, value will be reset when you hot updating APISIX but is kept for intact if you just reloading APISIX. |
+| boot_time | integer | Bootstrap timestamp of the APISIX instance, value will be reset when you hot updating APISIX but is kept for intact if you just reloading APISIX. |
 | last_report_time | integer | Last reporting timestamp. |
 | id | string | APISIX instance id. |
 | etcd_version | string | The etcd cluster version that APISIX is using, value will be `"unknown"` if the network (to etcd) is partitioned. |

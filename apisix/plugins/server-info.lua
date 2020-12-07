@@ -70,6 +70,7 @@ local function uninitialized_server_info()
         id               = core.id.get(),
         version          = core.version.VERSION,
         up_time          = ngx_time() - boot_time,
+        boot_time        = boot_time,
         last_report_time = -1,
     }
 end
@@ -118,7 +119,7 @@ local function get()
         return nil, err
     end
 
-    server_info.up_time = ngx_time() - boot_time
+    server_info.up_time = ngx_time() - server_info.boot_time
     return server_info
 end
 
@@ -187,6 +188,8 @@ function _M.init()
     if not ok then
         core.log.error("failed to encode and save server info: ", err)
     end
+
+    core.log.info("server info: ", core.json.delay_encode(get()))
 
     if core.config ~= require("apisix.core.config_etcd") then
         -- we don't need to report server info if etcd is not in use.
