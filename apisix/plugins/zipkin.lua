@@ -164,7 +164,7 @@ function _M.access(conf, ctx)
     local outgoing_headers = {}
     tracer:inject(opentracing.proxy_span, "http_headers", outgoing_headers)
     for k, v in pairs(outgoing_headers) do
-        core.request.set_header(k, v)
+        core.request.set_header(ctx, k, v)
     end
 end
 
