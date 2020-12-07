@@ -219,7 +219,7 @@ qr/1980/
 --- config
 location /t {
     content_by_lua_block {
-        ngx.sleep(0.2)
+        ngx.sleep(0.5)
         local t = require("lib.test_admin").test
         local code, body = t('/server_port',
             ngx.HTTP_GET
