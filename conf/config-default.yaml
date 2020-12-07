@@ -177,6 +177,7 @@ etcd:
                                   # e.g. "https://127.0.0.1:2379".
   prefix: "/apisix"               # apisix configurations prefix
   timeout: 30                     # 30 seconds
+  # resync_delay: 5               # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
   # user: root                    # root username for etcd
   # password: 5tHkHhYkjr6cQY      # root password for etcd
   tls:
