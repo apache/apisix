@@ -300,3 +300,45 @@ GET /t
 etcd host: http://127.0.0.1:2379
 first plugin: "example-plugin"
 seq: {"Block style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"],"Flow style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"]}
+
+
+
+=== TEST 3: allow environment variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = require("apisix.core").config.local_conf()
+
+            ngx.say(config.apisix.id)
+        }
+    }
+--- main_config
+env AID=3;
+--- yaml_config
+#nginx_config:
+    #env: AID=3
+apisix:
+    id: ${{ AID }}
+--- request
+GET /t
+--- response_body
+3
+
+
+
+=== TEST 4: allow integer worker processes
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = require("apisix.core").config.local_conf()
+
+            ngx.say(config.nginx_config.worker_processes)
+        }
+    }
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1 
+--- request
+GET /t
+--- response_body
+1
