@@ -32,7 +32,7 @@ local schema = {
                 body = {type = "string", minLength = 0},
                 percentage = {type = "integer", minimum = 0, maximum = 100}
             },
-            minProperties = 1,
+            required = {"http_status"},
         },
         delay = {
             type = "object",
@@ -40,7 +40,7 @@ local schema = {
                 duration = {type = "number", minimum = 0},
                 percentage = {type = "integer", minimum = 0, maximum = 100}
             },
-            minProperties = 1,
+            required = {"duration"},
         }
     },
     minProperties = 1,
@@ -77,18 +77,12 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    if conf.delay
-       and conf.delay.duration ~= nil
-       and sample_hit(conf.delay.percentage)
-    then
+    if conf.delay and sample_hit(conf.delay.percentage) then
         sleep(conf.delay.duration)
     end
 
-    if conf.abort
-       and conf.abort.http_status ~= nil
-       and sample_hit(conf.abort.percentage)
-    then
-        return conf.abort.http_status, conf.abort.body
+    if conf.abort and sample_hit(conf.abort.percentage) then
+        return conf.abort.http_status, core.utils.resolve_var(conf.abort.body, ctx.var)
     end
 end
 

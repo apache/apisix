@@ -199,3 +199,43 @@ received: \nreceived: hello world
 close: 1 nil}
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: resolve_var
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local cases = {
+                "",
+                "xx",
+                "$me",
+                "$me run",
+                "talk with $me",
+                "tell $me to",
+                "$you and $me",
+                "$eva and $me",
+                "$you and \\$me",
+            }
+            local ctx = {
+                you = "John",
+                me = "David",
+            }
+            for _, case in ipairs(cases) do
+                ngx.say("res:", resolve_var(case, ctx))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+res:
+res:xx
+res:David
+res:David run
+res:talk with David
+res:tell David to
+res:John and David
+res: and David
+res:John and \$me
