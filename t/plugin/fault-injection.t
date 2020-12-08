@@ -635,3 +635,109 @@ GET /hello HTTP/1.1
 hello1 world
 --- no_error_log
 [error]
+
+
+
+=== TEST 20: set route(body with var)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                    "plugins": {
+                        "fault-injection": {
+                            "abort": {
+                                "http_status": 200,
+                                "body": "client addr: $remote_addr\n"
+                            }
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                            }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: hit route(body with var)
+--- request
+GET /hello
+--- response_body
+client addr: 127.0.0.1
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: set route(abort without body)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                    "plugins": {
+                        "fault-injection": {
+                            "abort": {
+                                "http_status": 200
+                            }
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                            }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: hit route(abort without body)
+--- request
+GET /hello
+--- response_body
+--- no_error_log
+[error]
