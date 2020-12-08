@@ -66,7 +66,7 @@ local function parse_graphql(ctx)
         return nil, "empty graphql: " .. body
     end
 
-    return res, nil
+    return res
 end
 
 
@@ -76,31 +76,31 @@ local function get_parsed_graphql(ctx)
         if not res then
             log.error(err)
             ctx._graphql = {}
-
-        else
-            if #res.definitions > 1 then
-                log.warn("Mutliple operations are not supported.",
-                         "Only the first one is handled")
-            end
-
-            local def = res.definitions[1]
-            local fields = def.selectionSet.selections
-            local root_fields = core_tab.new(#fields, 0)
-            for i, f in ipairs(fields) do
-                root_fields[i] = f.name.value
-            end
-
-            local name = ""
-            if def.name and def.name.value then
-                name = def.name.value
-            end
-
-            ctx._graphql = {
-                name = name,
-                operation = def.operation,
-                root_fields = root_fields,
-            }
+            return ctx._graphql
         end
+
+        if #res.definitions > 1 then
+            log.warn("Mutliple operations are not supported.",
+                        "Only the first one is handled")
+        end
+
+        local def = res.definitions[1]
+        local fields = def.selectionSet.selections
+        local root_fields = core_tab.new(#fields, 0)
+        for i, f in ipairs(fields) do
+            root_fields[i] = f.name.value
+        end
+
+        local name = ""
+        if def.name and def.name.value then
+            name = def.name.value
+        end
+
+        ctx._graphql = {
+            name = name,
+            operation = def.operation,
+            root_fields = root_fields,
+        }
     end
 
     return ctx._graphql
@@ -159,6 +159,7 @@ do
                 val = get_var(key, t._request)
 
             elseif core_str.has_prefix(key, "graphql_") then
+                -- trim the "graphql_" prefix
                 key = sub_str(key, 9)
                 val = get_parsed_graphql(t)[key]
 
