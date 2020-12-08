@@ -90,6 +90,9 @@ This is release candidate.
 
 For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/7)
 
+## CVE
+- Fixed Admin API default access token vulnerability
+
 ## 1.5.0
 
 ### Core
