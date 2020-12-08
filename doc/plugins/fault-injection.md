@@ -27,10 +27,10 @@ Fault injection plugin, this plugin can be used with other plugins and will be e
 
 | Name              | Type    | Requirement | Default | Valid      | Description                                      |
 | ----------------- | ------- | ----------- | ------- | ---------- | ------------------------------------------------ |
-| abort.http_status | integer | optional    |         | [200, ...] | user-specified http code returned to the client. |
-| abort.body        | string  | optional    |         |            | response data returned to the client.            |
+| abort.http_status | integer | required    |         | [200, ...] | user-specified http code returned to the client. |
+| abort.body        | string  | optional    |         |            | response data returned to the client. Nginx varialbe can be used inside, like `client addr: $remote_addr\n`           |
 | abort.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be aborted.            |
-| delay.duration    | number  | optional    |         |            | delay time (can be decimal).                     |
+| delay.duration    | number  | required    |         |            | delay time (can be decimal).                     |
 | delay.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be delayed.            |
 
 Note: One of `abort` and `delay` must be specified.
