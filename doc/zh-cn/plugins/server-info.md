@@ -37,7 +37,7 @@
 
 | 名称    | 类型 | 描述 |
 |---------|------|-------------|
-| up_time | integer | APISIX 服务实例当前的运行时间, 如果对 APISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。 |
+| up_time | integer | APISIX 服务实例当前的运行时间（单位：秒）, 如果对 APISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。 |
 | boot_time | integer | APISIX 服务实例的启动时间（UNIX 时间戳），如果对 APIISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。|
 | last_report_time | integer | 最近一次服务信息上报的时间 （UNIX 时间戳）。|
 | id | string | APISIX 服务实例 id 。|

@@ -20,10 +20,14 @@ local timers = require("apisix.timers")
 
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
+local ngx_worker_id = ngx.worker.id
 local type = type
 
 local boot_time = os.time()
 local plugin_name = "server-info"
+local default_report_interval = 60
+local default_report_ttl = 7200
+
 local schema = {
     type = "object",
     additionalProperties = false,
@@ -34,14 +38,14 @@ local attr_schema = {
         report_interval = {
             type = "integer",
             description = "server info reporting interval (unit: second)",
-            default = 60,
+            default = default_report_interval,
             minimum = 60,
             maximum = 3600,
         },
         report_ttl = {
             type = "integer",
             description = "live time for server info in etcd",
-            default = 7200,
+            default = default_report_ttl,
             minimum = 3600,
             maximum = 86400,
         }
@@ -72,34 +76,6 @@ local function uninitialized_server_info()
         boot_time        = boot_time,
         last_report_time = -1,
     }
-end
-
-
--- server information will be saved into shared memory only if the key
--- "server_info" not exist if excl is true.
-local function save(data, excl)
-    local handler = excl and internal_status.add or internal_status.set
-
-    local ok, err = handler(internal_status, "server_info", data)
-    if not ok then
-        if excl and err == "exists" then
-            return true
-        end
-
-        return nil, err
-    end
-
-    return true
-end
-
-
-local function encode_and_save(server_info, excl)
-    local data, err = core.json.encode(server_info)
-    if not data then
-        return nil, err
-    end
-
-    return save(data, excl)
 end
 
 
@@ -164,7 +140,7 @@ local function report(premature, report_ttl)
         return
     end
 
-    local ok, err = save(data, false)
+    local ok, err = internal_status:set("server_info", data)
     if not ok then
         core.log.error("failed to encode and save server info: ", err)
         return
@@ -183,11 +159,6 @@ end
 
 
 function _M.init()
-    local ok, err = encode_and_save(uninitialized_server_info(), true)
-    if not ok then
-        core.log.error("failed to encode and save server info: ", err)
-    end
-
     core.log.info("server info: ", core.json.delay_encode(get()))
 
     if core.config ~= require("apisix.core.config_etcd") then
@@ -204,27 +175,30 @@ function _M.init()
         return
     end
 
-    local report_ttl = attr.report_ttl
+    local report_ttl = attr and attr.report_ttl or default_report_ttl
+    local report_interval = attr and attr.report_interval or default_report_interval
     local start_at = ngx_time()
 
     local fn = function()
         local now = ngx_time()
-        if now - start_at >= attr.report_interval then
+        if now - start_at >= report_interval then
             start_at = now
             report(nil, report_ttl)
         end
     end
 
-    local ok, err = ngx_timer_at(0, report, report_ttl)
-    if not ok then
-        core.log.error("failed to create initial timer to report server info: ", err)
-        return
+    if ngx_worker_id() == 0 then
+        local ok, err = ngx_timer_at(0, report, report_ttl)
+        if not ok then
+            core.log.error("failed to create initial timer to report server info: ", err)
+            return
+        end
     end
 
     timers.register_timer("plugin#server-info", fn, true)
 
     core.log.info("timer created to report server info, interval: ",
-                  attr.report_interval)
+                  report_interval)
 end
 
 
