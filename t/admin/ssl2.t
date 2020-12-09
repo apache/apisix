@@ -1,0 +1,198 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+use t::APISIX 'no_plan';
+
+repeat_each(1);
+no_long_string();
+no_root_location();
+no_shuffle();
+log_level("info");
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
+run_tests;
+
+__DATA__
+
+=== TEST 1: not unwanted data, POST
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "not-unwanted-post.com"}
+            local code, message, res = t.test('/apisix/admin/ssl',
+                ngx.HTTP_POST,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.key = nil
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            res.node.value.cert = ""
+            res.node.value.key = ""
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"create","node":{"value":{"cert":"","key":"","sni":"not-unwanted-post.com","status":1}}}
+
+
+
+=== TEST 2: not unwanted data, PUT
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            res.node.value.cert = ""
+            res.node.value.key = ""
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"set","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1}}}
+
+
+
+=== TEST 3: not unwanted data, PATCH
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "t.com"}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PATCH,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            res.node.value.cert = ""
+            res.node.value.key = ""
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"compareAndSwap","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1}}}
+
+
+
+=== TEST 4: not unwanted data, GET
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            res.node.value.cert = ""
+            res.node.value.key = ""
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"get","count":"1","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1}}}
+
+
+
+=== TEST 5: not unwanted data, DELETE
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_DELETE
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"delete","deleted":"1","key":"/apisix/ssl/1","node":{}}
