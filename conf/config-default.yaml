@@ -149,7 +149,6 @@ nginx_config:                     # config for render the template to genarate n
   stream_configuration_snippet: |
     # Add custom Nginx stream configuration to nginx.conf.
     # The configuration should be well indented!
-
   http:
     enable_access_log: true        # enable access log or not, default true
     access_log: "logs/access.log"
@@ -258,4 +257,5 @@ plugin_attr:
     export_uri: /apisix/prometheus/metrics
   server-info:
     report_interval: 60 # server info report interval (unit: second)
+    report_ttl: 3600    # live time for server info in etcd (unit: second)
     report_ttl: 3600    # live time for server info in etcd (unit: second)
