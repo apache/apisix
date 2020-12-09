@@ -76,6 +76,7 @@
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
+|status          |可选 |辅助| 是否启用此路由, 缺省 `1`。|`1` 表示启用，`0` 表示禁用|
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
@@ -235,6 +236,34 @@ HTTP/1.1 200 OK
 
 执行成功后，methods 将不保留原来的数据，整个更新为：
 ["POST", "DELETE", "PATCH"]
+
+
+# 禁用路由
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 0
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，status 将更新为：
+{
+    "status": 0
+}
+
+
+# 启用路由
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，status 将更新为：
+{
+    "status": 1
+}
 
 
 ```

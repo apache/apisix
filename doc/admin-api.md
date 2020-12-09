@@ -72,6 +72,7 @@
 |service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
+|status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 
@@ -228,6 +229,35 @@ HTTP/1.1 200 OK
 
 After successful execution, methods will not retain the original data, and the entire update is:
 ["POST", "DELETE", "PATCH"]
+
+
+# disable route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 0
+}'
+HTTP/1.1 200 OK
+...
+
+After successful execution, status nodes will be updated to:
+{
+    "status": 0
+}
+
+
+# enable route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 1
+}'
+HTTP/1.1 200 OK
+...
+
+After successful execution, status nodes will be updated to:
+{
+    "status": 1
+}
+
 
 ```
 
