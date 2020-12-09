@@ -23,7 +23,7 @@
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)
-- [API](#api)
+- [**API**](#api)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
