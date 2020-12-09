@@ -21,18 +21,17 @@
 
 # 目录
 
-- [名字](#名字)
-- [属性](#属性)
-- [如何启用](#如何启用)
-  - [灰度发布](#灰度发布)
-  - [蓝绿发布](#蓝绿发布)
-  - [自定义发布](#自定义发布)
-- [测试插件](#测试插件)
-  - [灰度测试](#灰度测试)
-  - [蓝绿测试](#蓝绿测试)
-  - [自定义测试](#自定义测试)
-- [禁用插件](#禁用插件)
-
+  - [名字](#名字)
+  - [属性](#属性)
+  - [如何启用](#如何启用)
+    - [灰度发布](#灰度发布)
+    - [蓝绿发布](#蓝绿发布)
+    - [自定义发布](#自定义发布)
+  - [测试插件](#测试插件)
+    - [灰度测试](#灰度测试)
+    - [蓝绿测试](#蓝绿测试)
+    - [自定义测试](#自定义测试)
+  - [禁用插件](#禁用插件)
 
 ## 名字
 
@@ -43,32 +42,17 @@
 | 参数名        | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
 | ------------ | ------------- | ------ | ------ | ------ | -------------------- |
 | rules.match | array[object] | 可选  |        |        | 匹配规则列表  |
-| rules.match.vars | array[array]   | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看下文的 `运算符列表` 部分。 |
+| rules.match.vars | array[array]   | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
 | rules.upstreams    | array[object] | 可选   |        |        | 上游配置规则列表。 |
-| rules.upstreams.upstream_id  | string or integer | 可选   |        |        | 通过上游 id 绑定对应上游。 |
+| rules.upstreams.upstream_id  | string or integer | 可选   |        |        | 通过上游 id 绑定对应上游(暂不支持)。 |
 | rules.upstreams.upstream     | object | 可选   |        |        | 上游配置信息。 |
-| rules.upstreams.upstream.type | enum | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的。 |
+| rules.upstreams.upstream.type | enum | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
 | rules.upstreams.upstream.nodes | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
-| rules.upstreams.upstream.timeout | object | 可选   |        |        | 设置连接、发送消息、接收消息的超时时间 |
-| rules.upstreams.upstream.enable_websocket | boolean | 可选   |        |        | 是否启用 websocket，默认不启用。 |
+| rules.upstreams.upstream.timeout | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
 | rules.upstreams.upstream.pass_host  | enum | 可选   | "pass"   | ["pass", "node", "rewrite"]  | pass: 透传客户端请求的 host, node: 不透传客户端请求的 host; 使用 upstream node 配置的 host, rewrite: 使用 upstream_host 配置的值重写 host 。 |
 | rules.upstreams.upstream.name  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
 | rules.upstreams.upstream.upstream_host | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
-| rules.upstreams.weight       | integer | 可选   |   weight = 1     |        | 根据 weight 值来做流量切分。默认使用 roundrobin 算法，且目前只支持 roundrobin 算法。|
-
-### 运算符列表
-
-| 运算符 |  描述       |                        示例                                  |
-|-------|------------|--------------------------------------------------------------|
-| ==    | 相等        | {"arg_name", "==", "json"}                                   |
-| ~=    | 不等        | {"arg_name", "~=", "json"}                                   |
-| ~~    |  正则匹配    | {"arg_name", "~~", "[a-z]+"}                                |
-| ~*    |  不区分大小写的正则匹配 | {"arg_name", "~*", "[a-z]+"}                       |
-| <     | 小于        | {"arg_age", "<", 24}                                         |
-| >     | 大于        | {"arg_age", ">", 24}                                         |
-| in    | 在数组中查找 |  {"arg_name", "in",{"1","2"}}                                |
-| has   | 在左边的数组值中有右边的值 | {"graphql_root_fields", "has", "repo"}           |
-| !     | 结果值取反   | {"arg_name", "!", "~~", "[a-z]+"}                            |
+| rules.upstreams.weight       | integer | 可选   |   weight = 1     |        | 根据 weight 值做流量划分，多个 weight 之间使用 roundrobin 算法划分。|
 
 ## 如何启用
 
@@ -244,7 +228,7 @@ world 1981
 ### 蓝绿测试
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html?name=jack -H 'new-release: blue' -i
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'new-release: blue' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -259,7 +243,7 @@ world 1981
 **在`match` 规则校验通过后, 2/3 的请求命中到1981端口的upstream, 1/3 命中到1980端口的upstream。**
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html?name=jack -H 'user-id:30' -H 'apisix-key: hello' -i
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -270,7 +254,7 @@ hello 1980
 match 校验成功，但是命中默认端口为`1980`的 upstream。
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html?name=jack -H 'user-id:30' -H 'apisix-key: hello' -i
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -283,7 +267,7 @@ match 校验成功， 命中端口为`1981`的 upstream。
 **`match` 规则校验失败(缺少请求头 `apisix-key` ), 响应都为默认 upstream 的数据 `hello 1980`**
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html?name=jack -H 'user-id:30' -i
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......

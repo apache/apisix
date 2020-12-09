@@ -17,6 +17,7 @@
 local core       = require("apisix.core")
 local upstream   = require("apisix.upstream")
 local schema_def = require("apisix.schema_def")
+local init       = require("apisix.init")
 local roundrobin = require("resty.roundrobin")
 local ipmatcher  = require("resty.ipmatcher")
 local expr       = require("resty.expr.v1")
@@ -154,27 +155,9 @@ function _M.check_schema(conf)
 end
 
 
-local function parse_domain(host)
-    local ip_info, err = core.utils.dns_parse(host)
-    if not ip_info then
-        core.log.error("failed to parse domain: ", host, ", error: ",err)
-        return nil, err
-    end
-
-    core.log.info("parse addr: ", core.json.delay_encode(ip_info))
-    core.log.info("host: ", host)
-    if not ip_info.address then
-        return nil, "failed to parse domain"
-    end
-
-    core.log.info("dns resolver domain: ", host, " to ", ip_info.address)
-    return ip_info.address
-end
-
-
 local function parse_domain_for_node(node)
     if not ipmatcher.parse_ipv4(node) and not ipmatcher.parse_ipv6(node) then
-        local ip, err = parse_domain(node)
+        local ip, err = init.parse_domain(node)
         if ip then
             return ip
         end
