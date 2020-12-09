@@ -100,7 +100,7 @@ local upstreams_schema = {
             upstream = schema_def.upstream,
             weight = {
                 description = "used to split traffic between different" ..
-                               "upstreams for plugin configuration",
+                              "upstreams for plugin configuration",
                 type = "integer",
                 default = 1,
                 minimum = 0

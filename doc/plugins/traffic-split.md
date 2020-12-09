@@ -153,7 +153,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### Custom Release
 
-Multiple matching rules can be set in `match` (multiple conditions in `vars` are the relationship of `add`, and the relationship between multiple `vars` rules is the relationship of `or`; as long as one of the vars rules passes, it means `match` passed), only one is configured here, and the traffic is divided into 4:2 according to the value of `weight`. Among them, only the `weight` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
+Multiple matching rules can be set in `match`, multiple expressions in `vars` are in the relationship of `add`, and multiple `vars` rules are in the relationship of `or`; as long as one of the vars rules is passed, then Indicates that `match` passed.
+
+Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `add`. According to the value of `weight`, the flow is divided into 4:2. Among them, only the `weight` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -200,7 +202,61 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The plug-in sets the request matching rules and sets the port to upstream with `1981`, and the route has upstream with port `1980`.
+The plugin sets the request matching rules and sets the port to upstream with `1981`, and the route has upstream with port `1980`.
+
+Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `and` relationships. According to the value of `weight`, the flow is divided into 4:2. Among them, only the `weight` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["arg_name","==","jack"],
+                                ["http_user-id",">","23"],
+                                ["http_apisix-key","~~","[a-z]+"]
+                            ],
+                            "vars": [
+                                ["arg_name2","==","rose"],
+                                ["http_user-id2","!",">","33"],
+                                ["http_apisix-key2","~~","[a-z]+"]
+                            ]
+                        }
+                    ],
+                    "upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                }
+                            },
+                            "weight": 4
+                        },
+                        {
+                            "weight": 2
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+The plugin sets the request matching rules and sets the port to upstream with `1981`, and the route has upstream with port `1980`.
 
 ## Test Plugin
 
@@ -239,18 +295,11 @@ When the match is passed, all requests will hit the upstream configured by the p
 
 ### Custom Test
 
+**Example 1:**
+
 **After the verification of the `match` rule passed, 2/3 of the requests hit the upstream of port 1981, and 1/3 hit the upstream of port 1980.**
 
-```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-......
-
-hello 1980
-```
-
-The match check succeeds, but it hits the upstream of the default port of `1980`.
+The match check succeeds and it hits the upstream port of `1981`.
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
@@ -261,9 +310,77 @@ Content-Type: text/html; charset=utf-8
 world 1981
 ```
 
-The match check succeeds and it hits the upstream port of `1981`.
+The match check succeeds, but it hits the upstream of the default port of `1980`.
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+After 3 requests, it hits the `world 1981` service twice and the `hello 1980` service once.
 
 **The `match` rule verification failed (missing request header `apisix-key`), the response is the default upstream data `hello 1980`**
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+**Example 2:**
+
+**The expressions of the two `vars` match successfully. After the `match` rule is passed, 2/3 of the requests hit the upstream of port 1981, and 1/3 hit the upstream of port 1980.**
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+After 3 requests, it hits the `world 1981` service twice and the `hello 1980` service once.
+
+**The second `vars` expression failed (missing the `name2` request parameter). After the `match` rule was verified, 2/3 of the requests hit the upstream of port 1981, and 1/3 of the request hits the port 1980 upstream.**
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+After 3 requests, it hits the `world 1981` service twice and the `hello 1980` service once.
+
+**Two `vars` expressions failed (missing `name` and `name2` request parameters), `match` rule verification failed, and the response is the default upstream data `hello 1980`**
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i

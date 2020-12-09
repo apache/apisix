@@ -154,7 +154,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 自定义发布
 
-`match` 中可以设置多个匹配规则(`vars` 中的多个条件是 `add` 的关系， 多个 `vars` 规则之间是 `or` 的关系；只要其中一个 vars 规则通过，则表示 `match` 通过), 这里就只配置了一个， 根据 `weight` 值将流量按 4:2 划分。其中只有 `weight` 部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。
+`match` 中可以设置多个匹配规则，`vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 规则之间是 `or` 的关系；只要其中一个 vars 规则通过，则表示 `match` 通过。
+
+示例1：只配置了一个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系。根据 `weight` 值将流量按 4:2 划分。其中只有 `weight` 部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -170,6 +172,60 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                 ["arg_name","==","jack"],
                                 ["http_user-id",">","23"],
                                 ["http_apisix-key","~~","[a-z]+"]
+                            ]
+                        }
+                    ],
+                    "upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                }
+                            },
+                            "weight": 4
+                        },
+                        {
+                            "weight": 2
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+插件设置了请求的匹配规则并设置端口为`1981`的 upstream，route 上具有端口为`1980`的upstream。
+
+示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 之间是 `and` 的关系。根据 `weight` 值将流量按 4:2 划分。其中只有 `weight` 部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["arg_name","==","jack"],
+                                ["http_user-id",">","23"],
+                                ["http_apisix-key","~~","[a-z]+"]
+                            ],
+                            "vars": [
+                                ["arg_name2","==","rose"],
+                                ["http_user-id2","!",">","33"],
+                                ["http_apisix-key2","~~","[a-z]+"]
                             ]
                         }
                     ],
@@ -240,18 +296,11 @@ world 1981
 
 ### 自定义测试
 
+**示例1：**
+
 **在`match` 规则校验通过后, 2/3 的请求命中到1981端口的upstream, 1/3 命中到1980端口的upstream。**
 
-```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-......
-
-hello 1980
-```
-
-match 校验成功，但是命中默认端口为`1980`的 upstream。
+match 校验成功， 命中端口为`1981`的 upstream。
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
@@ -262,9 +311,77 @@ Content-Type: text/html; charset=utf-8
 world 1981
 ```
 
-match 校验成功， 命中端口为`1981`的 upstream。
+match 校验成功，命中默认端口为`1980`的 upstream。
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+在请求3次后，分别两次命中 `world 1981` 服务，一次命中 `hello 1980` 服务。
 
 **`match` 规则校验失败(缺少请求头 `apisix-key` ), 响应都为默认 upstream 的数据 `hello 1980`**
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+**示例2：**
+
+**两个 `vars` 的表达式匹配成功， `match` 规则校验通过后, 2/3 的请求命中到1981端口的upstream, 1/3 命中到1980端口的upstream。**
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+在请求3次后，分别两次命中 `world 1981` 服务，一次命中 `hello 1980` 服务。
+
+**第二个 `vars` 的表达式匹配失败（缺少 `name2` 请求参数）， `match` 规则校验通过后, 2/3 的请求命中到1981端口的upstream, 1/3 命中到1980端口的upstream。**
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+在请求3次后，分别两次命中 `world 1981` 服务，一次命中 `hello 1980` 服务。
+
+**两个 `vars` 的表达式匹配失败（缺少 `name` 和 `name2` 请求参数），`match` 规则校验失败, 响应都为默认 upstream 的数据 `hello 1980`**
 
 ```shell
 $ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i
