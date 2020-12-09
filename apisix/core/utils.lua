@@ -16,6 +16,8 @@
 --
 local core_str = require("apisix.core.string")
 local table    = require("apisix.core.table")
+local log      = require("apisix.core.log")
+local string   = require("apisix.core.string")
 local ngx_re   = require("ngx.re")
 local resolver = require("resty.dns.resolver")
 local ipmatcher= require("resty.ipmatcher")
@@ -29,11 +31,14 @@ local tonumber = tonumber
 local tostring = tostring
 local re_gsub  = ngx.re.gsub
 local type     = type
+local io_popen = io.popen
 local C        = ffi.C
 local ffi_string = ffi.string
 local get_string_buf = base.get_string_buf
 local exiting = ngx.worker.exiting
 local ngx_sleep    = ngx.sleep
+
+local hostname
 local max_sleep_interval = 1
 
 ffi.cdef[[
@@ -203,6 +208,31 @@ function _M.validate_header_value(value)
         end
     end
     return true
+end
+
+
+-- only use this method in init/init_worker phase.
+function _M.gethostname()
+    if hostname then
+        return hostname
+    end
+
+    local hd = io_popen("/bin/hostname")
+    local data, err = hd:read("*a")
+    if err == nil then
+        hostname = data
+        if string.has_suffix(hostname, "\r\n") then
+            hostname = sub_str(hostname, 1, -3)
+        elseif string.has_suffix(hostname, "\n") then
+            hostname = sub_str(hostname, 1, -2)
+        end
+
+    else
+        hostname = "unknown"
+        log.error("failed to read output of \"/bin/hostname\": ", err)
+    end
+
+    return hostname
 end
 
 
