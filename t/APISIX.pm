@@ -239,6 +239,7 @@ _EOC_
     lua_shared_dict plugin-limit-count   10m;
     lua_shared_dict plugin-limit-conn    10m;
     lua_shared_dict prometheus-metrics   10m;
+    lua_shared_dict internal_status      10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
