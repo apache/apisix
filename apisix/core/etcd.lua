@@ -274,6 +274,7 @@ function _M.push(key, value, ttl)
         return nil, err
     end
 
+    -- Create a new revision and use it as the id.
     -- It will be better if we use snowflake algorithm like manager-api,
     -- but we haven't found a good library. It costs too much to write
     -- our own one as the admin-api will be replaced by manager-api finally.
