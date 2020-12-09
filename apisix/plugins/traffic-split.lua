@@ -251,7 +251,7 @@ function _M.access(conf, ctx)
     local upstreams, match_flag
     for _, rule in pairs(conf.rules) do
         match_flag = true
-        for _, single_match in pairs(rule.match) do
+        for _, single_match in ipairs(rule.match) do
             local expr, err = expr.new(single_match.vars)
             if err then
                 return 500, err
