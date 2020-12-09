@@ -146,7 +146,8 @@ function _M.init_processor(self)
         max_retry_count = 0,
         buffer_duration = 60,
         inactive_timeout = 5,
-        route_id = self.route_id
+        route_id = self.route_id,
+        server_addr = self.server_addr
     }
 
     local flush = function (entries, batch_max_size)

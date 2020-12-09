@@ -134,7 +134,8 @@ function batch_processor:new(func, config)
         is_timer_running = false,
         first_entry_t = 0,
         last_entry_t = 0,
-        route_id = config.route_id
+        route_id = config.route_id,
+        server_addr = config.server_addr
     }
 
     return setmetatable(processor, batch_processor_mt)
@@ -152,14 +153,14 @@ function batch_processor:push(entry)
     if not batch_metrics and prometheus.get_prometheus() then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
         "batch process remaining entries",
-        {"name", "route_id"})
+        {"name", "route_id", "server_addr"})
     end
 
     local entries = self.entry_buffer.entries
     table.insert(entries, entry)
     -- add batch metric for every route
     if batch_metrics then
-        batch_metrics:set(#entries, prometheus.gen_arr(self.name, self.route_id))
+        batch_metrics:set(#entries, prometheus.gen_arr(self.name, self.route_id, self.server_addr))
     end
 
     if #entries == 1 then
@@ -193,7 +194,7 @@ function batch_processor:process_buffer()
     end
 
     if batch_metrics then
-        batch_metrics:set(0, prometheus.gen_arr(self.name, self.route_id))
+        batch_metrics:set(0, prometheus.gen_arr(self.name, self.route_id, self.server_addr))
     end
 
     self.batch_to_process = {}
