@@ -239,6 +239,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - uri-blocker
   - wolf-rbac
   - zipkin
+  #- server-info
 
 stream_plugins:
   - mqtt-proxy
@@ -253,3 +254,6 @@ plugin_attr:
     endpoint_addr: http://127.0.0.1:12800
   prometheus:
     export_uri: /apisix/prometheus/metrics
+  server-info:
+    report_interval: 60 # server info report interval (unit: second)
+    report_ttl: 3600    # live time for server info in etcd (unit: second)
