@@ -1088,3 +1088,172 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- no_error_log
 [error]
+
+
+
+=== TEST 61: set batch plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {}
+                            "syslog": {
+			                    "host": "127.0.0.1",
+			                    "include_req_body": false,
+			                    "max_retry_times": 1,
+			                    "tls": false,
+			                    "retry_interval": 1,
+			                    "batch_max_size": 1000,
+			                    "buffer_duration": 60,
+			                    "port": 0,
+			                    "name": "sys-logger",
+			                    "flush_limit": 4096,
+			                    "sock_type": "tcp",
+			                    "timeout": 3,
+			                    "drop_limit": 1048576,
+			                    "pool_size": 5
+		                    },
+		                    "sls-logger": {
+			                    "host": "100.100.99.136",
+			                    "batch_max_size": 1000,
+			                    "name": "sls-logger",
+                                "inactive_timeout": 5,
+                                "logstore": "your_logstore",
+                                "buffer_duration": 60,
+                                "port": 10009,
+                                "max_retry_count": 0,
+                                "retry_delay": 1,
+                                "access_key_id": "your_access_key",
+                                "access_key_secret": "your_key_secret",
+                                "timeout": 5000,
+                                "project": "your_project"
+                            },
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9447",
+                                "service_name": "APISIX",
+                                "sample_ratio": 1
+                            },
+                            "http-logger": {
+                                "inactive_timeout": 5,
+                                "include_req_body": false,
+                                "timeout": 3,
+                                "name": "http-logger",
+                                "retry_delay": 1,
+                                "buffer_duration": 60,
+                                "uri": "http://127.0.0.1:19080/report",
+                                "concat_method": "json",
+                                "batch_max_size": 1000,
+                                "max_retry_count": 0
+                            },
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "include_req_body": false,
+                                "timeout": 1000,
+                                "name": "tcp-logger",
+                                "retry_delay": 1,
+                                "buffer_duration": 60,
+                                "port": 0,
+                                "batch_max_size": 1000,
+                                "inactive_timeout": 5,
+                                "tls": false,
+                                "max_retry_count": 0
+                            },
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 0,
+                                "include_req_body": false,
+                                "timeout": 3,
+                                "batch_max_size": 1000,
+                                "name": "udp-logger",
+                                "inactive_timeout": 5,
+                                "buffer_duration": 60
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uris": ["/batch-process-metrics"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 62: hit batch-process-metrics
+--- request
+GET /batch-process-metrics
+--- error_code: 200
+
+
+
+=== TEST 63: check http log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like
+apisix_batch_process_entries{name="http-logger",route_id="9"
+
+
+
+=== TEST 64: check sls log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like
+apisix_batch_process_entries{name="sls-logger",route_id="9"
+
+
+
+=== TEST 65: check sys log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like
+apisix_batch_process_entries{name="sys-logger",route_id="9"
+
+
+
+=== TEST 66: check tcp log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like
+apisix_batch_process_entries{name="tpc-logger",route_id="9"
+
+
+
+=== TEST 67: check udp log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like 
+apisix_batch_process_entries{name="udp-logger",route_id="9"
+
+
+
+=== TEST 68: check zipkin log metrics
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like
+apisix_batch_process_entries{name="zipkin_report",route_id="9"
