@@ -203,7 +203,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"create","node":{"value":{"methods":["GET"],"priority":0,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
+{"action":"create","node":{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
 --- no_error_log
 [error]
 
@@ -245,7 +245,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"set","node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index.html"}}}
+{"action":"set","node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index.html"}}}
 --- no_error_log
 [error]
 
@@ -286,7 +286,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index"}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index"}}}
 --- no_error_log
 [error]
 
@@ -317,7 +317,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index"}}}
+{"action":"get","count":"1","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"},"uri":"/index"}}}
 --- no_error_log
 [error]
 
