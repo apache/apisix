@@ -1,0 +1,6 @@
+apisix:
+  node_listen: 9080              # APISIX listening port
+  enable_ipv6: false
+
+  allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+    - 0.0.0.0/0              # We need to restrict ip access rules for security. 0.0.0.0/0 is for test.
