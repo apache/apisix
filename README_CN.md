@@ -157,7 +157,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 ```shell
 $ docker build -t apache/apisix:whole -f ./docker/Dockerfile .
-$ docker run -v ./docker/config.yaml:/usr/local/apisix/conf/config.yaml -p 9080:9080 -p 2379:2379 -d apache/apisix:whole
+$ docker run -v docker/config.yaml:/usr/local/apisix/conf/config.yaml -p 9080:9080 -p 2379:2379 -d apache/apisix:whole
 ```
 
 ### 编译和安装

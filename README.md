@@ -159,7 +159,7 @@ Use `docker` to quickly build an APISIX image which containing all dependencies,
 
 ```shell
 $ docker build -t apache/apisix:whole -f ./docker/Dockerfile .
-$ docker run -v ./docker/config.yaml:/usr/local/apisix/conf/config.yaml -p 9080:9080 -p 2379:2379 -d apache/apisix:whole
+$ docker run -v docker/config.yaml:/usr/local/apisix/conf/config.yaml -p 9080:9080 -p 2379:2379 -d apache/apisix:whole
 ```
 
 ### Configure and Installation
