@@ -166,6 +166,12 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
     exit 1
 fi
 
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "can't find environment variable"; then
+    echo "failed: failed to resolve variables"
+    exit 1
+fi
+
 echo "passed: resolve variables"
 
 echo '
@@ -210,6 +216,114 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: resolve variables wrapped with whitespace"
+
+# support environment variables in local_conf
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+# don't override user's envs configuration
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST=1.1.1.1
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST=1.1.1.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo "pass: support environment variables in local_conf"
+
+# support merging worker_processes
+echo '
+nginx_config:
+    worker_processes: 1
+' > conf/config.yaml
+
+make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+nproc=1 make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: true
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+out=$(nproc=false make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo "passed: merge worker_processes"
 
 # check nameserver imported
 git checkout conf/config.yaml
