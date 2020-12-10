@@ -38,6 +38,7 @@ local floor = math.floor
 local str_find = string.find
 local str_sub = string.sub
 
+
 local _M = {}
 
 
@@ -298,6 +299,30 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
+    end
+
+    local exported_vars = file.get_exported_vars()
+    if exported_vars then
+        if not sys_conf["envs"] then
+            sys_conf["envs"]= {}
+        end
+        for _, cfg_env in ipairs(sys_conf["envs"]) do
+            local cfg_name
+            local from = str_find(cfg_env, "=", 1, true)
+            if from then
+                cfg_name = str_sub(cfg_env, 1, from - 1)
+            else
+                cfg_name = cfg_env
+            end
+
+            exported_vars[cfg_name] = false
+        end
+
+        for name, value in pairs(exported_vars) do
+            if value then
+                table_insert(sys_conf["envs"], name .. "=" .. value)
+            end
+        end
     end
 
     local conf_render = template.compile(ngx_tpl)
