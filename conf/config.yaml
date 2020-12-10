@@ -28,10 +28,8 @@
 #       - "http://${{ETCD_HOST}}:2379"
 #
 # If the configured environment variable can't be found, an error will be thrown.
-apisix:
-  admin_key:
-    -
-      name: "admin"
-      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please
-                                            # update it when you deploy to production environment
-      role: admin
+dns_resolver:
+  - 10.96.0.10      # default coreDNS cluster ip
+etcd:
+  host:
+    - "http://etcd-cluster-client.default.svc.cluster.local:2379"     # multiple etcd address
