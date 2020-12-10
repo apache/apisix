@@ -1,0 +1,43 @@
+name: Chaos
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Creating kind cluster 
+      uses: helm/kind-action@v1.0.0-rc.1
+
+    - name: Print cluster information
+      run: |
+        kubectl config view
+        kubectl cluster-info
+        kubectl get nodes
+        kubectl get pods -n kube-system
+        helm version
+        kubectl version
+    - uses: actions/checkout@v2
+
+    - name: Deploy an application
+      run: |
+        kubectl apply -f https://raw.githubusercontent.com/chaos-mesh/apps/master/ping/busybox-statefulset.yaml
+        
+    - name: Check pods
+      run: |
+        kubectl get pods -n chaos-testing
+        sleep 5
+        kubectl get pods -n busybox
+        
+    - name: Run chaos mesh action
+      uses: chaos-mesh/chaos-mesh-action@master
+      env:
+        CFG_BASE64: YXBpVmVyc2lvbjogY2hhb3MtbWVzaC5vcmcvdjFhbHBoYTEKa2luZDogTmV0d29ya0NoYW9zCm1ldGFkYXRhOgogIG5hbWU6IG5ldHdvcmstZGVsYXkKICBuYW1lc3BhY2U6IGJ1c3lib3gKc3BlYzoKICBhY3Rpb246IGRlbGF5ICMgdGhlIHNwZWNpZmljIGNoYW9zIGFjdGlvbiB0byBpbmplY3QKICBtb2RlOiBhbGwKICBzZWxlY3RvcjoKICAgIHBvZHM6CiAgICAgIGJ1c3lib3g6CiAgICAgICAgLSBidXN5Ym94LTAKICBkZWxheToKICAgIGxhdGVuY3k6ICIxMG1zIgogIGR1cmF0aW9uOiAiNXMiCiAgc2NoZWR1bGVyOgogICAgY3JvbjogIkBldmVyeSAxMHMiCiAgZGlyZWN0aW9uOiB0bwogIHRhcmdldDoKICAgIHNlbGVjdG9yOgogICAgICBwb2RzOgogICAgICAgIGJ1c3lib3g6CiAgICAgICAgICAtIGJ1c3lib3gtMQogICAgbW9kZTogYWxsCg==
+        CHAOS_MESH_VERSION: v1.0.0
+        #CFG_FILE: https://raw.githubusercontent.com/chaos-mesh/chaos-mesh-action/master/chaos-test.yaml
+
+    - name: Verification
+      run: |
+        echo "do some verification"
+        kubectl exec busybox-0 -it -n busybox -- ping -c 30 busybox-1.busybox.busybox.svc

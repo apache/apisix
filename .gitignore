@@ -58,6 +58,7 @@ default.etcd/
 *.iml
 \.*
 !.travis/
+!.github/
 /conf/apisix.yaml
 /conf/apisix-*.yaml
 /conf/config-*.yaml
