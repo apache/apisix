@@ -193,7 +193,7 @@ passed
 
 
 
-=== TEST 8: invalid route: missing key
+=== TEST 8: invalid route: missing count
 --- config
     location /t {
         content_by_lua_block {
@@ -203,7 +203,6 @@ passed
                  [[{
                         "plugins": {
                             "limit-count": {
-                                "count": 2,
                                 "time_window": 60,
                                 "rejected_code": 503
                             }
@@ -228,7 +227,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
 --- no_error_log
 [error]
 
@@ -328,7 +327,6 @@ GET /t
                  [[{
                         "plugins": {
                             "limit-count": {
-                                "count": 2,
                                 "time_window": 60,
                                 "rejected_code": 503
                             }
@@ -352,7 +350,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: property \"key\" is required"}
+{"error_msg":"failed to check the configuration of plugin limit-count err: property \"count\" is required"}
 --- no_error_log
 [error]
 
@@ -832,5 +830,348 @@ passed
 ["GET /t", "GET /hello", "GET /hello", "GET /hello", "GET /t", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 200, 503, 200, 200, 200, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: create consumer and bind key-auth plugin
+--- config 
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "consumer_jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: create route and consumer_name is consumer_jack
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "key-auth": {},
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "consumer_name"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: up the limit
+--- more_headers
+apikey: auth-jack
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: set service(id: 1) and binding limit-count plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "service_id"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: set route(id: 1) and bind  service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "service_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: the number of requests exceeds the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: set service(id: 1), and no limit-count plugin configured
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{}]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: set route(id: 1) and bind  service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "service_id"
+                            }
+                        },                   
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello",
+                        "service_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: the number of requests exceeds the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: delete route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: delete service(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1', ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: use 'remote_addr' as default key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 36: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
 --- no_error_log
 [error]

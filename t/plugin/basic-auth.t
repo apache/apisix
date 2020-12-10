@@ -28,8 +28,9 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.basic-auth")
-            local ok, err = plugin.check_schema({username = 'foo', password = 'bar'})
+            local ok, err = plugin.check_schema({username = 'foo', password = 'bar'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -61,9 +62,10 @@ done
     }
 --- request
 GET /t
---- response_body
-value should match only one schema, but matches none
+--- response_body_like eval
+qr/additional properties forbidden, found (username|password)
 done
+/
 --- no_error_log
 [error]
 
@@ -196,6 +198,8 @@ Authorization: Basic Zm9vOmJhcg==
 hello world
 --- no_error_log
 [error]
+--- error_log
+find consumer foo
 
 
 
@@ -224,6 +228,131 @@ hello world
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: value should match only one schema, but matches none"}
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"password\" is required"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: invalid schema, not field given
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \\"(username|password)\\" is required"\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: invalid schema, not a table
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": "blah"
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [basic-auth]"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: get the default schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/schema/plugins/basic-auth',
+                ngx.HTTP_GET,
+                nil,
+                [[
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+                ]]
+                )
+            ngx.status = code
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: get the schema by schema_type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/schema/plugins/basic-auth?schema_type=consumer',
+                ngx.HTTP_GET,
+                nil,
+                [[
+{"title":"work with consumer object","additionalProperties":false,"required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+                ]]
+                )
+            ngx.status = code
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: get the schema by error schema_type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/schema/plugins/basic-auth?schema_type=consumer123123',
+                ngx.HTTP_GET,
+                nil,
+                [[
+{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","additionalProperties":false,"type":"object"}
+                ]]
+                )
+            ngx.status = code
+        }
+    }
+--- request
+GET /t
 --- no_error_log
 [error]

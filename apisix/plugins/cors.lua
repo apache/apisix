@@ -17,8 +17,13 @@
 local core        = require("apisix.core")
 local ngx         = ngx
 local plugin_name = "cors"
-local str_find    = string.find
+local str_find    = core.string.find
 local re_gmatch   = ngx.re.gmatch
+
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -81,7 +86,7 @@ local _M = {
 
 
 local function create_mutiple_origin_cache(conf)
-    if not str_find(conf.allow_origins, ",", 1, true) then
+    if not str_find(conf.allow_origins, ",") then
         return nil
     end
     local origin_cache = {}
@@ -160,7 +165,7 @@ function _M.header_filter(conf, ctx)
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
     end
-    local multiple_origin, err = core.lrucache.plugin_ctx(plugin_name, ctx,
+    local multiple_origin, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                                 create_mutiple_origin_cache, conf)
     if err then
         return 500, {message = "get mutiple origin cache failed: " .. err}

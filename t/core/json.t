@@ -85,7 +85,7 @@ data2 val: {"test":"test2"}
 --- request
 GET /t
 --- response_body_like eval
-qr/\{"test":"test","fun":"function: 0x[0-9a-f]+"}/
+qr/\{("test":"test","fun":"function: 0x[0-9a-f]+"|"fun":"function: 0x[0-9a-f]+","test":"test")}/
 --- no_error_log
 [error]
 

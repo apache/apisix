@@ -28,7 +28,7 @@
 
 ## 名字
 
-`ip-restriction` 可以通过以下方式限制对服务或路线的访问，将 IP 地址列入白名单或黑名单。 单个 IP 地址，多个 IP地址 或 CIDR 范围，可以使用类似 10.10.10.0/24 的 CIDR 表示法(将很快支持 IPv6)。
+`ip-restriction` 可以通过以下方式限制对服务或路线的访问，将 IP 地址列入白名单或黑名单。 单个 IP 地址，多个 IP 地址 或 CIDR 范围，可以使用类似 10.10.10.0/24 的 CIDR 表示法。
 
 ## 属性
 
@@ -66,18 +66,18 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-访问 `127.0.0.1`:
+通过 `127.0.0.1` 访问：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+$ curl http://127.0.0.1:9080/index.html -i
 HTTP/1.1 200 OK
 ...
 ```
 
-访问 `127.0.0.2`:
+通过 `127.0.0.2` 访问：
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -i
+$ curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
 HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}

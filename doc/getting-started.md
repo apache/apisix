@@ -237,7 +237,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 Now you can invoke the route with the following command:
 
 ```bash
-curl -i -X GET http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar -H 'apikey: superSecretAPIKey'
+curl -i -X GET 'http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar' -H 'apikey: superSecretAPIKey'
 ```
 
 ## APISIX Dashboard

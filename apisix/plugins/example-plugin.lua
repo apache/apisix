@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
 
 local schema = {
@@ -58,6 +59,20 @@ function _M.check_schema(conf)
     end
 
     return true
+end
+
+
+function _M.init()
+    -- call this function when plugin is loaded
+    local attr = plugin.plugin_attr(plugin_name)
+    if attr then
+        core.log.info(plugin_name, " get plugin attr val: ", attr.val)
+    end
+end
+
+
+function _M.destory()
+    -- call this function when plugin is unloaded
 end
 
 

@@ -45,7 +45,7 @@ function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
     local uuid_val = uuid()
     if not headers[conf.header_name] then
-        core.request.set_header(conf.header_name, uuid_val)
+        core.request.set_header(ctx, conf.header_name, uuid_val)
     end
 
     if conf.include_in_response then

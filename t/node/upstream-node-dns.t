@@ -79,7 +79,7 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         if domain == "test.com" then
             return {address = "127.0.0.2"}
         end
@@ -104,7 +104,7 @@ hello world
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" then
@@ -192,7 +192,7 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0.2"}
         end
@@ -217,7 +217,7 @@ hello world
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" or domain == "test2.com" then
@@ -253,20 +253,27 @@ location /t {
 GET /t
 --- grep_error_log eval
 qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
---- grep_error_log_out
-call /hello
+--- grep_error_log_out eval
+qr/call \/hello(
+dns resolver domain: test.com to 127.0.0.1
+dns resolver domain: test2.com to 127.0.0.2|
 dns resolver domain: test2.com to 127.0.0.1
-dns resolver domain: test.com to 127.0.0.2
-proxy request to 127.0.0.1:1980
-call /hello
+dns resolver domain: test.com to 127.0.0.2)
+proxy request to 127.0.0.[12]:1980
+call \/hello(
+dns resolver domain: test.com to 127.0.0.3
+dns resolver domain: test2.com to 127.0.0.4|
 dns resolver domain: test2.com to 127.0.0.3
-dns resolver domain: test.com to 127.0.0.4
-proxy request to 127.0.0.3:1980
-proxy request to 127.0.0.4:1980
-call /hello
+dns resolver domain: test.com to 127.0.0.4)
+proxy request to 127.0.0.[34]:1980
+proxy request to 127.0.0.[34]:1980
+call \/hello(
+dns resolver domain: test.com to 127.0.0.5
+dns resolver domain: test2.com to 127.0.0.6|
 dns resolver domain: test2.com to 127.0.0.5
-dns resolver domain: test.com to 127.0.0.6
-proxy request to 127.0.0.5:1980
+dns resolver domain: test.com to 127.0.0.6)
+proxy request to 127.0.0.[56]:1980
+/
 
 
 
@@ -338,7 +345,7 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" then
@@ -425,7 +432,7 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
 
         if domain == "test.com" or domain == "test2.com" then
@@ -459,22 +466,29 @@ location /t {
 GET /t
 --- grep_error_log eval
 qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
---- grep_error_log_out
-call /hello
+--- grep_error_log_out eval
+qr/call \/hello(
+dns resolver domain: test.com to 127.0.0.1
+dns resolver domain: test2.com to 127.0.0.2|
 dns resolver domain: test2.com to 127.0.0.1
-dns resolver domain: test.com to 127.0.0.2
-proxy request to 127.0.0.1:1980
-call /hello
+dns resolver domain: test.com to 127.0.0.2)
+proxy request to 127.0.0.[12]:1980
+call \/hello(
+dns resolver domain: test.com to 127.0.0.3
+dns resolver domain: test2.com to 127.0.0.4|
 dns resolver domain: test2.com to 127.0.0.3
-dns resolver domain: test.com to 127.0.0.4
-proxy request to 127.0.0.3:1980
-proxy request to 127.0.0.4:1980
-proxy request to 127.0.0.3:1980
-proxy request to 127.0.0.4:1980
-call /hello
+dns resolver domain: test.com to 127.0.0.4)
+proxy request to 127.0.0.[34]:1980
+proxy request to 127.0.0.[34]:1980
+proxy request to 127.0.0.[34]:1980
+proxy request to 127.0.0.[34]:1980
+call \/hello(
 dns resolver domain: test2.com to 127.0.0.5
-dns resolver domain: test.com to 127.0.0.6
-proxy request to 127.0.0.5:1980
+dns resolver domain: test.com to 127.0.0.6|
+dns resolver domain: test.com to 127.0.0.5
+dns resolver domain: test2.com to 127.0.0.6)
+proxy request to 127.0.0.[56]:1980
+/
 
 
 
@@ -487,7 +501,7 @@ proxy request to 127.0.0.5:1980
 
     local utils = require("apisix.core.utils")
     local count = 1
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0.1"}
         end
@@ -519,22 +533,29 @@ location /t {
 GET /t
 --- grep_error_log eval
 qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
---- grep_error_log_out
-call /hello
-dns resolver domain: test2.com to 127.0.0.1
+--- grep_error_log_out eval
+qr/call \/hello(
 dns resolver domain: test.com to 127.0.0.1
-proxy request to 127.0.0.1:1980
-call /hello
+dns resolver domain: test2.com to 127.0.0.1|
 dns resolver domain: test2.com to 127.0.0.1
+dns resolver domain: test.com to 127.0.0.1)
+proxy request to 127.0.0.1:1980
+call \/hello(
 dns resolver domain: test.com to 127.0.0.1
-proxy request to 127.0.0.1:1980
-proxy request to 127.0.0.1:1980
-proxy request to 127.0.0.1:1980
-proxy request to 127.0.0.1:1980
-call /hello
+dns resolver domain: test2.com to 127.0.0.1|
 dns resolver domain: test2.com to 127.0.0.1
-dns resolver domain: test.com to 127.0.0.1
+dns resolver domain: test.com to 127.0.0.1)
 proxy request to 127.0.0.1:1980
+proxy request to 127.0.0.1:1980
+proxy request to 127.0.0.1:1980
+proxy request to 127.0.0.1:1980
+call \/hello(
+dns resolver domain: test.com to 127.0.0.1
+dns resolver domain: test2.com to 127.0.0.1|
+dns resolver domain: test2.com to 127.0.0.1
+dns resolver domain: test.com to 127.0.0.1)
+proxy request to 127.0.0.1:1980
+/
 
 
 
@@ -579,7 +600,7 @@ passed
 
     local utils = require("apisix.core.utils")
     local count = 0
-    utils.dns_parse = function (resolvers, domain)  -- mock: DNS parser
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
         count = count + 1
         if domain == "test.com" or domain == "test2.com" then
             return {address = "127.0.0." .. count}
@@ -612,16 +633,17 @@ location /t {
 GET /t
 --- grep_error_log eval
 qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:198\d/
---- grep_error_log_out
-call /hello
+--- grep_error_log_out eval
+qr/call \/hello
 dns resolver domain: test.com to 127.0.0.1
-proxy request to 127.0.0.1:1980
-call /hello
+proxy request to 127.0.0.(1:1980|5:1981)
+call \/hello
 dns resolver domain: test.com to 127.0.0.2
-proxy request to 127.0.0.2:1980
-proxy request to 127.0.0.5:1981
-proxy request to 127.0.0.2:1980
-proxy request to 127.0.0.5:1981
-call /hello
+proxy request to 127.0.0.(2:1980|5:1981)
+proxy request to 127.0.0.(2:1980|5:1981)
+proxy request to 127.0.0.(2:1980|5:1981)
+proxy request to 127.0.0.(2:1980|5:1981)
+call \/hello
 dns resolver domain: test.com to 127.0.0.3
-proxy request to 127.0.0.3:1980
+proxy request to 127.0.0.(3:1980|5:1981)
+/

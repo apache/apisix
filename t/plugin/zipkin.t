@@ -125,7 +125,7 @@ done
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=127.0.0.1",
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                 "sample_ratio": 1,
                                 "service_name": "APISIX"
                             }
@@ -143,7 +143,7 @@ done
                         "value": {
                             "plugins": {
                                 "zipkin": {
-                                    "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=127.0.0.1",
+                                    "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                     "sample_ratio": 1,
                                     "service_name":"APISIX"
                                 }
@@ -180,12 +180,10 @@ passed
 === TEST 6: tiger zipkin
 --- request
 GET /opentracing
---- response_body
-opentracing
---- grep_error_log eval
-qr/\[info\].*/
---- grep_error_log_out eval
-qr{report2endpoint ok}
+--- error_log
+report zipkin span failed
+[error]
+--- wait: 10
 
 
 
@@ -199,7 +197,7 @@ qr{report2endpoint ok}
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin",
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                 "sample_ratio": 0.00001
                             }
                         },
@@ -216,7 +214,7 @@ qr{report2endpoint ok}
                         "value": {
                             "plugins": {
                                 "zipkin": {
-                                    "endpoint": "http://127.0.0.1:1982/mock_zipkin",
+                                    "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                     "sample_ratio": 0.00001
                                 }
                             },
@@ -255,7 +253,7 @@ GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
-report2endpoint ok
+[error]
 
 
 
@@ -317,7 +315,7 @@ GET /opentracing
 --- response_body
 opentracing
 --- no_error_log
-report2endpoint ok
+[error]
 
 
 
@@ -331,7 +329,7 @@ report2endpoint ok
                  [[{
                         "plugins": {
                             "zipkin": {
-                                "endpoint": "http://127.0.0.1:1982/mock_zipkin?server_addr=1.2.3.4",
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
                                 "sample_ratio": 1,
                                 "service_name": "apisix",
                                 "server_addr": "1.2.3.4"
@@ -365,12 +363,10 @@ passed
 === TEST 12: tiger zipkin
 --- request
 GET /opentracing
---- response_body
-opentracing
---- grep_error_log eval
-qr/\[info\].*/
---- grep_error_log_out eval
-qr{report2endpoint ok}
+--- error_log
+report zipkin span failed
+[error]
+--- wait: 10
 
 
 
@@ -395,5 +391,50 @@ qr{report2endpoint ok}
 GET /t
 --- response_body
 property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$" with "badip"
+--- no_error_log
+[error]
+
+
+
+=== TEST 14: check not error with limit count
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "zipkin": {
+                                "endpoint": "http://127.0.0.1:9999/mock_zipkin",
+                                "sample_ratio": 1,
+                                "service_name": "APISIX"
+                            },
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 403,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- pipelined_requests eval
+["GET /t", "GET /opentracing", "GET /opentracing", "GET /opentracing"]
+--- error_code eval
+[200, 200, 200, 403]
 --- no_error_log
 [error]

@@ -74,6 +74,11 @@
 |priority  |可选 |匹配规则|如果不同路由包含相同 `uri`，根据属性 `priority` 确定哪个 `route` 被优先匹配，值越大优先级越高，默认值为 0。|priority = 10|
 |vars       |可选  |匹配规则|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
+|status          |可选 |辅助| 是否启用此路由, 缺省 `1`。|`1` 表示启用，`0` 表示禁用|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
 有两点需要特别注意：
 
@@ -113,6 +118,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "hosts": ["foo.com", "*.bar.com"],
     "remote_addrs": ["127.0.0.0/8"],
     "methods": ["PUT", "GET"],
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -232,6 +238,34 @@ HTTP/1.1 200 OK
 ["POST", "DELETE", "PATCH"]
 
 
+# 禁用路由
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 0
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，status 将更新为：
+{
+    "status": 0
+}
+
+
+# 启用路由
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 1
+}'
+HTTP/1.1 200 OK
+...
+
+执行成功后，status 将更新为：
+{
+    "status": 1
+}
+
+
 ```
 
 > 应答参数
@@ -298,6 +332,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |upstream_id| upstream 或 upstream_id 两个选一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
 |name     |可选 |辅助   |标识服务名称。||
 |desc     |可选 |辅助   |服务描述、使用场景等。||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
+|create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
 serivce 对象 json 配置内容：
 
@@ -309,6 +347,7 @@ serivce 对象 json 配置内容：
     "upstream": {},         # upstream 信息对象，不建议使用
     "name": "测试svc",  # service 名称
     "desc": "hello world",  # service 描述
+    "enable_websocket": true, #启动 websocket 功能
 }
 ```
 
@@ -326,6 +365,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f03
             "key": "remote_addr"
         }
     },
+    "enable_websocket": true,
     "upstream": {
         "type": "roundrobin",
         "nodes": {
@@ -419,17 +459,16 @@ HTTP/1.1 200 OK
 
 ## Consumer
 
-*地址*：/apisix/admin/consumers/{id}
+*地址*：/apisix/admin/consumers/{username}
 
-*说明*：Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
+*说明*：Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。Consumer 使用 `username` 作为唯一标识，只支持使用 HTTP `PUT` 方法创建 Consumer。
 
 > 请求方法：
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
 |GET      |/apisix/admin/consumers/{id}|无|获取资源|
-|PUT      |/apisix/admin/consumers/{id}|{...}|根据 id 创建资源|
-|POST     |/apisix/admin/consumers     |{...}|创建资源，id 由后台服务自动生成|
+|PUT      |/apisix/admin/consumers|{...}|创建资源|
 |DELETE   |/apisix/admin/consumers/{id}|无|删除资源|
 
 > body 请求参数：
@@ -439,25 +478,27 @@ HTTP/1.1 200 OK
 |username|必需|辅助|Consumer 名称。||
 |plugins|可选|Plugin|该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，可以参考 [Plugins](#plugin) 章节。||
 |desc     |可选 |辅助|consumer描述||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
 consumer 对象 json 配置内容：
 
 ```shell
 {
-    "id": "1",              # id
     "plugins": {},          # 指定 consumer 绑定的插件
     "username": "name",     # 必填
     "desc": "hello world",  # consumer 描述
 }
 ```
 
-绑定认证授权插件有些特别，当它需要与 consumer 联合使用时，需要提供用户名、密码等信息；另一方面，当它与 route/service 绑定时，是不需要任何参数的。因为这时候是根据用户请求数据来反向推出用户对应的是哪个 consumer
+绑定认证插件有些特别，当它需要与 consumer 联合使用时，需要提供用户名、密码等信息；另一方面，当它与 route/service 绑定时，是不需要任何参数的。因为这时候是根据用户请求数据来反向推出用户对应的是哪个 consumer
 
 示例：
 
 ```shell
 # 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/2  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -478,6 +519,8 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 {"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63},"action":"set"}
 ```
+
+从 `v2.2` 版本之后，同一个 consumer 可以绑定多个认证插件。
 
 > 应答参数
 
@@ -515,12 +558,14 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](../health-check.md)||
 |retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制||
 |timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
-|enable_websocket     |可选 |辅助|是否允许启用 websocket 能力||
 |hash_on     |可选 |辅助|该参数作为一致性 hash 的入参||
 |name     |可选 |辅助|标识上游服务名称、使用场景等。||
 |desc     |可选 |辅助|上游服务描述、使用场景等。||
 |pass_host            |可选|枚举|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。||
 |upstream_host    |可选|辅助|只在 `pass_host` 配置为 `rewrite` 时有效。||
+|labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
 upstream 对象 json 配置内容：
 
@@ -533,7 +578,6 @@ upstream 对象 json 配置内容：
         "send":15,
         "read":15,
     },
-    "enable_websocket": true,
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + Port`
     "k8s_deployment_info": {    # k8s deployment 信息
         "namespace": "test-namespace",
@@ -658,16 +702,21 @@ HTTP/1.1 200 OK
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
-|cert|必需|公钥|https 证书公钥||
+|cert|必需|证书|https 证书||
 |key|必需|私钥|https 证书私钥||
+|certs|可选|证书字符串数组|当你想给同一个域名配置多个证书时，除了第一个证书需要通过cert传递外，剩下的证书可以通过该参数传递上来||
+|keys|可选|私钥字符串数组|certs 对应的证书私钥，注意要跟 certs 一一对应||
 |sni|必需|匹配规则|https 证书SNI||
+|labels|可选|匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
+|create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
 ssl 对象 json 配置内容：
 
 ```shell
 {
     "id": "1",          # id
-    "cert": "cert",     # 公钥
+    "cert": "cert",     # 证书
     "key": "key",       # 私钥
     "sni": "sni"        # host 域名
 }

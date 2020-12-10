@@ -51,12 +51,12 @@ local function plugin_consumer()
                 end
 
                 local new_consumer = core.table.clone(consumer.value)
-                new_consumer.consumer_id = new_consumer.id
+                -- Note: the id here is the key of consumer data, which
+                -- is 'username' field in admin
+                new_consumer.consumer_name = new_consumer.id
                 new_consumer.auth_conf = config
                 core.log.info("consumer:", core.json.delay_encode(new_consumer))
                 core.table.insert(plugins[name].nodes, new_consumer)
-
-                break
             end
         end
 
@@ -71,6 +71,14 @@ function _M.plugin(plugin_name)
     local plugin_conf = core.lrucache.global("/consumers",
                             consumers.conf_version, plugin_consumer)
     return plugin_conf[plugin_name]
+end
+
+
+-- attach chosen consumer to the ctx, used in auth plugin
+function _M.attach_consumer(ctx, consumer, conf)
+    ctx.consumer = consumer
+    ctx.consumer_name = consumer.consumer_name
+    ctx.consumer_ver = conf.conf_version
 end
 
 

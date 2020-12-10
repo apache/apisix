@@ -103,7 +103,7 @@ done
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -125,9 +125,9 @@ done
                                 "openid-connect": {
                                     "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                     "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                    "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "scope": "apisix"
                                 }
@@ -171,7 +171,7 @@ passed
             local res, err = httpc:request_uri(uri, {method = "GET"})
             ngx.status = res.status
             local location = res.headers['Location']
-            if string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+            if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
                 string.find(location, 'scope=apisix') ~= -1 and
                 string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
                 string.find(location, 'response_type=code') ~= -1 and
@@ -228,7 +228,7 @@ true
                                     "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "bearer_only": true,
                                     "scope": "apisix"
@@ -283,8 +283,7 @@ WWW-Authenticate: Bearer realm=apisix
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
+                 [[{ "plugins": {
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
@@ -294,10 +293,10 @@ WWW-Authenticate: Bearer realm=apisix
                                 "timeout": 10,
                                 "bearer_only": true,
                                 "scope": "apisix",
-                                "public_key": "-----BEGIN PUBLIC KEY-----
-MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ
-hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
------END PUBLIC KEY-----",
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                                    [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                                    [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256"
                             }
                         },
@@ -309,8 +308,7 @@ hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
                         },
                         "uri": "/hello"
                 }]],
-                [[{
-                    "node": {
+                [[{ "node": {
                         "value": {
                             "plugins": {
                                 "openid-connect": {
@@ -318,14 +316,14 @@ hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
                                     "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "bearer_only": true,
                                     "scope": "apisix",
-                                    "public_key": "-----BEGIN PUBLIC KEY-----
-MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ
-hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
------END PUBLIC KEY-----",
+                                    "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                        [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                                        [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                                        [[-----END PUBLIC KEY-----",
                                     "token_signing_alg_values_expected": "RS256"
                                 }
                             },
@@ -460,7 +458,7 @@ jwt signature verification failed
                                     "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
                                     "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
                                     "redirect_uri": "http://localhost:3000",
-                                    "ssl_verify": "no",
+                                    "ssl_verify": false,
                                     "timeout": 10000,
                                     "bearer_only": true,
                                     "realm": "University",
@@ -501,7 +499,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            local json_decode = require("cjson").decode
+            local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
@@ -512,6 +510,11 @@ passed
                         ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
                 })
+
+            if not res then
+                ngx.say(err)
+                return
+            end
 
             if res.status == 200 then
                 local body = json_decode(res.body)

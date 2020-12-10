@@ -30,8 +30,9 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.consumer-restriction")
-            local conf = {
-                whitelist = {
+            local conf = {                
+		title = "whitelist",
+		whitelist = {
                     "jack1",
                     "jack2"
                 }
@@ -41,13 +42,13 @@ __DATA__
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body
-{"rejected_code":403,"type":"consumer_name","whitelist":["jack1","jack2"]}
+{"rejected_code":403,"title":"whitelist","type":"consumer_name","whitelist":["jack1","jack2"]}
 --- no_error_log
 [error]
 
@@ -723,8 +724,16 @@ location /t {
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
-        local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -880,8 +889,16 @@ location /t {
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
-        local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -903,7 +920,7 @@ location /t {
         if code >= 300 then
             ngx.status = code
         end
-        
+
         ngx.say(body)
     }
 }
@@ -1051,8 +1068,16 @@ location /t {
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
-        local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -1163,8 +1188,16 @@ location /t {
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
-        local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))

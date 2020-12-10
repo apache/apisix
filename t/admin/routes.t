@@ -173,6 +173,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, message, res = t('/apisix/admin/routes',
                  ngx.HTTP_POST,
                  [[{
@@ -213,6 +214,12 @@ GET /t
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
+            local res = assert(etcd.get('/routes/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
             code, message = t('/apisix/admin/routes/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -239,6 +246,7 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, message, res = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -273,6 +281,12 @@ GET /t
             end
 
             ngx.say("[push] code: ", code, " message: ", message)
+
+            local res = assert(etcd.get('/routes/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -997,6 +1011,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+
+            local id = 1
+            local res = assert(etcd.get('/routes/' .. id))
+            local prev_create_time = res.body.node.value.create_time
+            local prev_update_time = res.body.node.value.update_time
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 [[{
@@ -1015,6 +1037,12 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/routes/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -2183,5 +2211,220 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 60: set route(with labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "labels": {
+                        "build": "16",
+                        "env": "production",
+                        "version": "v2"
+                    },
+
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "labels": {
+                                "build": "16",
+                                "env": "production",
+                                "version": "v2"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 61: patch route(change labels)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "labels": {
+                        "build": "17"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "labels": {
+                                "env": "production",
+                                "version": "v2",
+                                "build": "17"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "compareAndSwap"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 62: invalid format of label value: set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "uri": "/index.html",
+                        "labels": {
+	                        "env": ["production", "release"]
+                        }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 63: create route with create_time and update_time(id : 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html",
+                    "create_time": 1602883670,
+                    "update_time": 1602893670
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "uri": "/index.html",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "create_time": 1602883670,
+                            "update_time": 1602893670
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 64: delete test route(id : 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/routes/1',
+                 ngx.HTTP_DELETE,
+                 nil,
+                 [[{
+                    "action": "delete"
+                }]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: passed
 --- no_error_log
 [error]

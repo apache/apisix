@@ -31,6 +31,4 @@ __DATA__
 === TEST 1: set env "APISIX_PROFILE"
 --- request
 GET /t
---- must_die
---- error_log_like eval
-qr/failed to read config file:.*conf/config-default-dev.yaml/
+--- error_code: 404

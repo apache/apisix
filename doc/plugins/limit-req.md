@@ -20,14 +20,14 @@
 - [中文](../zh-cn/plugins/limit-req.md)
 
 # Summary
+  - [Introduction](#introduction)
+  - [Attributes](#attributes)
+  - [Example](#example)
+    - [How to enable on the `route` or `serivce`](#how-to-enable-on-the-route-or-serivce)
+    - [How to enable on the `consumer`](#how-to-enable-on-the-consumer)
+  - [Disable Plugin](#disable-plugin)
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Introduction
 
 limit request rate using the "leaky bucket" method.
 
@@ -37,14 +37,16 @@ limit request rate using the "leaky bucket" method.
 | ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | rate          | integer | required    |         | [0,...]                                                                  | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
 | burst         | integer | required    |         | [0,...]                                                                  | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
-| key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header. |
-| rejected_code | string  | optional    | 503     | [200,...]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected. The default is 503.                                                                     |
+| key           | string  | required    |         | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | the user specified key to limit the rate, now accept those as key: "remote_addr"(client's IP), "server_addr"(server's IP), "X-Forwarded-For/X-Real-IP" in request header, "consumer_name"(consumer's username). |
+| rejected_code | integer  | optional    | 503     | [200,...]                                                                | The HTTP status code returned when the request exceeds the threshold is rejected.                                                                      |
 
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
-## How To Enable
+## Example
 
-Here's an example, enable the limit req plugin on the specified route:
+### How to enable on the `route` or `serivce`
+
+Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -76,7 +78,7 @@ Then add limit-req plugin:
 
 ![add plugin](../images/plugin/limit-req-2.png)
 
-## Test Plugin
+**Test Plugin**
 
 The above configuration limits the request rate to 1 per second. If it is greater than 1 and less than 3, the delay will be added. If the rate exceeds 3, it will be rejected:
 
@@ -104,6 +106,78 @@ Server: APISIX web server
 
 This means that the limit req plugin is in effect.
 
+### How to enable on the `consumer`
+
+To enable the `limit-req` plugin on the consumer, it needs to be used together with the authorization plugin. Here, the key-auth authorization plugin is taken as an example.
+
+1. Bind the `limit-req` plugin to the consumer
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "consumer_jack",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        },
+        "limit-req": {
+            "rate": 1,
+            "burst": 1,
+            "rejected_code": 403,
+            "key": "consumer_name"
+        }
+    }
+}'
+```
+
+2. Create a `route` and enable the `key-auth` plugin
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+**Test Plugin**
+
+The value of `rate + burst` is not exceeded.
+
+```shell
+curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+HTTP/1.1 200 OK
+......
+```
+
+When the value of `rate + burst` is exceeded.
+
+```shell
+curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+HTTP/1.1 403 Forbidden
+.....
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
+
+Explains that the `limit-req` plugin tied to `consumer` has taken effect.
+
 ## Disable Plugin
 
 When you want to disable the limit req plugin, it is very simple,
@@ -122,6 +196,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "type": "roundrobin",
         "nodes": {
             "39.97.63.215:80": 1
+        }
+    }
+}'
+```
+
+Remove the `limit-req` plugin on `consumer`.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "consumer_jack",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
         }
     }
 }'

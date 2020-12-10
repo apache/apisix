@@ -27,7 +27,7 @@
 - [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
-- [**Consumer**](#consumer)
+- [**Consumer**](#consumer-1)
 - [**Global Rule**](#Global-Rule)
 - [**Debug mode**](#Debug-mode)
 
@@ -194,12 +194,23 @@ curl http://127.0.0.1:9080/apisix/admin/routes/102 -H 'X-API-KEY: edd1c9f034335f
 
 在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该
 白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
+如果你想在现有插件的基础上新增插件，注意需要拷贝 `conf/config-default.yaml` 的插件节点内容到 `conf/config.yaml` 的插件节点中。
 
 插件的配置可以被直接绑定在指定 Route 中，也可以被绑定在 Service 中，不过 Route 中的插件配置
 优先级更高。
 
 一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
-插件运行先后顺序是根据插件自身的优先级来决定的，例如：[example-plugin](../../apisix/plugins/example-plugin.lua#L37)。
+插件运行先后顺序是根据插件自身的优先级来决定的，例如：
+
+```lua
+local _M = {
+    version = 0.1,
+    priority = 0, -- 这个插件的优先级为 0
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
 
 插件配置作为 Route 或 Service 的一部分提交的，放到 `plugins` 下。它内部是使用插件
 名字作为哈希的 key 来保存不同插件的配置项。
@@ -272,7 +283,6 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |hash_on         |可选|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
 |checks          |可选|配置健康检查的参数，详细可参考[health-check](../health-check.md)|
 |retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
-|enable_websocket|可选| 是否启用 `websocket`（布尔值），默认不启用|
 |labels          |可选| 用于标识属性的键值对。 |
 |pass_host            |可选|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。|
 |upstream_host    |可选|只在 `pass_host` 配置为 `rewrite` 时有效。|
@@ -282,7 +292,7 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 1. 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)
 1. 设为 `header` 时, `key` 为必传参数，其值为自定义的 header name, 即 "http_`key`"
 1. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie_`key`"
-1. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_id`。
+1. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 1. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
 
 创建上游对象用例：
@@ -304,7 +314,6 @@ curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335
 {
     "type": "chash",
     "key": "remote_addr",
-    "enable_websocket": true,
     "nodes": {
         "127.0.0.1:80": 1,
         "foo.com:80": 2
@@ -423,7 +432,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-测试请求，认证通过后的`consumer_id`将作为负载均衡哈希算法的哈希值：
+测试请求，认证通过后的`consumer_name`将作为负载均衡哈希算法的哈希值：
 
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
@@ -521,7 +530,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 <img src="../images/consumer-internal.png" width="50%" height="50%">
 
 1. 授权认证：比如有 [key-auth](../plugins/key-auth.md)、[JWT](plugins/jwt-auth.md) 等。
-2. 获取 consumer_id：通过授权认证，即可自然获取到对应的 Consumer `id`，它是 Consumer 对象的唯一识别标识。
+2. 获取 consumer_name：通过授权认证，即可自然获取到对应的 Consumer name，它是 Consumer 对象的唯一识别标识。
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 概括一下，Consumer 是某类服务的消费者，需与用户认证体系配合才能使用。
@@ -533,7 +542,7 @@ APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Rout
 
 ```shell
 # 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {

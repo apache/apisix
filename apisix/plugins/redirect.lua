@@ -40,7 +40,7 @@ local schema = {
 }
 
 
-local plugin_name = "rewrite"
+local plugin_name = "redirect"
 
 local _M = {
     version = 0.1,

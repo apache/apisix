@@ -16,12 +16,15 @@
 --
 
 local lfs = require("lfs")
+local log = require("apisix.core.log")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
+local clear_header = ngx.req.clear_header
 local tonumber = tonumber
 local error    = error
 local type     = type
 local str_fmt  = string.format
+local str_lower = string.lower
 local io_open  = io.open
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
@@ -65,12 +68,27 @@ function _M.header(ctx, name)
 end
 
 
-function _M.set_header(header_name, header_value)
+function _M.set_header(ctx, header_name, header_value)
+    if type(ctx) == "string" then
+        -- It would be simpler to keep compatibility if we put 'ctx'
+        -- after 'header_value', but the style is too ugly!
+        header_value = header_name
+        header_name = ctx
+        ctx = nil
+
+        log.warn("DEPRECATED: use set_header(ctx, header_name, header_value) instead")
+    end
+
     local err
     header_name, err = _validate_header_name(header_name)
     if err then
         error(err)
     end
+
+    if ctx and ctx.headers then
+        ctx.headers[header_name] = header_value
+    end
+
     ngx.req.set_header(header_name, header_value)
 end
 
@@ -116,11 +134,52 @@ local function get_file(file_name)
 end
 
 
-function _M.get_body(max_size)
+local function check_size(size, max_size)
+    if max_size and size > max_size then
+        return nil, "request size " .. size .. " is greater than the "
+                    .. "maximum size " .. max_size .. " allowed"
+    end
+
+    return true
+end
+
+
+local function test_expect(var)
+    local expect = var.http_expect
+    return expect and str_lower(expect) == "100-continue"
+end
+
+
+function _M.get_body(max_size, ctx)
+    -- TODO: improve the check with set client_max_body dynamically
+    -- which requires to change Nginx source code
+    if max_size then
+        local var = ctx and ctx.var or ngx.var
+        local content_length = tonumber(var.http_content_length)
+        if content_length then
+            local ok, err = check_size(content_length, max_size)
+            if not ok then
+                -- When client_max_body_size is exceeded, Nginx will set r->expect_tested = 1 to
+                -- avoid sending the 100 CONTINUE.
+                -- We use trick below to imitate this behavior.
+                if test_expect(var) then
+                    clear_header("expect")
+                end
+
+                return nil, err
+            end
+        end
+    end
+
     req_read_body()
 
     local req_body = req_get_body_data()
     if req_body then
+        local ok, err = check_size(#req_body, max_size)
+        if not ok then
+            return nil, err
+        end
+
         return req_body
     end
 
@@ -129,15 +188,17 @@ function _M.get_body(max_size)
         return nil
     end
 
+    log.info("attempt to read body from file: ", file_name)
+
     if max_size then
         local size, err = lfs.attributes (file_name, "size")
         if not size then
             return nil, err
         end
 
-        if size > max_size then
-            return nil, "request size " .. size .. " is greater than the "
-                        .. "maximum size " .. max_size .. " allowed"
+        local ok, err = check_size(size, max_size)
+        if not ok then
+            return nil, err
         end
     end
 

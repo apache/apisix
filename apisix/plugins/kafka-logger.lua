@@ -23,15 +23,19 @@ local type     = type
 local table    = table
 local ipairs   = ipairs
 local plugin_name = "kafka-logger"
-local stale_timer_running = false;
+local stale_timer_running = false
 local timer_at = ngx.timer.at
-local tostring = tostring
 local ngx = ngx
 local buffers = {}
 
 local schema = {
     type = "object",
     properties = {
+        meta_format = {
+            type = "string",
+            default = "default",
+            enum = {"default", "origin"},
+        },
         broker_list = {
             type = "object"
         },
@@ -46,7 +50,7 @@ local schema = {
         batch_max_size = {type = "integer", minimum = 1, default = 1000},
         include_req_body = {type = "boolean", default = false}
     },
-    required = {"broker_list", "kafka_topic", "key"}
+    required = {"broker_list", "kafka_topic"}
 }
 
 local _M = {
@@ -90,10 +94,10 @@ local function send_kafka_data(conf, log_message)
 
     local ok, err = prod:send(conf.kafka_topic, conf.key, log_message)
     if not ok then
-        return nil, "failed to send data to Kafka topic" .. err
+        return nil, "failed to send data to Kafka topic: " .. err
     end
 
-    return true, nil
+    return true
 end
 
 -- remove stale objects from the memory after timer expires
@@ -104,7 +108,8 @@ local function remove_stale_objects(premature)
 
     for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.debug("removing batch processor stale object, route id:", tostring(key))
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
             buffers[key] = nil
         end
     end
@@ -113,15 +118,16 @@ local function remove_stale_objects(premature)
 end
 
 
-function _M.log(conf)
-    local entry = log_util.get_full_log(ngx, conf)
+function _M.log(conf, ctx)
+    local entry
+    if conf.meta_format == "origin" then
+        entry = log_util.get_req_original(ctx, conf)
+        -- core.log.info("origin entry: ", entry)
 
-    if not entry.route_id then
-        core.log.error("failed to obtain the route id for kafka logger")
-        return
+    else
+        entry = log_util.get_full_log(ngx, conf)
+        core.log.info("full log entry: ", core.json.delay_encode(entry))
     end
-
-    local log_buffer = buffers[entry.route_id]
 
     if not stale_timer_running then
         -- run the timer every 30 mins if any log is present
@@ -129,6 +135,7 @@ function _M.log(conf)
         stale_timer_running = true
     end
 
+    local log_buffer = buffers[conf]
     if log_buffer then
         log_buffer:push(entry)
         return
@@ -138,7 +145,10 @@ function _M.log(conf)
     local func = function(entries, batch_max_size)
         local data, err
         if batch_max_size == 1 then
-            data, err = core.json.encode(entries[1]) -- encode as single {}
+            data = entries[1]
+            if type(data) ~= "string" then
+                data, err = core.json.encode(data) -- encode as single {}
+            end
         else
             data, err = core.json.encode(entries) -- encode as array [{}]
         end
@@ -147,6 +157,7 @@ function _M.log(conf)
             return false, 'error occurred while encoding the data: ' .. err
         end
 
+        core.log.info("send data to kafka: ", data)
         return send_kafka_data(conf, data)
     end
 
@@ -167,8 +178,9 @@ function _M.log(conf)
         return
     end
 
-    buffers[entry.route_id] = log_buffer
+    buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
+
 
 return _M

@@ -106,12 +106,14 @@ local function create_checker(upstream, healthcheck_parent)
     if upstream.parent then
         core.table.insert(upstream.parent.clean_handlers, function ()
             core.log.info("try to release checker: ", tostring(checker))
+            checker:clear()
             checker:stop()
         end)
 
     else
         core.table.insert(healthcheck_parent.clean_handlers, function ()
             core.log.info("try to release checker: ", tostring(checker))
+            checker:clear()
             checker:stop()
         end)
     end
@@ -164,12 +166,24 @@ local function pick_server(route, ctx)
         if not discovery then
             return nil, "discovery is uninitialized"
         end
-        up_conf.nodes = discovery.nodes(up_conf.service_name)
+        if not up_conf.discovery_type then
+            return nil, "discovery server need appoint"
+        end
+
+        local dis = discovery[up_conf.discovery_type]
+        if not dis then
+            return nil, "discovery is uninitialized"
+        end
+        up_conf.nodes = dis.nodes(up_conf.service_name)
     end
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
         return nil, "no valid upstream node"
+    end
+
+    if ctx.server_picker and ctx.server_picker.after_balance then
+        ctx.server_picker.after_balance(ctx, true)
     end
 
     if up_conf.timeout then

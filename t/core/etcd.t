@@ -104,8 +104,8 @@ Host: foo.com
 --- error_code eval
 [201, 200, 200, 200, 200, 404, 201, 200, 200, 200, 200, 404]
 --- response_body eval
-["passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n",
-"passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
+["passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n",
+"passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n"]
 --- no_error_log
 [error]
 --- timeout: 5
@@ -227,8 +227,8 @@ Host: foo.com
 --- error_code eval
 [201, 200, 200, 404, 200, 200, 404, 201, 200, 200, 404, 200, 200, 404]
 --- response_body eval
-["passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", "ok\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n",
-"passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n", "hello1 world\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
+["passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n", "ok\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n",
+"passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n", "hello1 world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n"]
 --- no_error_log
 [error]
 --- timeout: 5
@@ -329,7 +329,45 @@ Host: foo.com
 --- error_code eval
 [201, 200, 201, 200, 200, 200, 200, 404]
 --- response_body eval
-["passed\n", "/print_uri_20\n", "passed\n", "/print_uri_36\n", "passed\n", "/print_uri_12\n", "passed\n", "{\"error_msg\":\"failed to match any routes\"}\n"]
+["passed\n", "/print_uri_20\n", "passed\n", "/print_uri_36\n", "passed\n", "/print_uri_12\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n"]
 --- no_error_log
 [error]
 --- timeout: 20
+
+
+
+=== TEST 5: get single
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/ab", "ab"))
+            local res, err = etcd.get("/a")
+            ngx.status = res.status
+        }
+    }
+--- request
+GET /t
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: get prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/ab", "ab"))
+            local res, err = etcd.get("/a", true)
+            ngx.status = res.status
+            ngx.say(res.body.node.value)
+        }
+    }
+--- request
+GET /t
+--- response_body
+ab
+--- no_error_log
+[error]
