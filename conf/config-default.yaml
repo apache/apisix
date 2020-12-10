@@ -117,6 +117,7 @@ apisix:
     key_encrypt_salt: "edd1c9f0985e76a2"    #  If not set, will save origin ssl key into etcd.
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
+
 nginx_config:                     # config for render the template to genarate nginx.conf
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
@@ -195,6 +196,9 @@ etcd:
 #       connect: 2000                 # default 2000ms
 #       send: 2000                    # default 2000ms
 #       read: 5000                    # default 5000ms
+
+graphql:
+  max_size: 1048576               # the maximum size limitation of graphql in bytes, defualt 1MiB
 
 plugins:                          # plugin list (sorted in alphabetical order)
   - api-breaker

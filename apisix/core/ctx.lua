@@ -15,22 +15,98 @@
 -- limitations under the License.
 --
 local core_str     = require("apisix.core.string")
+local core_tab     = require("apisix.core.table")
+local request      = require("apisix.core.request")
 local log          = require("apisix.core.log")
+local config_local = require("apisix.core.config_local")
 local tablepool    = require("tablepool")
 local get_var      = require("resty.ngxvar").fetch
 local get_request  = require("resty.ngxvar").request
 local ck           = require "resty.cookie"
+local gq_parse     = require("graphql").parse
 local setmetatable = setmetatable
 local sub_str      = string.sub
 local rawset       = rawset
+local ngx          = ngx
 local ngx_var      = ngx.var
 local re_gsub      = ngx.re.gsub
+local ipairs       = ipairs
 local type         = type
 local error        = error
-local ngx          = ngx
+local pcall        = pcall
 
 
 local _M = {version = 0.2}
+local GRAPHQL_DEFAULT_MAX_SIZE = 1048576               -- 1MiB
+
+
+local function parse_graphql(ctx)
+    local local_conf, err = config_local.local_conf()
+    if not local_conf then
+        return nil, "failed to get local conf: " .. err
+    end
+
+    local max_size = GRAPHQL_DEFAULT_MAX_SIZE
+    local size = core_tab.try_read_attr(local_conf, "graphql", "max_size")
+    if size then
+        max_size = size
+    end
+
+    local body, err = request.get_body(max_size, ctx)
+    if not body then
+        return nil, "failed to read graphql body: " .. err
+    end
+
+    local ok, res = pcall(gq_parse, body)
+    if not ok then
+        return nil, "failed to parse graphql: " .. res .. " body: " .. body
+    end
+
+    if #res.definitions == 0 then
+        return nil, "empty graphql: " .. body
+    end
+
+    return res
+end
+
+
+local function get_parsed_graphql(ctx)
+    if ctx._graphql then
+        return ctx._graphql
+    end
+
+    local res, err = parse_graphql(ctx)
+    if not res then
+        log.error(err)
+        ctx._graphql = {}
+        return ctx._graphql
+    end
+
+    if #res.definitions > 1 then
+        log.warn("Mutliple operations are not supported.",
+                    "Only the first one is handled")
+    end
+
+    local def = res.definitions[1]
+    local fields = def.selectionSet.selections
+    local root_fields = core_tab.new(#fields, 0)
+    for i, f in ipairs(fields) do
+        root_fields[i] = f.name.value
+    end
+
+    local name = ""
+    if def.name and def.name.value then
+        name = def.name.value
+    end
+
+    ctx._graphql = {
+        name = name,
+        operation = def.operation,
+        root_fields = root_fields,
+    }
+
+    return ctx._graphql
+end
 
 
 do
@@ -83,6 +159,11 @@ do
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
                 val = get_var(key, t._request)
+
+            elseif core_str.has_prefix(key, "graphql_") then
+                -- trim the "graphql_" prefix
+                key = sub_str(key, 9)
+                val = get_parsed_graphql(t)[key]
 
             elseif key == "route_id" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_id
