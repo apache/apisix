@@ -1,5 +1,9 @@
 name: spellchecker
-on: [pull_request]
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 jobs:
   misspell:
     name: runner / misspell
