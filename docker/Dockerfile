@@ -1,7 +1,9 @@
 FROM openresty/openresty:alpine-fat AS production-stage
 
 ARG APISIX_VERSION=master
+ARG ETCD_VERSION=v3.4.14
 LABEL apisix_version="${APISIX_VERSION}"
+LABEL etcd_version="${ETCD_VERSION}"
 
 RUN set -x \
     && /bin/sed -i 's,http://dl-cdn.alpinelinux.org,https://mirrors.aliyun.com,g' /etc/apk/repositories \
@@ -23,9 +25,9 @@ FROM alpine:3.11 AS etcd-stage
 
 WORKDIR /tmp
 
-RUN wget https://github.com/etcd-io/etcd/releases/download/v3.4.14/etcd-v3.4.14-linux-amd64.tar.gz \
-    && tar -zxvf etcd-v3.4.14-linux-amd64.tar.gz \
-    && ln -s etcd-v3.4.14-linux-amd64 etcd
+RUN wget https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz \
+    && tar -zxvf etcd-${ETCD_VERSION}-linux-amd64.tar.gz \
+    && ln -s etcd-${ETCD_VERSION}-linux-amd64 etcd
 
 FROM alpine:3.11 AS last-stage
 
