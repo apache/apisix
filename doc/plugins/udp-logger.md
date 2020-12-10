@@ -33,7 +33,7 @@
 
 This will provide the ability to send Log data requests as JSON objects to Monitoring tools and other UDP servers.
 
-This plugin provides the ability to push Log data as a batch to you're external UDP servers. In case if you did not recieve the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
+This plugin provides the ability to push Log data as a batch to you're external UDP servers. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
 
 For more info on Batch-Processor in Apache APISIX please refer.
 [Batch-Processor](../batch-processor.md)

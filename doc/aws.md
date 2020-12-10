@@ -276,6 +276,6 @@ _TBD_
 
 ## Decouple APISIX and etcd3 on AWS
 
-For high availability and state consistency consideration, you might be interested to decouple the **etcd3** as a seperate cluster from **APISIX** not only for performance but also high availability and faught tolerance yet with highly reliable state consistency.
+For high availability and state consistency consideration, you might be interested to decouple the **etcd3** as a separate cluster from **APISIX** not only for performance but also high availability and fault tolerance yet with highly reliable state consistency.
 
 _TBD_

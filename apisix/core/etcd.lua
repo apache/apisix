@@ -110,7 +110,7 @@ function _M.get_format(res, real_key, is_dir)
         -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
         res.body.node = kvs_to_node(res.body.kvs[1])
         if not res.body.kvs[1].value then
-            -- remove last "/" when necesary
+            -- remove last "/" when necessary
             if string.byte(res.body.node.key, -1) == 47 then
                 res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
             end
