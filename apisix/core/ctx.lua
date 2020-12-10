@@ -83,7 +83,7 @@ local function get_parsed_graphql(ctx)
     end
 
     if #res.definitions > 1 then
-        log.warn("Mutliple operations are not supported.",
+        log.warn("Multiple operations are not supported.",
                     "Only the first one is handled")
     end
 

@@ -40,7 +40,7 @@ It's also works with `Apache SkyWalking`, which is support Zipkin v1/v2 format.
 | endpoint     | string | required    |          |              | the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`. |
 | sample_ratio | number | required    |          | [0.00001, 1] | the ratio of sample                                                             |
 | service_name | string | optional    | "APISIX" |              | service name for zipkin reporter                                                |
-| server_addr  | string | optional    |          |              | IPv4 address for zipkin reporter, default is nginx built-in variables $server_addr, here you can speific your external ip address. |
+| server_addr  | string | optional    |          |              | IPv4 address for zipkin reporter, default is nginx built-in variables $server_addr, here you can specify your external ip address. |
 
 ## How To Enable
 

@@ -43,8 +43,8 @@ For more info on Batch-Processor in Apache APISIX please refer
 |host           |required       | IP address or the Hostname of the TCP server, please reference ali cloud log [Serve List](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb), use IP address insted of domain.|
 |port           |required       |Target upstream port, default 10009.|
 |timeout        |optional       |Timeout for the upstream to send data.|
-| project |required|Ali cloud log service project name，please creat in sls before us this plugin.|
-| logstore | required |Ali cloud log service  logstore name，please creat in sls before us this plugin.|
+| project |required|Ali cloud log service project name，please create in sls before us this plugin.|
+| logstore | required |Ali cloud log service  logstore name，please create in sls before us this plugin.|
 | access_key_id | required | Ali cloud AccessKey ID, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
 | access_key_secret | required |Ali cloud AccessKey Secret, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
 | include_req_body | required| Boolean value. |
