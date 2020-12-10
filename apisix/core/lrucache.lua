@@ -36,8 +36,7 @@ local can_yield_phases = {
     rewrite = true,
     access = true,
     content = true,
-    timer = true,
-    header_filter = true
+    timer = true
 }
 
 local GLOBAL_ITEMS_COUNT = 1024
@@ -83,6 +82,7 @@ local function new_lru_fun(opts)
     local lru_obj = lru_new(item_count)
 
     return function (key, version, create_obj_fun, ...)
+        -- lua.lock depoend on sleep and sleep only work in the phase which can yield
         if not serial_creating or not can_yield_phases[get_phase()] then
             local cache_obj = fetch_valid_cache(lru_obj, invalid_stale,
                                 item_ttl, item_release, key, version)
