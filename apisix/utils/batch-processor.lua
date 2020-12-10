@@ -150,16 +150,17 @@ function batch_processor:push(entry)
         return
     end
 
-    if not batch_metrics and prometheus.get_prometheus() then
+    if not batch_metrics and prometheus.get_prometheus() and self.name
+       and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
-        "batch process remaining entries",
-        {"name", "route_id", "server_addr"})
+                                                          "batch process remaining entries",
+                                                          {"name", "route_id", "server_addr"})
     end
 
     local entries = self.entry_buffer.entries
     table.insert(entries, entry)
     -- add batch metric for every route
-    if batch_metrics and self.name and self.route_id and self.server_addr then
+    if batch_metrics  then
         batch_metrics:set(#entries, prometheus.gen_arr(self.name, self.route_id, self.server_addr))
     end
 
@@ -187,14 +188,13 @@ function batch_processor:process_buffer()
             "buffercount[", #self.entry_buffer.entries ,"]")
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = { entries = {}, retry_count = 0 }
+        if batch_metrics then
+            batch_metrics:set(0, prometheus.gen_arr(self.name, self.route_id, self.server_addr))
+        end
     end
 
     for _, batch in ipairs(self.batch_to_process) do
         schedule_func_exec(self, 0, batch)
-    end
-
-    if batch_metrics and self.name and self.route_id and self.server_addr then
-        batch_metrics:set(0, prometheus.gen_arr(self.name, self.route_id, self.server_addr))
     end
 
     self.batch_to_process = {}

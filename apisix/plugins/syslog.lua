@@ -175,7 +175,7 @@ function _M.log(conf, ctx)
         buffer_duration = conf.buffer_duration,
         inactive_timeout = conf.timeout,
         route_id = ctx.var.route_id,
-        server_addr = ctx.var["server_addr"],
+        server_addr = ctx.var.server_addr,
     }
 
     local err
