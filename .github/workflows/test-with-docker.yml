@@ -18,6 +18,6 @@ jobs:
         run: |
           docker build -t apache/apisix:whole -f ./docker/Dockerfile .
           docker run -v `pwd`/docker/config.yaml:/usr/local/apisix/conf/config.yaml -p 9080:9080 -p 2379:2379 -d apache/apisix:whole
-          sleep 10
+          sleep 30
           curl http://127.0.0.1:9080/apisix/admin/schema/service -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 
