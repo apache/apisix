@@ -1,9 +1,8 @@
 FROM openresty/openresty:alpine-fat AS production-stage
 
 ARG APISIX_VERSION=master
-ARG ETCD_VERSION=v3.4.14
 LABEL apisix_version="${APISIX_VERSION}"
-LABEL etcd_version="${ETCD_VERSION}"
+
 
 RUN set -x \
     && /bin/sed -i 's,http://dl-cdn.alpinelinux.org,https://mirrors.aliyun.com,g' /etc/apk/repositories \
@@ -22,6 +21,9 @@ RUN set -x \
     && apk del .builddeps build-base make unzip
 
 FROM alpine:3.11 AS etcd-stage
+
+ARG ETCD_VERSION=v3.4.14
+LABEL etcd_version="${ETCD_VERSION}"
 
 WORKDIR /tmp
 
