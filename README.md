@@ -155,7 +155,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 ### Quick start
 
-Use `docker` to quickly build an APISIX image which containing all dependencies, and start it with one click.
+Use `docker` to quickly build an APISIX image which contains all dependencies, and start it with one click.
 
 ```shell
 $ docker build -t apache/apisix:whole -f ./docker/Dockerfile .
