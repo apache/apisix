@@ -106,6 +106,9 @@ Makefile rules:
     license-check:    Check Lua source code for Apache License
 ```
 
+Environment variable can be used to configure APISIX. Please take a look at `conf/config.yaml` to
+see how to do it.
+
 ## 4. Test
 
 1. Install perl's package manager `cpanminus` first
