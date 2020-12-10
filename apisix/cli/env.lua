@@ -45,6 +45,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
                           .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
 
         local pkg_path = apisix_home .. "/?/init.lua;"
+                         .. apisix_home .. "/deps/share/lua/5.1/?/init.lua;"
                          .. apisix_home .. "/deps/share/lua/5.1/?.lua;;"
 
         package.cpath = pkg_cpath .. package.cpath

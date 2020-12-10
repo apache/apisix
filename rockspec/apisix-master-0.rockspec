@@ -57,6 +57,7 @@ dependencies = {
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
     "lua-resty-expr = 1.0.0",
+    "graphql = 0.0.2",
 }
 
 build = {
