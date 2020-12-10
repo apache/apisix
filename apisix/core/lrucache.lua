@@ -36,7 +36,8 @@ local can_yield_phases = {
     rewrite = true,
     access = true,
     content = true,
-    timer = true
+    timer = true,
+    header_filter = true
 }
 
 local GLOBAL_ITEMS_COUNT = 1024
@@ -139,28 +140,20 @@ end
 global_lru_fun = new_lru_fun()
 
 
-local plugin_ctx
-do
-    local key_buf = {
-        nil,
-        nil,
-        nil,
-    }
+local function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
+    local key_buf = {}
+    key_buf[1] = api_ctx.conf_type
+    key_buf[2] = api_ctx.conf_id
 
-    function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
-        key_buf[1] = api_ctx.conf_type
-        key_buf[2] = api_ctx.conf_id
-
-        local key
-        if extra_key then
-            key_buf[3] = extra_key
-            key = concat(key_buf, "#", 1, 3)
-        else
-            key = concat(key_buf, "#", 1, 2)
-        end
-
-        return lrucache(key, api_ctx.conf_version, create_obj_func, ...)
+    local key
+    if extra_key then
+        key_buf[3] = extra_key
+        key = concat(key_buf, "#", 1, 3)
+    else
+        key = concat(key_buf, "#", 1, 2)
     end
+
+    return lrucache(key, api_ctx.conf_version, create_obj_func, ...)
 end
 
 
