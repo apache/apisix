@@ -269,12 +269,16 @@ end
 
 
 function _M.push(key, value, ttl)
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, _, err = new()
     if not etcd_cli then
         return nil, err
     end
 
-    local res, err = etcd_cli:readdir(prefix .. key)
+    -- Create a new revision and use it as the id.
+    -- It will be better if we use snowflake algorithm like manager-api,
+    -- but we haven't found a good library. It costs too much to write
+    -- our own one as the admin-api will be replaced by manager-api finally.
+    local res, err = set("/gen_id", 1)
     if not res then
         return nil, err
     end
