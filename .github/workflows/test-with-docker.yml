@@ -1,0 +1,25 @@
+name: Test and from Docker
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches: 
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t apache/apisix:whole -f ./docker/Dockerfile .
+          docker run -v ./docker/config.yaml:/usr/local/apisix/conf/config.yaml -p 9080:9080 -p 2379:2379 -d apache/apisix:whole
+
+      - name: test if apisix is ok
+        run: |
+          curl http://127.0.0.1:9080/apisix/admin/schema/service -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+
