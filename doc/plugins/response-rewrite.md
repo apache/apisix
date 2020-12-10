@@ -35,7 +35,7 @@ response rewrite plugin, rewrite the content returned by the upstream as well as
 **senario**:
 
 1. can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing).
-2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can alse use [redirect](redirect.md) plugin if you just want a redirection.
+2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can also use [redirect](redirect.md) plugin if you just want a redirection.
 
 ## Attributes
 
