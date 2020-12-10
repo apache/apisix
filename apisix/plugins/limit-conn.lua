@@ -65,8 +65,7 @@ end
 
 function _M.access(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
-    local lim, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
-                                              create_limit_obj, conf)
+    local lim, err = lrucache(conf, nil, create_limit_obj, conf)
     if not lim then
         core.log.error("failed to instantiate a resty.limit.conn object: ", err)
         return 500
@@ -88,9 +87,9 @@ function _M.access(conf, ctx)
     if lim:is_committed() then
         if not ctx.limit_conn then
             ctx.limit_conn = core.tablepool.fetch("plugin#limit-conn", 0, 6)
-        else
-            core.table.insert_tail(ctx.limit_conn, lim, key, delay)
         end
+
+        core.table.insert_tail(ctx.limit_conn, lim, key, delay)
     end
 
     if delay >= 0.001 then

@@ -989,7 +989,7 @@ done
 
 
 === TEST 26: create consumer and bind key-auth plugin
---- config 
+--- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
@@ -1019,7 +1019,7 @@ passed
 
 
 
-=== TEST 27: create route and enable plugin 'key-auth' 
+=== TEST 27: create route and enable plugin 'key-auth'
 --- config
     location /t {
         content_by_lua_block {
@@ -1207,9 +1207,9 @@ qr/limit key: consumer_jackroute&consumer\d+/
         content_by_lua_block {
             local plugin = require("apisix.plugins.limit-conn")
             local ok, err = plugin.check_schema({
-                conn = 1, 
-                default_conn_delay = 0.1, 
-                rejected_code = 503, 
+                conn = 1,
+                default_conn_delay = 0.1,
+                rejected_code = 503,
                 key = 'consumer_name'
                     })
             if not ok then
@@ -1223,5 +1223,63 @@ GET /t
 --- response_body
 property "burst" is required
 done
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: enable plugin: conn=1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.3,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: hit route and should not be limited
+--- pipelined_requests eval
+[
+    "GET /hello", "GET /hello", "GET /hello",
+    "GET /hello", "GET /hello", "GET /hello",
+]
+--- timeout: 10s
+--- error_code eval
+[
+    200, 200, 200,
+    200, 200, 200
+]
 --- no_error_log
 [error]
