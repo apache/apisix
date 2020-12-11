@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/traffic-split.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -34,7 +35,7 @@
 
 ## Name
 
-The traffic splitting plug-in divides the request traffic according to a specified ratio and diverts it to the corresponding upstream. The plug-in can realize the functions of gray release, blue-green release and custom release.
+The traffic division plugin divides the request traffic according to the specified ratio and diverts it to the corresponding upstream; through this plugin, gray-scale publishing, blue-green publishing and custom publishing functions can be realized.
 
 ## Attributes
 
@@ -51,21 +52,21 @@ The traffic splitting plug-in divides the request traffic according to a specifi
 | rules.upstreams.upstream.pass_host | enum | optional    | "pass"  | ["pass", "node", "rewrite"]  | pass: pass the host requested by the client, node: pass the host requested by the client; use the host configured with the upstream node, rewrite: rewrite the host with the value configured by the upstream_host. |
 | rules.upstreams.upstream.name      | string | optional    |        |   | Identify the upstream service name, usage scenario, etc.  |
 | rules.upstreams.upstream.upstream_host | string | optional    |    |   | Only valid when pass_host is configured as rewrite.    |
-| rules.upstreams.weight | integer | optional    | weight = 1   |  | The traffic is divided according to the weight value, and the roundrobin algorithm is used to divide multiple weights. |
+| rules.upstreams.weighted_upstreams | integer | optional    | weighted_upstreams = 1   |  | The traffic is divided according to the `weighted_upstreams` value, and the roundrobin algorithm is used to divide multiple `weighted_upstreams`. |
 
 ## How To Enable
 
-### Grayscale Release
-
-Traffic is split according to the weight value configured by upstreams in the plugin (the rule of `match` is not configured, and `match` is passed by default). The request traffic is divided into 4:2, 2/3 of the traffic reaches the upstream of the `1981` port in the plugin, and 1/3 of the traffic reaches the upstream of the default `1980` port on the route.
+There is only the value of `weighted_upstreams` in the upstreams of the plugin, which indicates the weight value of upstream traffic reaching the default `route`.
 
 ```json
 {
-    "weight": 2
+    "weighted_upstreams": 2
 }
 ```
 
-There is only a `weight` value in the plugin upstreams, which represents the weight value of the upstream traffic arriving on the route.
+### Grayscale Release
+
+Traffic is split according to the `weighted_upstreams` value configured by upstreams in the plugin (the rule of `match` is not configured, and `match` is passed by default). The request traffic is divided into 4:2, 2/3 of the traffic reaches the upstream of the `1981` port in the plugin, and 1/3 of the traffic reaches the upstream of the default `1980` port on the route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -89,10 +90,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "read": 15
                                 }
                             },
-                            "weight": 4
+                            "weighted_upstreams": 4
                         },
                         {
-                            "weight": 2
+                            "weighted_upstreams": 2
                         }
                     ]
                 }
@@ -155,7 +156,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Multiple matching rules can be set in `match`, multiple expressions in `vars` are in the relationship of `add`, and multiple `vars` rules are in the relationship of `or`; as long as one of the vars rules is passed, then Indicates that `match` passed.
 
-Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `add`. According to the value of `weight`, the flow is divided into 4:2. Among them, only the `weight` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
+Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `add`. According to the value of `weighted_upstreams`, the flow is divided into 4:2. Among them, only the `weighted_upstreams` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -183,10 +184,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "127.0.0.1:1981":10
                                 }
                             },
-                            "weight": 4
+                            "weighted_upstreams": 4
                         },
                         {
-                            "weight": 2
+                            "weighted_upstreams": 2
                         }
                     ]
                 }
@@ -204,7 +205,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 The plugin sets the request matching rules and sets the port to upstream with `1981`, and the route has upstream with port `1980`.
 
-Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `and` relationships. According to the value of `weight`, the flow is divided into 4:2. Among them, only the `weight` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
+Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `and` relationships. According to the value of `weighted_upstreams`, the flow is divided into 4:2. Among them, only the `weighted_upstreams` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -237,10 +238,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "127.0.0.1:1981":10
                                 }
                             },
-                            "weight": 4
+                            "weighted_upstreams": 4
                         },
                         {
-                            "weight": 2
+                            "weighted_upstreams": 2
                         }
                     ]
                 }

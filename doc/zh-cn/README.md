@@ -81,6 +81,7 @@
 * [request-validation](plugins/request-validation.md): 请求验证。
 * [proxy-mirror](plugins/proxy-mirror.md)：代理镜像插件提供镜像客户端请求的能力。
 * [api-breaker](plugins/api-breaker.md): API的断路器，在状态不正常的情况下停止将请求转发到上游。
+* [traffic-split](plugins/traffic-split.md)： 请求流量分割插件，对流量按指定的比例划分，并将其分流到对应的 upstream ；通过该插件可以实现 灰度发布、蓝绿发布和自定义发布功能。
 
 ### Monitoring
 
