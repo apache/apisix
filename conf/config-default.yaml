@@ -101,15 +101,12 @@ apisix:
   dns_resolver_valid: 30          # valid time for dns result 30 seconds
   resolver_timeout: 5             # resolver timeout
   ssl:
-    enable: false                 # ssl is disabled by default
-                                  # enable it to use your own cert and key
+    enable: true
     enable_http2: true
     listen_port: 9443
     # ssl_trusted_certificate: /path/to/ca-cert # Specifies a file path with trusted CA certificates in the PEM format
                                                 # used to verify the certificate when APISIX needs to do SSL/TLS handshaking
                                                 # with external services (e.g. etcd)
-    # ssl_cert: /path/to/ssl_cert
-    # ssl_cert_key: /path/to/ssl_cert_key
     ssl_protocols: "TLSv1.2 TLSv1.3"
     ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
     ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.
