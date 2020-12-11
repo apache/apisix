@@ -176,6 +176,12 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    if yaml_conf.apisix.enable_admin and
+        yaml_conf.apisix.config_center == "yaml"
+    then
+        util.die("ERROR: Admin API can only be used with etcd config_center.\n")
+    end
+
     local or_ver = util.execute_cmd("openresty -V 2>&1")
     local with_module_status = true
     if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
