@@ -289,13 +289,40 @@ function _M.load(config)
 end
 
 
+local function trace_plugins_info_for_debug(plugins)
+    if not (local_conf and local_conf.apisix.enable_debug) then
+        return
+    end
+
+    local is_http = ngx.config.subsystem == "http"
+
+    if not plugins then
+        if is_http and not ngx.headers_sent then
+            core.response.add_header("Apisix-Plugins", "no plugin")
+        else
+            core.log.warn("Apisix-Plugins: no plugin")
+        end
+
+        return
+    end
+
+    local t = {}
+    for i = 1, #plugins, 2 do
+        core.table.insert(t, plugins[i].name)
+    end
+    if is_http and not ngx.headers_sent then
+        core.response.add_header("Apisix-Plugins", core.table.concat(t, ", "))
+    else
+        core.log.warn("Apisix-Plugins: ", core.table.concat(t, ", "))
+    end
+end
+
+
 function _M.filter(user_route, plugins)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
-        if local_conf and local_conf.apisix.enable_debug then
-            core.response.set_header("Apisix-Plugins", "no plugin")
-        end
+        trace_plugins_info_for_debug(nil)
         return core.empty_tab
     end
 
@@ -310,13 +337,7 @@ function _M.filter(user_route, plugins)
         end
     end
 
-    if local_conf.apisix.enable_debug then
-        local t = {}
-        for i = 1, #plugins, 2 do
-            core.table.insert(t, plugins[i].name)
-        end
-        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
-    end
+    trace_plugins_info_for_debug(plugins)
 
     return plugins
 end
@@ -326,9 +347,7 @@ function _M.stream_filter(user_route, plugins)
     plugins = plugins or core.table.new(#stream_local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
-        if local_conf and local_conf.apisix.enable_debug then
-            core.response.set_header("Apisix-Plugins", "no plugin")
-        end
+        trace_plugins_info_for_debug(nil)
         return plugins
     end
 
@@ -342,13 +361,7 @@ function _M.stream_filter(user_route, plugins)
         end
     end
 
-    if local_conf.apisix.enable_debug then
-        local t = {}
-        for i = 1, #plugins, 2 do
-            core.table.insert(t, plugins[i].name)
-        end
-        core.response.set_header("Apisix-Plugins", core.table.concat(t, ", "))
-    end
+    trace_plugins_info_for_debug(plugins)
 
     return plugins
 end
