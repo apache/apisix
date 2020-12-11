@@ -657,6 +657,9 @@ Server: openresty
 hello world
 ```
 
+If the information can be delivered via HTTP response header, for example, the plugin is in stream
+subsystem, the information will be logged in the error log with `warn` level.
+
 ### Advanced Debug Mode
 
 Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will have a check every second, only the checker reads the `#END` flag, and the file would consider as closed.
