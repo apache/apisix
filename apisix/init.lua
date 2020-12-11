@@ -699,7 +699,7 @@ local function healcheck_passive(api_ctx)
     end
 
     http_statuses = passive and passive.unhealthy and
-                          passive.unhealthy.http_statuses
+            passive.unhealthy.http_statuses
     core.log.info("passive.unhealthy.http_statuses: ",
                   core.json.delay_encode(http_statuses))
     if not http_statuses then
