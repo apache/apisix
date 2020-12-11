@@ -421,6 +421,7 @@ _M.route = {
                 description = "HTTP uri",
                 type = "string",
             },
+            minItems = 1,
             uniqueItems = true,
         },
         name = rule_name_def,
@@ -441,12 +442,14 @@ _M.route = {
         hosts = {
             type = "array",
             items = host_def,
+            minItems = 1,
             uniqueItems = true,
         },
         remote_addr = remote_addr_def,
         remote_addrs = {
             type = "array",
             items = remote_addr_def,
+            minItems = 1,
             uniqueItems = true,
         },
         vars = {
@@ -502,6 +505,38 @@ _M.route = {
             type = "integer",
             enum = {1, 0},
             default = 1
+        },
+    },
+    allOf = {
+        {
+            oneOf = {
+                {required = {"uri"}},
+                {required = {"uris"}},
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"host"}},
+                        {required = {"hosts"}},
+                    }
+                }},
+                {required = {"host"}},
+                {required = {"hosts"}}
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"remote_addr"}},
+                        {required = {"remote_addrs"}},
+                    }
+                }},
+                {required = {"remote_addr"}},
+                {required = {"remote_addrs"}}
+            },
         },
     },
     anyOf = {

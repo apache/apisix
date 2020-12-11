@@ -157,7 +157,7 @@ query repo {
 --- response_body
 hello world
 --- error_log
-Mutliple operations are not supported
+Multiple operations are not supported
 
 
 
