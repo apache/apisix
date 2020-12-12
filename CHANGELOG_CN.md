@@ -108,7 +108,7 @@
 
 ### Improvements
 - 变更：nginx `worker_shutdown_timeout` 配置默认值由 `3s` 变更为推荐值 `240s`。[1883](https://github.com/apache/apisix/pull/1883)
-- 变更：`healthcheck` 超时时间类型 由 `integer ` 变更为 `number`。[1892](https://github.com/apache/apisix/pull/1892)
+- 变更：`healthcheck` 超时时间类型 由 `integer` 变更为 `number`。[1892](https://github.com/apache/apisix/pull/1892)
 - 变更：`request-validation` 插件输入参数支持 `JsonSchema` 验证。[1920](https://github.com/apache/apisix/pull/1920)
 - 变更：为 Makefile `install` 命令添加注释。[1912](https://github.com/apache/apisix/pull/1912)
 - 变更：更新 config.yaml `etcd.timeout` 默认配置的注释。[1929](https://github.com/apache/apisix/pull/1929)
