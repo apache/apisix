@@ -52,21 +52,21 @@ The traffic division plugin divides the request traffic according to the specifi
 | rules.upstreams.upstream.pass_host | enum | optional    | "pass"  | ["pass", "node", "rewrite"]  | pass: pass the host requested by the client, node: pass the host requested by the client; use the host configured with the upstream node, rewrite: rewrite the host with the value configured by the upstream_host. |
 | rules.upstreams.upstream.name      | string | optional    |        |   | Identify the upstream service name, usage scenario, etc.  |
 | rules.upstreams.upstream.upstream_host | string | optional    |    |   | Only valid when pass_host is configured as rewrite.    |
-| rules.upstreams.weighted_upstreams | integer | optional    | weighted_upstreams = 1   |  | The traffic is divided according to the `weighted_upstreams` value, and the roundrobin algorithm is used to divide multiple `weighted_upstreams`. |
+| rules.upstreams.weighted_upstream | integer | optional    | weighted_upstream = 1   |  | The traffic is divided according to the `weighted_upstream` value, and the roundrobin algorithm is used to divide multiple `weighted_upstream`. |
 
 ## How To Enable
 
-There is only the value of `weighted_upstreams` in the upstreams of the plugin, which indicates the weight value of upstream traffic reaching the default `route`.
+There is only the value of `weighted_upstream` in the upstreams of the plugin, which indicates the weight value of upstream traffic reaching the default `route`.
 
 ```json
 {
-    "weighted_upstreams": 2
+    "weighted_upstream": 2
 }
 ```
 
 ### Grayscale Release
 
-Traffic is split according to the `weighted_upstreams` value configured by upstreams in the plugin (the rule of `match` is not configured, and `match` is passed by default). The request traffic is divided into 4:2, 2/3 of the traffic reaches the upstream of the `1981` port in the plugin, and 1/3 of the traffic reaches the upstream of the default `1980` port on the route.
+Traffic is split according to the `weighted_upstream` value configured by upstreams in the plugin (the rule of `match` is not configured, and `match` is passed by default). The request traffic is divided into 4:2, 2/3 of the traffic reaches the upstream of the `1981` port in the plugin, and 1/3 of the traffic reaches the upstream of the default `1980` port on the route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -90,10 +90,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "read": 15
                                 }
                             },
-                            "weighted_upstreams": 4
+                            "weighted_upstream": 4
                         },
                         {
-                            "weighted_upstreams": 2
+                            "weighted_upstream": 2
                         }
                     ]
                 }
@@ -156,7 +156,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Multiple matching rules can be set in `match`, multiple expressions in `vars` are in the relationship of `add`, and multiple `vars` rules are in the relationship of `or`; as long as one of the vars rules is passed, then Indicates that `match` passed.
 
-Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `add`. According to the value of `weighted_upstreams`, the flow is divided into 4:2. Among them, only the `weighted_upstreams` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
+Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `add`. According to the value of `weighted_upstream`, the flow is divided into 4:2. Among them, only the `weighted_upstream` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -184,10 +184,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "127.0.0.1:1981":10
                                 }
                             },
-                            "weighted_upstreams": 4
+                            "weighted_upstream": 4
                         },
                         {
-                            "weighted_upstreams": 2
+                            "weighted_upstream": 2
                         }
                     ]
                 }
@@ -205,7 +205,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 The plugin sets the request matching rules and sets the port to upstream with `1981`, and the route has upstream with port `1980`.
 
-Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `and` relationships. According to the value of `weighted_upstreams`, the flow is divided into 4:2. Among them, only the `weighted_upstreams` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
+Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `and` relationships. According to the value of `weighted_upstream`, the flow is divided into 4:2. Among them, only the `weighted_upstream` part represents the proportion of upstream on the route. When `match` fails to match, all traffic will only hit upstream on the route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -238,10 +238,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "127.0.0.1:1981":10
                                 }
                             },
-                            "weighted_upstreams": 4
+                            "weighted_upstream": 4
                         },
                         {
-                            "weighted_upstreams": 2
+                            "weighted_upstream": 2
                         }
                     ]
                 }

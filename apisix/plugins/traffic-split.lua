@@ -98,7 +98,7 @@ local upstreams_schema = {
         properties = {
             upstream_id = schema_def.id_schema,    -- todo: support upstream_id method
             upstream = schema_def.upstream,
-            weighted_upstreams = {
+            weighted_upstream = {
                 description = "used to split traffic between different" ..
                               "upstreams for plugin configuration",
                 type = "integer",
@@ -111,7 +111,7 @@ local upstreams_schema = {
     -- the upstream of `route` is used by default.
     default = {
         {
-            weighted_upstreams = 1
+            weighted_upstream = 1
         }
     },
     minItems = 1,
@@ -231,12 +231,12 @@ local function new_rr_obj(upstreams)
     local server_list = {}
     for _, upstream_obj in ipairs(upstreams) do
         if not upstream_obj.upstream then
-            -- If the `upstream` object has only the `weighted_upstreams` value, it means that
+            -- If the `upstream` object has only the `weighted_upstream` value, it means that
             -- the `upstream` weight value on the default `route` has been reached.
             -- Need to set an identifier to mark the empty upstream.
             upstream_obj.upstream = "empty_upstream"
         end
-        server_list[upstream_obj.upstream] = upstream_obj.weighted_upstreams
+        server_list[upstream_obj.upstream] = upstream_obj.weighted_upstream
     end
 
     return roundrobin:new(server_list)

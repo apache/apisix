@@ -55,7 +55,7 @@ __DATA__
                                     nodes = {["127.0.0.1:1981"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstreams = 2
+                                weighted_upstream = 2
                             },
                             {
                                 upstream = {
@@ -64,10 +64,10 @@ __DATA__
                                     nodes = {["127.0.0.1:1982"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstreams = 2
+                                weighted_upstream = 2
                             },
                             {
-                                weighted_upstreams = 1
+                                weighted_upstream = 1
                             }
                         }
                     }
@@ -105,10 +105,10 @@ done
                                     nodes = {["127.0.0.1:1981"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstreams = 2
+                                weighted_upstream = 2
                             },
                             {
-                                weighted_upstreams = 1
+                                weighted_upstream = 1
                             }
                         }
                     }
@@ -153,10 +153,10 @@ done
                                     nodes = {["127.0.0.1:1981"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstreams = 2
+                                weighted_upstream = 2
                             },
                             {
-                                weighted_upstreams = 1
+                                weighted_upstream = 1
                             }
                         }
                     }
@@ -324,10 +324,10 @@ GET /t
                                     "upstreams": [
                                         {
                                            "upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":2}, "timeout": {"connect": 15, "send": 15, "read": 15}},
-                                            "weighted_upstreams": 2
+                                            "weighted_upstream": 2
                                         },
                                         {
-                                            "weighted_upstreams": 1
+                                            "weighted_upstream": 1
                                         }
                                     ]
                                 }
@@ -412,9 +412,9 @@ GET /t
                                         }
                                     ],
                                     "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstreams": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstreams": 2},
-                                        {"weighted_upstreams": 1}
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstream": 2},
+                                        {"weighted_upstream": 1}
                                     ]
                                 }
                             ]
@@ -498,8 +498,8 @@ GET /t
                                         }
                                     ],
                                     "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstreams": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstreams": 2}
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstream": 2}
                                     ]
                                 }
                             ]
@@ -570,7 +570,7 @@ GET /t
                                         }
                                     ],
                                     "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1980":1, "127.0.0.1:1981":2, "127.0.0.1:1982":2}, "timeout": {"connect": 15, "send": 15, "read": 15}}, "weighted_upstreams": 1}
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1980":1, "127.0.0.1:1981":2, "127.0.0.1:1982":2}, "timeout": {"connect": 15, "send": 15, "read": 15}}, "weighted_upstream": 1}
                                     ]
                                 }
                             ]
@@ -637,10 +637,10 @@ GET /t
                                                     "foo.com:80": 0
                                                 }
                                             },
-                                            "weighted_upstreams": 2
+                                            "weighted_upstream": 2
                                         },
                                         {
-                                            "weighted_upstreams": 1
+                                            "weighted_upstream": 1
                                         }
                                     ]
                                 }
@@ -701,10 +701,10 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
                                                     "127.0.0.1:1981":1
                                                 }
                                             },
-                                            "weighted_upstreams": 2
+                                            "weighted_upstream": 2
                                         },
                                         {
-                                            "weighted_upstreams": 1
+                                            "weighted_upstream": 1
                                         }
                                     ]
                                 }
@@ -884,9 +884,9 @@ GET /t
                                         }
                                     ],
                                     "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstreams": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstreams": 2},
-                                        {"weighted_upstreams": 1}
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstream": 2},
+                                        {"weighted_upstream": 1}
                                     ]
                                 }
                             ]
