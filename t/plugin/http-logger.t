@@ -513,7 +513,7 @@ GET /t
 hello1 world
 --- error_log
 Batch Processor[http logger] batch max size has exceeded
-tranferring buffer entries to processing pipe line, buffercount[2]
+transferring buffer entries to processing pipe line, buffercount[2]
 Batch Processor[http logger] successfully processed the entries
 --- wait: 1.5
 
