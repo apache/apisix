@@ -223,13 +223,9 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing ssl cert for https admin")
     end
 
-    local ssl = yaml_conf.apisix.ssl
-    if ssl and ssl.enable and not (
-        ssl.ssl_cert and ssl.ssl_cert ~= "" and
-        ssl.ssl_cert_key and ssl.ssl_cert_key ~= "")
-    then
-        util.die("missing ssl cert for ssl")
-    end
+    -- enable ssl with place holder crt&key
+    yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
+    yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
     -- Using template.render
     local sys_conf = {

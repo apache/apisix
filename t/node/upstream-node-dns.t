@@ -84,7 +84,7 @@ passed
             return {address = "127.0.0.2"}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 --- request
 GET /hello
@@ -111,7 +111,7 @@ hello world
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
@@ -197,7 +197,7 @@ passed
             return {address = "127.0.0.2"}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 --- request
 GET /hello
@@ -224,7 +224,7 @@ hello world
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
@@ -352,7 +352,7 @@ passed
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
@@ -439,7 +439,7 @@ passed
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
@@ -506,7 +506,7 @@ proxy request to 127.0.0.[56]:1980
             return {address = "127.0.0.1"}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
@@ -606,7 +606,7 @@ passed
             return {address = "127.0.0." .. count}
         end
 
-        error("unkown domain: " .. domain)
+        error("unknown domain: " .. domain)
     end
 
 --- config
