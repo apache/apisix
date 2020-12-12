@@ -53,7 +53,7 @@ Default enabled
 
 ## How To Configure
 
-By default, the maximun body size sent to the `/apisix/batch-requests` can't be larger than 1 MiB.
+By default, the maximum body size sent to the `/apisix/batch-requests` can't be larger than 1 MiB.
 You can configure it via `apisix/admin/plugin_metadata/batch-requests`:
 
 ```shell
@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| max_body_size       | integer  | required   |  1048576  |    > 0  | the maximun of request body size in bytes |
+| max_body_size       | integer  | required   |  1048576  |    > 0  | the maximum of request body size in bytes |
 
 
 ## Batch API Request/Response

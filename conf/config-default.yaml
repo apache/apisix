@@ -115,13 +115,13 @@ apisix:
                                             #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
                                             #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
 
-nginx_config:                     # config for render the template to genarate nginx.conf
+nginx_config:                     # config for render the template to generate nginx.conf
   error_log: "logs/error.log"
   error_log_level: "warn"         # warn,error
   worker_processes: auto          # one worker will get best performance, you can use "auto", but remember it is just work well only on physical machine
                                   # no more than 8 workers, otherwise competition between workers will consume a lot of resources
                                   # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APISIX_WORKER_PROCESSES"
-  enable_cpu_affinity: true       # enbale cpu affinity, this is just work well only on physical machine
+  enable_cpu_affinity: true       # enable cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s     # timeout for a graceful shutdown of worker processes
   event:
@@ -195,7 +195,7 @@ etcd:
 #       read: 5000                    # default 5000ms
 
 graphql:
-  max_size: 1048576               # the maximum size limitation of graphql in bytes, defualt 1MiB
+  max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
 
 plugins:                          # plugin list (sorted in alphabetical order)
   - api-breaker

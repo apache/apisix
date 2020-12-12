@@ -169,8 +169,8 @@ discovery:
 discovery:
   eureka:
     host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-      - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
-      - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+      - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
+      - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
     fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
     weight: 100                      # default weight for node
