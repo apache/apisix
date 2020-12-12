@@ -69,7 +69,7 @@ function _M.init()
 
     clear_tab(metrics)
 
-    -- Newly added metrics should follow the naming best pratices described in
+    -- Newly added metrics should follow the naming best practices described in
     -- https://prometheus.io/docs/practices/naming/#metric-names
     -- For example,
     -- 1. Add unit as the suffix

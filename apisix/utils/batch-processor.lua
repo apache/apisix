@@ -169,7 +169,7 @@ end
 function batch_processor:process_buffer()
     -- If entries are present in the buffer move the entries to processing
     if #self.entry_buffer.entries > 0 then
-        core.log.debug("tranferring buffer entries to processing pipe line, ",
+        core.log.debug("transferring buffer entries to processing pipe line, ",
             "buffercount[", #self.entry_buffer.entries ,"]")
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = { entries = {}, retry_count = 0 }

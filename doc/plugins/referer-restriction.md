@@ -30,7 +30,7 @@
 ## Name
 
 The `referer-restriction` can restrict access to a Service or a Route by
-whitelisting request header Referers.
+whitelisting request header Referrers.
 
 ## Attributes
 
