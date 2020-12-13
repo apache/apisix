@@ -918,3 +918,18 @@ if ! echo "$out" | grep 'authentication is not enabled'; then
 fi
 
 echo "passed: properly handle the error when connecting to etcd without auth"
+
+# Admin API can only be used with etcd config_center
+echo '
+apisix:
+    enable_admin: true
+    config_center: yaml
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; then
+    echo "failed: Admin API can only be used with etcd config_center"
+    exit 1
+fi
+
+echo "passed: Admin API can only be used with etcd config_center"
