@@ -166,9 +166,27 @@ plugins:
 
 
 === TEST 8: get all the attributes of all plugins
---- request
-GET /apisix/admin/plugins/?all=true
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins/?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            ngx.say(json.encode(res))
+        }
+    }
 --- response_body eval
-qr/\{"priority":0,"type":"other","name":"example-plugin","schema":\{"properties":\{"i":\{"minimum":0,"type":"number"\},"port":\{"type":"integer"\},"ip":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\},"s":\{"type":"string"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
+qr/\{"name":"example-plugin","priority":0,"schema":\{"properties":\{"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"type":"other","version":0.1\}/
 --- no_error_log
 [error]
