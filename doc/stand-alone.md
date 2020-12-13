@@ -43,7 +43,7 @@ apisix:
                         # `/your_path/conf/apisix.yaml`
 ```
 
-In addition, since the current Admin API is based on the etcd configuration center solution, the Admin API will not actually work when the Stand-alone mode is enabled.
+In addition, since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
 
 ## How to config rules
 
