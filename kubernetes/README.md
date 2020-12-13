@@ -30,6 +30,8 @@ There are some yaml files for deploying apisix in Kubernetes.
 if you do not need to change any config, and use default config in `../conf/config.yaml`
 ```
 $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
+# or
+$ kubectl apply -f apisix/kubernetes/apisix-configmaps.yaml
 ```
 
 #### when using etcd-operator
