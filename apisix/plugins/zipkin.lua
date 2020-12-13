@@ -42,7 +42,7 @@ local schema = {
         },
         server_addr = {
             type = "string",
-            description = "default is $server_addr, you can speific your external ip address",
+            description = "default is $server_addr, you can specify your external ip address",
             pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
         },
     },

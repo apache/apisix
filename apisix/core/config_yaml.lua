@@ -189,7 +189,7 @@ local function sync_data(self)
                 data_valid = false
                 log.error("invalid item data of [", self.key .. "/" .. id,
                           "], val: ", json.delay_encode(item),
-                          ", it should be a object")
+                          ", it should be an object")
             end
 
             local key = item.id or "arr_" .. i

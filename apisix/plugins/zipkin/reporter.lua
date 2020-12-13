@@ -168,7 +168,7 @@ function _M.init_processor(self)
 
     local processor, err = batch_processor:new(flush, process_conf)
     if err then
-        return false, "creat processor error: " .. err
+        return false, "create processor error: " .. err
     end
 
     self.processor = processor
