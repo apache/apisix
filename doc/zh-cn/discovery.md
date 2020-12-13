@@ -180,7 +180,7 @@ discovery:
       read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
 ```
 
-通过 `discovery.eureka.host ` 配置 eureka 的服务器地址。
+通过 `discovery.eureka.host` 配置 eureka 的服务器地址。
 
 如果 eureka 的地址是 `http://127.0.0.1:8761/` ，并且不需要用户名和密码验证的话，配置如下：
 

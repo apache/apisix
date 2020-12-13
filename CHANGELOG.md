@@ -107,7 +107,7 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 
 ### Improvements
 - change: nginx worker_shutdown_timeout is changed from 3s to recommended value 240s. [1883](https://github.com/apache/apisix/pull/1883)
-- change: the `healthcheck` timeout time type changed from `integer ` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
+- change: the `healthcheck` timeout time type changed from `integer` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
 - change: the `request-validation` plugin input parameter supports `Schema` validation. [1920](https://github.com/apache/apisix/pull/1920)
 - change: add comments for Makefile `install` command. [1912](https://github.com/apache/apisix/pull/1912)
 - change: update comment for config.yaml `etcd.timeout` configuration. [1929](https://github.com/apache/apisix/pull/1929)
