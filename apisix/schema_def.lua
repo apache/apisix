@@ -44,12 +44,14 @@ _M.host_def = host_def
 
 
 local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-local ipv6_def = "([a-fA-F0-9]{0,4}:){0,8}(:[a-fA-F0-9]{0,4}){0,8}"
+-- There is false negative for ipv6/cidr. For instance, `:/8` will be valid.
+-- It is fine as the correct regex will be too complex.
+local ipv6_def = "([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}"
                  .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
-    {title = "IPv4", type = "string", pattern = "^" .. ipv4_def .. "$"},
+    {title = "IPv4", type = "string", format = "ipv4"},
     {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
-    {title = "IPv6", type = "string", pattern = "^" .. ipv6_def .. "$"},
+    {title = "IPv6", type = "string", format = "ipv6"},
     {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
 _M.ip_def = ip_def
@@ -419,6 +421,7 @@ _M.route = {
                 description = "HTTP uri",
                 type = "string",
             },
+            minItems = 1,
             uniqueItems = true,
         },
         name = rule_name_def,
@@ -439,12 +442,14 @@ _M.route = {
         hosts = {
             type = "array",
             items = host_def,
+            minItems = 1,
             uniqueItems = true,
         },
         remote_addr = remote_addr_def,
         remote_addrs = {
             type = "array",
             items = remote_addr_def,
+            minItems = 1,
             uniqueItems = true,
         },
         vars = {
@@ -494,6 +499,45 @@ _M.route = {
         },
 
         id = id_schema,
+
+        status = {
+            description = "route status, 1 to enable, 0 to disable",
+            type = "integer",
+            enum = {1, 0},
+            default = 1
+        },
+    },
+    allOf = {
+        {
+            oneOf = {
+                {required = {"uri"}},
+                {required = {"uris"}},
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"host"}},
+                        {required = {"hosts"}},
+                    }
+                }},
+                {required = {"host"}},
+                {required = {"hosts"}}
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"remote_addr"}},
+                        {required = {"remote_addrs"}},
+                    }
+                }},
+                {required = {"remote_addr"}},
+                {required = {"remote_addrs"}}
+            },
+        },
     },
     anyOf = {
         {required = {"plugins", "uri"}},

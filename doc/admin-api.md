@@ -55,11 +55,12 @@
 |---------|---------|----|-----------|----|
 |name     |False |Auxiliary   |Identifies route names.|customer-xxxx|
 |desc     |False |Auxiliary   |route description, usage scenarios, and more.|customer xxxx|
-|uri      |True |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design.md#router) allows more advanced matching, see [Router](architecture-design.md#router) for more.|"/hello"|
-|host     |False |Match Rules|Currently requesting a domain name, such as `foo.com`; pan-domain names such as `*.foo.com` are also supported.|"foo.com"|
-|hosts    |False |Match Rules|The `host` in the form of a list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
-|remote_addr|False |Match Rules|The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.|"192.168.1.0/24"|
-|remote_addrs|False |Match Rules|The `remote_addr` in the form of a list indicates that multiple different IP addresses are allowed, and match any one of them.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
+|uri      |True, can't be used with `uris` |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design.md#router) allows more advanced matching, see [Router](architecture-design.md#router) for more.|"/hello"|
+|uris     |True, can't be used with `uri`|Match Rules|The `uri` in the form of a non-empty list means that multiple different uris are allowed, and match any one of them.|["/hello", "/word"]|
+|host     |False, can't be used with `hosts` |Match Rules|Currently requesting a domain name, such as `foo.com`; PAN domain names such as `*.foo.com` are also supported.|"foo.com"|
+|hosts    |False, can't be used with `host` |Match Rules|The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
+|remote_addr|False, can't be used with `remote_addrs` |Match Rules|The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.|"192.168.1.0/24"|
+|remote_addrs|False, can't be used with `remote_addr` |Match Rules|The `remote_addr` in the form of a non-empty list indicates that multiple different IP addresses are allowed, and match any one of them.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
 |methods  |False |Match Rules|If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.|{"GET", "POST"}|
 |priority  |False |Match Rules|If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`. Larger value means higher priority. The default value is 0.|priority = 10|
 |vars       |False  |Match Rules |A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For the operator part, the currently supported operators are `==`, `~=`,`>`, `<`, and `~~`. For the `>` and `<` operators, the result is first converted to `number` and then compared. See a list of [supported operators](#available-operators) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
@@ -72,6 +73,7 @@
 |service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
+|status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 
@@ -228,6 +230,35 @@ HTTP/1.1 200 OK
 
 After successful execution, methods will not retain the original data, and the entire update is:
 ["POST", "DELETE", "PATCH"]
+
+
+# disable route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 0
+}'
+HTTP/1.1 200 OK
+...
+
+After successful execution, status nodes will be updated to:
+{
+    "status": 0
+}
+
+
+# enable route
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+{
+    "status": 1
+}'
+HTTP/1.1 200 OK
+...
+
+After successful execution, status nodes will be updated to:
+{
+    "status": 1
+}
+
 
 ```
 
@@ -450,13 +481,14 @@ Config Example:
 }
 ```
 
-The binding authentication and authorization plug-in is a bit special. When it needs to be used in conjunction with the consumer, it needs to provide user name, password and other information; on the other hand, when it is bound with route / service, it does not require any parameters. Because at this time, it is based on the user request data to infer which consumer the user corresponds to.
+The binding authentication plug-in is a bit special. When it needs to be used in conjunction with the consumer, it needs to provide user name, password and other information; on the other hand, when it is bound with route / service, it does not require any parameters. Because at this time, it is based on the user request data to infer which consumer the user corresponds to.
 
 Example:
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
+    "username": "jack",
     "plugins": {
         "key-auth": {
             "key": "auth-one"
@@ -475,6 +507,8 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 {"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63},"action":"set"}
 ```
+
+Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
 > Response Parameters
 

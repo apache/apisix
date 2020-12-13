@@ -474,3 +474,98 @@ GET /t
 qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: failed to validate dependent schema for \\"name\\": value should match only one schema, but matches none"\}/
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: not unwanted data, PUT
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
+                 ngx.HTTP_PUT,
+                [[{
+                    "skey": "val",
+                    "ikey": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"set","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: not unwanted data, GET
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
+                 ngx.HTTP_GET
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.node.value.create_time = nil
+            res.node.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"get","count":"1","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: not unwanted data, DELETE
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
+                 ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"action":"delete","deleted":"1","key":"/apisix/plugin_metadata/example-plugin","node":{}}
+--- request
+GET /t
+--- no_error_log
+[error]

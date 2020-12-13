@@ -22,11 +22,19 @@ local util = require("apisix.cli.util")
 local pairs = pairs
 local type = type
 local tonumber = tonumber
+local getmetatable = getmetatable
 local getenv = os.getenv
 local str_gmatch = string.gmatch
 local str_find = string.find
+local str_sub = string.sub
 
 local _M = {}
+local exported_vars
+
+
+function _M.get_exported_vars()
+    return exported_vars
+end
 
 
 local function is_empty_yaml_line(line)
@@ -47,23 +55,36 @@ end
 local function resolve_conf_var(conf)
     for key, val in pairs(conf) do
         if type(val) == "table" then
-            resolve_conf_var(val)
+            local ok, err = resolve_conf_var(val)
+            if not ok then
+                return nil, err
+            end
 
         elseif type(val) == "string" then
+            local err
             local var_used = false
             -- we use '${{var}}' because '$var' and '${var}' are taken
             -- by Nginx
             local new_val = val:gsub("%$%{%{%s*([%w_]+)%s*%}%}", function(var)
                 local v = getenv(var)
                 if v then
+                    if not exported_vars then
+                        exported_vars = {}
+                    end
+
+                    exported_vars[var] = v
                     var_used = true
                     return v
                 end
 
-                util.die("failed to handle configuration: ",
-                         "can't find environment variable ",
-                         var, "\n")
+                err = "failed to handle configuration: " ..
+                      "can't find environment variable " .. var
+                return ""
             end)
+
+            if err then
+                return nil, err
+            end
 
             if var_used then
                 if tonumber(new_val) ~= nil then
@@ -78,22 +99,62 @@ local function resolve_conf_var(conf)
             conf[key] = new_val
         end
     end
+
+    return true
 end
 
 
-local function merge_conf(base, new_tab)
+local function tinyyaml_type(t)
+    local mt = getmetatable(t)
+    if mt then
+        return mt.__type
+    end
+end
+
+
+local function merge_conf(base, new_tab, ppath)
+    ppath = ppath or ""
+
     for key, val in pairs(new_tab) do
         if type(val) == "table" then
-            if tab_is_array(val) then
-                base[key] = val
-            elseif base[key] == nil then
-                base[key] = val
-            else
-                merge_conf(base[key], val)
-            end
+            if tinyyaml_type(val) == "null" then
+                base[key] = nil
 
+            elseif tab_is_array(val) then
+                base[key] = val
+
+            else
+                if base[key] == nil then
+                    base[key] = {}
+                end
+
+                local ok, err = merge_conf(
+                    base[key],
+                    val,
+                    ppath == "" and key or ppath .. "->" .. key
+                )
+                if not ok then
+                    return nil, err
+                end
+            end
         else
-            base[key] = val
+            local type_val = type(val)
+
+            if base[key] == nil then
+                base[key] = val
+            elseif type(base[key]) ~= type_val then
+                if (ppath == "nginx_config" or str_sub(ppath, 1, 14) == "nginx_config->") and
+                    (type_val == "number" or type_val == "string")
+                then
+                    base[key] = val
+                else
+                    local path = ppath == "" and key or ppath .. "->" .. key
+                    return nil, "failed to merge, path[" .. path ..  "] expect: " ..
+                                type(base[key]) .. ", but got: " .. type_val
+                end
+            else
+                base[key] = val
+            end
         end
     end
 
@@ -102,7 +163,10 @@ end
 
 
 function _M.read_yaml_conf(apisix_home)
-    profile.apisix_home = apisix_home .. "/"
+    if apisix_home then
+        profile.apisix_home = apisix_home .. "/"
+    end
+
     local local_conf_path = profile:yaml_path("config-default")
     local default_conf_yaml, err = util.read_file(local_conf_path)
     if not default_conf_yaml then
@@ -134,8 +198,15 @@ function _M.read_yaml_conf(apisix_home)
             return nil, "invalid config.yaml file"
         end
 
-        resolve_conf_var(user_conf)
-        merge_conf(default_conf, user_conf)
+        local ok, err = resolve_conf_var(user_conf)
+        if not ok then
+            return nil, err
+        end
+
+        ok, err = merge_conf(default_conf, user_conf)
+        if not ok then
+            return nil, err
+        end
     end
 
     return default_conf

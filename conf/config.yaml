@@ -27,6 +27,8 @@
 #     host:
 #       - "http://${{ETCD_HOST}}:2379"
 #
+# And then run `export ETCD_HOST=$your_host` before `make init`.
+#
 # If the configured environment variable can't be found, an error will be thrown.
 apisix:
   admin_key:

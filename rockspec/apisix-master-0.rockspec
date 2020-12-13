@@ -38,10 +38,11 @@ dependencies = {
     "lua-resty-jit-uuid = 0.0.7",
     "lua-resty-healthcheck-api7 = 2.2.0",
     "lua-resty-jwt = 0.2.0",
+    "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.4",
+    "lua-resty-radixtree = 2.5",
     "lua-protobuf = 0.3.1",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
@@ -55,6 +56,8 @@ dependencies = {
     "base64 = 1.5-2",
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
+    "lua-resty-expr = 1.0.0",
+    "graphql = 0.0.2",
 }
 
 build = {

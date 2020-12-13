@@ -67,9 +67,6 @@ echo "passed: nginx.conf file contains reuseport configuration"
 echo "
 apisix:
     ssl:
-        enable: true
-        ssl_cert: '../t/certs/apisix.crt'
-        ssl_cert_key: '../t/certs/apisix.key'
         listen_port: 8443
 " > conf/config.yaml
 
@@ -98,9 +95,6 @@ apisix:
     - 9081
     - 9082
   ssl:
-    enable: true
-    ssl_cert: '../t/certs/apisix.crt'
-    ssl_cert_key: '../t/certs/apisix.key'
     listen_port:
       - 9443
       - 9444
@@ -166,6 +160,12 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
     exit 1
 fi
 
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "can't find environment variable"; then
+    echo "failed: failed to resolve variables"
+    exit 1
+fi
+
 echo "passed: resolve variables"
 
 echo '
@@ -210,6 +210,114 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: resolve variables wrapped with whitespace"
+
+# support environment variables in local_conf
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+# don't override user's envs configuration
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST=1.1.1.1
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST=1.1.1.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo "pass: support environment variables in local_conf"
+
+# support merging worker_processes
+echo '
+nginx_config:
+    worker_processes: 1
+' > conf/config.yaml
+
+make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+nproc=1 make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: true
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+out=$(nproc=false make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo "passed: merge worker_processes"
 
 # check nameserver imported
 git checkout conf/config.yaml
@@ -273,10 +381,6 @@ git checkout conf/config.yaml
 
 echo "
 apisix:
-    ssl:
-        enable: true
-        ssl_cert: '../t/certs/apisix.crt'
-        ssl_cert_key: '../t/certs/apisix.key'
     admin_api_mtls:
         admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
         admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
@@ -651,14 +755,6 @@ echo "passed: using env to set worker processes"
 # set worker processes with env
 git checkout conf/config.yaml
 
-echo '
-apisix:
-    ssl:
-        enable: true
-        ssl_cert: "../t/certs/apisix.crt"
-        ssl_cert_key: "../t/certs/apisix.key"
-' > conf/config.yaml
-
 make init
 
 count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
@@ -670,9 +766,6 @@ fi
 echo '
 apisix:
     ssl:
-        enable: true
-        ssl_cert: "../t/certs/apisix.crt"
-        ssl_cert_key: "../t/certs/apisix.key"
         ssl_session_tickets: true
 ' > conf/config.yaml
 
@@ -793,38 +886,50 @@ etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
 
 init_kv=(
-/apisix/consumers/
-init_dir
-/apisix/global_rules/
-init_dir
-/apisix/node_status/
-init_dir
-/apisix/plugin_metadata/
-init_dir
-/apisix/plugins/
-init_dir
-/apisix/proto/
-init_dir
-/apisix/routes/
-init_dir
-/apisix/services/
-init_dir
-/apisix/ssl/
-init_dir
-/apisix/stream_routes/
-init_dir
-/apisix/upstreams/
-init_dir
+"/apisix/consumers/ init_dir"
+"/apisix/global_rules/ init_dir"
+"/apisix/node_status/ init_dir"
+"/apisix/plugin_metadata/ init_dir"
+"/apisix/plugins/ init_dir"
+"/apisix/proto/ init_dir"
+"/apisix/routes/ init_dir"
+"/apisix/services/ init_dir"
+"/apisix/ssl/ init_dir"
+"/apisix/stream_routes/ init_dir"
+"/apisix/upstreams/ init_dir"
 )
-i=0
 
-for kv in $cmd_res
+IFS=$'\n'
+for kv in ${init_kv[@]}
 do
-    if [ "${init_kv[$i]}" != "$kv" ]; then
-        echo "failed: index=$i, $kv is not equal to ${init_kv[$i]}"
-        exit 1
-    fi
-    let i=$i+1
+count=`echo $cmd_res | grep -c ${kv} || true`
+if [ $count -ne 1 ]; then
+    echo "failed: failed to match ${kv}"
+    exit 1
+fi
 done
 
 echo "passed: etcd auth enabled and init kv has been set up correctly"
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'authentication is not enabled'; then
+    echo "failed: properly handle the error when connecting to etcd without auth"
+    exit 1
+fi
+
+echo "passed: properly handle the error when connecting to etcd without auth"
+
+# Admin API can only be used with etcd config_center
+echo '
+apisix:
+    enable_admin: true
+    config_center: yaml
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; then
+    echo "failed: Admin API can only be used with etcd config_center"
+    exit 1
+fi
+
+echo "passed: Admin API can only be used with etcd config_center"

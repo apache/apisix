@@ -912,7 +912,7 @@ passed
 
 
 
-=== TEST 49: pipeline of client request with successfuly authorized
+=== TEST 49: pipeline of client request with successfully authorized
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- more_headers
@@ -1034,5 +1034,57 @@ qr/404 Not Found/
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1"\} \d+/
+--- no_error_log
+[error]
+
+
+
+=== TEST 58: customize export uri, not found
+--- yaml_config
+plugin_attr:
+    prometheus:
+        export_uri: /a
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 59: customize export uri, found
+--- yaml_config
+plugin_attr:
+    prometheus:
+        export_uri: /a
+--- request
+GET /a
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 60: customize export uri, missing plugin, use default
+--- yaml_config
+plugin_attr:
+    x:
+        y: z
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 61: customize export uri, missing attr, use default
+--- yaml_config
+plugin_attr:
+    prometheus:
+        y: z
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
 --- no_error_log
 [error]

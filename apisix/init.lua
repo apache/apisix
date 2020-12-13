@@ -373,7 +373,9 @@ function _M.http_access_phase()
         end
     end
 
-    if core.string.has_prefix(uri, "/apisix/") then
+    if router.api.has_route_not_under_apisix() or
+        core.string.has_prefix(uri, "/apisix/")
+    then
         local matched = router.api.match(api_ctx)
         if matched then
             return
@@ -514,6 +516,10 @@ function _M.http_access_phase()
                 api_ctx.consumer,
                 api_ctx
             )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
             if changed then
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
@@ -692,8 +698,8 @@ local function healcheck_passive(api_ctx)
         end
     end
 
-    local http_statuses = passive and passive.unhealthy and
-                          passive.unhealthy.http_statuses
+    http_statuses = passive and passive.unhealthy and
+                    passive.unhealthy.http_statuses
     core.log.info("passive.unhealthy.http_statuses: ",
                   core.json.delay_encode(http_statuses))
     if not http_statuses then

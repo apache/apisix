@@ -123,6 +123,7 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
+    lua_shared_dict internal_status      10m;
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
     lua_shared_dict prometheus-metrics   10m;
@@ -164,6 +165,10 @@ http {
         {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
     {% end %}
     }
+    {% end %}
+
+    {% if enabled_plugins["error-log-logger"] then %}
+        lua_capture_error_log  10m;
     {% end %}
 
     lua_ssl_verify_depth 5;

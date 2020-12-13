@@ -47,7 +47,7 @@ apisix:
 ```
 
 此外由于目前 Admin API 都是基于 etcd 配置中心解决方案，当开启 Stand-alone 模式后，
-Admin API 实际将不起作用。
+Admin API 将不再被允许使用。
 
 ## 如何配置规则
 

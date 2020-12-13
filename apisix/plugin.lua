@@ -264,7 +264,7 @@ function _M.load(config)
         end
     end
 
-    if ngx.config.subsystem == "http"then
+    if ngx.config.subsystem == "http" then
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
         else
@@ -468,7 +468,7 @@ function _M.init_worker()
     _M.load()
 
     -- some plugins need to be initialized in init* phases
-    if ngx.config.subsystem == "http"then
+    if ngx.config.subsystem == "http" then
         require("apisix.plugins.prometheus.exporter").init()
     end
 
