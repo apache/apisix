@@ -254,7 +254,7 @@ local function sync_data(self)
                     data_valid = false
                     log.error("invalid item data of [", self.key .. "/" .. key,
                               "], val: ", item.value,
-                              ", it shoud be a object")
+                              ", it should be an object")
                 end
 
                 if data_valid and self.item_schema then
@@ -355,7 +355,7 @@ local function sync_data(self)
             self:upgrade_version(res.modifiedIndex)
             return false, "invalid item data of [" .. self.key .. "/" .. key
                             .. "], val: " .. res.value
-                            .. ", it shoud be a object"
+                            .. ", it should be an object"
         end
 
         if res.value and self.item_schema then
@@ -650,7 +650,7 @@ end
 
 function _M.server_version(self)
     if not self.running then
-        return nil, "stoped"
+        return nil, "stopped"
     end
 
     return read_etcd_version(self.etcd_cli)
