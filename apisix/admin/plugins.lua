@@ -37,7 +37,42 @@ function _M.stream_check_schema(plugins_conf, schema_type)
 end
 
 
+local function get_plugins_all_attributes()
+    local plugins = core.config.local_conf().plugins
+    local all_attributes = core.table.new(#plugins, 0)
+    for _, name in ipairs(plugins) do
+        local plugin_name = "apisix.plugins." .. name
+        local ok, plugin = pcall(require, plugin_name)
+        if ok and plugin.priority then
+            local attribute = core.table.new(0, 6)
+            attribute.name = name
+            attribute.priority = plugin.priority
+            attribute.version = plugin.version
+            attribute.schema = plugin.schema
+            if plugin.consumer_schema then
+                attribute.consumer_schema = plugin.consumer_schema
+            end
+            if plugin.type then
+                attribute.type = plugin.type
+            else
+                attribute.type = "other"
+            end
+
+            table_insert(all_attributes, attribute)
+        end
+    end
+
+    return all_attributes
+end
+
+
 function _M.get(name)
+    local arg = get_uri_args()
+    if arg and arg["all"] == "true" then
+        local all_attributes = get_plugins_all_attributes()
+        return 200, all_attributes
+    end
+
     if not name then
         return 400, {error_msg = "not found plugin name"}
     end
@@ -50,7 +85,6 @@ function _M.get(name)
         return 400, {error_msg = "failed to load plugin " .. name}
     end
 
-    local arg = get_uri_args()
     local json_schema = plugin.schema
     if arg and arg["schema_type"] == "consumer" then
         json_schema = plugin.consumer_schema
@@ -83,35 +117,6 @@ function _M.get_plugins_list()
 
     table_sort(success, cmp)
     return success
-end
-
-
-function _M.get_plugins_meta_attributes()
-    local plugins = core.config.local_conf().plugins
-    local meta_attributes = core.table.new(#plugins, 0)
-    for _, name in ipairs(plugins) do
-        local plugin_name = "apisix.plugins." .. name
-        local ok, plugin = pcall(require, plugin_name)
-        if ok and plugin.priority then
-            local attribute = core.table.new(0, 6)
-            attribute.name = name
-            attribute.priority = plugin.priority
-            attribute.version = plugin.version
-            attribute.schema = plugin.schema
-            if plugin.consumer_schema then
-                attribute.consumer_schema = plugin.consumer_schema
-            end
-            if plugin.type then
-                attribute.type = plugin.type
-            else
-                attribute.type = "other"
-            end
-
-            table_insert(meta_attributes, attribute)
-        end
-    end
-
-    return meta_attributes
 end
 
 

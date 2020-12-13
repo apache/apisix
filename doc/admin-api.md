@@ -711,14 +711,14 @@ Content-Type: text/plain
 
 [Back to TOC](#Table-of-Contents)
 
-*API*：/apisix/admin/plugins/meta_attributes
+*API*：/apisix/admin/plugins/?all=true
 
-*Description*: plugin meta attributes, include plug-in `name`, `priority`, `priority`, `schema`, `consumer_schema` and `version`.
+*Description*: all the attributes of all plugins, each plug-in includes `name`, `priority`, `priority`, `schema`, `consumer_schema` and `version`.
 
 > Request Methods:
 
 |Method      |Request URI|Request Body|Description        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/plugins/meta_attributes|NULL|Fetch resource|
+|GET      |/apisix/admin/plugins/?all=true|NULL|Fetch resource|
 
 [Back to TOC](#Table-of-Contents)
