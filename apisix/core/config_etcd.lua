@@ -477,7 +477,7 @@ end
 
 function _M.getkey(self, key)
     if not self.running then
-        return nil, "stoped"
+        return nil, "stopped"
     end
 
     return getkey(self.etcd_cli, key)

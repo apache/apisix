@@ -169,8 +169,8 @@ discovery:
 discovery:
   eureka:
     host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-      - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
-      - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+      - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
+      - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
     fetch_interval: 30               # 从 eureka 中拉取数据的时间间隔，默认30秒
     weight: 100                      # default weight for node
@@ -180,7 +180,7 @@ discovery:
       read: 5000                     # 从 eureka 读数据的超时时间，默认5000ms
 ```
 
-通过 `discovery.eureka.host ` 配置 eureka 的服务器地址。
+通过 `discovery.eureka.host` 配置 eureka 的服务器地址。
 
 如果 eureka 的地址是 `http://127.0.0.1:8761/` ，并且不需要用户名和密码验证的话，配置如下：
 
