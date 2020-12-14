@@ -272,7 +272,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 | :------------------------------------ | :-------------------------------------- | :--------------------- |
 | 项目归属                              | Apache 软件基金会                       | Kong Inc.              |
 | 技术架构                              | Nginx + etcd                            | Nginx + postgres       |
-| 交流渠道                              | 微信群、QQ 群、邮件列表、Github、meetup | Github、论坛、freenode |
+| 交流渠道                              | 微信群、QQ 群、邮件列表、GitHub、meetup | GitHub、论坛、freenode |
 | 单核 QPS (开启限流和 prometheus 插件) | 18000                                   | 1700                   |
 | 平均延迟                              | 0.2 毫秒                                | 2 毫秒                 |
 | 支持 Dubbo 代理                       | 是                                      | 否                     |
