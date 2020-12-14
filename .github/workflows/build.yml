@@ -30,19 +30,19 @@ jobs:
     services:
       etcd:
         image: bitnami/etcd:3.4.0
-        ports: 
+        ports:
           - 2379:2379
           - 2380:2380
-        env: 
+        env:
           ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
       old_etcd:
         image: bitnami/etcd:3.3.8
-        ports: 
+        ports:
           - 3379:2379
           - 3380:2380
-        env: 
+        env:
           ALLOW_NONE_AUTHENTICATION: yes
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 

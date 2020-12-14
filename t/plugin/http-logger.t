@@ -604,8 +604,8 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
         content_by_lua_block {
             local plugin = require("apisix.plugins.http-logger")
             local bad_uris = {
-               "127.0.0.1", 
-               "127.0.0.1:1024", 
+               "127.0.0.1",
+               "127.0.0.1:1024",
             }
             for _, bad_uri in ipairs(bad_uris) do
                 local ok, err = plugin.check_schema({uri = bad_uri})
@@ -615,11 +615,11 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
             end
 
             local good_uris = {
-               "http://127.0.0.1:1024/x?aa=b", 
-               "http://127.0.0.1:1024?aa=b", 
-               "http://127.0.0.1:1024", 
-               "http://x.con", 
-               "https://x.con", 
+               "http://127.0.0.1:1024/x?aa=b",
+               "http://127.0.0.1:1024?aa=b",
+               "http://127.0.0.1:1024",
+               "http://x.con",
+               "https://x.con",
             }
             for _, good_uri in ipairs(good_uris) do
                 local ok, err = plugin.check_schema({uri = good_uri})

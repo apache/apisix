@@ -337,7 +337,7 @@ GET /t
     }
 --- extra_yaml_config
 nginx_config:
-    worker_processes: 1 
+    worker_processes: 1
 --- request
 GET /t
 --- response_body
