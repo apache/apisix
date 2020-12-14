@@ -60,6 +60,7 @@ default.etcd/
 !.github/
 !.travis/
 !.gitmodules
+!.markdownlint.yml
 /conf/apisix.yaml
 /conf/apisix-*.yaml
 /conf/config-*.yaml
