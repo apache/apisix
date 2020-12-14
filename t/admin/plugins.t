@@ -190,3 +190,37 @@ plugins:
 qr/\{"name":"example-plugin","priority":0,"schema":\{"properties":\{"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"type":"other","version":0.1\}/
 --- no_error_log
 [error]
+
+
+
+=== TEST 9: confirm the plugin of auth type
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins/?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local auth_plugins = {}
+            for _, plugin in ipairs(res) do
+                if plugin.type == "auth" then
+                    table.insert(auth_plugins, plugin.name)
+                end
+            end
+            ngx.say(json.encode(auth_plugins))
+        }
+    }
+--- response_body eval
+qr/\["basic-auth","hmac-auth","jwt-auth","key-auth","wolf-rbac"\]/
+--- no_error_log
+[error]
