@@ -334,7 +334,7 @@ Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) pa
 
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
-<br/><br/>
+<br><br>
 APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>
