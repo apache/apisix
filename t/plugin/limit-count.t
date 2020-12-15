@@ -680,7 +680,7 @@ passed
             end
             ngx.say(body)
         }
-    }    
+    }
 --- pipelined_requests eval
 ["GET /hello", "GET /hello","GET /hello","GET /t1", "GET /hello","GET /hello"]
 --- error_code eval
@@ -836,7 +836,7 @@ passed
 
 
 === TEST 24: create consumer and bind key-auth plugin
---- config 
+--- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
@@ -1046,7 +1046,7 @@ passed
                                 "rejected_code": 503,
                                 "key": "service_id"
                             }
-                        },                   
+                        },
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
