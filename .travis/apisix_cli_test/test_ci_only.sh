@@ -18,7 +18,7 @@
 #
 
 # This file is like other test_*.sh, but requires extra dependencies which
-# you don't need them in daily development.
+# you don't need in daily development.
 
 . ./.travis/apisix_cli_test/common.sh
 
