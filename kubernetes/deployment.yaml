@@ -66,8 +66,6 @@ spec:
 
       containers:
         - env:
-            - name: TZ
-              value: "Asia/Shanghai"
             - name: POD_NAME
               valueFrom:
                 fieldRef:
