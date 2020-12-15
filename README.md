@@ -274,7 +274,7 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
 | Belongs to                                                      | Apache Software Foundation                        | Kong Inc.               |
 | Tech Architecture                                               | Nginx + etcd                                      | Nginx + postgres        |
-| Communication channels                                          | Mail list, Wechat group, QQ group, Github, meetup | Github, freenode, forum |
+| Communication channels                                          | Mail list, Wechat group, QQ group, GitHub, meetup | GitHub, freenode, forum |
 | Single-core CPU, QPS(enable limit-count and prometheus plugins) | 18000                                             | 1700                    |
 | Latency                                                         | 0.2 ms                                            | 2 ms                    |
 | Dubbo                                                           | Yes                                               | No                      |
