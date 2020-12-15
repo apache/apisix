@@ -18,11 +18,13 @@
 #
 
 import subprocess
-from public import initfuzz, run_test
+
 from boofuzz import *
+from public import initfuzz, run_test
+
 
 def create_route():
-    command = '''curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    command = """curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get*",
     "methods": ["GET"],
@@ -33,19 +35,25 @@ def create_route():
         }
     }
 }'
-    '''
-    subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    """
+    subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+    )
+
 
 def run():
     session = initfuzz()
 
     s_initialize(name="Request")
     with s_block("Request-Line"):
-        s_group("Method", ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE'])
-        s_delim(" ", name='space-1')
-        s_string("/get", name='Request-URI')
-        s_delim(" ", name='space-2')
-        s_string('HTTP/1.1', name='HTTP-Version')
+        s_group(
+            "Method",
+            ["GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"],
+        )
+        s_delim(" ", name="space-1")
+        s_string("/get", name="Request-URI")
+        s_delim(" ", name="space-2")
+        s_string("HTTP/1.1", name="HTTP-Version")
         s_static("\r\n", name="Request-Line-CRLF")
         s_string("Host:", name="Host-Line")
         s_delim(" ", name="space-3")
@@ -57,12 +65,16 @@ def run():
         s_static("\r\n", name="Connection-Line-CRLF")
         s_string("User-Agent:", name="User-Agent-Line")
         s_delim(" ", name="space-5")
-        s_string("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.83 Safari/537.1", name="User-Agent-Line-Value")
+        s_string(
+            "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.83 Safari/537.1",
+            name="User-Agent-Line-Value",
+        )
         s_static("\r\n", name="User-Agent-Line-CRLF")
 
     s_static("\r\n", "Request-CRLF")
     session.connect(s_get("Request"))
     session.fuzz()
 
+
 if __name__ == "__main__":
-    run_test(create_route,run)
+    run_test(create_route, run)

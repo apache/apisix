@@ -1,0 +1,6 @@
+[flake8]
+# E501: Line too long (82 &gt; 79 characters) (E501)
+# F403: ‘from module import *’ used; unable to detect undefined names
+# F405: name may be undefined, or defined from star imports: module
+ignore = E501,F403,F405
+max-line-length = 120

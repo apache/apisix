@@ -19,31 +19,31 @@
 
 set -ex
 
-OR_EXEC=`which openresty 2>&1`
-echo $OR_EXEC
+OR_EXEC=$(which openresty 2>&1)
+echo "$OR_EXEC"
 APISIX_VER="https://raw.githubusercontent.com/apache/apisix/master/rockspec/apisix-master-0.rockspec"
 
 # check the openresty exist
-CHECK_OR_EXIST=`echo $OR_EXEC | grep ": no openresty" | wc -l`
-if [ $CHECK_OR_EXIST -eq 1 ];then
+CHECK_OR_EXIST=$(echo "$OR_EXEC" | grep -c ": no openresty")
+if [ "$CHECK_OR_EXIST" -eq 1 ];then
       echo "can not find the openresty, install failed"
       exit 1;
 fi
 
-LUA_JIT_DIR=`$OR_EXEC -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/'`
+LUA_JIT_DIR=$($OR_EXEC -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*?)/nginx' | grep -Eo '/.*/')
 LUA_JIT_DIR="${LUA_JIT_DIR}luajit"
-echo $LUA_JIT_DIR
+echo "$LUA_JIT_DIR"
 
-LUAROCKS_VER=`luarocks --version | grep -E -o  "luarocks [0-9]+."`
-echo $LUAROCKS_VER
+LUAROCKS_VER=$(luarocks --version | grep -E -o  "luarocks [0-9]+.")
+echo "$LUAROCKS_VER"
 
-UNAME=`uname`
-echo $UNAME
+UNAME=$(uname)
+echo "$UNAME"
 
 
 do_install() {
     if [ "$LUAROCKS_VER" = 'luarocks 3.' ]; then
-        sudo luarocks install --lua-dir=$LUA_JIT_DIR $APISIX_VER --tree=/usr/local/apisix/deps --local
+        sudo luarocks install --lua-dir="$LUA_JIT_DIR" $APISIX_VER --tree=/usr/local/apisix/deps --local
 
     else
         sudo luarocks install $APISIX_VER --tree=/usr/local/apisix/deps --local
@@ -61,7 +61,7 @@ do_remove() {
 
 
 case_opt=$1
-if [ ! $case_opt ]; then
+if [ ! "$case_opt" ]; then
     case_opt='install'
 fi
 echo $case_opt

@@ -24,8 +24,8 @@ hit=0
 checkfunc () {
     funccontent=$1
     file=$2
-    [[ $funccontent =~ "core.response.exit" ]] && echo -e ${RED}${file}${NC} && echo "    can't exit in rewrite or access phase!" && ((hit++))
-    [[ $funccontent =~ "ngx.exit" ]] && echo -e ${RED}${file}${NC} && echo "    can't exit in rewrite or access phase!" && ((hit++))
+    [[ $funccontent =~ core.response.exit ]] && echo -e "${RED}""${file}""${NC}" && echo "    can't exit in rewrite or access phase!" && ((hit++))
+    [[ $funccontent =~ ngx.exit ]] && echo -e "${RED}""${file}""${NC}" && echo "    can't exit in rewrite or access phase!" && ((hit++))
 }
 
 
@@ -45,9 +45,9 @@ filtercode () {
 
 for file in apisix/plugins/*.lua
 do
-    if test -f $file
+    if test -f "$file"
     then
-        content=$(cat $file)
+        content=$(cat "$file")
         filtercode "$content" "$file"
     fi
 done

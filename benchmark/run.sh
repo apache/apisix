@@ -39,8 +39,8 @@ trap 'onCtrlC' INT
 function onCtrlC () {
     sudo killall wrk
     sudo killall openresty
-    sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
-    sudo openresty -p $PWD/benchmark/server -s stop || exit 1
+    sudo openresty -p "$PWD"/benchmark/fake-apisix -s stop || exit 1
+    sudo openresty -p "$PWD"/benchmark/server -s stop || exit 1
 }
 
 for up_cnt in $(seq 1 $upstream_cnt);
@@ -49,7 +49,7 @@ do
     nginx_listen=$nginx_listen"listen $port;"
     upstream_nodes=$upstream_nodes"\"127.0.0.1:$port\":1"
 
-    if [ $up_cnt -lt $upstream_cnt ]; then
+    if [ "$up_cnt" -lt $upstream_cnt ]; then
         upstream_nodes=$upstream_nodes","
     fi
 done
@@ -62,7 +62,7 @@ else
     sed  -i "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
 fi
 
-sudo openresty -p $PWD/benchmark/server || exit 1
+sudo openresty -p "$PWD"/benchmark/server || exit 1
 
 make run
 
@@ -79,7 +79,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            '$upstream_nodes'
+            '"$upstream_nodes"'
         }
     }
 }'
@@ -112,7 +112,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            '$upstream_nodes'
+            '"$upstream_nodes"'
         }
     }
 }'
@@ -140,7 +140,7 @@ else
     sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
 fi
 
-sudo openresty -p $PWD/benchmark/fake-apisix || exit 1
+sudo openresty -p "$PWD"/benchmark/fake-apisix || exit 1
 
 sleep 1
 
@@ -150,6 +150,6 @@ sleep 1
 
 wrk -d 5 -c 16 http://127.0.0.1:9080/hello
 
-sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
+sudo openresty -p "$PWD"/benchmark/fake-apisix -s stop || exit 1
 
-sudo openresty -p $PWD/benchmark/server -s stop || exit 1
+sudo openresty -p "$PWD"/benchmark/server -s stop || exit 1

@@ -1,0 +1,37 @@
+name: Lint Code Base
+
+on:
+  push:
+    branches-ignore: [master]
+    # Remove the line above to run when pushing to master
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: Lint Code Base
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: github/super-linter@v3
+        env:
+          ERROR_ON_MISSING_EXEC_BIT: true
+          VALIDATE_BASH: true
+          VALIDATE_BASH_EXEC: true
+          VALIDATE_EDITORCONFIG: true
+          VALIDATE_GO: true
+          VALIDATE_JAVA: true
+          VALIDATE_JSON: true
+          VALIDATE_LUA: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_PERL: true
+          VALIDATE_PYTHON: false
+          VALIDATE_PYTHON_BLACK: true
+          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_PYTHON_ISORT: true
+          VALIDATE_PYTHON_MYPY: true
+          VALIDATE_PYTHON_PYLINT: true
+          VALIDATE_SHELL_SHFMT: true
+          VALIDATE_XML: true
+          VALIDATE_YAML: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

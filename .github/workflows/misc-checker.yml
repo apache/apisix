@@ -1,14 +1,14 @@
-name: misc
+name: Misc
 on:
   pull_request:
     branches: [master]
 jobs:
   misc:
-    name: misc checker
+    name: Misc checker
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code.
-        uses: actions/checkout@v1
+      - name: Check out code
+        uses: actions/checkout@v2
       - name: Install
         run: |
           wget -O - -q https://git.io/misspell | sh -s -- -b .
@@ -18,3 +18,5 @@ jobs:
       - name: Merge conflict
         run: |
           grep "^<<<<<<< HEAD" $(git ls-files | grep -v "t/toolkit" | xargs) && exit 1 || true
+      - name: Check for trailing whitespace
+        run: "! git grep -EIn $'[ \t]+$' | grep -v 'received: '"

@@ -26,8 +26,8 @@ GREEN='\e[1;32m'
 NC='\e[0m'
 
 # doc: apisix $ver
-matched=`grep "apisix.[0-9][0-9.]*" -r doc/`
-expected=`grep "apisix.$ver" -r doc/`
+matched=$(grep "apisix.[0-9][0-9.]*" -r doc/)
+expected=$(grep "apisix.$ver" -r doc/)
 
 if [ "$matched" = "$expected" ]; then
     echo -e "${green}passed: (doc) apisix $ver ${NC}"
@@ -40,8 +40,8 @@ else
 fi
 
 # doc: version $ver
-matched=`grep "version [0-9][0-9.]*" -r doc/`
-expected=`grep -F "version $ver" -r doc/`
+matched=$(grep "version [0-9][0-9.]*" -r doc/)
+expected=$(grep -F "version $ver" -r doc/)
 
 if [ "$matched" = "$expected" ]; then
     echo -e "${green}passed: (doc) version $ver ${NC}"
@@ -54,8 +54,8 @@ else
 fi
 
 # lua: VERSION = $ver
-matched=`grep "VERSION = \"[0-9][0-9.]*\"" -r apisix/`
-expected=`grep -F "VERSION = \"$ver\"" -r apisix/`
+matched=$(grep "VERSION = \"[0-9][0-9.]*\"" -r apisix/)
+expected=$(grep -F "VERSION = \"$ver\"" -r apisix/)
 
 if [ "$matched" = "$expected" ]; then
     echo -e "${green}passed: (lua) VERSION = $ver ${NC}"
@@ -69,7 +69,7 @@ fi
 
 
 # rockspec
-matched=`ls -l rockspec/ | grep  "$ver" `
+matched=$(ls -l rockspec/ | grep  "$ver" )
 
 if [ -z "$matched" ]; then
     echo -e "${RED}failed: (rockspec) VERSION = $ver \"$ver\" ${NC}" 1>&2

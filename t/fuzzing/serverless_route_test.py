@@ -18,11 +18,13 @@
 #
 
 import subprocess
-from public import initfuzz, run_test
+
 from boofuzz import *
+from public import initfuzz, run_test
+
 
 def create_route():
-    command = '''curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    command = """curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/post*",
     "methods": ["POST"],
@@ -38,15 +40,21 @@ def create_route():
         "type": "roundrobin"
     }
 }'
-    '''
-    subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    """
+    subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+    )
+
 
 def run():
     session = initfuzz()
 
     s_initialize(name="Request")
     with s_block("Request-Line"):
-        s_group("Method", ["GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"])
+        s_group(
+            "Method",
+            ["GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"],
+        )
         s_delim(" ", name="space-1")
         s_string("/post", name="Request-URI")
         s_delim(" ", name="space-2")
@@ -56,30 +64,36 @@ def run():
         s_delim(" ", name="space-3")
         s_string("127.0.0.1:9080", name="Host-Line-Value")
         s_static("\r\n", name="Host-Line-CRLF")
-        s_static('User-Agent', name='User-Agent-Header')
-        s_delim(':', name='User-Agent-Colon-1')
-        s_delim(' ', name='User-Agent-Space-1')
-        s_string('Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3223.8 Safari/537.36', name='User-Agent-Value')
-        s_static('\r\n', name='User-Agent-CRLF'),
-        s_static('Accept', name='Accept-Header')
-        s_delim(':', name='Accept-Colon-1')
-        s_delim(' ', name='Accept-Space-1')
-        s_string('text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8', name='Accept-Value')
-        s_static('\r\n', name='Accept-CRLF')
+        s_static("User-Agent", name="User-Agent-Header")
+        s_delim(":", name="User-Agent-Colon-1")
+        s_delim(" ", name="User-Agent-Space-1")
+        s_string(
+            "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3223.8 Safari/537.36",
+            name="User-Agent-Value",
+        )
+        s_static("\r\n", name="User-Agent-CRLF"),
+        s_static("Accept", name="Accept-Header")
+        s_delim(":", name="Accept-Colon-1")
+        s_delim(" ", name="Accept-Space-1")
+        s_string(
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            name="Accept-Value",
+        )
+        s_static("\r\n", name="Accept-CRLF")
         s_static("Content-Length:", name="Content-Length-Header")
         s_delim(" ", name="space-4")
         s_size("Body-Content", output_format="ascii", name="Content-Length-Value")
         s_static("\r\n", "Content-Length-CRLF")
-        s_static('Connection', name='Connection-Header')
-        s_delim(':', name='Connection-Colon-1')
-        s_delim(' ', name='Connection-Space-1')
-        s_group('Connection-Type', ['keep-alive', 'close'])
-        s_static('\r\n', 'Connection-CRLF')
-        s_static('Content-Type', name='Content-Type-Header')
-        s_delim(':', name='Content-Type-Colon-1')
-        s_delim(' ', name='Content-Type-Space-1')
-        s_string('application/x-www-form-urlencoded', name='Content-Type-Value')
-        s_static('\r\n', name='Content-Type-CRLF')
+        s_static("Connection", name="Connection-Header")
+        s_delim(":", name="Connection-Colon-1")
+        s_delim(" ", name="Connection-Space-1")
+        s_group("Connection-Type", ["keep-alive", "close"])
+        s_static("\r\n", "Connection-CRLF")
+        s_static("Content-Type", name="Content-Type-Header")
+        s_delim(":", name="Content-Type-Colon-1")
+        s_delim(" ", name="Content-Type-Space-1")
+        s_string("application/x-www-form-urlencoded", name="Content-Type-Value")
+        s_static("\r\n", name="Content-Type-CRLF")
     s_static("\r\n", "Request-CRLF")
 
     with s_block("Body-Content"):
@@ -88,5 +102,6 @@ def run():
     session.connect(s_get("Request"))
     session.fuzz()
 
+
 if __name__ == "__main__":
-    run_test(create_route,run)
+    run_test(create_route, run)

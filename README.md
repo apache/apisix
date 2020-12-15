@@ -23,6 +23,7 @@
 
 [![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
+[![GitHub Super-Linter](https://github.com/apache/apisix/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
 **Apache APISIX** is a dynamic, real-time, high-performance API gateway.
 

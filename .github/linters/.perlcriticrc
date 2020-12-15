@@ -1,0 +1,2 @@
+severity = 1
+verbose  = %f:%l:%c [%s %p] %m near '%r'\n

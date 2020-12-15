@@ -95,26 +95,26 @@ apisix:
 
 make init
 
-count_http_ipv4=`grep -c "listen 908." conf/nginx.conf || true`
-if [ $count_http_ipv4 -ne 3 ]; then
+count_http_ipv4=$(grep -c "listen 908." conf/nginx.conf || true)
+if [ "$count_http_ipv4" -ne 3 ]; then
     echo "failed: failed to support multiple ports listen in http with ipv4"
     exit 1
 fi
 
-count_http_ipv6=`grep -c "listen \[::\]:908." conf/nginx.conf || true`
-if [ $count_http_ipv6 -ne 3 ]; then
+count_http_ipv6=$(grep -c "listen \[::\]:908." conf/nginx.conf || true)
+if [ "$count_http_ipv6" -ne 3 ]; then
     echo "failed: failed to support multiple ports listen in http with ipv6"
     exit 1
 fi
 
-count_https_ipv4=`grep -c "listen 944. ssl" conf/nginx.conf || true`
-if [ $count_https_ipv4 -ne 3 ]; then
+count_https_ipv4=$(grep -c "listen 944. ssl" conf/nginx.conf || true)
+if [ "$count_https_ipv4" -ne 3 ]; then
     echo "failed: failed to support multiple ports listen in https with ipv4"
     exit 1
 fi
 
-count_https_ipv6=`grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true`
-if [ $count_https_ipv6 -ne 3 ]; then
+count_https_ipv6=$(grep -c "listen \[::\]:944. ssl" conf/nginx.conf || true)
+if [ "$count_https_ipv6" -ne 3 ]; then
     echo "failed: failed to support multiple ports listen in https with ipv6"
     exit 1
 fi
@@ -316,13 +316,13 @@ git checkout conf/config.yaml
 
 make init
 
-i=`grep  -E '^nameserver[[:space:]]+(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4]0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])[[:space:]]?$' /etc/resolv.conf | awk '{print $2}'`
+i=$(grep  -E '^nameserver[[:space:]]+(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4]0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])[[:space:]]?$' /etc/resolv.conf | awk '{print $2}')
 for ip in $i
 do
-  echo $ip
-  grep $ip conf/nginx.conf > /dev/null
+  echo "$ip"
+  grep "$ip" conf/nginx.conf > /dev/null
   if [ ! $? -eq 0 ]; then
-    echo "failed: system DNS "$ip" unimported"
+    echo "failed: system DNS ""$ip"" unimported"
     exit 1
   fi
 done
@@ -339,14 +339,14 @@ apisix:
 
 make init
 
-count=`grep -c "worker_processes 1;" conf/nginx.conf`
-if [ $count -ne 1 ]; then
+count=$(grep -c "worker_processes 1;" conf/nginx.conf)
+if [ "$count" -ne 1 ]; then
     echo "failed: worker_processes is not 1 when enable enable_dev_mode"
     exit 1
 fi
 
-count=`grep -c "listen 9080.*reuseport" conf/nginx.conf || true`
-if [ $count -ne 0 ]; then
+count=$(grep -c "listen 9080.*reuseport" conf/nginx.conf || true)
+if [ "$count" -ne 0 ]; then
     echo "failed: reuseport should be disabled when enable enable_dev_mode"
     exit 1
 fi
@@ -491,8 +491,8 @@ nginx_config:
 
 make init
 
-count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
-if [ $count -ne 0 ]; then
+count=$(grep -c "worker_cpu_affinity" conf/nginx.conf  || true)
+if [ "$count" -ne 0 ]; then
     echo "failed: nginx.conf file found worker_cpu_affinity when disable it"
     exit 1
 fi
@@ -506,8 +506,8 @@ export APISIX_WORKER_PROCESSES=8
 
 make init
 
-count=`grep -c "worker_processes 8;" conf/nginx.conf || true`
-if [ $count -ne 1 ]; then
+count=$(grep -c "worker_processes 8;" conf/nginx.conf || true)
+if [ "$count" -ne 1 ]; then
     echo "failed: worker_processes is not 8 when using env to set worker processes"
     exit 1
 fi
@@ -519,8 +519,8 @@ git checkout conf/config.yaml
 
 make init
 
-count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
-if [ $count -eq 0 ]; then
+count=$(grep -c "ssl_session_tickets off;" conf/nginx.conf || true )
+if [ "$count" -eq 0 ]; then
     echo "failed: ssl_session_tickets is off when ssl.ssl_session_tickets is false."
     exit 1
 fi
@@ -533,8 +533,8 @@ apisix:
 
 make init
 
-count=`grep -c "ssl_session_tickets on;" conf/nginx.conf || true `
-if [ $count -eq 0 ]; then
+count=$(grep -c "ssl_session_tickets on;" conf/nginx.conf || true )
+if [ "$count" -eq 0 ]; then
     echo "failed: ssl_session_tickets is on when ssl.ssl_session_tickets is true."
     exit 1
 fi

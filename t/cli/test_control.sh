@@ -37,14 +37,14 @@ make run
 sleep 0.1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9090/v1/schema)
 
-if [ ! $code -eq 200 ]; then
+if [ ! "$code" -eq 200 ]; then
     echo "failed: access control server"
     exit 1
 fi
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9090/v0/schema)
 
-if [ ! $code -eq 404 ]; then
+if [ ! "$code" -eq 404 ]; then
     echo "failed: handle route not found"
     exit 1
 fi
@@ -70,7 +70,7 @@ make run
 sleep 0.1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9090/v1/schema)
 
-if [ ! $code -eq 200 ]; then
+if [ ! "$code" -eq 200 ]; then
     echo "failed: access control server"
     exit 1
 fi
@@ -96,7 +96,7 @@ make run
 sleep 0.1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9091/v1/schema)
 
-if [ ! $code -eq 200 ]; then
+if [ ! "$code" -eq 200 ]; then
     echo "failed: access control server"
     exit 1
 fi
