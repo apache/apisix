@@ -48,8 +48,8 @@ qr/"plugins":\{"type":"object"}/
                 ngx.say("found `anyOf`")
                 return
             end
-            
-            ngx.say("passed") 
+
+            ngx.say("passed")
         }
     }
 --- request

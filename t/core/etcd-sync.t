@@ -22,7 +22,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: minus timeout to watch repeatedly 
+=== TEST 1: minus timeout to watch repeatedly
 --- extra_yaml_config
 etcd:
   host:
