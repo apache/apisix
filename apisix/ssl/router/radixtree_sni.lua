@@ -208,7 +208,8 @@ function _M.match_and_set(api_ctx)
     local sni
     sni, err = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        local advise = "please check if the client requests via IP or uses an outdated protocol"
+        local advise = "please check if the client requests via IP or uses an outdated protocol" ..
+            ". If you need to report an issue, provide a packet capture file of the TLS handshake."
         return false, "failed to find SNI: " .. (err or advise)
     end
 
