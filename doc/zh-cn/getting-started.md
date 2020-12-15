@@ -76,7 +76,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f0343
 
 ## 第二步: 在 Apache APISIX 中创建 Route
 
-为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个[ web控制台 ](https://github.com/apache/apisix-dashboard)。
+为了配置各种 routes / services / plugins ，APISIX 提供了强大的 Admin API 和一个 [web控制台](https://github.com/apache/apisix-dashboard)。
 本指南将会使用到 Admin API 接口。
 
 一个微服务可以通过 APISIX 的路由、服务、上游和插件等多个实体之间的关系进行配置。
