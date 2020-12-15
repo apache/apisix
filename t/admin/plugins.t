@@ -165,7 +165,7 @@ plugins:
 
 
 
-=== TEST 8: get all the attributes of all plugins
+=== TEST 8: confirm the name, priority, schema, type and version of plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -183,7 +183,12 @@ plugins:
             end
 
             res = json.decode(res)
-            ngx.say(json.encode(res))
+            local consumer_schema
+            for _, plugin in ipairs(res) do
+                if plugin.name == "example-plugin" then
+                    ngx.say(json.encode(plugin))
+                end
+            end
         }
     }
 --- response_body eval
@@ -222,5 +227,39 @@ qr/\{"name":"example-plugin","priority":0,"schema":\{"properties":\{"i":\{"minim
     }
 --- response_body eval
 qr/\["basic-auth","hmac-auth","jwt-auth","key-auth","wolf-rbac"\]/
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: confirm the consumer_schema of plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins/?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local consumer_schema
+            for _, plugin in ipairs(res) do
+                if plugin.name == "basic-auth" then
+                    consumer_schema = plugin.consumer_schema
+                end
+            end
+            ngx.say(json.encode(consumer_schema))
+        }
+    }
+--- response_body eval
+qr/\{"additionalProperties":false,"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 --- no_error_log
 [error]

@@ -757,7 +757,7 @@ Content-Type: text/plain
 
 *地址*：/apisix/admin/plugins/?all=true
 
-*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `priority`, `schema`, `consumer_schema` and `version`。
+*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`。
 
 > 请求方法:
 
