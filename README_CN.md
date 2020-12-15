@@ -292,7 +292,6 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
-
 ## 社区
 
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。

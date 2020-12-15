@@ -23,7 +23,6 @@
 
 微服务领域对 API 网关有新的需求：更高的灵活性、更高的性能要求，以及云原生的贴合。
 
-
 ## APISIX 和其他的 API 网关有什么不同之处？
 
 APISIX 基于 etcd 来完成配置的保存和同步，而不是 postgres 或者 MySQL 这类关系型数据库。
@@ -109,7 +108,6 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
 
 更多的 lua-resty-radixtree 匹配操作，可查看操作列表：
 https://github.com/iresty/lua-resty-radixtree#operator-list

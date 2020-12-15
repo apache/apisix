@@ -43,7 +43,6 @@
 
 常见的注册中心：Eureka, Etcd, Consul, Nacos, Zookeeper等
 
-
 ## 如何扩展注册中心？
 
 ### 基本步骤
@@ -253,7 +252,4 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 
 假如 A-SERVICE 和 B-SERVICE 都提供了一个 `/test` 的接口，通过上面的配置，可以通过 `/a/test` 访问 A-SERVICE 的 `/test` 接口，通过 `/b/test` 访问 B-SERVICE 的 `/test` 接口。
 
-
 **注意**：配置 `upstream.service_name` 后 `upstream.nodes` 将不再生效，而是使用从注册中心的数据来替换，即使注册中心的数据是空的。
-
-
