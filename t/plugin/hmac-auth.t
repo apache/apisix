@@ -924,12 +924,12 @@ passed
                     "plugins": {
                         "hmac-auth": {
                             "access_key": "my-access-key4",
-                            "secret_key": "my-secret-key4"                           
+                            "secret_key": "my-secret-key4"
                         }
                     }
                 }]]
                 )
-            
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -997,7 +997,7 @@ location /t {
             nil,
             headers
         )
-        
+
         if code >= 300 then
             ngx.status = code
         end

@@ -346,7 +346,7 @@ service_id: 1
 
 
 === TEST 14: create consumer and bind key-auth plugin
---- config 
+--- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
@@ -405,7 +405,7 @@ passed
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
@@ -459,7 +459,7 @@ consumer_name: consumer_jack
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
@@ -512,7 +512,7 @@ consumer_name: consumer_name is nil
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
@@ -566,7 +566,7 @@ consumer_name: consumer_jack
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
