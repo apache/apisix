@@ -432,7 +432,7 @@ function _M.http_access_phase()
             local upstream = upstreams:get(tostring(up_id))
             if not upstream then
                 core.log.error("failed to find upstream by id: " .. up_id)
-                return core.response.exit(500)
+                return core.response.exit(502)
             end
 
             if upstream.has_domain then
