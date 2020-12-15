@@ -231,3 +231,29 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: ensure only one auth request per subsystem for all the etcd sync
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "http://127.0.0.1:1980" -- fake server port
+  timeout: 1
+  user: root                    # root username for etcd
+  password: 5tHkHhYkjr6cQY      # root password for etcd
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.5)
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/etcd auth failed/
+--- grep_error_log_out
+etcd auth failed
+etcd auth failed
