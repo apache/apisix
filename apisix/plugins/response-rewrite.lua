@@ -25,21 +25,21 @@ local schema = {
     type = "object",
     properties = {
         headers = {
-            description = "new headers for repsonse",
+            description = "new headers for response",
             type = "object",
             minProperties = 1,
         },
         body = {
-            description = "new body for repsonse",
+            description = "new body for response",
             type = "string",
         },
         body_base64 = {
-            description = "whether new body for repsonse need base64 decode before return",
+            description = "whether new body for response need base64 decode before return",
             type = "boolean",
             default = false,
         },
         status_code = {
-            description = "new status code for repsonse",
+            description = "new status code for response",
             type = "integer",
             minimum = 200,
             maximum = 598,

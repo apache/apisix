@@ -172,3 +172,25 @@ hello world
 --- no_error_log
 [error]
 --- wait: 1
+
+
+
+=== TEST 6: test combine log
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.sls-logger")
+            local entities = {}
+            table.insert(entities, {data = "1"})
+            table.insert(entities, {data = "2"})
+            table.insert(entities, {data = "3"})
+            local data =  plugin.combine_syslog(entities)
+            ngx.say(data)
+        }
+    }
+--- request
+GET /t
+--- response_body
+123
+--- no_error_log
+[error]

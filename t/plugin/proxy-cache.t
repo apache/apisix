@@ -86,14 +86,14 @@ __DATA__
                    }]],
                    [[{
                        "node": {
-                        "value": {                            
+                        "value": {
                             "uri": "/hello",
                             "upstream": {
                                 "nodes": {
                                     "127.0.0.1:1980": 1
                                 },
                                 "type": "roundrobin"
-                            },                            
+                            },
                             "plugins": {
                                 "proxy-cache":{
                                     "cache_zone":"disk_cache_one",

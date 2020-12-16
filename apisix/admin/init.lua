@@ -28,6 +28,9 @@ local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
+local type = type
+
+
 local events
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
 
@@ -87,6 +90,27 @@ local function check_token(ctx)
     end
 
     return true
+end
+
+
+local function strip_etcd_resp(data)
+    if type(data) == "table"
+        and data.header ~= nil
+        and data.header.revision ~= nil
+        and data.header.raft_term ~= nil
+    then
+        -- strip etcd data
+        data.header = nil
+        data.responses = nil
+        data.succeeded = nil
+
+        if data.node then
+            data.node.createdIndex = nil
+            data.node.modifiedIndex = nil
+        end
+    end
+
+    return data
 end
 
 
@@ -150,6 +174,7 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end
 end
@@ -219,6 +244,7 @@ local function run_stream()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end
 end

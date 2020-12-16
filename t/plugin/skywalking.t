@@ -105,7 +105,7 @@ passed
 
 
 
-=== TEST 2: tiger skywalking
+=== TEST 2: trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -188,7 +188,7 @@ passed
 
 
 
-=== TEST 5: not tiger skywalking
+=== TEST 5: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -252,7 +252,7 @@ passed
 
 
 
-=== TEST 7: not tiger skywalking
+=== TEST 7: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body

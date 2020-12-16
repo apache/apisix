@@ -71,7 +71,6 @@ loaded plugin and sort by priority: 1005 name: api-breaker
 loaded plugin and sort by priority: 1003 name: limit-conn
 loaded plugin and sort by priority: 1002 name: limit-count
 loaded plugin and sort by priority: 1001 name: limit-req
-loaded plugin and sort by priority: 1000 name: node-status
 loaded plugin and sort by priority: 900 name: redirect
 loaded plugin and sort by priority: 899 name: response-rewrite
 loaded plugin and sort by priority: 506 name: grpc-transcode

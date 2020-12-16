@@ -22,7 +22,12 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: minus timeout to watch repeatedly 
+=== TEST 1: minus timeout to watch repeatedly
+--- extra_yaml_config
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  resync_delay: 0.5 # resync after timeout
 --- config
     location /t {
         content_by_lua_block {

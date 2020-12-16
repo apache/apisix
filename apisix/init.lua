@@ -432,7 +432,7 @@ function _M.http_access_phase()
             local upstream = upstreams:get(tostring(up_id))
             if not upstream then
                 core.log.error("failed to find upstream by id: " .. up_id)
-                return core.response.exit(500)
+                return core.response.exit(502)
             end
 
             if upstream.has_domain then
@@ -698,8 +698,8 @@ local function healcheck_passive(api_ctx)
         end
     end
 
-    local http_statuses = passive and passive.unhealthy and
-                          passive.unhealthy.http_statuses
+    http_statuses = passive and passive.unhealthy and
+                    passive.unhealthy.http_statuses
     core.log.info("passive.unhealthy.http_statuses: ",
                   core.json.delay_encode(http_statuses))
     if not http_statuses then

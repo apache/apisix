@@ -261,3 +261,29 @@ APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/
     apisix:
       id: "your-meaningful-id"
     ```
+
+## 为什么 `error.log` 中会有许多诸如 "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" 的错误？
+
+首先请确保 APISIX 和 etcd 之间不存在网络分区的情况。
+
+如果网络的确是健康的，请检查你的 etcd 集群是否启用了 [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) 特性。然而，当你使用命令行参数或配置文件启动 etcd 时，此特性的默认启用情况又是不同的。
+
+1. 当使用命令行参数启动 etcd，该特性默认被启用，相关选项是 `enable-grpc-gateway`。
+
+```sh
+etcd --enable-grpc-gateway --data-dir=/path/to/data
+```
+
+注意该选项并没有展示在 `etcd --help` 的输出中。
+
+2. 使用配置文件时，该特性默认被关闭，请明确启用 `enable-grpc-gateway` 配置项。
+
+```json
+# etcd.json
+{
+    "enable-grpc-gateway": true,
+    "data-dir": "/path/to/data"
+}
+```
+
+事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。

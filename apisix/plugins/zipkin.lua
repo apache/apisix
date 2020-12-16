@@ -42,7 +42,7 @@ local schema = {
         },
         server_addr = {
             type = "string",
-            description = "default is $server_addr, you can speific your external ip address",
+            description = "default is $server_addr, you can specify your external ip address",
             pattern = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
         },
     },
@@ -164,7 +164,7 @@ function _M.access(conf, ctx)
     local outgoing_headers = {}
     tracer:inject(opentracing.proxy_span, "http_headers", outgoing_headers)
     for k, v in pairs(outgoing_headers) do
-        core.request.set_header(k, v)
+        core.request.set_header(ctx, k, v)
     end
 end
 

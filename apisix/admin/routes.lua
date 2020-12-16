@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local expr = require("resty.expr.v1")
 local core = require("apisix.core")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local upstreams = require("apisix.admin.upstreams")
@@ -50,10 +51,6 @@ local function check_conf(id, conf, need_id)
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.route))
     core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.route, conf)
-    if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
-    end
 
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
@@ -62,6 +59,11 @@ local function check_conf(id, conf, need_id)
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
                                  .. "allowed"}
+    end
+
+    local ok, err = core.schema.check(core.schema.route, conf)
+    if not ok then
+        return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_conf = conf.upstream
@@ -110,6 +112,13 @@ local function check_conf(id, conf, need_id)
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
             return nil, {error_msg = err}
+        end
+    end
+
+    if conf.vars then
+        ok, err = expr.new(conf.vars)
+        if not ok then
+            return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
         end
     end
 

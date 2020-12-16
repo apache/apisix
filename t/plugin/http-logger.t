@@ -513,7 +513,7 @@ GET /t
 hello1 world
 --- error_log
 Batch Processor[http logger] batch max size has exceeded
-tranferring buffer entries to processing pipe line, buffercount[2]
+transferring buffer entries to processing pipe line, buffercount[2]
 Batch Processor[http logger] successfully processed the entries
 --- wait: 1.5
 
@@ -604,8 +604,8 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
         content_by_lua_block {
             local plugin = require("apisix.plugins.http-logger")
             local bad_uris = {
-               "127.0.0.1", 
-               "127.0.0.1:1024", 
+               "127.0.0.1",
+               "127.0.0.1:1024",
             }
             for _, bad_uri in ipairs(bad_uris) do
                 local ok, err = plugin.check_schema({uri = bad_uri})
@@ -615,11 +615,11 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
             end
 
             local good_uris = {
-               "http://127.0.0.1:1024/x?aa=b", 
-               "http://127.0.0.1:1024?aa=b", 
-               "http://127.0.0.1:1024", 
-               "http://x.con", 
-               "https://x.con", 
+               "http://127.0.0.1:1024/x?aa=b",
+               "http://127.0.0.1:1024?aa=b",
+               "http://127.0.0.1:1024",
+               "http://x.con",
+               "https://x.con",
             }
             for _, good_uri in ipairs(good_uris) do
                 local ok, err = plugin.check_schema({uri = good_uri})
@@ -637,3 +637,150 @@ GET /t
 done
 --- no_error_log
 [error]
+
+
+
+=== TEST 17: check plugin configuration updating
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body1 = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1982/hello",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "http-logger": {
+                                    "uri": "http://127.0.0.1:1982/hello",
+                                    "batch_max_size": 1,
+                                    "max_retry_count": 1,
+                                    "retry_delay": 2,
+                                    "buffer_duration": 2,
+                                    "inactive_timeout": 2
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/opentracing"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body2 = t("/opentracing", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, body3 = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1982/hello1",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "http-logger": {
+                                    "uri": "http://127.0.0.1:1982/hello1",
+                                    "batch_max_size": 1,
+                                    "max_retry_count": 1,
+                                    "retry_delay": 2,
+                                    "buffer_duration": 2,
+                                    "inactive_timeout": 2
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/opentracing"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body4 = t("/opentracing", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.print(body1)
+            ngx.print(body2)
+            ngx.print(body3)
+            ngx.print(body4)
+        }
+    }
+--- request
+GET /t
+--- wait: 0.5
+--- response_body
+passedopentracing
+passedopentracing
+--- grep_error_log eval
+qr/sending a batch logs to http:\/\/127.0.0.1:1982\/hello\d?/
+--- grep_error_log_out
+sending a batch logs to http://127.0.0.1:1982/hello
+sending a batch logs to http://127.0.0.1:1982/hello1

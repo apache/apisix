@@ -30,7 +30,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.consumer-restriction")
-            local conf = {                
+            local conf = {
 		title = "whitelist",
 		whitelist = {
                     "jack1",

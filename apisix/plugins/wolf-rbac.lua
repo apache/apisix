@@ -307,9 +307,9 @@ function _M.rewrite(conf, ctx)
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
         core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(prefix .. "UserId", userId)
-        core.request.set_header(prefix .. "Username", username)
-        core.request.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(ctx, prefix .. "UserId", userId, ctx)
+        core.request.set_header(ctx, prefix .. "Username", username)
+        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then

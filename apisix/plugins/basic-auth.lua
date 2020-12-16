@@ -125,7 +125,7 @@ do
     end
 end
 
-function _M.access(conf, ctx)
+function _M.rewrite(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
 
     -- 1. extract authorization from header
@@ -163,9 +163,7 @@ function _M.access(conf, ctx)
         return 401, { message = "Password is error" }
     end
 
-    ctx.consumer = cur_consumer
-    ctx.consumer_name = cur_consumer.consumer_name
-    ctx.consumer_ver = consumer_conf.conf_version
+    consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
 
     core.log.info("hit basic-auth access")
 end
