@@ -388,7 +388,87 @@ true
 
 
 
-=== TEST 9a: access route with valid token in Authorization header and verify token is sent to upstream in X-Access-Token header as well
+=== TEST 9a: update plugin with different upstream endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "bearer_only": true,
+                                "scope": "apisix",
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                                    [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                                    [[-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/reflect_oidc_token_headers"
+                }]],
+                [[{ "node": {
+                        "value": {
+                            "plugins": {
+                                "openid-connect": {
+                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                    "redirect_uri": "https://iresty.com",
+                                    "ssl_verify": false,
+                                    "timeout": 10000,
+                                    "bearer_only": true,
+                                    "scope": "apisix",
+                                    "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                        [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                                        [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                                        [[-----END PUBLIC KEY-----",
+                                    "token_signing_alg_values_expected": "RS256"
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/reflect_oidc_token_headers"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 9b: access route with valid token in Authorization header and verify token is sent to upstream in X-Access-Token header as well
 --- config
     location /t {
         content_by_lua_block {
@@ -426,7 +506,7 @@ X-Access-Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsIml
 
 
 
-=== TEST 9b: Update plugin to use Authorization header.
+=== TEST 9c: Update plugin to use Authorization header.
 --- config
     location /t {
         content_by_lua_block {
@@ -457,7 +537,7 @@ X-Access-Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsIml
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/reflect_oidc_token_headers"
                 }]],
                 [[{ "node": {
                         "value": {
@@ -475,7 +555,8 @@ X-Access-Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsIml
                                         [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
                                         [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
                                         [[-----END PUBLIC KEY-----",
-                                    "token_signing_alg_values_expected": "RS256"
+                                    "token_signing_alg_values_expected": "RS256",
+                                    "access_token_in_authorization_header": true
                                 }
                             },
                             "upstream": {
@@ -484,7 +565,7 @@ X-Access-Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsIml
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/hello"
+                            "uri": "/reflect_oidc_token_headers"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -507,7 +588,7 @@ passed
 
 
 
-=== TEST 9c: Access route with valid token in Authorization header and verify token is still only sent to upstream in Authorization header.
+=== TEST 9d: Access route with valid token in Authorization header and verify token is still only sent to upstream in Authorization header.
 --- config
     location /t {
         content_by_lua_block {
