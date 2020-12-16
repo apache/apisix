@@ -91,7 +91,7 @@ done
 
 
 
-=== TEST 4: add plugin
+=== TEST 4: add plugin to route
 --- config
     location /t {
         content_by_lua_block {
@@ -112,7 +112,7 @@ done
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:8888": 1
                             },
                             "type": "roundrobin"
                         },
@@ -134,7 +134,7 @@ done
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:1980": 1
+                                    "127.0.0.1:88": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -161,7 +161,7 @@ passed
 
 
 
-=== TEST 5: access
+=== TEST 5: access route w/o bearer token
 --- config
     location /t {
         content_by_lua_block {
@@ -213,7 +213,7 @@ true
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:8888": 1
                             },
                             "type": "roundrobin"
                         },
@@ -236,7 +236,7 @@ true
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:1980": 1
+                                    "127.0.0.1:8888": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -263,7 +263,7 @@ passed
 
 
 
-=== TEST 7: access
+=== TEST 7: access route w/o bearer token
 --- timeout: 10s
 --- request
 GET /hello
@@ -302,7 +302,7 @@ WWW-Authenticate: Bearer realm=apisix
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:8888": 1
                             },
                             "type": "roundrobin"
                         },
@@ -329,7 +329,7 @@ WWW-Authenticate: Bearer realm=apisix
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:1980": 1
+                                    "127.0.0.1:8888": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -443,7 +443,7 @@ jwt signature verification failed
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:8888": 1
                             },
                             "type": "roundrobin"
                         },
@@ -468,7 +468,7 @@ jwt signature verification failed
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:1980": 1
+                                    "127.0.0.1:8888": 1
                                 },
                                 "type": "roundrobin"
                             },
