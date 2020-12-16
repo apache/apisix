@@ -112,7 +112,7 @@ done
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:8888": 1
+                                "127.0.0.1:1980": 1
                             },
                             "type": "roundrobin"
                         },
@@ -134,7 +134,7 @@ done
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:8888": 1
+                                    "127.0.0.1:1980": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -213,7 +213,7 @@ true
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:8888": 1
+                                "127.0.0.1:1980": 1
                             },
                             "type": "roundrobin"
                         },
@@ -236,7 +236,7 @@ true
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:8888": 1
+                                    "127.0.0.1:1980": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -302,7 +302,7 @@ WWW-Authenticate: Bearer realm=apisix
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:8888": 1
+                                "127.0.0.1:1980": 1
                             },
                             "type": "roundrobin"
                         },
@@ -329,7 +329,7 @@ WWW-Authenticate: Bearer realm=apisix
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:8888": 1
+                                    "127.0.0.1:1980": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -443,7 +443,7 @@ jwt signature verification failed
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:8888": 1
+                                "127.0.0.1:1980": 1
                             },
                             "type": "roundrobin"
                         },
@@ -468,7 +468,7 @@ jwt signature verification failed
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:8888": 1
+                                    "127.0.0.1:1980": 1
                                 },
                                 "type": "roundrobin"
                             },
