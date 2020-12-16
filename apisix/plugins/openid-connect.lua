@@ -41,7 +41,7 @@ local schema = {
             type = "integer",
             minimum = 1,
             default = 3,
-            description = "timeout in second",
+            description = "timeout in seconds",
         },
         introspection_endpoint = {
             type = "string"
@@ -151,8 +151,8 @@ end
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
 
-    -- Previously, we multiple conf.timeout before storing it in etcd.
-    -- If the timeout is too large, we should not multiple it again.
+    -- Previously, we multiply conf.timeout before storing it in etcd.
+    -- If the timeout is too large, we should not multiply it again.
     if not (conf.timeout >= 1000 and conf.timeout % 1000 == 0) then
         conf.timeout = conf.timeout * 1000
     end
