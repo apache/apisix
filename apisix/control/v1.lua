@@ -27,7 +27,7 @@ return {
     -- /v1/schema
     {
         methods = {"GET"},
-        uri = "/schema",
+        uris = {"/schema"},
         handler = _M.schema,
     }
 }

@@ -126,7 +126,7 @@ function _M.control_api(ver)
             -- /v1/plugin/example-plugin/hello
             {
                 methods = {"GET"},
-                uri = "/plugin/example-plugin/hello",
+                uris = {"/plugin/example-plugin/hello"},
                 handler = hello,
             }
         }

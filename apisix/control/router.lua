@@ -16,7 +16,7 @@
 --
 local require = require
 local router = require("resty.radixtree")
-local v1_routes = require("apisix.control.v1")
+local builtin_v1_routes = require("apisix.control.v1")
 local plugin_mod = require("apisix.plugin")
 local core = require("apisix.core")
 local str_sub = string.sub
@@ -36,7 +36,8 @@ do
         for _, route in ipairs(api_routes) do
             core.table.insert(routes, {
                 methods = route.methods,
-                paths = route.uri,
+                -- note that it is 'uris' for control API, which is an array of strings
+                paths = route.uris,
                 handler = function (api_ctx)
                     local code, body = route.handler(api_ctx)
                     if code or body then
@@ -52,19 +53,36 @@ do
     end
 
     local routes = {}
+    local v1_routes = {}
+    local function empty_func() end
 
 function fetch_control_api_router()
-    core.table.clear(routes)
+    core.table.clear(v1_routes)
 
-    register_api_routes(routes, v1_routes)
+    register_api_routes(v1_routes, builtin_v1_routes)
 
     for _, plugin in ipairs(plugin_mod.plugins) do
         local api_fun = plugin.control_api
         if api_fun then
             local api_routes = api_fun(current_version)
-            register_api_routes(routes, api_routes)
+            register_api_routes(v1_routes, api_routes)
         end
     end
+
+    local v1_router, err = router.new(v1_routes)
+    if not v1_router then
+        return nil, err
+    end
+
+    core.table.clear(routes)
+    core.table.insert(routes, {
+        paths = {"/v1/*"},
+        filter_fun = function(vars, opts, ...)
+            local uri = str_sub(vars.uri, #"/v1" + 1)
+            return v1_router:dispatch(uri, opts, ...)
+        end,
+        handler = empty_func,
+    })
 
     return router.new(routes)
 end
@@ -78,15 +96,11 @@ do
     local router
 
 function _M.match(uri)
-    if not core.string.has_prefix(uri, "/v1/") then
-        -- we will support different versions in the future
-        return false
-    end
-
     if cached_version ~= plugin_mod.load_times then
-        router = fetch_control_api_router()
+        local err
+        router, err = fetch_control_api_router()
         if router == nil then
-            core.log.error("failed to fetch valid api router")
+            core.log.error("failed to fetch valid api router: ", err)
             return false
         end
 
@@ -96,9 +110,7 @@ function _M.match(uri)
     core.table.clear(match_opts)
     match_opts.method = get_method()
 
-    uri = str_sub(uri, #"/v1" + 1)
-    local ok = router:dispatch(uri, match_opts)
-    return ok
+    return router:dispatch(uri, match_opts)
 end
 
 end -- do
