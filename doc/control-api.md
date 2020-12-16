@@ -33,12 +33,12 @@ apisix:
     port: 9090
 ```
 
-Note that the control API server should not be configured to listen the public traffic!
+Note that the control API server should not be configured to listen to the public traffic!
 
 ## Control API Added via plugin
 
 Plugin can add its control API when it is enabled.
-If a plugin adds such control API, please refer to each plugin's documentation for those APIs.
+If a plugin adds such a control API, please refer to each plugin's documentation for those APIs.
 
 ## Plugin independent Control API
 
