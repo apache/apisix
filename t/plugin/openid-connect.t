@@ -134,7 +134,7 @@ done
                             },
                             "upstream": {
                                 "nodes": {
-                                    "127.0.0.1:88": 1
+                                    "127.0.0.1:8888": 1
                                 },
                                 "type": "roundrobin"
                             },
@@ -276,7 +276,7 @@ WWW-Authenticate: Bearer realm=apisix
 
 
 
-=== TEST 8: update plugin public key
+=== TEST 8: update plugin public key, so tokens can be validated locally
 --- config
     location /t {
         content_by_lua_block {
@@ -356,7 +356,7 @@ passed
 
 
 
-=== TEST 9: access introspection with correct token
+=== TEST 9: access route with valid token
 --- config
     location /t {
         content_by_lua_block {
