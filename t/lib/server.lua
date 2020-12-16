@@ -357,8 +357,8 @@ function _M.reflect_oidc_token_headers()
     local reflect_headers = {"Authorization", "X-Access-Token", "X-ID-Token", "X-Userinfo"}
 
     for _, h in ipairs(reflect_headers) do
-        if hdrs['Authorization'] then
-            ngx.header['Authorization'] = hdrs['Authorization']
+        if hdrs[h] then
+            ngx.header[h] = hdrs[h]
         end
     end
 
