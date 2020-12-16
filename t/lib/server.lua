@@ -352,6 +352,18 @@ function _M.headers()
     ngx.say("/headers")
 end
 
+function _M.reflect_oidc_token_headers()
+    local hdrs = ngx.req.get_headers()
+    local reflect_headers = {"Authorization", "X-Access-Token", "X-ID-Token", "X-Userinfo"}
+
+    for _, h in ipairs(reflect_headers) do
+        if hdrs['Authorization'] then
+            ngx.header['Authorization'] = hdrs['Authorization']
+        end
+    end
+
+    ngx.say("/reflect_oidc_token_headers")
+end
 
 function _M.log()
     ngx.req.read_body()
