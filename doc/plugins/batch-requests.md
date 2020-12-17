@@ -69,7 +69,6 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
 | max_body_size       | integer  | required   |  1048576  |    > 0  | the maximum of request body size in bytes |
 
-
 ## Batch API Request/Response
 The plugin will create a API in `apisix` to handle your batch request.
 

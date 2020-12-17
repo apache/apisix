@@ -44,8 +44,6 @@
 |PATCH    |/apisix/admin/routes/{id}|{...}|标准 PATCH ，修改已有 Route 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
 |PATCH    |/apisix/admin/routes/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。两种 PATCH 的区别可以参考后面的示例|
 
-
-
 > URL 请求参数：
 
 |名字      |可选项   |类型 |说明        |示例|
@@ -321,7 +319,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 |DELETE   |/apisix/admin/services/{id}|无|删除资源|
 |PATCH    |/apisix/admin/services/{id}|{...}|标准 PATCH ，修改已有 Service 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
 |PATCH    |/apisix/admin/services/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Service 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留|
-
 
 > body 请求参数：
 

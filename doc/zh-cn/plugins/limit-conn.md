@@ -107,4 +107,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 现在就已经移除了 limit-conn 插件了。其他插件的开启和移除也是同样的方法。
-

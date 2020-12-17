@@ -28,7 +28,6 @@
 - [**Metadata**](#metadata)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `http-logger` is a plugin which push Log data requests to HTTP/HTTPS servers.
