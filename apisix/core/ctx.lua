@@ -174,6 +174,12 @@ do
             elseif key == "consumer_name" then
                 val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.consumer_name
 
+            elseif key == "route_name" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.route_name
+
+            elseif key == "service_name" then
+                val = ngx.ctx.api_ctx and ngx.ctx.api_ctx.service_name
+
             else
                 val = get_var(key, t._request)
             end
