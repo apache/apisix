@@ -418,7 +418,7 @@ true
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/reflect_oidc_token_headers"
+                        "uri": "/uri"
                 }]],
                 [[{ "node": {
                         "value": {
@@ -445,7 +445,7 @@ true
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/reflect_oidc_token_headers"
+                            "uri": "/uri"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -474,7 +474,7 @@ passed
         content_by_lua_block {
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/reflect_oidc_token_headers"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = httpc:request_uri(uri, {
                 method = "GET",
                     headers = {
@@ -494,13 +494,9 @@ passed
 --- request
 GET /t
 --- response_body
-/reflect_oidc_token_headers
-
---- response_headers
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
-X-Access-Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
-!X-ID-Token
-!X-Userinfo
+uri: /uri
+authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
+x-access-token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
 --- no_error_log
 [error]
 --- error_code: 200
@@ -538,7 +534,7 @@ X-Access-Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsIml
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/reflect_oidc_token_headers"
+                        "uri": "/uri"
                 }]],
                 [[{ "node": {
                         "value": {
@@ -566,7 +562,7 @@ X-Access-Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsIml
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/reflect_oidc_token_headers"
+                            "uri": "/uri"
                         },
                         "key": "/apisix/routes/1"
                     },
@@ -595,7 +591,7 @@ passed
         content_by_lua_block {
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/reflect_oidc_token_headers"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = httpc:request_uri(uri, {
                 method = "GET",
                     headers = {
@@ -615,13 +611,8 @@ passed
 --- request
 GET /t
 --- response_body
-/reflect_oidc_token_headers
-
---- response_headers
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
-!X-Access-Token
-!X-ID-Token
-!X-Userinfo
+uri: /uri
+authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
 --- no_error_log
 [error]
 --- error_code: 200
