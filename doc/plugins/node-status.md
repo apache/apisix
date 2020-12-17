@@ -28,22 +28,18 @@
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `node-status` is a plugin which we could get request status information through it's API.
-
 
 ## Attributes
 
 None
 
-
 ## API
 
 This plugin will add `/apisix/status` to get status information.
 You may need to use [interceptors](../plugin-interceptors.md) to protect it.
-
 
 ## How To Enable
 
@@ -83,7 +79,6 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 You have to configure `node-status` in the configuration file `apisix/conf/config.yaml` before creating a route like this.
 And this plugin will not make any difference in future requests, so usually we don't set this plugin when creating routes.
 
-
 ## Test Plugin
 
 1. Request with uri `/apisix/status`
@@ -113,7 +108,6 @@ Server: APISIX web server
 | active       | the current number of active client connections including waiting connections                       |
 | reading      | the current number of connections where APISIX is reading the request header                   |
 | id           | APISIX's uid which is saved in apisix/conf/apisix.uid  |
-
 
 ## Disable Plugin
 

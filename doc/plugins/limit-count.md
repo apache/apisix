@@ -46,7 +46,6 @@ Limit request rate by a fixed number of requests in a given time window.
 | redis_timeout  | integer | optional             | 1000    | [1,...]                                                                  | When using the `redis` policy, this property specifies the timeout in milliseconds of any command submitted to the Redis server.                                                                                                                                                                            |
 | redis_cluster_nodes | array | optional |         |                                                              | When using `redis-cluster` policy，This property is a list of addresses of Redis cluster service nodes. |
 
-
 **Key can be customized by the user, only need to modify a line of code of the plug-in to complete.  It is a security consideration that is not open in the plugin.**
 
 ## How To Enable

@@ -33,7 +33,6 @@
 
 该插件使用 `Json Schema` 进行数据验证，有关 `Json Schema` 的更多信息，请参阅 [JSON schema](https://github.com/api7/jsonschema)。
 
-
 ## 属性
 
 | Name          | Type   | Requirement | Default | Valid | Description                       |
@@ -70,7 +69,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
 ## 测试插件
 
 ```shell
@@ -81,7 +79,6 @@ curl --header "Content-Type: application/json" \
 ```
 
 如果 `Schema` 验证失败，将返回 `400 bad request` 错误。
-
 
 ## 禁用插件
 
@@ -101,7 +98,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 ## 示例
 
@@ -194,7 +190,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 **数组（Array）验证:**
 

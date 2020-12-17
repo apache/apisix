@@ -63,7 +63,6 @@ if batch_processor then
 end
 ```
 
-
 注意：请确保批处理的最大大小（条目数）在函数执行的范围内。
 刷新批处理的计时器基于“ inactive_timeout”配置运行。因此，为了获得最佳使用效果，
 保持“ inactive_timeout”小于“ buffer_duration”。

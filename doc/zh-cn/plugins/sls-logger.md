@@ -31,7 +31,6 @@
 
 `sls-logger` 是使用[RF5424](https://tools.ietf.org/html/rfc5424)标准将日志数据发送到以JSON格式发送到[阿里云日志服务](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u)。
 
-
 该插件提供了将Log Data作为批处理推送到阿里云日志服务器的功能。如果您没有收到日志数据，请放心一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
 
 有关Apache APISIX中Batch-Processor的更多信息，请参考：

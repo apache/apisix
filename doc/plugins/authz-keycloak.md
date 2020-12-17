@@ -27,7 +27,6 @@
 - [**Disable Plugin**](#disable-plugin)
 - [**Examples**](#examples)
 
-
 ## Name
 
 `authz-keycloak` is an authorization plugin to be used with the Keycloak Identity Server. Keycloak is an OAuth/OIDC and
@@ -48,8 +47,6 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | ssl_verify              | boolean       | optional    | true                                          |                                                 | Verify if SSL cert matches hostname.                                                                                                                        |
 | policy_enforcement_mode | string        | optional    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                     |                                                                                                                                                             |
 
-
-
 ### Policy Enforcement Mode
 
 Specifies how policies are enforced when processing authorization requests sent to the server.
@@ -61,7 +58,6 @@ Specifies how policies are enforced when processing authorization requests sent 
 **Permissive**
 
 - Requests are allowed even when there is no policy associated with a given resource.
-
 
 ## How To Enable
 
@@ -87,13 +83,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
 ## Test Plugin
 
 ```shell
 curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 ```
-
 
 ## Disable Plugin
 

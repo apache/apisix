@@ -87,11 +87,9 @@ plugin_attr:
     report_ttl: 3600
 ```
 
-
 ## 测试插件
 
 Apache APISIX Dashboard 会收集上报到 etcd 中的服务信息，在启用这个插件后，你可以通过 APISIX Dashboard 来查看这些数据。
-
 
 ## 禁用插件
 
