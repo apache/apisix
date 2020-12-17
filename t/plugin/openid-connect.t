@@ -23,7 +23,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity
+=== TEST 1: Sanity check with minimal valid configuration.
 --- config
     location /t {
         content_by_lua_block {
@@ -45,7 +45,7 @@ done
 
 
 
-=== TEST 2: missing client_id
+=== TEST 2: Missing `client_id`.
 --- config
     location /t {
         content_by_lua_block {
@@ -68,7 +68,7 @@ done
 
 
 
-=== TEST 3: wrong type of string
+=== TEST 3: Wrong type for `client_id`.
 --- config
     location /t {
         content_by_lua_block {
@@ -91,7 +91,7 @@ done
 
 
 
-=== TEST 4: add plugin to route
+=== TEST 4: Add plugin to route for path `/hello`.
 --- config
     location /t {
         content_by_lua_block {
@@ -161,7 +161,7 @@ passed
 
 
 
-=== TEST 5: access route w/o bearer token
+=== TEST 5: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider.
 --- config
     location /t {
         content_by_lua_block {
@@ -191,7 +191,7 @@ true
 
 
 
-=== TEST 6: update plugin with bearer_only=true
+=== TEST 6: Update plugin with `bearer_only=true`.
 --- config
     location /t {
         content_by_lua_block {
@@ -263,7 +263,7 @@ passed
 
 
 
-=== TEST 7: access route w/o bearer token
+=== TEST 7: Access route w/o bearer token. Should return 401.
 --- timeout: 10s
 --- request
 GET /hello
@@ -276,7 +276,7 @@ WWW-Authenticate: Bearer realm=apisix
 
 
 
-=== TEST 8: update plugin public key, so tokens can be validated locally
+=== TEST 8: Update plugin with ID provider public key, so tokens can be validated locally.
 --- config
     location /t {
         content_by_lua_block {
@@ -356,7 +356,7 @@ passed
 
 
 
-=== TEST 9: access route with valid token
+=== TEST 9: Access route with valid token.
 --- config
     location /t {
         content_by_lua_block {
@@ -388,7 +388,7 @@ true
 
 
 
-=== TEST 9a: update plugin with different upstream endpoint
+=== TEST 9a: Update route URI to '/uri' where upstream endpoint returns request headers in response body.
 --- config
     location /t {
         content_by_lua_block {
@@ -468,7 +468,7 @@ passed
 
 
 
-=== TEST 9b: access route with valid token in Authorization header and verify token is sent to upstream in X-Access-Token header as well
+=== TEST 9b: Access route with valid token in `Authorization` header. Upstream should additionally get the token in the `X-Access-Token` header.
 --- request
 GET /uri HTTP/1.1
 --- more_headers
@@ -485,7 +485,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 9c: Update plugin to use Authorization header.
+=== TEST 9c: Update plugin to only use `Authorization` header.
 --- config
     location /t {
         content_by_lua_block {
@@ -567,7 +567,7 @@ passed
 
 
 
-=== TEST 9d: Access route with valid token in Authorization header and verify token is still only sent to upstream in Authorization header.
+=== TEST 9d: Access route with valid token in `Authorization` header. Upstream should not get the additional `X-Access-Token` header.
 --- request
 GET /uri HTTP/1.1
 --- more_headers
@@ -583,7 +583,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 9z: update plugin public key, so tokens can be validated locally
+=== TEST 9z: Switch route URI back to `/hello`.
 --- config
     location /t {
         content_by_lua_block {
@@ -663,7 +663,7 @@ passed
 
 
 
-=== TEST 10: access introspection with wrong token
+=== TEST 10: Access route with invalid token. Should return 401.
 --- config
     location /t {
         content_by_lua_block {
@@ -694,7 +694,7 @@ jwt signature verification failed
 
 
 
-=== TEST 11: Update route with keycloak config for introspection
+=== TEST 11: Update route with Keycloak introspection endpoint and public key removed. Should now invoke introspection endpoint to validate tokens.
 --- config
     location /t {
         content_by_lua_block {
@@ -770,44 +770,34 @@ passed
 
 
 
-=== TEST 12: Access keycloak with correct token
+=== TEST 12: Obtain authorization code
 --- config
     location /t {
         content_by_lua_block {
-            local json_decode = require("toolkit.json").decode
+            -- Call authorization endpoint. Should return a login form.
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
-                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    body = "response_type=code&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&redirect_uri=https://iresty.com",
                     headers = {
                         ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
                 })
 
+            -- Check response from keycloak and fail quickly if there's no response.
             if not res then
                 ngx.say(err)
                 return
             end
 
+            -- Check if response code was ok.
             if res.status == 200 then
-                local body = json_decode(res.body)
-                local accessToken = body["access_token"]
-                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-                local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                    headers = {
-                        ["Authorization"] = "Bearer " .. body["access_token"]
-                    }
-                 })
-
-                if res.status == 200 then
-                    ngx.say(true)
-                else
-                    ngx.say(false)
-                end
+                local url = res.body:match('.*action="(.*)" method="post">')
+                ngx.say(url)
             else
+                -- Response from Keycloak not ok.
                 ngx.say(false)
             end
         }
@@ -821,10 +811,71 @@ true
 
 
 
-=== TEST 13: Access keycloak with wrong token
+=== TEST 12: Obtain valid token and access route with it.
 --- config
     location /t {
         content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if res.status == 200 then
+                    -- Route accessed successfully.
+                    ngx.say(true)
+                else
+                    -- Couldn't access route.
+                    ngx.say(false)
+                end
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: Access route with an invalid token.
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Access route using a fake access token.
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
