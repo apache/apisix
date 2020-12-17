@@ -26,7 +26,6 @@
 - [**测试插件**](#test-plugin)
 - [**禁用插件**](#disable-plugin)
 
-
 ## 定义
 
 `sys` 是一个将Log data请求推送到Syslog的插件。
@@ -88,7 +87,6 @@ hello, world
 ```
 
 ## 禁用插件
-
 
 想要禁用“sys-logger”插件，是非常简单的，将对应的插件配置从json配置删除，就会立即生效，不需要重新启动服务：
 
