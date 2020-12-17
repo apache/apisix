@@ -794,12 +794,12 @@ passed
 
             -- Check if response code was ok.
             if res.status == 200 then
-                local url, params = res.body:match('.*action="(.*)?(.*)" method="post">')
+                local url, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
                 params = params:gsub("&amp;", "&")
                 ngx.say(url)
                 ngx.say(params)
                 for k,v in pairs(res.headers) do
-                    ngx.say(k .. ": " .. v)
+                    ngx.say(k)
                 end
             else
                 -- Response from Keycloak not ok.
