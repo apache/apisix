@@ -794,14 +794,39 @@ passed
 
             -- Check if response code was ok.
             if res.status == 200 then
-                local url, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
-                params = params:gsub("&amp;", "&")
-                cookies = res.headers['Set-Cookie']
+                -- Extract form target URI and parameters.
+                local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
+                -- Need to substitute escaped ampersand.
+                local params = params:gsub("&amp;", "&")
+                -- Get all cookies returned.
+                local cookies = res.headers['Set-Cookie']
+                -- Concatenate cookies into one string as expected in request header.
+                local cookie_str = ""
+                local i = 1
+                for k,v in pairs(cookies) do
+                    if i > 1 then
+                        cookie_str = cookie_str .. "; "
+                    end
+                    cookie_str = cookie_str .. k .. "=" .. v
+                    i = i + 1
+                end
+
+                -- Invoke the URL with parameters and cookies, adding username and password.
+                --local res, err = httpc:request_uri(uri, {
+                --        method = "POST",
+                --        body = params .. "&username=teacher@gmail.com&password=123456",
+                --        headers = {
+                --            ["Content-Type"] = "application/x-www-form-urlencoded",
+                --            ["Cookie"] = cookie_str
+                --        }
+                --    })
+
                 ngx.say(url)
                 ngx.say(params)
-                for k,v in pairs(cookies) do
-                    ngx.say(k .. ": " .. v)
-                end
+                --for k,v in pairs(cookies) do
+                --    ngx.say(k .. ": " .. v)
+                --end
+                ngx.say(cookie_str)
             else
                 -- Response from Keycloak not ok.
                 ngx.say(false)
