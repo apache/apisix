@@ -413,6 +413,7 @@ function _M.http_access_phase()
         api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
         api_ctx.conf_id = route.value.id .. "&" .. service.value.id
         api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
 
         if enable_websocket == nil then
             enable_websocket = service.value.enable_websocket
@@ -424,6 +425,7 @@ function _M.http_access_phase()
         api_ctx.conf_id = route.value.id
     end
     api_ctx.route_id = route.value.id
+    api_ctx.route_name = route.value.name
 
     local up_id = route.value.upstream_id
     if up_id then
