@@ -796,10 +796,11 @@ passed
             if res.status == 200 then
                 local url, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
                 params = params:gsub("&amp;", "&")
+                cookies = res.headers['Set-Cookie']
                 ngx.say(url)
                 ngx.say(params)
-                for k,v in pairs(res.headers) do
-                    ngx.say(k)
+                for k,v in pairs(cookies) do
+                    ngx.say(k .. ": " .. v)
                 end
             else
                 -- Response from Keycloak not ok.
