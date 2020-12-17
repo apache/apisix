@@ -802,13 +802,12 @@ passed
                 local cookies = res.headers['Set-Cookie']
                 -- Concatenate cookies into one string as expected in request header.
                 local cookie_str = ""
-                local i = 1
-                for k,v in pairs(cookies) do
-                    if i > 1 then
-                        cookie_str = cookie_str .. "; "
+                local len = #cookies
+                if len > 0 then
+                    cookie_str = cookies[1]
+                    for i = 2, len do
+                        cookie_str = cookie_str .. "; " .. cookies[i]
                     end
-                    cookie_str = cookie_str .. k .. "=" .. v
-                    i = i + 1
                 end
 
                 -- Invoke the URL with parameters and cookies, adding username and password.
