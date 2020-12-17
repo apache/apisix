@@ -32,10 +32,10 @@ RELEASE_SRC = apache-apisix-${VERSION}-src
 .PHONY: default
 default:
 ifeq ($(OR_EXEC), )
-ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
-	@echo "ERROR: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
-	exit 1
-endif
+	ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
+		@echo "ERROR: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX."
+		exit 1
+	endif
 endif
 
 LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit
@@ -124,6 +124,7 @@ install: default
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
+	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
 	$(INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
