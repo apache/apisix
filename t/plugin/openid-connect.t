@@ -313,14 +313,17 @@ passed
                 ngx.say("Cookie: " .. cookie_str)
 
                 -- Call authorization endpoint. Should return a login form.
-                uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
-                res, err = httpc:request_uri(uri, {
-                    method = "POST",
-                        body = "redirect_uri=http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
-                        headers = {
-                            ["Content-Type"] = "application/x-www-form-urlencoded"
-                       }
-                    })
+                res, err = httpc:request_uri(res.headers['Location'], {method = "GET"})
+
+                --uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
+                --res, err = httpc:request_uri(uri, {
+                --    method = "POST",
+                --        -- body = "redirect_uri=http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
+                --        body = "redirect_uri=http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated&scope=openid&client_id=course_management&response_type=code&state=" .. state .. "",
+                --        headers = {
+                --            ["Content-Type"] = "application/x-www-form-urlencoded"
+                --       }
+                --    })
 
                 -- Check response from keycloak and fail quickly if there's no response.
                 if not res then
