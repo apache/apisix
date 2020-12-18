@@ -311,7 +311,6 @@ passed
                 end
 
                 ngx.say("Cookie: " .. cookie_str)
-                ngx.status = res.status
 
                 -- Call authorization endpoint. Should return a login form.
                 uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
@@ -329,7 +328,6 @@ passed
                     return
                 end
 
-                ngx.status = res.status
                 ngx.say(res.body)
 
                 -- Check if response code was ok.
@@ -370,7 +368,7 @@ passed
                         })
 
                     ngx.status = res.status
-                    ngx.say(res.body)
+                    --ngx.say(res.body)
                     for k, v in pairs(res.headers) do
                         ngx.say(k .. ": " .. v)
                     end
