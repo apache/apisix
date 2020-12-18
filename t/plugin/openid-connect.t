@@ -290,49 +290,43 @@ passed
                 local state = res.headers['Location']:match('.*state=([^&]+).*')
 
                 -- Extract cookies.
-                --local cookies = res.headers['Set-Cookie']
+                local cookies = res.headers['Set-Cookie']
 
                 -- Concatenate cookies into one string as expected in request header.
-                --local cookie_str = ""
-                --local len = #cookies
-                --if len > 0 then
-                --    cookie_str = cookies[1]:match('([^;]*); .*')
-                --    for i = 2, len do
-                --        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                --    end
+                local cookie_str = ""
+                local len = #cookies
+                if len > 0 then
+                    cookie_str = cookies[1]:match('([^;]*); .*')
+                    for i = 2, len do
+                        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                    end
                 --end
 
                 ngx.status = res.status
                 ngx.say("Nonce: " .. nonce)
                 ngx.say("State: " .. state)
-                --ngx.say("Cookie: " .. cookie_str)
+                ngx.say("Cookie: " .. cookie_str)
+
+                -- Call authorization endpoint. Should return a login form.
+                uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
+                res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                        body = "redirect_uri=http://127.0.0.1:3000/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
+                        headers = {
+                            ["Content-Type"] = "application/x-www-form-urlencoded"
+                       }
+                    })
+
+                -- Check response from keycloak and fail quickly if there's no response.
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+
+                ngx.status = res.status
+                ngx.say(res.body)
+
             end
-
-            -- local location = res.headers['Location']
-            -- if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
-            --    string.find(location, 'scope=apisix') ~= -1 and
-            --    string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
-            --    string.find(location, 'response_type=code') ~= -1 and
-            --    string.find(location, 'redirect_uri=https://iresty.com') ~= -1 then
-            --    ngx.say(true)
-            -- end
-
-
-            -- Call authorization endpoint. Should return a login form.
-            -- uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
-            -- res, err = httpc:request_uri(uri, {
-            --         method = "POST",
-            --         body = "response_type=code&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&redirect_uri=https://iresty.com",
-            --         headers = {
-            --             ["Content-Type"] = "application/x-www-form-urlencoded"
-            --         }
-            --     })
-
-            -- Check response from keycloak and fail quickly if there's no response.
-            -- if not res then
-            --     ngx.say(err)
-            --     return
-            -- end
 
             -- Check if response code was ok.
             -- if res.status == 200 then
