@@ -380,7 +380,7 @@ passed
                     res, err = httpc:request_uri(redirect_uri, {
                             method = "GET",
                             headers = {
-                                ["Cookie"] = cookie_str
+                                ["Cookie"] = cookie_str .. "; " .. auth_cookie_str
                             }
                         })
 
