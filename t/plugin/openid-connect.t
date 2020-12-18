@@ -383,10 +383,25 @@ passed
                     res, err = httpc:request_uri(redirect_uri, {
                             method = "GET",
                             headers = {
-                                ["Cookie"] = cookie_str .. "; " .. auth_cookie_str
+                                ["Cookie"] = cookie_str
                             }
                         })
 
+                    ngx.status = res.status
+                    ngx.say(res.body)
+                    for k, v in pairs(res.headers) do
+                        ngx.say(k)
+                    end
+                    ngx.say(res.headers['Location'])
+
+                    -- Get the final URI out of the Location response header.
+                    redirect_uri = res.headers['Location']
+                    res, err = httpc:request_uri(redirect_uri, {
+                            method = "GET",
+                            headers = {
+                                ["Cookie"] = cookie_str
+                            }
+                        })
                     ngx.status = res.status
                     ngx.say(res.body)
                     for k, v in pairs(res.headers) do
