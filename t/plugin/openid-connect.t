@@ -779,9 +779,9 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri, {method = "GET"})
             ngx.status = res.status
-            nginx.say(res.body)
+            ngx.say(res.body)
             for k, v in pairs(res.headers) do
-                nginx.say(k .. ": " .. v)
+                ngx.say(k .. ": " .. v)
             end
             return
             --local location = res.headers['Location']
@@ -795,8 +795,8 @@ passed
 
 
             -- Call authorization endpoint. Should return a login form.
-            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
-            local res, err = httpc:request_uri(uri, {
+            uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
+            res, err = httpc:request_uri(uri, {
                     method = "POST",
                     body = "response_type=code&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&redirect_uri=https://iresty.com",
                     headers = {
