@@ -191,6 +191,162 @@ true
 
 
 
+=== TEST 11: Update route with Keycloak introspection endpoint and public key removed. Should now invoke introspection endpoint to validate tokens.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "redirect_uri": "http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated",
+                                "realm": "University",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello|/authenticated"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "openid-connect": {
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "redirect_uri": "http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated",
+                                "realm": "University",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello|/authenticated"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: Obtain authorization code.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            ngx.say(res.body)
+            for k, v in pairs(res.headers) do
+                ngx.say(k .. ": " .. v)
+            end
+            -- local location = res.headers['Location']
+            -- if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+            --    string.find(location, 'scope=apisix') ~= -1 and
+            --    string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
+            --    string.find(location, 'response_type=code') ~= -1 and
+            --    string.find(location, 'redirect_uri=https://iresty.com') ~= -1 then
+            --    ngx.say(true)
+            -- end
+
+
+            -- Call authorization endpoint. Should return a login form.
+            -- uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
+            -- res, err = httpc:request_uri(uri, {
+            --         method = "POST",
+            --         body = "response_type=code&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&redirect_uri=https://iresty.com",
+            --         headers = {
+            --             ["Content-Type"] = "application/x-www-form-urlencoded"
+            --         }
+            --     })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            -- if not res then
+            --     ngx.say(err)
+            --     return
+            -- end
+
+            -- Check if response code was ok.
+            -- if res.status == 200 then
+                -- Extract form target URI and parameters.
+                -- local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
+                -- Need to substitute escaped ampersand.
+                -- local params = params:gsub("&amp;", "&")
+                -- Get all cookies returned.
+                -- local cookies = res.headers['Set-Cookie']
+                -- Concatenate cookies into one string as expected in request header.
+                -- local cookie_str = ""
+                -- local len = #cookies
+                -- if len > 0 then
+                --     cookie_str = cookies[1]:match('([^;]*); .*')
+                --     for i = 2, len do
+                --         cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                --     end
+                -- end
+
+                -- Invoke the URL with parameters and cookies, adding username and password.
+                --local res, err = httpc:request_uri(uri, {
+                --        method = "POST",
+                --        body = params .. "&username=teacher@gmail.com&password=123456",
+                --        headers = {
+                --            ["Content-Type"] = "application/x-www-form-urlencoded",
+                --            ["Cookie"] = cookie_str
+                --        }
+                --    })
+
+                -- ngx.say(url)
+                -- ngx.say(params)
+                -- ngx.say(cookie_str)
+            -- else
+                -- Response from Keycloak not ok.
+                -- ngx.say(false)
+            -- end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+
 === TEST 6: Update plugin with `bearer_only=true`.
 --- config
     location /t {
@@ -765,91 +921,6 @@ jwt signature verification failed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
-
-
-
-=== TEST 12: Obtain authorization code.
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {method = "GET"})
-            ngx.status = res.status
-            ngx.say(res.body)
-            for k, v in pairs(res.headers) do
-                ngx.say(k .. ": " .. v)
-            end
-            -- local location = res.headers['Location']
-            -- if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
-            --    string.find(location, 'scope=apisix') ~= -1 and
-            --    string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
-            --    string.find(location, 'response_type=code') ~= -1 and
-            --    string.find(location, 'redirect_uri=https://iresty.com') ~= -1 then
-            --    ngx.say(true)
-            -- end
-
-
-            -- Call authorization endpoint. Should return a login form.
-            -- uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
-            -- res, err = httpc:request_uri(uri, {
-            --         method = "POST",
-            --         body = "response_type=code&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&redirect_uri=https://iresty.com",
-            --         headers = {
-            --             ["Content-Type"] = "application/x-www-form-urlencoded"
-            --         }
-            --     })
-
-            -- Check response from keycloak and fail quickly if there's no response.
-            -- if not res then
-            --     ngx.say(err)
-            --     return
-            -- end
-
-            -- Check if response code was ok.
-            -- if res.status == 200 then
-                -- Extract form target URI and parameters.
-                -- local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
-                -- Need to substitute escaped ampersand.
-                -- local params = params:gsub("&amp;", "&")
-                -- Get all cookies returned.
-                -- local cookies = res.headers['Set-Cookie']
-                -- Concatenate cookies into one string as expected in request header.
-                -- local cookie_str = ""
-                -- local len = #cookies
-                -- if len > 0 then
-                --     cookie_str = cookies[1]:match('([^;]*); .*')
-                --     for i = 2, len do
-                --         cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                --     end
-                -- end
-
-                -- Invoke the URL with parameters and cookies, adding username and password.
-                --local res, err = httpc:request_uri(uri, {
-                --        method = "POST",
-                --        body = params .. "&username=teacher@gmail.com&password=123456",
-                --        headers = {
-                --            ["Content-Type"] = "application/x-www-form-urlencoded",
-                --            ["Cookie"] = cookie_str
-                --        }
-                --    })
-
-                -- ngx.say(url)
-                -- ngx.say(params)
-                -- ngx.say(cookie_str)
-            -- else
-                -- Response from Keycloak not ok.
-                -- ngx.say(false)
-            -- end
-        }
-    }
---- request
-GET /t
---- response_body
-true
 --- no_error_log
 [error]
 
