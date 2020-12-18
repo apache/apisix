@@ -90,6 +90,6 @@ jobs:
       run: |
         docker exec centos7Instance bash -c "yum install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl"
         docker exec centos7Instance bash -c "git clone -b add-ci-on-centos7 https://github.com/idbeta/apisix"
-        docker exec centos7Instance bash -c "cd apisix && make deps && git submodule update --init --recursive"
+        docker exec centos7Instance bash -c "cd apisix && git submodule update --init --recursive"
         docker exec centos7Instance bash -c "PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/luajit/bin:/usr/local/openresty-debug/bin:$PATH cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)"
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/admin/*.t"
