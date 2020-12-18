@@ -373,6 +373,22 @@ passed
                         ngx.say(k)
                     end
                     ngx.say(res.headers['Location'])
+
+                    local redirect_uri = res.headers['Location']
+
+                    -- Invoke the redirect URI with the obtained authorization code.
+                    res, err = httpc:request_uri(redirect_uri, {
+                            method = "GET",
+                            headers = {
+                                ["Cookie"] = cookie_str
+                            }
+                        })
+
+                    ngx.status = res.status
+                    ngx.say(res.body)
+                    for k, v in pairs(res.headers) do
+                        ngx.say(k)
+                    end
                 else
                     -- Response from Keycloak not ok.
                     ngx.say(false)
