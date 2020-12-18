@@ -128,7 +128,7 @@ done
                                     "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "scope": "apisix"
                                 }
                             },
@@ -229,7 +229,7 @@ true
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "bearer_only": true,
                                     "scope": "apisix"
                                 }
@@ -317,7 +317,7 @@ WWW-Authenticate: Bearer realm=apisix
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "bearer_only": true,
                                     "scope": "apisix",
                                     "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
@@ -459,7 +459,7 @@ jwt signature verification failed
                                     "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
                                     "redirect_uri": "http://localhost:3000",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "bearer_only": true,
                                     "realm": "University",
                                     "introspection_endpoint_auth_method": "client_secret_post",
@@ -573,3 +573,31 @@ GET /t
 false
 --- error_log
 failed to introspect in openidc: invalid token
+
+
+
+=== TEST 14: check default value
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("t.toolkit.json")
+            local plugin = require("apisix.plugins.openid-connect")
+            local s = {
+                client_id = "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                client_secret = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                discovery = "http://127.0.0.1:1980/.well-known/openid-configuration",
+            }
+            local ok, err = plugin.check_schema(s)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(json.encode(s))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","ssl_verify":false,"timeout":3}
+--- no_error_log
+[error]

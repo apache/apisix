@@ -31,6 +31,8 @@ URI 重定向插件。
 | uri           | string  | 可选        |         |            | 可以包含 Nginx 变量的 URI，例如：`/test/index.html`, `$uri/index.html`。你可以通过类似于 `$ {xxx}` 的方式引用变量，以避免产生歧义，例如：`${uri}foo/index.html`。若你需要保留 `$` 字符，那么使用如下格式：`/\$foo/index.html` |
 | ret_code      | string  | 可选        | 302     | [200, ...] | 请求响应码                                                                                                                                                                                                                    |
 
+`http_to_https` 和 `uri` 两个中只能配置一个。
+
 ### 示例
 
 #### 启用插件

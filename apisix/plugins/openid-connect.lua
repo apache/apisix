@@ -29,16 +29,43 @@ local schema = {
         client_id = {type = "string"},
         client_secret = {type = "string"},
         discovery = {type = "string"},
-        scope = {type = "string"},
-        ssl_verify = {type = "boolean"}, -- default is false
-        timeout = {type = "integer", minimum = 1}, --default is 3 seconds
-        introspection_endpoint = {type = "string"}, --default is nil
-        --default is client_secret_basic
-        introspection_endpoint_auth_method = {type = "string"},
-        bearer_only = {type = "boolean"}, -- default is false
-        realm = {type = "string"}, -- default is apisix
-        logout_path = {type = "string"}, -- default is /logout
-        redirect_uri = {type = "string"}, -- default is ngx.var.request_uri
+        scope = {
+            type = "string",
+            default = "openid",
+        },
+        ssl_verify = {
+            type = "boolean",
+            default = false,
+        },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 3,
+            description = "timeout in seconds",
+        },
+        introspection_endpoint = {
+            type = "string"
+        },
+        introspection_endpoint_auth_method = {
+            type = "string",
+            default = "client_secret_basic"
+        },
+        bearer_only = {
+            type = "boolean",
+            default = false,
+        },
+        realm = {
+            type = "string",
+            default = "apisix",
+        },
+        logout_path = {
+            type = "string",
+            default = "/logout",
+        },
+        redirect_uri = {
+            type = "string",
+            description = "use ngx.var.request_uri if not configured"
+        },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"}
     },
@@ -62,31 +89,6 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
-    end
-
-    if not conf.scope then
-        conf.scope = "openid"
-    end
-    if not conf.ssl_verify then
-        -- we need to use a boolean default value here
-        -- so that the schema can pass check in the DP
-        conf.ssl_verify = false
-    end
-    if not conf.timeout then
-        conf.timeout = 3
-    end
-    conf.timeout = conf.timeout * 1000
-    if not conf.introspection_endpoint_auth_method then
-        conf.introspection_endpoint_auth_method = 'client_secret_basic'
-    end
-    if not conf.bearer_only then
-        conf.bearer_only = false
-    end
-    if not conf.realm then
-        conf.realm = 'apisix'
-    end
-    if not conf.logout_path then
-        conf.logout_path = '/logout'
     end
 
     return true
@@ -148,6 +150,13 @@ end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
+
+    -- Previously, we multiply conf.timeout before storing it in etcd.
+    -- If the timeout is too large, we should not multiply it again.
+    if not (conf.timeout >= 1000 and conf.timeout % 1000 == 0) then
+        conf.timeout = conf.timeout * 1000
+    end
+
     if not conf.redirect_uri then
         conf.redirect_uri = ctx.var.request_uri
     end
