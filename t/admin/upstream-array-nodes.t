@@ -232,24 +232,67 @@ GET /t
                 }]]
                 )
 
-            if code ~= 200 then
+            if code >= 300 then
                 ngx.status = code
                 ngx.print(message)
                 return
             end
 
-            ngx.say("[push] code: ", code, " message: ", message)
+            ngx.say(message)
         }
     }
 --- request
 GET /t
---- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the requireds"}
+passed
+--- no_error_log
+[error]
 
 
 
-=== TEST 7: no additional properties is valid
+=== TEST 7: refer to empty nodes upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream_id": "1",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: hit empty nodes upstream
+--- request
+GET /index.html
+--- error_code: 502
+--- error_log
+no valid upstream node
+
+
+
+=== TEST 9: no additional properties is valid
 --- config
     location /t {
         content_by_lua_block {
@@ -282,7 +325,7 @@ GET /t
 
 
 
-=== TEST 8: invalid weight of node
+=== TEST 10: invalid weight of node
 --- config
     location /t {
         content_by_lua_block {
@@ -314,7 +357,7 @@ GET /t
 
 
 
-=== TEST 9: invalid weight of node
+=== TEST 11: invalid weight of node
 --- config
     location /t {
         content_by_lua_block {
@@ -346,7 +389,7 @@ GET /t
 
 
 
-=== TEST 10: invalid port of node
+=== TEST 12: invalid port of node
 --- config
     location /t {
         content_by_lua_block {
@@ -378,7 +421,7 @@ GET /t
 
 
 
-=== TEST 11: invalid host of node
+=== TEST 13: invalid host of node
 --- config
     location /t {
         content_by_lua_block {
