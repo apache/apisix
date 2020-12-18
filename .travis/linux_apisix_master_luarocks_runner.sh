@@ -40,6 +40,7 @@ script() {
 
     which apisix
 
+    sudo mkdir -p /usr/local/apisix/apisix
     sudo cp -r ../apisix/control /usr/local/apisix/apisix/control
 
     # run test
