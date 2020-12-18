@@ -285,7 +285,8 @@ passed
                 end
             else
                 -- Extract nonce and state.
-                local nonce, state = res.headers['Location']:match('.*nonce=([^&]*)&.*state=([^&]*).*')
+                ngx.say('Location: ' .. res.headers['Location'])
+                --local nonce, state = res.headers['Location']:match('.*nonce=([^&]*)&.*state=([^&]*).*')
 
                 -- Extract cookies.
                 --local cookies = res.headers['Set-Cookie']
@@ -301,8 +302,8 @@ passed
                 --end
 
                 ngx.status = res.status
-                ngx.say("Nonce: " .. nonce)
-                ngx.say("State: " .. state)
+                --ngx.say("Nonce: " .. nonce)
+                --ngx.say("State: " .. state)
                 --ngx.say("Cookie: " .. cookie_str)
             end
 
