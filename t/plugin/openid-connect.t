@@ -369,6 +369,7 @@ passed
                             }
                         })
 
+                    ngx.status = res.status
                     ngx.say(res.body)
                     for k, v in pairs(res.headers) do
                         ngx.say(k .. ": " .. v)
