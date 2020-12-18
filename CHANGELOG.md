@@ -218,7 +218,7 @@ This release is mainly to strengthen the stability of the code and add more docu
 
 ### Core
 
-- always specify perl include path when runing test cases. [#1097](https://github.com/apache/incubator-apisix/pull/1097)
+- always specify perl include path when running test cases. [#1097](https://github.com/apache/incubator-apisix/pull/1097)
 - Feature: Add support for PROXY Protocol. [#1113](https://github.com/apache/incubator-apisix/pull/1113)
 - enhancement: add verify command to verify apisix configuration(nginx.conf). [#1112](https://github.com/apache/incubator-apisix/pull/1112)
 - feature: increase the default size of the core file. [#1105](https://github.com/apache/incubator-apisix/pull/1105)
