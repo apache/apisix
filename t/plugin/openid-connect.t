@@ -360,9 +360,9 @@ passed
                     ngx.say(auth_cookie_str)
 
                     -- Invoke the URL with parameters and cookies, adding username and password.
-                    res, err = httpc:request_uri(uri, {
+                    res, err = httpc:request_uri(uri .. "?" .. params, {
                             method = "POST",
-                            body = params .. "&username=teacher@gmail.com&password=123456",
+                            body = "username=teacher@gmail.com&password=123456",
                             headers = {
                                 ["Content-Type"] = "application/x-www-form-urlencoded",
                                 ["Cookie"] = auth_cookie_str
