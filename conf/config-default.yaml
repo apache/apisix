@@ -20,53 +20,54 @@
 #
 
 apisix:
-  node_listen: 9080              # APISIX listening port
+  node_listen: 9080                # APISIX listening port
   enable_admin: true
-  enable_admin_cors: true         # Admin API support CORS response headers.
+  enable_admin_cors: true          # Admin API support CORS response headers.
   enable_debug: false
-  enable_dev_mode: false          # Sets nginx worker_processes to 1 if set to true
-  enable_reuseport: true          # Enable nginx SO_REUSEPORT switch if set to true.
+  enable_dev_mode: false           # Sets nginx worker_processes to 1 if set to true
+  enable_reuseport: true           # Enable nginx SO_REUSEPORT switch if set to true.
   enable_ipv6: true
-  config_center: etcd             # etcd: use etcd to store the config value
-                                  # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
+  config_center: etcd              # etcd: use etcd to store the config value
+                                   # yamllint disable rule:comments-indentation
+                                   # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
 
-  #proxy_protocol:                 # Proxy Protocol configuration
-  #  listen_http_port: 9181        # The port with proxy protocol for http, it differs from node_listen and port_admin.
+  # proxy_protocol:                # Proxy Protocol configuration
+  # listen_http_port: 9181         # The port with proxy protocol for http, it differs from node_listen and port_admin.
                                    # This port can only receive http request with proxy protocol, but node_listen & port_admin
                                    # can only receive http request. If you enable proxy protocol, you must use this port to
                                    # receive http request with proxy protocol
-  #  listen_https_port: 9182       # The port with proxy protocol for https
-  #  enable_tcp_pp: true           # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
-  #  enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
-
+  # listen_https_port: 9182        # The port with proxy protocol for https
+  # enable_tcp_pp: true            # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
+  # enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
+                                   # yamllint enable rule:comments-indentation
   enable_server_tokens: true       # Whether the APISIX version number should be shown in Server header.
                                    # It's enabled by default.
 
   proxy_cache:                     # Proxy Caching configuration
     cache_ttl: 10s                 # The default caching time if the upstream does not specify the cache time
     zones:                         # The parameters of a cache
-    - name: disk_cache_one         # The name of the cache, administrator can be specify
+      - name: disk_cache_one       # The name of the cache, administrator can be specify
                                    # which cache to use by name in the admin api
-      memory_size: 50m             # The size of shared memory, it's used to store the cache index
-      disk_size: 1G                # The size of disk, it's used to store the cache data
-      disk_path: "/tmp/disk_cache_one" # The path to store the cache data
-      cache_levels: "1:2"           # The hierarchy levels of a cache
-  #  - name: disk_cache_two
-  #    memory_size: 50m
-  #    disk_size: 1G
-  #    disk_path: "/tmp/disk_cache_two"
-  #    cache_levels: "1:2"
+        memory_size: 50m           # The size of shared memory, it's used to store the cache index
+        disk_size: 1G              # The size of disk, it's used to store the cache data
+        disk_path: "/tmp/disk_cache_one"  # The path to store the cache data
+        cache_levels: "1:2"        # The hierarchy levels of a cache
+    #  - name: disk_cache_two
+    #    memory_size: 50m
+    #    disk_size: 1G
+    #    disk_path: "/tmp/disk_cache_two"
+    #    cache_levels: "1:2"
 
   allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
     - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
   #   - "::/64"
-  # port_admin: 9180              # use a separate port
-  # https_admin: true             # enable HTTPS when use a separate port for Admin API.
+  # port_admin: 9180            # use a separate port
+  # https_admin: true           # enable HTTPS when use a separate port for Admin API.
                                 # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
   admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
-    admin_ssl_cert: ""             # Path of your self-signed server side cert.
-    admin_ssl_cert_key: ""         # Path of your self-signed server side key.
-    admin_ssl_ca_cert: ""          # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
+    admin_ssl_cert: ""          # Path of your self-signed server side cert.
+    admin_ssl_cert_key: ""      # Path of your self-signed server side key.
+    admin_ssl_ca_cert: ""       # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
@@ -95,7 +96,7 @@ apisix:
   #   udp:                        # UDP proxy port list
   #     - 9200
   #     - 9211
-  # dns_resolver:                   # If not set, read from `/etc/resolv.conf`
+  # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #  - 1.1.1.1
   #  - 8.8.8.8
   dns_resolver_valid: 30          # valid time for dns result 30 seconds
@@ -123,10 +124,10 @@ nginx_config:                     # config for render the template to generate n
                                   # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APISIX_WORKER_PROCESSES"
   enable_cpu_affinity: true       # enable cpu affinity, this is just work well only on physical machine
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
-  worker_shutdown_timeout: 240s     # timeout for a graceful shutdown of worker processes
+  worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
   event:
     worker_connections: 10620
-  #envs:                            # allow to get a list of environment variables
+  # envs:                         # allow to get a list of environment variables
   #  - TEST_ENV
 
   # As user can add arbitrary configurations in the snippet,
@@ -166,8 +167,8 @@ nginx_config:                     # config for render the template to generate n
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - 'unix:'
-    #lua_shared_dicts:              # add custom shared cache to nginx.conf
-    #  ipc_shared_dict: 100m        # custom shared cache, format: `cache-key: cache-size`
+    # lua_shared_dicts:            # add custom shared cache to nginx.conf
+    #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
@@ -179,20 +180,20 @@ etcd:
   # user: root                    # root username for etcd
   # password: 5tHkHhYkjr6cQY      # root password for etcd
   tls:
-      verify: true                # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
+    verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
                                   # the default value is true, e.g. the certificate will be verified strictly.
 
-# discovery:                          # service discovery center
+# discovery:                      # service discovery center
 #   eureka:
-#     host:                           # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+#     host:                       # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
 #       - "http://127.0.0.1:8761"
 #     prefix: "/eureka/"
-#     fetch_interval: 30              # default 30s
-#     weight: 100                     # default weight for node
+#     fetch_interval: 30          # default 30s
+#     weight: 100                 # default weight for node
 #     timeout:
-#       connect: 2000                 # default 2000ms
-#       send: 2000                    # default 2000ms
-#       read: 5000                    # default 5000ms
+#       connect: 2000             # default 2000ms
+#       send: 2000                # default 2000ms
+#       read: 5000                # default 5000ms
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
@@ -205,8 +206,8 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - consumer-restriction
   - cors
   - echo
-  #- error-log-logger
-  #- example-plugin
+  # - error-log-logger
+  # - example-plugin
   - fault-injection
   - grpc-transcode
   - hmac-auth
@@ -218,8 +219,8 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - limit-conn
   - limit-count
   - limit-req
-  #- log-rotate
-  #- node-status
+  # - log-rotate
+  # - node-status
   - openid-connect
   - prometheus
   - proxy-cache
@@ -232,7 +233,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - response-rewrite
   - serverless-post-function
   - serverless-pre-function
-  #- skywalking
+  # - skywalking
   - sls-logger
   - syslog
   - tcp-logger
@@ -240,7 +241,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - uri-blocker
   - wolf-rbac
   - zipkin
-  #- server-info
+  # - server-info
 
 stream_plugins:
   - mqtt-proxy
@@ -256,5 +257,5 @@ plugin_attr:
   prometheus:
     export_uri: /apisix/prometheus/metrics
   server-info:
-    report_interval: 60 # server info report interval (unit: second)
-    report_ttl: 3600    # live time for server info in etcd (unit: second)
+    report_interval: 60  # server info report interval (unit: second)
+    report_ttl: 3600     # live time for server info in etcd (unit: second)
