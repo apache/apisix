@@ -806,7 +806,7 @@ passed
                 if len > 0 then
                     cookie_str = cookies[1]
                     for i = 2, len do
-                        cookie_str = cookie_str .. "; " .. cookies[i]
+                        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
                     end
                 end
 
