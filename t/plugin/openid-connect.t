@@ -288,22 +288,22 @@ passed
                 local nonce, state = res.headers['Location']:match('.*nonce=([^&]*)&.*state=([^&]*).*')
 
                 -- Extract cookies.
-                local cookies = res.headers['Set-Cookie']
+                --local cookies = res.headers['Set-Cookie']
 
                 -- Concatenate cookies into one string as expected in request header.
-                local cookie_str = ""
-                local len = #cookies
-                if len > 0 then
-                    cookie_str = cookies[1]:match('([^;]*); .*')
-                    for i = 2, len do
-                        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                    end
-                end
+                --local cookie_str = ""
+                --local len = #cookies
+                --if len > 0 then
+                --    cookie_str = cookies[1]:match('([^;]*); .*')
+                --    for i = 2, len do
+                --        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                --    end
+                --end
 
                 ngx.status = res.status
                 ngx.say("Nonce: " .. nonce)
                 ngx.say("State: " .. state)
-                ngx.say("Cookie: " .. cookie_str)
+                --ngx.say("Cookie: " .. cookie_str)
             end
 
             -- local location = res.headers['Location']
