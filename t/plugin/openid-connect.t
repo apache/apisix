@@ -394,19 +394,35 @@ passed
                     end
                     ngx.say(res.headers['Location'])
 
+                    cookies = res.headers['Set-Cookie']
+
+                    -- Concatenate cookies into one string as expected in request header.
+                    if type(cookies) == 'string' then
+                        cookie_str = cookies:match('([^;]*); .*')
+                    else
+                        -- Must be a table.
+                        local len = #cookies
+                        if len > 0 then
+                            cookie_str = cookies[1]:match('([^;]*); .*')
+                            for i = 2, len do
+                                cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                            end
+                        end
+                    end
+
                     -- Get the final URI out of the Location response header.
-                    --redirect_uri = res.headers['Location']
-                    --res, err = httpc:request_uri(redirect_uri, {
-                    --        method = "GET",
-                    --        headers = {
-                    --            ["Cookie"] = cookie_str
-                    --        }
-                    --    })
-                    --ngx.status = res.status
-                    --ngx.say(res.body)
-                    --for k, v in pairs(res.headers) do
-                    --    ngx.say(k)
-                    --end
+                    redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+                    res, err = httpc:request_uri(redirect_uri, {
+                            method = "GET",
+                            headers = {
+                                ["Cookie"] = cookie_str
+                            }
+                        })
+                    ngx.status = res.status
+                    ngx.say(res.body)
+                    for k, v in pairs(res.headers) do
+                        ngx.say(k)
+                    end
                 else
                     -- Response from Keycloak not ok.
                     ngx.say(false)
