@@ -331,43 +331,48 @@ passed
 
                 ngx.status = res.status
                 ngx.say(res.body)
+
+                -- Check if response code was ok.
+                if res.status == 200 then
+                    -- Extract form target URI and parameters.
+                    local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
+                    -- Need to substitute escaped ampersand.
+                    params = params:gsub("&amp;", "&")
+                    -- Get all cookies returned.
+                    local auth_cookies = res.headers['Set-Cookie']
+                    -- Concatenate cookies into one string as expected in request header.
+                    local auth_cookie_str = ""
+                    if type(auth_cookies) == 'string' then
+                        auth_cookie_str = auth_cookies:match('([^;]*); .*')
+                    else
+                        -- Must be a table.
+                        local len = #auth_cookies
+                        if len > 0 then
+                            auth_cookie_str = auth_cookies[1]:match('([^;]*); .*')
+                            for i = 2, len do
+                                auth_cookie_str = auth_cookie_str .. "; " .. auth_cookies[i]:match('([^;]*); .*')
+                            end
+                        end
+                    end
+
+                    -- Invoke the URL with parameters and cookies, adding username and password.
+                    --httpc:request_uri(uri, {
+                    --        method = "POST",
+                    --        body = params .. "&username=teacher@gmail.com&password=123456",
+                    --        headers = {
+                    --            ["Content-Type"] = "application/x-www-form-urlencoded",
+                    --            ["Cookie"] = auth_cookie_str
+                    --        }
+                    --    })
+
+                    ngx.say(uri)
+                    ngx.say(params)
+                    ngx.say(auth_cookie_str)
+                else
+                    -- Response from Keycloak not ok.
+                    ngx.say(false)
+                end
             end
-
-            -- Check if response code was ok.
-            -- if res.status == 200 then
-                -- Extract form target URI and parameters.
-                -- local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
-                -- Need to substitute escaped ampersand.
-                -- local params = params:gsub("&amp;", "&")
-                -- Get all cookies returned.
-                -- local cookies = res.headers['Set-Cookie']
-                -- Concatenate cookies into one string as expected in request header.
-                -- local cookie_str = ""
-                -- local len = #cookies
-                -- if len > 0 then
-                --     cookie_str = cookies[1]:match('([^;]*); .*')
-                --     for i = 2, len do
-                --         cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                --     end
-                -- end
-
-                -- Invoke the URL with parameters and cookies, adding username and password.
-                --local res, err = httpc:request_uri(uri, {
-                --        method = "POST",
-                --        body = params .. "&username=teacher@gmail.com&password=123456",
-                --        headers = {
-                --            ["Content-Type"] = "application/x-www-form-urlencoded",
-                --            ["Cookie"] = cookie_str
-                --        }
-                --    })
-
-                -- ngx.say(url)
-                -- ngx.say(params)
-                -- ngx.say(cookie_str)
-            -- else
-                -- Response from Keycloak not ok.
-                -- ngx.say(false)
-            -- end
         }
     }
 --- request
