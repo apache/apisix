@@ -285,7 +285,10 @@ passed
                 end
             else
                 -- Extract nonce and state.
-                ngx.say('Location: ' .. res.headers['Location'])
+                ngx.say(res.body)
+                for k, v in pairs(res.headers) do
+                    ngx.say(k .. ": " .. v)
+                end
                 local nonce = res.headers['Location']:match('.*nonce=([^&]+).*')
                 local state = res.headers['Location']:match('.*state=([^&]+).*')
                 ngx.say("Nonce: " .. nonce)
@@ -295,16 +298,16 @@ passed
                 local cookies = res.headers['Set-Cookie']
 
                 -- Concatenate cookies into one string as expected in request header.
-                local cookie_str = ""
-                local len = #cookies
-                if len > 0 then
-                    cookie_str = cookies[1]:match('([^;]*); .*')
-                    for i = 2, len do
-                        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                    end
-                end
+                --local cookie_str = ""
+                --local len = #cookies
+                --if len > 0 then
+                --    cookie_str = cookies[1]:match('([^;]*); .*')
+                --    for i = 2, len do
+                --        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                --    end
+                --end
 
-                ngx.say("Cookie: " .. cookie_str)
+                --ngx.say("Cookie: " .. cookie_str)
                 ngx.status = res.status
 
                 -- Call authorization endpoint. Should return a login form.
