@@ -52,7 +52,6 @@ plugin_attr:
 location /t {
     content_by_lua_block {
         ngx.sleep(2)
-        local json_decode = require("cjson.safe").decode
         local core = require("apisix.core")
         local key = "/data_plane/server_info/" .. core.id.get()
         local res, err = core.etcd.get(key)
@@ -63,8 +62,7 @@ location /t {
         end
 
         local keys = {}
-        local body = json_decode(res.body.node.value)
-        for k in pairs(body) do
+        for k in pairs(value) do
             keys[#keys + 1] = k
         end
 
@@ -104,7 +102,6 @@ plugin_attr:
 --- config
 location /t {
     content_by_lua_block {
-        local json_decode = require("cjson.safe").decode
         local core = require("apisix.core")
         local key = "/data_plane/server_info/" .. core.id.get()
         local res, err = core.etcd.get(key)
@@ -115,8 +112,8 @@ location /t {
         end
 
         local keys = {}
-        local body = json_decode(res.body.node.value)
-        for k in pairs(body) do
+        local value = res.body.node.value
+        for k in pairs(value) do
             keys[#keys + 1] = k
         end
 
