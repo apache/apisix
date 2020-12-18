@@ -77,13 +77,13 @@ plugins:                          # plugin list
 | report_interval | integer | 60 | 上报服务信息至 etcd 的间隔（单位：秒，最大值：3600，最小值：60）|
 | report_ttl | integer | 7200 | etcd 中服务信息保存的 TTL（单位：秒，最大值：86400，最小值：3600）|
 
-下面的例子将 `report_interval` 修改成了 10 秒，并将 `report_ttl` 修改成了 1
+下面的例子将 `report_interval` 修改成了 10 分钟，并将 `report_ttl` 修改成了 1
 小时：
 
 ```yaml
 plugin_attr:
   server-info:
-    report_interval: 10
+    report_interval: 600
     report_ttl: 3600
 ```
 
