@@ -42,12 +42,11 @@ local schema = {
 
 local consumer_schema = {
     type = "object",
-    additionalProperties = false,
+    -- can't use additionalProperties with dependencies
+    -- additionalProperties = false,
     properties = {
         key = {type = "string"},
         secret = {type = "string"},
-        public_key = {type = "string"},
-        private_key= {type = "string"},
         algorithm = {
             type = "string",
             enum = {"HS256", "HS512", "RS256"},
@@ -57,6 +56,30 @@ local consumer_schema = {
         base64_secret = {
             type = "boolean",
             default = false
+        }
+    },
+    dependencies = {
+        algorithm = {
+            oneOf = {
+                {
+                    properties = {
+                        algorithm = {
+                            enum = {"HS256", "HS512"},
+                            default = "HS256"
+                        },
+                    },
+                },
+                {
+                    properties = {
+                        public_key = {type = "string"},
+                        private_key= {type = "string"},
+                        algorithm = {
+                            enum = {"RS256"},
+                        },
+                    },
+                    required = {"public_key", "private_key"},
+                }
+            }
         }
     },
     required = {"key"},

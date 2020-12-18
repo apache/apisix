@@ -476,7 +476,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"type\" validation failed: matches non of the enum values"}
+{"error_msg":"invalid configuration: property \"type\" validation failed: matches none of the enum values"}
 --- no_error_log
 [error]
 
@@ -1385,7 +1385,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches non of the enum values"}
+{"error_msg":"invalid configuration: property \"hash_on\" validation failed: matches none of the enum values"}
 --- no_error_log
 [error]
 

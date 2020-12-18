@@ -38,7 +38,7 @@ URI redirect.
 | uri           | string  | optional    |         |       | New URL which can contain Nginx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`. If you refer to a variable name that does not exist, this will not produce an error, and it will be used as an empty string. |
 | ret_code      | string  | optional    | 302     |  [200, ...]     | Response code                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
-One of `http_to_https` and `uri` need to be specified.
+Only one of `http_to_https` or `uri` can be specified.
 
 ## How To Enable
 

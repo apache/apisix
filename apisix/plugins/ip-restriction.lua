@@ -100,6 +100,7 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    -- we still need this as it is too complex to filter out all invalid IPv6 via regex
     if conf.whitelist and #conf.whitelist > 0 then
         for _, cidr in ipairs(conf.whitelist) do
             if not valid_ip(cidr) then
