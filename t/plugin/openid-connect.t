@@ -216,7 +216,7 @@ true
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello*"
+                        "uri": "/hello"
                 }]],
                 [[{
                     "node": {
@@ -238,7 +238,7 @@ true
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/hello*"
+                            "uri": "/hello"
                         },
                         "key": "/apisix/routes/1"
                     },
