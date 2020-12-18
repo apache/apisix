@@ -368,10 +368,11 @@ passed
                         })
 
                     ngx.status = res.status
-                    --ngx.say(res.body)
+                    ngx.say(res.body)
                     for k, v in pairs(res.headers) do
-                        ngx.say(k .. ": " .. v)
+                        ngx.say(k)
                     end
+                    ngx.say(res.headers['Location'])
                 else
                     -- Response from Keycloak not ok.
                     ngx.say(false)
