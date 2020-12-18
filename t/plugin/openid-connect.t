@@ -204,7 +204,7 @@ true
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
                                 "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                "redirect_uri": "http://127.0.0.1:3000/authenticated",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "realm": "University",
@@ -228,7 +228,7 @@ true
                                     "client_id": "course_management",
                                     "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
                                     "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                    "redirect_uri": "http://127.0.0.1:3000/authenticated",
+                                    "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
                                     "ssl_verify": false,
                                     "timeout": 10,
                                     "realm": "University",
@@ -316,7 +316,7 @@ passed
                 uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
                 res, err = httpc:request_uri(uri, {
                     method = "POST",
-                        body = "redirect_uri=http://127.0.0.1:3000/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
+                        body = "redirect_uri=http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
                         headers = {
                             ["Content-Type"] = "application/x-www-form-urlencoded"
                        }
