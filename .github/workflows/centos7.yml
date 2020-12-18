@@ -93,6 +93,8 @@ jobs:
 
     - name: run test cases
       run: |
+        pwd
+        ls
         docker exec centos7Instance bash -c "yum install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl"
 
         docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
