@@ -204,10 +204,12 @@ true
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
                                 "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/hello_authenticated",
-                                "realm": "University",
+                                "redirect_uri": "http://127.0.0.1:3000/authenticated",
                                 "ssl_verify": false,
                                 "timeout": 10,
+                                "realm": "University",
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
                             }
                         },
                         "upstream": {
@@ -223,13 +225,15 @@ true
                         "value": {
                             "plugins": {
                                 "openid-connect": {
-                                "client_id": "course_management",
-                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/hello_authenticated",
-                                "realm": "University",
-                                "ssl_verify": false,
-                                "timeout": 10,
+                                    "client_id": "course_management",
+                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                    "redirect_uri": "http://127.0.0.1:3000/authenticated",
+                                    "ssl_verify": false,
+                                    "timeout": 10,
+                                    "realm": "University",
+                                    "introspection_endpoint_auth_method": "client_secret_post",
+                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
                                 }
                             },
                             "upstream": {
