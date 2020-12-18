@@ -255,6 +255,20 @@ http {
         apisix.http_init_worker()
     }
 
+    {% if enable_control then %}
+    server {
+        listen {* control_server_addr *};
+
+        access_log off;
+
+        location / {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+    }
+    {% end %}
+
     {% if enable_admin and port_admin then %}
     server {
         {%if https_admin then%}
