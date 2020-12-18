@@ -62,13 +62,14 @@ location /t {
         end
 
         local keys = {}
+        local value = res.body.node.value
         for k in pairs(value) do
             keys[#keys + 1] = k
         end
 
         table.sort(keys)
         for i = 1, #keys do
-            ngx.say(keys[i], ": ", body[keys[i]])
+            ngx.say(keys[i], ": ", value[keys[i]])
         end
     }
 }
@@ -117,7 +118,7 @@ location /t {
             keys[#keys + 1] = k
         end
 
-        if body.up_time >= 2 then
+        if value.up_time >= 2 then
             ngx.say("integral")
         else
             ngx.say("reset")
