@@ -1,0 +1,11 @@
+---
+
+extends: default
+
+rules:
+  colons: disable
+  comments-indentation: disable
+  document-start: disable
+  indentation: disable
+  line-length: disable
+  truthy: disable

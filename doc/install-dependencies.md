@@ -34,7 +34,6 @@ Note
 
 - If you want use Tengine instead of OpenResty, please take a look at this installation step script [Install Tengine at Ubuntu](../.travis/linux_tengine_runner.sh).
 
-
 CentOS 7
 ========
 

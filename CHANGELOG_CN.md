@@ -33,7 +33,6 @@
 - [0.7.0](#070)
 - [0.6.0](#060)
 
-
 ## 2.1.0
 
 ### Core
@@ -140,7 +139,6 @@
 - 文档：修正 `README` 中 `grpc-transcode` 文档路径。[1946](https://github.com/apache/apisix/pull/1946)
 - 文档: 删除 `k8s` 文档中不必要的配置。[1891](https://github.com/apache/apisix/pull/1891)
 
-
 ## 1.4.1
 
 ### Bugfix
@@ -174,7 +172,6 @@
 ### Plugin
 - :sunrise: **新增 batch request 插件**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
 - 实现完成 `sys logger` 插件. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
-
 
 ## 1.2.0
 1.2 版本在内核以及插件上带来了非常多的更新。
@@ -214,7 +211,6 @@
 - basic-auth 增加 required 字段. [#1251](https://github.com/apache/incubator-apisix/pull/1251)
 - 检查上游合法节点的个数. [#1292](https://github.com/apache/incubator-apisix/pull/1292)
 
-
 ## 1.1.0
 
 这个版本主要是加强代码的稳定性，以及增加更多的文档。
@@ -248,7 +244,6 @@
 - 「节点状态」插件使用 nginx 内部请求替换原来的外部请求。 [#1109](https://github.com/apache/incubator-apisix/pull/1109)
 - 增加 wolf-rbac 插件。 [#1095](https://github.com/apache/incubator-apisix/pull/1095)
 - 增加 udp-logger 插件。 [#1070](https://github.com/apache/incubator-apisix/pull/1070)
-
 
 ## 1.0.0
 
@@ -287,7 +282,6 @@
 - 安装程序增加了仪表盘开关，支持用户自主选择是否安装仪表板程序。 [#686](https://github.com/apache/incubator-apisix/pull/686)
 - 取消对 R3 路由的支持，并移除 R3 路由模块。 [#725](https://github.com/apache/incubator-apisix/pull/725)
 
-
 ### Plugins
 - :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/redirect.md)**： URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
 - [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/proxy-rewrite.md)：支持 `header` 删除功能。 [#658](https://github.com/apache/incubator-apisix/pull/658)
@@ -308,10 +302,8 @@
 - 在APISIX CLI中跳过 luajit 环境的`check cjson`。[#652](https://github.com/apache/incubator-apisix/pull/652)
 - 配置 `Upstream` 时，选择 `balancer` 类型为 `chash` 时，支持更多Nginx内置变量作为计算key。 [#775](https://github.com/apache/incubator-apisix/pull/775)
 
-
 ### Dependencies
 - 使用 `lua-resty-jsonschema` 全局替换 `lua-rapidjson` 扩展，`lua-resty-jsonschema` 解析速度更快，更容易编译。
-
 
 ## 0.8.0
 > Released on 2019/09/30
@@ -340,7 +332,6 @@
     - 允许指定多个 host, remote_addr 和 uri。
     - 允许设置用户自定义函数来做额外的过滤。
     - 使用 `lua-resty-ipmatcher` 替代 `lua-resty-iputils`, `lua-resty-ipmatcher` 支持 IPv6 并且速度更快。
-
 
 ### Bugfix
 - 健康检查: 修复在多 worker 下运行时健康检查 checker 的名字错误。 [#568](https://github.com/apache/incubator-apisix/issues/568)
@@ -376,9 +367,7 @@
 ### Dashboard
 - :sunrise: **增加在线版本的 dashboard**，用户不用安装即可[体验 APISIX](http://apisix.iresty.com/). [#374](https://github.com/apache/incubator-apisix/issues/374)
 
-
 [Back to TOC](#table-of-contents)
-
 
 ## 0.6.0
 

@@ -33,7 +33,6 @@
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
-
 CentOS 7
 ========
 

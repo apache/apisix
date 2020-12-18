@@ -55,7 +55,6 @@ It is very easy for APISIX to extend the discovery client, the basic steps are a
 
 3. Convert the registry data into data in APISIX;
 
-
 ### the example of Eureka
 
 #### Implementation of eureka.lua
@@ -182,7 +181,6 @@ discovery:
       read: 5000                     # 5000ms
 ```
 
-
 ## Upstream setting
 
 Here is an example of routing a request with a URL of "/user/*" to a service which named "user-service" and use eureka discovery client in the registry :
@@ -245,5 +243,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configuration allows access to A-SERVICE's `/test` API through `/a/test` and B-SERVICE's `/test` API through `/b/test`.
 
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
-
-

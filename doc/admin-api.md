@@ -555,7 +555,6 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 
-
 Config Example:
 
 ```shell

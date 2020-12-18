@@ -36,4 +36,3 @@ spec:
       app: apisix-gw
   namespaceSelector:
     any: true
-
