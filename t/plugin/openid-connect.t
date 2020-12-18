@@ -288,6 +288,8 @@ passed
                 ngx.say('Location: ' .. res.headers['Location'])
                 local nonce = res.headers['Location']:match('.*nonce=([^&]+).*')
                 local state = res.headers['Location']:match('.*state=([^&]+).*')
+                ngx.say("Nonce: " .. nonce)
+                ngx.say("State: " .. state)
 
                 -- Extract cookies.
                 local cookies = res.headers['Set-Cookie']
@@ -302,30 +304,27 @@ passed
                     end
                 end
 
-                ngx.status = res.status
-                ngx.say("Nonce: " .. nonce)
-                ngx.say("State: " .. state)
                 ngx.say("Cookie: " .. cookie_str)
+                ngx.status = res.status
 
                 -- Call authorization endpoint. Should return a login form.
-                uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
-                res, err = httpc:request_uri(uri, {
-                    method = "POST",
-                        body = "redirect_uri=http://127.0.0.1:3000/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
-                        headers = {
-                            ["Content-Type"] = "application/x-www-form-urlencoded"
-                       }
-                    })
+                --uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
+                --res, err = httpc:request_uri(uri, {
+                --    method = "POST",
+                --        body = "redirect_uri=http://127.0.0.1:3000/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
+                --        headers = {
+                --            ["Content-Type"] = "application/x-www-form-urlencoded"
+                --       }
+                --    })
 
                 -- Check response from keycloak and fail quickly if there's no response.
-                if not res then
-                    ngx.say(err)
-                    return
-                end
+                --if not res then
+                --    ngx.say(err)
+                --    return
+                --end
 
-                ngx.status = res.status
-                ngx.say(res.body)
-
+                --ngx.status = res.status
+                --ngx.say(res.body)
             end
 
             -- Check if response code was ok.
