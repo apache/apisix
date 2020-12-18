@@ -70,7 +70,7 @@
 |remote_addrs|可选 |匹配规则|非空列表形态的 `remote_addr`，表示允许有多个不同 IP 地址，符合其中任意一个即可。|{"127.0.0.1", "192.0.0.0/8", "::1"}|
 |methods  |可选 |匹配规则|如果为空或没有该选项，代表没有任何 `method` 限制，也可以是一个或多个的组合：`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`，`CONNECT`，`TRACE`。|{"GET", "POST"}|
 |priority  |可选 |匹配规则|如果不同路由包含相同 `uri`，根据属性 `priority` 确定哪个 `route` 被优先匹配，值越大优先级越高，默认值为 0。|priority = 10|
-|vars       |可选  |匹配规则|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于 `operator` 部分，目前已支持的运算符有 `==`、`~=`、`>`、`<` 和 `~~`。对于`>`和`<`两个运算符，会把结果先转换成 number 然后再做比较。查看支持的[运算符列表](#运算符列表)|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
+|vars       |可选  |匹配规则|由一个或多个`{var, operator, val}`元素组成的列表，类似这样：`{{var, operator, val}, {var, operator, val}, ...}}`。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等。更多细节请参考[lua-resty-expr](https://github.com/api7/lua-resty-expr) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|可选|匹配规则|用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 vars 的输入参数，可以用它来获取 Nginx 变量。|function(vars) return vars["arg_name"] == "json" end|
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|可选 |辅助| 是否启用 `websocket`(boolean), 缺省 `false`.||
@@ -88,17 +88,14 @@ route 对象 json 配置内容：
 ```shell
 {
     "id": "1",                  # id，非必填
-    "uri": "/release/a",        # URL 路径
-    "uris": ["/a","/b"],        # 一组 URL 路径， URL 与 uris 只需要有一个非空即可
+    "uris": ["/a","/b"],        # 一组 URL 路径
     "methods": ["GET","POST"],  # 可以填多个方法
-    "host": "aa.com",           # host 域名
-    "hosts": ["a.com","b.com"], # 一组 host 域名， host 与 hosts 只需要有一个非空即可
+    "hosts": ["a.com","b.com"], # 一组 host 域名
     "plugins": {},              # 指定 route 绑定的插件
     "priority": 0,              # apisix 支持多种匹配方式，可能会在一次匹配中同时匹配到多条路由，此时优先级高的优先匹配中
     "name": "路由xxx",
     "desc": "hello world",
-    "remote_addr": "127.0.0.1", # 客户端请求 IP 地址
-    "remote_addrs": ["127.0.0.1"],  # 一组客户端请求 IP 地址， remote_addr 与 remote_addrs 只需要有一个非空即可
+    "remote_addrs": ["127.0.0.1"],  # 一组客户端请求 IP 地址
     "vars": [],                 # 由一个或多个 {var, operator, val} 元素组成的列表
     "upstream_id": "1",         # upstream 对象在 etcd 中的 id ，建议使用此值
     "upstream": {},             # upstream 信息对象，建议尽量不要使用
@@ -269,36 +266,6 @@ HTTP/1.1 200 OK
 > 应答参数
 
 目前是直接返回与 etcd 交互后的结果。
-
-### 运算符列表
-
-|运算符   |描述       |例子|
-|--------|-----------|-------|
-|==      |相等      |{"arg_name", "==", "json"}|
-|~=      |不等于    |{"arg_name", "~=", "json"}|
-|>       |大于      |{"arg_age", ">", 24}|
-|<       |小于      |{"arg_age", "<", 24}|
-|~~      |正则匹配   |{"arg_name", "~~", "[a-z]+"}|
-
-请看下面例子，匹配请求参数 name 等于 json ，age 大于 18 且 address 开头是 China 的请求：
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "uri": "/index.html",
-    "vars": [
-        ["arg_name", "==", "json"],
-        ["arg_age", ">", "18"],
-        ["arg_address", "~~", "^China.*"]
-    ],
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
 
 [Back to TOC](#目录)
 
