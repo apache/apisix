@@ -276,19 +276,16 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
+            ngx.say(res.body)
+            for k, v in pairs(res.headers) do
+                ngx.say(k .. ": " .. v)
+            end
+
             -- Expect redirect (302).
             if res.status ~= 302 then
                 ngx.status = res.status
-                ngx.say(res.body)
-                for k, v in pairs(res.headers) do
-                    ngx.say(k .. ": " .. v)
-                end
             else
                 -- Extract nonce and state.
-                ngx.say(res.body)
-                for k, v in pairs(res.headers) do
-                    ngx.say(k .. ": " .. v)
-                end
                 local nonce = res.headers['Location']:match('.*nonce=([^&]+).*')
                 local state = res.headers['Location']:match('.*state=([^&]+).*')
                 ngx.say("Nonce: " .. nonce)
@@ -298,36 +295,42 @@ passed
                 local cookies = res.headers['Set-Cookie']
 
                 -- Concatenate cookies into one string as expected in request header.
-                --local cookie_str = ""
-                --local len = #cookies
-                --if len > 0 then
-                --    cookie_str = cookies[1]:match('([^;]*); .*')
-                --    for i = 2, len do
-                --        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
-                --    end
-                --end
+                local cookie_str = ""
 
-                --ngx.say("Cookie: " .. cookie_str)
+                if type(cookies) == 'string' then
+                    cookie_str = cookies:match('([^;]*); .*')
+                else
+                    -- Must be a table.
+                    local len = #cookies
+                    if len > 0 then
+                        cookie_str = cookies[1]:match('([^;]*); .*')
+                        for i = 2, len do
+                            cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                        end
+                    end
+                end
+
+                ngx.say("Cookie: " .. cookie_str)
                 ngx.status = res.status
 
                 -- Call authorization endpoint. Should return a login form.
-                --uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
-                --res, err = httpc:request_uri(uri, {
-                --    method = "POST",
-                --        body = "redirect_uri=http://127.0.0.1:3000/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
-                --        headers = {
-                --            ["Content-Type"] = "application/x-www-form-urlencoded"
-                --       }
-                --    })
+                uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
+                res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                        body = "redirect_uri=http://127.0.0.1:3000/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
+                        headers = {
+                            ["Content-Type"] = "application/x-www-form-urlencoded"
+                       }
+                    })
 
                 -- Check response from keycloak and fail quickly if there's no response.
-                --if not res then
-                --    ngx.say(err)
-                --    return
-                --end
+                if not res then
+                    ngx.say(err)
+                    return
+                end
 
-                --ngx.status = res.status
-                --ngx.say(res.body)
+                ngx.status = res.status
+                ngx.say(res.body)
             end
 
             -- Check if response code was ok.
