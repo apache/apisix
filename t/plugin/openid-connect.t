@@ -277,35 +277,35 @@ passed
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
             -- Expect redirect (302).
-            if res.status != 302 then
+            if res.status ~= 302 then
                 ngx.status = res.status
                 ngx.say(res.body)
                 for k, v in pairs(res.headers) do
                     ngx.say(k .. ": " .. v)
                 end
-            end
+            else
+                -- Extract nonce and state.
+                local nonce, state = res.header['Location']:match('.*nonce=([^&]*)&.*state=([^&]*).*')
 
-            -- Extract nonce and state.
-            local nonce, state = res.header['Location']:match('.*nonce=([^&]*).*state=([^&]*).*')
+                -- Extract cookies.
+                local cookies = res.headers['Set-Cookie']
 
-            -- Extract cookies.
-            local cookies = res.headers['Set-Cookie']
-            -- Concatenate cookies into one string as expected in request header.
-            local cookie_str = ""
-            local len = #cookies
-            if len > 0 then
-                cookie_str = cookies[1]:match('([^;]*); .*')
-                for i = 2, len do
-                    cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                -- Concatenate cookies into one string as expected in request header.
+                local cookie_str = ""
+                local len = #cookies
+                if len > 0 then
+                    cookie_str = cookies[1]:match('([^;]*); .*')
+                    for i = 2, len do
+                        cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
+                    end
                 end
+
+                ngx.status = res.status
+                ngx.say("Nonce: " .. nonce)
+                ngx.say("State: " .. state)
+                ngx.say("Cookie: " .. cookie_str)
             end
 
-
-            ngx.status = res.status
-            ngx.say("Nonce: " .. nonce)
-            ngx.say("State: " .. state)
-            ngx.say("Cookie: " .. cookie_str)
-            
             -- local location = res.headers['Location']
             -- if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
             --    string.find(location, 'scope=apisix') ~= -1 and
