@@ -395,18 +395,18 @@ passed
                     ngx.say(res.headers['Location'])
 
                     -- Get the final URI out of the Location response header.
-                    redirect_uri = res.headers['Location']
-                    res, err = httpc:request_uri(redirect_uri, {
-                            method = "GET",
-                            headers = {
-                                ["Cookie"] = cookie_str
-                            }
-                        })
-                    ngx.status = res.status
-                    ngx.say(res.body)
-                    for k, v in pairs(res.headers) do
-                        ngx.say(k)
-                    end
+                    --redirect_uri = res.headers['Location']
+                    --res, err = httpc:request_uri(redirect_uri, {
+                    --        method = "GET",
+                    --        headers = {
+                    --            ["Cookie"] = cookie_str
+                    --        }
+                    --    })
+                    --ngx.status = res.status
+                    --ngx.say(res.body)
+                    --for k, v in pairs(res.headers) do
+                    --    ngx.say(k)
+                    --end
                 else
                     -- Response from Keycloak not ok.
                     ngx.say(false)
