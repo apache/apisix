@@ -269,7 +269,6 @@ local nodes_schema = {
         },
         {
             type = "array",
-            minItems = 1,
             items = {
                 type = "object",
                 properties = {
