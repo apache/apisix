@@ -127,16 +127,16 @@ local function report(premature, report_ttl)
 
     server_info.last_report_time = ngx_time()
 
-    local data, err = core.json.encode(server_info)
-    if not data then
-        core.log.error("failed to encode server_info: ", err)
+    local key = "/data_plane/server_info/" .. server_info.id
+    local ok, err = core.etcd.set(key, server_info, report_ttl)
+    if not ok then
+        core.log.error("failed to report server info to etcd: ", err)
         return
     end
 
-    local key = "/data_plane/server_info/" .. server_info.id
-    local ok, err = core.etcd.set(key, data, report_ttl)
-    if not ok then
-        core.log.error("failed to report server info to etcd: ", err)
+    local data, err = core.json.encode(server_info)
+    if not data then
+        core.log.error("failed to encode server_info: ", err)
         return
     end
 
