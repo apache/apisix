@@ -117,6 +117,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/global_rules',
                 ngx.HTTP_GET,
