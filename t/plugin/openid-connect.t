@@ -773,10 +773,27 @@ passed
 === TEST 12: Obtain authorization code.
 --- config
     location /t {
-        content_by_lua_block {
-            -- Call authorization endpoint. Should return a login form.
             local http = require "resty.http"
             local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            nginx.say(res.body)
+            for k, v in pairs(res.headers) do
+                nginx.say(k .. ": " .. v)
+            end
+            return
+            --local location = res.headers['Location']
+            --if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+            --    string.find(location, 'scope=apisix') ~= -1 and
+            --    string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
+            --    string.find(location, 'response_type=code') ~= -1 and
+            --    string.find(location, 'redirect_uri=https://iresty.com') ~= -1 then
+            --    ngx.say(true)
+            --end
+
+
+            -- Call authorization endpoint. Should return a login form.
             local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
@@ -804,7 +821,7 @@ passed
                 local cookie_str = ""
                 local len = #cookies
                 if len > 0 then
-                    cookie_str = cookies[1]
+                    cookie_str = cookies[1]:match('([^;]*); .*')
                     for i = 2, len do
                         cookie_str = cookie_str .. "; " .. cookies[i]:match('([^;]*); .*')
                     end
