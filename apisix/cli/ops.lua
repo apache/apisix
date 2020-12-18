@@ -265,6 +265,25 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf[k] = v
     end
 
+    if yaml_conf.apisix.enable_control then
+        if not yaml_conf.apisix.control then
+            sys_conf.control_server_addr = "127.0.0.1:9090"
+        else
+            local ip = yaml_conf.apisix.control.ip
+            local port = tonumber(yaml_conf.apisix.control.port)
+
+            if ip == nil then
+                ip = "127.0.0.1"
+            end
+
+            if not port then
+                port = 9090
+            end
+
+            sys_conf.control_server_addr = ip .. ":" .. port
+        end
+    end
+
     local wrn = sys_conf["worker_rlimit_nofile"]
     local wc = sys_conf["event"]["worker_connections"]
     if not wrn or wrn <= wc then
