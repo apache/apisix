@@ -33,7 +33,7 @@ return function(plugin_name, priority)
         properties = {
             phase = {
                 type = "string",
-                -- the default phase is access
+                default = "access",
                 enum = {"rewrite", "access", "header_filter", "body_filter",
                         "log", "balancer"}
             },
@@ -83,10 +83,6 @@ return function(plugin_name, priority)
         local ok, err = core.schema.check(schema, conf)
         if not ok then
             return false, err
-        end
-
-        if not conf.phase then
-            conf.phase = 'access'
         end
 
         local functions = conf.functions
