@@ -355,19 +355,24 @@ passed
                         end
                     end
 
-                    -- Invoke the URL with parameters and cookies, adding username and password.
-                    --httpc:request_uri(uri, {
-                    --        method = "POST",
-                    --        body = params .. "&username=teacher@gmail.com&password=123456",
-                    --        headers = {
-                    --            ["Content-Type"] = "application/x-www-form-urlencoded",
-                    --            ["Cookie"] = auth_cookie_str
-                    --        }
-                    --    })
-
                     ngx.say(uri)
                     ngx.say(params)
                     ngx.say(auth_cookie_str)
+
+                    -- Invoke the URL with parameters and cookies, adding username and password.
+                    res, err = httpc:request_uri(uri, {
+                            method = "POST",
+                            body = params .. "&username=teacher@gmail.com&password=123456",
+                            headers = {
+                                ["Content-Type"] = "application/x-www-form-urlencoded",
+                                ["Cookie"] = auth_cookie_str
+                            }
+                        })
+
+                    ngx.say(res.body)
+                    for k, v in pairs(res.headers) do
+                        ngx.say(k .. ": " .. v)
+                    end
                 else
                     -- Response from Keycloak not ok.
                     ngx.say(false)
