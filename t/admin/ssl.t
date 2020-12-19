@@ -638,8 +638,8 @@ GET /t
             local ssl_cert = t.read_file("t/certs/apisix.crt")
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {
-                cert = ssl_cert, 
-                key = ssl_key, 
+                cert = ssl_cert,
+                key = ssl_key,
                 sni = "test.com",
                 create_time = 1602883670,
                 update_time = 1602893670,

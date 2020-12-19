@@ -28,7 +28,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local encode = require "toolkit.json".encode 
+            local encode = require "toolkit.json".encode
             local str = require("apisix.core.string")
             local cases = {
                 {"xx", "", true},
@@ -70,7 +70,7 @@ GET /t
 --- config
     location /t {
         content_by_lua_block {
-            local encode = require "toolkit.json".encode 
+            local encode = require "toolkit.json".encode
             local str = require("apisix.core.string")
             local cases = {
                 {"xx", "", true},
@@ -110,7 +110,7 @@ GET /t
 --- config
     location /t {
         content_by_lua_block {
-            local encode = require "toolkit.json".encode 
+            local encode = require "toolkit.json".encode
             local str = require("apisix.core.string")
             local cases = {
                 {"xx", "", true},

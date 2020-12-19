@@ -21,15 +21,7 @@
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
 
-set -ex
-
-clean_up() {
-    git checkout conf/config.yaml
-}
-
-trap clean_up EXIT
-
-unset APISIX_PROFILE
+. ./.travis/apisix_cli_test/common.sh
 
 git checkout conf/config.yaml
 
@@ -67,9 +59,6 @@ echo "passed: nginx.conf file contains reuseport configuration"
 echo "
 apisix:
     ssl:
-        enable: true
-        ssl_cert: '../t/certs/apisix.crt'
-        ssl_cert_key: '../t/certs/apisix.key'
         listen_port: 8443
 " > conf/config.yaml
 
@@ -98,9 +87,6 @@ apisix:
     - 9081
     - 9082
   ssl:
-    enable: true
-    ssl_cert: '../t/certs/apisix.crt'
-    ssl_cert_key: '../t/certs/apisix.key'
     listen_port:
       - 9443
       - 9444
@@ -166,6 +152,12 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
     exit 1
 fi
 
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "can't find environment variable"; then
+    echo "failed: failed to resolve variables"
+    exit 1
+fi
+
 echo "passed: resolve variables"
 
 echo '
@@ -210,6 +202,114 @@ if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: resolve variables wrapped with whitespace"
+
+# support environment variables in local_conf
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+# don't override user's envs configuration
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo '
+etcd:
+    host:
+        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+nginx_config:
+    envs:
+        - ETCD_HOST=1.1.1.1
+' > conf/config.yaml
+
+ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
+
+if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+if ! grep "env ETCD_HOST=1.1.1.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: support environment variables in local_conf"
+    exit 1
+fi
+
+echo "pass: support environment variables in local_conf"
+
+# support merging worker_processes
+echo '
+nginx_config:
+    worker_processes: 1
+' > conf/config.yaml
+
+make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+nproc=1 make init
+
+if ! grep "worker_processes 1;" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: true
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo '
+nginx_config:
+    worker_processes: ${{nproc}}
+' > conf/config.yaml
+
+out=$(nproc=false make init 2>&1 || true)
+if ! echo "$out" | grep 'path\[nginx_config->worker_processes\] expect'; then
+    echo "failed: failed to merge worker_processes"
+    exit 1
+fi
+
+echo "passed: merge worker_processes"
 
 # check nameserver imported
 git checkout conf/config.yaml
@@ -273,10 +373,6 @@ git checkout conf/config.yaml
 
 echo "
 apisix:
-    ssl:
-        enable: true
-        ssl_cert: '../t/certs/apisix.crt'
-        ssl_cert_key: '../t/certs/apisix.key'
     admin_api_mtls:
         admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
         admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
@@ -442,7 +538,7 @@ if [ $count_test_access_log -eq 0 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -eq 2 ]; then
+if [ $count_access_log_off -eq 3 ]; then
     echo "failed: nginx.conf file find access_log off; when enable access log"
     exit 1
 fi
@@ -477,7 +573,7 @@ if [ $count_test_access_log -eq 1 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -ne 2 ]; then
+if [ $count_access_log_off -ne 3 ]; then
     echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
     exit 1
 fi
@@ -651,14 +747,6 @@ echo "passed: using env to set worker processes"
 # set worker processes with env
 git checkout conf/config.yaml
 
-echo '
-apisix:
-    ssl:
-        enable: true
-        ssl_cert: "../t/certs/apisix.crt"
-        ssl_cert_key: "../t/certs/apisix.key"
-' > conf/config.yaml
-
 make init
 
 count=`grep -c "ssl_session_tickets off;" conf/nginx.conf || true `
@@ -670,9 +758,6 @@ fi
 echo '
 apisix:
     ssl:
-        enable: true
-        ssl_cert: "../t/certs/apisix.crt"
-        ssl_cert_key: "../t/certs/apisix.key"
         ssl_session_tickets: true
 ' > conf/config.yaml
 
@@ -825,3 +910,18 @@ if ! echo "$out" | grep 'authentication is not enabled'; then
 fi
 
 echo "passed: properly handle the error when connecting to etcd without auth"
+
+# Admin API can only be used with etcd config_center
+echo '
+apisix:
+    enable_admin: true
+    config_center: yaml
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; then
+    echo "failed: Admin API can only be used with etcd config_center"
+    exit 1
+fi
+
+echo "passed: Admin API can only be used with etcd config_center"

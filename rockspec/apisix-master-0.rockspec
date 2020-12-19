@@ -32,7 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-template = 1.9",
-    "lua-resty-etcd = 1.4.2",
+    "lua-resty-etcd = 1.4.3",
     "lua-resty-balancer = 0.02rc5",
     "lua-resty-ngxvar = 0.5",
     "lua-resty-jit-uuid = 0.0.7",
@@ -48,7 +48,7 @@ dependencies = {
     "luafilesystem = 1.7.0-2",
     "lua-tinyyaml = 1.0",
     "lua-resty-prometheus = 1.1",
-    "jsonschema = 0.9.2",
+    "jsonschema = 0.9.3",
     "lua-resty-ipmatcher = 0.6",
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
@@ -57,6 +57,7 @@ dependencies = {
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
     "lua-resty-expr = 1.0.0",
+    "graphql = 0.0.2",
 }
 
 build = {

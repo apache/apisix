@@ -107,7 +107,7 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 
 ### Improvements
 - change: nginx worker_shutdown_timeout is changed from 3s to recommended value 240s. [1883](https://github.com/apache/apisix/pull/1883)
-- change: the `healthcheck` timeout time type changed from `integer ` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
+- change: the `healthcheck` timeout time type changed from `integer` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
 - change: the `request-validation` plugin input parameter supports `Schema` validation. [1920](https://github.com/apache/apisix/pull/1920)
 - change: add comments for Makefile `install` command. [1912](https://github.com/apache/apisix/pull/1912)
 - change: update comment for config.yaml `etcd.timeout` configuration. [1929](https://github.com/apache/apisix/pull/1929)
@@ -139,12 +139,10 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 - doc: fixed `grpc-transcode` plugin path error in `README`. [1946](https://github.com/apache/apisix/pull/1946)
 - doc: removed unnecessary configurations for `k8s` document. [1891](https://github.com/apache/apisix/pull/1891)
 
-
 ## 1.4.1
 
 ### Bugfix
 - Fix: multiple SSL certificates are configured, but only one certificate working fine. [1818](https://github.com/apache/incubator-apisix/pull/1818)
-
 
 ## 1.4.0
 
@@ -163,7 +161,6 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 - SSL private key encryption [1678](https://github.com/apache/incubator-apisix/pull/1678)
 - Improvement of docs for multiple plugins
 
-
 ## 1.3.0
 
 The 1.3 version is mainly for security update.
@@ -175,7 +172,6 @@ The 1.3 version is mainly for security update.
 ### Plugin
 - :sunrise: **add batch request plugin**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
 - implemented plugin `sys logger`. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
-
 
 ## 1.2.0
 
@@ -216,14 +212,13 @@ The 1.2 version brings many new features, including core and plugins.
 - the plugin basic-auth needs required field. [#1251](https://github.com/apache/incubator-apisix/pull/1251)
 - check the count of upstream valid node. [#1292](https://github.com/apache/incubator-apisix/pull/1292)
 
-
 ## 1.1.0
 
 This release is mainly to strengthen the stability of the code and add more documentation.
 
 ### Core
 
-- always specify perl include path when runing test cases. [#1097](https://github.com/apache/incubator-apisix/pull/1097)
+- always specify perl include path when running test cases. [#1097](https://github.com/apache/incubator-apisix/pull/1097)
 - Feature: Add support for PROXY Protocol. [#1113](https://github.com/apache/incubator-apisix/pull/1113)
 - enhancement: add verify command to verify apisix configuration(nginx.conf). [#1112](https://github.com/apache/incubator-apisix/pull/1112)
 - feature: increase the default size of the core file. [#1105](https://github.com/apache/incubator-apisix/pull/1105)

@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local schema    = require('apisix.core.schema')
+local table_insert = table.insert
+local table_concat = table.concat
 local setmetatable = setmetatable
 local error     = error
 
@@ -43,14 +45,19 @@ local host_def = {
 _M.host_def = host_def
 
 
-local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+local ipv4_seg = "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
+local ipv4_def_buf = {}
+for i = 1, 4 do
+    table_insert(ipv4_def_buf, ipv4_seg)
+end
+local ipv4_def = table_concat(ipv4_def_buf, [[\.]])
 -- There is false negative for ipv6/cidr. For instance, `:/8` will be valid.
 -- It is fine as the correct regex will be too complex.
 local ipv6_def = "([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}"
                  .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
     {title = "IPv4", type = "string", format = "ipv4"},
-    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
+    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/([12]?[0-9]|3[0-2])$"},
     {title = "IPv6", type = "string", format = "ipv6"},
     {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
@@ -269,7 +276,6 @@ local nodes_schema = {
         },
         {
             type = "array",
-            minItems = 1,
             items = {
                 type = "object",
                 properties = {
@@ -421,6 +427,7 @@ _M.route = {
                 description = "HTTP uri",
                 type = "string",
             },
+            minItems = 1,
             uniqueItems = true,
         },
         name = rule_name_def,
@@ -441,12 +448,14 @@ _M.route = {
         hosts = {
             type = "array",
             items = host_def,
+            minItems = 1,
             uniqueItems = true,
         },
         remote_addr = remote_addr_def,
         remote_addrs = {
             type = "array",
             items = remote_addr_def,
+            minItems = 1,
             uniqueItems = true,
         },
         vars = {
@@ -502,6 +511,38 @@ _M.route = {
             type = "integer",
             enum = {1, 0},
             default = 1
+        },
+    },
+    allOf = {
+        {
+            oneOf = {
+                {required = {"uri"}},
+                {required = {"uris"}},
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"host"}},
+                        {required = {"hosts"}},
+                    }
+                }},
+                {required = {"host"}},
+                {required = {"hosts"}}
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"remote_addr"}},
+                        {required = {"remote_addrs"}},
+                    }
+                }},
+                {required = {"remote_addr"}},
+                {required = {"remote_addrs"}}
+            },
         },
     },
     anyOf = {

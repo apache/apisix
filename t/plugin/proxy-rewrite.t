@@ -80,7 +80,7 @@ done
 --- request
 GET /t
 --- response_body
-property "scheme" validation failed: matches non of the enum values
+property "scheme" validation failed: matches none of the enum values
 done
 --- no_error_log
 [error]

@@ -483,7 +483,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 * `apisix.router.http`: HTTP Request Route。
     * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        * `Absolute match `: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
+        * `Absolute match`: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
@@ -657,9 +657,12 @@ Server: openresty
 hello world
 ```
 
+If the information can be delivered via HTTP response header, for example, the plugin is in stream
+subsystem, the information will be logged in the error log with `warn` level.
+
 ### Advanced Debug Mode
 
-Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will have a check every second, only the checker reads the `#END` flag, and the file would consider as closed.
+Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will be a check every second, only the checker reads the `#END` flag, and the file would be considered as closed.
 
 The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
 

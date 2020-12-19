@@ -179,7 +179,7 @@ Trailer: grpc-message
 {"workflowKey":"#2251799813685260","workflowInstanceKey":"#2251799813688013","bpmnProcessId":"order-process","version":1}
 ```
 
-`"workflowKey":"#2251799813685260"` suggests pb_option configuation success.
+`"workflowKey":"#2251799813685260"` suggests pb_option configuration success.
 
 ## Disable Plugin
 

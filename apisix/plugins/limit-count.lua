@@ -124,12 +124,6 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    if conf.policy == "redis" then
-        if not conf.redis_host then
-            return false, "missing valid redis option host"
-        end
-    end
-
     return true
 end
 

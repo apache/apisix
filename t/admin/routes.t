@@ -434,7 +434,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"methods\" validation failed: failed to validate item 1: matches non of the enum values"}
+{"error_msg":"invalid configuration: property \"methods\" validation failed: failed to validate item 1: matches none of the enum values"}
 --- no_error_log
 [error]
 

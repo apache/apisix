@@ -37,7 +37,6 @@ for us to fix.
 
 * If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/apache/apisix/issues/new). Be sure to include a **title and clear description**, as much relevant information as possible, and a **code sample** or an **executable test case** demonstrating the expected behavior that is not occurring.
 
-
 ## How to add a new feature or change an existing one
 
 _Before making any significant changes, please [open an issue](https://github.com/apache/apisix/issues)._ Discussing your proposed changes ahead of time will make the contribution process smooth for everyone.

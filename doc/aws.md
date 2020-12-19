@@ -21,8 +21,6 @@
 
 [APISIX](https://github.com/apache/apisix) is a cloud-native microservices API gateway, delivering the ultimate performance, security, open source and scalable platform for all your APIs and microservices.
 
-
-
 ## Architecture
 
 This reference architecture walks you through building **APISIX** as a serverless container API Gateway on top of AWS Fargate with AWS CDK.
@@ -167,8 +165,6 @@ new ApiSixStack(app, 'apisix-stack-dev', { env: devEnv });
 app.synth();
 ```
 
-
-
 ## Deploy the APISIX Stack with AWS CDK
 
 ```bash
@@ -208,8 +204,7 @@ Name:   apiSi-PhpSe-FOL2MM4TW7G8-09029e095ab36fcc.elb.us-west-2.amazonaws.com
 Address: 44.226.102.63
 ```
 
-Configure the IP addresses returned as your upstream nodes in your **APISIX** dashboard followed by the **Services** and **Routes** configuration. Let's say we have a `/index.php` as the URI for the first route for our first **Service** from the **Upstream** IP adddresses.
-
+Configure the IP addresses returned as your upstream nodes in your **APISIX** dashboard followed by the **Services** and **Routes** configuration. Let's say we have a `/index.php` as the URI for the first route for our first **Service** from the **Upstream** IP addresses.
 
 ![](images/aws-nlb-ip-addr.png)
 ![](images/aws-define-service.png)
@@ -229,7 +224,6 @@ Now we have been successfully running **APISIX** in AWS Fargate as serverless co
 $ cdk destroy
 ```
 
-
 ## Running APISIX in AWS China Regions
 
 update `src/main.ts`
@@ -246,9 +240,7 @@ update `src/main.ts`
 ```
 _(read [here](https://github.com/iresty/docker-apisix/blob/9a731f698171f4838e9bc0f1c05d6dda130ca89b/example/docker-compose.yml#L18-L19) for more reference)_
 
-
 Run `cdk deploy` and specify your preferred AWS region in China.
-
 
 ```bash
 # let's say we have another AWS_PROFILE for China regions called 'cn'
@@ -271,11 +263,10 @@ apiSix.ApiSixServiceServiceURLF6EC7872 = http://apiSi-ApiSi-123HOROQKWZKA-126832
 
 Open the `apiSix.ApiSixDashboardURL` URL and log in to configure your **APISIX** in AWS China region.
 
-
 _TBD_
 
 ## Decouple APISIX and etcd3 on AWS
 
-For high availability and state consistency consideration, you might be interested to decouple the **etcd3** as a seperate cluster from **APISIX** not only for performance but also high availability and faught tolerance yet with highly reliable state consistency.
+For high availability and state consistency consideration, you might be interested to decouple the **etcd3** as a separate cluster from **APISIX** not only for performance but also high availability and fault tolerance yet with highly reliable state consistency.
 
 _TBD_

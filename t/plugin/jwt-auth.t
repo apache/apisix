@@ -43,7 +43,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/{"algorithm":"HS256","exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 --- no_error_log
 [error]
 
@@ -561,11 +561,10 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/schema/plugins/jwt-auth?schema_type=consumer',
+            local code, body, raw = t('/apisix/admin/schema/plugins/jwt-auth?schema_type=consumer',
                 ngx.HTTP_GET,
-                nil,
                 [[
-                {"required":["key"],"properties":{"exp":{"type":"integer","default":86400,"minimum":1},"private_key":{"type":"string"},"public_key":{"type":"string"},"algorithm":{"type":"string","default":"HS256","enum":["HS256","HS512","RS256"]},"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"key":{"type":"string"}},"additionalProperties":false,"type":"object"}
+{"dependencies":{"algorithm":{"oneOf":[{"properties":{"algorithm":{"default":"HS256","enum":["HS256","HS512"]}}},{"required":["public_key","private_key"],"properties":{"algorithm":{"enum":["RS256"]},"public_key":{"type":"string"},"private_key":{"type":"string"}}}]}},"required":["key"],"type":"object","properties":{"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"algorithm":{"enum":["HS256","HS512","RS256"],"default":"HS256","type":"string"},"exp":{"minimum":1,"default":86400,"type":"integer"},"key":{"type":"string"}}}
                 ]]
                 )
 
@@ -1089,7 +1088,7 @@ qr/failed to sign jwt/
 --- request
 GET /t
 --- response_body_like eval
-qr/{"algorithm":"HS512","exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 --- no_error_log
 [error]
 
@@ -1327,5 +1326,68 @@ qr/"exp":86400/
 GET /t
 --- response_body
 true
+--- no_error_log
+[error]
+
+
+
+=== TEST 47: RS256 without public key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "algorithm": "RS256",
+                            "key": "user-key"
+                        }
+                    }
+                }]]
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/failed to validate dependent schema for \\"algorithm\\"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 48: RS256 without private key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "algorithm": "RS256",
+                            "key": "user-key",
+                            "public_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----"
+                        }
+                    }
+                }]]
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like eval
+qr/failed to validate dependent schema for \\"algorithm\\"/
 --- no_error_log
 [error]

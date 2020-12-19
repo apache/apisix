@@ -128,7 +128,7 @@ done
                                     "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "scope": "apisix"
                                 }
                             },
@@ -229,7 +229,7 @@ true
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "bearer_only": true,
                                     "scope": "apisix"
                                 }
@@ -283,8 +283,7 @@ WWW-Authenticate: Bearer realm=apisix
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
+                 [[{ "plugins": {
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
@@ -294,10 +293,10 @@ WWW-Authenticate: Bearer realm=apisix
                                 "timeout": 10,
                                 "bearer_only": true,
                                 "scope": "apisix",
-                                "public_key": "-----BEGIN PUBLIC KEY-----
-MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ
-hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
------END PUBLIC KEY-----",
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                                    [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                                    [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256"
                             }
                         },
@@ -309,8 +308,7 @@ hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
                         },
                         "uri": "/hello"
                 }]],
-                [[{
-                    "node": {
+                [[{ "node": {
                         "value": {
                             "plugins": {
                                 "openid-connect": {
@@ -319,13 +317,13 @@ hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
                                     "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "bearer_only": true,
                                     "scope": "apisix",
-                                    "public_key": "-----BEGIN PUBLIC KEY-----
-MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ
-hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==
------END PUBLIC KEY-----",
+                                    "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                        [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                                        [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                                        [[-----END PUBLIC KEY-----",
                                     "token_signing_alg_values_expected": "RS256"
                                 }
                             },
@@ -461,7 +459,7 @@ jwt signature verification failed
                                     "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
                                     "redirect_uri": "http://localhost:3000",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "bearer_only": true,
                                     "realm": "University",
                                     "introspection_endpoint_auth_method": "client_secret_post",
@@ -575,3 +573,31 @@ GET /t
 false
 --- error_log
 failed to introspect in openidc: invalid token
+
+
+
+=== TEST 14: check default value
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("t.toolkit.json")
+            local plugin = require("apisix.plugins.openid-connect")
+            local s = {
+                client_id = "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                client_secret = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                discovery = "http://127.0.0.1:1980/.well-known/openid-configuration",
+            }
+            local ok, err = plugin.check_schema(s)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(json.encode(s))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","ssl_verify":false,"timeout":3}
+--- no_error_log
+[error]

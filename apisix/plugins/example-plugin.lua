@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx = ngx
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
@@ -106,6 +107,30 @@ function _M.access(conf, ctx)
     upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
                  ctx.conf_version, up_conf, matched_route)
     return
+end
+
+
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api(ver)
+    if ver == 1 then
+        return {
+            -- /v1/plugin/example-plugin/hello
+            {
+                methods = {"GET"},
+                uris = {"/plugin/example-plugin/hello"},
+                handler = hello,
+            }
+        }
+    end
 end
 
 
