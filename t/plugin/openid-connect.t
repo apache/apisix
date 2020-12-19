@@ -272,8 +272,8 @@ passed
             local http = require "resty.http"
             local httpc = http.new()
 
-            -- Invoke /hello endpoint w/o any token. Should receive redirect to Keycloak authorization endpoint.
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            -- Invoke /uri endpoint w/o any token. Should receive redirect to Keycloak authorization endpoint.
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
             ngx.say(res.body)
