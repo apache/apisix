@@ -40,9 +40,6 @@ script() {
 
     which apisix
 
-    sudo mkdir -p /usr/local/apisix/apisix
-    sudo cp -r ../apisix/control /usr/local/apisix/apisix/control
-
     # run test
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
