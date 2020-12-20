@@ -44,11 +44,9 @@ local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
 
 local metrics = {}
 
-
+local inner_tab_arr = {}
 
 local function gen_arr(...)
-    -- use function var to avoid thread security issues
-    local inner_tab_arr = {}
     for i = 1, select('#', ...) do
         inner_tab_arr[i] = select(i, ...)
     end
@@ -59,7 +57,6 @@ end
 
 local _M = {}
 
-_M.gen_arr = gen_arr
 
 function _M.init()
     -- todo: support hot reload, we may need to update the lua-prometheus

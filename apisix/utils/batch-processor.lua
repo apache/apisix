@@ -161,7 +161,8 @@ function batch_processor:push(entry)
     table.insert(entries, entry)
     -- add batch metric for every route
     if batch_metrics  then
-        batch_metrics:set(#entries, prometheus.gen_arr(self.name, self.route_id, self.server_addr))
+        local label = {self.name, self.route_id, self.server_addr}
+        batch_metrics:set(#entries, label)
     end
 
     if #entries == 1 then
@@ -189,7 +190,8 @@ function batch_processor:process_buffer()
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = { entries = {}, retry_count = 0 }
         if batch_metrics then
-            batch_metrics:set(0, prometheus.gen_arr(self.name, self.route_id, self.server_addr))
+            local label = {self.name, self.route_id, self.server_addr}
+            batch_metrics:set(0, label)
         end
     end
 
