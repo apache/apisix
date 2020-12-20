@@ -912,7 +912,7 @@ passed
 
 
 
-=== TEST 49: pipeline of client request with successfuly authorized
+=== TEST 49: pipeline of client request with successfully authorized
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- more_headers

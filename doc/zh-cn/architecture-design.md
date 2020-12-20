@@ -675,6 +675,9 @@ Server: openresty
 hello world
 ```
 
+如果这个信息无法通过 HTTP 应答头传递，比如插件在 stream 子系统里面执行，
+那么这个信息会以 warn 等级日志写入到错误日志中。
+
 ### 高级调试模式
 
 设置 `conf/debug.yaml` 中的选项，开启高级调试模式。由于 APISIX 服务启动后是每秒定期检查该文件，

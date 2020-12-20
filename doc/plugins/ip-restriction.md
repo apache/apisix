@@ -26,7 +26,6 @@
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 The `ip-restriction` can restrict access to a Service or a Route by either
@@ -132,7 +131,6 @@ HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
 ```
-
 
 ## Disable Plugin
 

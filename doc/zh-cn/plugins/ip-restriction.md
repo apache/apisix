@@ -102,4 +102,3 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 ```
 
 现在就已移除 `ip-restriction` 插件，其它插件的开启和移除也类似。
-

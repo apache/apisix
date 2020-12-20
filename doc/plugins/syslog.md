@@ -26,7 +26,6 @@
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `sys` is a plugin which push Log data requests to Syslog.

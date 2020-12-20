@@ -26,6 +26,7 @@
 * [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
 * [Admin API](admin-api.md)
+* [Control API](control-api.md)
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 * [Router radixtree](router-radixtree.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
@@ -42,7 +43,7 @@
 
 ### General
 
-* [batch-requests](plugins/batch-requests.md): Allow you send mutiple http api via **http pipeline**.
+* [batch-requests](plugins/batch-requests.md): Allow you send multiple http api via **http pipeline**.
 * [hot reload](plugins.md): Hot reload without reload service.
 * [HTTPS/TLS](https.md): Dynamic load the SSL Certificate by Server Name Indication (SNI).
 * [serverless](plugins/serverless.md)：Allows to dynamically run Lua code at *different* phase in APISIX.
@@ -74,7 +75,7 @@
 ### Traffic
 
 * [limit-req](plugins/limit-req.md): Request rate limiting and adjustment based on the "leaky bucket" method.
-* [limit-conn](plugins/limit-conn.md): Limite request concurrency (or concurrent connections).
+* [limit-conn](plugins/limit-conn.md): Limit request concurrency (or concurrent connections).
 * [limit-count](plugins/limit-count.md): Rate limiting based on a "fixed window" implementation.
 * [proxy-cache](plugins/proxy-cache.md): Provides the ability to cache upstream response data.
 * [request-validation](plugins/request-validation.md): Validates requests before forwarding to upstream.

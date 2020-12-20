@@ -27,7 +27,6 @@
     - [How to restrict service_id](#how-to-restrict-service_id)
   - [Disable Plugin](#disable-plugin)
 
-
 ## Introduction
 
 The `consumer-restriction` makes corresponding access restrictions based on different objects selected.

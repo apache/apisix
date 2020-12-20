@@ -106,6 +106,9 @@ Makefile rules:
     license-check:    Check Lua source code for Apache License
 ```
 
+Environment variable can be used to configure APISIX. Please take a look at `conf/config.yaml` to
+see how to do it.
+
 ## 4. Test
 
 1. Install perl's package manager `cpanminus` first
@@ -128,7 +131,7 @@ make sure to set openresty as default nginx. And export the path as below.
         * export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
 
 **Run Individual Test Cases**
-- Use the following command to run test cases constratined to a file:
+- Use the following command to run test cases constrained to a file:
     - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 
 ## 5. Update Admin API token to protect Apache APISIX

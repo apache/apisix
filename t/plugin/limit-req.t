@@ -500,7 +500,7 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {
-                        "key-auth": {} 
+                        "key-auth": {}
                     },
                         "upstream": {
                             "nodes": {

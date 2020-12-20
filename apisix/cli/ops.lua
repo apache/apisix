@@ -38,6 +38,7 @@ local floor = math.floor
 local str_find = string.find
 local str_sub = string.sub
 
+
 local _M = {}
 
 
@@ -175,6 +176,12 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    if yaml_conf.apisix.enable_admin and
+        yaml_conf.apisix.config_center == "yaml"
+    then
+        util.die("ERROR: Admin API can only be used with etcd config_center.\n")
+    end
+
     local or_ver = util.execute_cmd("openresty -V 2>&1")
     local with_module_status = true
     if or_ver and not or_ver:find("http_stub_status_module", 1, true) then
@@ -222,13 +229,9 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("missing ssl cert for https admin")
     end
 
-    local ssl = yaml_conf.apisix.ssl
-    if ssl and ssl.enable and not (
-        ssl.ssl_cert and ssl.ssl_cert ~= "" and
-        ssl.ssl_cert_key and ssl.ssl_cert_key ~= "")
-    then
-        util.die("missing ssl cert for ssl")
-    end
+    -- enable ssl with place holder crt&key
+    yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
+    yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
     -- Using template.render
     local sys_conf = {
@@ -260,6 +263,25 @@ Please modify "admin_key" in conf/config.yaml .
     end
     for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
+    end
+
+    if yaml_conf.apisix.enable_control then
+        if not yaml_conf.apisix.control then
+            sys_conf.control_server_addr = "127.0.0.1:9090"
+        else
+            local ip = yaml_conf.apisix.control.ip
+            local port = tonumber(yaml_conf.apisix.control.port)
+
+            if ip == nil then
+                ip = "127.0.0.1"
+            end
+
+            if not port then
+                port = 9090
+            end
+
+            sys_conf.control_server_addr = ip .. ":" .. port
+        end
     end
 
     local wrn = sys_conf["worker_rlimit_nofile"]
@@ -298,6 +320,30 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
+    end
+
+    local exported_vars = file.get_exported_vars()
+    if exported_vars then
+        if not sys_conf["envs"] then
+            sys_conf["envs"]= {}
+        end
+        for _, cfg_env in ipairs(sys_conf["envs"]) do
+            local cfg_name
+            local from = str_find(cfg_env, "=", 1, true)
+            if from then
+                cfg_name = str_sub(cfg_env, 1, from - 1)
+            else
+                cfg_name = cfg_env
+            end
+
+            exported_vars[cfg_name] = false
+        end
+
+        for name, value in pairs(exported_vars) do
+            if value then
+                table_insert(sys_conf["envs"], name .. "=" .. value)
+            end
+        end
     end
 
     local conf_render = template.compile(ngx_tpl)

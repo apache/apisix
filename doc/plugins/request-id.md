@@ -27,7 +27,6 @@
 - [**Disable Plugin**](#disable-plugin)
 - [**Examples**](#examples)
 
-
 ## Name
 
 `request-id` plugin adds a unique ID (UUID) to each request proxied through APISIX. This plugin can be used to track an

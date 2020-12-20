@@ -101,8 +101,6 @@ script() {
     export_or_prefix
     openresty -V
 
-    enable_ssl
-
     ./build-cache/grpc_server_example &
 
     ./bin/apisix help

@@ -55,14 +55,15 @@
 |---------|---------|----|-----------|----|
 |name     |False |Auxiliary   |Identifies route names.|customer-xxxx|
 |desc     |False |Auxiliary   |route description, usage scenarios, and more.|customer xxxx|
-|uri      |True |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design.md#router) allows more advanced matching, see [Router](architecture-design.md#router) for more.|"/hello"|
-|host     |False |Match Rules|Currently requesting a domain name, such as `foo.com`; pan-domain names such as `*.foo.com` are also supported.|"foo.com"|
-|hosts    |False |Match Rules|The `host` in the form of a list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
-|remote_addr|False |Match Rules|The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.|"192.168.1.0/24"|
-|remote_addrs|False |Match Rules|The `remote_addr` in the form of a list indicates that multiple different IP addresses are allowed, and match any one of them.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
+|uri      |True, can't be used with `uris` |Match Rules|In addition to full matching such as `/foo/bar`、`/foo/gloo`, using different [Router](architecture-design.md#router) allows more advanced matching, see [Router](architecture-design.md#router) for more.|"/hello"|
+|uris     |True, can't be used with `uri`|Match Rules|The `uri` in the form of a non-empty list means that multiple different uris are allowed, and match any one of them.|["/hello", "/word"]|
+|host     |False, can't be used with `hosts` |Match Rules|Currently requesting a domain name, such as `foo.com`; PAN domain names such as `*.foo.com` are also supported.|"foo.com"|
+|hosts    |False, can't be used with `host` |Match Rules|The `host` in the form of a non-empty list means that multiple different hosts are allowed, and match any one of them.|{"foo.com", "*.bar.com"}|
+|remote_addr|False, can't be used with `remote_addrs` |Match Rules|The client requests an IP address: `192.168.1.101`, `192.168.1.102`, and CIDR format support `192.168.1.0/24`. In particular, APISIX also fully supports IPv6 address matching: `::1`, `fe80::1`, `fe80::1/64`, etc.|"192.168.1.0/24"|
+|remote_addrs|False, can't be used with `remote_addr` |Match Rules|The `remote_addr` in the form of a non-empty list indicates that multiple different IP addresses are allowed, and match any one of them.|{"127.0.0.1", "192.0.0.0/8", "::1"}|
 |methods  |False |Match Rules|If empty or without this option, there are no `method` restrictions, and it can be a combination of one or more: `GET`,`POST`,`PUT`,`DELETE`,`PATCH`, `HEAD`,`OPTIONS`,`CONNECT`,`TRACE`.|{"GET", "POST"}|
 |priority  |False |Match Rules|If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`. Larger value means higher priority. The default value is 0.|priority = 10|
-|vars       |False  |Match Rules |A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For the operator part, the currently supported operators are `==`, `~=`,`>`, `<`, and `~~`. For the `>` and `<` operators, the result is first converted to `number` and then compared. See a list of [supported operators](#available-operators) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
+|vars       |False  |Match Rules |A list of one or more `{var, operator, val}` elements, like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_name", "==", "json"}` means that the current request parameter `name` is `json`. The `var` here is consistent with the internal variable name of Nginx, so you can also use `request_uri`, `host`, etc. For more details, see [lua-resty-expr](https://github.com/api7/lua-resty-expr) |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_func|False|Match Rules|User-defined filtering function. You can use it to achieve matching requirements for special scenarios. This function accepts an input parameter named `vars` by default, which you can use to get Nginx variables.|function(vars) return vars["arg_name"] == "json" end|
 |plugins  |False |Plugin|See [Plugin](architecture-design.md#plugin) for more ||
 |script  |False |Script|See [Script](architecture-design.md#script) for more ||
@@ -83,17 +84,14 @@ Config Example:
 ```shell
 {
     "id": "1",                  # id, unnecessary.
-    "uri": "/release/a",        # uri
-    "uris": ["/a","/b"],        # A set of uri, URL and uris need only have a non-empty one.
+    "uris": ["/a","/b"],        # A set of uri.
     "methods": ["GET","POST"],  # Can fill multiple methods
-    "host": "aa.com",           # host
-    "hosts": ["a.com","b.com"], # A set of host. Host and hosts only need to be non-empty one.
+    "hosts": ["a.com","b.com"], # A set of host.
     "plugins": {},              # Bound plugin
     "priority": 0,              # If different routes contain the same `uri`, determine which route is matched first based on the attribute` priority`, the default value is 0.
     "name": "route-xxx",
     "desc": "hello world",
-    "remote_addr": "127.0.0.1", # Client IP
-    "remote_addrs": ["127.0.0.1"], # A set of Client IP. Remote_addr and remo-te_addrs only need to be non-empty one.
+    "remote_addrs": ["127.0.0.1"], # A set of Client IP.
     "vars": [],                 # A list of one or more `{var, operator, val}` elements
     "upstream_id": "1",         # upstream id, recommended
     "upstream": {},             # upstream, not recommended
@@ -264,36 +262,6 @@ After successful execution, status nodes will be updated to:
 > Response Parameters
 
 Return response from etcd currently.
-
-### Available Operators
-
-|Operator   |Description       |Example|
-|--------|-----------|-------|
-|==      |Equal      |{"arg_name", "==", "json"}|
-|~=      |Not Equal    |{"arg_name", "~=", "json"}|
-|>       |Greater Than     |{"arg_age", ">", 24}|
-|<       |Less Than      |{"arg_age", "<", 24}|
-|~~      |Regex   |{"arg_name", "~~", "[a-z]+"}|
-
-Consider the following example: matching requests whose `request name` is equal to `json`, `age` is greater than `18`, and `address` begins with `China`:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "uri": "/index.html",
-    "vars": [
-        ["arg_name", "==", "json"],
-        ["arg_age", ">", "18"],
-        ["arg_address", "~~", "China.*"]
-    ],
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "39.97.63.215:80": 1
-        }
-    }
-}'
-```
 
 [Back to TOC](#Table-of-Contents)
 
@@ -539,7 +507,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |Name    |Optional|Description|
 |-------         |-----|------|
 |type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash,`ewma` minimum latency ,pick one of them.see https://en.wikipedia.org/wiki/EWMA_chart for details|
-|nodes           |required if `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
+|nodes           |required if `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
 |k8s_deployment_info|required if `nodes` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
 |key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
@@ -553,7 +521,6 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |labels|optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
-
 
 Config Example:
 

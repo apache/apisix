@@ -405,7 +405,7 @@ GET /apisix/prometheus/metrics
 --- request
 GET /t
 --- response_body eval
-qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"name\\" validation failed: matches non of the enum values"\}/
+qr/\{"error_msg":"invalid configuration: property \\"interceptors\\" validation failed: failed to validate item 1: property \\"name\\" validation failed: matches none of the enum values"\}/
 --- error_code: 400
 --- no_error_log
 [error]

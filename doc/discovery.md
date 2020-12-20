@@ -55,7 +55,6 @@ It is very easy for APISIX to extend the discovery client, the basic steps are a
 
 3. Convert the registry data into data in APISIX;
 
-
 ### the example of Eureka
 
 #### Implementation of eureka.lua
@@ -171,8 +170,8 @@ Add following configuration in `conf/config.yaml` ：
 discovery:
   eureka:
     host:                            # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
-      - "http://${usename}:${passowrd}@${eureka_host1}:${eureka_port1}"
-      - "http://${usename}:${passowrd}@${eureka_host2}:${eureka_port2}"
+      - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
+      - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
     fetch_interval: 30               # 30s
     weight: 100                      # default weight for node
@@ -181,7 +180,6 @@ discovery:
       send: 2000                     # 2000ms
       read: 5000                     # 5000ms
 ```
-
 
 ## Upstream setting
 
@@ -245,5 +243,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configuration allows access to A-SERVICE's `/test` API through `/a/test` and B-SERVICE's `/test` API through `/b/test`.
 
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
-
-
