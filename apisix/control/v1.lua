@@ -18,7 +18,6 @@ local _M = {}
 
 
 function _M.schema()
-    -- stub for test yet, fill it in the next PR
     return 200, {}
 end
 
