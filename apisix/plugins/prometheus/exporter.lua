@@ -47,7 +47,7 @@ local metrics = {}
 local inner_tab_arr = {}
 
 local function gen_arr(...)
-    clear_tab(inner_tab_arr)    
+    clear_tab(inner_tab_arr)
     for i = 1, select('#', ...) do
         inner_tab_arr[i] = select(i, ...)
     end
