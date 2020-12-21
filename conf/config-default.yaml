@@ -152,6 +152,7 @@ nginx_config:                     # config for render the template to generate n
   stream_configuration_snippet: |
     # Add custom Nginx stream configuration to nginx.conf.
     # The configuration should be well indented!
+
   http:
     enable_access_log: true        # enable access log or not, default true
     access_log: "logs/access.log"
@@ -244,7 +245,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - uri-blocker
   - wolf-rbac
   - zipkin
-  #- server-info
+  # - server-info
   - traffic-split
 
 stream_plugins:
