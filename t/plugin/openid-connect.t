@@ -283,8 +283,9 @@ OIDC Relying Party authentication process, using the authorization code flow.
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
-            if not err then
+            if not res then
                 -- No response, must be an error.
+                ngx.status = 500
                 ngx.say(err)
                 return
             elseif res.status ~= 302 then
@@ -327,6 +328,7 @@ OIDC Relying Party authentication process, using the authorization code flow.
 
                 if not res then
                     -- No response, must be an error.
+                    ngx.status = 500
                     ngx.say(err)
                     return
                 elseif res.status ~= 200 then
@@ -338,14 +340,18 @@ OIDC Relying Party authentication process, using the authorization code flow.
 
                 -- Check if response code was ok.
                 if res.status == 200 then
-                    -- Extract form target URI and parameters.
+                    -- From the returned form, extract the submit URI and parameters.
                     local uri, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
-                    -- Need to substitute escaped ampersand.
+
+                    -- Substitute escaped ampersand in parameters.
                     params = params:gsub("&amp;", "&")
-                    -- Get all cookies returned.
+
+                    -- Get all cookies returned. Probably not so important since not part of OIDC specification.
                     local auth_cookies = res.headers['Set-Cookie']
-                    -- Concatenate cookies into one string as expected in request header.
+
+                    -- Concatenate cookies into one string as expected when sent in request header.
                     local auth_cookie_str = ""
+
                     if type(auth_cookies) == 'string' then
                         auth_cookie_str = auth_cookies:match('([^;]*); .*')
                     else
@@ -359,11 +365,8 @@ OIDC Relying Party authentication process, using the authorization code flow.
                         end
                     end
 
-                    ngx.say(uri)
-                    ngx.say(params)
-                    ngx.say(auth_cookie_str)
-
-                    -- Invoke the URL with parameters and cookies, adding username and password.
+                    -- Invoke the submit URI with parameters and cookies, adding username and password in the body.
+                    -- Note: Username and password are specific to the Keycloak Docker image used.
                     res, err = httpc:request_uri(uri .. "?" .. params, {
                             method = "POST",
                             body = "username=teacher@gmail.com&password=123456",
@@ -373,16 +376,24 @@ OIDC Relying Party authentication process, using the authorization code flow.
                             }
                         })
 
-                    ngx.status = res.status
-                    ngx.say(res.body)
-                    for k, v in pairs(res.headers) do
-                        ngx.say(k)
+                    if not res then
+                        -- No response, must be an error.
+                        ngx.status = 500
+                        ngx.say(err)
+                        return
+                    elseif res.status ~= 302 then
+                        -- Not a redirect which we expect.
+                        -- Use 500 to indicate error.
+                        ngx.status = 500
+                        ngx.say("Login form submission did not return redirect to redirect URI.")
+                        return
                     end
-                    ngx.say(res.headers['Location'])
 
+                    -- Extract the redirect URI from the response header.
+                    -- TODO: Consider validating this against the plugin configuration.
                     local redirect_uri = res.headers['Location']
 
-                    -- Invoke the redirect URI with the obtained authorization code.
+                    -- Invoke the redirect URI (which contains the authorization code as an URL parameter).
                     res, err = httpc:request_uri(redirect_uri, {
                             method = "GET",
                             headers = {
