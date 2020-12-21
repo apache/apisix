@@ -171,3 +171,36 @@ ok
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: pick
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local cases = {
+                {expect = {}, a = {}, b = {priority = true}},
+                {expect = {priority = 1}, a = {priority = 1}, b = {priority = true}},
+                {expect = {}, a = {priorities = 1}, b = {priority = true}},
+                {expect = {priority = 1}, a = {priority = 1, ver = "2"}, b = {priority = true}},
+                {expect = {priority = 1, ver = "2"}, a = {priority = 1, ver = "2"}, b = {priority = true, ver = true}},
+            }
+            for _, t in ipairs(cases) do
+                local actual = core.table.pick(t.a, t.b)
+                local expect = t.expect
+                if not core.table.deep_eq(actual, expect) then
+                    ngx.say("expect ", json.encode(expect), ", actual ", json.encode(actual))
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- request
+GET /t
+--- no_error_log
+[error]
