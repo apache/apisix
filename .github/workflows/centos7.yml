@@ -98,4 +98,5 @@ jobs:
         docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/luajit/bin:/usr/local/openresty-debug/bin:$PATH make deps"
         docker exec centos7Instance bash -c "PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/luajit/bin:/usr/local/openresty-debug/bin:$PATH cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)"
+        docker exec centos7Instance bash -c "cd apisix && make init"
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/admin/*.t"
