@@ -279,24 +279,31 @@ OIDC Relying Party authentication process, using the authorization code flow.
             local http = require "resty.http"
             local httpc = http.new()
 
-            -- Invoke /uri endpoint w/o any token. Should receive redirect to Keycloak authorization endpoint.
+            -- Invoke /uri endpoint w/o bearer token. Should receive redirect to Keycloak authorization endpoint.
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
-            -- Expect redirect (302).
-            if res.status ~= 302 then
-                ngx.status = res.status
+            if not err then
+                -- No response, must be an error.
+                ngx.say(err)
+                return
+            elseif res.status ~= 302 then
+                -- Not a redirect which we expect.
+                -- Use 500 to indicate error.
+                ngx.status = 500
+                ngx.say("Initial request was not redirected to ID provider authorization endpoint.")
+                return
             else
-                -- Extract nonce and state.
+                -- Redirect to ID provider's authorization endpoint.
+
+                -- Extract nonce and state from response header.
                 local nonce = res.headers['Location']:match('.*nonce=([^&]+).*')
                 local state = res.headers['Location']:match('.*state=([^&]+).*')
-                ngx.say("Nonce: " .. nonce)
-                ngx.say("State: " .. state)
 
-                -- Extract cookies.
+                -- Extract cookies. Important since OIDC module tracks state with a session cookie.
                 local cookies = res.headers['Set-Cookie']
 
-                -- Concatenate cookies into one string as expected in request header.
+                -- Concatenate cookies into one string as expected when sent in request header.
                 local cookie_str = ""
 
                 if type(cookies) == 'string' then
@@ -312,28 +319,22 @@ OIDC Relying Party authentication process, using the authorization code flow.
                     end
                 end
 
-                ngx.say("Cookie: " .. cookie_str)
-
-                -- Call authorization endpoint. Should return a login form.
+                -- Call authorization endpoint we were redirected to.
+                -- Note: This typically returns a login form which is the case here for Keycloak as well.
+                -- However, how we process the form to perform the login is specific to Keycloak and
+                -- possibly even the version used.
                 res, err = httpc:request_uri(res.headers['Location'], {method = "GET"})
 
-                --uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/auth"
-                --res, err = httpc:request_uri(uri, {
-                --    method = "POST",
-                --        -- body = "redirect_uri=http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated&nonce=" .. nonce .. "&client_id=course_management&response_type=code&state=" .. state .. "",
-                --        body = "redirect_uri=http://127.0.0.1:" .. ngx.var.server_port .. "/authenticated&scope=openid&client_id=course_management&response_type=code&state=" .. state .. "",
-                --        headers = {
-                --            ["Content-Type"] = "application/x-www-form-urlencoded"
-                --       }
-                --    })
-
-                -- Check response from keycloak and fail quickly if there's no response.
                 if not res then
+                    -- No response, must be an error.
                     ngx.say(err)
                     return
+                elseif res.status ~= 200 then
+                    -- Unexpected response.
+                    ngx.status = res.status
+                    ngx.say(res.body)
+                    return
                 end
-
-                ngx.say(res.body)
 
                 -- Check if response code was ok.
                 if res.status == 200 then
