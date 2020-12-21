@@ -307,7 +307,7 @@ GET /t
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [[{
+                [=[{
                     "uri": "/server_port",
                     "plugins": {
                         "traffic-split": {
@@ -315,10 +315,7 @@ GET /t
                                 {
                                     "match": [
                                         {
-                                            "vars": [
-                                                ["arg_name", "==", "jack"],
-                                                ["arg_age", "!","<", "16"]
-                                            ]
+                                            "vars": [["arg_name", "==", "jack"],["arg_age", "!","<", "16"]]
                                         }
                                     ],
                                     "upstreams": [
@@ -340,7 +337,7 @@ GET /t
                                 "127.0.0.1:1980": 1
                             }
                     }
-                }]]
+                }]=]
             )
             if code >= 300 then
                 ngx.status = code
@@ -404,12 +401,8 @@ GET /t
                             "rules": [
                                 {
                                     "match": [
-                                        {
-                                            "vars": [["arg_name", "==", "jack"], ["arg_age", "~~", "^[1-9]{1,2}"]]
-                                        },
-                                        {
-                                            "vars": [["arg_name2", "in", ["jack", "rose"]], ["arg_age2", "!", "<", 18]]
-                                        }
+                                        {"vars": [["arg_name", "==", "jack"], ["arg_age", "~~", "^[1-9]{1,2}"]]},
+                                        {"vars": [["arg_name2", "in", ["jack", "rose"]], ["arg_age2", "!", "<", 18]]}
                                     ],
                                     "upstreams": [
                                         {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
@@ -490,12 +483,8 @@ GET /t
                             "rules": [
                                 {
                                     "match": [
-                                        {
-                                            "vars": [["arg_name", "==", "jack"], ["arg_age", "~~", "^[1-9]{1,2}"]]
-                                        },
-                                        {
-                                            "vars": [["arg_name2", "in", ["jack", "rose"]], ["arg_age2", "!", "<", 18]]
-                                        }
+                                        {"vars": [["arg_name", "==", "jack"], ["arg_age", "~~", "^[1-9]{1,2}"]]},
+                                        {"vars": [["arg_name2", "in", ["jack", "rose"]], ["arg_age2", "!", "<", 18]]}
                                     ],
                                     "upstreams": [
                                         {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
@@ -764,7 +753,7 @@ GET /t
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [[{
+                [=[{
                     "uri": "/server_port",
                     "plugins": {
                         "traffic-split": {
@@ -772,9 +761,7 @@ GET /t
                                 {
                                     "match": [
                                         {
-                                            "vars": [
-                                                [ "http_release","==","blue" ]
-                                            ]
+                                            "vars": [["http_release","==","blue"]]
                                         }
                                     ],
                                     "upstreams": [
@@ -798,7 +785,7 @@ GET /t
                                 "127.0.0.1:1980": 1
                             }
                     }
-                }]]
+                }]=]
             )
             if code >= 300 then
                 ngx.status = code
@@ -840,7 +827,7 @@ GET /t
 
 
 
-=== TEST 24: release is equal to `green` 
+=== TEST 24: release is equal to `green`
 --- config
 location /t {
     content_by_lua_block {
