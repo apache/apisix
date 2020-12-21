@@ -401,16 +401,25 @@ OIDC Relying Party authentication process, using the authorization code flow.
                             }
                         })
 
-                    ngx.status = res.status
-                    ngx.say(res.body)
-                    for k, v in pairs(res.headers) do
-                        ngx.say(k)
+                    if not res then
+                        -- No response, must be an error.
+                        ngx.status = 500
+                        ngx.say(err)
+                        return
+                    elseif res.status ~= 302 then
+                        -- Not a redirect which we expect.
+                        -- Use 500 to indicate error.
+                        ngx.status = 500
+                        ngx.say("Invoking redirect URI with authorization code did not return redirect to original URI.")
+                        return
                     end
-                    ngx.say(res.headers['Location'])
 
+                    -- Get all cookies returned. This should update the session cookie maintained by the OIDC module with the new state.
+                    -- E.g. the session cookie should now contain the access token, ID token and user info.
+                    -- The cookie itself should however be treated as opaque.
                     cookies = res.headers['Set-Cookie']
 
-                    -- Concatenate cookies into one string as expected in request header.
+                    -- Concatenate cookies into one string as expected when sent in request header.
                     if type(cookies) == 'string' then
                         cookie_str = cookies:match('([^;]*); .*')
                     else
@@ -424,14 +433,31 @@ OIDC Relying Party authentication process, using the authorization code flow.
                         end
                     end
 
-                    -- Get the final URI out of the Location response header.
+                    -- Get the final URI out of the Location response header. This should be the original URI that was requested.
+                    -- TODO: Consider checking the URI against the original request URI.
                     redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+
+                    -- Make the final call back to the original URI.
                     res, err = httpc:request_uri(redirect_uri, {
                             method = "GET",
                             headers = {
                                 ["Cookie"] = cookie_str
                             }
                         })
+
+                    if not res then
+                        -- No response, must be an error.
+                        ngx.status = 500
+                        ngx.say(err)
+                        return
+                    elseif res.status ~= 200 then
+                        -- Not a valid response.
+                        -- Use 500 to indicate error.
+                        ngx.status = 500
+                        ngx.say("Invoking the original URI didn't return the expected result.")
+                        return
+                    end
+
                     ngx.status = res.status
                     ngx.say(res.body)
                     for k, v in pairs(res.headers) do
