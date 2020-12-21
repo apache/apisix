@@ -460,8 +460,6 @@ OIDC Relying Party authentication process, using the authorization code flow.
 
                     ngx.status = res.status
                     ngx.say(res.body)
-                    for k, v in pairs(res.headers) do
-                        ngx.say(k)
                     end
                 else
                     -- Response from Keycloak not ok.
@@ -472,11 +470,17 @@ OIDC Relying Party authentication process, using the authorization code flow.
     }
 --- request
 GET /t
---- response_body
-true
+--- response_body_like
+uri: /uri
+cookie: .*
+host: 127.0.0.1
+user-agent: .*
+x-access-token: ey.*
+x-id-token: ey.*
+x-real-ip: 127.0.0.1
+x-userinfo: ey.*
 --- no_error_log
 [error]
-
 
 
 
