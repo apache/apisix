@@ -176,6 +176,10 @@ http {
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
+    {% if http.proxy_ssl_server_name then %}
+    proxy_ssl_server_name on;
+    {% end %}
+
     {% if http.underscores_in_headers then %}
     underscores_in_headers {* http.underscores_in_headers *};
     {%end%}
