@@ -105,3 +105,6 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/stream-node/*.t"
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/stream-plugin/*.t"
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/utils/*.t"
+        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/node/*.t"
+        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/discovery/*.t"
+        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/core/*.t"
