@@ -460,7 +460,6 @@ OIDC Relying Party authentication process, using the authorization code flow.
 
                     ngx.status = res.status
                     ngx.say(res.body)
-                    end
                 else
                     -- Response from Keycloak not ok.
                     ngx.say(false)
