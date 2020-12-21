@@ -91,7 +91,7 @@ done
 
 
 
-=== TEST 4: Add plugin to route for path `/hello`.
+=== TEST 4: Set up new route with plugin matching URI `/hello`.
 --- config
     location /t {
         content_by_lua_block {
@@ -161,7 +161,8 @@ passed
 
 
 
-=== TEST 5: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider.
+=== TEST 5: Access route w/o bearer token.
+Should redirect to authentication endpoint of ID provider.
 --- config
     location /t {
         content_by_lua_block {
@@ -191,7 +192,11 @@ true
 
 
 
-=== TEST 11: Update route with Keycloak introspection endpoint and public key removed. Should now invoke introspection endpoint to validate tokens.
+=== TEST 11: Modify route to match catch-all URI `/*` and point plugin to local Keycloak instance.
+Notes:
+- Use proper discovery endpoint of the local Keycloak instance.
+- Realm, client ID, and secret are specific to the Keycloak Docker image used.
+- Use a redirect URL that is matched by route as well. Keycloak will redirect to this with the authorization code once user has been authenticated.
 --- config
     location /t {
         content_by_lua_block {
@@ -201,13 +206,13 @@ true
                  [[{
                         "plugins": {
                             "openid-connect": {
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
                                 "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
                                 "ssl_verify": false,
                                 "timeout": 10,
-                                "realm": "University",
                                 "introspection_endpoint_auth_method": "client_secret_post",
                                 "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
                             }
@@ -265,7 +270,9 @@ passed
 
 
 
-=== TEST 12: Obtain authorization code.
+=== TEST 12: Access route w/o bearer token.
+When redirected to authentication endpoint of ID provider, go through the full
+OIDC Relying Party authentication process, using the authorization code flow.
 --- config
     location /t {
         content_by_lua_block {
@@ -275,11 +282,6 @@ passed
             -- Invoke /uri endpoint w/o any token. Should receive redirect to Keycloak authorization endpoint.
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = httpc:request_uri(uri, {method = "GET"})
-
-            ngx.say(res.body)
-            for k, v in pairs(res.headers) do
-                ngx.say(k .. ": " .. v)
-            end
 
             -- Expect redirect (302).
             if res.status ~= 302 then
