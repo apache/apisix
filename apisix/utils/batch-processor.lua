@@ -162,7 +162,7 @@ function batch_processor:push(entry)
     -- add batch metric for every route
     if batch_metrics  then
         self.label = {self.name, self.route_id, self.server_addr}
-        batch_metrics:set(#entries, label)
+        batch_metrics:set(#entries, self.label)
     end
 
     if #entries == 1 then
