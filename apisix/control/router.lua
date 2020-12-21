@@ -27,7 +27,6 @@ local get_method = ngx.req.get_method
 
 
 local _M = {}
-local current_version = 1
 
 
 local fetch_control_api_router
@@ -57,24 +56,24 @@ do
     local function empty_func() end
 
 function fetch_control_api_router()
-    core.table.clear(v1_routes)
-
-    register_api_routes(v1_routes, builtin_v1_routes)
+    core.table.clear(routes)
 
     for _, plugin in ipairs(plugin_mod.plugins) do
         local api_fun = plugin.control_api
         if api_fun then
-            local api_routes = api_fun(current_version)
-            register_api_routes(v1_routes, api_routes)
+            local api_route = api_fun()
+            register_api_routes(routes, api_route)
         end
     end
+
+    core.table.clear(v1_routes)
+    register_api_routes(v1_routes, builtin_v1_routes)
 
     local v1_router, err = router.new(v1_routes)
     if not v1_router then
         return nil, err
     end
 
-    core.table.clear(routes)
     core.table.insert(routes, {
         paths = {"/v1/*"},
         filter_fun = function(vars, opts, ...)

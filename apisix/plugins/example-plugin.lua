@@ -120,17 +120,14 @@ local function hello()
 end
 
 
-function _M.control_api(ver)
-    if ver == 1 then
-        return {
-            -- /v1/plugin/example-plugin/hello
-            {
-                methods = {"GET"},
-                uris = {"/plugin/example-plugin/hello"},
-                handler = hello,
-            }
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
         }
-    end
+    }
 end
 
 
