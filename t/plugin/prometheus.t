@@ -1173,7 +1173,7 @@ GET /batch-process-metrics
 GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
-qr/apisix_batch_process_entries{name="sys-logger",route_id="9"/
+qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
 
 
 
@@ -1182,7 +1182,7 @@ qr/apisix_batch_process_entries{name="sys-logger",route_id="9"/
 GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
-qr/apisix_batch_process_entries{name="zipkin_report",route_id="9"/
+qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="127.0.0.1"\} \d+/
 
 
 
@@ -1191,7 +1191,7 @@ qr/apisix_batch_process_entries{name="zipkin_report",route_id="9"/
 GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
-qr/apisix_batch_process_entries{name="http-logger",route_id="9"/
+qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
 
 
 
@@ -1282,7 +1282,7 @@ GET /batch-process-metrics-10
 GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
-qr/apisix_batch_process_entries{name="tcp-logger",route_id="10"/
+qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="127.0.0.1"\} \d+/
 
 
 
@@ -1291,4 +1291,4 @@ qr/apisix_batch_process_entries{name="tcp-logger",route_id="10"/
 GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
-qr/apisix_batch_process_entries{name="udp-logger",route_id="10"/
+qr/apisix_batch_process_entries\{name="udp-logger",route_id="10",server_addr="127.0.0.1"\} \d+/

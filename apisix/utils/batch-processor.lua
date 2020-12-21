@@ -161,7 +161,7 @@ function batch_processor:push(entry)
     table.insert(entries, entry)
     -- add batch metric for every route
     if batch_metrics  then
-        local label = {self.name, self.route_id, self.server_addr}
+        self.label = {self.name, self.route_id, self.server_addr}
         batch_metrics:set(#entries, label)
     end
 
@@ -190,8 +190,8 @@ function batch_processor:process_buffer()
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = { entries = {}, retry_count = 0 }
         if batch_metrics then
-            local label = {self.name, self.route_id, self.server_addr}
-            batch_metrics:set(0, label)
+            self.label = {self.name, self.route_id, self.server_addr}
+            batch_metrics:set(0, self.label)
         end
     end
 
