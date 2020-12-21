@@ -192,11 +192,17 @@ true
 
 
 
-=== TEST 11: Modify route to match catch-all URI `/*` and point plugin to local Keycloak instance.
+=== TEST 6: Modify route to match catch-all URI `/*` and point plugin to local Keycloak instance.
 Notes:
 - Use proper discovery endpoint of the local Keycloak instance.
 - Realm, client ID, and secret are specific to the Keycloak Docker image used.
 - Use a redirect URL that is matched by route as well. Keycloak will redirect to this with the authorization code once user has been authenticated.
+- Uses default plugin configuration with respect to token and userinfo headers.
+--- main_config
+set $set_access_token_header 'true';
+set $access_token_in_authorization_header 'false';
+set $set_id_token_header 'true';
+set $set_userinfo_header 'true';
 --- config
     location /t {
         content_by_lua_block {
@@ -214,7 +220,11 @@ Notes:
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
+                                "set_access_token_header": ]] .. ngx.var.set_access_token_header .. [[,
+                                "access_token_in_authorization_header": ]] .. ngx.var.access_token_in_authorization_header .. [[,
+                                "set_id_token_header": ]] .. ngx.var.set_id_token_header .. [[,
+                                "set_userinfo_token_header": ]] .. ngx.var.set_userinfo_header .. [[
                             }
                         },
                         "upstream": {
@@ -238,7 +248,11 @@ Notes:
                                     "timeout": 10,
                                     "realm": "University",
                                     "introspection_endpoint_auth_method": "client_secret_post",
-                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
+                                    "set_access_token_header": ]] .. ngx.var.set_access_token_header .. [[,
+                                    "access_token_in_authorization_header": ]] .. ngx.var.access_token_in_authorization_header .. [[,
+                                    "set_id_token_header": ]] .. ngx.var.set_id_token_header .. [[,
+                                    "set_userinfo_token_header": ]] .. ngx.var.set_userinfo_header .. [[
                                 }
                             },
                             "upstream": {
@@ -270,7 +284,7 @@ passed
 
 
 
-=== TEST 12: Access route w/o bearer token.
+=== TEST 7: Access route w/o bearer token.
 When redirected to authentication endpoint of ID provider, go through the full
 OIDC Relying Party authentication process, using the authorization code flow.
 --- config
