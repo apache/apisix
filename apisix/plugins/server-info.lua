@@ -99,6 +99,17 @@ local function get()
 end
 
 
+local function get_server_info()
+    local info, err = get()
+    if not info then
+        core.log.error("failed to get server_info: ", err)
+        return 500
+    end
+
+    return 200, info
+end
+
+
 local function report(premature, report_ttl)
     if premature then
         return
@@ -155,6 +166,17 @@ function _M.check_schema(conf)
     end
 
     return true
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris ={"/v1/server_info"},
+            handler = get_server_info,
+        }
+    }
 end
 
 
