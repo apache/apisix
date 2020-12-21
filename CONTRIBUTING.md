@@ -47,6 +47,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * Includes tests for new functionality.
 * References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
+* Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/semantic.yml).
 
 ## Contribution Guidelines for Documentation
 
@@ -113,6 +114,8 @@ Once we've discussed your changes and you've got your code ready, make sure that
             apisix/plugins/limit-count/*.lua > \
             /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 ```
+      The `lj-releng` will be downloaded automatically by `make lint` if not exists.
+
 * test case style
     * Use tool to check your test case style statically by command, eg: `reindex t/admin/*.t`.
 ```shell
@@ -128,6 +131,8 @@ Once we've discussed your changes and you've got your code ready, make sure that
     reindex: t/plugin/zipkin.t:	skipped.
 ```
     * By the way, we can download "reindex" to another path and add this path to "PATH" environment.
+    * When the test file is too large, for example > 800 lines, you should split it to a new file.
+      Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
 
 ## Do you have questions about the source code?
 
