@@ -477,7 +477,7 @@ invalid base64 content
 --- request
 GET /t
 --- response_body
-{"response-rewrite":{"body":"new body\n","headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
+{"response-rewrite":{"body":"new body\n","body_base64":false,"headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
 --- no_error_log
 [error]
 

@@ -29,7 +29,7 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->no_error_log) {
+    if (!$block->no_error_log && !$block->error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
 });
@@ -189,3 +189,68 @@ __DATA__
     }
 --- response_body
 {"action":"delete","deleted":"1","key":"/apisix/upstreams/1","node":{}}
+
+
+
+=== TEST 6: empty nodes
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {},
+                    "type": "roundrobin"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: refer to empty nodes upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream_id": "1",
+                    "uri": "/index.html"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 8: hit empty nodes upstream
+--- request
+GET /index.html
+--- error_code: 502
+--- error_log
+no valid upstream node

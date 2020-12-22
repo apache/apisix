@@ -52,7 +52,6 @@ plugin_attr:
 location /t {
     content_by_lua_block {
         ngx.sleep(2)
-        local json_decode = require("cjson.safe").decode
         local core = require("apisix.core")
         local key = "/data_plane/server_info/" .. core.id.get()
         local res, err = core.etcd.get(key)
@@ -63,14 +62,14 @@ location /t {
         end
 
         local keys = {}
-        local body = json_decode(res.body.node.value)
-        for k in pairs(body) do
+        local value = res.body.node.value
+        for k in pairs(value) do
             keys[#keys + 1] = k
         end
 
         table.sort(keys)
         for i = 1, #keys do
-            ngx.say(keys[i], ": ", body[keys[i]])
+            ngx.say(keys[i], ": ", value[keys[i]])
         end
     }
 }
@@ -104,7 +103,6 @@ plugin_attr:
 --- config
 location /t {
     content_by_lua_block {
-        local json_decode = require("cjson.safe").decode
         local core = require("apisix.core")
         local key = "/data_plane/server_info/" .. core.id.get()
         local res, err = core.etcd.get(key)
@@ -115,12 +113,12 @@ location /t {
         end
 
         local keys = {}
-        local body = json_decode(res.body.node.value)
-        for k in pairs(body) do
+        local value = res.body.node.value
+        for k in pairs(value) do
             keys[#keys + 1] = k
         end
 
-        if body.up_time >= 2 then
+        if value.up_time >= 2 then
             ngx.say("integral")
         else
             ngx.say("reset")
@@ -135,3 +133,51 @@ integral
 [error]
 --- error_log
 timer created to report server info, interval: 60
+
+
+
+=== TEST 3: get server_info from plugin control API
+--- yaml_config
+apisix:
+    id: 123456
+plugins:
+    - server-info
+--- config
+location /t {
+    content_by_lua_block {
+        local json_decode = require("apisix.core").json.decode
+        local t = require("lib.test_admin").test
+        local code, _, body = t("/v1/server_info")
+        if code >= 300 then
+            ngx.status = code
+        end
+
+        local keys = {}
+        local value, err = json_decode(body)
+        if not value then
+            ngx.say(err)
+            return
+        end
+        for k in pairs(value) do
+            keys[#keys + 1] = k
+        end
+
+        table.sort(keys)
+        for i = 1, #keys do
+            ngx.say(keys[i], ": ", value[keys[i]])
+        end
+    }
+}
+--- request
+GET /t
+--- response_body eval
+qr{^boot_time: \d+
+etcd_version: [\d\.]+
+hostname: [a-zA-Z\-0-9\.]+
+id: [a-zA-Z\-0-9]+
+last_report_time: \d+
+up_time: \d+
+version: [\d\.]+
+$}
+--- no_error_log
+[error]

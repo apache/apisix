@@ -77,6 +77,7 @@ GET /t
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say(require("toolkit.json").encode(conf))
@@ -85,7 +86,7 @@ GET /t
 --- request
 GET /t
 --- response_body_like eval
-qr/invalid ip address: 10.255.256.0\/24/
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 
@@ -105,6 +106,7 @@ qr/invalid ip address: 10.255.256.0\/24/
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say(require("toolkit.json").encode(conf))
@@ -113,7 +115,7 @@ qr/invalid ip address: 10.255.256.0\/24/
 --- request
 GET /t
 --- response_body_like eval
-qr@invalid ip address: 10.255.254.0/38@
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 

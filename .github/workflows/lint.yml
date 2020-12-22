@@ -14,3 +14,10 @@ jobs:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
       - run: markdownlint '**/*.md' --ignore node_modules
+  yamllint:
+    name: 🍺 YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🧹 YAML Lint
+        uses: ibiqlik/action-yamllint@v3

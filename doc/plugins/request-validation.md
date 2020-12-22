@@ -27,7 +27,6 @@
 - [**Disable Plugin**](#disable-plugin)
 - [**Examples**](#examples)
 
-
 ## Name
 
 `request-validation` plugin validates the requests before forwarding to an upstream service. The validation plugin uses
@@ -102,7 +101,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
 ## Examples:
 
 **`Enum` validate:**
@@ -122,7 +120,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 **`Boolean` validate:**
 
@@ -195,7 +192,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 **`Array` validate:**
 

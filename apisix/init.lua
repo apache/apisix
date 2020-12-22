@@ -37,6 +37,10 @@ local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
 local tonumber      = tonumber
+local control_api_router
+if ngx.config.subsystem == "http" then
+    control_api_router = require("apisix.control.router")
+end
 local load_balancer
 local local_conf
 local dns_resolver
@@ -413,6 +417,7 @@ function _M.http_access_phase()
         api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
         api_ctx.conf_id = route.value.id .. "&" .. service.value.id
         api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
 
         if enable_websocket == nil then
             enable_websocket = service.value.enable_websocket
@@ -424,6 +429,7 @@ function _M.http_access_phase()
         api_ctx.conf_id = route.value.id
     end
     api_ctx.route_id = route.value.id
+    api_ctx.route_name = route.value.name
 
     local up_id = route.value.upstream_id
     if up_id then
@@ -806,6 +812,14 @@ function _M.http_admin()
 end
 
 end -- do
+
+
+function _M.http_control()
+    local ok = control_api_router.match(get_var("uri"))
+    if not ok then
+        ngx_exit(404)
+    end
+end
 
 
 function _M.stream_init()

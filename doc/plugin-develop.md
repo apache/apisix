@@ -162,7 +162,6 @@ local _M = {
 }
 ```
 
-
 ## choose phase to run
 
 Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's

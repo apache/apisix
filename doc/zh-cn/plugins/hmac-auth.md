@@ -172,7 +172,6 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
-
 ## 自定义 header 名称
 
 我们可以在 `conf/config.yaml` 中，`plugin_attr` 下添加插件的属性配置来自定义参数 header 名称。
@@ -200,7 +199,6 @@ Accept-Ranges: bytes
 <!DOCTYPE html>
 <html lang="cn">
 ```
-
 
 ## 禁用插件
 
