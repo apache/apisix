@@ -75,11 +75,11 @@ local schema = {
             type = "boolean",
             default = true
         },
-        set_userinfo_token_header = {
-            description = "Whether the user info token should be added in the X-Userinfo " ..
-                "header to the request for downstream.",
+        access_token_in_authorization_header = {
+            description = "Whether the access token should be added in the Authorization " ..
+                "header as opposed to the X-Access-Token header.",
             type = "boolean",
-            default = true
+            default = false
         },
         set_id_token_header = {
             description = "Whether the ID token should be added in the X-ID-Token header to " ..
@@ -87,11 +87,11 @@ local schema = {
             type = "boolean",
             default = true
         },
-        access_token_in_authorization_header = {
-            description = "Whether the access token should be added in the Authorization " ..
-                "header as opposed to the X-Access-Token header.",
+        set_userinfo_header = {
+            description = "Whether the user info token should be added in the X-Userinfo " ..
+                "header to the request for downstream.",
             type = "boolean",
-            default = false
+            default = true
         }
     },
     required = {"client_id", "client_secret", "discovery"}
@@ -150,37 +150,18 @@ local function check_bearer_access_token(ctx)
 end
 
 
-local function set_header(ctx, name, value)
-    -- Set a request header to the given value and update the cached headers in the context as well.
-
-    -- Set header in request.
-    ngx.req.set_header(name, value)
-
-    -- Set header in cache, maybe.
-    if ctx and ctx.headers then
-        ctx.headers[name] = value
-    end
-end
-
-
-local function add_user_header(ctx, user)
-    local userinfo = core.json.encode(user)
-    set_header(ctx, "X-Userinfo", ngx_encode_base64(userinfo))
-end
-
-
 local function add_access_token_header(ctx, conf, token)
     -- Add Authorization or X-Access-Token header, respectively, if not already set.
     if conf.set_access_token_header then
         if conf.access_token_in_authorization_header then
             if not core.request.header(ctx, "Authorization") then
                 -- Add Authorization header.
-                set_header(ctx, "Authorization", "Bearer " .. token)
+                core.request.set_header(ctx, "Authorization", "Bearer " .. token)
             end
         else
             if not core.request.header(ctx, "X-Access-Token") then
                 -- Add X-Access-Token header.
-                set_header(ctx, "X-Access-Token", token)
+                core.request.set_header(ctx, "X-Access-Token", token)
             end
         end
     end
@@ -213,9 +194,9 @@ local function introspect(ctx, conf)
             else
                 -- Token is valid and res contains the response from the introspection endpoint.
 
-                if conf.set_userinfo_token_header then
+                if conf.set_userinfo_header then
                     -- Set X-Userinfo header to introspection endpoint response.
-                    add_user_header(ctx, res)
+                    core.request.set_header(ctx, "X-Userinfo", ngx_encode_base64(core.json.encode(res)))
                 end
 
                 -- Add configured access token header, maybe.
@@ -250,6 +231,7 @@ function _M.rewrite(plugin_conf, ctx)
     if not conf.redirect_uri then
         conf.redirect_uri = ctx.var.request_uri
     end
+
     if not conf.ssl_verify then
         -- openidc use "no" to disable ssl verification
         conf.ssl_verify = "no"
@@ -257,27 +239,35 @@ function _M.rewrite(plugin_conf, ctx)
 
     local response, err
     if conf.introspection_endpoint or conf.public_key then
+        -- Try to introspect access token from request, if it is present.
+        -- Returns a nil response if token is not found.
         response, err = introspect(ctx, conf)
+
         if err then
+            -- Unable to introspect. Fail quickly.
             core.log.error("failed to introspect in openidc: ", err)
             return response
         end
     end
 
     if not response then
-        -- A valid token was not in the request. Try to obtain one by authenticatin against the
-        -- configured identity provider.
+        -- Response has not yet been determined. Either no token was found in
+        -- the request or introspection is not set up.
+
+        -- Authenticate the request. This will check and validate the token if
+        -- it is stored in the openidc module's session cookie, or divert to the
+        -- authorization endpoint of the ID provider.
         local response, err = openidc.authenticate(conf)
+
         if err then
             core.log.error("failed to authenticate in openidc: ", err)
             return 500
         end
 
         if response then
-            -- Add X-Userinfo header, maybe.
-            if response.user and conf.set_userinfo_token_header then
-                add_user_header(ctx, response.user)
-            end
+            -- If the openidc module has returned a response, it may contain,
+            -- respectively, the access token, ID token, and userinfo. Add
+            -- respective headers to the request, if so configured.
 
             -- Add configured access token header, maybe.
             if response.access_token then
@@ -287,7 +277,12 @@ function _M.rewrite(plugin_conf, ctx)
             -- Add X-ID-Token header, maybe.
             if response.id_token and conf.set_id_token_header then
                 local token = core.json.encode(response.id_token)
-                set_header(ctx, "X-ID-Token", ngx.encode_base64(token))
+                core.request.set_header(ctx, "X-ID-Token", ngx.encode_base64(token))
+            end
+
+            -- Add X-Userinfo header, maybe.
+            if response.user and conf.set_userinfo_header then
+                core.request.set_header(ctx, "X-Userinfo", ngx_encode_base64(core.json.encode(response.user)))
             end
         end
     end
