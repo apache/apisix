@@ -196,7 +196,8 @@ local function introspect(ctx, conf)
 
                 if conf.set_userinfo_header then
                     -- Set X-Userinfo header to introspection endpoint response.
-                    core.request.set_header(ctx, "X-Userinfo", ngx_encode_base64(core.json.encode(res)))
+                    core.request.set_header(ctx, "X-Userinfo",
+                        ngx_encode_base64(core.json.encode(res)))
                 end
 
                 -- Add configured access token header, maybe.
@@ -282,7 +283,8 @@ function _M.rewrite(plugin_conf, ctx)
 
             -- Add X-Userinfo header, maybe.
             if response.user and conf.set_userinfo_header then
-                core.request.set_header(ctx, "X-Userinfo", ngx_encode_base64(core.json.encode(response.user)))
+                core.request.set_header(ctx, "X-Userinfo",
+                    ngx_encode_base64(core.json.encode(response.user)))
             end
         end
     end
