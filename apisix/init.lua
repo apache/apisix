@@ -185,6 +185,7 @@ function _M.http_ssl_phase()
         end
         ngx_exit(-1)
     end
+    ngx.ctx = nil
 end
 
 
@@ -334,12 +335,8 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
 
