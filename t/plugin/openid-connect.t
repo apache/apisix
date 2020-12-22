@@ -1529,3 +1529,31 @@ GET /t
 false
 --- error_log
 failed to introspect in openidc: invalid token
+
+
+
+=== TEST 23: Check defaults.
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("t.toolkit.json")
+            local plugin = require("apisix.plugins.openid-connect")
+            local s = {
+                client_id = "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                client_secret = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                discovery = "http://127.0.0.1:1980/.well-known/openid-configuration",
+            }
+            local ok, err = plugin.check_schema(s)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(json.encode(s))
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_userinfo_token_header":true,"ssl_verify":false,"timeout":3}
+--- no_error_log
+[error]
