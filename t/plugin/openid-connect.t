@@ -19,6 +19,7 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+no_shuffle();
 run_tests;
 
 __DATA__
@@ -1003,8 +1004,7 @@ true
                                     [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
                                     [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256",
-                                "access_token_in_authorization_header": true
+                                "token_signing_alg_values_expected": "RS256"
                             }
                         },
                         "upstream": {
@@ -1013,7 +1013,7 @@ true
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/uri"
                 }]],
                 [[{ "node": {
                         "value": {
@@ -1031,8 +1031,7 @@ true
                                         [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
                                         [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
                                         [[-----END PUBLIC KEY-----",
-                                    "token_signing_alg_values_expected": "RS256",
-                                    "access_token_in_authorization_header": true
+                                    "token_signing_alg_values_expected": "RS256"
                                 }
                             },
                             "upstream": {
@@ -1041,7 +1040,7 @@ true
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/hello"
+                            "uri": "/uri"
                         },
                         "key": "/apisix/routes/1"
                     },
