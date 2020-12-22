@@ -51,7 +51,7 @@
 
 ## 插件接口
 
-无
+该插件在 [Control API](../../control-api.md) 下暴露了一个 API 接口 `/v1/server_info`。
 
 ## 启用插件
 
@@ -89,7 +89,22 @@ plugin_attr:
 
 ## 测试插件
 
-Apache APISIX Dashboard 会收集上报到 etcd 中的服务信息，在启用这个插件后，你可以通过 APISIX Dashboard 来查看这些数据。
+在启用该插件后，你可以通过插件的 Control API 来访问到这些数据：
+
+```shell
+$ curl http://127.0.0.1:9090/v1/server_info -s | jq .
+{
+  "etcd_version": "3.5.0",
+  "up_time": 9460,
+  "last_report_time": 1608531519,
+  "id": "b7ce1c5c-b1aa-4df7-888a-cbe403f3e948",
+  "hostname": "fedora32",
+  "version": "2.1",
+  "boot_time": 1608522102
+}
+```
+
+Apache APISIX Dashboard 会收集上报到 etcd 中的服务信息，因此你也可以通过 APISIX Dashboard 来查看这些数据。
 
 ## 禁用插件
 
