@@ -271,46 +271,14 @@ Upstream 的配置可以被直接绑定在指定 `Route` 中，也可以被绑�
 
 ### 配置参数
 
-APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面表格。
+APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上游做主被动健康检查、重试等逻辑，具体看下面的链接。
 
-|名字    |可选|说明|
-|-------         |-----|------|
-|type            |必填|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|
-|nodes           |与 `k8s_deployment_info`、 `service_name` 三选一|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80` 等。value 则是节点的权重。当权重值为 `0` 代表该上游节点失效，不会被选中，可以用于暂时摘除节点的情况。|
-|service_name    |与 `nodes`、 `k8s_deployment_info` 三选一 |用于设置上游服务名，并配合注册中心使用，详细可参考[集成服务发现注册中心](discovery.md) |
-|k8s_deployment_info|与 `nodes`、 `service_name` 三选一|哈希表|字段包括 `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`，其中 `port` 字段为数值，`backend_type` 为 `pod` 或 `service`，其他为字符串 |
-|key             |可选|在 `type` 等于 `chash` 是必选项。 `key` 需要配合 `hash_on` 来使用，通过 `hash_on` 和 `key` 来查找对应的 node `id`|
-|hash_on         |可选|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
-|checks          |可选|配置健康检查的参数，详细可参考[health-check](../health-check.md)|
-|retries         |可选|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认 APISIX 会启用重试机制，根据配置的后端节点个数设置重试次数，如果此参数显式被设置将会覆盖系统默认设置的重试次数。|
-|labels          |可选| 用于标识属性的键值对。 |
-|pass_host            |可选|`pass` 透传客户端请求的 host, `node` 不透传客户端请求的 host, 使用 upstream node 配置的 host, `rewrite` 使用 `upstream_host` 配置的值重写 host 。|
-|upstream_host    |可选|只在 `pass_host` 配置为 `rewrite` 时有效。|
-
-`hash_on` 比较复杂，这里专门说明下：
-
-1. 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)
-1. 设为 `header` 时, `key` 为必传参数，其值为自定义的 header name, 即 "http_`key`"
-1. 设为 `cookie` 时, `key` 为必传参数，其值为自定义的 cookie name，即 "cookie_`key`"
-1. 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
-1. 如果指定的 `hash_on` 和 `key` 获取不到值时，就是用默认值：`remote_addr`。
+https://github.com/apache/apisix/blob/master/doc/admin-api.md#upstream
 
 创建上游对象用例：
 
 ```json
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "type": "roundrobin",
-    "k8s_deployment_info": {
-        "namespace": "test-namespace",
-        "deploy_name": "test-deploy-name",
-        "service_name": "test-service-name",
-        "backend_type": "pod",
-        "port": 8080
-    }
-}'
-
-curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
