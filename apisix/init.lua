@@ -185,6 +185,8 @@ function _M.http_ssl_phase()
         end
         ngx_exit(-1)
     end
+
+    -- clear the ctx of the ssl phase, avoid affecting other phases
     ngx.ctx = nil
 end
 
@@ -335,6 +337,7 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
+    -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
