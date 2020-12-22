@@ -129,7 +129,7 @@ done
                                     "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "scope": "apisix"
                                 }
                             },
@@ -207,7 +207,7 @@ true
                                 "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
-                                "timeout": 10000,
+                                "timeout": 10,
                                 "scope": "apisix"
                             }
                         },
@@ -229,7 +229,7 @@ true
                                     "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                     "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10000,
+                                    "timeout": 10,
                                     "scope": "apisix"
                                 }
                             },
