@@ -107,7 +107,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(0.5)
+            ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/services/1',
                  ngx.HTTP_DELETE,
@@ -153,7 +153,7 @@ GET /t
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(0.5)
+            ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/services/1',
                  ngx.HTTP_DELETE,
