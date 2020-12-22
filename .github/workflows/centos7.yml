@@ -33,6 +33,10 @@ jobs:
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
 
     steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
     - name: Install Redis Cluster
       uses: vishnudxb/redis-cluster@1.0.5
@@ -74,7 +78,6 @@ jobs:
         docker exec centos7Instance bash -c "wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz && tar xf etcd-v3.4.0-linux-amd64.tar.gz"
         docker exec centos7Instance bash -c "cp /etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/ && rm -rf etcd-v3.4.0-linux-amd64"
 
-
     - name: run other docker containers for test
       run: |
         docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
@@ -87,11 +90,6 @@ jobs:
         sleep 5
         docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
         docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
-
-    - name: Check out code
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
 
     - name: run test cases
       run: |
