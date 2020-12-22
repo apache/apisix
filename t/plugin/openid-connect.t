@@ -202,19 +202,13 @@ true
                  [[{
                         "plugins": {
                             "openid-connect": {
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                "realm": "University",
-                                "client_id": "course_management",
-                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
-                                "timeout": 10,
-                                "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
-                                "set_access_token_header": true,
-                                "access_token_in_authorization_header": false,
-                                "set_id_token_header": true,
-                                "set_userinfo_token_header": true
+                                "timeout": 10000,
+                                "scope": "apisix"
                             }
                         },
                         "upstream": {
@@ -223,26 +217,20 @@ true
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/foo"
+                        "uri": "/*"
                 }]],
                 [[{
                     "node": {
                         "value": {
                             "plugins": {
                                 "openid-connect": {
-                                    "client_id": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                    "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                    "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                    "redirect_uri": "https://iresty.com",
                                     "ssl_verify": false,
-                                    "timeout": 10,
-                                    "realm": "University",
-                                    "introspection_endpoint_auth_method": "client_secret_post",
-                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
-                                    "set_access_token_header": true,
-                                    "access_token_in_authorization_header": false,
-                                    "set_id_token_header": true,
-                                    "set_userinfo_token_header": true
+                                    "timeout": 10000,
+                                    "scope": "apisix"
                                 }
                             },
                             "upstream": {
@@ -251,7 +239,7 @@ true
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/foo"
+                            "uri": "/*"
                         },
                         "key": "/apisix/routes/1"
                     },
