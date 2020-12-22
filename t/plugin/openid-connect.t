@@ -194,11 +194,6 @@ true
 
 
 === TEST 6: Modify route to match catch-all URI `/*` and point plugin to local Keycloak instance.
-Notes:
-- Use proper discovery endpoint of the local Keycloak instance.
-- Realm, client ID, and secret are specific to the Keycloak Docker image used.
-- Use a redirect URL that is matched by route as well. Keycloak will redirect to this with the authorization code once user has been authenticated.
-- Uses default plugin configuration with respect to token and userinfo headers.
 --- config
     location /t {
         content_by_lua_block {
@@ -280,9 +275,7 @@ passed
 
 
 
-=== TEST 7: Access route w/o bearer token.
-When redirected to authentication endpoint of ID provider, go through the full
-OIDC Relying Party authentication process, using the authorization code flow.
+=== TEST 7: Access route w/o bearer token and go through the full OIDC Relying Party authentication process
 --- config
     location /t {
         content_by_lua_block {
