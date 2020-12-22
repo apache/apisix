@@ -8,7 +8,7 @@ on:
     branches:
       - master
 
-jobs:     
+jobs:
   test_apisix:
     name: test_apisix_on_centos7
     runs-on: ubuntu-latest
@@ -61,10 +61,10 @@ jobs:
         -e ETCD_KEY_FILE=/certs/etcd.key \
         -e GITHUB_ACTIONS=true \
         -e CI=true \
-        -v /apisix/t/certs:/certs \
+        -v /home/runner/work/apisix/apisix/t/certs:/certs \
         bitnami/etcd:3.4.0
 
-    - name: run centos7 docker and install dependencies 
+    - name: run centos7 docker and install dependencies
       run: |
         docker run -itd -v /home/runner/work/apisix/apisix:/tmp/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
         docker exec centos7Instance bash -c "yum install -y wget tar gcc automake autoconf libtool make && wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && rpm -ivh epel-release-latest-7.noarch.rpm"
