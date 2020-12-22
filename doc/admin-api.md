@@ -507,8 +507,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |Name    |Optional|Description|
 |-------         |-----|------|
 |type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash,`ewma` minimum latency ,pick one of them.see https://en.wikipedia.org/wiki/EWMA_chart for details|
-|nodes           |required if `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
-|k8s_deployment_info|required if `nodes` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
+|nodes           |required|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
 |hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
 |key             |optional|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_name` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
 |checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
@@ -522,6 +521,14 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 
+`hash_on` can be set to different types:
+
+1. when it is `vars`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html), without the prefix '$'.
+1. when it is `header`, the `key` is required. It is equal to "http_`key`".
+1. when it is `cookie`, the `key` is required. It is equal to "cookie_`key`".
+1. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
+1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
+
 Config Example:
 
 ```shell
@@ -534,13 +541,6 @@ Config Example:
         "read":15,
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
-    "k8s_deployment_info": {    # kubernetes deployment info
-        "namespace": "test-namespace",
-        "deploy_name": "test-deploy-name",
-        "service_name": "test-service-name",
-        "backend_type": "pod",    # pod or service
-        "port": 8080
-    },
     "type":"roundrobin",        # chash or roundrobin
     "checks": {},               # Health check parameters
     "hash_on": "",

@@ -53,42 +53,7 @@ GET /t
 
 
 
-=== TEST 2: set upstream(id: 1) k8s deployment info
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "k8s_deployment_info": {
-                        "namespace": "test-namespace",
-                        "deploy_name": "test-deploy-name",
-                        "service_name": "test-service-name",
-                        "backend_type": "pod",
-                        "port": 8080
-                    },
-                    "type": "roundrobin",
-                    "desc": "new upstream"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 3: set upstream(id: 1) nodes
+=== TEST 2: set upstream(id: 1) nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -119,7 +84,7 @@ passed
 
 
 
-=== TEST 4: set route(id: 1)
+=== TEST 3: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -147,7 +112,7 @@ passed
 
 
 
-=== TEST 5: /not_found
+=== TEST 4: /not_found
 --- request
 GET /not_found
 --- error_code: 404
@@ -158,7 +123,7 @@ GET /not_found
 
 
 
-=== TEST 6: hit routes
+=== TEST 5: hit routes
 --- request
 GET /hello
 --- response_body
@@ -168,7 +133,7 @@ hello world
 
 
 
-=== TEST 7: delete upstream(id: 1)
+=== TEST 6: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -193,7 +158,7 @@ GET /t
 
 
 
-=== TEST 8: delete route(id: 1)
+=== TEST 7: delete route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -217,7 +182,7 @@ GET /t
 
 
 
-=== TEST 9: delete upstream(id: 1)
+=== TEST 8: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +206,7 @@ GET /t
 
 
 
-=== TEST 10: delete upstream again(id: 1)
+=== TEST 9: delete upstream again(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -265,7 +230,7 @@ GET /t
 
 
 
-=== TEST 11: set upstream(id: 1, using `node` mode to pass upstream host)
+=== TEST 10: set upstream(id: 1, using `node` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -297,7 +262,7 @@ passed
 
 
 
-=== TEST 12: set route(id: 1, using `node` mode to pass upstream host)
+=== TEST 11: set route(id: 1, using `node` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -325,7 +290,7 @@ passed
 
 
 
-=== TEST 13: hit route
+=== TEST 12: hit route
 --- request
 GET /get
 --- response_body eval
@@ -335,7 +300,7 @@ qr/"Host": "httpbin.org"/
 
 
 
-=== TEST 14: set upstream(id: 1, using `rewrite` mode to pass upstream host)
+=== TEST 13: set upstream(id: 1, using `rewrite` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -368,7 +333,7 @@ passed
 
 
 
-=== TEST 15: set route(id: 1, using `rewrite` mode to pass upstream host)
+=== TEST 14: set route(id: 1, using `rewrite` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -396,7 +361,7 @@ passed
 
 
 
-=== TEST 16: hit route
+=== TEST 15: hit route
 --- request
 GET /uri
 --- response_body eval
@@ -406,7 +371,7 @@ qr/host: httpbin.org/
 
 
 
-=== TEST 17: set route(upstream deleted)
+=== TEST 16: set route(upstream deleted)
 --- config
     location /t {
         content_by_lua_block {
@@ -434,7 +399,7 @@ passed
 
 
 
-=== TEST 18: delete upstream
+=== TEST 17: delete upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -458,7 +423,7 @@ passed
 
 
 
-=== TEST 19: hit route
+=== TEST 18: hit route
 --- request
 GET /uri
 --- error_code: 502
