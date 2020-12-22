@@ -1003,7 +1003,11 @@ true
                                     [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
                                     [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "set_access_token_header": true,
+                                "access_token_in_authorization_header": false,
+                                "set_id_token_header": false,
+                                "set_userinfo_token_header": false
                             }
                         },
                         "upstream": {
@@ -1030,7 +1034,11 @@ true
                                         [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
                                         [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
                                         [[-----END PUBLIC KEY-----",
-                                    "token_signing_alg_values_expected": "RS256"
+                                    "token_signing_alg_values_expected": "RS256",
+                                    "set_access_token_header": true,
+                                    "access_token_in_authorization_header": false,
+                                    "set_id_token_header": false,
+                                    "set_userinfo_token_header": false
                                 }
                             },
                             "upstream": {
@@ -1101,7 +1109,10 @@ x-real-ip: 127.0.0.1
                                     [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
-                                "access_token_in_authorization_header": true
+                                "set_access_token_header": true,
+                                "access_token_in_authorization_header": true,
+                                "set_id_token_header": false,
+                                "set_userinfo_token_header": false
                             }
                         },
                         "upstream": {
@@ -1129,7 +1140,10 @@ x-real-ip: 127.0.0.1
                                         [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
                                         [[-----END PUBLIC KEY-----",
                                     "token_signing_alg_values_expected": "RS256",
-                                    "access_token_in_authorization_header": true
+                                    "set_access_token_header": true,
+                                    "access_token_in_authorization_header": true,
+                                    "set_id_token_header": false,
+                                    "set_userinfo_token_header": false
                                 }
                             },
                             "upstream": {
