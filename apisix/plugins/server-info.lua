@@ -23,7 +23,7 @@ local ngx_timer_at = ngx.timer.at
 local ngx_worker_id = ngx.worker.id
 local type = type
 
-local boot_time = os.time()
+local load_time = os.time()
 local plugin_name = "server-info"
 local default_report_interval = 60
 local default_report_ttl = 7200
@@ -66,7 +66,28 @@ local _M = {
 }
 
 
+local function get_boot_time()
+    local time, err = internal_status:get("server_info:boot_time")
+    if err ~= nil then
+        core.log.error("failed to get boot_time from shdict: ", err)
+        return load_time
+    end
+
+    if time ~= nil then
+        return time
+    end
+
+    local ok, err = internal_status:set("server_info:boot_time", load_time)
+    if err ~= nil then
+        core.log.error("failed to save boot_time to shdict: ", err)
+    end
+
+    return load_time
+end
+
+
 local function uninitialized_server_info()
+    local boot_time = get_boot_time()
     return {
         etcd_version     = "unknown",
         hostname         = core.utils.gethostname(),

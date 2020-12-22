@@ -140,9 +140,6 @@ timer created to report server info, interval: 60
 --- yaml_config
 apisix:
     id: 123456
-    enable_control: true
-    control:
-      port: 1984
 plugins:
     - server-info
 --- config
