@@ -77,7 +77,7 @@ local function get_boot_time()
         return time
     end
 
-    local ok, err = internal_status:set("server_info:boot_time", load_time)
+    local _, err = internal_status:set("server_info:boot_time", load_time)
     if err ~= nil then
         core.log.error("failed to save boot_time to shdict: ", err)
     end
