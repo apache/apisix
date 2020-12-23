@@ -1023,7 +1023,7 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
                                         }
                                     ],
                                     "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}, {"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 2},
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}, {"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 4},
                                         {"weighted_upstream": 1}
                                     ]
                                 }
