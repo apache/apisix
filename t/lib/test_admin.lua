@@ -36,7 +36,7 @@ local function com_tab(pattern, data, deep)
             v = nil
         end
 
-        if type(v) == "table" then
+        if type(v) == "table" and data[k] then
             local ok, err = com_tab(v, data[k], deep + 1)
             if not ok then
                 return false, err
