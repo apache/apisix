@@ -171,35 +171,51 @@ local function parse_domain_for_node(node)
 end
 
 
+local function set_pass_host(ctx, upstream_info, host)
+    -- Currently only supports a single upstream of the domain name.
+    -- When the upstream is `IP`, do not do any `pass_host` operation.
+    if not core.utils.parse_ipv4(host) and not core.utils.parse_ipv6(host) then
+        local pass_host = upstream_info.pass_host or "pass"
+        if pass_host == "pass" then
+            ctx.var.upstream_host = ctx.var.host
+            return
+        end
+
+        if pass_host == "rewrite" then
+            ctx.var.upstream_host = upstream_info.upstream_host
+            return
+        end
+
+        ctx.var.upstream_host = host
+        return
+    end
+
+    return
+end
+
+
 local function set_upstream(upstream_info, ctx)
     local nodes = upstream_info.nodes
     local new_nodes = {}
-    for addr, weight in pairs(nodes) do
-        local node = {}
-        local ip, port, host
-        host, port = core.utils.parse_addr(addr)
-        ip = parse_domain_for_node(host)
-        node.host = ip
-        node.port = port
-        node.weight = weight
-        table_insert(new_nodes, node)
-
-        -- Currently only supports a single upstream of the domain name.
-        -- When the upstream is `IP`, do not do any `pass_host` operation.
-        if not core.utils.parse_ipv4(host) and not core.utils.parse_ipv6(host) then
-            local pass_host = upstream_info.pass_host or "pass"
-            if pass_host == "pass" then
-                ctx.var.upstream_host = ctx.var.host
-                break
-            end
-
-            if pass_host == "rewrite" then
-                ctx.var.upstream_host = upstream_info.upstream_host
-                break
-            end
-
-            ctx.var.upstream_host = host
-            break
+    if core.table.isarray(nodes) then
+        for _, node in ipairs(nodes) do
+            set_pass_host(ctx, upstream_info, node.host)
+            node.host = parse_domain_for_node(node.host)
+            node.port = node.port
+            node.weight = node.weight
+            table_insert(new_nodes, node)
+        end
+    else
+        for addr, weight in pairs(nodes) do
+            local node = {}
+            local ip, port, host
+            host, port = core.utils.parse_addr(addr)
+            set_pass_host(ctx, upstream_info, host)
+            ip = parse_domain_for_node(host)
+            node.host = ip
+            node.port = port
+            node.weight = weight
+            table_insert(new_nodes, node)
         end
     end
     core.log.info("upstream_host: ", ctx.var.upstream_host)

@@ -927,7 +927,7 @@ GET /t
 
 
 
-=== TEST 27: `match` rule failed, `age` condition did not match 
+=== TEST 27: `match` rule failed, `age` condition did not match
 --- config
 location /t {
     content_by_lua_block {
@@ -947,5 +947,206 @@ location /t {
 GET /t
 --- response_body
 1980, 1980, 1980, 1980, 1980, 1980
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: upstreams nodes are array type and node is the domain name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"foo.com", "port": 80, "weight": 0}]}, "weighted_upstream": 2}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: domain name resolved successfully
+--- request
+GET /server_port
+--- error_code: 502
+--- error_log eval
+qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
+
+
+
+=== TEST 30: the nodes of upstreams are array type, with multiple nodes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_name", "==", "jack"], ["arg_age", ">", "23"],["http_appkey", "~~", "[a-z]{1,5}"]]
+                                        }
+                                    ],
+                                    "upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}, {"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 2},
+                                        {"weighted_upstream": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: `match` rule passed
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        local headers = {}
+        headers["appkey"] = "hello"
+        for i = 1, 5 do
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1981, 1981, 1982, 1982
+--- no_error_log
+[error]
+
+
+
+=== TEST 32: the upstream node is an array type and has multiple upstreams
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_name", "==", "jack"], ["arg_age", ">", "23"],["http_appkey", "~~", "[a-z]{1,5}"]]
+                                        }
+                                    ],
+                                    "upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weighted_upstream": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 2},
+                                        {"weighted_upstream": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: `match` rule passed
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        local headers = {}
+        headers["appkey"] = "hello"
+        for i = 1, 5 do
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1981, 1981, 1982, 1982
 --- no_error_log
 [error]
