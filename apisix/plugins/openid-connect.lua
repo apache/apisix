@@ -120,7 +120,7 @@ function _M.check_schema(conf)
 end
 
 
-local function check_bearer_access_token(ctx)
+local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
@@ -150,6 +150,63 @@ local function check_bearer_access_token(ctx)
 end
 
 
+
+local function introspect(ctx, conf)
+    -- Extract token, maybe.
+    local has_token, token, _ = get_bearer_access_token(ctx)
+
+    if not has_token then
+        -- Could not find token.
+
+        if conf.bearer_only then
+            -- Token strictly required in request.
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm .. '"'
+            return ngx.HTTP_UNAUTHORIZED, "No bearer token found in request.", nil, nil
+        else
+            -- Return empty result.
+            return nil, nil, nil, nil
+        end
+    end
+
+    -- If we get here, token was found in request.
+    local res, err
+
+    if conf.public_key then
+        -- Validate token against public key.
+        -- TODO: In the called method, the openidc module will try to extract
+        --  the token by itself again -- from a request header or session cookie.
+        --  It is inefficient that we also need to extract it (just from headers)
+        --  so we can add it in the configured header. Find a way to use openidc
+        --  module's internal methods to extract the token.
+        res, err = openidc.bearer_jwt_verify(conf)
+
+        if err then
+            -- Error while validating or token invalid.
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                '", error="invalid_token", error_description="' .. err .. '"'
+            return ngx.HTTP_UNAUTHORIZED, err, nil, nil
+        end
+
+        -- Token successfully validated.
+        return res, err, token, nil
+    else
+        -- Validate token against introspection endpoint.
+        -- TODO: Same as above for public key validation.
+        res, err = openidc.introspect(conf)
+
+        if err then
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                '", error="invalid_token", error_description="' .. err .. '"'
+            return ngx.HTTP_UNAUTHORIZED, err, nil, nil
+        end
+
+        -- Token successfully validated and response from the introspection
+        -- endpoint contains the userinfo.
+        return res, err, token, res
+    end
+end
+
+
 local function add_access_token_header(ctx, conf, token)
     -- Add Authorization or X-Access-Token header, respectively, if not already set.
     if conf.set_access_token_header then
@@ -165,58 +222,6 @@ local function add_access_token_header(ctx, conf, token)
             end
         end
     end
-end
-
-
-local function introspect(ctx, conf)
-    -- Extract token, maybe. Ignore errors.
-    local has_token, token, _ = check_bearer_access_token(ctx)
-
-    -- Check if token was extracted or if we always require a token in the request.
-    if has_token or conf.bearer_only then
-        local res, err
-
-        if conf.public_key then
-            -- Validate token against public key.
-            res, err = openidc.bearer_jwt_verify(conf)
-            if res then
-                -- Token is valid.
-
-                -- Add configured access token header, maybe.
-                add_access_token_header(ctx, conf, token)
-                return res
-            end
-        else
-            -- Validate token against introspection endpoint.
-            res, err = openidc.introspect(conf)
-            if err then
-                return ngx.HTTP_UNAUTHORIZED, err
-            else
-                -- Token is valid and res contains the response from the introspection endpoint.
-
-                if conf.set_userinfo_header then
-                    -- Set X-Userinfo header to introspection endpoint response.
-                    core.request.set_header(ctx, "X-Userinfo",
-                        ngx_encode_base64(core.json.encode(res)))
-                end
-
-                -- Add configured access token header, maybe.
-                add_access_token_header(ctx, conf, token)
-                return res
-            end
-        end
-        if conf.bearer_only then
-            -- If we get here, the token could not be validated, but we always require a valid
-            -- token in the request.
-            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm
-                                             .. '",error="' .. err .. '"'
-            return ngx.HTTP_UNAUTHORIZED, err
-        end
-    end
-
-    -- Return nil to indicate that a token could not be extracted or validated, but that we don't
-    -- want to fail quickly.
-    return nil
 end
 
 
@@ -240,35 +245,52 @@ function _M.rewrite(plugin_conf, ctx)
 
     local response, err
     if conf.introspection_endpoint or conf.public_key then
-        -- Try to introspect access token from request, if it is present.
-        -- Returns a nil response if token is not found.
-        response, err = introspect(ctx, conf)
+        -- An introspection endpoint or a public key has been configured. Try to
+        -- validate the access token from the request, if it is present in a
+        -- request header. Otherwise, return a nil response. See below for
+        -- handling of the case where the access token is stored in a session cookie.
+        response, err, access_token, userinfo = introspect(ctx, conf)
 
         if err then
-            -- Unable to introspect. Fail quickly.
-            core.log.error("failed to introspect in openidc: ", err)
+            -- Error while validating token or invalid token.
+            core.log.error("OIDC introspection failed: ", err)
             return response
+        end
+
+        if response then
+            if access_token then
+                -- Add configured access token header, maybe.
+                add_access_token_header(ctx, conf, token)
+            end
+            if userinfo and conf.set_userinfo_header then
+                -- Set X-Userinfo header to introspection endpoint response.
+                core.request.set_header(ctx, "X-Userinfo",
+                    ngx_encode_base64(core.json.encode(userinfo)))
+            end
         end
     end
 
     if not response then
-        -- Response has not yet been determined. Either no token was found in
-        -- the request or introspection is not set up.
+        -- Either token validation via introspection endpoint or public key is
+        -- not configured, and/or token could not be extracted from the request.
 
-        -- Authenticate the request. This will check and validate the token if
-        -- it is stored in the openidc module's session cookie, or divert to the
-        -- authorization endpoint of the ID provider.
+        -- Authenticate the request. This will validate the access token if it
+        -- is stored in a session cookie, and also renew the token if required.
+        -- If no token can be extracted, the response will redirect to the ID
+        -- provider's authorization endpoint to initiate the Relying Party flow.
+        -- This code path also handles when the ID provider then redirects to
+        -- the configured redirect URI after successful authentication.
         local response, err = openidc.authenticate(conf)
 
         if err then
-            core.log.error("failed to authenticate in openidc: ", err)
+            core.log.error("OIDC authentication failed: ", err)
             return 500
         end
 
         if response then
             -- If the openidc module has returned a response, it may contain,
-            -- respectively, the access token, ID token, and userinfo. Add
-            -- respective headers to the request, if so configured.
+            -- respectively, the access token, the ID token, and the userinfo.
+            -- Add respective headers to the request, if so configured.
 
             -- Add configured access token header, maybe.
             if response.access_token then
