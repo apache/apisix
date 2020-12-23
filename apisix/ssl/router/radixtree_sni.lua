@@ -17,16 +17,14 @@
 local get_request      = require("resty.core.base").get_request
 local radixtree_new    = require("resty.radixtree").new
 local core             = require("apisix.core")
+local apisix_ssl       = require("apisix.ssl")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
 local ipairs	       = ipairs
 local type             = type
 local error            = error
 local str_find         = core.string.find
-local aes              = require "resty.aes"
-local assert           = assert
 local str_gsub         = string.gsub
-local ngx_decode_base64 = ngx.decode_base64
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
@@ -62,41 +60,11 @@ local function parse_pem_priv_key(sni, pkey)
 end
 
 
-local function decrypt_priv_pkey(iv, key)
-    if core.string.has_prefix(key, "---") then
-        return key
-    end
-
-    local decoded_key = ngx_decode_base64(key)
-    if not decoded_key then
-        core.log.error("base64 decode ssl key failed and skipped. key[", key, "] ")
-        return
-    end
-
-    local decrypted = iv:decrypt(decoded_key)
-    if not decrypted then
-        core.log.error("decrypt ssl key failed and skipped. key[", key, "] ")
-    end
-
-    return decrypted
-end
-
-
 local function create_router(ssl_items)
     local ssl_items = ssl_items or {}
 
     local route_items = core.table.new(#ssl_items, 0)
     local idx = 0
-
-    local local_conf = core.config.local_conf()
-    local iv
-    if local_conf and local_conf.apisix
-       and local_conf.apisix.ssl
-       and local_conf.apisix.ssl.key_encrypt_salt then
-        iv = local_conf.apisix.ssl.key_encrypt_salt
-    end
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
-            assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
     for _, ssl in config_util.iterate_values(ssl_items) do
         if ssl.value ~= nil and
@@ -115,22 +83,18 @@ local function create_router(ssl_items)
             end
 
             -- decrypt private key
-            if aes_128_cbc_with_iv ~= nil then
-                if ssl.value.key then
-                    local decrypted = decrypt_priv_pkey(aes_128_cbc_with_iv,
-                                                        ssl.value.key)
-                    if decrypted then
-                        ssl.value.key = decrypted
-                    end
+            if ssl.value.key then
+                local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.key)
+                if decrypted then
+                    ssl.value.key = decrypted
                 end
+            end
 
-                if ssl.value.keys then
-                    for i = 1, #ssl.value.keys do
-                        local decrypted = decrypt_priv_pkey(aes_128_cbc_with_iv,
-                                                            ssl.value.keys[i])
-                        if decrypted then
-                            ssl.value.keys[i] = decrypted
-                        end
+            if ssl.value.keys then
+                for i = 1, #ssl.value.keys do
+                    local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.keys[i])
+                    if decrypted then
+                        ssl.value.keys[i] = decrypted
                     end
                 end
             end
