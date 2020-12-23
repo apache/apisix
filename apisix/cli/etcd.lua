@@ -225,7 +225,7 @@ function _M.init(env, show_output)
 
             local res_put = table_concat(response_body)
             if res_put:find("404 page not found", 1, true) then
-                errmsg = str_format("gRPC gateway is not enabled in etcd cluster \"%s\","
+                errmsg = str_format("gRPC gateway is not enabled in etcd cluster \"%s\",",
                                     "which is required by Apache APISIX\n")
 
             if res_put:find("error", 1, true) then
