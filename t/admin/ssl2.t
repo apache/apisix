@@ -196,3 +196,143 @@ __DATA__
     }
 --- response_body
 {"action":"delete","deleted":"1","key":"/apisix/ssl/1","node":{}}
+
+
+
+=== TEST 6: bad cert
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = [[-----BEGIN CERTIFICATE-----
+MIIEojCCAwqgAwIBAgIJAK253pMhgCkxMA0GCSqGSIb3DQEBCwUAMFYxCzAJBgNV
+BAYTAkNOMRIwEAYDVQQIDAlHdWFuZ0RvbmcxDzANBgNVBAcMBlpodUhhaTEPMA0G
+U/OOcSRr39Kuis/JJ+DkgHYa/PWHZhnJQBxcqXXk1bJGw9BNbhM=
+-----END CERTIFICATE-----
+            ]], key = ssl_key, sni = "test.com"}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(res)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to parse cert: PEM_read_bio_X509_AUX() failed"}
+
+
+
+=== TEST 7: bad key
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local data = {cert = ssl_cert, key = [[
+-----BEGIN RSA PRIVATE KEY-----
+MIIG5AIBAAKCAYEAyCM0rqJecvgnCfOw4fATotPwk5Ba0gC2YvIrO+gSbQkyxXF5
+jhZB3W6BkWUWR4oNFLLSqcVbVDPitz/Mt46Mo8amuS6zTbQetGnBARzPLtmVhJfo
+wzarryret/7GFW1/3cz+hTj9/d45i25zArr3Pocfpur5mfz3fJO8jg==
+-----END RSA PRIVATE KEY-----]], sni = "test.com"}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(res)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to parse key: PEM_read_bio_PrivateKey() failed"}
+
+
+
+=== TEST 8: bad certs
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "t.com",
+                certs = {
+                    [[-----BEGIN CERTIFICATE-----
+MIIEojCCAwqgAwIBAgIJAK253pMhgCkxMA0GCSqGSIb3DQEBCwUAMFYxCzAJBgNV
+BAYTAkNOMRIwEAYDVQQIDAlHdWFuZ0RvbmcxDzANBgNVBAcMBlpodUhhaTEPMA0G
+U/OOcSRr39Kuis/JJ+DkgHYa/PWHZhnJQBxcqXXk1bJGw9BNbhM=
+-----END CERTIFICATE-----]]
+                },
+                keys = {ssl_key}
+            }
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(res)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to handle cert-key pair[1]: failed to parse cert: PEM_read_bio_X509_AUX() failed"}
+
+
+
+=== TEST 9: bad keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, sni = "t.com",
+                certs = {ssl_cert},
+                keys = {[[-----BEGIN RSA PRIVATE KEY-----
+MIIG5AIBAAKCAYEAyCM0rqJecvgnCfOw4fATotPwk5Ba0gC2YvIrO+gSbQkyxXF5
+jhZB3W6BkWUWR4oNFLLSqcVbVDPitz/Mt46Mo8amuS6zTbQetGnBARzPLtmVhJfo
+wzarryret/7GFW1/3cz+hTj9/d45i25zArr3Pocfpur5mfz3fJO8jg==
+-----END RSA PRIVATE KEY-----]]}
+            }
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(res)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to handle cert-key pair[1]: failed to parse key: PEM_read_bio_PrivateKey() failed"}
