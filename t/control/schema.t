@@ -49,7 +49,10 @@ __DATA__
                 nil,
                 [[{
                     "main": {
+                        "consumer": {"type":"object"},
                         "global_rule": {"type":"object"},
+                        "plugins": {"type":"array"},
+                        "proto": {"type":"object"},
                         "route": {"type":"object"},
                         "service": {"type":"object"},
                         "ssl": {"type":"object"},

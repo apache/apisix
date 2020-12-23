@@ -24,7 +24,10 @@ local _M = {}
 function _M.schema()
     local schema = {
         main = {
+            consumer = core.schema.consumer,
             global_rule = core.schema.global_rule,
+            plugins = core.schema.plugins,
+            proto = core.schema.proto,
             route = core.schema.route,
             service = core.schema.service,
             ssl = core.schema.ssl,
