@@ -227,6 +227,7 @@ function _M.init(env, show_output)
             if res_put:find("404 page not found", 1, true) then
                 errmsg = str_format("gRPC gateway is not enabled in etcd cluster \"%s\",",
                                     "which is required by Apache APISIX\n")
+                util.die(errmsg)
             end
 
             if res_put:find("error", 1, true) then
