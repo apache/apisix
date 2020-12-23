@@ -156,7 +156,9 @@ end
 
 
 local function parse_domain_for_node(node)
-    if not ipmatcher.parse_ipv4(node) and not ipmatcher.parse_ipv6(node) then
+    if not ipmatcher.parse_ipv4(node)
+       and not ipmatcher.parse_ipv6(node)
+    then
         local ip, err = init.parse_domain(node)
         if ip then
             return ip
@@ -174,7 +176,9 @@ end
 local function set_pass_host(ctx, upstream_info, host)
     -- Currently only supports a single upstream of the domain name.
     -- When the upstream is `IP`, do not do any `pass_host` operation.
-    if not core.utils.parse_ipv4(host) and not core.utils.parse_ipv6(host) then
+    if not core.utils.parse_ipv4(host)
+       and not core.utils.parse_ipv6(host)
+    then
         local pass_host = upstream_info.pass_host or "pass"
         if pass_host == "pass" then
             ctx.var.upstream_host = ctx.var.host
@@ -247,8 +251,8 @@ local function new_rr_obj(upstreams)
     local server_list = {}
     for _, upstream_obj in ipairs(upstreams) do
         if not upstream_obj.upstream then
-            -- If the `upstream` object has only the `weighted_upstream` value, it means that
-            -- the `upstream` weight value on the default `route` has been reached.
+            -- If the `upstream` object has only the `weighted_upstream` value, it means
+            -- that the `upstream` weight value on the default `route` has been reached.
             -- Need to set an identifier to mark the empty upstream.
             upstream_obj.upstream = "empty_upstream"
         end
