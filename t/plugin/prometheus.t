@@ -1110,7 +1110,7 @@ GET /apisix/prometheus/metrics
 			                    "retry_interval": 1,
 			                    "batch_max_size": 1000,
 			                    "buffer_duration": 60,
-			                    "port": 0,
+			                    "port": 1000,
 			                    "name": "sys-logger",
 			                    "flush_limit": 4096,
 			                    "sock_type": "tcp",
@@ -1142,7 +1142,7 @@ GET /apisix/prometheus/metrics
                             },
                             "type": "roundrobin"
                         },
-                        "uris": ["/batch-process-metrics"]
+                        "uri": "/batch-process-metrics"
                 }]]
                 )
 
@@ -1213,7 +1213,7 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
                                 "name": "tcp-logger",
                                 "retry_delay": 1,
                                 "buffer_duration": 60,
-                                "port": 0,
+                                "port": 1000,
                                 "batch_max_size": 1000,
                                 "inactive_timeout": 5,
                                 "tls": false,
@@ -1221,7 +1221,7 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
                             },
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 0,
+                                "port": 1000,
                                 "include_req_body": false,
                                 "timeout": 3,
                                 "batch_max_size": 1000,
@@ -1251,7 +1251,7 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
                             },
                             "type": "roundrobin"
                         },
-                        "uris": ["/batch-process-metrics-10"]
+                        "uri": "/batch-process-metrics-10"
                 }]]
                 )
 
