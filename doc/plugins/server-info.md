@@ -50,7 +50,7 @@ None
 
 ## API
 
-None
+This plugin exposes one API `/v1/server_info` to [Control API](../control-api.md).
 
 ## How to Enable
 
@@ -87,7 +87,22 @@ plugin_attr:
 
 ## Test Plugin
 
-The APISIX Dashboard will collects server info in etcd, after enabling this plugin, you may try to check them through Dashboard.
+After enabling this plugin, you can access these data through the plugin Control API:
+
+```shell
+$ curl http://127.0.0.1:9090/v1/server_info -s | jq .
+{
+  "etcd_version": "3.5.0",
+  "up_time": 9460,
+  "last_report_time": 1608531519,
+  "id": "b7ce1c5c-b1aa-4df7-888a-cbe403f3e948",
+  "hostname": "fedora32",
+  "version": "2.1",
+  "boot_time": 1608522102
+}
+```
+
+The APISIX Dashboard will collects server info in etcd, so you may also try to check them through Dashboard.
 
 ## Disable Plugin
 
