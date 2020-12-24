@@ -67,11 +67,11 @@ jobs:
         -e CI=true \
         -v /home/runner/work/apisix/apisix/t/certs:/certs \
         bitnami/etcd:3.4.0
-    
+
     - name: run centos7 docker and mapping apisix into container
       run: |
         docker run -itd -v /home/runner/work/apisix/apisix:/tmp/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
-        
+
     - name: run other docker containers for test
       run: |
         docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
