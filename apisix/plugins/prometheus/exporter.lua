@@ -43,11 +43,10 @@ local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
 
 local metrics = {}
 
+local inner_tab_arr = {}
 
-    local inner_tab_arr = {}
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
-
     for i = 1, select('#', ...) do
         inner_tab_arr[i] = select(i, ...)
     end
@@ -328,5 +327,8 @@ function _M.metric_data()
     return prometheus:metric_data()
 end
 
+function _M.get_prometheus()
+    return prometheus
+end
 
 return _M
