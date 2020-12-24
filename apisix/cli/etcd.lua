@@ -138,6 +138,9 @@ function _M.init(env, show_output)
         local errmsg
 
         local res, err = http.request(version_url)
+        -- In case of failure, request returns nil followed by an error message.
+        -- Else the first return value is the response body
+        -- and followed by the response status code.
         if err and type(err) == "string" then
             errmsg = str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err)
             util.die(errmsg)
@@ -180,7 +183,9 @@ function _M.init(env, show_output)
                                         source = ltn12.source.string(post_json_auth),
                                         sink = ltn12.sink.table(response_body),
                                         headers = {["Content-Length"] = #post_json_auth}}
-            -- err is string type
+            -- In case of failure, request returns nil followed by an error message.
+            -- Else the first return value is just the number 1
+            -- and followed by the response status code.
             if err and type(err) == "string" then
                 errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", auth_url, err)
                 util.die(errmsg)
