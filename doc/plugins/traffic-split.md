@@ -21,21 +21,21 @@
 
 # Summary
 
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-  - [**Grayscale Release**](#grayscale-release)
-  - [**Blue-green Release**](#blue-green-release)
-  - [**Custom Release**](#custom-release)
-- [**Test Plugin**](#test-plugin)
-  - [**Grayscale Test**](#grayscale-test)
-  - [**Blue-green Test**](#blue-green-test)
-  - [**Custom Test**](#custom-test)
-- [**Disable Plugin**](#disable-plugin)
+  - [**Name**](#name)
+  - [**Attributes**](#attributes)
+  - [**How To Enable**](#how-to-enable)
+    - [**Grayscale Release**](#grayscale-release)
+    - [**Blue-green Release**](#blue-green-release)
+    - [**Custom Release**](#custom-release)
+  - [**Test Plugin**](#test-plugin)
+    - [**Grayscale Test**](#grayscale-test)
+    - [**Blue-green Test**](#blue-green-test)
+    - [**Custom Test**](#custom-test)
+  - [**Disable Plugin**](#disable-plugin)
 
 ## Name
 
-The traffic division plugin divides the request traffic according to the specified ratio and diverts it to the corresponding upstream; through this plugin, gray-scale publishing, blue-green publishing and custom publishing functions can be realized.
+The traffic split plugin divides the request traffic according to the specified ratio and diverts it to the corresponding upstream; through this plugin, gray-scale publishing, blue-green publishing and custom publishing functions can be realized.
 
 Note: Since the selection of different upstream in the plugin is based on the roundrobin algorithm, the ratio of traffic distribution is not completely accurate when the algorithm state is reset.
 

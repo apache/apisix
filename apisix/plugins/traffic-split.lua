@@ -57,8 +57,8 @@ local vars_schema = {
                     items = {
                         anyOf = {
                             {
-                            type = "string",
-                            minLength = 1, maxLength = 100
+                                type = "string",
+                                minLength = 1, maxLength = 100
                             },
                             {
                                 type = "number"
