@@ -37,6 +37,10 @@ local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
 local tonumber      = tonumber
+local control_api_router
+if ngx.config.subsystem == "http" then
+    control_api_router = require("apisix.control.router")
+end
 local load_balancer
 local local_conf
 local dns_resolver
@@ -179,8 +183,13 @@ function _M.http_ssl_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
+        -- clear the ctx of the ssl phase, avoid affecting other phases
+        ngx.ctx = nil
         ngx_exit(-1)
     end
+
+    -- clear the ctx of the ssl phase, avoid affecting other phases
+    ngx.ctx = nil
 end
 
 
@@ -330,12 +339,9 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    -- always fetch table from the table pool, we don't need a reused api_ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
 
@@ -808,6 +814,14 @@ function _M.http_admin()
 end
 
 end -- do
+
+
+function _M.http_control()
+    local ok = control_api_router.match(get_var("uri"))
+    if not ok then
+        ngx_exit(404)
+    end
+end
 
 
 function _M.stream_init()

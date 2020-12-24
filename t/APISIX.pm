@@ -375,6 +375,12 @@ _EOC_
             }
         }
 
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+
         location / {
             set \$upstream_mirror_host        '';
             set \$upstream_upgrade            '';

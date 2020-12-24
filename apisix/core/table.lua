@@ -217,4 +217,17 @@ end
 _M.deep_eq = deep_eq
 
 
+-- pick takes the given attributes out of object
+function _M.pick(obj, attrs)
+    local data = {}
+    for k, v in pairs(obj) do
+        if attrs[k] ~= nil then
+            data[k] = v
+        end
+    end
+
+    return data
+end
+
+
 return _M

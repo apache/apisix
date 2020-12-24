@@ -116,6 +116,8 @@ function _M.log(conf, ctx)
             latency = ctx.var.request_time - delay
         end
 
+        core.log.debug("request latency is ", latency) -- for test
+
         local conn, err = lim:leaving(key, latency)
         if not conn then
             core.log.error("failed to record the connection leaving request: ",

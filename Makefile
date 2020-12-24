@@ -135,6 +135,9 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/balancer
 	$(INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/control
+	$(INSTALL) apisix/control/*.lua $(INST_LUADIR)/apisix/control/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
 

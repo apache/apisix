@@ -231,3 +231,27 @@ routes:
 --- request
 GET /hello
 --- error_code: 404
+
+
+
+=== TEST 9: script with id
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    script: "local ngx = ngx"
+    script_id: "1"
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 200
