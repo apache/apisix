@@ -104,4 +104,4 @@ jobs:
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH make deps"
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH make init"
         docker exec centos7Instance bash -c "cd apisix && git clone https://github.com/iresty/test-nginx.git test-nginx"
-        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/plugin/grpc-transcode.t"
+        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/"
