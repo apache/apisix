@@ -1147,7 +1147,7 @@ GET /t
 
 
 
-=== TEST 34: multiple upstream and empty_upstream
+=== TEST 34: multi-upstream, test with unique upstream key
 --- config
     location /t {
         content_by_lua_block {
@@ -1161,9 +1161,8 @@ GET /t
                             "rules": [
                                 {
                                     "weighted_upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weight": 1},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weight": 1},
-                                        {"weight": 1}
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weight": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weight": 2}
                                     ]
                                 }
                             ]
@@ -1198,7 +1197,7 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
-        for i = 1, 3 do
+        for i = 1, 2 do
             local _, _, body = t('/server_port', ngx.HTTP_GET)
             bodys[i] = body
         end
@@ -1209,11 +1208,82 @@ location /t {
 --- request
 GET /t
 --- response_body
-1980, 1981, 1982
+1981, 1982
 --- grep_error_log eval
 qr/upstream_key: roundrobin#route_1_\d/
 --- grep_error_log_out
 upstream_key: roundrobin#route_1_1
 upstream_key: roundrobin#route_1_2
+--- no_error_log
+[error]
+--- LAST
+
+
+=== TEST 36: has empty upstream, test the upstream key is unique
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weight": 1},
+                                        {"weight": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: the upstream `key` is unique
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        for i = 1, 2 do
+            local _, _, body = t('/server_port', ngx.HTTP_GET)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1981
+--- grep_error_log eval
+qr/upstream_key: roundrobin#route_1_\d/
+--- grep_error_log_out
+upstream_key: roundrobin#route_1_1
 --- no_error_log
 [error]
