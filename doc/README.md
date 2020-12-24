@@ -81,7 +81,7 @@
 * [request-validation](plugins/request-validation.md): Validates requests before forwarding to upstream.
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 * [api-breaker](plugins/api-breaker.md): Circuit Breaker for API that stops requests forwarding to upstream in case of unhealthy state.
-* [traffic-split](plugins/traffic-split.md): The traffic split plugin divides the request traffic according to the specified ratio and diverts it to the corresponding upstream; through this plug-in, gray-scale publishing, blue-green publishing and custom publishing functions can be realized.
+* [traffic-split](plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
 
 ### Monitoring
 
