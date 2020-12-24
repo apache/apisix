@@ -924,7 +924,7 @@ GET /t
 1980, 1981, 1981, 1982, 1982
 --- no_error_log
 [error]
---- LAST
+
 
 
 === TEST 27: `match` rule failed, `age` condition did not match
