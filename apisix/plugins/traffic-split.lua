@@ -23,6 +23,7 @@ local ipmatcher  = require("resty.ipmatcher")
 local expr       = require("resty.expr.v1")
 local pairs      = pairs
 local ipairs     = ipairs
+local type       = type
 local table_insert = table.insert
 
 local lrucache = core.lrucache.new({
