@@ -45,30 +45,30 @@
 | ------------ | ------------- | ------ | ------ | ------ | -------------------- |
 | rules.match | array[object] | 可选  |        |        | 匹配规则列表  |
 | rules.match.vars | array[array]   | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
-| rules.upstreams    | array[object] | 可选   |        |        | 上游配置规则列表。 |
-| rules.upstreams.upstream_id  | string or integer | 可选   |        |        | 通过上游 id 绑定对应上游(暂不支持)。 |
-| rules.upstreams.upstream     | object | 可选   |        |        | 上游配置信息。 |
-| rules.upstreams.upstream.type | enum | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
-| rules.upstreams.upstream.nodes | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
-| rules.upstreams.upstream.timeout | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
-| rules.upstreams.upstream.pass_host  | enum | 可选   | "pass"   | ["pass", "node", "rewrite"]  | pass: 透传客户端请求的 host, node: 不透传客户端请求的 host; 使用 upstream node 配置的 host, rewrite: 使用 upstream_host 配置的值重写 host 。 |
-| rules.upstreams.upstream.name  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
-| rules.upstreams.upstream.upstream_host | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
-| rules.upstreams.weighted_upstream       | integer | 可选   |   weighted_upstream = 1     |        | 根据 `weighted_upstream` 值做流量划分，多个 weighted_upstream 之间使用 roundrobin 算法划分。|
+| rules.weighted_upstreams    | array[object] | 可选   |        |        | 上游配置规则列表。 |
+| rules.weighted_upstreams.upstream_id  | string or integer | 可选   |        |        | 通过上游 id 绑定对应上游(暂不支持)。 |
+| rules.weighted_upstreams.upstream     | object | 可选   |        |        | 上游配置信息。 |
+| rules.weighted_upstreams.upstream.type | enum | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
+| rules.weighted_upstreams.upstream.nodes | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
+| rules.weighted_upstreams.upstream.timeout | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
+| rules.weighted_upstreams.upstream.pass_host  | enum | 可选   | "pass"   | ["pass", "node", "rewrite"]  | pass: 透传客户端请求的 host, node: 不透传客户端请求的 host; 使用 upstream node 配置的 host, rewrite: 使用 upstream_host 配置的值重写 host 。 |
+| rules.weighted_upstreams.upstream.name  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
+| rules.weighted_upstreams.upstream.upstream_host | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
+| rules.weighted_upstreams.weight       | integer | 可选   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 weight 之间使用 roundrobin 算法划分。|
 
 ## 如何启用
 
-在插件的 upstreams 中只有 `weighted_upstream` 值，表示到达默认 `route` 上的 upstream 流量权重值。
+在插件的 weighted_upstreams 中只有 `weight` 值，表示到达默认 `route` 上的 upstream 流量权重值。
 
 ```json
 {
-    "weighted_upstream": 2
+    "weight": 2
 }
 ```
 
 ### 灰度发布
 
-根据插件中 upstreams 配置的 `weighted_upstream` 值做流量分流（不配置 `match` 的规则，已经默认 `match` 通过）。将请求流量按 4:2 划分，2/3 的流量到达插件中的 `1981` 端口上游， 1/3 的流量到达 route 上默认的 `1980` 端口上游。
+根据插件中 weighted_upstreams 配置的 `weight` 值做流量分流（不配置 `match` 的规则，已经默认 `match` 通过）。将请求流量按 4:2 划分，2/3 的流量到达插件中的 `1981` 端口上游， 1/3 的流量到达 route 上默认的 `1980` 端口上游。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "traffic-split": {
             "rules": [
                 {
-                    "upstreams": [
+                    "weighted_upstreams": [
                         {
                             "upstream": {
                                 "name": "upstream_A",
@@ -92,10 +92,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "read": 15
                                 }
                             },
-                            "weighted_upstream": 4
+                            "weight": 4
                         },
                         {
-                            "weighted_upstream": 2
+                            "weight": 2
                         }
                     ]
                 }
@@ -130,7 +130,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                             ]
                         }
                     ],
-                    "upstreams": [
+                    "weighted_upstreams": [
                         {
                             "upstream": {
                                 "name": "upstream_A",
@@ -158,7 +158,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 `match` 中可以设置多个匹配规则，`vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 规则之间是 `or` 的关系；只要其中一个 vars 规则通过，则表示 `match` 通过。
 
-示例1：只配置了一个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系。根据 `weighted_upstream` 值将流量按 4:2 划分。其中只有 `weighted_upstream` 部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。
+示例1：只配置了一个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系。根据 `weight` 值将流量按 4:2 划分。其中只有 `weight` 部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -177,7 +177,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                             ]
                         }
                     ],
-                    "upstreams": [
+                    "weighted_upstreams": [
                         {
                             "upstream": {
                                 "name": "upstream_A",
@@ -186,10 +186,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "127.0.0.1:1981":10
                                 }
                             },
-                            "weighted_upstream": 4
+                            "weight": 4
                         },
                         {
-                            "weighted_upstream": 2
+                            "weight": 2
                         }
                     ]
                 }
@@ -207,7 +207,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 插件设置了请求的匹配规则并设置端口为`1981`的 upstream，route 上具有端口为`1980`的upstream。
 
-示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 之间是 `and` 的关系。根据 `weighted_upstream` 值将流量按 4:2 划分。其中只有 `weighted_upstream` 部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。
+示例2：配置多个 `vars` 规则， `vars` 中的多个表达式是 `add` 的关系， 多个 `vars` 之间是 `and` 的关系。根据 `weight` 值将流量按 4:2 划分。其中只有 `weight` 部分表示 route 上的 upstream 所占的比例。 当 `match` 匹配不通过时，所有的流量只会命中 route 上的 upstream 。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -231,7 +231,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                             ]
                         }
                     ],
-                    "upstreams": [
+                    "weighted_upstreams": [
                         {
                             "upstream": {
                                 "name": "upstream_A",
@@ -240,10 +240,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                                     "127.0.0.1:1981":10
                                 }
                             },
-                            "weighted_upstream": 4
+                            "weight": 4
                         },
                         {
-                            "weighted_upstream": 2
+                            "weight": 2
                         }
                     ]
                 }

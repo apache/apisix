@@ -99,7 +99,7 @@ local upstreams_schema = {
         properties = {
             upstream_id = schema_def.id_schema,    -- todo: support upstream_id method
             upstream = schema_def.upstream,
-            weighted_upstream = {
+            weight = {
                 description = "used to split traffic between different" ..
                               "upstreams for plugin configuration",
                 type = "integer",
@@ -112,7 +112,7 @@ local upstreams_schema = {
     -- the upstream of `route` is used by default.
     default = {
         {
-            weighted_upstream = 1
+            weight = 1
         }
     },
     minItems = 1,
@@ -129,7 +129,7 @@ local schema = {
                 type = "object",
                 properties = {
                     match = match_schema,
-                    upstreams = upstreams_schema
+                    weighted_upstreams = upstreams_schema
                 }
             }
         }
@@ -251,11 +251,11 @@ local function set_upstream(upstream_info, ctx)
 end
 
 
-local function new_rr_obj(upstreams)
+local function new_rr_obj(weighted_upstreams)
     local server_list = {}
-    for i, upstream_obj in ipairs(upstreams) do
+    for i, upstream_obj in ipairs(weighted_upstreams) do
         if not upstream_obj.upstream then
-            -- If the `upstream` object has only the `weighted_upstream` value, it means
+            -- If the `upstream` object has only the `weight` value, it means
             -- that the `upstream` weight value on the default `route` has been reached.
             -- Need to set an identifier to mark the empty upstream.
             upstream_obj.upstream = "empty_upstream"
@@ -265,7 +265,7 @@ local function new_rr_obj(upstreams)
             -- Add a virtual id field to uniquely identify the upstream `key`.
             upstream_obj.upstream.vid = i
         end
-        server_list[upstream_obj.upstream] = upstream_obj.weighted_upstream
+        server_list[upstream_obj.upstream] = upstream_obj.weight
     end
 
     return roundrobin:new(server_list)
@@ -277,7 +277,7 @@ function _M.access(conf, ctx)
         return
     end
 
-    local upstreams, match_flag
+    local weighted_upstreams, match_flag
     for _, rule in ipairs(conf.rules) do
         match_flag = true
         for _, single_match in ipairs(rule.match) do
@@ -294,7 +294,7 @@ function _M.access(conf, ctx)
         end
 
         if match_flag then
-            upstreams = rule.upstreams
+            weighted_upstreams = rule.weighted_upstreams
             break
         end
     end
@@ -304,7 +304,7 @@ function _M.access(conf, ctx)
         return
     end
 
-    local rr_up, err = lrucache(upstreams, nil, new_rr_obj, upstreams)
+    local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
         return 500

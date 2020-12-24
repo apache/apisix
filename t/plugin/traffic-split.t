@@ -47,7 +47,7 @@ __DATA__
                                 }
                             }
                         },
-                        upstreams = {
+                        weighted_upstreams = {
                             {
                                 upstream = {
                                     name = "upstream_A",
@@ -55,7 +55,7 @@ __DATA__
                                     nodes = {["127.0.0.1:1981"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstream = 2
+                                weight = 2
                             },
                             {
                                 upstream = {
@@ -64,10 +64,10 @@ __DATA__
                                     nodes = {["127.0.0.1:1982"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstream = 2
+                                weight = 2
                             },
                             {
-                                weighted_upstream = 1
+                                weight = 1
                             }
                         }
                     }
@@ -97,7 +97,7 @@ done
             local ok, err = plugin.check_schema({
                 rules = {
                     {
-                        upstreams = {
+                        weighted_upstreams = {
                             {
                                 upstream = {
                                     name = "upstream_A",
@@ -105,10 +105,10 @@ done
                                     nodes = {["127.0.0.1:1981"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstream = 2
+                                weight = 2
                             },
                             {
-                                weighted_upstream = 1
+                                weight = 1
                             }
                         }
                     }
@@ -145,7 +145,7 @@ done
                                 }
                             }
                         },
-                        upstreams = {
+                        weighted_upstreams = {
                             {
                                 upstream = {
                                     name = "upstream_A",
@@ -153,10 +153,10 @@ done
                                     nodes = {["127.0.0.1:1981"]=2},
                                     timeout = {connect = 15, send = 15, read = 15}
                                 },
-                                weighted_upstream = 2
+                                weight = 2
                             },
                             {
-                                weighted_upstream = 1
+                                weight = 1
                             }
                         }
                     }
@@ -236,7 +236,7 @@ GET /t
 
 
 
-=== TEST 6: when `upstreams` is empty, the upstream of `route` is used by default
+=== TEST 6: when `weighted_upstreams` is empty, the upstream of `route` is used by default
 --- config
     location /t {
         content_by_lua_block {
@@ -249,7 +249,7 @@ GET /t
                         "traffic-split": {
                              "rules": [
                                 {
-                                    "upstreams": [{}]
+                                    "weighted_upstreams": [{}]
                                 }
                             ]
                         }
@@ -318,13 +318,13 @@ GET /t
                                             "vars": [["arg_name", "==", "jack"],["arg_age", "!","<", "16"]]
                                         }
                                     ],
-                                    "upstreams": [
+                                    "weighted_upstreams": [
                                         {
                                            "upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":2}, "timeout": {"connect": 15, "send": 15, "read": 15}},
-                                            "weighted_upstream": 2
+                                            "weight": 2
                                         },
                                         {
-                                            "weighted_upstream": 1
+                                            "weight": 1
                                         }
                                     ]
                                 }
@@ -404,10 +404,10 @@ GET /t
                                         {"vars": [["arg_name", "==", "jack"], ["arg_age", "~~", "^[1-9]{1,2}"]]},
                                         {"vars": [["arg_name2", "in", ["jack", "rose"]], ["arg_age2", "!", "<", 18]]}
                                     ],
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstream": 2},
-                                        {"weighted_upstream": 1}
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weight": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weight": 2},
+                                        {"weight": 1}
                                     ]
                                 }
                             ]
@@ -486,9 +486,9 @@ GET /t
                                         {"vars": [["arg_name", "==", "jack"], ["arg_age", "~~", "^[1-9]{1,2}"]]},
                                         {"vars": [["arg_name2", "in", ["jack", "rose"]], ["arg_age2", "!", "<", 18]]}
                                     ],
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstream": 2}
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weight": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weight": 2}
                                     ]
                                 }
                             ]
@@ -558,8 +558,8 @@ GET /t
                                             "vars": [["arg_name", "==", "jack"], ["arg_age", "~~", "^[1-9]{1,2}"]]
                                         }
                                     ],
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1980":1, "127.0.0.1:1981":2, "127.0.0.1:1982":2}, "timeout": {"connect": 15, "send": 15, "read": 15}}, "weighted_upstream": 1}
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1980":1, "127.0.0.1:1981":2, "127.0.0.1:1982":2}, "timeout": {"connect": 15, "send": 15, "read": 15}}, "weight": 1}
                                     ]
                                 }
                             ]
@@ -617,7 +617,7 @@ GET /t
                         "traffic-split": {
                             "rules": [
                                 {
-                                    "upstreams": [
+                                    "weighted_upstreams": [
                                         {
                                             "upstream": {
                                                 "name": "upstream_A",
@@ -626,10 +626,10 @@ GET /t
                                                     "foo.com:80": 0
                                                 }
                                             },
-                                            "weighted_upstream": 2
+                                            "weight": 2
                                         },
                                         {
-                                            "weighted_upstream": 1
+                                            "weight": 1
                                         }
                                     ]
                                 }
@@ -681,7 +681,7 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
                         "traffic-split": {
                             "rules": [
                                 {
-                                    "upstreams": [
+                                    "weighted_upstreams": [
                                         {
                                             "upstream": {
                                                 "name": "upstream_A",
@@ -690,10 +690,10 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
                                                     "127.0.0.1:1981":1
                                                 }
                                             },
-                                            "weighted_upstream": 2
+                                            "weight": 2
                                         },
                                         {
-                                            "weighted_upstream": 1
+                                            "weight": 1
                                         }
                                     ]
                                 }
@@ -764,7 +764,7 @@ GET /t
                                             "vars": [["http_release","==","blue"]]
                                         }
                                     ],
-                                    "upstreams": [
+                                    "weighted_upstreams": [
                                         {
                                             "upstream": {
                                                 "name": "upstream_A",
@@ -870,10 +870,10 @@ GET /t
                                             "vars": [["arg_name", "==", "jack"], ["arg_age", ">", "23"],["http_appkey", "~~", "[a-z]{1,5}"]]
                                         }
                                     ],
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weighted_upstream": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weighted_upstream": 2},
-                                        {"weighted_upstream": 1}
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": {"127.0.0.1:1981":20}}, "weight": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": {"127.0.0.1:1982":10}}, "weight": 2},
+                                        {"weight": 1}
                                     ]
                                 }
                             ]
@@ -950,7 +950,7 @@ GET /t
 
 
 
-=== TEST 28: upstreams nodes are array type and node is the domain name
+=== TEST 28: upstream nodes are array type and node is the domain name
 --- config
     location /t {
         content_by_lua_block {
@@ -963,8 +963,8 @@ GET /t
                         "traffic-split": {
                             "rules": [
                                 {
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"foo.com", "port": 80, "weight": 0}]}, "weighted_upstream": 2}
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"foo.com", "port": 80, "weight": 0}]}, "weight": 2}
                                     ]
                                 }
                             ]
@@ -1002,7 +1002,7 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
 
 
 
-=== TEST 30: the nodes of upstreams are array type, with multiple nodes
+=== TEST 30: the nodes of upstream are array type, with multiple nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -1020,9 +1020,9 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
                                             "vars": [["arg_name", "==", "jack"], ["arg_age", ">", "23"],["http_appkey", "~~", "[a-z]{1,5}"]]
                                         }
                                     ],
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}, {"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 4},
-                                        {"weighted_upstream": 1}
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}, {"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weight": 4},
+                                        {"weight": 1}
                                     ]
                                 }
                             ]
@@ -1074,7 +1074,7 @@ GET /t
 
 
 
-=== TEST 32: the upstream node is an array type and has multiple upstreams
+=== TEST 32: the upstream node is an array type and has multiple upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -1092,10 +1092,10 @@ GET /t
                                             "vars": [["arg_name", "==", "jack"], ["arg_age", ">", "23"],["http_appkey", "~~", "[a-z]{1,5}"]]
                                         }
                                     ],
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weighted_upstream": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 2},
-                                        {"weighted_upstream": 1}
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weight": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weight": 2},
+                                        {"weight": 1}
                                     ]
                                 }
                             ]
@@ -1147,7 +1147,7 @@ GET /t
 
 
 
-=== TEST 34: multiple upstream
+=== TEST 34: multiple upstream and empty_upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -1160,9 +1160,10 @@ GET /t
                         "traffic-split": {
                             "rules": [
                                 {
-                                    "upstreams": [
-                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weighted_upstream": 2},
-                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 2}                                        
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weight": 1},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weight": 1},
+                                        {"weight": 1}
                                     ]
                                 }
                             ]
@@ -1197,7 +1198,7 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
-        for i = 1, 2 do
+        for i = 1, 3 do
             local _, _, body = t('/server_port', ngx.HTTP_GET)
             bodys[i] = body
         end
@@ -1208,7 +1209,7 @@ location /t {
 --- request
 GET /t
 --- response_body
-1981, 1982
+1980, 1981, 1982
 --- grep_error_log eval
 qr/upstream_key: roundrobin#route_1_\d/
 --- grep_error_log_out
