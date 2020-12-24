@@ -107,7 +107,6 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-
 Here is the operator list of current `lua-resty-radixtree`：
 https://github.com/iresty/lua-resty-radixtree#operator-list
 
@@ -192,7 +191,6 @@ Server: APISIX web server
 </html>
 ```
 
-
 ## How to fix OpenResty Installation Failure on MacOS 10.15
 When you install the OpenResty on MacOs 10.15, you may face this error
 
@@ -257,19 +255,10 @@ Steps:
 
 Now you can trace the info level log in logs/error.log.
 
-## How to reload your own plugin
+## How to reload your own plugin?
 
-The Apache APISIX plugin supports hot reloading. If your APISIX node has the Admin API turned on, then for scenarios such as adding / deleting / modifying plugins, you can hot reload the plugin by calling the HTTP interface without restarting the service.
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
-```
-
-If your APISIX node does not open the Admin API, then you can manually load the plug-in by reloading APISIX.
-
-```shell
-apisix reload
-```
+The Apache APISIX plugin supports hot reloading.
+See the `Hot reload` section in [plugins](./doc/plugins.md) for how to do that.
 
 ## How to make APISIX listen on multiple ports when handling HTTP or HTTPS requests?
 
@@ -283,7 +272,7 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
         - 9080
         - 9081
         - 9082
-    ```
+   ```
 
    Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
 
@@ -297,3 +286,40 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
     ```
 
 2. Reload or restart APISIX
+
+## How to customize the APISIX instance id?
+
+By default, APISIX will read the instance id from `conf/apisix.uid`. If it is not found, and no id is configured, APISIX will generate a `uuid` as the instance id.
+
+If you want to specify a meaningful id to bind APISIX instance to your internal system, you can configure it in `conf/config.yaml`, for example:
+
+    ```
+    apisix:
+      id: "your-meaningful-id"
+    ```
+
+## Why there are a lot of "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" errors in error.log?
+
+First please make sure the network between APISIX and etcd cluster is not partitioned.
+
+If the network is healthy, please check whether your etcd cluster enables the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/).  However, The default case for this feature is different when use command line options or configuration file to start etcd server.
+
+1. When command line options is in use, this feature is enabled by default, the related option is `--enable-grpc-gateway`.
+
+```sh
+etcd --enable-grpc-gateway --data-dir=/path/to/data
+```
+
+Note this option is not shown in the output of `etcd --help`.
+
+2. When configuration file is used, this feature is disabled by default, please enable `enable-grpc-gateway` explicitly.
+
+```json
+# etcd.json
+{
+    "enable-grpc-gateway": true,
+    "data-dir": "/path/to/data"
+}
+```
+
+Indeed this distinction was eliminated by etcd in their master branch, but not backport to announced versions, so be care when deploy your etcd cluster.

@@ -30,7 +30,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.consumer-restriction")
-            local conf = {                
+            local conf = {
 		title = "whitelist",
 		whitelist = {
                     "jack1",
@@ -42,13 +42,13 @@ __DATA__
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body
-{"type":"consumer_name","title":"whitelist","rejected_code":403,"whitelist":["jack1","jack2"]}
+{"rejected_code":403,"title":"whitelist","type":"consumer_name","whitelist":["jack1","jack2"]}
 --- no_error_log
 [error]
 
@@ -733,7 +733,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -898,7 +898,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -1077,7 +1077,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
@@ -1197,7 +1197,7 @@ location /t {
             "x-custom-header-a:" .. custom_header_a,
             "x-custom-header-b:" .. custom_header_b
         }
-        signing_string = core.table.concat(signing_string, "\n")
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))

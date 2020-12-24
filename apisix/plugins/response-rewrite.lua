@@ -25,21 +25,21 @@ local schema = {
     type = "object",
     properties = {
         headers = {
-            description = "new headers for repsonse",
+            description = "new headers for response",
             type = "object",
             minProperties = 1,
         },
         body = {
-            description = "new body for repsonse",
+            description = "new body for response",
             type = "string",
         },
         body_base64 = {
-            description = "whether new body for repsonse need base64 decode before return",
+            description = "whether new body for response need base64 decode before return",
             type = "boolean",
             default = false,
         },
         status_code = {
-            description = "new status code for repsonse",
+            description = "new status code for response",
             type = "integer",
             minimum = 200,
             maximum = 598,
@@ -112,9 +112,7 @@ function _M.header_filter(conf, ctx)
     end
 
     if conf.body then
-        ngx.header.content_length = nil
-        -- in case of upstream content is compressed content
-        ngx.header.content_encoding = nil
+        core.response.clear_header_as_body_modified()
     end
 
     if not conf.headers then

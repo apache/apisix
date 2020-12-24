@@ -124,7 +124,7 @@ install: default
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
-	$(INSTALL) conf/cert/apisix.* /usr/local/apisix/conf/cert/
+	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
 	$(INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
@@ -135,8 +135,14 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/balancer
 	$(INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/control
+	$(INSTALL) apisix/control/*.lua $(INST_LUADIR)/apisix/control/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/cli
+	$(INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
 	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
@@ -159,11 +165,11 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/prometheus
 	$(INSTALL) apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/plugins/prometheus/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/serverless
+	$(INSTALL) apisix/plugins/serverless/*.lua $(INST_LUADIR)/apisix/plugins/serverless/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
 	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
-
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
-	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/ssl/router
 	$(INSTALL) apisix/ssl/router/*.lua $(INST_LUADIR)/apisix/ssl/router/
@@ -179,10 +185,14 @@ install: default
 
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
+	
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
+	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
 
 ### test:             Run the test case
 test:
+	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
 
 ### license-check:    Check Lua source code for Apache License

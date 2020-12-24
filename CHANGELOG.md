@@ -19,7 +19,8 @@
 
 # Table of Contents
 
-
+- [2.1.0](#210)
+- [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
 - [1.4.0](#140)
@@ -32,6 +33,65 @@
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.1.0
+
+### Core
+- :sunrise: **support ENV variable in configuration.** [#2743](https://github.com/apache/apisix/pull/2743)
+- :sunrise: **support TLS connection with etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
+- generate create/update_time automatically. [#2740](https://github.com/apache/apisix/pull/2740)
+- add a deprecate log for enable_websocket in upstream.[#2691](https://github.com/apache/apisix/pull/2691)
+- add a deprecate log for consumer id.[#2829](https://github.com/apache/apisix/pull/2829)
+- Added `X-APISIX-Upstream-Status` header to distinguish 5xx errors from upstream or APISIX itself. [#2817](https://github.com/apache/apisix/pull/2817)
+- support Nginx configuration snippet. [#2803](https://github.com/apache/apisix/pull/2803)
+
+## Plugin
+- :sunrise: **Upgrade protocol to support Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). So this version only supports skywalking 8.0 protocol. This plugin is disabled by default, you need to modify config.yaml to enable, which is not backward compatible.
+- :sunrise: add aliyun sls logging plugin.[#2169](https://github.com/apache/apisix/issues/2169)
+- proxy-cache: the cache_zone field in the schema should be optional.[#2776](https://github.com/apache/apisix/pull/2776)
+- fix: validate plugin configuration in the DP [#2856](https://github.com/apache/apisix/pull/2856)
+
+## Bugfix
+- :bug: fix(etcd): handle etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
+- fix: move `conf/cert` to `t/certs` and disable ssl by default, which is not backward compatible. [#2112](https://github.com/apache/apisix/pull/2112)
+- fix: check decrypt key to prevent lua thread aborted [#2815](https://github.com/apache/apisix/pull/2815)
+
+## Not downward compatible features in future versions
+-In the 2.3 release, the consumer will only support user names and discard the id. The consumer needs to manually clean up the id field in etcd, otherwise the schema verification will report an error during use
+-In the 2.3 release, opening websocket on upstream will no longer be supported
+-In version 3.0, the data plane and control plane will be separated into two independent ports, that is, the current port 9080 will only process data plane requests, and no longer process admin API requests
+
+For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/8)
+
+## 2.0.0
+
+This is release candidate.
+
+### Core
+- :sunrise: **Migrate from etcd v2 to v3 protocol, which is not backward compatible. Apache APISIX only supports etcd 3.4 and above versions.** [#2036](https://github.com/apache/apisix/pull/2036)
+- add labels for upstream object.[#2279](https://github.com/apache/apisix/pull/2279)
+- add managed fields in json schema for resources, such as create_time and update_time.[#2444](https://github.com/apache/apisix/pull/2444)
+- use interceptors to protect plugin's route[#2416](https://github.com/apache/apisix/pull/2416)
+- support multiple ports for http and https listen.[#2409](https://github.com/apache/apisix/pull/2409)
+- implement `core.sleep`.[#2397](https://github.com/apache/apisix/pull/2397)
+
+## Plugin
+- :sunrise: **add AK/SK(HMAC) auth plugin.**[#2192](https://github.com/apache/apisix/pull/2192)
+- :sunrise: add referer-restriction plugin.[#2352](https://github.com/apache/apisix/pull/2352)
+- `limit-count` support to use `redis` cluster.[#2406](https://github.com/apache/apisix/pull/2406)
+- feat(proxy-cache): store the temporary file under cache directory. [#2317](https://github.com/apache/apisix/pull/2317)
+- feat(http-logger): support for specified the log formats via admin API [#2309](https://github.com/apache/apisix/pull/2309)
+
+## Bugfix
+- :bug: **`high priority`** When the data plane receives an instruction to delete a resource(router or upstream etc.), it does not properly clean up the cache, resulting in the existing resources cannot be found. This problem only occurs in the case of long and frequent deletion operations.[#2168](https://github.com/apache/apisix/pull/2168)
+- fix routing priority does not take effect.[#2447](https://github.com/apache/apisix/pull/2447)
+- set random seed for each worker process at `init_worker` phase, only `init` phase is not enough.[#2357](https://github.com/apache/apisix/pull/2357)
+- remove unsupported algorithm in jwt plugin.[#2356](https://github.com/apache/apisix/pull/2356)
+- return correct response code when `http_to_https` enabled in redirect plugin.[#2311](https://github.com/apache/apisix/pull/2311)
+
+For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/7)
+
+## CVE
+- Fixed Admin API default access token vulnerability
 
 ## 1.5.0
 
@@ -47,7 +107,7 @@
 
 ### Improvements
 - change: nginx worker_shutdown_timeout is changed from 3s to recommended value 240s. [1883](https://github.com/apache/apisix/pull/1883)
-- change: the `healthcheck` timeout time type changed from `integer ` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
+- change: the `healthcheck` timeout time type changed from `integer` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
 - change: the `request-validation` plugin input parameter supports `Schema` validation. [1920](https://github.com/apache/apisix/pull/1920)
 - change: add comments for Makefile `install` command. [1912](https://github.com/apache/apisix/pull/1912)
 - change: update comment for config.yaml `etcd.timeout` configuration. [1929](https://github.com/apache/apisix/pull/1929)
@@ -79,12 +139,10 @@
 - doc: fixed `grpc-transcode` plugin path error in `README`. [1946](https://github.com/apache/apisix/pull/1946)
 - doc: removed unnecessary configurations for `k8s` document. [1891](https://github.com/apache/apisix/pull/1891)
 
-
 ## 1.4.1
 
 ### Bugfix
 - Fix: multiple SSL certificates are configured, but only one certificate working fine. [1818](https://github.com/apache/incubator-apisix/pull/1818)
-
 
 ## 1.4.0
 
@@ -103,7 +161,6 @@
 - SSL private key encryption [1678](https://github.com/apache/incubator-apisix/pull/1678)
 - Improvement of docs for multiple plugins
 
-
 ## 1.3.0
 
 The 1.3 version is mainly for security update.
@@ -115,7 +172,6 @@ The 1.3 version is mainly for security update.
 ### Plugin
 - :sunrise: **add batch request plugin**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
 - implemented plugin `sys logger`. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
-
 
 ## 1.2.0
 
@@ -156,14 +212,13 @@ The 1.2 version brings many new features, including core and plugins.
 - the plugin basic-auth needs required field. [#1251](https://github.com/apache/incubator-apisix/pull/1251)
 - check the count of upstream valid node. [#1292](https://github.com/apache/incubator-apisix/pull/1292)
 
-
 ## 1.1.0
 
 This release is mainly to strengthen the stability of the code and add more documentation.
 
 ### Core
 
-- always specify perl include path when runing test cases. [#1097](https://github.com/apache/incubator-apisix/pull/1097)
+- always specify perl include path when running test cases. [#1097](https://github.com/apache/incubator-apisix/pull/1097)
 - Feature: Add support for PROXY Protocol. [#1113](https://github.com/apache/incubator-apisix/pull/1113)
 - enhancement: add verify command to verify apisix configuration(nginx.conf). [#1112](https://github.com/apache/incubator-apisix/pull/1112)
 - feature: increase the default size of the core file. [#1105](https://github.com/apache/incubator-apisix/pull/1105)

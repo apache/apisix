@@ -17,7 +17,9 @@
 
 local lru_new = require("resty.lrucache").new
 local resty_lock = require("resty.lock")
+local log = require("apisix.core.log")
 local tostring = tostring
+local concat = table.concat
 local ngx = ngx
 local get_phase = ngx.get_phase
 
@@ -65,14 +67,22 @@ end
 
 
 local function new_lru_fun(opts)
-    local item_count = opts and opts.count or GLOBAL_ITEMS_COUNT
-    local item_ttl = opts and opts.ttl or GLOBAL_TTL
+    local item_count, item_ttl
+    if opts and opts.type == 'plugin' then
+        item_count = opts.count or PLUGIN_ITEMS_COUNT
+        item_ttl = opts.ttl or PLUGIN_TTL
+    else
+        item_count = opts and opts.count or GLOBAL_ITEMS_COUNT
+        item_ttl = opts and opts.ttl or GLOBAL_TTL
+    end
+
     local item_release = opts and opts.release
     local invalid_stale = opts and opts.invalid_stale
+    local serial_creating = opts and opts.serial_creating
     local lru_obj = lru_new(item_count)
 
     return function (key, version, create_obj_fun, ...)
-        if not can_yield_phases[get_phase()] then
+        if not serial_creating or not can_yield_phases[get_phase()] then
             local cache_obj = fetch_valid_cache(lru_obj, invalid_stale,
                                 item_ttl, item_release, key, version)
             if cache_obj then
@@ -99,6 +109,8 @@ local function new_lru_fun(opts)
         end
 
         local key_s = tostring(key)
+        log.info("try to lock with key ", key_s)
+
         local elapsed, err = lock:lock(key_s)
         if not elapsed then
             return nil, "failed to acquire the lock: " .. err
@@ -108,6 +120,7 @@ local function new_lru_fun(opts)
                         nil, key, version)
         if cache_obj then
             lock:unlock()
+            log.info("unlock with key ", key_s)
             return cache_obj.val
         end
 
@@ -116,6 +129,7 @@ local function new_lru_fun(opts)
             lru_obj:set(key, {val = obj, ver = version}, item_ttl)
         end
         lock:unlock()
+        log.info("unlock with key ", key_s)
 
         return obj, err
     end
@@ -125,27 +139,28 @@ end
 global_lru_fun = new_lru_fun()
 
 
-local function _plugin(plugin_name, key, version, create_obj_fun, ...)
-    local lru_global = global_lru_fun("/plugin/" .. plugin_name, nil,
-                                      lru_new, PLUGIN_ITEMS_COUNT)
+local plugin_ctx
+do
+    local key_buf = {
+        nil,
+        nil,
+        nil,
+    }
 
-    local obj, stale_obj = lru_global:get(key)
-    if obj and obj.ver == version then
-        return obj.val
+    function plugin_ctx(lrucache, api_ctx, extra_key, create_obj_func, ...)
+        key_buf[1] = api_ctx.conf_type
+        key_buf[2] = api_ctx.conf_id
+
+        local key
+        if extra_key then
+            key_buf[3] = extra_key
+            key = concat(key_buf, "#", 1, 3)
+        else
+            key = concat(key_buf, "#", 1, 2)
+        end
+
+        return lrucache(key, api_ctx.conf_version, create_obj_func, ...)
     end
-
-    if stale_obj and stale_obj.ver == version then
-        lru_global:set(key, stale_obj, PLUGIN_TTL)
-        return stale_obj
-    end
-
-    local err
-    obj, err = create_obj_fun(...)
-    if obj ~= nil then
-        lru_global:set(key, {val = obj, ver = version}, PLUGIN_TTL)
-    end
-
-    return obj, err
 end
 
 
@@ -153,14 +168,8 @@ local _M = {
     version = 0.1,
     new = new_lru_fun,
     global = global_lru_fun,
-    plugin = _plugin,
+    plugin_ctx = plugin_ctx,
 }
-
-
-function _M.plugin_ctx(plugin_name, api_ctx, create_obj_fun, ...)
-    local key = api_ctx.conf_type .. "#" .. api_ctx.conf_id
-    return _plugin(plugin_name, key, api_ctx.conf_version, create_obj_fun, ...)
-end
 
 
 return _M

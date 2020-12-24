@@ -31,6 +31,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -61,6 +62,12 @@ __DATA__
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/services/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -164,6 +171,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, message, res = t('/apisix/admin/services',
                  ngx.HTTP_POST,
                  [[{
@@ -198,6 +206,12 @@ GET /t
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.node.key, #"/apisix/services/" + 1)
+            local res = assert(etcd.get('/services/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
             code, message = t('/apisix/admin/services/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -633,6 +647,14 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+
+            local id = 1
+            local res = assert(etcd.get('/services/' .. id))
+            local prev_create_time = res.body.node.value.create_time
+            local prev_update_time = res.body.node.value.update_time
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/services/1',
                 ngx.HTTP_PATCH,
                 [[{
@@ -663,6 +685,12 @@ GET /t
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/services/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -1141,7 +1169,7 @@ passed
                         }
                     }
                 }]],
-                [[{ 
+                [[{
                     "node":{
                         "value":{
                             "desc":"empty service",
@@ -1387,5 +1415,75 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: limit the length of service's name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 require("toolkit.json").encode({name = ("1"):rep(101)})
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"name\" validation failed: string too long, expected at most 100, got 101"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: allow dot in the id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/a.b',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new service"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "desc": "new service"
+                        },
+                        "key": "/apisix/services/a.b"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

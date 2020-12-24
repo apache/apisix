@@ -29,7 +29,7 @@
 
 `mqtt-proxy` 只工作在流模式，它可以帮助你根据 MQTT 的 `client_id` 实现动态负载均衡。
 
-这个插件支持 MQTT [3.1.* ]( http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html )及[5.0]( https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html )两个协议。
+这个插件支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 及[5.0]( https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html )两个协议。
 
 ## 属性
 

@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local schema    = require('apisix.core.schema')
+local table_insert = table.insert
+local table_concat = table.concat
 local setmetatable = setmetatable
 local error     = error
 
@@ -29,7 +31,7 @@ local id_schema = {
     anyOf = {
         {
             type = "string", minLength = 1, maxLength = 64,
-            pattern = [[^[a-zA-Z0-9-_]+$]]
+            pattern = [[^[a-zA-Z0-9-_.]+$]]
         },
         {type = "integer", minimum = 1}
     }
@@ -43,16 +45,27 @@ local host_def = {
 _M.host_def = host_def
 
 
-local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-local ipv6_def = "([a-fA-F0-9]{0,4}:){0,8}(:[a-fA-F0-9]{0,4}){0,8}"
+local ipv4_seg = "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
+local ipv4_def_buf = {}
+for i = 1, 4 do
+    table_insert(ipv4_def_buf, ipv4_seg)
+end
+local ipv4_def = table_concat(ipv4_def_buf, [[\.]])
+-- There is false negative for ipv6/cidr. For instance, `:/8` will be valid.
+-- It is fine as the correct regex will be too complex.
+local ipv6_def = "([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}"
                  .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
-    {title = "IPv4", type = "string", pattern = "^" .. ipv4_def .. "$"},
-    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
-    {title = "IPv6", type = "string", pattern = "^" .. ipv6_def .. "$"},
+    {title = "IPv4", type = "string", format = "ipv4"},
+    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/([12]?[0-9]|3[0-2])$"},
+    {title = "IPv6", type = "string", format = "ipv6"},
     {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
 _M.ip_def = ip_def
+
+
+_M.uri_def = {type = "string", pattern = [=[^[^\/]+:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?]=]}
+
 
 local timestamp_def = {
     type = "integer",
@@ -73,6 +86,13 @@ local label_value_def = {
     minLength = 1
 }
 _M.label_value_def = label_value_def
+
+
+local rule_name_def = {
+    type = "string",
+    maxLength = 100,
+    minLength = 1,
+}
 
 
 local health_checker = {
@@ -256,7 +276,6 @@ local nodes_schema = {
         },
         {
             type = "array",
-            minItems = 1,
             items = {
                 type = "object",
                 properties = {
@@ -302,25 +321,6 @@ local upstream_schema = {
             },
             required = {"connect", "send", "read"},
         },
-        k8s_deployment_info = {
-            type = "object",
-            properties = {
-                namespace = {type = "string", description = "k8s namespace"},
-                deploy_name = {type = "string", description = "k8s deployment name"},
-                service_name = {type = "string", description = "k8s service name"},
-                port = {type = "number", minimum = 0},
-                backend_type = {
-                    type = "string",
-                    default = "pod",
-                    description = "k8s service name",
-                    enum = {"svc", "pod"}
-                },
-            },
-            anyOf = {
-                {required = {"namespace", "deploy_name", "port"}},
-                {required = {"namespace", "service_name", "port"}},
-            },
-        },
         type = {
             description = "algorithms of load balancing",
             type = "string",
@@ -341,10 +341,6 @@ local upstream_schema = {
             description = "the key of chash for dynamic load balancing",
             type = "string",
         },
-        enable_websocket = {
-            description = "enable websocket for request",
-            type        = "boolean"
-        },
         labels = {
             description = "key/value pairs to specify attributes",
             type = "object",
@@ -353,6 +349,10 @@ local upstream_schema = {
             },
             maxProperties = 16
         },
+        discovery_type = {
+            description = "discovery type",
+            type = "string",
+        },
         pass_host = {
             description = "mod of host passing",
             type = "string",
@@ -360,14 +360,18 @@ local upstream_schema = {
             default = "pass"
         },
         upstream_host = host_def,
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
-        service_name = {type = "string", maxLength = 50},
-        id = id_schema
+        service_name = rule_name_def,
+        id = id_schema,
+        -- deprecate fields, will be removed soon
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
     },
     anyOf = {
         {required = {"type", "nodes"}},
-        {required = {"type", "k8s_deployment_info"}},
         {required = {"type", "service_name"}},
     },
     additionalProperties = false,
@@ -403,9 +407,10 @@ _M.route = {
                 description = "HTTP uri",
                 type = "string",
             },
+            minItems = 1,
             uniqueItems = true,
         },
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         priority = {type = "integer", default = 0},
 
@@ -423,12 +428,14 @@ _M.route = {
         hosts = {
             type = "array",
             items = host_def,
+            minItems = 1,
             uniqueItems = true,
         },
         remote_addr = remote_addr_def,
         remote_addrs = {
             type = "array",
             items = remote_addr_def,
+            minItems = 1,
             uniqueItems = true,
         },
         vars = {
@@ -452,7 +459,9 @@ _M.route = {
             pattern = [[^function]],
         },
 
+        -- The 'script' fields below are used by dashboard for plugin orchestration
         script = {type = "string", minLength = 10, maxLength = 102400},
+        script_id = id_schema,
 
         plugins = plugins_schema,
         upstream = upstream_schema,
@@ -471,7 +480,52 @@ _M.route = {
         service_protocol = {
             enum = {"grpc", "http"}
         },
+
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
+
         id = id_schema,
+
+        status = {
+            description = "route status, 1 to enable, 0 to disable",
+            type = "integer",
+            enum = {1, 0},
+            default = 1
+        },
+    },
+    allOf = {
+        {
+            oneOf = {
+                {required = {"uri"}},
+                {required = {"uris"}},
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"host"}},
+                        {required = {"hosts"}},
+                    }
+                }},
+                {required = {"host"}},
+                {required = {"hosts"}}
+            },
+        },
+        {
+            oneOf = {
+                {["not"] = {
+                    anyOf = {
+                        {required = {"remote_addr"}},
+                        {required = {"remote_addrs"}},
+                    }
+                }},
+                {required = {"remote_addr"}},
+                {required = {"remote_addrs"}}
+            },
+        },
     },
     anyOf = {
         {required = {"plugins", "uri"}},
@@ -501,7 +555,7 @@ _M.service = {
         plugins = plugins_schema,
         upstream = upstream_schema,
         upstream_id = id_schema,
-        name = {type = "string", maxLength = 50},
+        name = rule_name_def,
         desc = {type = "string", maxLength = 256},
         script = {type = "string", minLength = 10, maxLength = 102400},
         labels = {
@@ -513,7 +567,12 @@ _M.service = {
             maxProperties = 16
         },
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+        enable_websocket = {
+            description = "enable websocket for request",
+            type        = "boolean",
+        },
+
     },
     additionalProperties = false,
 }
@@ -522,7 +581,6 @@ _M.service = {
 _M.consumer = {
     type = "object",
     properties = {
-        id = id_schema,
         username = {
             type = "string", minLength = 1, maxLength = 32,
             pattern = [[^[a-zA-Z0-9_]+$]]
@@ -538,7 +596,9 @@ _M.consumer = {
         },
         create_time = timestamp_def,
         update_time = timestamp_def,
-        desc = {type = "string", maxLength = 256}
+        desc = {type = "string", maxLength = 256},
+        -- deprecate fields, will be removed soon
+        id = id_schema,
     },
     required = {"username"},
     additionalProperties = false,
@@ -657,6 +717,25 @@ _M.stream_route = {
         upstream = upstream_schema,
         upstream_id = id_schema,
         plugins = plugins_schema,
+    }
+}
+
+
+_M.plugins = {
+    type = "array",
+    items = {
+        type = "object",
+        properties = {
+            name = {
+                type = "string",
+                minLength = 1,
+            },
+            stream = {
+                type = "boolean"
+            },
+            additionalProperties = false,
+        },
+        required = {"name"}
     }
 }
 

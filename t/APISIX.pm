@@ -24,6 +24,7 @@ repeat_each(1);
 log_level('info');
 no_long_string();
 no_shuffle();
+no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
@@ -70,13 +71,16 @@ if ($enable_local_dns) {
 
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
+# enable example-plugin as some tests require it
+$default_yaml_config =~ s/# - example-plugin/- example-plugin/;
+
 my $user_yaml_config = read_file("conf/config.yaml");
-my $ssl_crt = read_file("conf/cert/apisix.crt");
-my $ssl_key = read_file("conf/cert/apisix.key");
-my $ssl_ecc_crt = read_file("conf/cert/apisix_ecc.crt");
-my $ssl_ecc_key = read_file("conf/cert/apisix_ecc.key");
-my $test2_crt = read_file("conf/cert/test2.crt");
-my $test2_key = read_file("conf/cert/test2.key");
+my $ssl_crt = read_file("t/certs/apisix.crt");
+my $ssl_key = read_file("t/certs/apisix.key");
+my $ssl_ecc_crt = read_file("t/certs/apisix_ecc.crt");
+my $ssl_ecc_key = read_file("t/certs/apisix_ecc.key");
+my $test2_crt = read_file("t/certs/test2.crt");
+my $test2_key = read_file("t/certs/test2.key");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
@@ -131,10 +135,16 @@ add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
+    my $lua_deps_path = <<_EOC_;
+    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
+    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+_EOC_
+
     my $main_config = $block->main_config // <<_EOC_;
 worker_rlimit_core  500M;
 env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
+env TEST_NGINX_HTML_DIR;
 _EOC_
 
     # set default `timeout` to 5sec
@@ -145,9 +155,7 @@ _EOC_
 
     my $stream_enable = $block->stream_enable;
     my $stream_config = $block->stream_config // <<_EOC_;
-    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
-
+    $lua_deps_path
     lua_socket_log_errors off;
 
     lua_shared_dict lrucache-lock-stream   10m;
@@ -174,6 +182,7 @@ _EOC_
     init_worker_by_lua_block {
         apisix.stream_init_worker()
     }
+
 
     # fake server, only for test
     server {
@@ -226,13 +235,13 @@ _EOC_
 
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
-    lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;;";
-    lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
+    $lua_deps_path
 
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
     lua_shared_dict plugin-limit-conn    10m;
     lua_shared_dict prometheus-metrics   10m;
+    lua_shared_dict internal_status      10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
@@ -241,6 +250,9 @@ _EOC_
     lua_shared_dict balancer_ewma_locks   1m;
     lua_shared_dict balancer_ewma_last_touched_at  1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
+    lua_shared_dict tracing_buffer       10m;    # plugin skywalking
+    lua_shared_dict plugin-api-breaker   10m;
+    lua_capture_error_log                 1m;    # plugin error-log-logger
 
     resolver $dns_addrs_str;
     resolver_timeout 5;
@@ -264,6 +276,8 @@ _EOC_
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
     }
+
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
 
     # fake server, only for test
     server {
@@ -289,6 +303,20 @@ _EOC_
             }
 
             more_clear_headers Date;
+        }
+
+        location = /v3/auth/authenticate {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "etcd auth failed!")
+            }
+        }
+
+        location  = /.well-known/openid-configuration {
+            content_by_lua_block {
+                ngx.say([[
+{"issuer":"https://samples.auth0.com/","authorization_endpoint":"https://samples.auth0.com/authorize","token_endpoint":"https://samples.auth0.com/oauth/token","device_authorization_endpoint":"https://samples.auth0.com/oauth/device/code","userinfo_endpoint":"https://samples.auth0.com/userinfo","mfa_challenge_endpoint":"https://samples.auth0.com/mfa/challenge","jwks_uri":"https://samples.auth0.com/.well-known/jwks.json","registration_endpoint":"https://samples.auth0.com/oidc/register","revocation_endpoint":"https://samples.auth0.com/oauth/revoke","scopes_supported":["openid","profile","offline_access","name","given_name","family_name","nickname","email","email_verified","picture","created_at","identities","phone","address"],"response_types_supported":["code","token","id_token","code token","code id_token","token id_token","code token id_token"],"code_challenge_methods_supported":["S256","plain"],"response_modes_supported":["query","fragment","form_post"],"subject_types_supported":["public"],"id_token_signing_alg_values_supported":["HS256","RS256"],"token_endpoint_auth_methods_supported":["client_secret_basic","client_secret_post"],"claims_supported":["aud","auth_time","created_at","email","email_verified","exp","family_name","given_name","iat","identities","iss","name","nickname","phone_number","picture","sub"],"request_uri_parameter_supported":false}
+                ]])
+            }
         }
     }
 
@@ -331,6 +359,10 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
+        set \$upstream_scheme             'http';
+        set \$upstream_host               \$host;
+        set \$upstream_uri                '';
+
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             access_log off;
@@ -343,13 +375,16 @@ _EOC_
             }
         }
 
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+
         location / {
             set \$upstream_mirror_host        '';
-            set \$upstream_scheme             'http';
-            set \$upstream_host               \$host;
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
-            set \$upstream_uri                '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
@@ -385,7 +420,6 @@ _EOC_
             proxy_set_header   Upgrade           \$upstream_upgrade;
             proxy_set_header   Connection        \$upstream_connection;
             proxy_set_header   X-Real-IP         \$remote_addr;
-            proxy_pass_header  Server;
             proxy_pass_header  Date;
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;
@@ -432,6 +466,8 @@ _EOC_
                 return 200;
             }
 
+            proxy_http_version 1.1;
+            proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_host\$request_uri;
         }
 _EOC_
@@ -447,6 +483,11 @@ _EOC_
     }
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
+
+    if ($block->extra_yaml_config) {
+        $yaml_config .= $block->extra_yaml_config;
+    }
+
     my $user_debug_config = $block->debug_config // "";
 
     my $user_files = $block->user_files;

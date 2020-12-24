@@ -135,8 +135,20 @@ end
 
 
 function _M.get_upstream_status(ctx)
-    -- $upstream_status maybe including mutiple status, only need the last one
+    -- $upstream_status maybe including multiple status, only need the last one
     return tonumber(str_sub(ctx.var.upstream_status or "", -3))
 end
+
+
+function _M.clear_header_as_body_modified()
+    ngx.header.content_length = nil
+    -- in case of upstream content is compressed content
+    ngx.header.content_encoding = nil
+
+    -- clear cache identifier
+    ngx.header.last_modified = nil
+    ngx.header.etag = nil
+end
+
 
 return _M

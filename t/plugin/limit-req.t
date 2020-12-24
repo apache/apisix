@@ -72,9 +72,10 @@ done
     }
 --- request
 GET /t
---- response_body
-property "conn" is required
+--- response_body_like eval
+qr/property "(conn|default_conn_delay)" is required
 done
+/
 --- no_error_log
 [error]
 
@@ -499,7 +500,7 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {
-                        "key-auth": {} 
+                        "key-auth": {}
                     },
                         "upstream": {
                             "nodes": {

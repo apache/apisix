@@ -26,18 +26,17 @@ apisix:
   node_listen: 1984
   config_center: yaml
   enable_admin: false
-  discovery: eureka
-
-eureka:
-  host:
-    - "http://127.0.0.1:8761"
-  prefix: "/eureka/"
-  fetch_interval: 10
-  weight: 80
-  timeout:
-    connect: 1500
-    send: 1500
-    read: 1500
+discovery:
+  eureka:
+    host:
+      - "http://127.0.0.1:8761"
+    prefix: "/eureka/"
+    fetch_interval: 10
+    weight: 80
+    timeout:
+      connect: 1500
+      send: 1500
+      read: 1500
 _EOC_
 
 run_tests();
@@ -52,6 +51,7 @@ routes:
     uri: /eureka/*
     upstream:
       service_name: APISIX-EUREKA
+      discovery_type: eureka
       type: roundrobin
 
 #END
@@ -78,6 +78,7 @@ routes:
     uri: /eureka/*
     upstream:
       service_name: APISIX-EUREKA-DEMO
+      discovery_type: eureka
       type: roundrobin
 
 #END
@@ -100,6 +101,7 @@ routes:
         regex_uri: ["^/eureka-test/(.*)", "/${1}"]
     upstream:
       service_name: APISIX-EUREKA
+      discovery_type: eureka
       type: roundrobin
 
 #END

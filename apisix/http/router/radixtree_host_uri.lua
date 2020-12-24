@@ -17,6 +17,7 @@
 local require = require
 local router = require("resty.radixtree")
 local core = require("apisix.core")
+local http_route = require("apisix.http.route")
 local ipairs = ipairs
 local type = type
 local error = error
@@ -61,9 +62,10 @@ local function push_host_router(route, host_routes, only_uri_routes)
                        or route.value.remote_addr,
         vars = route.value.vars,
         filter_fun = filter_fun,
-        handler = function (api_ctx)
+        handler = function (api_ctx, match_opts)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
+            api_ctx.curr_req_matched = match_opts.matched
         end
     }
 
@@ -92,7 +94,11 @@ local function create_radixtree_router(routes)
     host_router = nil
 
     for _, route in ipairs(routes or {}) do
-        push_host_router(route, host_routes, only_uri_routes)
+        local status = core.table.try_read_attr(route, "value", "status")
+        -- check the status
+        if not status or status == 1 then
+            push_host_router(route, host_routes, only_uri_routes)
+        end
     end
 
     -- create router: host_router
@@ -130,16 +136,17 @@ function _M.match(api_ctx)
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
     match_opts.host = api_ctx.var.host
+    match_opts.matched = core.tablepool.fetch("matched_route_record", 0, 4)
 
     if host_router then
         local host_uri = api_ctx.var.host
-        local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx)
+        local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx, match_opts)
         if ok then
             return true
         end
     end
 
-    local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx)
+    local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
     return ok
 end
 
@@ -158,6 +165,7 @@ function _M.init_worker(filter)
     user_routes, err = core.config.new("/routes", {
             automatic = true,
             item_schema = core.schema.route,
+            checker = http_route.check_route,
             filter = filter,
         })
     if not user_routes then

@@ -16,43 +16,17 @@
 # limitations under the License.
 #
 
-set -ex
-
-export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
-    export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
-}
+. ./.travis/common.sh
 
 do_install() {
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-    sudo apt-get -y update --fix-missing
-    sudo apt-get -y install software-properties-common
-    sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-
-    sudo apt-get update
-    sudo apt-get install openresty-debug lua5.1 liblua5.1-0-dev
-
-    wget https://github.com/luarocks/luarocks/archive/v2.4.4.tar.gz
-    tar -xf v2.4.4.tar.gz
-    cd luarocks-2.4.4
-    ./configure --prefix=/usr > build.log 2>&1 || (cat build.log && exit 1)
-    make build > build.log 2>&1 || (cat build.log && exit 1)
-    sudo make install > build.log 2>&1 || (cat build.log && exit 1)
-    cd ..
-    rm -rf luarocks-2.4.4
-
-    ./utils/install-etcd.sh
+    ./utils/linux-install-openresty.sh
+    ./utils/linux-install-luarocks.sh
+    ./utils/linux-install-etcd-client.sh
 }
 
 script() {
     export_or_prefix
-    export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     openresty -V
-    sudo service etcd stop
-    mkdir -p ~/etcd-data
-    etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls='http://0.0.0.0:2379' --data-dir ~/etcd-data > /dev/null 2>&1 &
-    etcd --version
-    sleep 5
 
     sudo rm -rf /usr/local/apisix
 
@@ -64,6 +38,9 @@ script() {
     sudo mkdir -p /usr/local/apisix/deps
     sudo PATH=$PATH ./utils/install-apisix.sh install > build.log 2>&1 || (cat build.log && exit 1)
 
+    which apisix
+
+    # run test
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start

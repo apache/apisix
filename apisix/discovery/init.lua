@@ -17,15 +17,25 @@
 
 local log          = require("apisix.core.log")
 local local_conf   = require("apisix.core.config_local").local_conf()
+local pairs        = pairs
 
-local discovery_type = local_conf.apisix and local_conf.apisix.discovery
-local discovery
+local discovery_type = local_conf.discovery
+local discovery = {}
 
 if discovery_type then
-    log.info("use discovery: ", discovery_type)
-    discovery = require("apisix.discovery." .. discovery_type)
+    for discovery_name, _ in pairs(discovery_type) do
+        log.info("use discovery: ", discovery_name)
+        discovery[discovery_name] = require("apisix.discovery." .. discovery_name)
+    end
 end
 
+function discovery.init_worker()
+    if discovery_type then
+        for discovery_name, _ in pairs(discovery_type) do
+            discovery[discovery_name].init_worker()
+        end
+    end
+end
 
 return {
     version = 0.1,
