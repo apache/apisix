@@ -1336,7 +1336,7 @@ passed
 === TEST 72:  tigger metircs batch-process-metrics
 --- request
 GET /batch-process-metrics-10
---- error_code: 
+--- error_code: 404
 
 
 
