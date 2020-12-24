@@ -49,7 +49,8 @@ function _M.new(conf)
         service_name = service_name,
         server_addr = server_addr,
         server_port = server_port,
-        pending_spans_n = 0
+        pending_spans_n = 0,
+        route_id = conf.route_id
     }, mt)
 end
 
@@ -144,7 +145,9 @@ function _M.init_processor(self)
         batch_max_size = 1000,
         max_retry_count = 0,
         buffer_duration = 60,
-        inactive_timeout = 5
+        inactive_timeout = 5,
+        route_id = self.route_id,
+        server_addr = self.server_addr,
     }
 
     local flush = function (entries, batch_max_size)
