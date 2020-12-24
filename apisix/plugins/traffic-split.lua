@@ -269,11 +269,12 @@ function _M.access(conf, ctx)
     end
 
     local upstreams, match_flag
-    for _, rule in pairs(conf.rules) do
+    for _, rule in ipairs(conf.rules) do
         match_flag = true
         for _, single_match in ipairs(rule.match) do
             local expr, err = expr.new(single_match.vars)
             if err then
+                core.log.error("vars expression does not match: ", err)
                 return 500, err
             end
 
@@ -288,7 +289,6 @@ function _M.access(conf, ctx)
             break
         end
     end
-
     core.log.info("match_flag: ", match_flag)
 
     if not match_flag then

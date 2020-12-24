@@ -37,6 +37,8 @@
 
 The traffic division plugin divides the request traffic according to the specified ratio and diverts it to the corresponding upstream; through this plugin, gray-scale publishing, blue-green publishing and custom publishing functions can be realized.
 
+Note: Since the selection of different upstreams in the plugin is based on the roundrobin algorithm, the ratio of traffic distribution is not completely accurate when the algorithm state is reset.
+
 ## Attributes
 
 | Name             | Type    | Requirement | Default | Valid   | Description                                                                              |
