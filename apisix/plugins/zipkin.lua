@@ -82,6 +82,7 @@ local function create_tracer(conf,ctx)
         conf.sample_ratio = 1
     end
 
+    conf.route_id = ctx.route_id
     local reporter = new_reporter(conf)
     reporter:init_processor()
     local tracer = new_tracer(reporter, new_random_sampler(conf))
