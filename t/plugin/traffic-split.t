@@ -908,10 +908,8 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
-        local headers = {}
-        headers["appkey"] = "hello"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1059,10 +1057,8 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
-        local headers = {}
-        headers["appkey"] = "hello"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1134,10 +1130,8 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
-        local headers = {}
-        headers["appkey"] = "hello"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1148,5 +1142,77 @@ location /t {
 GET /t
 --- response_body
 1980, 1981, 1981, 1982, 1982
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: multiple upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}]}, "weighted_upstream": 2},
+                                        {"upstream": {"name": "upstream_B", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weighted_upstream": 2}                                        
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 35: the upstream `key` is unique
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        for i = 1, 2 do
+            local _, _, body = t('/server_port', ngx.HTTP_GET)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1981, 1982
+--- grep_error_log eval
+qr/upstream_key: roundrobin#route_1_\d/
+--- grep_error_log_out
+upstream_key: roundrobin#route_1_1
+upstream_key: roundrobin#route_1_2
 --- no_error_log
 [error]

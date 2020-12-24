@@ -241,20 +241,28 @@ local function set_upstream(upstream_info, ctx)
     end
 
     local matched_route = ctx.matched_route
-    upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
-                ctx.conf_version, up_conf, matched_route)
+    local upstream_key = up_conf.type .. "#route_" ..
+                         matched_route.value.id .. "_" ..upstream_info.vid
+    core.log.info("upstream_key: ", upstream_key)
+    upstream.set(ctx, upstream_key, ctx.conf_version, up_conf, matched_route)
+
     return
 end
 
 
 local function new_rr_obj(upstreams)
     local server_list = {}
-    for _, upstream_obj in ipairs(upstreams) do
+    for i, upstream_obj in ipairs(upstreams) do
         if not upstream_obj.upstream then
             -- If the `upstream` object has only the `weighted_upstream` value, it means
             -- that the `upstream` weight value on the default `route` has been reached.
             -- Need to set an identifier to mark the empty upstream.
             upstream_obj.upstream = "empty_upstream"
+        end
+
+        if type(upstream_obj.upstream) == "table" then
+            -- Add a virtual id field to uniquely identify the upstream `key`.
+            upstream_obj.upstream.vid = i
         end
         server_list[upstream_obj.upstream] = upstream_obj.weighted_upstream
     end
