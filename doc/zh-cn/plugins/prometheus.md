@@ -123,7 +123,7 @@ plugin_attr:
 * `Bandwidth`: 流经apisix的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
 * `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1来表示。
 * `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
-* `Batch process entries`: 批处理未发送数据统计，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到当前尚未发送的数据量。
+* `Batch process entries`: 批处理未发送数据统计，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到批处理当前尚未发送的数据量。
 这里是apisix的原始的指标数据集:
 
 ```

@@ -125,7 +125,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 * `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
 * `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
-* `Batch process entries`: A gauge type, when we use plugins such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, the surplus entries which not sended will be statistics in the metrics.
+* `Batch process entries`: A gauge type, when we use plugins and the plugin used batch process to send data, such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, then the entries which hasn't been sent in batch process will be counted in the metrics.
 
 Here is the original metric data of apisix:
 
