@@ -183,8 +183,13 @@ function _M.http_ssl_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
+        -- clear the ctx of the ssl phase, avoid affecting other phases
+        ngx.ctx = nil
         ngx_exit(-1)
     end
+
+    -- clear the ctx of the ssl phase, avoid affecting other phases
+    ngx.ctx = nil
 end
 
 
@@ -334,12 +339,9 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    -- always fetch table from the table pool, we don't need a reused api_ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
 
