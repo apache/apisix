@@ -99,6 +99,6 @@ jobs:
         docker exec centos7Instance bash -c "PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/luajit/bin:/usr/local/openresty-debug/bin:$PATH cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)"
         docker exec centos7Instance bash -c "mkdir build-cache && wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz && tar -xvf grpc_server_example-amd64.tar.gz && mv grpc_server_example build-cache/"
         docker exec centos7Instance bash -c "git clone https://github.com/iresty/grpc_server_example.git grpc_server_example && cd grpc_server_example/ && mv proto/ ../build-cache/"
-        docker exec centos7Instance bash -c "PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/luajit/bin:/usr/local/openresty-debug/bin:$PATH && nohup ./build-cache/grpc_server_example &"
+        docker exec centos7Instance bash -c "PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/luajit/bin:/usr/local/openresty-debug/bin:$PATH && ./build-cache/grpc_server_example"
         docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH && make init"
-        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t"
+        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/plugin/grpc-transcode.t"
