@@ -19,6 +19,8 @@
 
 # Table of Contents
 
+- [2.1.0](#210)
+- [2.0.0](#200)
 - [1.5.0](#150)
 - [1.4.1](#141)
 - [1.4.0](#140)
@@ -31,6 +33,65 @@
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.1.0
+
+### Core
+- :sunrise: **支持使用环境变量来配置参数.** [#2743](https://github.com/apache/apisix/pull/2743)
+- :sunrise: **支持使用 TLS 来连接 etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
+- 自动生成对象的创建和更新时间. [#2740](https://github.com/apache/apisix/pull/2740)
+- 在上游中开启 websocket 时，增加日志来提示此功能即将废弃.[#2691](https://github.com/apache/apisix/pull/2691)
+- 增加日志来提示 consumer id 即将废弃.[#2829](https://github.com/apache/apisix/pull/2829)
+- 增加 `X-APISIX-Upstream-Status` 头来区分 5xx 错误来自上游还是 APISIX 自身。[#2817](https://github.com/apache/apisix/pull/2817)
+- 支持 Nginx 配置片段。[#2803](https://github.com/apache/apisix/pull/2803)
+
+## Plugin
+- :sunrise: **升级协议来 Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). 这个版本只支持 skywalking 8.0 协议。此插件默认关闭，需要修改 config.yaml 来开启。这是不向下兼容的修改。
+- :sunrise: 新增阿里云 sls 日志服务插件。[#2169](https://github.com/apache/apisix/issues/2169)
+- proxy-cache: cache_zone 字段改为可选.[#2776](https://github.com/apache/apisix/pull/2776)
+- 在数据平面校验插件的配置。[#2856](https://github.com/apache/apisix/pull/2856)
+
+## Bugfix
+- :bug: fix(etcd): 处理 etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
+- 将 `conf/cert` 中的测试证书移动到 `t/certs` 目录中，并且默认关闭 SSL。这是不向下兼容的修改。 [#2112](https://github.com/apache/apisix/pull/2112)
+- 检查 decrypt key 来阻止 lua thread 中断。 [#2815](https://github.com/apache/apisix/pull/2815)
+
+## 不向下兼容特性预告
+- 在 2.3 发布版本中，consumer 将只支持用户名，废弃 id，consumer需要在 etcd 中手工清理掉 id 字段，不然使用时 schema 校验会报错
+- 在 2.3 发布版本中，将不再支持在 upstream 上开启 websocket
+- 在 3.0 版本中，数据平面和控制平面将分开为两个独立的端口，即现在的 9080 端口将只处理数据平面的请求，不再处理 admin API 的请求
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/8)
+
+## 2.0.0
+
+这是一个 release candidate。
+
+### Core
+- :sunrise: **从 etcd v2 协议迁移到 v3，这是不向下兼容的修改。Apache APISIX 只支持 etcd 3.4 以及后续的版本。** [#2036](https://github.com/apache/apisix/pull/2036)
+- 支持为上游对象增加标签。[#2279](https://github.com/apache/apisix/pull/2279)
+- 为上游、路由等资源增加更多字段，比如 create_time 和 update_time。[#2444](https://github.com/apache/apisix/pull/2444)
+- 使用拦截器来保护插件的路由。[#2416](https://github.com/apache/apisix/pull/2416)
+- 支持 http 和 https 监听多个端口。[#2409](https://github.com/apache/apisix/pull/2409)
+- 实现 `core.sleep` 函数。[#2397](https://github.com/apache/apisix/pull/2397)
+
+## Plugin
+- :sunrise: **增加 AK/SK(HMAC) 认证插件。**[#2192](https://github.com/apache/apisix/pull/2192)
+- :sunrise: 增加 referer-restriction 插件。[#2352](https://github.com/apache/apisix/pull/2352)
+- `limit-count` 插件支持 `redis` cluster。[#2406](https://github.com/apache/apisix/pull/2406)
+- proxy-cache 插件支持存储临时文件。[#2317](https://github.com/apache/apisix/pull/2317)
+- http-logger 插件支持通过 admin API 来指定文件格式。[#2309](https://github.com/apache/apisix/pull/2309)
+
+## Bugfix
+- :bug: **`高优先级`** 当数据平面接收到删除某一个资源(路由、上游等)的指令时，没有正确的清理缓存，导致存在的资源也会找不到。这个问题在长时间、频繁删除操作的情况下才会出现。[#2168](https://github.com/apache/apisix/pull/2168)
+- 修复路由优先级不生效的问题。[#2447](https://github.com/apache/apisix/pull/2447)
+- 在 `init_worker` 阶段设置随机数, 而不是 `init` 阶段。[#2357](https://github.com/apache/apisix/pull/2357)
+- 删除 jwt 插件中不支持的算法。[#2356](https://github.com/apache/apisix/pull/2356)
+- 当重定向插件的 `http_to_https` 开启时，返回正确的响应码。[#2311](https://github.com/apache/apisix/pull/2311)
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/7)
+
+## CVE
+- 修复 Admin API 默认访问令牌漏洞
 
 ## 1.5.0
 
@@ -46,7 +107,7 @@
 
 ### Improvements
 - 变更：nginx `worker_shutdown_timeout` 配置默认值由 `3s` 变更为推荐值 `240s`。[1883](https://github.com/apache/apisix/pull/1883)
-- 变更：`healthcheck` 超时时间类型 由 `integer ` 变更为 `number`。[1892](https://github.com/apache/apisix/pull/1892)
+- 变更：`healthcheck` 超时时间类型 由 `integer` 变更为 `number`。[1892](https://github.com/apache/apisix/pull/1892)
 - 变更：`request-validation` 插件输入参数支持 `JsonSchema` 验证。[1920](https://github.com/apache/apisix/pull/1920)
 - 变更：为 Makefile `install` 命令添加注释。[1912](https://github.com/apache/apisix/pull/1912)
 - 变更：更新 config.yaml `etcd.timeout` 默认配置的注释。[1929](https://github.com/apache/apisix/pull/1929)
@@ -77,7 +138,6 @@
 - 文档：修正 `README` 中 `uri-blocker` 文档路径。[1950](https://github.com/apache/apisix/pull/1950)
 - 文档：修正 `README` 中 `grpc-transcode` 文档路径。[1946](https://github.com/apache/apisix/pull/1946)
 - 文档: 删除 `k8s` 文档中不必要的配置。[1891](https://github.com/apache/apisix/pull/1891)
-
 
 ## 1.4.1
 
@@ -112,7 +172,6 @@
 ### Plugin
 - :sunrise: **新增 batch request 插件**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
 - 实现完成 `sys logger` 插件. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
-
 
 ## 1.2.0
 1.2 版本在内核以及插件上带来了非常多的更新。
@@ -152,7 +211,6 @@
 - basic-auth 增加 required 字段. [#1251](https://github.com/apache/incubator-apisix/pull/1251)
 - 检查上游合法节点的个数. [#1292](https://github.com/apache/incubator-apisix/pull/1292)
 
-
 ## 1.1.0
 
 这个版本主要是加强代码的稳定性，以及增加更多的文档。
@@ -186,7 +244,6 @@
 - 「节点状态」插件使用 nginx 内部请求替换原来的外部请求。 [#1109](https://github.com/apache/incubator-apisix/pull/1109)
 - 增加 wolf-rbac 插件。 [#1095](https://github.com/apache/incubator-apisix/pull/1095)
 - 增加 udp-logger 插件。 [#1070](https://github.com/apache/incubator-apisix/pull/1070)
-
 
 ## 1.0.0
 
@@ -225,7 +282,6 @@
 - 安装程序增加了仪表盘开关，支持用户自主选择是否安装仪表板程序。 [#686](https://github.com/apache/incubator-apisix/pull/686)
 - 取消对 R3 路由的支持，并移除 R3 路由模块。 [#725](https://github.com/apache/incubator-apisix/pull/725)
 
-
 ### Plugins
 - :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/redirect.md)**： URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
 - [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/doc/plugins/proxy-rewrite.md)：支持 `header` 删除功能。 [#658](https://github.com/apache/incubator-apisix/pull/658)
@@ -246,10 +302,8 @@
 - 在APISIX CLI中跳过 luajit 环境的`check cjson`。[#652](https://github.com/apache/incubator-apisix/pull/652)
 - 配置 `Upstream` 时，选择 `balancer` 类型为 `chash` 时，支持更多Nginx内置变量作为计算key。 [#775](https://github.com/apache/incubator-apisix/pull/775)
 
-
 ### Dependencies
 - 使用 `lua-resty-jsonschema` 全局替换 `lua-rapidjson` 扩展，`lua-resty-jsonschema` 解析速度更快，更容易编译。
-
 
 ## 0.8.0
 > Released on 2019/09/30
@@ -278,7 +332,6 @@
     - 允许指定多个 host, remote_addr 和 uri。
     - 允许设置用户自定义函数来做额外的过滤。
     - 使用 `lua-resty-ipmatcher` 替代 `lua-resty-iputils`, `lua-resty-ipmatcher` 支持 IPv6 并且速度更快。
-
 
 ### Bugfix
 - 健康检查: 修复在多 worker 下运行时健康检查 checker 的名字错误。 [#568](https://github.com/apache/incubator-apisix/issues/568)
@@ -314,9 +367,7 @@
 ### Dashboard
 - :sunrise: **增加在线版本的 dashboard**，用户不用安装即可[体验 APISIX](http://apisix.iresty.com/). [#374](https://github.com/apache/incubator-apisix/issues/374)
 
-
 [Back to TOC](#table-of-contents)
-
 
 ## 0.6.0
 

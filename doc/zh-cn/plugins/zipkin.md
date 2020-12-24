@@ -125,7 +125,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f03433
 
 现在就已经移除了 Zipkin 插件了。其他插件的开启和移除也是同样的方法。
 
-
 ## 上游服务是Golang的示例代码
 
 ```golang
@@ -164,4 +163,3 @@ func main(){
 
 }
 ```
-

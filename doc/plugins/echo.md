@@ -26,7 +26,6 @@
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `echo` is a a useful plugin to help users understand as fully as possible how to develop an APISIX plugin.

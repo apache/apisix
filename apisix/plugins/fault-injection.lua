@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core          = require("apisix.core")
-local sleep         = core.sleep
+local core = require("apisix.core")
+
+local sleep = core.sleep
+local random = math.random
 
 local plugin_name   = "fault-injection"
 
@@ -28,15 +30,17 @@ local schema = {
             properties = {
                 http_status = {type = "integer", minimum = 200},
                 body = {type = "string", minLength = 0},
+                percentage = {type = "integer", minimum = 0, maximum = 100}
             },
-            minProperties = 1,
+            required = {"http_status"},
         },
         delay = {
             type = "object",
             properties = {
                 duration = {type = "number", minimum = 0},
+                percentage = {type = "integer", minimum = 0, maximum = 100}
             },
-            minProperties = 1,
+            required = {"duration"},
         }
     },
     minProperties = 1,
@@ -49,6 +53,15 @@ local _M = {
     name = plugin_name,
     schema = schema,
 }
+
+
+local function sample_hit(percentage)
+    if not percentage then
+        return true
+    end
+
+    return random(1, 100) <= percentage
+end
 
 
 function _M.check_schema(conf)
@@ -64,12 +77,12 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    if conf.delay and conf.delay.duration ~= nil then
+    if conf.delay and sample_hit(conf.delay.percentage) then
         sleep(conf.delay.duration)
     end
 
-    if conf.abort and conf.abort.http_status ~= nil then
-        return conf.abort.http_status, conf.abort.body
+    if conf.abort and sample_hit(conf.abort.percentage) then
+        return conf.abort.http_status, core.utils.resolve_var(conf.abort.body, ctx.var)
     end
 end
 

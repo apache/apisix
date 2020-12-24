@@ -570,12 +570,24 @@ passed
 
 
 === TEST 20: hit route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/grpctest',
+                ngx.HTTP_POST,
+                [[
+                {"name":"apisix", "items": ["a","b","c"]}
+                ]],
+                [[
+                {"message":"Hello apisix", "items": ["a","b","c"]}
+                ]],
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.status = code
+        }
+    }
 --- request
-POST /grpctest
-{"name":"apisix", "items": ["a","b","c"]}
---- more_headers
-Content-Type: application/json
---- response_body eval
-qr/\{"items":\["a","b","c"\],"message":"Hello apisix"\}/
+GET /t
 --- no_error_log
 [error]

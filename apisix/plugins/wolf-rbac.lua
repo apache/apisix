@@ -33,6 +33,10 @@ local string   = string
 local plugin_name = "wolf-rbac"
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -62,17 +66,17 @@ local _M = {
 
 local create_consume_cache
 do
-    local consumer_ids = {}
+    local consumer_names = {}
 
     function create_consume_cache(consumers)
-        core.table.clear(consumer_ids)
+        core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_ids[consumer.auth_conf.appid] = consumer
+            consumer_names[consumer.auth_conf.appid] = consumer
         end
 
-        return consumer_ids
+        return consumer_names
     end
 
 end -- do
@@ -274,9 +278,8 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Missing related consumer")
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]
@@ -304,9 +307,9 @@ function _M.rewrite(conf, ctx)
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
         core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(prefix .. "UserId", userId)
-        core.request.set_header(prefix .. "Username", username)
-        core.request.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(ctx, prefix .. "UserId", userId, ctx)
+        core.request.set_header(ctx, prefix .. "Username", username)
+        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then
@@ -344,9 +347,8 @@ local function get_consumer(appid)
         core.response.exit(500)
     end
 
-    local consumers = core.lrucache.plugin(plugin_name, "consumers_key",
-            consumer_conf.conf_version,
-            create_consume_cache, consumer_conf)
+    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
+        create_consume_cache, consumer_conf)
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]

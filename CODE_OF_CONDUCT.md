@@ -44,7 +44,6 @@ it can enrich all of us and the technical communities in which we participate.
 
 We strive to:
 
-
 1. __Be open.__ We invite anyone to participate in our community. We preferably use public methods of communication for project-related messages, unless discussing something sensitive. This applies to messages for help or project-related support, too; not only is a public support request much more likely to result in an answer to a question, it also makes sure that any inadvertent mistakes made by people answering will be more easily detected and corrected.
 
 2. __Be `empathetic`, welcoming, friendly, and patient.__ We work together to resolve conflict, assume good intentions, and do our best to act in an empathetic fashion. We may all experience some frustration from time to time, but we do not allow frustration to turn into a personal attack. A community where people feel uncomfortable or threatened is not a productive one. We should be respectful when dealing with other community members as well as with people outside our community.
@@ -73,7 +72,6 @@ We strive to:
       Try to stay on topic, especially in discussions that are already fairly large.
 
 7. __Step down considerately.__ Members of every project come and go. When somebody leaves or disengages from the project they should tell people they are leaving and take the proper steps to ensure that others can pick up where they left off. In doing so, they should remain respectful of those who continue to participate in the project and should not misrepresent the project's goals or achievements. Likewise, community members should respect any individual's choice to leave the project.</p>
-
 
 ## Diversity Statement ##
 
@@ -107,18 +105,14 @@ or one of our volunteers:
 
 If the violation is in documentation or code, for example inappropriate pronoun usage or word choice within official documentation, we ask that people report these privately to the project in question at private@<em>project</em>.apache.org, and, if they have sufficient ability within the project, to resolve or remove the concerning material, being mindful of the perspective of the person originally reporting the issue.
 
-
 ## End Notes ##
 
 This Code defines __empathy__ as "a vicarious participation in the emotions, ideas, or opinions of others; the ability to imagine oneself in the condition or predicament of another." __Empathetic__ is the adjectival form of empathy.
 
-
 This statement thanks the following, on which it draws for content and inspiration:
-
 
   * [CouchDB Project Code of conduct](http://couchdb.apache.org/conduct.html)
   * [Fedora Project Code of Conduct](http://fedoraproject.org/code-of-conduct)
-  * [Speak Up! Code of Conduct](http://speakup.io/coc.html)
   * [Django Code of Conduct](https://www.djangoproject.com/conduct/)
   * [Debian Code of Conduct](http://www.debian.org/vote/2014/vote_002)
   * [Twitter Open Source Code of Conduct](https://github.com/twitter/code-of-conduct/blob/master/code-of-conduct.md)

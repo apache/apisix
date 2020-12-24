@@ -346,7 +346,7 @@ service_id: 1
 
 
 === TEST 14: create consumer and bind key-auth plugin
---- config 
+--- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
@@ -405,7 +405,7 @@ passed
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
@@ -459,7 +459,7 @@ consumer_name: consumer_jack
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
@@ -484,7 +484,7 @@ consumer_name: consumer_name is nil
 
 
 
-=== TEST 19: create route and consumer_id is consumer_jack
+=== TEST 19: create route and consumer_name is consumer_jack
 --- config
     location /t {
         content_by_lua_block {
@@ -504,7 +504,7 @@ consumer_name: consumer_name is nil
                         "key-auth": {},
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_id: \", ngx.ctx.api_ctx.var.consumer_id) end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_name: \", ngx.ctx.api_ctx.var.consumer_name) end"]
                         }
                     }
                 }]]
@@ -512,7 +512,7 @@ consumer_name: consumer_name is nil
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
@@ -525,7 +525,7 @@ passed
 
 
 
-=== TEST 20: consumer_id is `consumer_jack`
+=== TEST 20: consumer_name is `consumer_jack`
 --- request
 GET /hello
 --- more_headers
@@ -533,13 +533,13 @@ apikey: auth-jack
 --- response_body
 hello world
 --- error_log
-consumer_id: consumer_jack
+consumer_name: consumer_jack
 --- no_error_log
 [error]
 
 
 
-=== TEST 21: update the route, and the consumer_id is nil
+=== TEST 21: update the route, and the consumer_name is nil
 --- config
     location /t {
         content_by_lua_block {
@@ -558,7 +558,7 @@ consumer_id: consumer_jack
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_id: \", ngx.ctx.api_ctx.var.consumer_id or 'consumer_id is nil') end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"consumer_name: \", ngx.ctx.api_ctx.var.consumer_name or 'consumer_name is nil') end"]
                         }
                     }
                 }]]
@@ -566,7 +566,7 @@ consumer_id: consumer_jack
 
             if code >= 300 then
                 ngx.status = code
-            end   
+            end
             ngx.say(body)
         }
     }
@@ -579,12 +579,333 @@ passed
 
 
 
-=== TEST 22: consumer_id is nil
+=== TEST 22: consumer_name is nil
 --- request
 GET /hello
 --- response_body
 hello world
 --- error_log
-consumer_id: consumer_id is nil
+consumer_name: consumer_name is nil
 --- no_error_log
 [error]
+
+
+
+=== TEST 23: add plugin metadata `service_name`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "service_name": "$service_name"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "log_format": {
+                                "service_name": "$service_name"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: add `http-logger` plugin on service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "name": "ctx_var-support-service_name",
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1,
+                            "max_retry_count": 1,
+                            "retry_delay": 2,
+                            "buffer_duration": 2,
+                            "concat_method": "json"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: route binding service and concat_method is json
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": 1,
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: hit route and report http logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log: \{"route_id":"1","service_id":"1","service_name":"ctx_var-support-service_name"\}/
+
+
+
+=== TEST 27: log_format is configured with `service_name`, but there is no matching service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1,
+                            "max_retry_count": 1,
+                            "retry_delay": 2,
+                            "buffer_duration": 2,
+                            "concat_method": "json"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: hit route but there is no matching service
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log: \{"route_id":"1"\}/
+
+
+
+=== TEST 29: add plugin metadata `route_name`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "route_name": "$route_name"
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "log_format": {
+                                "route_name": "$route_name"
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: sanity, batch_max_size=1 and concat_method is json
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "name": "ctx_var-support-route_name",
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1,
+                            "max_retry_count": 1,
+                            "retry_delay": 2,
+                            "buffer_duration": 2,
+                            "concat_method": "json"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: hit route and report http logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log: \{"route_id":"1","route_name":"ctx_var-support-route_name"\}/
+
+
+
+=== TEST 32: missing `name` field, batch_max_size=1 and concat_method is json
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1,
+                            "max_retry_count": 1,
+                            "retry_delay": 2,
+                            "buffer_duration": 2,
+                            "concat_method": "json"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: hit route and report http logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log eval
+qr/request log: \{"route_id":"1"\}/

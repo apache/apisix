@@ -149,7 +149,7 @@ done
                 ngx.say("failed to load plugins: ", err)
             end
 
-            local encode_json = require "cjson.safe" .encode
+            local encode_json = require("toolkit.json").encode
             for _, plugin in ipairs(plugins) do
                 ngx.say("plugin name: ", plugin.name,
                         " priority: ", plugin.priority)
@@ -200,7 +200,7 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
                 modifiedIndex = 1,
             })
 
-            local encode_json = require "cjson.safe" .encode
+            local encode_json = require("toolkit.json").encode
             for i = 1, #filter_plugins, 2 do
                 local plugin = filter_plugins[i]
                 local plugin_conf = filter_plugins[i + 1]

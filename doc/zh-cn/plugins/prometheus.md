@@ -29,7 +29,7 @@
 
 ## 接口
 
-插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](plugin-interceptors.md)
+插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](../../plugin-interceptors.md)
 来保护它。
 
 ## 如何开启插件
@@ -69,7 +69,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
-把改uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
+把该uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
 
 例子如下:
 
@@ -87,6 +87,21 @@ scrape_configs:
 
 ![](../../images/plugin/prometheus02.png)
 
+## 如何修改暴露指标的uri
+
+我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的uri
+
+| 名称         | 类型   | 默认值   | 描述                                                  |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的uri |
+
+配置示例:
+
+```yaml
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
+```
 
 ### Grafana 面板
 

@@ -54,7 +54,6 @@
 | retry_delay      | integer | 可选   | 1      | [0,...] | 如果执行失败，则应延迟执行流程的秒数             |
 | include_req_body | boolean | 可选   |        |         | 是否包括请求 body                                |
 
-
 ## 如何开启
 
 1. 下面例子展示了如何为指定路由开启 `tcp-logger` 插件的。

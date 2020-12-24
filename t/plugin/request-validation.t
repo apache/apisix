@@ -101,7 +101,7 @@ done
                                     }
                                 }
                             }
-                        },
+                        },]] .. [[
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1982": 1
@@ -109,46 +109,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-validation": {
-                                "body_schema": {
-                                    "type": "object",
-                                    "required": ["required_payload"],
-                                    "properties": {
-                                        "required_payload": {"type": "string"},
-                                        "boolean_payload": {"type": "boolean"},
-                                        "timeouts": {
-                                            "type": "integer",
-                                            "minimum": 1,
-                                            "maximum": 254,
-                                            "default": 3
-                                        },
-                                        "req_headers": {
-                                            "type": "array",
-                                            "minItems": 1,
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -263,7 +223,7 @@ hello1 world
                                     }
                                 }
                             }
-                        },
+                        },]] .. [[
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1982": 1
@@ -271,46 +231,6 @@ hello1 world
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-validation": {
-                                "header_schema": {
-                                    "type": "object",
-                                    "required": ["required_payload"],
-                                    "properties": {
-                                        "required_payload": {"type": "string"},
-                                        "boolean_payload": {"type": "boolean"},
-                                        "timeouts": {
-                                            "type": "integer",
-                                            "minimum": 1,
-                                            "maximum": 254,
-                                            "default": 3
-                                        },
-                                        "req_headers": {
-                                            "type": "array",
-                                            "minItems": 1,
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -424,7 +344,7 @@ hello1 world
                                 }
                             }
                         }
-                    },
+                    },]] .. [[
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1982": 1
@@ -988,7 +908,7 @@ passed
                                 }
                             }
                         }
-                    },
+                    },]] .. [[
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1982": 1

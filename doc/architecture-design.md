@@ -29,7 +29,7 @@
 - [**Script**](#script)
 - [**Upstream**](#upstream)
 - [**Router**](#router)
-- [**Consumer**](#consumer)
+- [**Consumer**](#consumer-1)
 - [**Global Rule**](#Global-Rule)
 - [**Debug mode**](#Debug-mode)
 
@@ -188,13 +188,23 @@ Note: When both Route and Service enable the same plugin, the Route parameter ha
 
 The `Plugin` configuration can be bound directly to `Route` or it can be bound to `Service` or `Consumer`. For the configuration of the same plugin, only one copy is valid, and the configuration selection priority is always `Consumer` > `Route` > `Service`.
 
-In `conf/config.yaml`, you can declare which plugins are supported by the local APISIX node. This is a whitelisting mechanism. Plugins that are not in this whitelist will be automatically ignored. This feature can be used to temporarily turn off or turn on specific plugins, which is very effective in dealing with unexpected situations.
+In `conf/config.yaml`, you can declare which plugins are supported by the local APISIX node. This is a whitelisting mechanism. Plugins that are not in this whitelist will be automatically ignored. This feature can be used to temporarily turn off or turn on specific plugins, which is very effective in dealing with unexpected situations. If you want to add new plugins based on existing plugins, you need to copy the data of `plugins` node which in `conf/config-default.yaml` to the `plugins` node of `conf/config.yaml`.
 
 The configuration of the plugin can be directly bound to the specified Route, or it can be bound to the Service, but the plugin configuration in Route has a higher priority.
 
 A plugin will only be executed once in a single request, even if it is bound to multiple different objects (such as Route or Service).
 
-The order in which plugins are run is determined by the priority of the plugin itself, for example: [example-plugin](../apisix/plugins/example-plugin.lua#L37).
+The order in which plugins are run is determined by the priority of the plugin itself, for example:
+
+```lua
+local _M = {
+    version = 0.1,
+    priority = 0, -- the priority of this plugin will be 0
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
+```
 
 The plugin configuration is submitted as part of Route or Service and placed under `plugins`. It internally uses the plugin name as the hash's key to hold configuration items for different plugins.
 
@@ -250,45 +260,17 @@ Upstream configuration can be directly bound to the specified `Route` or it can 
 
 ### Configuration
 
-In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the table below.
+In addition to the basic complex equalization algorithm selection, APISIX's Upstream also supports logic for upstream passive health check and retry, see the link below.
 
-|Name    |Optional|Description|
-|-------         |-----|------|
-|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash, pick one of them.|
-|nodes           |required if `service_name` and `k8s_deployment_info` not configured|Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected.|
-|service_name    |required if `nodes` and `k8s_deployment_info` not configured |The name of the upstream service and used with the registry, refer to [Integration service discovery registry](discovery.md).|
-|k8s_deployment_info |required if `nodes` and `service_name` not configured|fields: `namespace`、`deploy_name`、`service_name`、`port`、`backend_type`, `port` is number, `backend_type` is `pod` or `service`, others is string. |
-|hash_on         |optional|This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, the default value is `vars`.|
-|key             |required|This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. When `hash_on` is set as `vars`, `key` is the required parameter, for now, it support nginx built-in variables like `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`, `arg_***` is arguments in the request line, [Nginx variables list](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is the required parameter, and `header name` is customized. When `hash_on` is set to `cookie`, `key` is the required parameter, and `cookie name` is customized. When `hash_on` is set to `consumer`, `key` does not need to be set. In this case, the `key` adopted by the hash algorithm is the `consumer_id` authenticated. If the specified `hash_on` and `key` can not fetch values, it will be fetch `remote_addr` by default.|
-|checks          |optional|Configure the parameters of the health check. For details, refer to [health-check](health-check.md).|
-|retries         |optional|Pass the request to the next upstream using the underlying Nginx retry mechanism, the retry mechanism is enabled by default and set the number of retries according to the number of backend nodes. If `retries` option is explicitly set, it will override the default value.|
-|enable_websocket|optional| enable `websocket`(boolean), default `false`.|
-|timeout|optional| Set the timeout for connection, sending and receiving messages. |
-|desc     |optional|Identifies route names, usage scenarios, and more.|
-|labels   |optional|The key/value pairs to specify attributes. |
-|pass_host            |optional|`pass` pass the client request host, `node` not pass the client request host, using the upstream node host, `rewrite` rewrite host by the configured `upstream_host`.|
-|upstream_host    |optional|This option is only valid if the `pass_host` is `rewrite`.|
+https://github.com/apache/apisix/blob/master/doc/admin-api.md#upstream
 
 Create an upstream object use case:
 
 ```json
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "type": "roundrobin",
-    "k8s_deployment_info": {
-        "namespace": "test-namespace",
-        "deploy_name": "test-deploy-name",
-        "service_name": "test-service-name",
-        "backend_type": "pod",
-        "port": 8080
-    }
-}'
-
-curl http://127.0.0.1:9080/apisix/admin/upstreams/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
     "type": "chash",
     "key": "remote_addr",
-    "enable_websocket": true,
     "nodes": {
         "127.0.0.1:80": 1,
         "foo.com:80": 2
@@ -302,7 +284,7 @@ After the upstream object is created, it can be referenced by specific `Route` o
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
-    "upstream_id": 2
+    "upstream_id": 1
 }'
 ```
 
@@ -407,7 +389,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Test request, the `consumer_id` after authentication is passed will be used as the hash value of the load balancing hash algorithm:
+Test request, the `consumer_name` after authentication is passed will be used as the hash value of the load balancing hash algorithm:
 
 ```shell
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
@@ -475,7 +457,7 @@ Set the route that best suits your business needs in the local configuration `co
 
 * `apisix.router.http`: HTTP Request Route。
     * `radixtree_uri`: (Default) only use `uri` as the primary index. Support for full and deep prefix matching based on the `radixtree` engine, see [How to use router-radixtree](router-radixtree.md).
-        * `Absolute match `: Complete match for the given `uri` , such as `/foo/bar`,`/foo/glo`.
+        * `Absolute match`: Complete match for the given `uri`, such as `/foo/bar`,`/foo/glo`.
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
@@ -504,7 +486,7 @@ In APISIX, the process of identifying a Consumer is as follows:
 <img src="./images/consumer-internal.png" width="50%" height="50%">
 
 1. Authorization certification: e.g [key-auth](./plugins/key-auth.md), [JWT](./plugins/jwt-auth.md), etc.
-2. Get consumer_id: By authorization, you can naturally get the corresponding Consumer `id`, which is the unique identifier of the Consumer object.
+2. Get consumer_name: By authorization, you can naturally get the corresponding Consumer `id`, which is the unique identifier of the Consumer object.
 3. Get the Plugin or Upstream information bound to the Consumer: Complete the different configurations for different Consumers.
 
 To sum up, Consumer is a consumer of certain types of services and needs to be used in conjunction with the user authentication system.
@@ -516,8 +498,8 @@ In addition, you can refer to the [key-auth](./plugins/key-auth.md) authenticati
 How to enable a specific plugin for a Consumer, you can see the following example:
 
 ```shell
-# Create a Consumer , specify the authentication plugin key-auth, and enable the specific plugin limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+# Create a Consumer, specify the authentication plugin key-auth, and enable the specific plugin limit-count
+$ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -649,9 +631,12 @@ Server: openresty
 hello world
 ```
 
+If the information can be delivered via HTTP response header, for example, the plugin is in stream
+subsystem, the information will be logged in the error log with `warn` level.
+
 ### Advanced Debug Mode
 
-Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will have a check every second, only the checker reads the `#END` flag, and the file would consider as closed.
+Enable advanced debug mode by modifying the configuration in `conf/debug.yaml` file. Because there will be a check every second, only the checker reads the `#END` flag, and the file would be considered as closed.
 
 The checker would judge whether the file data changed according to the last modification time of the file. If there has any change, reload it. If there was no change, skip this check. So it's hot reload for enabling or disabling advanced debug mode.
 
