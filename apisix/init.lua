@@ -184,7 +184,7 @@ function _M.http_ssl_phase()
             core.log.error("failed to fetch ssl config: ", err)
         end
         -- clear the ctx of the ssl phase, avoid affecting other phases
-        ngx.ctx = nil       
+        ngx.ctx = nil
         ngx_exit(-1)
     end
 
