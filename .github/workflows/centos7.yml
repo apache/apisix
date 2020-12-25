@@ -86,7 +86,7 @@ jobs:
         docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
 
     - name: install dependencies
-      run: run: ./utils/centos7-install-dependencies-ci.sh
+      run: ./utils/centos7-install-dependencies-ci.sh
 
     - name: run test cases
       run: |
