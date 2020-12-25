@@ -52,11 +52,9 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 | rules.weighted_upstreams.upstream.upstream_host | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
 | rules.weighted_upstreams.weight       | integer | 可选   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 weight 之间使用 roundrobin 算法划分。|
 
-## 如何启用
+traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的配置信息。如果配置 `match` 和 `weighted_upstreams` 信息，那么在 `match` 规则校验通过后，会根据 `weighted_upstreams` 中的 `weight` 值；引导插件中各个 upstream 之间的流量比例，否则，所有流量直接到达 `route` 或 `service` 上配置的 `upstream`。当然你也可以只配置 `weighted_upstreams` 部分，这样会直接根据 `weighted_upstreams` 中的 `weight` 值，引导插件中各个 upstream 之间的流量比例。
 
-traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的信息。在使用插件时，至少需要配置 `weighted_upstreams` 部分，这样将默认 `match` 规则通过，会根据 `weighted_upstreams` 中的 `weight` 值，逐步引导各个 upstream 之间的流量比例。你也可以同时配置 `match` 和 `weighted_upstreams`，这样只有 `match` 规则匹配通过后，才会对 `weighted_upstreams` 中的流量进行划分。
-
->注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 中只有 `weight` 值，表示到达默认 `route` 上的 upstream 流量权重值。如：
+>注：1、在 `match` 里，vars 中的表达式是 `and` 的关系，多个 `vars` 之间是 `or` 的关系。2、在插件的 weighted_upstreams 中只有 `weight` 值，表示到达 `route` 或 `service` 上配置的 upstream 流量权重值。如：
 
 ```json
 {
@@ -64,11 +62,13 @@ traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成�
 }
 ```
 
+## 如何启用
+
 下面提供插件的使用示例，这将有助于你对插件使用上的理解。
 
 ### 灰度发布
 
-不配置 `match` 规则部分（已经默认 `match` 通过），根据插件中 weighted_upstreams 配置的 `weight` 值做流量分流。将 `插件 upstream` 与 `route 的 upstream` 请求流量按 3:2 进行划分，其中 60% 的流量到达插件中的 `1981` 端口的 upstream， 40% 的流量到达 route 上默认 `1980` 端口的 upstream。
+缺少 `match` 规则部分，根据插件中 `weighted_upstreams` 配置的 `weight` 值做流量分流。将 `插件的 upstream` 与 `route 的 upstream` 按 3:2 的流量比例进行划分，其中 60% 的流量到达插件中的 `1981` 端口的 upstream， 40% 的流量到达 route 上默认 `1980` 端口的 upstream。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

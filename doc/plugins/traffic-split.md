@@ -52,11 +52,9 @@ Note: Since the selection of different upstream in the plugin is based on the ro
 | rules.weighted_upstreams.upstream.upstream_host | string | optional    |    |   | Only valid when pass_host is configured as rewrite.    |
 | rules.weighted_upstreams.weight | integer | optional    | weight = 1   |  | The traffic is divided according to the `weight` value, and the roundrobin algorithm is used to divide multiple `weight`. |
 
-## How To Enable
+The traffic-split plugin is mainly composed of two parts: `match` and `weighted_upstreams`. `match` is a custom conditional rule, and `weighted_upstreams` is upstream configuration information. If you configure `match` and `weighted_upstreams` information, then after the `match` rule is verified, it will be based on the `weight` value in `weighted_upstreams`; the ratio of traffic between each upstream in the plug-in will be guided, otherwise, all traffic will be directly Reach the `upstream` configured on `route` or `service`. Of course, you can also configure only the `weighted_upstreams` part, which will directly guide the traffic ratio between each upstream in the plugin based on the `weight` value in `weighted_upstreams`.
 
-The traffic-split plugin is mainly composed of two parts: `match` and `weighted_upstreams`. `match` is a custom conditional rule, and `weighted_upstreams` is upstream information. When using the plugin, at least the `weighted_upstreams` part needs to be configured, so that the default `match` rule is passed, and the traffic ratio between each upstream will be gradually guided according to the `weight` value in `weighted_upstreams`. You can also configure `match` and `weighted_upstreams` at the same time, so that the traffic in `weighted_upstreams` will be divided only after the `match` rule is matched.
-
->Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`. 2. There is only a `weight` value in the weighted_upstreams of the plugin, which means the upstream traffic weight value on the default `route`. Such as:
+>Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`.  2. There is only a `weight` value in the weighted_upstreams of the plug-in, which means reaching the upstream traffic weight value configured on `route` or `service`. Such as:
 
 ```json
 {
@@ -64,11 +62,13 @@ The traffic-split plugin is mainly composed of two parts: `match` and `weighted_
 }
 ```
 
+## How To Enable
+
 The following provides examples of plugin usage, which will help you understand the use of plugin.
 
 ### Grayscale Release
 
-Do not configure the `match` rule part (the `match` is passed by default), and the traffic is split according to the `weight` value of the weighted_upstreams configuration in the plugin. Divide `plugin upstream` and `route's upstream` request traffic according to 3:2, of which 60% of the traffic reaches the upstream of the `1981` port in the plugin, and 40% of the traffic reaches the upstream of the default `1980` port on the route .
+The `match` rule part is missing, and the traffic is split according to the `weight` value configured by the `weighted_upstreams` in the plugin. Divide `plug-in upstream` and `route's upstream` according to the traffic ratio of 3:2, of which 60% of the traffic reaches the upstream of the `1981` port in the plugin, and 40% of the traffic reaches the default `1980` port on the route Upstream.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
