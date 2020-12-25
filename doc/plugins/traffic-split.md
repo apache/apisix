@@ -33,7 +33,7 @@
 
 The traffic split plugin allows users to incrementally direct percentages of traffic between various upstreams.
 
-Note: Since the selection of different upstream in the plugin is based on the roundrobin algorithm, the ratio of traffic distribution is not completely accurate when the algorithm state is reset.
+Note: The ratio between each upstream may not so accurate since the drawback of weighted round robin algorithm (especially when the wrr state is reset).
 
 ## Attributes
 
