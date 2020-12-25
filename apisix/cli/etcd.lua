@@ -141,7 +141,7 @@ function _M.init(env, show_output)
         -- In case of failure, request returns nil followed by an error message.
         -- Else the first return value is the response body
         -- and followed by the response status code.
-        if err and type(err) == "string" then
+        if not res then
             errmsg = str_format("request etcd endpoint \'%s\' error, %s\n", version_url, err)
             util.die(errmsg)
         end
@@ -179,14 +179,14 @@ function _M.init(env, show_output)
 
             local post_json_auth = dkjson.encode(json_auth)
             local response_body = {}
-            local _, err = http.request{url = auth_url, method = "POST",
+            local res, err = http.request{url = auth_url, method = "POST",
                                         source = ltn12.source.string(post_json_auth),
                                         sink = ltn12.sink.table(response_body),
                                         headers = {["Content-Length"] = #post_json_auth}}
             -- In case of failure, request returns nil followed by an error message.
             -- Else the first return value is just the number 1
             -- and followed by the response status code.
-            if err and type(err) == "string" then
+            if not res then
                 errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", auth_url, err)
                 util.die(errmsg)
             end
@@ -219,11 +219,11 @@ function _M.init(env, show_output)
                 headers["Authorization"] = auth_token
             end
 
-            local _, err = http.request{url = put_url, method = "POST",
+            local res, err = http.request{url = put_url, method = "POST",
                                         source = ltn12.source.string(post_json),
                                         sink = ltn12.sink.table(response_body),
                                         headers = headers}
-            if err and type(err) == "string" then
+            if not res then
                 errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", put_url, err)
                 util.die(errmsg)
             end
