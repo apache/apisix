@@ -23,6 +23,7 @@
 
 - [名字](#名字)
 - [属性](#属性)
+- [如何启用](#如何启用)
 - [示例](#示例)
   - [灰度发布](#灰度发布)
   - [蓝绿发布](#蓝绿发布)
@@ -60,6 +61,51 @@ traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成�
 {
     "weight": 2
 }
+```
+
+## 如何启用
+
+创建一个路由并启用 `traffic-split` 插件：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                },
+                                "timeout": {
+                                    "connect": 15,
+                                    "send": 15,
+                                    "read": 15
+                                }
+                            },
+                            "weight": 1
+                        },
+                        {
+                            "weight": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
 ```
 
 ## 示例

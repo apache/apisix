@@ -23,6 +23,7 @@
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
 - [**Example**](#example)
   - [**Grayscale Release**](#grayscale-release)
   - [**Blue-green Release**](#blue-green-release)
@@ -60,6 +61,51 @@ The traffic-split plugin is mainly composed of two parts: `match` and `weighted_
 {
     "weight": 2
 }
+```
+
+## How To Enable
+
+Create a route and enable the `traffic-split` plugin:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                },
+                                "timeout": {
+                                    "connect": 15,
+                                    "send": 15,
+                                    "read": 15
+                                }
+                            },
+                            "weight": 1
+                        },
+                        {
+                            "weight": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
 ```
 
 ## Example
