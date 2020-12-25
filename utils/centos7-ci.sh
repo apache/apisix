@@ -33,7 +33,6 @@ install_dependencies() {
     cp /etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
     rm -rf etcd-v3.4.0-linux-amd64
     yum install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
-    cp -r /tmp/apisix ./apisix
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
     mkdir build-cache 
     wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
