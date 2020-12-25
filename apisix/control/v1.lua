@@ -33,6 +33,8 @@ function _M.schema()
             ssl = core.schema.ssl,
             stream_route = core.schema.stream_route,
             upstream = core.schema.upstream,
+            upstream_hash_header_schema = core.schema.upstream_hash_header_schema,
+            upstream_hash_vars_schema = core.schema.upstream_hash_vars_schema,
         },
         plugins = plugin.get_all({
             version = true,

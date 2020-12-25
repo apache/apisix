@@ -57,7 +57,9 @@ __DATA__
                         "service": {"type":"object"},
                         "ssl": {"type":"object"},
                         "stream_route": {"type":"object"},
-                        "upstream": {"type":"object"}
+                        "upstream": {"type":"object"},
+                        "upstream_hash_header_schema": {"type":"string"},
+                        "upstream_hash_vars_schema": {"type":"string"},
                     },
                     "plugins": {
                         "example-plugin": {
