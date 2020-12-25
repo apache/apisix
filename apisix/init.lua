@@ -48,10 +48,8 @@ local lru_resolved_domain
 local ver_header    = "APISIX/" .. core.version.VERSION
 
 
-local function parse_args(args)
-    dns_resolver = args and args["dns_resolver"]
-    core.utils.set_resolver(dns_resolver)
-    core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
+local function parse_args()
+    core.utils.init_dns_client()
 end
 
 

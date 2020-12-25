@@ -19,7 +19,6 @@ local table    = require("apisix.core.table")
 local log      = require("apisix.core.log")
 local string   = require("apisix.core.string")
 local ngx_re   = require("ngx.re")
-local resolver = require("resty.dns.resolver")
 local ipmatcher= require("resty.ipmatcher")
 local ffi      = require("ffi")
 local base     = require("resty.core.base")
@@ -40,6 +39,10 @@ local ngx_sleep    = ngx.sleep
 
 local hostname
 local max_sleep_interval = 1
+local dns_client = {
+    client = require("resty.dns.client"),
+    inited = nil,
+}
 
 ffi.cdef[[
     int ngx_escape_uri(char *dst, const char *src,
@@ -80,26 +83,16 @@ function _M.split_uri(uri)
 end
 
 
-local function dns_parse(domain, resolvers)
-    resolvers = resolvers or _M.resolvers
-    local r, err = resolver:new{
-        nameservers = table.clone(resolvers),
-        retrans = 5,  -- 5 retransmissions on receive timeout
-        timeout = 2000,  -- 2 sec
-    }
-
-    if not r then
-        return nil, "failed to instantiate the resolver: " .. err
+local function dns_parse(domain)
+    if not dns_client.inited then
+        dns_client.client.init()
     end
 
-    local answers, err = r:query(domain, nil, {})
+    local answers, err
+    answers, err = dns_client.client.resolve(domain)
+
     if not answers then
-        return nil, "failed to query the DNS server: " .. err
-    end
-
-    if answers.errcode then
-        return nil, "server returned error code: " .. answers.errcode
-                    .. ": " .. answers.errstr
+      return nil, "failed to query the DNS server: " .. err
     end
 
     local idx = math.random(1, #answers)
@@ -112,13 +105,22 @@ local function dns_parse(domain, resolvers)
         return nil, "unsupport DNS answer"
     end
 
-    return dns_parse(answer.cname, resolvers)
+    return dns_parse(answer.cname)
 end
 _M.dns_parse = dns_parse
 
+function _M.init_dns_client (resolv_conf)
+    if dns_client.inited then
+        return
+    end
 
-function _M.set_resolver(resolvers)
-    _M.resolvers = resolvers
+    if resolv_conf then
+        dns_client.client.init({ resolvConf = resolv_conf })
+    else
+        dns_client.client.init()
+    end
+
+    dns_client.inited = true
 end
 
 
