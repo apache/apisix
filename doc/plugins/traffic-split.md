@@ -23,7 +23,7 @@
 
 - [**Name**](#name)
 - [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
+- [**Example**](#example)
   - [**Grayscale Release**](#grayscale-release)
   - [**Blue-green Release**](#blue-green-release)
   - [**Custom Release**](#custom-release)
@@ -62,9 +62,7 @@ The traffic-split plugin is mainly composed of two parts: `match` and `weighted_
 }
 ```
 
-## How To Enable
-
-The following provides examples of plugin usage, which will help you understand the use of plugin.
+## Example
 
 ### Grayscale Release
 
