@@ -88,8 +88,8 @@ jobs:
         docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
 
     - name: install dependencies
-      run: ./utils/centos7-install-dependencies-ci.sh
+      run: docker exec centos7Instance bash -c "/apisix/utils/centos7-ci.sh install_dependencies"
 
     - name: run test cases
       run: |
-        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/"
+        docker exec centos7Instance bash -c "/apisix/utils/centos7-ci.sh run_case"
