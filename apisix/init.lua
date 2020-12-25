@@ -210,6 +210,7 @@ local function parse_domain(host)
         return nil, "failed to parse domain"
     end
 end
+_M.parse_domain = parse_domain
 
 
 local function parse_domain_for_nodes(nodes)
