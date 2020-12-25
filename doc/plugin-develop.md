@@ -108,7 +108,7 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 
 ## schema and check
 
-Write [Json Schema](https://json-schema.org) descriptions and check functions. similarly, take the example-plugin plugin as an example to see its
+Write [Json Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
  configuration data :
 
 ```json
