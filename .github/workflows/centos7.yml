@@ -1,4 +1,4 @@
-name: test_apisix_on_centos7
+name: CI Centos7
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test_apisix:
-    name: test_apisix_on_centos7
+    name: run ci on centos7
     runs-on: ubuntu-latest
 
     services:
