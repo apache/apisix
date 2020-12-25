@@ -74,7 +74,7 @@ local _M = {
 }
 ```
 
-Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first. For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
+Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
 
 in the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
@@ -228,8 +228,7 @@ end
 Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
-In APISIX, the authentication logic is implemented in the rewrite phase. Generally, IP access and interface
-permission are completed in the access phase.
+In APISIX, only the authentication logic can be run in the rewrite phase. Other logic needs to run before proxy should be in access phase.
 
 The following code snippet shows how to implement any logic relevant to the plugin in the OpenResty log phase.
 

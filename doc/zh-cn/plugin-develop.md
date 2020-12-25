@@ -71,7 +71,7 @@ local _M = {
 }
 ```
 
-注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。另外，优先级( priority )值大的插件，会优先执行，比如 `example-plugin` 的优先级是 2520 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。
+注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。另外，同一个阶段里面，优先级( priority )值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的[确定执行阶段](#确定执行阶段)这一节。
 
 在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
@@ -221,8 +221,7 @@ end
 
 ## 确定执行阶段
 
-根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，所以需要在 rewrite 阶段执行。在 APISIX，认证逻辑需要在 rewrite 阶段里面完成。
-完成的。
+根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，所以需要在 rewrite 阶段执行。在 APISIX，只有认证逻辑可以在 rewrite 阶段里面完成，其他需要在代理到上游之前执行的逻辑都是在 access 阶段完成的。
 
 **注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。[例子](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
 
