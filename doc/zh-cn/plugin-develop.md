@@ -110,9 +110,9 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 
 ```json
 "example-plugin" : {
-    i = 1,
-    s = "s",
-    t = {1}
+    "i": 1,
+    "s": "s",
+    "t": {1}
 }
 ```
 
