@@ -1528,7 +1528,7 @@ GET /t
 --- response_body
 false
 --- error_log
-failed to introspect in openidc: invalid token
+OIDC introspection failed: invalid token
 
 
 
