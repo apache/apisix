@@ -243,12 +243,14 @@ function _M.rewrite(plugin_conf, ctx)
     end
 
     local response, err
+
     if conf.introspection_endpoint or conf.public_key then
         -- An introspection endpoint or a public key has been configured. Try to
         -- validate the access token from the request, if it is present in a
         -- request header. Otherwise, return a nil response. See below for
         -- handling of the case where the access token is stored in a session cookie.
-        local response, err, access_token, userinfo = introspect(ctx, conf)
+        local access_token, userinfo
+        response, err, access_token, userinfo = introspect(ctx, conf)
 
         if err then
             -- Error while validating token or invalid token.
@@ -279,7 +281,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        local response, err = openidc.authenticate(conf)
+        response, err = openidc.authenticate(conf)
 
         if err then
             core.log.error("OIDC authentication failed: ", err)
