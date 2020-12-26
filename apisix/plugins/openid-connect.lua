@@ -169,7 +169,6 @@ local function introspect(ctx, conf)
     end
 
     -- If we get here, token was found in request.
-    local res, err
 
     if conf.public_key then
         -- Validate token against public key.
@@ -178,7 +177,7 @@ local function introspect(ctx, conf)
         --  It is inefficient that we also need to extract it (just from headers)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
-        res, err = openidc.bearer_jwt_verify(conf)
+        local res, err = openidc.bearer_jwt_verify(conf)
 
         if err then
             -- Error while validating or token invalid.
@@ -192,7 +191,7 @@ local function introspect(ctx, conf)
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
-        res, err = openidc.introspect(conf)
+        local res, err = openidc.introspect(conf)
 
         if err then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
@@ -249,7 +248,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- validate the access token from the request, if it is present in a
         -- request header. Otherwise, return a nil response. See below for
         -- handling of the case where the access token is stored in a session cookie.
-        response, err, access_token, userinfo = introspect(ctx, conf)
+        local response, err, access_token, userinfo = introspect(ctx, conf)
 
         if err then
             -- Error while validating token or invalid token.
@@ -260,7 +259,7 @@ function _M.rewrite(plugin_conf, ctx)
         if response then
             if access_token then
                 -- Add configured access token header, maybe.
-                add_access_token_header(ctx, conf, token)
+                add_access_token_header(ctx, conf, access_token)
             end
             if userinfo and conf.set_userinfo_header then
                 -- Set X-Userinfo header to introspection endpoint response.
