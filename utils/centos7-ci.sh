@@ -56,13 +56,11 @@ run_case() {
 }
 
 case_opt=$1
-shift
-
-case ${case_opt} in
-install_dependencies)
-    install_dependencies "$@"
-    ;;
-run_case)
-    run_case "$@"
-    ;;
+case $case_opt in
+    (install_dependencies)
+        install_dependencies
+        ;;
+    (run_case)
+        run_case
+        ;;
 esac
