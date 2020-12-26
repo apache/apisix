@@ -1,0 +1,453 @@
+<!--
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+-->
+
+- [中文](../zh-cn/plugins/traffic-split.md)
+
+# Summary
+
+- [**Name**](#name)
+- [**Attributes**](#attributes)
+- [**How To Enable**](#how-to-enable)
+- [**Example**](#example)
+  - [**Grayscale Release**](#grayscale-release)
+  - [**Blue-green Release**](#blue-green-release)
+  - [**Custom Release**](#custom-release)
+- [**Disable Plugin**](#disable-plugin)
+
+## Name
+
+The traffic split plugin allows users to incrementally direct percentages of traffic between various upstreams.
+
+Note: The ratio between each upstream may not so accurate since the drawback of weighted round robin algorithm (especially when the wrr state is reset).
+
+## Attributes
+
+| Name             | Type    | Requirement | Default | Valid   | Description                                                                              |
+| ---------------- | ------- | ----------- | ------- | ------- | ---------------------------------------------------------------------------------------- |
+| rules.match      | array[object]  | optional    |         |  | List of matching rules.                                                                    |
+| rules.match.vars | array[array] | optional    |     |  | A list consisting of one or more {var, operator, val} elements, like this: {{var, operator, val}, {var, operator, val}, ...}}. For example: {"arg_name", "==", "json"}, which means that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| rules.weighted_upstreams  | array[object] | optional    |    |         | List of upstream configuration rules.                                                   |
+| rules.weighted_upstreams.upstream_id  | string or integer | optional    |         |         | The upstream id is bound to the corresponding upstream(not currently supported).            |
+| rules.weighted_upstreams.upstream   | object | optional    |     |      | Upstream configuration information.                                                    |
+| rules.weighted_upstreams.upstream.type | enum | optional    | roundrobin  | [roundrobin, chash] | roundrobin supports weighted load, chash consistent hashing, the two are alternatives.   |
+| rules.weighted_upstreams.upstream.nodes  | object | optional    |       |  | In the hash table, the key of the internal element is the list of upstream machine addresses, in the format of address + Port, where the address part can be an IP or a domain name, such as 192.168.1.100:80, foo.com:80, etc. value is the weight of the node. In particular, when the weight value is 0, it has special meaning, which usually means that the upstream node is invalid and never wants to be selected. |
+| rules.weighted_upstreams.upstream.timeout  | object | optional    |  15     |   | Set the timeout period for connecting, sending and receiving messages (time unit: second, all default to 15 seconds).  |
+| rules.weighted_upstreams.upstream.pass_host | enum | optional    | "pass"  | ["pass", "node", "rewrite"]  | pass: pass the host requested by the client, node: pass the host requested by the client; use the host configured with the upstream node, rewrite: rewrite the host with the value configured by the upstream_host. |
+| rules.weighted_upstreams.upstream.name      | string | optional    |        |   | Identify the upstream service name, usage scenario, etc.  |
+| rules.weighted_upstreams.upstream.upstream_host | string | optional    |    |   | Only valid when pass_host is configured as rewrite.    |
+| rules.weighted_upstreams.weight | integer | optional    | weight = 1   |  | The traffic is divided according to the `weight` value, and the roundrobin algorithm is used to divide multiple `weight`. |
+
+The traffic-split plugin is mainly composed of two parts: `match` and `weighted_upstreams`. `match` is a custom conditional rule, and `weighted_upstreams` is upstream configuration information. If you configure `match` and `weighted_upstreams` information, then after the `match` rule is verified, it will be based on the `weight` value in `weighted_upstreams`; the ratio of traffic between each upstream in the plug-in will be guided, otherwise, all traffic will be directly Reach the `upstream` configured on `route` or `service`. Of course, you can also configure only the `weighted_upstreams` part, which will directly guide the traffic ratio between each upstream in the plugin based on the `weight` value in `weighted_upstreams`.
+
+>Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`.  2. There is only a `weight` value in the weighted_upstreams of the plug-in, which means reaching the upstream traffic weight value configured on `route` or `service`. Such as:
+
+```json
+{
+    "weight": 2
+}
+```
+
+## How To Enable
+
+Create a route and enable the `traffic-split` plugin:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                },
+                                "timeout": {
+                                    "connect": 15,
+                                    "send": 15,
+                                    "read": 15
+                                }
+                            },
+                            "weight": 1
+                        },
+                        {
+                            "weight": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+## Example
+
+### Grayscale Release
+
+The `match` rule part is missing, and the traffic is split according to the `weight` value configured by the `weighted_upstreams` in the plugin. Divide `plug-in upstream` and `route's upstream` according to the traffic ratio of 3:2, of which 60% of the traffic reaches the upstream of the `1981` port in the plugin, and 40% of the traffic reaches the default `1980` port on the route Upstream.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                },
+                                "timeout": {
+                                    "connect": 15,
+                                    "send": 15,
+                                    "read": 15
+                                }
+                            },
+                            "weight": 3
+                        },
+                        {
+                            "weight": 2
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+**Test plugin:**
+
+There are 5 requests, 3 requests hit the upstream of port 1981 of the plug-in, and 2 requests hit the upstream of port 1980 of `route`.
+
+```shell
+$ curl http://127.0.0.1:9080/index.html -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+
+hello 1980
+
+$ curl http://127.0.0.1:9080/index.html -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+
+world 1981
+
+......
+```
+
+### Blue-green Release
+
+Get the `match` rule parameter through the request header (you can also get it through the request parameter or NGINX variable). After the `match` rule is matched, it means that all requests hit the upstream configured by the plugin, otherwise the request only hits the `route` configured upstream.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["http_release","==","new_release"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+**Test plugin:**
+
+The rule of `match` is matched, and all requests hit the upstream port 1981 configured by the plugin:
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'release: new_release' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+The `match` rule fails to match, and all requests hit the 1980 port upstream configured on the `route`:
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'release: old_release' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+### Custom Release
+
+Multiple `vars` rules can be set in `match`. Multiple expressions in `vars` have an `add` relationship, and multiple `vars` rules have an `or` relationship; as long as one of the vars is required If the rule passes, the entire `match` passes.
+
+**Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `add`. In `weighted_upstreams`, the traffic is divided into 3:2 according to the value of `weight`, of which only the part of the `weight` value represents the proportion of upstream on the `route`. When `match` fails to pass, all traffic will only hit the upstream on the route.**
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["arg_name","==","jack"],
+                                ["http_user-id",">","23"],
+                                ["http_apisix-key","~~","[a-z]+"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                }
+                            },
+                            "weight": 3
+                        },
+                        {
+                            "weight": 2
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+The plugin sets the requested `match` rule and upstream with port `1981`, and the route has upstream with port `1980`.
+
+**Test plugin:**
+
+>1. After the verification of the `match` rule is passed, 60% of the requests hit the upstream of the plug-in port 1981, and 40% of the requests hit the upstream of the 1980 port of the `route`.
+
+The match rule is successfully verified, and the upstream port of `1981` is hit.
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+The match rule fails to verify, and it hits the upstream of the default port of `1980`.
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
+
+**Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `add` relationships, and multiple `vars` are `and` relationships. According to the `weight` value in `weighted_upstreams`, the traffic is divided into 3:2, where only the part of the `weight` value represents the proportion of upstream on the route. When `match` fails to pass, all traffic will only hit the upstream on the route.**
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "traffic-split": {
+            "rules": [
+                {
+                    "match": [
+                        {
+                            "vars": [
+                                ["arg_name","==","jack"],
+                                ["http_user-id",">","23"],
+                                ["http_apisix-key","~~","[a-z]+"]
+                            ],
+                            "vars": [
+                                ["arg_name2","==","rose"],
+                                ["http_user-id2","!",">","33"],
+                                ["http_apisix-key2","~~","[a-z]+"]
+                            ]
+                        }
+                    ],
+                    "weighted_upstreams": [
+                        {
+                            "upstream": {
+                                "name": "upstream_A",
+                                "type": "roundrobin",
+                                "nodes": {
+                                    "127.0.0.1:1981":10
+                                }
+                            },
+                            "weight": 3
+                        },
+                        {
+                            "weight": 2
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+    }
+}'
+```
+
+The plugin sets the requested `match` rule and the upstream port of `1981`, and the route has upstream port of `1980`.
+
+**Test plugin:**
+
+>1. The expressions of the two `vars` are matched successfully. After the `match` rule is verified, 60% of the requests hit the 1981 port upstream of the plugin, and 40% of the requests hit the 1980 port upstream of the `route`.
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
+
+>2. The second expression of `vars` failed to match (missing the `name2` request parameter). After the `match` rule was verified, 60% of the requests hit the plug-in's 1981 port upstream, and 40% of the request traffic hits Go upstream to the 1980 port of `route`.
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+world 1981
+```
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
+
+>3. The expression verification of two `vars` failed (missing the request parameters of `name` and `name2`), the `match` rule verification failed, and the response is the upstream data `hello 1980` of the default `route`.
+
+```shell
+$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -i
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
+
+hello 1980
+```
+
+## Disable Plugin
+
+When you want to remove the traffic-split plugin, it's very simple, just delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```

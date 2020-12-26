@@ -246,6 +246,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - wolf-rbac
   - zipkin
   # - server-info
+  - traffic-split
 
 stream_plugins:
   - mqtt-proxy
