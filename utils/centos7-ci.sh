@@ -35,11 +35,11 @@ install_dependencies() {
     yum install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
     cp -r /tmp/apisix ./apisix
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
-    mkdir build-cache 
+    mkdir build-cache
     wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
-    tar -xvf grpc_server_example-amd64.tar.gz 
+    tar -xvf grpc_server_example-amd64.tar.gz
     mv grpc_server_example build-cache/
-    git clone https://github.com/iresty/grpc_server_example.git grpc_server_example 
+    git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
     cd grpc_server_example/ && mv proto/ ../build-cache/ && cd ..
     ./build-cache/grpc_server_example > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
     sleep 3
