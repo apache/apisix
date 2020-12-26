@@ -192,7 +192,7 @@
 - :sunrise: **新增 proxy mirror 插件**. [#1288](https://github.com/apache/incubator-apisix/pull/1288)
 - :sunrise: **新增 proxy cache 插件**. [#1153](https://github.com/apache/incubator-apisix/pull/1153)
 - 在 proxy-rewrite 插件中废弃 websocket 开关(**不向下兼容**). [1332](https://github.com/apache/incubator-apisix/pull/1332)
--  OAuth 插件中增加基于公钥的自省支持. [#1266](https://github.com/apache/incubator-apisix/pull/1266)
+- OAuth 插件中增加基于公钥的自省支持. [#1266](https://github.com/apache/incubator-apisix/pull/1266)
 - response-rewrite 插件通过 base64 来支持传输二进制数据. [#1381](https://github.com/apache/incubator-apisix/pull/1381)
 - gRPC 转码插件支持 `deadline`. [#1149](https://github.com/apache/incubator-apisix/pull/1149)
 - limit count 插件支持 redis 权限认证. [#1150](https://github.com/apache/incubator-apisix/pull/1150)
