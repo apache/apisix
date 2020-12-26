@@ -115,7 +115,7 @@ Write [Json Schema](https://json-schema.org) descriptions and check functions. S
 "example-plugin" : {
     "i": 1,
     "s": "s",
-    "t": {1}
+    "t": [1]
 }
 ```
 
