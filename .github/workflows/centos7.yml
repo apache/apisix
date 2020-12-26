@@ -88,9 +88,8 @@ jobs:
     - name: install dependencies
       run: |
         docker exec centos7Instance bash -c "cp -r /tmp/apisix ./apisix"
-        docker exec centos7Instance bash -c "pwd && ls"
-        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh"
+        docker exec centos7Instance bash -c ./apisix/utils/centos7-ci.sh install_dependencies
 
     - name: run test cases
       run: |
-        docker exec centos7Instance bash -c "cd apisix && PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH prove -Itest-nginx/lib -I./ -r t/"
+        docker exec centos7Instance bash -c ./apisix/utils/centos7-ci.sh run_case
