@@ -26,6 +26,8 @@
 - [**choose phase to run**](#choose-phase-to-run)
 - [**implement the logic**](#implement-the-logic)
 - [**write test case**](#write-test-case)
+- [**register public API**](#register-public-api)
+- [**register control API**](#register-control-api)
 
 ## check dependencies
 
@@ -56,29 +58,28 @@ Note : if the dependency of some plugin needs to be initialized when Nginx start
 
 ## name and config
 
-determine the name and priority of the plugin, and add to conf/config-default.yaml. For example, for the key-auth plugin,
+Determine the name and priority of the plugin, and add to conf/config-default.yaml. For example, for the example-plugin plugin,
  you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
- duplicate), you can see the code in file "__apisix/plugins/key-auth.lua__" :
+ duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
 
 ```lua
-   local plugin_name = "key-auth"
+local plugin_name = "example-plugin"
 
-   local _M = {
-      version = 0.1,
-      priority = 2500,
-      type = 'auth',
-      name = plugin_name,
-      schema = schema,
-   }
+local _M = {
+    version = 0.1,
+    priority = 0,
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
 ```
 
-Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first. For example, the priority of basic-auth is 2520 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the basic-auth plugin.
+Note : The priority of the new plugin cannot be the same as the priority of any existing plugin. In addition, plugins with a high priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin.
 
 in the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
 
 ```yaml
 plugins:                          # plugin list
-  - example-plugin
   - limit-req
   - limit-count
   - limit-conn
@@ -94,6 +95,7 @@ plugins:                          # plugin list
   - openid-connect
   - proxy-rewrite
   - redirect
+  ...
 ```
 
 Note : the order of the plugins is not related to the order of execution.
@@ -106,33 +108,41 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 
 ## schema and check
 
-Write [Json Schema](https://json-schema.org) descriptions and check functions. similarly, take the key-auth plugin as an example to see its
+Write [Json Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
  configuration data :
 
 ```json
- "key-auth" : {
-       "key" : "auth-one"
-  }
+"example-plugin" : {
+    "i": 1,
+    "s": "s",
+    "t": [1]
+}
 ```
 
-The configuration data of the plugin is relatively simple. Only one attribute named key is supported. Let's look
-at its schema description :
+Let's look at its schema description :
 
 ```lua
-   local schema = {
-       type = "object",
-       properties = {
-           key = {type = "string"},
-       }
-   }
+local schema = {
+    type = "object",
+    properties = {
+        i = {type = "number", minimum = 0},
+        s = {type = "string"},
+        t = {type = "array", minItems = 1},
+        ip = {type = "string"},
+        port = {type = "integer"},
+    },
+    required = {"i"},
+}
 ```
+
+The schema defines a non-negative number `i`, a string `s`, a non-empty array of `t`, and `ip` / `port`. Only `i` is required.
 
 At the same time, we need to implement the __check_schema(conf)__ method to complete the specification verification.
 
 ```lua
-   function _M.check_schema(conf)
-       return core.schema.check(schema, conf)
-   end
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
+end
 ```
 
 Note: the project has provided the public method "__core.schema.check__", which can be used directly to complete JSON
@@ -162,15 +172,65 @@ local _M = {
 }
 ```
 
+You might have noticed the key-auth plugin has `type = 'auth'` in its definition.
+When we set the type of plugin to `auth`, it means that this plugin is an authentication plugin.
+
+An authentication plugin needs to choose a consumer after execution. For example, in key-auth plugin, it calls the `consumer.attach_consumer` to attach a consumer, which is chosen via the `apikey` header.
+
+To interact with the `consumer` resource, this type of plugin needs to provide a `consumer_schema` to check the `plugins` configuration in the `consumer`.
+
+Here is the consumer configuration for key-auth plugin:
+```json
+{
+    "username": "Joe",
+    "plugins": {
+        "key-auth": {
+            "key": "Joe's key"
+        }
+    }
+}
+```
+It will be used when you try to create a [Consumer](https://github.com/apache/apisix/blob/master/doc/admin-api.md#consumer)
+
+To validate the configuration, the plugin uses a schema like this:
+```json
+local consumer_schema = {
+    type = "object",
+    additionalProperties = false,
+    properties = {
+        key = {type = "string"},
+    },
+    required = {"key"},
+}
+```
+
+Note the difference between key-auth's __check_schema(conf)__ method to example-plugin's:
+```lua
+-- key-auth
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_CONSUMER then
+        return core.schema.check(consumer_schema, conf)
+    else
+        return core.schema.check(schema, conf)
+    end
+end
+```
+
+```lua
+-- example-plugin
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
+end
+```
+
 ## choose phase to run
 
 Determine which phase to run, generally access or rewrite. If you don't know the [Openresty life cycle](https://openresty-reference.readthedocs.io/en/latest/Directives/), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
-before forwarding the request to any upstream service. Therefore, the plugin can be executed in the rewrite and access phases.
-In APISIX, the authentication logic is implemented in the rewrite phase. Generally, IP access and interface
-permission are completed in the access phase.
+before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
+In APISIX, only the authentication logic can be run in the rewrite phase. Other logic needs to run before proxy should be in access phase.
 
-The following code snippet shows how to implement any logic relevant to the plugin in the Openresty log phase.
+The following code snippet shows how to implement any logic relevant to the plugin in the OpenResty log phase.
 
 ```lua
 function _M.log(conf)
@@ -198,7 +258,7 @@ of the real test case. For example, the key-auth plugin :
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 'test-key'})
+            local ok, err = plugin.check_schema({key = 'test-key'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -233,3 +293,55 @@ According to the path we configured in the makefile and some configuration items
 framework will assemble into a complete nginx.conf file. "__t/servroot__" is the working directory of Nginx and start the
 Nginx instance. according to the information provided by the test case, initiate the http request and check that the
 return items of HTTP include HTTP status, HTTP response header, HTTP response body and so on.
+
+### Register public API
+
+A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
+
+```lua
+local function gen_token()
+    ...
+end
+
+function _M.api()
+    return {
+        {
+            methods = {"GET"},
+            uri = "/apisix/plugin/jwt/sign",
+            handler = gen_token,
+        }
+    }
+end
+```
+
+Note that the public API is exposed to the public.
+You may need to use [interceptors](plugin-interceptors.md) to protect it.
+
+### Register control API
+
+If you only want to expose the API to the localhost or intranet, you can expose it via [Control API](./control-api.md).
+
+Take a look at example-plugin plugin:
+```lua
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
+        }
+    }
+end
+```
+
+If you don't change the default control API configuration, the plugin will be expose `GET /v1/plugin/example-plugin/hello` which can only be accessed via `127.0.0.1`.
