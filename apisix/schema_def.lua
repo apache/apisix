@@ -443,15 +443,9 @@ _M.route = {
             items = {
                 description = "Nginx builtin variable name and value",
                 type = "array",
-                items = {
-                    maxItems = 3,
-                    minItems = 2,
-                    anyOf = {
-                        {type = "string",},
-                        {type = "number",},
-                    }
-                }
-            }
+                maxItems = 4,
+                minItems = 2,
+            },
         },
         filter_func = {
             type = "string",
