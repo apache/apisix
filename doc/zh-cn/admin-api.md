@@ -37,6 +37,7 @@
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/routes|无|获取资源列表|
 |GET      |/apisix/admin/routes/{id}|无|获取资源|
 |PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/routes     |{...}|创建资源，id 由后台服务自动生成|
@@ -280,6 +281,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/services|无|获取资源列表|
 |GET      |/apisix/admin/services/{id}|无|获取资源|
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
@@ -431,6 +433,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/consumers|无|获取资源列表|
 |GET      |/apisix/admin/consumers/{id}|无|获取资源|
 |PUT      |/apisix/admin/consumers|{...}|创建资源|
 |DELETE   |/apisix/admin/consumers/{id}|无|删除资源|
@@ -502,6 +505,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/upstreams|无|获取资源列表|
 |GET      |/apisix/admin/upstreams/{id}|无|获取资源|
 |PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
@@ -657,6 +661,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/ssl|无|获取资源列表|
 |GET      |/apisix/admin/ssl/{id}|无|获取资源|
 |PUT      |/apisix/admin/ssl/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/ssl     |{...}|创建资源，id 由后台服务自动生成|
