@@ -52,14 +52,8 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    return true
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
 end
 
 
