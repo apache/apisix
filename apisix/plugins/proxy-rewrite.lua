@@ -143,7 +143,7 @@ function _M.rewrite(conf, ctx)
 
     local upstream_uri = ctx.var.uri
     if conf.uri ~= nil then
-        upstream_uri = conf.uri
+        upstream_uri = core.utils.resolve_var(conf.uri, ctx.var)
     elseif conf.regex_uri ~= nil then
         local uri, _, err = re_sub(ctx.var.uri, conf.regex_uri[1],
                                    conf.regex_uri[2], "jo")
