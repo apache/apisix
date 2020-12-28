@@ -1211,9 +1211,12 @@ GET /t
 1981, 1982
 --- grep_error_log eval
 qr/upstream_key: roundrobin#route_1_\d/
---- grep_error_log_out
-upstream_key: roundrobin#route_1_1
+--- grep_error_log_out eval
+qr/(upstream_key: roundrobin#route_1_1
 upstream_key: roundrobin#route_1_2
+|upstream_key: roundrobin#route_1_2
+upstream_key: roundrobin#route_1_1
+)/
 --- no_error_log
 [error]
 
