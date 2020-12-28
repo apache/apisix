@@ -23,6 +23,7 @@ local pcall     = pcall
 local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
+local v1 = require("apisix.control.v1")
 
 local _M = {}
 
@@ -38,31 +39,8 @@ end
 
 
 local function get_plugins_all_attributes()
-    local plugins = core.config.local_conf().plugins
-    local all_attributes = core.table.new(#plugins, 0)
-    for _, name in ipairs(plugins) do
-        local plugin_name = "apisix.plugins." .. name
-        local ok, plugin = pcall(require, plugin_name)
-        if ok and plugin.priority then
-            local attribute = core.table.new(0, 6)
-            attribute.name = name
-            attribute.priority = plugin.priority
-            attribute.version = plugin.version
-            attribute.schema = plugin.schema
-            if plugin.consumer_schema then
-                attribute.consumer_schema = plugin.consumer_schema
-            end
-            if plugin.type then
-                attribute.type = plugin.type
-            else
-                attribute.type = "other"
-            end
-
-            table_insert(all_attributes, attribute)
-        end
-    end
-
-    return all_attributes
+    local _, schema = v1[1].handler()
+    return schema.plugins
 end
 
 

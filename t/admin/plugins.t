@@ -183,16 +183,15 @@ plugins:
             end
 
             res = json.decode(res)
-            local consumer_schema
-            for _, plugin in ipairs(res) do
-                if plugin.name == "example-plugin" then
-                    ngx.say(json.encode(plugin))
+            for k, v in pairs(res) do
+                if k == "example-plugin" then
+                    ngx.say(json.encode(v))
                 end
             end
         }
     }
 --- response_body eval
-qr/\{"name":"example-plugin","priority":0,"schema":\{"properties":\{"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"type":"other","version":0.1\}/
+qr/\{"metadata_schema":\{"additionalProperties":false,"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"properties":\{"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
 --- no_error_log
 [error]
 
@@ -217,16 +216,16 @@ qr/\{"name":"example-plugin","priority":0,"schema":\{"properties":\{"i":\{"minim
 
             res = json.decode(res)
             local auth_plugins = {}
-            for _, plugin in ipairs(res) do
-                if plugin.type == "auth" then
-                    table.insert(auth_plugins, plugin.name)
+            for k, v in pairs(res) do
+                if v.type == "auth" then
+                    table.insert(auth_plugins, k)
                 end
             end
             ngx.say(json.encode(auth_plugins))
         }
     }
 --- response_body eval
-qr/\["basic-auth","hmac-auth","jwt-auth","key-auth","wolf-rbac"\]/
+qr/\["wolf-rbac","basic-auth","key-auth","jwt-auth","hmac-auth"\]/
 --- no_error_log
 [error]
 
@@ -251,9 +250,9 @@ qr/\["basic-auth","hmac-auth","jwt-auth","key-auth","wolf-rbac"\]/
 
             res = json.decode(res)
             local consumer_schema
-            for _, plugin in ipairs(res) do
-                if plugin.name == "basic-auth" then
-                    consumer_schema = plugin.consumer_schema
+            for k, v in pairs(res) do
+                if k == "basic-auth" then
+                    consumer_schema = v.consumer_schema
                 end
             end
             ngx.say(json.encode(consumer_schema))

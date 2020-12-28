@@ -713,7 +713,7 @@ Content-Type: text/plain
 
 *API*：/apisix/admin/plugins/?all=true
 
-*Description*: all the attributes of all plugins, each plug-in includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
+*Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
 > Request Methods:
 
