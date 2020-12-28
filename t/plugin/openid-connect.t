@@ -864,7 +864,9 @@ OIDC introspection failed: No bearer token found in request.
 --- timeout: 10s
 --- request
 GET /hello
---- error_code: 401
+--- more_headers
+Authorization: foo
+--- error_code: 400
 --- error_log
 OIDC introspection failed: Invalid Authorization header format.
 
