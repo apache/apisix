@@ -218,14 +218,21 @@ qr/\{"metadata_schema":\{"additionalProperties":false,"properties":\{"ikey":\{"m
             local auth_plugins = {}
             for k, v in pairs(res) do
                 if v.type == "auth" then
-                    table.insert(auth_plugins, k)
+                    local plugin = {}
+                    plugin.name = k
+                    plugin.priority = v.priority
+                    table.insert(auth_plugins, plugin)
                 end
             end
+
+            table.sort(auth_plugins, function(l, r)
+                return l.priority > r.priority
+            end)
             ngx.say(json.encode(auth_plugins))
         }
     }
 --- response_body eval
-qr/\["wolf-rbac","basic-auth","key-auth","jwt-auth","hmac-auth"\]/
+qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"key-auth","priority":2500\}\]/
 --- no_error_log
 [error]
 
