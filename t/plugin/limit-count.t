@@ -1178,7 +1178,7 @@ passed
 
 
 
-=== TEST 37: plugin is bound to the service and upstream is the domain name
+=== TEST 37: add service and route, upstream is the domain name
 --- config
     location /t {
         content_by_lua_block {
@@ -1205,25 +1205,10 @@ passed
 
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
             end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
-
-
-=== TEST 38: add route and bind service_id
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
+            code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                     "methods": ["GET"],
@@ -1247,7 +1232,7 @@ passed
 
 
 
-=== TEST 39: normal, the result is as expected
+=== TEST 38: normal, the result is as expected
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -1275,7 +1260,7 @@ passed
 
 
 
-=== TEST 40: plugin is bound to the route and upstream is the domain name
+=== TEST 39: plugin is bound to the route and upstream is the domain name
 --- config
     location /t {
         content_by_lua_block {
@@ -1317,7 +1302,7 @@ passed
 
 
 
-=== TEST 41: normal, the result is as expected
+=== TEST 40: normal, the result is as expected
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
