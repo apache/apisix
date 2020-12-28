@@ -51,7 +51,7 @@ local function parse_args()
     local options = {}
     core.utils.init_dns_proxy(options)
     if options.nameservers then
-        for _, dns_resolver in pairs(options.nameservers) do
+        for _, dns_resolver in ipairs(options.nameservers) do
             core.log.info("dns resolver ", dns_resolver)
         end
     end
