@@ -158,7 +158,7 @@ end
 
 local function introspect(ctx, conf)
     -- Extract token, maybe.
-    local has_token, token, status, err = get_bearer_access_token(ctx)
+    local has_token, token, err = get_bearer_access_token(ctx)
 
     if err then
         return ngx.HTTP_BAD_REQUEST, err, nil, nil
