@@ -1192,3 +1192,60 @@ x-key: X-APISIX
 x-real-ip: 127.0.0.1
 --- no_error_log
 [error]
+
+
+
+=== TEST 40: set route(nginx variable does not exist)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/uri",
+                            "headers": {
+                                "x-api": "$helle",
+                                "name": "$arg_world",
+                                "x-key": "$http_key",
+                                "Version": "nginx_var_does_not_exist"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: hit route(get nginx variable is nil)
+--- request
+GET /hello HTTP/1.1
+--- response_body
+uri: /uri
+host: localhost
+version: nginx_var_does_not_exist
+x-real-ip: 127.0.0.1
+--- no_error_log
+[error]
