@@ -39,7 +39,7 @@ local ngx_sleep    = ngx.sleep
 
 local hostname
 local max_sleep_interval = 1
-local dns_client = {
+local dns_proxy = {
     client = require("resty.dns.client"),
     inited = nil,
 }
@@ -84,12 +84,12 @@ end
 
 
 local function dns_parse(domain)
-    if not dns_client.inited then
-        dns_client.client.init()
+    if not dns_proxy.inited then
+        dns_proxy.client.init()
     end
 
     local answers, err
-    answers, err = dns_client.client.resolve(domain)
+    answers, err = dns_proxy.client.resolve(domain)
 
     if not answers then
       return nil, "failed to query the DNS server: " .. err
@@ -109,18 +109,13 @@ local function dns_parse(domain)
 end
 _M.dns_parse = dns_parse
 
-function _M.init_dns_client (resolv_conf)
-    if dns_client.inited then
+function _M.init_dns_proxy (options)
+    if dns_proxy.inited then
         return
     end
 
-    if resolv_conf then
-        dns_client.client.init({ resolvConf = resolv_conf })
-    else
-        dns_client.client.init()
-    end
-
-    dns_client.inited = true
+    dns_proxy.client.init(options)
+    dns_proxy.inited = true
 end
 
 

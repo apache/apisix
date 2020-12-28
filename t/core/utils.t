@@ -77,8 +77,8 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local resolvers = {"8.8.8.8"}
-            core.utils.set_resolver(resolvers)
-            local ip_info, err = core.utils.dns_parse("github.com", resolvers)
+            core.utils.init_dns_proxy({nameservers = resolvers})
+            local ip_info, err = core.utils.dns_parse("github.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -104,13 +104,10 @@ qr/"address":.+,"name":"github.com"/
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
             core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
-            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.resolvers))
         }
     }
 --- request
 GET /t
---- response_body
-resolvers: ["8.8.8.8","114.114.114.114"]
 --- error_log eval
 qr/"address":.+,"name":"github.com"/
 --- no_error_log
@@ -239,3 +236,32 @@ res:tell David to
 res:John and David
 res: and David
 res:John and \$me
+
+
+
+=== TEST 7:  resolve with search
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local resolvers = {"223.5.5.5", "223.6.6.6"}
+            local search = {"google.com"}
+            local ndots = 5
+            core.utils.init_dns_proxy({
+                ndots = ndots,
+                search = search,
+                resolvers = resolvers,
+            })
+            local ip_info, err = core.utils.dns_parse("news")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+            end
+            core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- error_log eval
+qr/"address":.+,"name":"partner"/
+--- no_error_log
+[error]

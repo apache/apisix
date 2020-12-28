@@ -49,7 +49,7 @@ local ver_header    = "APISIX/" .. core.version.VERSION
 
 
 local function parse_args()
-    core.utils.init_dns_client()
+    core.utils.init_dns_proxy()
 end
 
 
@@ -67,7 +67,7 @@ function _M.http_init(args)
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    parse_args(args)
+    parse_args()
     core.id.init()
 
     local process = require("ngx.process")
