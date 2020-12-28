@@ -105,6 +105,7 @@ local _M = {
     schema = schema,
 }
 
+
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
@@ -153,7 +154,6 @@ local function get_bearer_access_token(ctx)
 
     return false, nil, nil
 end
-
 
 
 local function introspect(ctx, conf)
