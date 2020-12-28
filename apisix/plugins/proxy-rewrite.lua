@@ -192,7 +192,8 @@ function _M.rewrite(conf, ctx)
 
     local field_cnt = #conf.headers_arr
     for i = 1, field_cnt, 2 do
-        ngx.req.set_header(conf.headers_arr[i], conf.headers_arr[i+1])
+        ngx.req.set_header(conf.headers_arr[i],
+                           core.utils.resolve_var(conf.headers_arr[i+1], ctx.var))
     end
 end
 
