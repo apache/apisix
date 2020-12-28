@@ -854,7 +854,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers_like
-WWW-Authenticate: Bearer realm=apisix
+WWW-Authenticate: Bearer realm="apisix"
 --- error_log
 OIDC introspection failed: No bearer token found in request.
 
