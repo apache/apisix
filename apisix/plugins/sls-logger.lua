@@ -188,7 +188,9 @@ function _M.log(conf, ctx)
         batch_max_size = conf.batch_max_size,
         max_retry_count = conf.max_retry_count,
         buffer_duration = conf.buffer_duration,
-        inactive_timeout = conf.inactive_timeout
+        inactive_timeout = conf.inactive_timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
     log_buffer, err = batch_processor:new(handle_log, process_conf)

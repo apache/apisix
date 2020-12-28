@@ -26,7 +26,6 @@
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `key-auth` is an authentication plugin, it should work with `consumer` together.
@@ -35,11 +34,9 @@ Add Key Authentication (also sometimes referred to as an API key) to a Service o
 
 ## Attributes
 
-
 | Name | Type   | Requirement | Default | Valid | Description                                                                  |
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | key  | string | required    |         |       | different consumer objects should use different values, it should be unique. |
-
 
 ## How To Enable
 

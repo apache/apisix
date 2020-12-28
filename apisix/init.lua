@@ -37,6 +37,10 @@ local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
 local tonumber      = tonumber
+local control_api_router
+if ngx.config.subsystem == "http" then
+    control_api_router = require("apisix.control.router")
+end
 local load_balancer
 local local_conf
 local dns_resolver
@@ -179,8 +183,13 @@ function _M.http_ssl_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
+        -- clear the ctx of the ssl phase, avoid affecting other phases
+        ngx.ctx = nil
         ngx_exit(-1)
     end
+
+    -- clear the ctx of the ssl phase, avoid affecting other phases
+    ngx.ctx = nil
 end
 
 
@@ -201,6 +210,7 @@ local function parse_domain(host)
         return nil, "failed to parse domain"
     end
 end
+_M.parse_domain = parse_domain
 
 
 local function parse_domain_for_nodes(nodes)
@@ -330,12 +340,9 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    -- always fetch table from the table pool, we don't need a reused api_ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
 
@@ -413,6 +420,7 @@ function _M.http_access_phase()
         api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
         api_ctx.conf_id = route.value.id .. "&" .. service.value.id
         api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
 
         if enable_websocket == nil then
             enable_websocket = service.value.enable_websocket
@@ -424,6 +432,7 @@ function _M.http_access_phase()
         api_ctx.conf_id = route.value.id
     end
     api_ctx.route_id = route.value.id
+    api_ctx.route_name = route.value.name
 
     local up_id = route.value.upstream_id
     if up_id then
@@ -432,7 +441,7 @@ function _M.http_access_phase()
             local upstream = upstreams:get(tostring(up_id))
             if not upstream then
                 core.log.error("failed to find upstream by id: " .. up_id)
-                return core.response.exit(500)
+                return core.response.exit(502)
             end
 
             if upstream.has_domain then
@@ -806,6 +815,14 @@ function _M.http_admin()
 end
 
 end -- do
+
+
+function _M.http_control()
+    local ok = control_api_router.match(get_var("uri"))
+    if not ok then
+        ngx_exit(404)
+    end
+end
 
 
 function _M.stream_init()

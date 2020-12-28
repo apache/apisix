@@ -42,7 +42,7 @@ add_block_preprocessor(sub {
                 local data, err =  sock:receive()
                 if (data) then
                     ngx.log(ngx.INFO, "[Server] receive data:", data)
-                else 
+                else
                     if err ~= "timeout" then
                         ngx.log(ngx.WARN, "socket error:", err)
                         return

@@ -28,7 +28,6 @@
 - [**Metadata**](#metadata)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 `http-logger` is a plugin which push Log data requests to HTTP/HTTPS servers.
@@ -60,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 {
       "plugins": {
             "http-logger": {
-                "uri": "http://127.0.0.1:80/postendpoint?param=1",
+                "uri": "http://127.0.0.1:80/postendpoint?param=1"
             }
        },
       "upstream": {
@@ -88,9 +87,19 @@ hello, world
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, the value is [Nginx variable](http://nginx.org/en/docs/varindex.html). |
+| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as JSON object. Only string is supported in the `value` part. If the value starts with `$`, it means to get `APISIX` variables or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
 
  Note that the metadata configuration is applied in global scope, which means it will take effect on all Route or Service which use http-logger plugin.
+
+**APISIX Variables**
+
+|   Variable Name  |      Description        | Usage Example  |
+|------------------|-------------------------|----------------|
+| route_id         | id of `route`          | $route_id      |
+| route_name       | name of `route`        | $route_name    |
+| service_id       | id of `service`        | $service_id    |
+| service_name     | name of `service`      | $service_name  |
+| consumer_name    | username of `consumer` | $consumer_name |
 
 ### Example
 

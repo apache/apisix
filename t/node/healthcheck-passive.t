@@ -56,7 +56,7 @@ __DATA__
                                     "interval": 100,
                                     "http_failures": 2
                                 }
-                            },
+                            },]] .. [[
                             "passive": {
                                 "healthy": {
                                     "http_statuses": [200, 201],

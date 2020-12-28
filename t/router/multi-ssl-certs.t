@@ -342,7 +342,7 @@ we have more than 1 ssl certs now
 
 
 
-=== TEST 8: remove test ssl certs 
+=== TEST 8: remove test ssl certs
 --- config
 location /t {
     content_by_lua_block {

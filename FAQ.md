@@ -19,11 +19,11 @@
 
 # FAQ
 
-##  Why a new API gateway?
+## Why a new API gateway?
 
 There are new requirements for API gateways in the field of microservices: higher flexibility, higher performance requirements, and cloud native.
 
-##  What are the differences between APISIX and other API gateways?
+## What are the differences between APISIX and other API gateways?
 
 APISIX is based on etcd to save and synchronize configuration, not relational databases such as Postgres or MySQL.
 
@@ -106,7 +106,6 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
 
 Here is the operator list of current `lua-resty-radixtree`：
 https://github.com/iresty/lua-resty-radixtree#operator-list
@@ -191,7 +190,6 @@ Server: APISIX web server
 </body>
 </html>
 ```
-
 
 ## How to fix OpenResty Installation Failure on MacOS 10.15
 When you install the OpenResty on MacOs 10.15, you may face this error

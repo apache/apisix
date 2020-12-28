@@ -20,7 +20,6 @@ local ipairs    = ipairs
 local ngx       = ngx
 local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
-local tonumber = tonumber
 local select = select
 local type = type
 local prometheus
@@ -44,11 +43,10 @@ local DEFAULT_BUCKETS = { 1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70,
 
 local metrics = {}
 
+local inner_tab_arr = {}
 
-    local inner_tab_arr = {}
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
-
     for i = 1, select('#', ...) do
         inner_tab_arr[i] = select(i, ...)
     end
@@ -153,7 +151,7 @@ function _M.log(conf, ctx)
 
     local overhead = latency
     if ctx.var.upstream_response_time then
-        overhead =  overhead - tonumber(ctx.var.upstream_response_time) * 1000
+        overhead =  overhead - ctx.var.upstream_response_time * 1000
     end
     metrics.overhead:observe(overhead,
         gen_arr("request", service_id, consumer_name, balancer_ip))
@@ -329,5 +327,8 @@ function _M.metric_data()
     return prometheus:metric_data()
 end
 
+function _M.get_prometheus()
+    return prometheus
+end
 
 return _M

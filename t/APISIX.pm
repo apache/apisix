@@ -72,7 +72,7 @@ if ($enable_local_dns) {
 
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
-$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
+$default_yaml_config =~ s/# - example-plugin/- example-plugin/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -305,6 +305,12 @@ _EOC_
             more_clear_headers Date;
         }
 
+        location = /v3/auth/authenticate {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "etcd auth failed!")
+            }
+        }
+
         location  = /.well-known/openid-configuration {
             content_by_lua_block {
                 ngx.say([[
@@ -366,6 +372,12 @@ _EOC_
         location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
+            }
+        }
+
+        location /v1/ {
+            content_by_lua_block {
+                apisix.http_control()
             }
         }
 

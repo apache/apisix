@@ -21,15 +21,7 @@
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
 
-set -ex
-
-clean_up() {
-    git checkout conf/config.yaml
-}
-
-trap clean_up EXIT
-
-unset APISIX_PROFILE
+. ./.travis/apisix_cli_test/common.sh
 
 git checkout conf/config.yaml
 
@@ -546,7 +538,7 @@ if [ $count_test_access_log -eq 0 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -eq 2 ]; then
+if [ $count_access_log_off -eq 3 ]; then
     echo "failed: nginx.conf file find access_log off; when enable access log"
     exit 1
 fi
@@ -581,7 +573,7 @@ if [ $count_test_access_log -eq 1 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -ne 2 ]; then
+if [ $count_access_log_off -ne 3 ]; then
     echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
     exit 1
 fi

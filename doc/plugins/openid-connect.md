@@ -41,7 +41,7 @@ The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspec
 | bearer_only                        | boolean | optional    | false                 |         | Setting this `true` will check for the authorization header in the request with a bearer token |
 | logout_path                        | string  | optional    | "/logout"             |         |                                                                                                |
 | redirect_uri                       | string  | optional    | "ngx.var.request_uri" |         |                                                                                                |
-| timeout                            | integer | optional    | 3                     | [1,...] |                                                                                                |
+| timeout                            | integer | optional    | 3                     | [1,...] | Timeout in seconds                                                                              |
 | ssl_verify                         | boolean | optional    | false                 |         |                                                                                                |
 | introspection_endpoint             | string  | optional    |                       |         | URL of the token verification endpoint of the identity server                                  |
 | introspection_endpoint_auth_method | string  | optional    | "client_secret_basic" |         | Authentication method name for token introspection                                             |

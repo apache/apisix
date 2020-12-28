@@ -26,7 +26,6 @@
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
-
 ## Name
 
 [Zipkin](https://github.com/openzipkin/zipkin) is a OpenTracing plugin.
@@ -166,4 +165,3 @@ func main(){
 
 }
 ```
-

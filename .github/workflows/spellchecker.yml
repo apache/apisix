@@ -1,9 +1,9 @@
 name: spellchecker
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 jobs:
   misspell:
     name: runner / misspell

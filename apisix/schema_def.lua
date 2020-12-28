@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local schema    = require('apisix.core.schema')
+local table_insert = table.insert
+local table_concat = table.concat
 local setmetatable = setmetatable
 local error     = error
 
@@ -43,14 +45,19 @@ local host_def = {
 _M.host_def = host_def
 
 
-local ipv4_def = "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+local ipv4_seg = "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
+local ipv4_def_buf = {}
+for i = 1, 4 do
+    table_insert(ipv4_def_buf, ipv4_seg)
+end
+local ipv4_def = table_concat(ipv4_def_buf, [[\.]])
 -- There is false negative for ipv6/cidr. For instance, `:/8` will be valid.
 -- It is fine as the correct regex will be too complex.
 local ipv6_def = "([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}"
                  .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
     {title = "IPv4", type = "string", format = "ipv4"},
-    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/[0-9]{1,2}$"},
+    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/([12]?[0-9]|3[0-2])$"},
     {title = "IPv6", type = "string", format = "ipv6"},
     {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
@@ -269,7 +276,6 @@ local nodes_schema = {
         },
         {
             type = "array",
-            minItems = 1,
             items = {
                 type = "object",
                 properties = {
@@ -314,25 +320,6 @@ local upstream_schema = {
                 read = {type = "number", minimum = 0},
             },
             required = {"connect", "send", "read"},
-        },
-        k8s_deployment_info = {
-            type = "object",
-            properties = {
-                namespace = {type = "string", description = "k8s namespace"},
-                deploy_name = {type = "string", description = "k8s deployment name"},
-                service_name = {type = "string", description = "k8s service name"},
-                port = {type = "number", minimum = 0},
-                backend_type = {
-                    type = "string",
-                    default = "pod",
-                    description = "k8s service name",
-                    enum = {"svc", "pod"}
-                },
-            },
-            anyOf = {
-                {required = {"namespace", "deploy_name", "port"}},
-                {required = {"namespace", "service_name", "port"}},
-            },
         },
         type = {
             description = "algorithms of load balancing",
@@ -385,7 +372,6 @@ local upstream_schema = {
     },
     anyOf = {
         {required = {"type", "nodes"}},
-        {required = {"type", "k8s_deployment_info"}},
         {required = {"type", "service_name"}},
     },
     additionalProperties = false,
@@ -457,15 +443,9 @@ _M.route = {
             items = {
                 description = "Nginx builtin variable name and value",
                 type = "array",
-                items = {
-                    maxItems = 3,
-                    minItems = 2,
-                    anyOf = {
-                        {type = "string",},
-                        {type = "number",},
-                    }
-                }
-            }
+                maxItems = 4,
+                minItems = 2,
+            },
         },
         filter_func = {
             type = "string",
@@ -473,7 +453,9 @@ _M.route = {
             pattern = [[^function]],
         },
 
+        -- The 'script' fields below are used by dashboard for plugin orchestration
         script = {type = "string", minLength = 10, maxLength = 102400},
+        script_id = id_schema,
 
         plugins = plugins_schema,
         upstream = upstream_schema,

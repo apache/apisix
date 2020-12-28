@@ -33,7 +33,6 @@
 
 - 如果你要想使用 Tengine 替代 OpenResty，请参考 [Install Tengine at Ubuntu](../../.travis/linux_tengine_runner.sh)。
 
-
 CentOS 7
 ========
 
@@ -121,9 +120,9 @@ sudo add-apt-repository -y "deb http://openresty.org/package/debian $(lsb_releas
 sudo apt-get update
 
 # 安装 etcd
-wget https://github.com/etcd-io/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz
-tar -xvf etcd-v3.3.13-linux-amd64.tar.gz && \
-    cd etcd-v3.3.13-linux-amd64 && \
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.13/etcd-v3.4.13-linux-amd64.tar.gz
+tar -xvf etcd-v3.4.13-linux-amd64.tar.gz && \
+    cd etcd-v3.4.13-linux-amd64 && \
     sudo cp -a etcd etcdctl /usr/bin/
 
 # 安装 OpenResty 和 编译工具

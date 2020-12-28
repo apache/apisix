@@ -26,6 +26,8 @@
 - [**确定执行阶段**](#确定执行阶段)
 - [**编写执行逻辑**](#编写执行逻辑)
 - [**编写测试用例**](#编写测试用例)
+- [**注册公共接口**](#注册公共接口)
+- [**注册控制接口**](#注册控制接口)
 
 ## 检查外部依赖
 
@@ -54,28 +56,27 @@
 
 ## 插件命名与配置
 
-给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config-default.yaml__ 文件中添加上你的插件名。例如 key-auth 这个插件，
-需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/key-auth.lua__ 文件中可以看到：
+给插件取一个很棒的名字，确定插件的加载优先级，然后在 __conf/config-default.yaml__ 文件中添加上你的插件名。例如 example-plugin 这个插件，
+需要在代码里指定插件名称（名称是插件的唯一标识，不可重名），在 __apisix/plugins/example-plugin.lua__ 文件中可以看到：
 
 ```lua
-   local plugin_name = "key-auth"
+local plugin_name = "example-plugin"
 
-   local _M = {
-       version = 0.1,
-       priority = 2500,
-       type = 'auth',
-       name = plugin_name,
-       schema = schema,
-   }
+local _M = {
+    version = 0.1,
+    priority = 0,
+    name = plugin_name,
+    schema = schema,
+    metadata_schema = metadata_schema,
+}
 ```
 
-注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。另外，优先级( priority )值大的插件，会优先执行，比如 `basic-auth` 的优先级是 2520 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `basic-auth` 插件。
+注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同。另外，同一个阶段里面，优先级( priority )值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的[确定执行阶段](#确定执行阶段)这一节。
 
 在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
 ```yaml
 plugins:                          # plugin list
-  - example-plugin
   - limit-req
   - limit-count
   - limit-conn
@@ -91,6 +92,7 @@ plugins:                          # plugin list
   - openid-connect
   - proxy-rewrite
   - redirect
+  ...
 ```
 
 注：先后顺序与执行顺序无关。
@@ -104,31 +106,40 @@ $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalk
 ## 配置描述与校验
 
 定义插件的配置项，以及对应的 [Json Schema](https://json-schema.org) 描述，并完成对 json 的校验，这样方便对配置的数据规
-格进行验证，以确保数据的完整性以及程序的健壮性。同样，我们以 key-auth 插件为例，看看他的配置数据：
+格进行验证，以确保数据的完整性以及程序的健壮性。同样，我们以 example-plugin 插件为例，看看他的配置数据：
 
 ```json
- "key-auth" : {
-       "key" : "auth-one"
-  }
+"example-plugin" : {
+    "i": 1,
+    "s": "s",
+    "t": [1]
+}
 ```
 
-插件的配置数据比较简单，只支持一个命名为 key 的属性，那么我们看下他的 Schema 描述：
+我们看下他的 Schema 描述：
 
 ```lua
-   local schema = {
-       type = "object",
-       properties = {
-           key = {type = "string"},
-       }
-   }
+local schema = {
+    type = "object",
+    properties = {
+        i = {type = "number", minimum = 0},
+        s = {type = "string"},
+        t = {type = "array", minItems = 1},
+        ip = {type = "string"},
+        port = {type = "integer"},
+    },
+    required = {"i"},
+}
 ```
+
+这个 schema 定义了一个非负数 `i`，字符串 `s`，非空数组 `t`，和 `ip` 跟 `port`。只有 `i` 是必需的。
 
 同时，需要实现 __check_schema(conf)__ 方法，完成配置参数的合法性校验。
 
 ```lua
-   function _M.check_schema(conf)
-       return core.schema.check(schema, conf)
-   end
+function _M.check_schema(conf)
+    return core.schema.check(schema, conf)
+end
 ```
 
 注：项目已经提供了 __core.schema.check__ 公共方法，直接使用即可完成配置参数校验。
@@ -157,11 +168,60 @@ local _M = {
 }
 ```
 
+你可能之前见过 key-auth 这个插件在它的模块定义时设置了 `type = 'auth'`。
+当一个插件设置 `type = 'auth'`，说明它是个认证插件。
+
+认证插件需要在执行后选择对应的consumer。举个例子，在 key-auth 插件中，它通过 `apikey` 请求头获取对应的 consumer，然后通过 `consumer.attach_consumer` 设置它。
+
+为了跟 `consumer` 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `consumer` 资源的 `plugins` 属性里面的配置。
+
+下面是 key-auth 插件的 consumer 配置：
+```json
+{
+    "username": "Joe",
+    "plugins": {
+        "key-auth": {
+            "key": "Joe's key"
+        }
+    }
+}
+```
+你在创建 [Consumer](https://github.com/apache/apisix/blob/master/doc/admin-api.md#consumer) 时会用到它。
+
+为了检验这个配置，这个插件使用了如下的schema:
+```json
+local consumer_schema = {
+    type = "object",
+    additionalProperties = false,
+    properties = {
+        key = {type = "string"},
+    },
+    required = {"key"},
+}
+```
+
+注意 key-auth 的 __check_schema(conf)__ 方法和 example-plugin 的同名方法的区别：
+```lua
+-- key-auth
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_CONSUMER then
+        return core.schema.check(consumer_schema, conf)
+    else
+        return core.schema.check(schema, conf)
+    end
+end
+```
+
+```lua
+-- example-plugin
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
+end
+```
+
 ## 确定执行阶段
 
-根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，只要在请求进来之后业务响应之前完成认证即可。
-该插件在 rewrite 、access 阶段执行都可以，项目中是用 rewrite 阶段执行认证逻辑，一般 IP 准入、接口权限是在 access 阶段
-完成的。
+根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，所以需要在 rewrite 阶段执行。在 APISIX，只有认证逻辑可以在 rewrite 阶段里面完成，其他需要在代理到上游之前执行的逻辑都是在 access 阶段完成的。
 
 **注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。[例子](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
 
@@ -182,7 +242,7 @@ local _M = {
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 'test-key'})
+            local ok, err = plugin.check_schema({key = 'test-key'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -213,3 +273,55 @@ done
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
 包括 http status，http response header， http response body 等。
+
+### 注册公共接口
+
+插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口:
+
+```lua
+local function gen_token()
+    ...
+end
+
+function _M.api()
+    return {
+        {
+            methods = {"GET"},
+            uri = "/apisix/plugin/jwt/sign",
+            handler = gen_token,
+        }
+    }
+end
+```
+
+注意注册的接口会暴露到外网。
+你可能需要使用 [interceptors](plugin-interceptors.md) 来保护它。
+
+### 注册控制接口
+
+如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
+
+Take a look at example-plugin plugin:
+```lua
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
+        }
+    }
+end
+```
+
+如果你没有改过默认的 control API 配置，这个插件暴露的 `GET /v1/plugin/example-plugin/hello` API 只有通过 `127.0.0.1` 才能访问它。

@@ -26,6 +26,7 @@
 * [Getting Started Guide](getting-started.md)
 * [How to build Apache APISIX](how-to-build.md)
 * [Admin API](admin-api.md)
+* [Control API](control-api.md)
 * [Health Check](health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
 * [Router radixtree](router-radixtree.md)
 * [Stand Alone Model](stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
@@ -80,6 +81,7 @@
 * [request-validation](plugins/request-validation.md): Validates requests before forwarding to upstream.
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 * [api-breaker](plugins/api-breaker.md): Circuit Breaker for API that stops requests forwarding to upstream in case of unhealthy state.
+* [traffic-split](plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
 
 ### Monitoring
 

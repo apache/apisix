@@ -97,6 +97,7 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [健康检查](doc/zh-cn/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
   - 熔断器: 智能跟踪不健康上游服务。
   - [代理镜像](doc/zh-cn/plugins/proxy-mirror.md): 提供镜像客户端请求的能力。
+  - [流量拆分](doc/zh-cn/plugins/traffic-split.md): 允许用户逐步控制各个上游之间的流量百分比。
 
 - **精细化路由**
 
@@ -272,7 +273,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 | :------------------------------------ | :-------------------------------------- | :--------------------- |
 | 项目归属                              | Apache 软件基金会                       | Kong Inc.              |
 | 技术架构                              | Nginx + etcd                            | Nginx + postgres       |
-| 交流渠道                              | 微信群、QQ 群、邮件列表、Github、meetup | Github、论坛、freenode |
+| 交流渠道                              | 微信群、QQ 群、邮件列表、GitHub、meetup | GitHub、论坛、freenode |
 | 单核 QPS (开启限流和 prometheus 插件) | 18000                                   | 1700                   |
 | 平均延迟                              | 0.2 毫秒                                | 2 毫秒                 |
 | 支持 Dubbo 代理                       | 是                                      | 否                     |
@@ -291,7 +292,6 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 | 支持任何 Nginx 变量做路由条件         | 是                                      | 否                     |
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
-
 
 ## 社区
 
@@ -338,7 +338,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
-<br/><br/>
+<br><br>
 APISIX 被纳入 <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category"> 云原生软件基金会 API 网关全景图</a>
 </p>
 
