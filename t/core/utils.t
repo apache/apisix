@@ -252,7 +252,7 @@ res:John and \$me
                 search = search,
                 resolvers = resolvers,
             })
-            local ip_info, err = core.utils.dns_parse("news")
+            local ip_info, err = core.utils.dns_parse("news.google.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -262,6 +262,6 @@ res:John and \$me
 --- request
 GET /t
 --- error_log eval
-qr/"address":.+,"name":"partner"/
+qr/"address":.+,"name":"news.google.com"/
 --- no_error_log
 [error]

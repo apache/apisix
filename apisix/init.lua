@@ -48,7 +48,13 @@ local ver_header    = "APISIX/" .. core.version.VERSION
 
 
 local function parse_args()
-    core.utils.init_dns_proxy()
+    local options = {}
+    core.utils.init_dns_proxy(options)
+    if options.nameservers then
+        for _, dns_resolver in pairs(options.nameservers) do
+            core.log.info("dns resolver ", dns_resolver)
+        end
+    end
 end
 
 
