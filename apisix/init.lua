@@ -198,7 +198,6 @@ local function parse_domain(host)
     end
 
     core.log.info("parse addr: ", core.json.delay_encode(ip_info))
-    core.log.info("resolver: ", core.json.delay_encode(dns_resolver))
     core.log.info("host: ", host)
     if ip_info.address then
         core.log.info("dns resolver domain: ", host, " to ", ip_info.address)
