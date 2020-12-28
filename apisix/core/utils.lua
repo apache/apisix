@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core_str = require("apisix.core.string")
-local table    = require("apisix.core.table")
 local log      = require("apisix.core.log")
 local string   = require("apisix.core.string")
 local ngx_re   = require("ngx.re")

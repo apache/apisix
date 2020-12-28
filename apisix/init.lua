@@ -43,7 +43,6 @@ if ngx.config.subsystem == "http" then
 end
 local load_balancer
 local local_conf
-local dns_resolver
 local lru_resolved_domain
 local ver_header    = "APISIX/" .. core.version.VERSION
 
