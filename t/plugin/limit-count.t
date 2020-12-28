@@ -1178,7 +1178,7 @@ passed
 
 
 
-=== TEST 37: plugin is bound to the service
+=== TEST 37: plugin is bound to the service and upstream is the domain name
 --- config
     location /t {
         content_by_lua_block {
@@ -1192,6 +1192,13 @@ passed
                             "time_window": 60,
                             "rejected_code": 503
                         }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "test.com:1980": 1,
+                            "foo.com:1981": 1
+                        },
+                        "type": "roundrobin"
                     }
                 }]]
                 )
@@ -1211,7 +1218,7 @@ passed
 
 
 
-=== TEST 38: add route and upstream is the domain name
+=== TEST 38: add route and bind service_id
 --- config
     location /t {
         content_by_lua_block {
@@ -1221,14 +1228,7 @@ passed
                  [[{
                     "methods": ["GET"],
                     "uri": "/hello",
-                    "service_id": 1,
-                    "upstream": {
-                        "nodes": {
-                            "test.com:1980": 1,
-                            "foo.com:1981": 1
-                        },
-                        "type": "roundrobin"
-                    }
+                    "service_id": 1
                 }]]
                 )
 
