@@ -137,8 +137,13 @@ local function get_bearer_access_token(ctx)
 
     -- Check format of Authorization header.
     local res, err = ngx_re.split(auth_header, " ", nil, nil, 2)
+
     if not res then
+        -- No result was returned.
         return false, nil, err
+    elseif #res < 2 then
+        -- Header doesn't split into enough tokens.
+        return false, nil, "Invalid Authorization header format."
     end
 
     if string.lower(res[1]) == "bearer" then
@@ -146,14 +151,18 @@ local function get_bearer_access_token(ctx)
         return true, res[2], nil
     end
 
-    return false
+    return false, nil, nil
 end
 
 
 
 local function introspect(ctx, conf)
     -- Extract token, maybe.
-    local has_token, token, _ = get_bearer_access_token(ctx)
+    local has_token, token, status, err = get_bearer_access_token(ctx)
+
+    if err then
+        return ngx.HTTP_BAD_REQUEST, err, nil, nil
+    end
 
     if not has_token then
         -- Could not find token.

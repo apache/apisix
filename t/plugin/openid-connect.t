@@ -848,20 +848,29 @@ passed
 
 
 
-=== TEST 11: Access route w/o bearer token. Should return 401.
+=== TEST 11: Access route w/o bearer token. Should return 401 (Unauthorized).
 --- timeout: 10s
 --- request
 GET /hello
 --- error_code: 401
 --- response_headers_like
 WWW-Authenticate: Bearer realm=apisix
---- no_error_log
-[error]
---- SKIP
+--- error_log
+OIDC introspection failed: No bearer token found in request.
 
 
 
-=== TEST 12: Update plugin with ID provider public key, so tokens can be validated locally.
+=== TEST 12: Access route with invalid Authorization header value. Should return 400 (Bad Request).
+--- timeout: 10s
+--- request
+GET /hello
+--- error_code: 401
+--- error_log
+OIDC introspection failed: Invalid Authorization header format.
+
+
+
+=== TEST 13: Update plugin with ID provider public key, so tokens can be validated locally.
 --- config
     location /t {
         content_by_lua_block {
@@ -941,7 +950,7 @@ passed
 
 
 
-=== TEST 13: Access route with valid token.
+=== TEST 14: Access route with valid token.
 --- config
     location /t {
         content_by_lua_block {
@@ -973,7 +982,7 @@ true
 
 
 
-=== TEST 14: Update route URI to '/uri' where upstream endpoint returns request headers in response body.
+=== TEST 15: Update route URI to '/uri' where upstream endpoint returns request headers in response body.
 --- config
     location /t {
         content_by_lua_block {
@@ -1053,7 +1062,7 @@ passed
 
 
 
-=== TEST 15: Access route with valid token in `Authorization` header. Upstream should additionally get the token in the `X-Access-Token` header.
+=== TEST 16: Access route with valid token in `Authorization` header. Upstream should additionally get the token in the `X-Access-Token` header.
 --- request
 GET /uri HTTP/1.1
 --- more_headers
@@ -1070,7 +1079,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 16: Update plugin to only use `Authorization` header.
+=== TEST 17: Update plugin to only use `Authorization` header.
 --- config
     location /t {
         content_by_lua_block {
@@ -1157,7 +1166,7 @@ passed
 
 
 
-=== TEST 17: Access route with valid token in `Authorization` header. Upstream should not get the additional `X-Access-Token` header.
+=== TEST 18: Access route with valid token in `Authorization` header. Upstream should not get the additional `X-Access-Token` header.
 --- request
 GET /uri HTTP/1.1
 --- more_headers
@@ -1173,7 +1182,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 18: Switch route URI back to `/hello`.
+=== TEST 19: Switch route URI back to `/hello`.
 --- config
     location /t {
         content_by_lua_block {
@@ -1253,7 +1262,7 @@ passed
 
 
 
-=== TEST 19: Access route with invalid token. Should return 401.
+=== TEST 20: Access route with invalid token. Should return 401.
 --- config
     location /t {
         content_by_lua_block {
@@ -1284,7 +1293,7 @@ jwt signature verification failed
 
 
 
-=== TEST 20: Update route with Keycloak introspection endpoint and public key removed. Should now invoke introspection endpoint to validate tokens.
+=== TEST 21: Update route with Keycloak introspection endpoint and public key removed. Should now invoke introspection endpoint to validate tokens.
 --- config
     location /t {
         content_by_lua_block {
@@ -1360,7 +1369,7 @@ passed
 
 
 
-=== TEST 21: Obtain valid token and access route with it.
+=== TEST 22: Obtain valid token and access route with it.
 --- config
     location /t {
         content_by_lua_block {
@@ -1420,7 +1429,7 @@ true
 
 
 
-=== TEST 22: Access route with an invalid token.
+=== TEST 23: Access route with an invalid token.
 --- config
     location /t {
         content_by_lua_block {
@@ -1451,7 +1460,7 @@ OIDC introspection failed: invalid token
 
 
 
-=== TEST 23: Check defaults.
+=== TEST 24: Check defaults.
 --- config
     location /t {
         content_by_lua_block {
