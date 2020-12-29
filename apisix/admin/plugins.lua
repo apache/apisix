@@ -23,7 +23,7 @@ local pcall     = pcall
 local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
-local v1 = require("apisix.control.v1")
+local plugin_get_all = require("apisix.plugin").get_all
 
 local _M = {}
 
@@ -38,16 +38,17 @@ function _M.stream_check_schema(plugins_conf, schema_type)
 end
 
 
-local function get_plugins_all_attributes()
-    local _, schema = v1[1].handler()
-    return schema.plugins
-end
-
-
 function _M.get(name)
     local arg = get_uri_args()
     if arg and arg["all"] == "true" then
-        local all_attributes = get_plugins_all_attributes()
+        local all_attributes = plugin_get_all({
+            version = true,
+            priority = true,
+            schema = true,
+            metadata_schema = true,
+            consumer_schema = true,
+            type = true,
+        })
         return 200, all_attributes
     end
 
