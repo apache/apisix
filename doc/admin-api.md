@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin](#plugin)
 * [Plugin Metadata](#plugin-metadata)
 
 ## Route
@@ -682,6 +683,38 @@ Config Example:
     "sni": "sni"    # https SNI
 }
 ```
+
+[Back to TOC](#目录)
+
+## Plugin
+
+
+*API*：/apisix/admin/plugins/{plugin_name}
+
+*Description*: plugin
+
+> Request Methods:
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/list|NULL|Fetch resource list|
+|GET      |/apisix/admin/plugins/{plugin_name}|NULL|Fetch resource|
+
+> Request Body Parameters:
+
+Get the plugin ({plugin_name}) of the data structure.
+
+Example：
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+["zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","serverless-post-function"]
+
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+```
+
+[Back to TOC](#目录)
 
 ## Plugin Metadata
 

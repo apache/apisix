@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Plugin](#plugin)
 * [Plugin Metadata](#plugin-metadata)
 
 ## Route
@@ -690,6 +691,38 @@ ssl 对象 json 配置内容：
     "sni": "sni"        # host 域名
 }
 ```
+
+[Back to TOC](#目录)
+
+## Plugin
+
+
+*地址*：/apisix/admin/plugins/{plugin_name}
+
+*说明*: 插件
+
+> 请求方法:
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/list|无|获取资源列表|
+|GET      |/apisix/admin/plugins/{plugin_name}|无|获取资源|
+
+> body 请求参数：
+
+获取插件 ({plugin_name}) 数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+["zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","serverless-post-function"]
+
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+```
+
+[Back to TOC](#目录)
 
 ## Plugin Metadata
 
