@@ -43,18 +43,18 @@ if ngx.config.subsystem == "http" then
 end
 local load_balancer
 local local_conf
+local dns_resolver
 local lru_resolved_domain
 local ver_header    = "APISIX/" .. core.version.VERSION
 
 
-local function parse_args()
-    local options = {}
+local function parse_args(args)
+    dns_resolver = args and args["dns_resolver"]
+    local options = {
+        nameservices = dns_resolver
+    }
     core.utils.init_dns_proxy(options)
-    if options.nameservers then
-        for _, dns_resolver in ipairs(options.nameservers) do
-            core.log.info("dns resolver ", dns_resolver)
-        end
-    end
+    core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
 end
 
 
@@ -72,7 +72,7 @@ function _M.http_init(args)
                              "maxrecord=8000", "sizemcode=64",
                              "maxmcode=4000", "maxirconst=1000")
 
-    parse_args()
+    parse_args(args)
     core.id.init()
 
     local process = require("ngx.process")
@@ -204,6 +204,7 @@ local function parse_domain(host)
     end
 
     core.log.info("parse addr: ", core.json.delay_encode(ip_info))
+    core.log.info("resolver: ", core.json.delay_encode(dns_resolver))
     core.log.info("host: ", host)
     if ip_info.address then
         core.log.info("dns resolver domain: ", host, " to ", ip_info.address)
