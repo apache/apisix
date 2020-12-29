@@ -112,8 +112,8 @@ see how to do it.
 ## 4. Test
 
 1. Install perl's package manager `cpanminus` first
-2. Then install `test-nginx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
-3. Clone source code：`git clone https://github.com/openresty/test-nginx.git`;
+2. Then install `test-nginx`'s dependencies via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
+3. Clone source code：`git clone https://github.com/iresty/test-nginx.git`. Note that we should use our fork.
 4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
     * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
     * Run the test cases: `make test`
