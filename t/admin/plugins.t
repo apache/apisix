@@ -172,7 +172,7 @@ plugins:
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins/?all=true',
+            local code, message, res = t('/apisix/admin/plugins?all=true',
                 ngx.HTTP_GET
             )
 
@@ -204,7 +204,7 @@ qr/\{"metadata_schema":\{"additionalProperties":false,"properties":\{"ikey":\{"m
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins/?all=true',
+            local code, message, res = t('/apisix/admin/plugins?all=true',
                 ngx.HTTP_GET
             )
 
@@ -245,7 +245,7 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"hmac-auth","priority":2530
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins/?all=true',
+            local code, message, res = t('/apisix/admin/plugins?all=true',
                 ngx.HTTP_GET
             )
 
