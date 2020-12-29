@@ -727,6 +727,6 @@ Content-Type: text/plain
 
 |Method   |请求 URI|请求 body|说明        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/plugins/?all=true|无|获取资源|
+|GET      |/apisix/admin/plugins?all=true|无|获取资源|
 
 [Back to TOC](#目录)
