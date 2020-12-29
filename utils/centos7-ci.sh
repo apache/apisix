@@ -25,11 +25,12 @@ install_dependencies() {
     
     # install development tools
     yum install -y wget tar gcc automake autoconf libtool make \
-        curl git luarocks lua-devel which
+        curl git which
 
-    # install epel
+    # install epel and luarocks
     wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     rpm -ivh epel-release-latest-7.noarch.rpm
+    yum install -y luarocks lua-devel
         
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
