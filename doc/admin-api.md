@@ -719,6 +719,6 @@ Content-Type: text/plain
 
 |Method      |Request URI|Request Body|Description        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/plugins/?all=true|NULL|Fetch resource|
+|GET      |/apisix/admin/plugins?all=true|NULL|Fetch resource|
 
 [Back to TOC](#Table-of-Contents)
