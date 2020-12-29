@@ -60,14 +60,15 @@ jobs:
 
       - name: Install Redis Cluster
         if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'
-        uses: vishnudxb/redis-cluster@1.0.5
-        with:
-          master1-port: 5000
-          master2-port: 5001
-          master3-port: 5002
-          slave1-port: 5003
-          slave2-port: 5004
-          slave3-port: 5005
+        run: |
+          docker run -d -p ${MASTER1_PORT}:6379 -p ${MASTER2_PORT}:6380 -p ${MASTER3_PORT}:6381 -p ${SLAVE1_PORT}:6382 -p ${SLAVE2_PORT}:6383 -p ${SLAVE3_PORT}:6384 --name redis-cluster vishnunair/docker-redis-cluster:latest
+        env:
+          MASTER1_PORT: 5000
+          MASTER2_PORT: 5001
+          MASTER3_PORT: 5002
+          SLAVE1_PORT: 5003
+          SLAVE2_PORT: 5004
+          SLAVE3_PORT: 5005
 
       - name: Running Redis Cluster Test
         if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'

@@ -19,11 +19,11 @@
 
 # FAQ
 
-##  Why a new API gateway?
+## Why a new API gateway?
 
 There are new requirements for API gateways in the field of microservices: higher flexibility, higher performance requirements, and cloud native.
 
-##  What are the differences between APISIX and other API gateways?
+## What are the differences between APISIX and other API gateways?
 
 APISIX is based on etcd to save and synchronize configuration, not relational databases such as Postgres or MySQL.
 
