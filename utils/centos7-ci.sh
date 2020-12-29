@@ -23,13 +23,13 @@ set -ex
 install_dependencies() {
     export PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH
     
-    # install epel
-    wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    rpm -ivh epel-release-latest-7.noarch.rpm
-    
     # install development tools
     yum install -y wget tar gcc automake autoconf libtool make \
         curl git luarocks lua-devel which
+
+    # install epel
+    wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    rpm -ivh epel-release-latest-7.noarch.rpm
         
     # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
