@@ -710,3 +710,15 @@ Content-Type: text/plain
 ```
 
 [Back to TOC](#Table-of-Contents)
+
+*API*：/apisix/admin/plugins/?all=true
+
+*Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
+
+> Request Methods:
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/?all=true|NULL|Fetch resource|
+
+[Back to TOC](#Table-of-Contents)
