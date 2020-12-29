@@ -31,12 +31,51 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 * `key`: PEM-encoded private key of the SSL key pair.
 * `sni`: Hostname to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
 
+We will use the python script below to simplify the example:
+```python
+#!/usr/bin/env python
+# coding: utf-8
+# save this file as ssl.py
+import sys
+# sudo pip install requests
+import requests
+
+if len(sys.argv) <= 3:
+    print("bad argument")
+    sys.exit(1)
+with open(sys.argv[1]) as f:
+    cert = f.read()
+with open(sys.argv[2]) as f:
+    key = f.read()
+sni = sys.argv[3]
+api_key = "edd1c9f034335f136f87ad84b625c8f1"
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssl/1", json={
+    "cert": cert,
+    "key": key,
+    "sni": sni,
+}, headers={
+    "X-API-KEY": api_key,
+})
+print(resp.status_code)
+print(resp.text)
+```
+
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+# create SSL object
+./ssl.py t.crt t.key test.com
+
+# create Router object
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "cert": "...",
-    "key": "....",
-    "sni": "test.com"
+    "uri": "/hello",
+    "hosts": ["test.com"],
+    "methods": ["GET"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
 }'
 
 # make a test
@@ -69,11 +108,19 @@ that means it can accept more than one domain, eg: `www.test.com` or `mail.test.
 Here is an example, please pay attention on the field `sni`.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+./ssl.py t.crt t.key '*.test.com'
+
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "cert": "...",
-    "key": "....",
-    "sni": "*.test.com"
+    "uri": "/hello",
+    "hosts": ["*.test.com"],
+    "methods": ["GET"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
 }'
 
 # make a test

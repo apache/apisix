@@ -33,12 +33,51 @@ SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允�
 * `key`: SSL 密钥对的私钥，pem 格式
 * `sni`: SSL 证书所指定的域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
+为了简化示例，我们会使用下面的 python 脚本:
+```python
+#!/usr/bin/env python
+# coding: utf-8
+# save this file as ssl.py
+import sys
+# sudo pip install requests
+import requests
+
+if len(sys.argv) <= 3:
+    print("bad argument")
+    sys.exit(1)
+with open(sys.argv[1]) as f:
+    cert = f.read()
+with open(sys.argv[2]) as f:
+    key = f.read()
+sni = sys.argv[3]
+api_key = "edd1c9f034335f136f87ad84b625c8f1"
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssl/1", json={
+    "cert": cert,
+    "key": key,
+    "sni": sni,
+}, headers={
+    "X-API-KEY": api_key,
+})
+print(resp.status_code)
+print(resp.text)
+```
+
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+# 创建 SSL 对象
+./ssl.py t.crt t.key test.com
+
+# 创建 Router 对象
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "cert": "...",
-    "key": "....",
-    "sni": "test.com"
+    "uri": "/hello",
+    "hosts": ["test.com"],
+    "methods": ["GET"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
 }'
 
 # 测试一下
@@ -71,11 +110,19 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 看下面这个例子，请注意 `sni` 这个属性:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/ssl/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+./ssl.py t.crt t.key '*.test.com'
+
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "cert": "...",
-    "key": "....",
-    "sni": "*.test.com"
+    "uri": "/hello",
+    "hosts": ["*.test.com"],
+    "methods": ["GET"],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
 }'
 
 # 测试一下
