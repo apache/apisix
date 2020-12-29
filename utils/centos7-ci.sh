@@ -22,19 +22,31 @@ set -ex
 
 install_dependencies() {
     export PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH
-    yum install -y wget tar gcc automake autoconf libtool make
+    
+    # install epel
     wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     rpm -ivh epel-release-latest-7.noarch.rpm
-    yum install -y curl git luarocks lua-devel which
+    
+    # install development tools
+    yum install -y wget tar gcc automake autoconf libtool make \
+        curl git luarocks lua-devel which
+        
+    # install openresty
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty-debug
+    
+    # install etcd
     wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
     tar xf etcd-v3.4.0-linux-amd64.tar.gz
     cp /etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
     rm -rf etcd-v3.4.0-linux-amd64
+    
+    # install test::nginx
     yum install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl
     cp -r /tmp/apisix ./apisix
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
+    
+    # install and start grpc_server_example
     mkdir build-cache
     wget https://github.com/iresty/grpc_server_example/releases/download/20200901/grpc_server_example-amd64.tar.gz
     tar -xvf grpc_server_example-amd64.tar.gz
@@ -42,7 +54,10 @@ install_dependencies() {
     git clone https://github.com/iresty/grpc_server_example.git grpc_server_example
     cd grpc_server_example/ && mv proto/ ../build-cache/ && cd ..
     ./build-cache/grpc_server_example > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
+    
     sleep 3
+    
+    # install dependencies
     cd apisix
     make deps
     make init
@@ -52,6 +67,8 @@ install_dependencies() {
 run_case() {
     export PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH
     cd apisix
+    
+    # run test cases
     prove -Itest-nginx/lib -I./ -r t/
 }
 
