@@ -216,17 +216,19 @@ end
 
 
 local function add_access_token_header(ctx, conf, token)
-    -- Add Authorization or X-Access-Token header, respectively, if not already set.
-    if conf.set_access_token_header then
-        if conf.access_token_in_authorization_header then
-            if not core.request.header(ctx, "Authorization") then
-                -- Add Authorization header.
-                core.request.set_header(ctx, "Authorization", "Bearer " .. token)
-            end
-        else
-            if not core.request.header(ctx, "X-Access-Token") then
-                -- Add X-Access-Token header.
-                core.request.set_header(ctx, "X-Access-Token", token)
+    if token then
+        -- Add Authorization or X-Access-Token header, respectively, if not already set.
+        if conf.set_access_token_header then
+            if conf.access_token_in_authorization_header then
+                if not core.request.header(ctx, "Authorization") then
+                    -- Add Authorization header.
+                    core.request.set_header(ctx, "Authorization", "Bearer " .. token)
+                end
+            else
+                if not core.request.header(ctx, "X-Access-Token") then
+                    -- Add X-Access-Token header.
+                    core.request.set_header(ctx, "X-Access-Token", token)
+                end
             end
         end
     end
@@ -268,10 +270,9 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
-            if access_token then
-                -- Add configured access token header, maybe.
-                add_access_token_header(ctx, conf, access_token)
-            end
+            -- Add configured access token header, maybe.
+            add_access_token_header(ctx, conf, access_token)
+
             if userinfo and conf.set_userinfo_header then
                 -- Set X-Userinfo header to introspection endpoint response.
                 core.request.set_header(ctx, "X-Userinfo",
@@ -303,9 +304,7 @@ function _M.rewrite(plugin_conf, ctx)
             -- Add respective headers to the request, if so configured.
 
             -- Add configured access token header, maybe.
-            if response.access_token then
-                add_access_token_header(ctx, conf, response.access_token)
-            end
+            add_access_token_header(ctx, conf, response.access_token)
 
             -- Add X-ID-Token header, maybe.
             if response.id_token and conf.set_id_token_header then
