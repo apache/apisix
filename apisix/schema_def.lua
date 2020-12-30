@@ -621,7 +621,8 @@ _M.ssl = {
             items = {
                 type = "string",
                 pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-            }
+            },
+            minItems = 1,
         },
         certs = {
             type = "array",
