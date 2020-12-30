@@ -68,6 +68,26 @@ Here are the rules:
 |/blog/foo/gloo | `/blog/foo/*` |
 |/blog/bar | not match |
 
+#### 4. Parameter match
+
+When `radixtree_uri_with_parameter` is used, we can match routes with parameters.
+
+For example, with configuration:
+```yaml
+apisix:
+    router:
+        http: 'radixtree_uri_with_parameter'
+```
+
+route like
+```
+/blog/:name
+```
+
+will match both `/blog/dog` and `/blog/cat`.
+
+For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in-path.
+
 ### How to filter route by Nginx builtin variable
 
 Please take a look at [radixtree-new](https://github.com/iresty/lua-resty-radixtree#new),

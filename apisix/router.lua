@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require = require
+local base_router = require("apisix.http.router.base")
 local core    = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local error   = error
@@ -67,6 +68,27 @@ local function filter(route)
 end
 
 
+-- attach common methods if the router doesn't provide its custom implementation
+local function attach_http_router_common_methods(http_router)
+    if http_router.routes == nil then
+        http_router.routes = function ()
+            if not http_router.user_routes then
+                return nil, nil
+            end
+
+            local user_routes = http_router.user_routes
+            return user_routes.values, user_routes.conf_version
+        end
+    end
+
+    if http_router.init_worker == nil then
+        http_router.init_worker = function (filter)
+            http_router.user_routes = base_router.init_worker(filter)
+        end
+    end
+end
+
+
 function _M.http_init_worker()
     local conf = core.config.local_conf()
     local router_http_name = "radixtree_uri"
@@ -78,6 +100,7 @@ function _M.http_init_worker()
     end
 
     local router_http = require("apisix.http.router." .. router_http_name)
+    attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
     _M.router_http = router_http
 

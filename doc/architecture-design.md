@@ -461,6 +461,7 @@ Set the route that best suits your business needs in the local configuration `co
         * `Prefix match`: Use `*` at the end to represent the given `uri` as a prefix match. For example, `/foo*` allows matching `/foo/`, `/foo/a` and `/foo/b`.
         * `match priority`: first try absolute match, if you can't hit absolute match, try prefix match.
         * `Any filter attribute`: Allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, cookies, and so on.
+    * `radixtree_uri_with_parameter`: Like `radixtree_uri` but also support parameter match.
     * `radixtree_host_uri`: Use `host + uri` as the primary index (based on the `radixtree` engine), matching both host and URL for the current request.
 
 * `apisix.router.ssl`: SSL loads the matching route.
