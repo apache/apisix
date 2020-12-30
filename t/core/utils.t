@@ -245,14 +245,14 @@ res:John and \$me
         content_by_lua_block {
             local core = require("apisix.core")
             local resolvers = {"223.5.5.5", "223.6.6.6"}
-            local search = {"google.com"}
+            local search = {"github.com"}
             local ndots = 5
             core.utils.init_dns_proxy({
                 ndots = ndots,
                 search = search,
                 resolvers = resolvers,
             })
-            local ip_info, err = core.utils.dns_parse("news.google.com")
+            local ip_info, err = core.utils.dns_parse("github.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
