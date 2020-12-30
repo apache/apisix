@@ -20,7 +20,7 @@ local base_router = require("apisix.http.router.base")
 local cached_version
 
 
-local _M = {version = 0.2}
+local _M = {}
 
 
     local uri_routes = {}
@@ -30,12 +30,12 @@ function _M.match(api_ctx)
     local user_routes = _M.user_routes
     if not cached_version or cached_version ~= user_routes.conf_version then
         uri_router = base_router.create_radixtree_uri_router(user_routes.values,
-                                                             uri_routes, false)
+                                                             uri_routes, true)
         cached_version = user_routes.conf_version
     end
 
     if not uri_router then
-        core.log.error("failed to fetch valid `uri` router: ")
+        core.log.error("failed to fetch valid `uri_with_parameter` router: ")
         return true
     end
 

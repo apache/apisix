@@ -88,6 +88,9 @@ apisix:
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
+                                  # radixtree_uri_with_parameter: like radixtree_uri but match uri with parameters,
+                                  #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
+                                  #   more details.
     ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
   # stream_proxy:                 # TCP/UDP proxy
   #   tcp:                        # TCP proxy port list

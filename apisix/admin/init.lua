@@ -16,7 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
-local route = require("resty.radixtree")
+local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local ngx = ngx
 local get_method = ngx.req.get_method

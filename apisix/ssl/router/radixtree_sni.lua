@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local get_request      = require("resty.core.base").get_request
-local radixtree_new    = require("resty.radixtree").new
+local router_new       = require("apisix.utils.router").new
 local core             = require("apisix.core")
 local apisix_ssl       = require("apisix.ssl")
 local ngx_ssl          = require("ngx.ssl")
@@ -118,7 +118,7 @@ local function create_router(ssl_items)
     if #route_items > 1 then
         core.log.info("we have more than 1 ssl certs now")
     end
-    local router, err = radixtree_new(route_items)
+    local router, err = router_new(route_items)
     if not router then
         return nil, err
     end
