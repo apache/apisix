@@ -675,10 +675,11 @@ HTTP/1.1 200 OK
 |key|必需|私钥|https 证书私钥||
 |certs|可选|证书字符串数组|当你想给同一个域名配置多个证书时，除了第一个证书需要通过cert传递外，剩下的证书可以通过该参数传递上来||
 |keys|可选|私钥字符串数组|certs 对应的证书私钥，注意要跟 certs 一一对应||
-|sni|必需|匹配规则|https 证书SNI||
+|snis|必需|匹配规则|非空数组形式，可以匹配多个 SNI||
 |labels|可选|匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|status|可选 |辅助| 是否启用此SSL, 缺省 `1`。|`1` 表示启用，`0` 表示禁用|
 
 ssl 对象 json 配置内容：
 
@@ -687,7 +688,7 @@ ssl 对象 json 配置内容：
     "id": "1",          # id
     "cert": "cert",     # 证书
     "key": "key",       # 私钥
-    "sni": "sni"        # host 域名
+    "snis": ["t.com"]   # HTTPS 握手时客户端发送的 SNI
 }
 ```
 
