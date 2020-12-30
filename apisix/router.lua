@@ -68,6 +68,7 @@ local function filter(route)
 end
 
 
+-- attach common methods if the router doesn't provide its custom implementation
 local function attach_http_router_common_methods(http_router)
     if http_router.routes == nil then
         http_router.routes = function ()
