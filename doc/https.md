@@ -151,7 +151,7 @@ If your SSL certificate may contain more than one domain, like `www.test.com`
 and `mail.test.com`, then you can add them into the `snis` array. For example:
 ```json
 {
-    "snis": ["www.test.com", "mail.test.com"] 
+    "snis": ["www.test.com", "mail.test.com"]
 }
 ```
 

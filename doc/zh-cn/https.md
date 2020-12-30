@@ -154,7 +154,7 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 ```json
 {
-    "snis": ["www.test.com", "mail.test.com"] 
+    "snis": ["www.test.com", "mail.test.com"]
 }
 ```
 
