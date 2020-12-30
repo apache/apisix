@@ -24,8 +24,8 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
-* [Plugin](#plugin)
 * [Plugin Metadata](#plugin-metadata)
+* [Plugin](#plugin)
 
 ## Route
 
@@ -692,38 +692,6 @@ ssl 对象 json 配置内容：
 }
 ```
 
-[Back to TOC](#目录)
-
-## Plugin
-
-
-*地址*：/apisix/admin/plugins/{plugin_name}
-
-*说明*: 插件
-
-> 请求方法:
-
-|名字      |请求 uri|请求 body|说明        |
-|---------|-------------------------|--|------|
-|GET      |/apisix/admin/plugins/list|无|获取资源列表|
-|GET      |/apisix/admin/plugins/{plugin_name}|无|获取资源|
-
-> body 请求参数：
-
-获取插件 ({plugin_name}) 数据结构的 json object 。
-
-例子:
-
-```shell
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-["zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","node-status","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","serverless-post-function"]
-
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
-```
-
-[Back to TOC](#目录)
-
 ## Plugin Metadata
 
 *地址*：/apisix/admin/plugin_metadata/{plugin_name}
@@ -754,5 +722,45 @@ HTTP/1.1 201 Created
 Date: Thu, 26 Dec 2019 04:19:34 GMT
 Content-Type: text/plain
 ```
+
+[Back to TOC](#目录)
+
+## Plugin
+
+
+*地址*：/apisix/admin/plugins/{plugin_name}
+
+*说明*: 插件
+
+> 请求方法:
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/list|无|获取资源列表|
+|GET      |/apisix/admin/plugins/{plugin_name}|无|获取资源|
+
+> body 请求参数：
+
+获取插件 ({plugin_name}) 数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+["zipkin","request-id",...]
+
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+```
+
+*地址*：/apisix/admin/plugins/?all=true
+
+*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins?all=true|无|获取资源|
 
 [Back to TOC](#目录)
