@@ -14,32 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local require = require
-local core = require("apisix.core")
-local base_router = require("apisix.http.router.base")
-local cached_version
+local resty_router = require("resty.radixtree")
 
 
-local _M = {version = 0.2}
+local _M = {}
 
+do
+    local router_opts = {
+        no_param_match = true
+    }
 
-    local uri_routes = {}
-    local uri_router
-    local match_opts = {}
-function _M.match(api_ctx)
-    local user_routes = _M.user_routes
-    if not cached_version or cached_version ~= user_routes.conf_version then
-        uri_router = base_router.create_radixtree_uri_router(user_routes.values,
-                                                             uri_routes, false)
-        cached_version = user_routes.conf_version
-    end
+function _M.new(routes)
+    return resty_router.new(routes, router_opts)
+end
 
-    if not uri_router then
-        core.log.error("failed to fetch valid `uri` router: ")
-        return true
-    end
-
-    return base_router.match_uri(uri_router, match_opts, api_ctx)
 end
 
 
