@@ -29,7 +29,7 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 
 * `cert`: PEM-encoded public certificate of the SSL key pair.
 * `key`: PEM-encoded private key of the SSL key pair.
-* `sni`: Hostname to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
+* `snis`: Hostname(s) to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
 
 We will use the python script below to simplify the example:
 ```python
@@ -52,7 +52,7 @@ api_key = "edd1c9f034335f136f87ad84b625c8f1"
 resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssl/1", json={
     "cert": cert,
     "key": key,
-    "sni": sni,
+    "snis": [sni],
 }, headers={
     "X-API-KEY": api_key,
 })
@@ -105,7 +105,7 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 Sometimes, one SSL certificate may contain a wildcard domain like `*.test.com`,
 that means it can accept more than one domain, eg: `www.test.com` or `mail.test.com`.
 
-Here is an example, please pay attention on the field `sni`.
+Here is an example, note that the value we pass as `sni` is `*.test.com`.
 
 ```shell
 ./ssl.py t.crt t.key '*.test.com'
@@ -148,8 +148,12 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 ### multiple domain
 
 If your SSL certificate may contain more than one domain, like `www.test.com`
-and `mail.test.com`, then you can more ssl object for each domain, that is a
-most simple way.
+and `mail.test.com`, then you can add them into the `snis` array. For example:
+```json
+{
+    "snis": ["www.test.com", "mail.test.com"] 
+}
+```
 
 ### multiple certificates for a single domain
 

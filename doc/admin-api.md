@@ -662,8 +662,7 @@ Return response from etcd currently.
 |key|True|Private key|https private key||
 |certs|False|An array of certificate|when you need to configure multiple certificate for the same domain, you can pass extra https certificates (excluding the one given as cert) in this field||
 |keys|False|An array of private key|https private keys. The keys should be paired with certs above||
-|sni|True, can't be used with `snis`|Match Rules|https SNI||
-|snis|True, can't be used with `sni`|Match Rules|a non-empty arrays of https SNI||
+|snis|True|Match Rules|a non-empty arrays of https SNI||
 |labels|False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
@@ -676,7 +675,7 @@ Config Example:
     "id": "1",      # id
     "cert": "cert", # Certificate
     "key": "key",   # Private key
-    "sni": "sni"    # https SNI, multiple SNIs can be used with `snis`
+    "snis": ["t.com"]    # https SNI
 }
 ```
 

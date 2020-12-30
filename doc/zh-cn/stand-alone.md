@@ -224,6 +224,7 @@ ssl:
             IeVtU6fH57Ddn59VPbF20m8RCSkmBvSdcbyBmqlZSBE+fKwCliKl6u/GH0BNAWKz
             r8yiEiskqRmy7P7MY9hDmEbG
             -----END PRIVATE KEY-----
-        sni: "yourdomain.com"
+        snis:
+            - "yourdomain.com"
 #END
 ```
