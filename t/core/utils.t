@@ -262,6 +262,6 @@ res:John and \$me
 --- request
 GET /t
 --- error_log eval
-qr/"address":.+,"name":"news.google.com"/
+qr/"address":.+,"name":"github.com"/
 --- no_error_log
 [error]
