@@ -336,3 +336,32 @@ wzarryret/7GFW1/3cz+hTj9/d45i25zArr3Pocfpur5mfz3fJO8jg==
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to handle cert-key pair[1]: failed to parse key: PEM_read_bio_PrivateKey() failed"}
+
+
+
+=== TEST 10: empty snis
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key, snis = {}}
+            local code, message, res = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(message)
+                return
+            end
+
+            ngx.say(res)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"snis\" validation failed: expect array to have at least 1 items"}

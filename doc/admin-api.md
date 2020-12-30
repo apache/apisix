@@ -667,10 +667,11 @@ Return response from etcd currently.
 |key|True|Private key|https private key||
 |certs|False|An array of certificate|when you need to configure multiple certificate for the same domain, you can pass extra https certificates (excluding the one given as cert) in this field||
 |keys|False|An array of private key|https private keys. The keys should be paired with certs above||
-|sni|True|Match Rules|https SNI||
+|snis|True|Match Rules|a non-empty arrays of https SNI||
 |labels|False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
 |update_time|False| Auxiliary|epoch timestamp in second, will be created automatically if missing | 1602883670|
+|status|False|Auxiliary|enable this SSL, default `1`.|`1` to enable, `0` to disable|
 
 Config Example:
 
@@ -679,7 +680,7 @@ Config Example:
     "id": "1",      # id
     "cert": "cert", # Certificate
     "key": "key",   # Private key
-    "sni": "sni"    # https SNI
+    "snis": ["t.com"]    # https SNI
 }
 ```
 
