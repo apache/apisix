@@ -109,10 +109,6 @@ end
 _M.dns_parse = dns_parse
 
 function _M.init_dns_proxy(options)
-    if dns_proxy.inited then
-        return
-    end
-
     dns_proxy.client.init(options)
     dns_proxy.inited = true
 end

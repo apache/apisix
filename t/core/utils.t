@@ -252,7 +252,7 @@ res:John and \$me
                 search = search,
                 resolvers = resolvers,
             })
-            local ip_info, err = core.utils.dns_parse("github.com")
+            local ip_info, err = core.utils.dns_parse("docs")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
@@ -262,6 +262,6 @@ res:John and \$me
 --- request
 GET /t
 --- error_log eval
-qr/"address":.+,"name":"github.com"/
+qr/"address":.+,"name":"docs.github.com"/
 --- no_error_log
 [error]
