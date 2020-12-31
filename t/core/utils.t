@@ -252,9 +252,10 @@ res:John and \$me
                 search = search,
                 resolvers = resolvers,
             })
-            local ip_info, err = core.utils.dns_parse("docs")
+            local host = "docs"
+            local ip_info, err = core.utils.dns_parse(host)
             if not ip_info then
-                core.log.error("failed to parse domain: ", host, ", error: ",err)
+                core.log.error("failed to parse domain: ",host , ", error: ",err)
             end
             core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
         }
