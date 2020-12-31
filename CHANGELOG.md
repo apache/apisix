@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.2.0](#220)
 - [2.1.0](#210)
 - [2.0.0](#200)
 - [1.5.0](#150)
@@ -32,6 +33,43 @@
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.2.0
+
+## Change
+- disable node-status plugin by default [#2968](https://github.com/apache/apisix/pull/2968)
+- k8s_deployment_info is no longer allowed in upstream [#3098](https://github.com/apache/apisix/pull/3098)
+- don't treat route segment with ':' as parameter by default [#3154](https://github.com/apache/apisix/pull/3154)
+
+## Deprecated
+
+### Core
+- :sunrise: allow create consumers with multiple auth plugins [#2898](https://github.com/apache/apisix/pull/2898)
+- :sunrise: increase the delay before resync etcd [#2977](https://github.com/apache/apisix/pull/2977)
+- :sunrise: support enable/disable route [#2943](https://github.com/apache/apisix/pull/2943)
+- :sunrise: route accroding to the graphql attributes [#2964](https://github.com/apache/apisix/pull/2964)
+- :sunrise: share etcd auth token [#2932](https://github.com/apache/apisix/pull/2932)
+- :sunrise: add control API [#3048](https://github.com/apache/apisix/pull/3048)
+
+## Plugin
+- :sunrise: feat(limt-count): use 'remote_addr' as default key [#2927](https://github.com/apache/apisix/pull/2927)
+- :sunrise: feat(fault-injection): support Nginx variable in abort.body [#2986](https://github.com/apache/apisix/pull/2986)
+- :sunrise: feat: implement new plugin `server-info` [#2926](https://github.com/apache/apisix/pull/2926)
+- :sunrise: feat: add batch process metrics [#3070](https://github.com/apache/apisix/pull/3070)
+- :sunrise: feat: Implement traffic splitting plugin [#2935](https://github.com/apache/apisix/pull/2935)
+- :sunrise: feat:  the proxy-rewrite plugin  support pass nginx variable within header [#3144](https://github.com/apache/apisix/pull/3144)
+- :sunrise: feat: Make headers to add to request in openid-connect plugin configurable [#2903](https://github.com/apache/apisix/pull/2903)
+- :sunrise: feat: support var in upstream_uri on proxy-rewrite plugin [#3139](https://github.com/apache/apisix/pull/3139)
+
+## Bugfix
+- basic-auth plugin should run in rewrite phases. [#2905](https://github.com/apache/apisix/pull/2905)
+- fixed the non effective config update in http/udp-logger [#2901](https://github.com/apache/apisix/pull/2901)
+- always necessary to save the data of the limit concurrency, and release the statistical status in the log phase [#2465](https://github.com/apache/apisix/pull/2465)
+- avoid duplicate auto-generated id [#3003](https://github.com/apache/apisix/pull/3003)
+- fix: ctx being contaminated due to a new feature of openresty 1.19. **For openresty 1.19 users, it is recommended to upgrade the APISIX version as soon as possible.** [#3105](https://github.com/apache/apisix/pull/3105)
+- fix: correct the validation of route.vars [#3124](https://github.com/apache/apisix/pull/3124)
+
+For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/10)
 
 ## 2.1.0
 
