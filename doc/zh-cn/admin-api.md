@@ -25,6 +25,7 @@
 * [Upstream](#upstream)
 * [SSL](#ssl)
 * [Plugin Metadata](#plugin-metadata)
+* [Plugin](#plugin)
 
 ## Route
 
@@ -724,6 +725,34 @@ Content-Type: text/plain
 ```
 
 [Back to TOC](#目录)
+
+## Plugin
+
+
+*地址*：/apisix/admin/plugins/{plugin_name}
+
+*说明*: 插件
+
+> 请求方法:
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/list|无|获取资源列表|
+|GET      |/apisix/admin/plugins/{plugin_name}|无|获取资源|
+
+> body 请求参数：
+
+获取插件 ({plugin_name}) 数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+["zipkin","request-id",...]
+
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+```
 
 *地址*：/apisix/admin/plugins/?all=true
 
