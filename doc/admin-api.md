@@ -25,6 +25,7 @@
 * [Upstream](#upstream)
 * [SSL](#ssl)
 * [Plugin Metadata](#plugin-metadata)
+* [Plugin](#plugin)
 
 ## Route
 
@@ -716,6 +717,33 @@ Content-Type: text/plain
 ```
 
 [Back to TOC](#Table-of-Contents)
+
+## Plugin
+
+*API*：/apisix/admin/plugins/{plugin_name}
+
+*Description*: plugin
+
+> Request Methods:
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/list|NULL|Fetch resource list|
+|GET      |/apisix/admin/plugins/{plugin_name}|NULL|Fetch resource|
+
+> Request Body Parameters:
+
+Get the plugin ({plugin_name}) of the data structure.
+
+Example：
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+["zipkin","request-id",...]
+
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+```
 
 *API*：/apisix/admin/plugins/?all=true
 
