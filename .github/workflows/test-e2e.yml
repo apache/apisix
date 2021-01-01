@@ -1,4 +1,4 @@
-name: build
+name: test
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 jobs:
-  build:
+  e2e:
     strategy:
       fail-fast: false
       matrix:
