@@ -91,7 +91,7 @@ local function dns_parse(domain)
     answers, err = dns_proxy.client.resolve(domain)
 
     if not answers then
-      return nil, "failed to query the DNS server: " .. err
+        return nil, "failed to query the DNS server: " .. err
     end
 
     local idx = math.random(1, #answers)
