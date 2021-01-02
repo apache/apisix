@@ -17,7 +17,6 @@
 local core        = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local protoc      = require("protoc")
-local ipairs      = ipairs
 local protos
 
 
