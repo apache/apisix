@@ -19,14 +19,13 @@
 
 # 目录
 
-- [目录](#目录)
-  - [Route](#route)
-  - [Service](#service)
-  - [Consumer](#consumer)
-  - [Upstream](#upstream)
-  - [SSL](#ssl)
-  - [Plugin Metadata](#plugin-metadata)
-  - [Plugin](#plugin)
+* [Route](#route)
+* [Service](#service)
+* [Consumer](#consumer)
+* [Upstream](#upstream)
+* [SSL](#ssl)
+* [Plugin Metadata](#plugin-metadata)
+* [Plugin](#plugin)
 
 ## Route
 
