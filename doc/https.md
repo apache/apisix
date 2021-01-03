@@ -32,6 +32,7 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 * `snis`: Hostname(s) to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
 
 We will use the python script below to simplify the example:
+
 ```python
 #!/usr/bin/env python
 # coding: utf-8
@@ -149,6 +150,7 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 If your SSL certificate may contain more than one domain, like `www.test.com`
 and `mail.test.com`, then you can add them into the `snis` array. For example:
+
 ```json
 {
     "snis": ["www.test.com", "mail.test.com"]

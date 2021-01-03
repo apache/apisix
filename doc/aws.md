@@ -238,6 +238,7 @@ update `src/main.ts`
       containerPort: 2379
     })
 ```
+
 _(read [here](https://github.com/iresty/docker-apisix/blob/9a731f698171f4838e9bc0f1c05d6dda130ca89b/example/docker-compose.yml#L18-L19) for more reference)_
 
 Run `cdk deploy` and specify your preferred AWS region in China.
@@ -251,6 +252,7 @@ $ cdk deploy --profile cn -c region=cn-northwest-1
 # deploy to Beijing region
 $ cdk deploy --profile cn -c region=cn-north-1
 ```
+
 In the following case, we got the `Outputs` returned for **AWS Ningxia region(cn-northwest-1)**:
 
 ```bash

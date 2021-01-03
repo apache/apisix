@@ -73,6 +73,7 @@ Here are the rules:
 When `radixtree_uri_with_parameter` is used, we can match routes with parameters.
 
 For example, with configuration:
+
 ```yaml
 apisix:
     router:
@@ -80,6 +81,7 @@ apisix:
 ```
 
 route like
+
 ```
 /blog/:name
 ```
@@ -124,6 +126,7 @@ APISIX supports filtering route by some attributes of graphql. Currently we supp
 * graphql_root_fields
 
 For instance, with graphql like this:
+
 ```graphql
 query getRepo {
     owner {
@@ -140,6 +143,7 @@ query getRepo {
 * The `graphql_root_fields` is `["owner", "repo"]`
 
 We can filter such route out with:
+
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
