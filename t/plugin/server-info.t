@@ -69,7 +69,7 @@ location /t {
 --- request
 GET /t
 --- response_body eval
-qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"last_report_time":\d+,"up_time":\d+,"version":"[\d\.]+"}$/
+qr/^{"boot_time":\d+,"create_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"last_report_time":\d+,"up_time":\d+,"update_time":\d+,"version":"[\d\.]+"}$/
 --- no_error_log
 [error]
 --- error_log
@@ -140,6 +140,6 @@ location /t {
 --- request
 GET /t
 --- response_body eval
-qr/^{"boot_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"last_report_time":\d+,"up_time":\d+,"version":"[\d\.]+"}$/
+qr/^{"boot_time":\d+,"create_time":\d+,"etcd_version":"[\d\.]+","hostname":"[a-zA-Z\-0-9\.]+","id":[a-zA-Z\-0-9]+,"last_report_time":\d+,"up_time":\d+,"update_time":\d+,"version":"[\d\.]+"}$/
 --- no_error_log
 [error]

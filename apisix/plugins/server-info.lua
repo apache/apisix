@@ -17,6 +17,7 @@
 local require = require
 local core = require("apisix.core")
 local timers = require("apisix.timers")
+local utils = require("apisix.admin.utils")
 
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
@@ -158,8 +159,15 @@ local function report(premature, report_ttl)
     end
 
     server_info.last_report_time = ngx_time()
+    server_info.update_time = server_info.last_report_time
 
     local key = "/data_plane/server_info/" .. server_info.id
+    local ok, err = utils.inject_conf_with_prev_conf("server_info", key, server_info)
+    if not ok then
+        core.log.error("failed to inject create_time to server info: ", err)
+        return
+    end
+
     local ok, err = core.etcd.set(key, server_info, report_ttl)
     if not ok then
         core.log.error("failed to report server info to etcd: ", err)
