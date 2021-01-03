@@ -163,23 +163,31 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 1. 源码编译（适用所有系统）
    - 安装运行时依赖：OpenResty 和 etcd，以及编译的依赖：luarocks。参考[依赖安装文档](doc/zh-cn/install-dependencies.md)
    - 下载最新的源码发布包：
+
      ```shell
      $ mkdir apisix-2.1
      $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
      $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
      ```
+
    - 安装运行时依赖的 Lua 库：
+
      ```shell
      $ make deps
      ```
+
    - 检查 APISIX 的版本号：
+
      ```shell
      $ ./bin/apisix version
      ```
+
    - 启动 APISIX:
+
      ```shell
      $ ./bin/apisix start
      ```
+
 2. [Docker 镜像](https://hub.docker.com/r/apache/apisix)（适用所有系统）
 
    默认会拉取最新的 Apache 发布包：
@@ -193,14 +201,19 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 3. RPM 包（只适用于 CentOS 7）
    - 安装依赖：OpenResty 和 etcd，参考[依赖安装文档](doc/zh-cn/install-dependencies.md#centos-7)
    - 安装 APISIX：
+
    ```shell
    $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
    ```
+
    - 检查 APISIX 的版本号：
+
      ```shell
      $ apisix version
      ```
+
    - 启动 APISIX:
+
      ```shell
      $ apisix start
      ```
@@ -306,6 +319,7 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 ![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## 视频和文章
+
 - 2020.10.16 [Apache APISIX: How to implement plugin orchestration in API Gateway](https://www.youtube.com/watch?v=iEegNXOtEhQ)
 - 2020.10.16 [Improve Apache APISIX observability with Apache Skywalking](https://www.youtube.com/watch?v=DleVJwPs4i4)
 - 2020.1.17 [API 网关 Apache APISIX 和 Kong 的选型对比](https://mp.weixin.qq.com/s/c51apneVj0O9yxiZAHF34Q)
