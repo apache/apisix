@@ -40,6 +40,7 @@ $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
 ```
 
 安装运行时依赖的 Lua 库：
+
 ```
 cd apache-apisix-2.1
 make deps
