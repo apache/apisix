@@ -1262,7 +1262,7 @@ x-real-ip: 127.0.0.1
                  [[{
                         "plugins": {
                             "proxy-rewrite": {
-                                "uri": "/$consumer_name"
+                                "uri": "/$arg_new_uri"
                             }
                         },
                         "upstream": {
@@ -1271,7 +1271,7 @@ x-real-ip: 127.0.0.1
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/test"
                 }]]
                 )
 
@@ -1285,5 +1285,15 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: hit route(upstream uri: should be /hello)
+--- request
+GET /test?new_uri=hello
+--- response_body
+hello world
 --- no_error_log
 [error]
