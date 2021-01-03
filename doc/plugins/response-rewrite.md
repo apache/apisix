@@ -82,6 +82,7 @@ curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
 It will output like below,no matter what kind of content from upstream.
+
 ```
 
 HTTP/1.1 200 OK

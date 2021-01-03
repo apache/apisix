@@ -36,6 +36,7 @@
 ## 2.1.0
 
 ### Core
+
 - :sunrise: **support ENV variable in configuration.** [#2743](https://github.com/apache/apisix/pull/2743)
 - :sunrise: **support TLS connection with etcd.** [#2548](https://github.com/apache/apisix/pull/2548)
 - generate create/update_time automatically. [#2740](https://github.com/apache/apisix/pull/2740)
@@ -45,12 +46,14 @@
 - support Nginx configuration snippet. [#2803](https://github.com/apache/apisix/pull/2803)
 
 ## Plugin
+
 - :sunrise: **Upgrade protocol to support Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). So this version only supports skywalking 8.0 protocol. This plugin is disabled by default, you need to modify config.yaml to enable, which is not backward compatible.
 - :sunrise: add aliyun sls logging plugin.[#2169](https://github.com/apache/apisix/issues/2169)
 - proxy-cache: the cache_zone field in the schema should be optional.[#2776](https://github.com/apache/apisix/pull/2776)
 - fix: validate plugin configuration in the DP [#2856](https://github.com/apache/apisix/pull/2856)
 
 ## Bugfix
+
 - :bug: fix(etcd): handle etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
 - fix: move `conf/cert` to `t/certs` and disable ssl by default, which is not backward compatible. [#2112](https://github.com/apache/apisix/pull/2112)
 - fix: check decrypt key to prevent lua thread aborted [#2815](https://github.com/apache/apisix/pull/2815)
@@ -67,6 +70,7 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 This is release candidate.
 
 ### Core
+
 - :sunrise: **Migrate from etcd v2 to v3 protocol, which is not backward compatible. Apache APISIX only supports etcd 3.4 and above versions.** [#2036](https://github.com/apache/apisix/pull/2036)
 - add labels for upstream object.[#2279](https://github.com/apache/apisix/pull/2279)
 - add managed fields in json schema for resources, such as create_time and update_time.[#2444](https://github.com/apache/apisix/pull/2444)
@@ -75,6 +79,7 @@ This is release candidate.
 - implement `core.sleep`.[#2397](https://github.com/apache/apisix/pull/2397)
 
 ## Plugin
+
 - :sunrise: **add AK/SK(HMAC) auth plugin.**[#2192](https://github.com/apache/apisix/pull/2192)
 - :sunrise: add referer-restriction plugin.[#2352](https://github.com/apache/apisix/pull/2352)
 - `limit-count` support to use `redis` cluster.[#2406](https://github.com/apache/apisix/pull/2406)
@@ -82,6 +87,7 @@ This is release candidate.
 - feat(http-logger): support for specified the log formats via admin API [#2309](https://github.com/apache/apisix/pull/2309)
 
 ## Bugfix
+
 - :bug: **`high priority`** When the data plane receives an instruction to delete a resource(router or upstream etc.), it does not properly clean up the cache, resulting in the existing resources cannot be found. This problem only occurs in the case of long and frequent deletion operations.[#2168](https://github.com/apache/apisix/pull/2168)
 - fix routing priority does not take effect.[#2447](https://github.com/apache/apisix/pull/2447)
 - set random seed for each worker process at `init_worker` phase, only `init` phase is not enough.[#2357](https://github.com/apache/apisix/pull/2357)
@@ -91,11 +97,13 @@ This is release candidate.
 For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/7)
 
 ## CVE
+
 - Fixed Admin API default access token vulnerability
 
 ## 1.5.0
 
 ### Core
+
 - Admin API: support authentication with SSL certificates. [1747](https://github.com/apache/apisix/pull/1747)
 - Admin API: support both standard `PATCH` and sub path `PATCH`. [1930](https://github.com/apache/apisix/pull/1930)
 - HealthCheck: supports custom host port. [1914](https://github.com/apache/apisix/pull/1914)
@@ -103,9 +111,11 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 - URI: supports delete the '/' at the end of the `URI`. [1766](https://github.com/apache/apisix/pull/1766)
 
 ### New Plugin
+
 - :sunrise: **Request Validator** [1709](https://github.com/apache/apisix/pull/1709)
 
 ### Improvements
+
 - change: nginx worker_shutdown_timeout is changed from 3s to recommended value 240s. [1883](https://github.com/apache/apisix/pull/1883)
 - change: the `healthcheck` timeout time type changed from `integer` to `number`. [1892](https://github.com/apache/apisix/pull/1892)
 - change: the `request-validation` plugin input parameter supports `Schema` validation. [1920](https://github.com/apache/apisix/pull/1920)
@@ -115,6 +125,7 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 - change: add more configuration options for `cors` plugin. [1963](https://github.com/apache/apisix/pull/1963)
 
 ### Bugfix
+
 - fixed: failed to get `host` in health check configuration. [1871](https://github.com/apache/apisix/pull/1871)
 - fixed: should not save the runtime data of plugin into `etcd`. [1910](https://github.com/apache/apisix/pull/1910)
 - fixed: run `apisix start` several times will start multi nginx processes. [1913](https://github.com/apache/apisix/pull/1913)
@@ -126,6 +137,7 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 - fixed: the test case of `invalid-upstream` is unstable and sometimes fails to run. [1925](https://github.com/apache/apisix/pull/1925)
 
 ### Doc
+
 - doc: added APISIX Lua Coding Style Guide. [1874](https://github.com/apache/apisix/pull/1874)
 - doc: fixed link syntax in README.md. [1894](https://github.com/apache/apisix/pull/1894)
 - doc: fixed image links in zh-cn benchmark. [1896](https://github.com/apache/apisix/pull/1896)
@@ -142,21 +154,25 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 ## 1.4.1
 
 ### Bugfix
+
 - Fix: multiple SSL certificates are configured, but only one certificate working fine. [1818](https://github.com/apache/incubator-apisix/pull/1818)
 
 ## 1.4.0
 
 ### Core
+
 - Admin API: Support unique names for routes [1655](https://github.com/apache/incubator-apisix/pull/1655)
 - Optimization of log buffer size and flush time [1570](https://github.com/apache/incubator-apisix/pull/1570)
 
 ### New plugins
+
 - :sunrise: **Apache Skywalking plugin** [1241](https://github.com/apache/incubator-apisix/pull/1241)
 - :sunrise: **Keycloak Identity Server Plugin** [1701](https://github.com/apache/incubator-apisix/pull/1701)
 - :sunrise: **Echo Plugin** [1632](https://github.com/apache/incubator-apisix/pull/1632)
 - :sunrise: **Consume Restriction Plugin** [1437](https://github.com/apache/incubator-apisix/pull/1437)
 
 ### Improvements
+
 - Batch Request : Copy all headers to every request [1697](https://github.com/apache/incubator-apisix/pull/1697)
 - SSL private key encryption [1678](https://github.com/apache/incubator-apisix/pull/1678)
 - Improvement of docs for multiple plugins
@@ -166,10 +182,12 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 The 1.3 version is mainly for security update.
 
 ### Security
+
 - reject invalid header[#1462](https://github.com/apache/incubator-apisix/pull/1462) and uri safe encode[#1461](https://github.com/apache/incubator-apisix/pull/1461)
 - only allow 127.0.0.1 access admin API and dashboard by default. [#1458](https://github.com/apache/incubator-apisix/pull/1458)
 
 ### Plugin
+
 - :sunrise: **add batch request plugin**. [#1388](https://github.com/apache/incubator-apisix/pull/1388)
 - implemented plugin `sys logger`. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
 
@@ -178,6 +196,7 @@ The 1.3 version is mainly for security update.
 The 1.2 version brings many new features, including core and plugins.
 
 ### Core
+
 - :sunrise: **support etcd cluster**. [#1283](https://github.com/apache/incubator-apisix/pull/1283)
 - using the local DNS resolver by default, which is friendly for k8s. [#1387](https://github.com/apache/incubator-apisix/pull/1387)
 - support to run `header_filter`, `body_filter` and `log` phases for global rules. [#1364](https://github.com/apache/incubator-apisix/pull/1364)
@@ -186,6 +205,7 @@ The 1.2 version brings many new features, including core and plugins.
 - allow adding custom shared dict. [#1367](https://github.com/apache/incubator-apisix/pull/1367)
 
 ### Plugin
+
 - :sunrise: **add Apache Kafka plugin**. [#1312](https://github.com/apache/incubator-apisix/pull/1312)
 - :sunrise: **add CORS plugin**. [#1327](https://github.com/apache/incubator-apisix/pull/1327)
 - :sunrise: **add TCP logger plugin**. [#1221](https://github.com/apache/incubator-apisix/pull/1221)
@@ -201,10 +221,12 @@ The 1.2 version brings many new features, including core and plugins.
 - add `change_pwd` and `user_info` for Wolf-Rbac plugin. [#1204](https://github.com/apache/incubator-apisix/pull/1204)
 
 ### Admin API
+
 - :sunrise: support key-based authentication for Admin API(**not backward compatible**). [#1169](https://github.com/apache/incubator-apisix/pull/1169)
 - hide SSL private key in admin API. [#1240](https://github.com/apache/incubator-apisix/pull/1240)
 
 ### Bugfix
+
 - missing `clear` table before to reuse table (**will cause memory leak**). [#1134](https://github.com/apache/incubator-apisix/pull/1134)
 - print warning error message if the yaml route file is invalid. [#1141](https://github.com/apache/incubator-apisix/pull/1141)
 - the balancer IP may be nil, use an empty string instead. [#1166](https://github.com/apache/incubator-apisix/pull/1166)

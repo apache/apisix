@@ -139,6 +139,7 @@ x-custom-header:value
 ### 使用生成好的签名进行请求尝试
 
 **注:**
+
 1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
 2. **SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`**
 3. **SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`**
