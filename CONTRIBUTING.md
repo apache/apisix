@@ -96,6 +96,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * code style
     * Please take a look at [APISIX Lua Coding Style Guide](CODE_STYLE.md).
     * Use tool to check your code statically by command: `make lint`.
+
 ```shell
         # install `luacheck` first before run it
         $ luarocks install luacheck
@@ -114,10 +115,12 @@ Once we've discussed your changes and you've got your code ready, make sure that
             apisix/plugins/limit-count/*.lua > \
             /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 ```
+
       The `lj-releng` will be downloaded automatically by `make lint` if not exists.
 
 * test case style
     * Use tool to check your test case style statically by command, eg: `reindex t/admin/*.t`.
+
 ```shell
     # install `reindex` first before run it
     # wget https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
@@ -130,6 +133,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
     reindex: t/plugin/udp-logger.t:	done.
     reindex: t/plugin/zipkin.t:	skipped.
 ```
+
     * By the way, we can download "reindex" to another path and add this path to "PATH" environment.
     * When the test file is too large, for example > 800 lines, you should split it to a new file.
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.

@@ -728,7 +728,6 @@ Content-Type: text/plain
 
 ## Plugin
 
-
 *地址*：/apisix/admin/plugins/{plugin_name}
 
 *说明*: 插件
