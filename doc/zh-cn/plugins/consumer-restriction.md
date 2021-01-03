@@ -115,6 +115,7 @@ HTTP/1.1 403 Forbidden
 ```
 
 ### 如何限制 `service_id`
+
 `service_id`方式需要与授权插件一起配合使用，这里以key-auth授权插件为例。
 
 1、创建两个 service

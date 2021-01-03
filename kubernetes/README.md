@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 -->
+
 ### kubernetes
 
 There are some yaml files for deploying apisix in Kubernetes.
@@ -35,6 +36,7 @@ $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
 
 #### when using etcd-operator
+
 when using etcd-operator, you need to change `apisix-gw-config-cm.yaml`:
 
 * add CoreDNS IP into dns_resolver

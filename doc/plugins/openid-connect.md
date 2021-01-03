@@ -53,6 +53,7 @@ The OAuth 2 / Open ID Connect(OIDC) plugin provides authentication and introspec
 | set_userinfo_header                  | boolean | optional    | true                  |         | Whether to ensure the UserInfo object, if available, is set in the `X-Userinfo` request header.                                 |
 
 ### Modes of operation
+
 The plugin supports different modes of operation.
 
 1) It can be configured to just validate an access token that is expected to be present in a request header.
