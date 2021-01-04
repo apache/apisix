@@ -726,7 +726,7 @@ Content-Type: text/plain
 
 [Back to TOC](#目录)
 
-## Plugin
+## Plugin
 
 *地址*：/apisix/admin/plugins/{plugin_name}
 
