@@ -718,7 +718,7 @@ Content-Type: text/plain
 
 [Back to TOC](#Table-of-Contents)
 
-## Plugin
+## Plugin
 
 *API*：/apisix/admin/plugins/{plugin_name}
 
