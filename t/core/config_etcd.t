@@ -257,3 +257,4 @@ qr/etcd auth failed/
 --- grep_error_log_out
 etcd auth failed
 etcd auth failed
+etcd auth failed
