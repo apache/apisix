@@ -34,6 +34,19 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
+    my $routes = <<_EOC_;
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+_EOC_
+
+    $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
+
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]");
     }
