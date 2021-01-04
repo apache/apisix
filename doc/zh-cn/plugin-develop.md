@@ -98,6 +98,7 @@ plugins:                          # plugin list
 注：先后顺序与执行顺序无关。
 
 特别需要注意的是，如果你的插件有新建自己的代码目录，那么就需要修改 Makefile 文件，新增创建文件夹的操作，比如：
+
 ```
 $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
@@ -176,6 +177,7 @@ local _M = {
 为了跟 `consumer` 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `consumer` 资源的 `plugins` 属性里面的配置。
 
 下面是 key-auth 插件的 consumer 配置：
+
 ```json
 {
     "username": "Joe",
@@ -186,9 +188,11 @@ local _M = {
     }
 }
 ```
+
 你在创建 [Consumer](https://github.com/apache/apisix/blob/master/doc/admin-api.md#consumer) 时会用到它。
 
 为了检验这个配置，这个插件使用了如下的schema:
+
 ```json
 local consumer_schema = {
     type = "object",
@@ -201,6 +205,7 @@ local consumer_schema = {
 ```
 
 注意 key-auth 的 __check_schema(conf)__ 方法和 example-plugin 的同名方法的区别：
+
 ```lua
 -- key-auth
 function _M.check_schema(conf, schema_type)
@@ -302,6 +307,7 @@ end
 如果你只想暴露 API 到 localhost 或内网，你可以通过 [Control API](./control-api.md) 来暴露它。
 
 Take a look at example-plugin plugin:
+
 ```lua
 local function hello()
     local args = ngx.req.get_uri_args()

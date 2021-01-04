@@ -79,6 +79,7 @@ An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `i
 2. Group B：id > 1000
 
 here is the way:
+
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -115,7 +116,9 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 An example, redirect `http://foo.com` to `https://foo.com`
 
 There are several different ways to do this.
+
 1. Directly use the `http_to_https` in `redirect` plugin：
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -168,11 +171,13 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 ```
 
 Then test it to see if it works：
+
 ```shell
 curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
 ```
 
 The response body should be:
+
 ```
 HTTP/1.1 301 Moved Permanently
 Date: Mon, 18 May 2020 02:56:04 GMT
@@ -240,6 +245,7 @@ https://developer.apple.com/download/more/.
 ```
 
 This is an OS incompatible issue, you could fix by these two steps
+
 1. `brew edit openresty/brew/openresty`
 1. add `\ -fno-stack-check` in with-luajit-xcflags line.
 

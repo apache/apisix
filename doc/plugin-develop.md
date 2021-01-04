@@ -101,6 +101,7 @@ plugins:                          # plugin list
 Note : the order of the plugins is not related to the order of execution.
 
 If your plugin has a new code directory of its own, you will need to modify the `Makefile` to create directory, such as:
+
 ```
 $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
@@ -180,6 +181,7 @@ An authentication plugin needs to choose a consumer after execution. For example
 To interact with the `consumer` resource, this type of plugin needs to provide a `consumer_schema` to check the `plugins` configuration in the `consumer`.
 
 Here is the consumer configuration for key-auth plugin:
+
 ```json
 {
     "username": "Joe",
@@ -190,9 +192,11 @@ Here is the consumer configuration for key-auth plugin:
     }
 }
 ```
+
 It will be used when you try to create a [Consumer](https://github.com/apache/apisix/blob/master/doc/admin-api.md#consumer)
 
 To validate the configuration, the plugin uses a schema like this:
+
 ```json
 local consumer_schema = {
     type = "object",
@@ -205,6 +209,7 @@ local consumer_schema = {
 ```
 
 Note the difference between key-auth's __check_schema(conf)__ method to example-plugin's:
+
 ```lua
 -- key-auth
 function _M.check_schema(conf, schema_type)
@@ -322,6 +327,7 @@ You may need to use [interceptors](plugin-interceptors.md) to protect it.
 If you only want to expose the API to the localhost or intranet, you can expose it via [Control API](./control-api.md).
 
 Take a look at example-plugin plugin:
+
 ```lua
 local function hello()
     local args = ngx.req.get_uri_args()
