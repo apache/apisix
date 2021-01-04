@@ -207,4 +207,4 @@ In this case, the plugin can enforce that the access token, the ID token, and th
 
 ## Troubleshooting
 
-Check/modify the DNS settings (`conf/config.yaml) if APISIX cannot resolve/connect to the identity provider.
+Check/modify the DNS settings (`conf/config.yaml`) if APISIX cannot resolve/connect to the identity provider.
