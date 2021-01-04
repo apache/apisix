@@ -51,7 +51,9 @@ local ver_header    = "APISIX/" .. core.version.VERSION
 local function parse_args(args)
     dns_resolver = args and args["dns_resolver"]
     local options = {
-        nameservers = dns_resolver
+        nameservers = dns_resolver,
+        timeout = 2000,
+        retrans = 5,
     }
     core.utils.init_dns_proxy(options)
     core.log.info("dns resolver", core.json.delay_encode(dns_resolver, true))
