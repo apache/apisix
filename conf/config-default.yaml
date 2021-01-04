@@ -248,7 +248,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - uri-blocker
   - wolf-rbac
   - zipkin
-  # - server-info
+  - server-info
   - traffic-split
 
 stream_plugins:
