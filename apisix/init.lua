@@ -205,6 +205,7 @@ local function parse_domain(host)
         return nil, "failed to parse domain"
     end
 end
+_M.parse_domain = parse_domain
 
 
 local function parse_domain_for_nodes(nodes)
@@ -334,12 +335,9 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    -- always fetch table from the table pool, we don't need a reused api_ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
 

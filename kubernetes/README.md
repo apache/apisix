@@ -21,6 +21,7 @@
 There are some yaml files for deploying apisix in Kubernetes.
 
 ### Prerequisites
+
 - use `etcd` , if there is no `etcd` service, please install and set etcd address in `../conf/config.yaml`
 
 ### Usage
@@ -28,6 +29,7 @@ There are some yaml files for deploying apisix in Kubernetes.
 #### Create configmap for apache apisix
 
 if you do not need to change any config, and use default config in `../conf/config.yaml`
+
 ```
 $ kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
 ```
@@ -42,6 +44,7 @@ dns_resolver:
   - 10.233.0.3      # default coreDNS cluster ip
 
 ```
+
 * change etcd host
 
 Following {your-namespace} should be changed to your namespace, for example `default`.

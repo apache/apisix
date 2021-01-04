@@ -267,7 +267,8 @@ end
 
 ```lua
 --Yes
-local t = {}
+local new_tab = require "table.new"
+local t = new_tab(100, 0)
 for i = 1, 100000 do
     t[i] = "a"
 end
@@ -326,8 +327,6 @@ end
 ## 模块
 
 所有 `require` 的库都要 `local` 化：
-
-```lua
 
 ```lua
 --No

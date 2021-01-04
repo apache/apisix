@@ -24,6 +24,7 @@
 The proxy-cache plugin, which provides the ability to cache upstream response data and can be used with other plugins. The plugin supports disk-based caching and will support the memory-based caching in the future. The data that needs to be cached can be determined by the response code or request method and more complex caching policies can be configured by no_cache and cache_bypass attributes.
 
 *Note*:
+
 1. The cache expiration time cannot be configured dynamically. The expiration time can only be set by the upstream response header `Expires` or `Cache-Control`, and the default cache expiration time is 10s if there is no `Expires` or `Cache-Control` in the upstream response header
 2. If the upstream service is not available and APISIX will return 502 or 504, then 502 or 504 will be cached for 10s.
 
@@ -40,6 +41,7 @@ The proxy-cache plugin, which provides the ability to cache upstream response da
 | no_cache           | array[string]  | optional    |                           |                                                                                 | Whether to cache data, it can use variables, and note that the data will not be cached when the value of this attribute is not empty or not '0'.                                                                                             |
 
 Note:
+
 1. The variable starts with $.
 2. The attribute can use a combination of the variable and the string, but it needs to be written separately as an array, and the final values are stitched together after the variable is parsed.
 

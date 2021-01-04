@@ -1175,3 +1175,155 @@ passed
 [200, 200, 503, 503]
 --- no_error_log
 [error]
+
+
+
+=== TEST 37: add service and route, upstream is the domain name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 3,
+                            "time_window": 60,
+                            "rejected_code": 503
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "test.com:1980": 1,
+                            "foo.com:1981": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "uri": "/hello",
+                    "service_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 38: normal, the result is as expected
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+        if domain == "test.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        if domain == "foo.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        error("unknown domain: " .. domain)
+    end
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 503, 503]
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: plugin is bound to the route and upstream is the domain name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 3,
+                            "time_window": 60,
+                            "rejected_code": 503
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "test.com:1980": 1,
+                            "foo.com:1981": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: normal, the result is as expected
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    utils.dns_parse = function (domain, resolvers)  -- mock: DNS parser
+        if domain == "test.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        if domain == "foo.com" then
+            return {address = "127.0.0.1"}
+        end
+
+        error("unknown domain: " .. domain)
+    end
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 503, 503]
+--- no_error_log
+[error]

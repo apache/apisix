@@ -37,7 +37,7 @@ local id_schema = {
     }
 }
 
-local host_def_pat = "^\\*?[0-9a-zA-Z-.]+$"
+local host_def_pat = "^\\*?[0-9a-zA-Z-._]+$"
 local host_def = {
     type = "string",
     pattern = host_def_pat,
@@ -443,15 +443,9 @@ _M.route = {
             items = {
                 description = "Nginx builtin variable name and value",
                 type = "array",
-                items = {
-                    maxItems = 3,
-                    minItems = 2,
-                    anyOf = {
-                        {type = "string",},
-                        {type = "number",},
-                    }
-                }
-            }
+                maxItems = 4,
+                minItems = 2,
+            },
         },
         filter_func = {
             type = "string",
@@ -459,7 +453,9 @@ _M.route = {
             pattern = [[^function]],
         },
 
+        -- The 'script' fields below are used by dashboard for plugin orchestration
         script = {type = "string", minLength = 10, maxLength = 102400},
+        script_id = id_schema,
 
         plugins = plugins_schema,
         upstream = upstream_schema,
@@ -625,7 +621,8 @@ _M.ssl = {
             items = {
                 type = "string",
                 pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-            }
+            },
+            minItems = 1,
         },
         certs = {
             type = "array",

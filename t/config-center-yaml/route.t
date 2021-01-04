@@ -231,3 +231,53 @@ routes:
 --- request
 GET /hello
 --- error_code: 404
+
+
+
+=== TEST 9: script with id
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    enable_admin: false
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    script: "local ngx = ngx"
+    script_id: "1"
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 200
+
+
+
+=== TEST 10: hosts with '_' is valid
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    hosts:
+        - foo.com
+        - v1_test-api.com
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- more_headers
+host: v1_test-api.com
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]

@@ -18,6 +18,7 @@
 -->
 
 The control API can be used to
+
 * expose APISIX internal state
 * control the behavior of a single isolate APISIX data panel
 
@@ -48,4 +49,33 @@ Here is the supported API:
 
 Introduced since `v2.2`.
 
-Return the jsonschema used by this APISIX instance.
+Return the jsonschema used by this APISIX instance in the format below:
+
+```json
+{
+    "main": {
+        "route": {
+            "properties": {...}
+        },
+        "upstream": {
+            "properties": {...}
+        },
+        ...
+    },
+    "plugins": {
+        "example-plugin": {
+            "consumer_schema": {...},
+            "metadata_schema": {...},
+            "schema": {...},
+            "type": ...,
+            "priority": 0,
+            "version": 0.1
+        },
+        ...
+    }
+}
+```
+
+For `plugins` part, only enabled plugins will be returned. Some plugins may lack
+of fields like `consumer_schema` or `type`, it is dependended by the plugin's
+definition.

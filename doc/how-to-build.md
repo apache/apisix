@@ -112,8 +112,8 @@ see how to do it.
 ## 4. Test
 
 1. Install perl's package manager `cpanminus` first
-2. Then install `test-nginx` via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
-3. Clone source code：`git clone https://github.com/openresty/test-nginx.git`;
+2. Then install `test-nginx`'s dependencies via `cpanm`:：`sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)`
+3. Clone source code：`git clone https://github.com/iresty/test-nginx.git`. Note that we should use our fork.
 4. Load the `test-nginx` library with perl's `prove` command and run the test cases in the `/t` directory:
     * Set PERL5LIB for perl module: `export PERL5LIB=.:$PERL5LIB`
     * Run the test cases: `make test`
@@ -122,8 +122,10 @@ see how to do it.
 ### Troubleshoot Testing
 
 **Set Nginx Path**
+
 - If you run in to an issue `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf`
 make sure to set openresty as default nginx. And export the path as below.
+
 * export PATH=/usr/local/openresty/nginx/sbin:$PATH
     - Linux default installation path:
         * export PATH=/usr/local/openresty/nginx/sbin:$PATH
@@ -131,6 +133,7 @@ make sure to set openresty as default nginx. And export the path as below.
         * export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
 
 **Run Individual Test Cases**
+
 - Use the following command to run test cases constrained to a file:
     - prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 

@@ -25,6 +25,7 @@
 * [Upstream](#upstream)
 * [SSL](#ssl)
 * [Plugin Metadata](#plugin-metadata)
+* [Plugin](#plugin)
 
 ## Route
 
@@ -37,6 +38,7 @@
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/routes|无|获取资源列表|
 |GET      |/apisix/admin/routes/{id}|无|获取资源|
 |PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/routes     |{...}|创建资源，id 由后台服务自动生成|
@@ -280,6 +282,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/services|无|获取资源列表|
 |GET      |/apisix/admin/services/{id}|无|获取资源|
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
@@ -431,6 +434,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/consumers|无|获取资源列表|
 |GET      |/apisix/admin/consumers/{id}|无|获取资源|
 |PUT      |/apisix/admin/consumers|{...}|创建资源|
 |DELETE   |/apisix/admin/consumers/{id}|无|删除资源|
@@ -502,6 +506,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/upstreams|无|获取资源列表|
 |GET      |/apisix/admin/upstreams/{id}|无|获取资源|
 |PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
@@ -657,6 +662,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/ssl|无|获取资源列表|
 |GET      |/apisix/admin/ssl/{id}|无|获取资源|
 |PUT      |/apisix/admin/ssl/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/ssl     |{...}|创建资源，id 由后台服务自动生成|
@@ -670,10 +676,11 @@ HTTP/1.1 200 OK
 |key|必需|私钥|https 证书私钥||
 |certs|可选|证书字符串数组|当你想给同一个域名配置多个证书时，除了第一个证书需要通过cert传递外，剩下的证书可以通过该参数传递上来||
 |keys|可选|私钥字符串数组|certs 对应的证书私钥，注意要跟 certs 一一对应||
-|sni|必需|匹配规则|https 证书SNI||
+|snis|必需|匹配规则|非空数组形式，可以匹配多个 SNI||
 |labels|可选|匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|status|可选 |辅助| 是否启用此SSL, 缺省 `1`。|`1` 表示启用，`0` 表示禁用|
 
 ssl 对象 json 配置内容：
 
@@ -682,7 +689,7 @@ ssl 对象 json 配置内容：
     "id": "1",          # id
     "cert": "cert",     # 证书
     "key": "key",       # 私钥
-    "sni": "sni"        # host 域名
+    "snis": ["t.com"]   # HTTPS 握手时客户端发送的 SNI
 }
 ```
 
@@ -716,5 +723,44 @@ HTTP/1.1 201 Created
 Date: Thu, 26 Dec 2019 04:19:34 GMT
 Content-Type: text/plain
 ```
+
+[Back to TOC](#目录)
+
+## Plugin
+
+*地址*：/apisix/admin/plugins/{plugin_name}
+
+*说明*: 插件
+
+> 请求方法:
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/list|无|获取资源列表|
+|GET      |/apisix/admin/plugins/{plugin_name}|无|获取资源|
+
+> body 请求参数：
+
+获取插件 ({plugin_name}) 数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+["zipkin","request-id",...]
+
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+```
+
+*地址*：/apisix/admin/plugins/?all=true
+
+*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins?all=true|无|获取资源|
 
 [Back to TOC](#目录)

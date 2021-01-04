@@ -81,9 +81,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/hello"
 }'
 ```
+
 ```
 注释:这里的 100.100.99.135 是阿里云华北3内外地址。
 ```
+
 ## 测试插件
 
 * 成功的情况:
@@ -94,6 +96,7 @@ HTTP/1.1 200 OK
 ...
 hello, world
 ```
+
 * 查看阿里云日志服务上传记录
 ![](../../images/plugin/sls-logger-1.png "阿里云日志服务预览")
 

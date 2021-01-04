@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local require = require
-local router = require("resty.radixtree")
+local router = require("apisix.utils.router")
 local builtin_v1_routes = require("apisix.control.v1")
 local plugin_mod = require("apisix.plugin")
 local core = require("apisix.core")

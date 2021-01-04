@@ -23,6 +23,7 @@ local pcall     = pcall
 local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
+local plugin_get_all = require("apisix.plugin").get_all
 
 local _M = {}
 
@@ -38,6 +39,19 @@ end
 
 
 function _M.get(name)
+    local arg = get_uri_args()
+    if arg and arg["all"] == "true" then
+        local all_attributes = plugin_get_all({
+            version = true,
+            priority = true,
+            schema = true,
+            metadata_schema = true,
+            consumer_schema = true,
+            type = true,
+        })
+        return 200, all_attributes
+    end
+
     if not name then
         return 400, {error_msg = "not found plugin name"}
     end
@@ -50,7 +64,6 @@ function _M.get(name)
         return 400, {error_msg = "failed to load plugin " .. name}
     end
 
-    local arg = get_uri_args()
     local json_schema = plugin.schema
     if arg and arg["schema_type"] == "consumer" then
         json_schema = plugin.consumer_schema
