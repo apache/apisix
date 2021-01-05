@@ -16,14 +16,15 @@
 --
 local resty_http = require "resty.http"
 local to_hex = require "resty.string".to_hex
-local cjson = require "cjson".new()
+local cjson = require "cjson.safe".new()
 cjson.encode_number_precision(16)
 local assert = assert
 local type = type
 local setmetatable = setmetatable
 local math = math
 local tostring = tostring
-
+local batch_processor = require("apisix.utils.batch-processor")
+local core = require("apisix.core")
 
 local _M = {}
 local mt = { __index = _M }
@@ -48,8 +49,8 @@ function _M.new(conf)
         service_name = service_name,
         server_addr = server_addr,
         server_port = server_port,
-        pending_spans = {},
         pending_spans_n = 0,
+        route_id = conf.route_id
     }, mt)
 end
 
@@ -105,38 +106,75 @@ function _M.report(self, span)
         annotations = span.logs
     }
 
-    local i = self.pending_spans_n + 1
-    self.pending_spans[i] = zipkin_span
-    self.pending_spans_n = i
+    self.pending_spans_n = self.pending_spans_n + 1
+    if self.processor then
+        self.processor:push(zipkin_span)
+    end
 end
 
-function _M.flush(self)
-    if self.pending_spans_n == 0 then
 
-        return true
-    end
-
-    local pending_spans = cjson.encode(self.pending_spans)
-    self.pending_spans = {}
-    self.pending_spans_n = 0
-
+local function send_span(pending_spans, report)
     local httpc = resty_http.new()
-    local res, err = httpc:request_uri(self.endpoint, {
+    local res, err = httpc:request_uri(report.endpoint, {
         method = "POST",
         headers = {
             ["content-type"] = "application/json",
         },
         body = pending_spans,
+        keepalive = 5000,
+        keepalive_pool = 5
     })
 
-    -- TODO: on failure, retry?
     if not res then
-        return nil, "failed to request: " .. err
+        -- for zipkin test
+        core.log.error("report zipkin span failed")
+        return nil, "failed: " .. err .. ", url: " .. report.endpoint
     elseif res.status < 200 or res.status >= 300 then
-        return nil, "failed: " .. res.status .. " " .. res.reason
+        return nil, "failed: " .. report.endpoint .. " "
+               .. res.status .. " " .. res.reason
     end
 
     return true
+end
+
+
+function _M.init_processor(self)
+    local process_conf = {
+        name = "zipkin_report",
+        retry_delay = 1,
+        batch_max_size = 1000,
+        max_retry_count = 0,
+        buffer_duration = 60,
+        inactive_timeout = 5,
+        route_id = self.route_id,
+        server_addr = self.server_addr,
+    }
+
+    local flush = function (entries, batch_max_size)
+        if not entries then
+            return true
+        end
+
+        local pending_spans, err
+        if batch_max_size == 1 then
+            pending_spans, err = cjson.encode(entries[1])
+        else
+            pending_spans, err = cjson.encode(entries)
+        end
+
+        if not pending_spans then
+            return false, 'error occurred while encoding the data: ' .. err
+        end
+
+        return send_span(pending_spans, self)
+    end
+
+    local processor, err = batch_processor:new(flush, process_conf)
+    if err then
+        return false, "create processor error: " .. err
+    end
+
+    self.processor = processor
 end
 
 

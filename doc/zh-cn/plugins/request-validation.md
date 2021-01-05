@@ -20,6 +20,7 @@
 - [English](../../plugins/request-validation.md)
 
 # 目录
+
 - [**名称**](#名称)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -33,14 +34,12 @@
 
 该插件使用 `Json Schema` 进行数据验证，有关 `Json Schema` 的更多信息，请参阅 [JSON schema](https://github.com/api7/jsonschema)。
 
-
 ## 属性
 
-|名称           |必选项          |描述|
-|---------      |--------       |-----------|
-| header_schema |可选           |`header` 数据的 `schema` 数据结构|
-| body_schema   |可选           |`body` 数据的 `schema` 数据结构|
-
+| Name          | Type   | Requirement | Default | Valid | Description                       |
+| ------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
+| header_schema | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
+| body_schema   | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
 
 ## 如何启用
 
@@ -71,7 +70,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
 ## 测试插件
 
 ```shell
@@ -82,7 +80,6 @@ curl --header "Content-Type: application/json" \
 ```
 
 如果 `Schema` 验证失败，将返回 `400 bad request` 错误。
-
 
 ## 禁用插件
 
@@ -102,7 +99,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 ## 示例
 
@@ -195,7 +191,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 **数组（Array）验证:**
 

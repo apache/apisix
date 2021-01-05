@@ -240,11 +240,22 @@ passed
 === TEST 7: check body and header not changed
 --- request
 GET /with_header
+--- more_headers
+resp-X-Server-id: 100
+resp-Content-Type: application/xml
+resp-Content-Encoding: gzip
+resp-Content-Length: 4
+resp-Last-Modified: Wed, 21 Oct 2015 07:28:00 GMT
+resp-ETag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
 --- response_body
 new body2
 --- response_headers
 X-Server-id: 100
 Content-Type: application/xml
+Content-Length:
+Content-Encoding:
+Last-Modified:
+ETag:
 --- no_error_log
 [error]
 
@@ -436,7 +447,7 @@ invalid base64 content
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local encode_with_keys_sorted = require("lib.json_sort").encode
+            local encode_with_keys_sorted = require("toolkit.json").encode
 
             local code, _, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -466,7 +477,7 @@ invalid base64 content
 --- request
 GET /t
 --- response_body
-{"response-rewrite":{"body":"new body\n","headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
+{"response-rewrite":{"body":"new body\n","body_base64":false,"headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
 --- no_error_log
 [error]
 

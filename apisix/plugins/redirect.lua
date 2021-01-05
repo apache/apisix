@@ -19,18 +19,23 @@ local tab_insert = table.insert
 local tab_concat = table.concat
 local re_gmatch = ngx.re.gmatch
 local ipairs = ipairs
+local ngx = ngx
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
 })
 
 
+local reg = [[(\\\$[0-9a-zA-Z_]+)|]]         -- \$host
+            .. [[\$\{([0-9a-zA-Z_]+)\}|]]    -- ${host}
+            .. [[\$([0-9a-zA-Z_]+)|]]        -- $host
+            .. [[(\$|[^$\\]+)]]              -- $ or others
 local schema = {
     type = "object",
     properties = {
         ret_code = {type = "integer", minimum = 200, default = 302},
-        uri = {type = "string", minLength = 2},
-        http_to_https = {type = "boolean"}, -- default is false
+        uri = {type = "string", minLength = 2, pattern = reg},
+        http_to_https = {type = "boolean"},
     },
     oneOf = {
         {required = {"uri"}},
@@ -39,7 +44,7 @@ local schema = {
 }
 
 
-local plugin_name = "rewrite"
+local plugin_name = "redirect"
 
 local _M = {
     version = 0.1,
@@ -50,11 +55,6 @@ local _M = {
 
 
 local function parse_uri(uri)
-
-    local reg = [[ (\\\$[0-9a-zA-Z_]+) | ]]         -- \$host
-                .. [[ \$\{([0-9a-zA-Z_]+)\} | ]]    -- ${host}
-                .. [[ \$([0-9a-zA-Z_]+) | ]]        -- $host
-                .. [[ (\$|[^$\\]+) ]]               -- $ or others
     local iterator, err = re_gmatch(uri, reg, "jiox")
     if not iterator then
         return nil, err
@@ -79,20 +79,7 @@ end
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    if conf.uri then
-        local uri_segs, err = parse_uri(conf.uri)
-        if not uri_segs then
-            return false, err
-        end
-        core.log.info(core.json.delay_encode(uri_segs))
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
@@ -133,7 +120,13 @@ function _M.rewrite(conf, ctx)
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
         uri = "https://$host$request_uri"
-        ret_code = 301
+        local method_name = ngx.req.get_method()
+        if method_name == "GET" or method_name == "HEAD" then
+            ret_code = 301
+        else
+         -- https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/308
+            ret_code = 308
+        end
     end
 
     if uri and ret_code then

@@ -15,7 +15,9 @@
 -- limitations under the License.
 --
 local require = require
+local http_route = require("apisix.http.route")
 local core    = require("apisix.core")
+local plugin_checker = require("apisix.plugin").plugin_checker
 local error   = error
 local pairs   = pairs
 local ipairs  = ipairs
@@ -66,6 +68,27 @@ local function filter(route)
 end
 
 
+-- attach common methods if the router doesn't provide its custom implementation
+local function attach_http_router_common_methods(http_router)
+    if http_router.routes == nil then
+        http_router.routes = function ()
+            if not http_router.user_routes then
+                return nil, nil
+            end
+
+            local user_routes = http_router.user_routes
+            return user_routes.values, user_routes.conf_version
+        end
+    end
+
+    if http_router.init_worker == nil then
+        http_router.init_worker = function (filter)
+            http_router.user_routes = http_route.init_worker(filter)
+        end
+    end
+end
+
+
 function _M.http_init_worker()
     local conf = core.config.local_conf()
     local router_http_name = "radixtree_uri"
@@ -77,16 +100,20 @@ function _M.http_init_worker()
     end
 
     local router_http = require("apisix.http.router." .. router_http_name)
+    attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
     _M.router_http = router_http
 
-    local router_ssl = require("apisix.http.router." .. router_ssl_name)
+    local router_ssl = require("apisix.ssl.router." .. router_ssl_name)
     router_ssl.init_worker()
     _M.router_ssl = router_ssl
 
+    _M.api = require("apisix.api_router")
+
     local global_rules, err = core.config.new("/global_rules", {
             automatic = true,
-            item_schema = core.schema.global_rule
+            item_schema = core.schema.global_rule,
+            checker = plugin_checker,
         })
     if not global_rules then
         error("failed to create etcd instance for fetching /global_rules : "

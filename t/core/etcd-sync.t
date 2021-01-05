@@ -22,11 +22,17 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: auto update prev_index when other keys update
+=== TEST 1: minus timeout to watch repeatedly
+--- extra_yaml_config
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  resync_delay: 0.5 # resync after timeout
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
+            local t = require("lib.test_admin").test
 
             local consumers, _ = core.config.new("/consumers", {
                 automatic = true,
@@ -35,18 +41,27 @@ __DATA__
             })
 
             ngx.sleep(0.6)
-
             local idx = consumers.prev_index
-            local key = "/test_key"
-            local val = "test_value"
-            core.etcd.set(key, val)
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jobs",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "jobs",
+                            "password": "123456"
+                        }
+                    }
+                }]])
 
             ngx.sleep(2)
-
             local new_idx = consumers.prev_index
-
+            core.log.info("idx:", idx, " new_idx: ", new_idx)
             if new_idx > idx then
                 ngx.say("prev_index updated")
+            else
+                ngx.say("prev_index not update")
             end
         }
     }
@@ -56,10 +71,60 @@ GET /t
 prev_index updated
 --- no_error_log
 [error]
+--- error_log
+cancel watch connection success
 
 
 
 === TEST 2: using default timeout
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local consumers, _ = core.config.new("/consumers", {
+                automatic = true,
+                item_schema = core.schema.consumer,
+            })
+
+            ngx.sleep(0.6)
+            local idx = consumers.prev_index
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jobs",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "jobs",
+                            "password": "678901"
+                        }
+                    }
+                }]])
+
+            ngx.sleep(2)
+            local new_idx = consumers.prev_index
+            core.log.info("idx:", idx, " new_idx: ", new_idx)
+            if new_idx > idx then
+                ngx.say("prev_index updated")
+            else
+                ngx.say("prev_index not update")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+prev_index updated
+--- no_error_log
+[error]
+--- error_log
+waitdir key
+
+
+
+=== TEST 3: no update
 --- config
     location /t {
         content_by_lua_block {
@@ -80,7 +145,7 @@ prev_index updated
             ngx.sleep(2)
 
             local new_idx = consumers.prev_index
-
+            core.log.info("idx:", idx, " new_idx: ", new_idx)
             if new_idx > idx then
                 ngx.say("prev_index updated")
             else
@@ -94,3 +159,41 @@ GET /t
 prev_index not update
 --- no_error_log
 [error]
+
+
+
+=== TEST 4: bad plugin configuration (validated via incremental sync)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            assert(core.etcd.set("/global_rules/etcdsync",
+                {id = 1, plugins = { ["proxy-rewrite"] = { uri =  1 }}}
+            ))
+            -- wait for sync
+            ngx.sleep(0.6)
+        }
+    }
+--- request
+GET /t
+--- error_log
+property "uri" validation failed
+
+
+
+=== TEST 5: bad plugin configuration (validated via full sync)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            -- wait for full sync finish
+            ngx.sleep(0.6)
+
+            assert(core.etcd.delete("/global_rules/etcdsync"))
+        }
+    }
+--- request
+GET /t
+--- error_log
+property "uri" validation failed

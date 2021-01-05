@@ -14,7 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local ngx = ngx
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
 
 local schema = {
@@ -29,6 +31,15 @@ local schema = {
     required = {"i"},
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        ikey = {type = "number", minimum = 0},
+        skey = {type = "string"},
+    },
+    required = {"ikey", "skey"},
+    additionalProperties = false,
+}
 
 local plugin_name = "example-plugin"
 
@@ -37,17 +48,26 @@ local _M = {
     priority = 0,        -- TODO: add a type field, may be a good idea
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
+end
 
-    if not ok then
-        return false, err
+
+function _M.init()
+    -- call this function when plugin is loaded
+    local attr = plugin.plugin_attr(plugin_name)
+    if attr then
+        core.log.info(plugin_name, " get plugin attr val: ", attr.val)
     end
+end
 
-    return true
+
+function _M.destory()
+    -- call this function when plugin is unloaded
 end
 
 
@@ -81,6 +101,27 @@ function _M.access(conf, ctx)
     upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
                  ctx.conf_version, up_conf, matched_route)
     return
+end
+
+
+local function hello()
+    local args = ngx.req.get_uri_args()
+    if args["json"] then
+        return 200, {msg = "world"}
+    else
+        return 200, "world\n"
+    end
+end
+
+
+function _M.control_api()
+    return {
+        {
+            methods = {"GET"},
+            uris = {"/v1/plugin/example-plugin/hello"},
+            handler = hello,
+        }
+    }
 end
 
 

@@ -30,16 +30,26 @@
 
 ## Name
 
-`wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a` service` or `route`.
+`wolf-rbac` is an authentication and authorization (rbac) plugin. It needs to work with `consumer`. Also need to add `wolf-rbac` to a `service` or `route`.
 The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more information about `wolf`, please refer to [wolf documentation](https://github.com/iGeeky/wolf).
-
 
 ## Attributes
 
-* `server`: Set the service address of` wolf-server`. If not set, the default is: `http://127.0.0.1:10080`.
-* `appid`: Set the app id. The app id must be added in wolf-console.
-* `header_prefix`: prefix of custom HTTP header. The default value is `X-`. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`.
+| Name          | Type   | Requirement | Default                  | Valid | Description                                               |
+| ------------- | ------ | ----------- | ------------------------ | ----- | --------------------------------------------------------- |
+| server        | string | optional    | "http://127.0.0.1:10080" |       | Set the service address of` wolf-server`.                 |
+| appid         | string | optional    | "unset"                  |       | Set the app id. The app id must be added in wolf-console. |
+| header_prefix | string | optional    | "X-"                     |       | prefix of custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend): `X-UserId`, `X-Username`, `X-Nickname`. |
 
+## API
+
+This plugin will add several API:
+
+* /apisix/plugin/wolf-rbac/login
+* /apisix/plugin/wolf-rbac/change_pwd
+* /apisix/plugin/wolf-rbac/user_info
+
+You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## Dependencies
 
@@ -47,10 +57,9 @@ The rbac feature is provided by [wolf](https://github.com/iGeeky/wolf). For more
 
 [Wolf quick start](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README.md)
 
-### Add `application`,` admin`, `normal user`,` permission`, `resource` and user authorize
+### Add `application`, `admin`, `normal user`, `permission`, `resource` and user authorize
 
 [Wolf-console usage](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)
-
 
 ## How To Enable
 
@@ -101,7 +110,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 #### Login and get `wolf-rbac` token:
 
-The following `appid`,` username`, and `password` must be real ones in the wolf system.
+The following `appid`, `username`, and `password` must be real ones in the wolf system.
 
 * Login as `POST application/json`
 
@@ -126,7 +135,6 @@ curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -H "Content-Type: application/x-www-form-urlencoded" \
 -d 'appid=restful&username=test&password=user-password'
 ```
-
 
 #### try request with token
 
@@ -185,7 +193,6 @@ HTTP/1.1 200 OK
 
 <!DOCTYPE html>
 ```
-
 
 #### Get `RBAC` user information
 
@@ -246,4 +253,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-

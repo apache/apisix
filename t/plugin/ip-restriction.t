@@ -51,13 +51,13 @@ __DATA__
                 ngx.say(err)
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body
-{"whitelist":["10.255.254.0\/24","192.168.0.0\/16"]}
+{"whitelist":["10.255.254.0/24","192.168.0.0/16"]}
 --- no_error_log
 [error]
 
@@ -77,15 +77,16 @@ GET /t
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body_like eval
-qr/invalid ip address: 10.255.256.0\/24/
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 
@@ -105,15 +106,16 @@ qr/invalid ip address: 10.255.256.0\/24/
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
-            ngx.say(require("cjson").encode(conf))
+            ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- request
 GET /t
 --- response_body_like eval
-qr@invalid ip address: 10.255.254.0/38@
+qr/value should match only one schema, but matches none/
 --- no_error_log
 [error]
 
@@ -566,5 +568,40 @@ GET /t
 --- response_body
 invalid ip address: ::1/129
 value should match only one schema, but matches none
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: set disable=true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "ip-restriction": {
+                            "blacklist": [
+                                "127.0.0.0/24"
+                            ],
+                            "disable": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
 --- no_error_log
 [error]

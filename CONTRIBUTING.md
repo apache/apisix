@@ -37,7 +37,6 @@ for us to fix.
 
 * If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/apache/apisix/issues/new). Be sure to include a **title and clear description**, as much relevant information as possible, and a **code sample** or an **executable test case** demonstrating the expected behavior that is not occurring.
 
-
 ## How to add a new feature or change an existing one
 
 _Before making any significant changes, please [open an issue](https://github.com/apache/apisix/issues)._ Discussing your proposed changes ahead of time will make the contribution process smooth for everyone.
@@ -48,6 +47,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * Includes tests for new functionality.
 * References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
+* Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/semantic.yml).
 
 ## Contribution Guidelines for Documentation
 
@@ -68,7 +68,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 * Capitalization:
 
-    * For titles of a section, capitalize the first letter of each word except for the [closed-class words](http://babelnet.sbg.ac.at/themepark/grammar/classes.htm)
+    * For titles of a section, capitalize the first letter of each word except for the [closed-class words](https://en.wikipedia.org/wiki/Part_of_speech#Open_and_closed_classes)
       such as determiners, pronouns, conjunctions, and prepositions. Use the following [link](https://capitalizemytitle.com/#Chicago) for guidance.
       - Recommended: Authentication **with** APISIX
 
@@ -96,6 +96,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * code style
     * Please take a look at [APISIX Lua Coding Style Guide](CODE_STYLE.md).
     * Use tool to check your code statically by command: `make lint`.
+
 ```shell
         # install `luacheck` first before run it
         $ luarocks install luacheck
@@ -114,8 +115,12 @@ Once we've discussed your changes and you've got your code ready, make sure that
             apisix/plugins/limit-count/*.lua > \
             /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 ```
+
+      The `lj-releng` will be downloaded automatically by `make lint` if not exists.
+
 * test case style
     * Use tool to check your test case style statically by command, eg: `reindex t/admin/*.t`.
+
 ```shell
     # install `reindex` first before run it
     # wget https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
@@ -128,9 +133,12 @@ Once we've discussed your changes and you've got your code ready, make sure that
     reindex: t/plugin/udp-logger.t:	done.
     reindex: t/plugin/zipkin.t:	skipped.
 ```
+
     * By the way, we can download "reindex" to another path and add this path to "PATH" environment.
+    * When the test file is too large, for example > 800 lines, you should split it to a new file.
+      Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
 
 ## Do you have questions about the source code?
 
-- **QQ Group**: 552030619
-- [![Gitter](https://badges.gitter.im/apisix/community.svg)](https://gitter.im/apisix/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+- **QQ Group**: 578997126(recommended), 552030619
+- Join in `apisix` channel at [Apache Slack](http://s.apache.org/slack-invite). If the link is not working, find the latest one at [Apache INFRA WIKI](https://cwiki.apache.org/confluence/display/INFRA/Slack+Guest+Invites).

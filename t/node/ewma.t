@@ -108,7 +108,7 @@ passed
             end
             table.sort(ports_arr, cmd)
 
-            ngx.say(require("cjson").encode(ports_arr))
+            ngx.say(require("toolkit.json").encode(ports_arr))
             ngx.exit(200)
         }
     }
@@ -119,6 +119,7 @@ GET /t
 --- error_code: 200
 --- no_error_log
 [error]
+
 
 
 === TEST 3: about frequency
@@ -203,7 +204,7 @@ GET /t
                 ngx.say(err)
                 return
             end
-            ngx.say(require("cjson").encode({port = res.body, count = 1}))
+            ngx.say(require("toolkit.json").encode({port = res.body, count = 1}))
             ngx.exit(200)
         }
     }
@@ -214,4 +215,3 @@ GET /t
 --- error_code: 200
 --- no_error_log
 [error]
-

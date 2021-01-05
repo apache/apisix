@@ -24,6 +24,10 @@ UNAME ?= $(shell uname)
 OR_EXEC ?= $(shell which openresty)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 
+SHELL := /bin/bash -o pipefail
+
+VERSION ?= latest
+RELEASE_SRC = apache-apisix-${VERSION}-src
 
 .PHONY: default
 default:
@@ -58,7 +62,7 @@ endif
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")
-	wget -O utils/lj-releng https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
+	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
 
@@ -81,7 +85,6 @@ init: default
 run: default
 ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
-	mkdir -p /tmp/apisix_cores/
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
 else
 	@echo "APISIX is running..."
@@ -121,7 +124,7 @@ install: default
 	$(INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
 	$(INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
-	$(INSTALL) conf/cert/apisix.* /usr/local/apisix/conf/cert/
+	$(INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix
 	$(INSTALL) apisix/*.lua $(INST_LUADIR)/apisix/
@@ -132,17 +135,23 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/balancer
 	$(INSTALL) apisix/balancer/*.lua $(INST_LUADIR)/apisix/balancer/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/control
+	$(INSTALL) apisix/control/*.lua $(INST_LUADIR)/apisix/control/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/core
 	$(INSTALL) apisix/core/*.lua $(INST_LUADIR)/apisix/core/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/cli
+	$(INSTALL) apisix/cli/*.lua $(INST_LUADIR)/apisix/cli/
+
+	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
+	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/http
 	$(INSTALL) apisix/http/*.lua $(INST_LUADIR)/apisix/http/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/http/router
 	$(INSTALL) apisix/http/router/*.lua $(INST_LUADIR)/apisix/http/router/
-
-	$(INSTALL) -d $(INST_LUADIR)/apisix/discovery
-	$(INSTALL) apisix/discovery/*.lua $(INST_LUADIR)/apisix/discovery/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins
 	$(INSTALL) apisix/plugins/*.lua $(INST_LUADIR)/apisix/plugins/
@@ -156,11 +165,14 @@ install: default
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/prometheus
 	$(INSTALL) apisix/plugins/prometheus/*.lua $(INST_LUADIR)/apisix/plugins/prometheus/
 
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/serverless
+	$(INSTALL) apisix/plugins/serverless/*.lua $(INST_LUADIR)/apisix/plugins/serverless/
+
 	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/zipkin
 	$(INSTALL) apisix/plugins/zipkin/*.lua $(INST_LUADIR)/apisix/plugins/zipkin/
 
-	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
-	$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
+	$(INSTALL) -d $(INST_LUADIR)/apisix/ssl/router
+	$(INSTALL) apisix/ssl/router/*.lua $(INST_LUADIR)/apisix/ssl/router/
 
 	$(INSTALL) -d $(INST_LUADIR)/apisix/stream/plugins
 	$(INSTALL) apisix/stream/plugins/*.lua $(INST_LUADIR)/apisix/stream/plugins/
@@ -173,10 +185,14 @@ install: default
 
 	$(INSTALL) README.md $(INST_CONFDIR)/README.md
 	$(INSTALL) bin/apisix $(INST_BINDIR)/apisix
+	
+	$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/slslog
+	$(INSTALL) apisix/plugins/slslog/*.lua $(INST_LUADIR)/apisix/plugins/slslog/
 
 
 ### test:             Run the test case
 test:
+	git submodule update --init --recursive
 	prove -I../test-nginx/lib -I./ -r -s t/
 
 ### license-check:    Check Lua source code for Apache License
@@ -188,3 +204,29 @@ ifeq ("$(wildcard .travis/openwhisk-utilities/scancode/scanCode.py)", "")
 endif
 	.travis/openwhisk-utilities/scancode/scanCode.py --config .travis/ASF-Release.cfg ./
 
+release-src:
+	tar -zcvf $(RELEASE_SRC).tgz \
+	--exclude .github \
+	--exclude .git \
+	--exclude .gitattributes \
+	--exclude .idea \
+	--exclude .travis \
+	--exclude .gitignore \
+	--exclude .DS_Store \
+	--exclude benchmark \
+	--exclude doc \
+	--exclude kubernetes \
+	--exclude logos \
+	--exclude deps \
+	--exclude logs \
+	--exclude t \
+	--exclude release \
+	.
+
+	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz
+	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
+
+	mkdir -p release
+	mv $(RELEASE_SRC).tgz release/$(RELEASE_SRC).tgz
+	mv $(RELEASE_SRC).tgz.asc release/$(RELEASE_SRC).tgz.asc
+	mv $(RELEASE_SRC).tgz.sha512 release/$(RELEASE_SRC).tgz.sha512

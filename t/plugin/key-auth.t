@@ -27,8 +27,9 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 'test-key'})
+            local ok, err = plugin.check_schema({key = 'test-key'}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -49,8 +50,9 @@ done
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 123})
+            local ok, err = plugin.check_schema({key = 123}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -213,5 +215,47 @@ GET /add_more_consumer
 apikey: auth-13
 --- response_body eval
 ["passed\n", "hello world\n"]
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: add consumer with empty key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "error",
+                    "plugins": {
+                        "key-auth": {
+                        }
+                    }
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "username": "error",
+                            "plugins": {
+                                "key-auth": {
+                                }
+                            }
+                        }
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin key-auth err: property \"key\" is required"}
 --- no_error_log
 [error]

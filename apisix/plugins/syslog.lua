@@ -25,7 +25,6 @@ local buffers = {}
 local ipairs   = ipairs
 local stale_timer_running = false;
 local timer_at = ngx.timer.at
-local tostring = tostring
 
 
 local schema = {
@@ -37,7 +36,7 @@ local schema = {
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3},
-        sock_type = {type = "string", default = "tcp"},
+        sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
         max_retry_times = {type = "integer", minimum = 1, default = 1},
         retry_interval = {type = "integer", minimum = 0, default = 1},
         pool_size = {type = "integer", minimum = 5, default = 5},
@@ -51,7 +50,7 @@ local schema = {
 
 
 local lrucache = core.lrucache.new({
-    ttl = 300, count = 512
+    ttl = 300, count = 512, serial_creating = true,
 })
 
 
@@ -82,11 +81,11 @@ local function send_syslog_data(conf, log_message, api_ctx)
     local err_msg
     local res = true
 
+    core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
+
     -- fetch it from lrucache
-    local logger, err =  lrucache(
-        api_ctx.conf_type .. "#" .. api_ctx.conf_id,
-        api_ctx.conf_version,
-        logger_socket.new, logger_socket, {
+    local logger, err = core.lrucache.plugin_ctx(
+        lrucache, api_ctx, nil, logger_socket.new, logger_socket, {
             host = conf.host,
             port = conf.port,
             flush_limit = conf.flush_limit,
@@ -124,7 +123,8 @@ local function remove_stale_objects(premature)
 
     for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.debug("removing batch processor stale object, route id:", tostring(key))
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
             buffers[key] = nil
         end
     end
@@ -137,18 +137,13 @@ end
 function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
 
-    if not entry.route_id then
-        core.log.error("failed to obtain the route id for sys logger")
-        return
-    end
-
-    local log_buffer = buffers[entry.route_id]
-
     if not stale_timer_running then
         -- run the timer every 30 mins if any log is present
         timer_at(1800, remove_stale_objects)
         stale_timer_running = true
     end
+
+    local log_buffer = buffers[conf]
 
     if log_buffer then
         log_buffer:push(entry)
@@ -179,6 +174,8 @@ function _M.log(conf, ctx)
         max_retry_count = conf.max_retry_times,
         buffer_duration = conf.buffer_duration,
         inactive_timeout = conf.timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
     local err
@@ -189,7 +186,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    buffers[entry.route_id] = log_buffer
+    buffers[conf] = log_buffer
     log_buffer:push(entry)
 
 end

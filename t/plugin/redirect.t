@@ -38,6 +38,7 @@ __DATA__
             })
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say("done")
@@ -63,6 +64,7 @@ done
             })
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say("done")
@@ -574,8 +576,8 @@ location /t {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        local ssl_cert = t.read_file("conf/cert/apisix.crt")
-        local ssl_key =  t.read_file("conf/cert/apisix.key")
+        local ssl_cert = t.read_file("t/certs/apisix.crt")
+        local ssl_key =  t.read_file("t/certs/apisix.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
         local code, body = t.test('/apisix/admin/ssl/1',
@@ -668,11 +670,85 @@ ssl handshake: userdata
 sent http request: 58 bytes.
 received: HTTP/1.1 200 OK
 received: Content-Type: text/plain
+received: Content-Length: 12
 received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
-received: Server: \w+
 received: \nreceived: hello world
 close: 1 nil}
 --- no_error_log
 [error]
 [alert]
+
+
+
+=== TEST 26: add plugin with new uri: /test/add
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods":["POST","GET","HEAD"],
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "ret_code": 307
+                        }
+                    },
+                    "host": "test.com",
+                    "uri": "/hello-https"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: http to https post redirect
+--- request
+POST /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 308
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: http to https get redirect
+--- request
+GET /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 301
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: http to https head redirect
+--- request
+HEAD /hello-https
+--- more_headers
+Host: test.com
+--- response_headers
+Location: https://test.com/hello-https
+--- error_code: 301
+--- no_error_log
+[error]

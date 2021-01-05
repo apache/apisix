@@ -38,7 +38,7 @@ __DATA__
 --- request
 GET /t
 --- response_body_like eval
-qr/random seed \d+\ntwice: false/
+qr/random seed \d+(\.\d+)?(e\+\d+)?\ntwice: false/
 
 
 
@@ -68,3 +68,174 @@ qr/random seed \d+\ntwice: false/
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 3: specify resolvers
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local resolvers = {"8.8.8.8"}
+            core.utils.set_resolver(resolvers)
+            local ip_info, err = core.utils.dns_parse("github.com", resolvers)
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+            end
+            ngx.say(require("toolkit.json").encode(ip_info))
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/"address":.+,"name":"github.com"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: default resolvers
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ip_info, err = core.utils.dns_parse("github.com")
+            if not ip_info then
+                core.log.error("failed to parse domain: ", host, ", error: ",err)
+            end
+            core.log.info("ip_info: ", require("toolkit.json").encode(ip_info))
+            ngx.say("resolvers: ", require("toolkit.json").encode(core.utils.resolvers))
+        }
+    }
+--- request
+GET /t
+--- response_body
+resolvers: ["8.8.8.8","114.114.114.114"]
+--- error_log eval
+qr/"address":.+,"name":"github.com"/
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: enable_server_tokens false
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_server_tokens: false
+  admin_key: null
+
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+             [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say("failed")
+            return
+        end
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
+            local bytes, err = sock:send(req)
+            if not bytes then
+                ngx.say("failed to send http request: ", err)
+                return
+            end
+
+            ngx.say("sent http request: ", bytes, " bytes.")
+
+            while true do
+                local line, err = sock:receive()
+                if not line then
+                    -- ngx.say("failed to receive response status line: ", err)
+                    break
+                end
+
+                ngx.say("received: ", line)
+            end
+
+            local ok, err = sock:close()
+            ngx.say("close: ", ok, " ", err)
+        end  -- do
+    }
+}
+--- request
+GET /t
+--- response_body eval
+qr{connected: 1
+sent http request: 62 bytes.
+received: HTTP/1.1 200 OK
+received: Content-Type: text/plain
+received: Content-Length: 12
+received: Connection: close
+received: Server: APISIX
+received: \nreceived: hello world
+close: 1 nil}
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: resolve_var
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local cases = {
+                "",
+                "xx",
+                "$me",
+                "$me run",
+                "talk with $me",
+                "tell $me to",
+                "$you and $me",
+                "$eva and $me",
+                "$you and \\$me",
+            }
+            local ctx = {
+                you = "John",
+                me = "David",
+            }
+            for _, case in ipairs(cases) do
+                ngx.say("res:", resolve_var(case, ctx))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+res:
+res:xx
+res:David
+res:David run
+res:talk with David
+res:tell David to
+res:John and David
+res: and David
+res:John and \$me

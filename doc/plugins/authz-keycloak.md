@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/authz-keycloak.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -27,27 +28,25 @@
 - [**Disable Plugin**](#disable-plugin)
 - [**Examples**](#examples)
 
-
 ## Name
 
 `authz-keycloak` is an authorization plugin to be used with the Keycloak Identity Server. Keycloak is an OAuth/OIDC and
-UMA compliant Ideneity Server. Although, its developed to working in conjunction with Keycloak it should work with any
+UMA compliant Identity Server. Although, its developed to working in conjunction with Keycloak it should work with any
 OAuth/OIDC and UMA compliant identity providers as well.
 
 For more information on Keycloak, refer to [Keycloak Authorization Docs](https://www.keycloak.org/docs/latest/authorization_services) for more information.
 
 ## Attributes
 
-|Name           |Requirement    |Description|
-|---------      |--------       |-----------|
-| token_endpoint|required       |A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type.|
-| grant_type    |optional       |Default value is `urn:ietf:params:oauth:grant-type:uma-ticket`.|
-| audience      |optional       |The client identifier of the resource server to which the client is seeking access. This parameter is mandatory in case the permission parameter is defined.|
-| permissions   |optional       |This parameter is optional. A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: `RESOURCE_ID#SCOPE_ID`.|
-| timeout       |optional       |Timeout for the http connection with the Identity Server. Default is 3 seconds|
-| ssl_verify    |optional       |Verify SSL cert matches hostname|
-| policy_enforcement_mode|required     |Enforcing or Permissive.|
-
+| Name                    | Type          | Requirement | Default                                       | Valid                                           | Description                                                                                                                                                 |
+| ----------------------- | ------------- | ----------- | --------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| token_endpoint          | string        | required    |                                               | [1, 4096]                                       | A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type.                                               |
+| grant_type              | string        | optional    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"] |                                                                                                                                                             |
+| audience                | string        | optional    |                                               |                                                 | The client identifier of the resource server to which the client is seeking access. <br>This parameter is mandatory when parameter permission is defined. |
+| permissions             | array[string] | optional    |                                               |                                                 | A string representing a set of one or more resources and scopes the client is seeking access.  The format of the string must be: `RESOURCE_ID#SCOPE_ID`.    |
+| timeout                 | integer       | optional    | 3000                                          | [1000, ...]                                     | Timeout(ms) for the http connection with the Identity Server.                                                                                               |
+| ssl_verify              | boolean       | optional    | true                                          |                                                 | Verify if SSL cert matches hostname.                                                                                                                        |
+| policy_enforcement_mode | string        | optional    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                     |                                                                                                                                                             |
 
 ### Policy Enforcement Mode
 
@@ -60,7 +59,6 @@ Specifies how policies are enforced when processing authorization requests sent 
 **Permissive**
 
 - Requests are allowed even when there is no policy associated with a given resource.
-
 
 ## How To Enable
 
@@ -86,13 +84,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
 ## Test Plugin
 
 ```shell
 curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
 ```
-
 
 ## Disable Plugin
 

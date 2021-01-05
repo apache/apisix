@@ -20,6 +20,7 @@
 - [English](../../plugins/zipkin.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -34,10 +35,12 @@
 
 ## 属性
 
-* `endpoint`: Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。
-* `sample_ratio`: 监听的比例，最小为0.00001，最大为1。
-* `service_name`: 可选参数，标记当前服务的名称，默认值是`APISIX`。
-* `server_addr`: 可选参数，标记当前 APISIX 实例的IP地址，默认值是 nginx 的内置变量`server_addr`。|
+| 名称         | 类型   | 必选项 | 默认值   | 有效值       | 描述                                                                 |
+| ------------ | ------ | ------ | -------- | ------------ | -------------------------------------------------------------------- |
+| endpoint     | string | 必须   |          |              | Zipkin 的 http 节点，例如`http://127.0.0.1:9411/api/v2/spans`。      |
+| sample_ratio | number | 必须   |          | [0.00001, 1] | 监听的比例                                                           |
+| service_name | string | 可选   | "APISIX" |              | 标记当前服务的名称                                                   |
+| server_addr  | string | 可选   |          |              | 标记当前 APISIX 实例的IP地址，默认值是 nginx 的内置变量`server_addr` |
 
 ## 如何启用
 
@@ -123,7 +126,6 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1 -H 'X-API-KEY: edd1c9f03433
 
 现在就已经移除了 Zipkin 插件了。其他插件的开启和移除也是同样的方法。
 
-
 ## 上游服务是Golang的示例代码
 
 ```golang
@@ -162,4 +164,3 @@ func main(){
 
 }
 ```
-

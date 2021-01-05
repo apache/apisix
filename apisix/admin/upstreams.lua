@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
+local utils = require("apisix.admin.utils")
 local tostring = tostring
 local ipairs = ipairs
 local type = type
@@ -135,6 +136,12 @@ function _M.put(id, conf)
 
     local key = "/upstreams/" .. id
     core.log.info("key: ", key)
+
+    local ok, err = utils.inject_conf_with_prev_conf("upstream", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put upstream[", key, "]: ", err)
@@ -151,7 +158,7 @@ function _M.get(id)
         key = key .. "/" .. id
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get upstream[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -168,6 +175,7 @@ function _M.post(id, conf)
     end
 
     local key = "/upstreams"
+    utils.inject_timestamp(conf)
     local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post upstream[", key, "]: ", err)
@@ -253,6 +261,7 @@ function _M.patch(id, conf, sub_path)
                   core.json.delay_encode(res_old, true))
 
     local new_value = res_old.body.node.value
+    local modified_index = res_old.body.node.modifiedIndex
 
     if sub_path and sub_path ~= "" then
         local code, err, node_val = core.table.patch(new_value, sub_path, conf)
@@ -264,6 +273,8 @@ function _M.patch(id, conf, sub_path)
         new_value = core.table.merge(new_value, conf);
     end
 
+    utils.inject_timestamp(new_value, nil, conf)
+
     core.log.info("new value ", core.json.delay_encode(new_value, true))
 
     local id, err = check_conf(id, new_value, true)
@@ -271,8 +282,7 @@ function _M.patch(id, conf, sub_path)
         return 400, err
     end
 
-    -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, new_value)
+    local res, err = core.etcd.atomic_set(key, new_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new upstream[", key, "]: ", err)
         return 500, {error_msg = err}

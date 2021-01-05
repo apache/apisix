@@ -58,6 +58,9 @@ local function send_udp_data(conf, log_message)
     local res = true
     local sock = udp()
     sock:settimeout(conf.timeout * 1000)
+
+    core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
+
     local ok, err = sock:setpeername(conf.host, conf.port)
 
     if not ok then
@@ -89,7 +92,8 @@ local function remove_stale_objects(premature)
 
     for key, batch in ipairs(buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.debug("removing batch processor stale object, route id:", tostring(key))
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
             buffers[key] = nil
         end
     end
@@ -98,15 +102,8 @@ local function remove_stale_objects(premature)
 end
 
 
-function _M.log(conf)
+function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
-
-    if not entry.route_id then
-        core.log.error("failed to obtain the route id for udp logger")
-        return
-    end
-
-    local log_buffer = buffers[entry.route_id]
 
     if not stale_timer_running then
         -- run the timer every 30 mins if any log is present
@@ -114,6 +111,7 @@ function _M.log(conf)
         stale_timer_running = true
     end
 
+    local log_buffer = buffers[conf]
     if log_buffer then
         log_buffer:push(entry)
         return
@@ -142,6 +140,8 @@ function _M.log(conf)
         max_retry_count = conf.max_retry_count,
         buffer_duration = conf.buffer_duration,
         inactive_timeout = conf.inactive_timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
     local err
@@ -152,7 +152,7 @@ function _M.log(conf)
         return
     end
 
-    buffers[entry.route_id] = log_buffer
+    buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
 

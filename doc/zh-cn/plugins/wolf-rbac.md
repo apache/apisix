@@ -33,12 +33,23 @@
 `wolf-rbac` 是一个认证及授权(rbac)插件，它需要与 `consumer` 一起配合才能工作。同时需要添加 `wolf-rbac` 到一个 `service` 或 `route` 中。
 rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更多信息, 请参考[wolf文档](https://github.com/iGeeky/wolf)。
 
-
 ## 属性
 
-* `server`: 设置 `wolf-server` 的访问地址, 如果未设置, 默认为: `http://127.0.0.1:10080`.
-* `appid`: 设置应用id, 该应用id, 需要是在 `wolf-console` 中已经添加的应用id.
-* `header_prefix`: 自定义http头的前缀, 默认为: `X-`. `wolf-rbac`在鉴权成功后, 会在请求头(用于传给后端)及响应头(用于传给前端)中添加3个头: `X-UserId`, `X-Username`, `X-Nickname`.
+| 名称          | 类型   | 必选项 | 默认值                   | 有效值 | 描述                                                             |
+| ------------- | ------ | ------ | ------------------------ | ------ | ---------------------------------------------------------------- |
+| server        | string | 可选   | "http://127.0.0.1:10080" |        | 设置 `wolf-server` 的访问地址                                    |
+| appid         | string | 可选   | "unset"                  |        | 设置应用id, 该应用id, 需要是在 `wolf-console` 中已经添加的应用id |
+| header_prefix | string | 可选   | "X-"                     |        | 自定义http头的前缀。`wolf-rbac`在鉴权成功后, 会在请求头(用于传给后端)及响应头(用于传给前端)中添加3个头: `X-UserId`, `X-Username`, `X-Nickname` |
+
+## 接口
+
+插件会增加这些接口：
+
+* /apisix/plugin/wolf-rbac/login
+* /apisix/plugin/wolf-rbac/change_pwd
+* /apisix/plugin/wolf-rbac/user_info
+
+你可能需要通过 [interceptors](../../plugin-interceptors.md) 来保护它们。
 
 ## 依赖项
 
@@ -49,7 +60,6 @@ rbac功能由[wolf](https://github.com/iGeeky/wolf)提供, 有关 `wolf` 的更�
 ### 添加应用, 管理员, 普通用户, 权限, 资源 及给用户授权.
 
 [Wolf管理使用](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)
-
 
 ## 如何启用
 
@@ -125,7 +135,6 @@ curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -H "Content-Type: application/x-www-form-urlencoded" \
 -d 'appid=restful&username=test&password=user-password'
 ```
-
 
 #### 使用获取到的 token 进行请求尝试
 
@@ -223,7 +232,6 @@ HTTP/1.1 200 OK
 {"message":"success to change password"}
 ```
 
-
 ## 禁用插件
 
 当你想去掉 `rbac-wolf` 插件的时候，很简单，在routes中的插件配置中把对应的 `插件` 配置删除即可，无须重启服务，即刻生效：
@@ -243,4 +251,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-

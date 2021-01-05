@@ -20,13 +20,13 @@
 - [中文](../zh-cn/plugins/request-validation.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 - [**Examples**](#examples)
-
 
 ## Name
 
@@ -37,10 +37,10 @@ For more information on schema, refer to [JSON schema](https://github.com/api7/j
 
 ## Attributes
 
-|Name           |Requirement    |Description|
-|---------      |--------       |-----------|
-| header_schema |optional       |schema for the header data|
-| body_schema   |optional       |schema for the body data|
+| Name          | Type   | Requirement | Default | Valid | Description                |
+| ------------- | ------ | ----------- | ------- | ----- | -------------------------- |
+| header_schema | object | optional    |         |       | schema for the header data |
+| body_schema   | object | optional    |         |       | schema for the body data   |
 
 ## How To Enable
 
@@ -68,7 +68,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
             "127.0.0.1:8080": 1
         }
     }
-}
+}'
 ```
 
 ## Test Plugin
@@ -102,7 +102,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
 ## Examples:
 
 **`Enum` validate:**
@@ -122,7 +121,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 **`Boolean` validate:**
 
@@ -195,7 +193,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 **`Array` validate:**
 

@@ -15,12 +15,10 @@
 -- limitations under the License.
 --
 local core              = require("apisix.core")
+local utils             = require("apisix.admin.utils")
+local apisix_ssl        = require("apisix.ssl")
 local tostring          = tostring
-local aes               = require "resty.aes"
-local ngx_encode_base64 = ngx.encode_base64
-local str_find          = string.find
 local type              = type
-local assert            = assert
 
 local _M = {
     version = 0.1,
@@ -54,37 +52,25 @@ local function check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
+    local ok, err = apisix_ssl.validate(conf.cert, conf.key)
+    if not ok then
+        return nil, {error_msg = err}
+    end
+
     local numcerts = conf.certs and #conf.certs or 0
     local numkeys = conf.keys and #conf.keys or 0
     if numcerts ~= numkeys then
         return nil, {error_msg = "mismatched number of certs and keys"}
     end
 
-    return need_id and id or true
-end
-
-
-local function aes_encrypt(origin)
-    local local_conf = core.config.local_conf()
-    local iv
-    if local_conf and local_conf.apisix
-       and local_conf.apisix.ssl.key_encrypt_salt then
-        iv = local_conf.apisix.ssl.key_encrypt_salt
-    end
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
-            assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
-
-    if aes_128_cbc_with_iv ~= nil and str_find(origin, "---") then
-        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
-        if encrypted == nil then
-            core.log.error("failed to encrypt key[", origin, "] ")
-            return origin
+    for i = 1, numcerts do
+        local ok, err = apisix_ssl.validate(conf.certs[i], conf.keys[i])
+        if not ok then
+            return nil, {error_msg = "failed to handle cert-key pair[" .. i .. "]: " .. err}
         end
-
-        return ngx_encode_base64(encrypted)
     end
 
-    return origin
+    return need_id and id or true
 end
 
 
@@ -95,9 +81,21 @@ function _M.put(id, conf)
     end
 
     -- encrypt private key
-    conf.key = aes_encrypt(conf.key)
+    conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
+
+    if conf.keys then
+        for i = 1, #conf.keys do
+            conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
+        end
+    end
 
     local key = "/ssl/" .. id
+
+    local ok, err = utils.inject_conf_with_prev_conf("ssl", key, conf)
+    if not ok then
+        return 500, {error_msg = err}
+    end
+
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put ssl[", key, "]: ", err)
@@ -114,7 +112,7 @@ function _M.get(id)
         key = key .. "/" .. id
     end
 
-    local res, err = core.etcd.get(key)
+    local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get ssl[", key, "]: ", err)
         return 500, {error_msg = err}
@@ -136,10 +134,17 @@ function _M.post(id, conf)
     end
 
     -- encrypt private key
-    conf.key = aes_encrypt(conf.key)
+    conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
+
+    if conf.keys then
+        for i = 1, #conf.keys do
+            conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
+        end
+    end
 
     local key = "/ssl"
     -- core.log.info("key: ", key)
+    utils.inject_timestamp(conf)
     local res, err = core.etcd.push("/ssl", conf)
     if not res then
         core.log.error("failed to post ssl[", key, "]: ", err)
@@ -199,8 +204,11 @@ function _M.patch(id, conf)
 
 
     local node_value = res_old.body.node.value
+    local modified_index = res_old.body.node.modifiedIndex
 
     node_value = core.table.merge(node_value, conf);
+
+    utils.inject_timestamp(node_value, nil, conf)
 
     core.log.info("new ssl conf: ", core.json.delay_encode(node_value, true))
 
@@ -209,8 +217,7 @@ function _M.patch(id, conf)
         return 400, err
     end
 
-    -- TODO: this is not safe, we need to use compare-set
-    local res, err = core.etcd.set(key, node_value)
+    local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
         core.log.error("failed to set new ssl[", key, "] to etcd: ", err)
         return 500, {error_msg = err}

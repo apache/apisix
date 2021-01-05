@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core   = require("apisix.core")
+local plugin_checker = require("apisix.plugin").plugin_checker
 local ipairs = ipairs
 local services
 local error = error
@@ -87,6 +88,7 @@ function _M.init_worker()
     services, err = core.config.new("/services", {
         automatic = true,
         item_schema = core.schema.service,
+        checker = plugin_checker,
         filter = filter,
     })
     if not services then

@@ -28,17 +28,16 @@
 - [**禁用插件**](#禁用插件)
 - [**示例**](#示例)
 
-
 ## 名称
 
 `request-id` 插件通过 APISIX 为每一个请求代理添加唯一 ID（UUID），以用于追踪 API 请求。该插件在 `header_name` 已经在请求中存在时不会为请求添加新的 ID
 
 ## 属性
 
-| 名称                | 必选项 | 描述                                        |
-| ------------------- | ------ | ------------------------------------------- |
-| header_name         | 可选   | Request ID header name (默认: X-Request-Id) |
-| include_in_response | 可选   | 是否需要在返回头中包含该唯一ID (默认: true) |
+| 名称                | 类型    | 必选项   | 默认值         | 有效值 | 描述                           |
+| ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
+| header_name         | string  | 可选 | "X-Request-Id" |        | Request ID header name         |
+| include_in_response | boolean | 可选 | false          |        | 是否需要在返回头中包含该唯一ID |
 
 ## 如何启用
 

@@ -19,28 +19,37 @@
 
 - [English](../../plugins/response-rewrite.md)
 
-# response-rewrite
+# 目录
 
-该插件支持修改上游服务返回的 body 和 header 信息。
+- [**response-rewrite**](#response-rewrite)
+- [**配置参数**](#配置参数)
+- [**开启插件**](#开启插件)
+- [**测试插件**](#测试插件)
+- [**禁用插件**](#禁用插件)
+- [**注意事项**](#注意事项)
+
+## response-rewrite
+
+该插件支持修改上游服务或网关本身返回的 body 和 header 信息。
 
 使用场景：
-1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS (跨域资源共享)的功能。
+1、可以设置 `Access-Control-Allow-*` 等 header 信息，来实现 CORS （跨域资源共享）的功能。
 2、另外也可以通过配置 status_code 和 header 里面的 Location 来实现重定向，当然如果只是需要重定向功能，最好使用 [redirect](redirect.md) 插件。
 
 ## 配置参数
 
-|名字    |可选|说明|
-|------- |-----|------|
-|status_code   |可选| 修改上游返回状态码，默认保留原始响应代码。|
-|body          |可选| 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉|
-|body_base64       |可选| 布尔类型，描述 `body` 字段是否需要 base64 解码之后再返回给客户端，用在某些图片和 Protobuffer 场景|
-|headers       |可选| 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可|
+| 名称        | 类型    | 必选项 | 默认值 | 有效值     | 描述                                                                                                                                   |
+| ----------- | ------- | ------ | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| status_code | integer | 可选   |        | [200, 598] | 修改上游返回状态码，默认保留原始响应代码。                                                                                             |
+| body        | string  | 可选   |        |            | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉                                              |
+| body_base64 | boolean | 可选   | false  |            | 描述 `body` 字段是否需要 base64 解码之后再返回给客户端，用在某些图片和 Protobuffer 场景                                                |
+| headers     | object  | 可选   |        |            | 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可 |
 
 ## 示例
 
 ### 开启插件
 
-下面是一个示例，在指定的 route 上开启了 `response rewrite` 插件:
+下面是一个示例，在指定的 route 上开启了 `response rewrite` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -85,3 +94,29 @@ X-Server-status: on
 
 {"code":"ok","message":"new json body"}
 ```
+
+### 禁用插件
+
+禁用`response-rewrite`插件很简单。你不需要重新启动服务，只需要在插件配置中删除相应的 json 配置，它将立即生效。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/test/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
+
+## 注意事项
+
+`ngx.exit`将中断当前请求的执行，并返回状态码给 Nginx。
+
+![](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+
+但是很多人可能会对`ngx.exit`理解出现偏差，即如果你在`access`阶段执行`ngx.exit`，只是中断了请求处理阶段，响应阶段仍然会处理。比如，如果你配置了`response-rewrite`插件，它会强制覆盖你的响应信息（如响应代码）。

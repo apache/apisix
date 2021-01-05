@@ -14,83 +14,44 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require   = require
 local core = require("apisix.core")
-local local_plugins = require("apisix.plugin").plugins_hash
-local stream_local_plugins = require("apisix.plugin").stream_plugins_hash
-local pairs     = pairs
+local check_schema = require("apisix.plugin").check_schema
+local stream_check_schema = require("apisix.plugin").stream_check_schema
 local ipairs    = ipairs
 local pcall     = pcall
-local require   = require
-local table_remove = table.remove
 local table_sort = table.sort
 local table_insert = table.insert
+local get_uri_args = ngx.req.get_uri_args
+local plugin_get_all = require("apisix.plugin").get_all
+
+local _M = {}
 
 
-local _M = {
-    version = 0.1,
-}
-
-
-local disable_schema = {
-    type = "object",
-    properties = {
-        disable = {type = "boolean", enum={true}}
-    },
-    required = {"disable"}
-}
-
-
-function _M.check_schema(plugins_conf)
-    for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check plugin scheme, name: ", name, ", configurations: ",
-                      core.json.delay_encode(plugin_conf, true))
-        local plugin_obj = local_plugins[name]
-        if not plugin_obj then
-            return false, "unknown plugin [" .. name .. "]"
-        end
-
-        if plugin_obj.check_schema then
-            local ok = core.schema.check(disable_schema, plugin_conf)
-            if not ok then
-                local ok, err = plugin_obj.check_schema(plugin_conf)
-                if not ok then
-                    return false, "failed to check the configuration of plugin "
-                                  .. name .. " err: " .. err
-                end
-            end
-        end
-    end
-
-    return true
+function _M.check_schema(plugins_conf, schema_type)
+    return check_schema(plugins_conf, schema_type, false)
 end
 
 
-function _M.stream_check_schema(plugins_conf)
-    for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check stream plugin scheme, name: ", name,
-                      ": ", core.json.delay_encode(plugin_conf, true))
-        local plugin_obj = stream_local_plugins[name]
-        if not plugin_obj then
-            return false, "unknown plugin [" .. name .. "]"
-        end
-
-        if plugin_obj.check_schema then
-            local ok = core.schema.check(disable_schema, plugin_conf)
-            if not ok then
-                local ok, err = plugin_obj.check_schema(plugin_conf)
-                if not ok then
-                    return false, "failed to check the configuration of "
-                                  .. "stream plugin [" .. name .. "]: " .. err
-                end
-            end
-        end
-    end
-
-    return true
+function _M.stream_check_schema(plugins_conf, schema_type)
+    return stream_check_schema(plugins_conf, schema_type, false)
 end
 
 
 function _M.get(name)
+    local arg = get_uri_args()
+    if arg and arg["all"] == "true" then
+        local all_attributes = plugin_get_all({
+            version = true,
+            priority = true,
+            schema = true,
+            metadata_schema = true,
+            consumer_schema = true,
+            type = true,
+        })
+        return 200, all_attributes
+    end
+
     if not name then
         return 400, {error_msg = "not found plugin name"}
     end
@@ -104,6 +65,10 @@ function _M.get(name)
     end
 
     local json_schema = plugin.schema
+    if arg and arg["schema_type"] == "consumer" then
+        json_schema = plugin.consumer_schema
+    end
+
     if not json_schema then
         return 400, {error_msg = "not found schema"}
     end
@@ -114,10 +79,6 @@ end
 
 function _M.get_plugins_list()
     local plugins = core.config.local_conf().plugins
-    if plugins[1] == 'example-plugin' then
-        table_remove(plugins, 1)
-    end
-
     local priorities = {}
     local success = {}
     for i, name in ipairs(plugins) do

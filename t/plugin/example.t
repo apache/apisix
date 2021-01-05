@@ -149,7 +149,7 @@ done
                 ngx.say("failed to load plugins: ", err)
             end
 
-            local encode_json = require "cjson.safe" .encode
+            local encode_json = require("toolkit.json").encode
             for _, plugin in ipairs(plugins) do
                 ngx.say("plugin name: ", plugin.name,
                         " priority: ", plugin.priority)
@@ -200,7 +200,7 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
                 modifiedIndex = 1,
             })
 
-            local encode_json = require "cjson.safe" .encode
+            local encode_json = require("toolkit.json").encode
             for i = 1, #filter_plugins, 2 do
                 local plugin = filter_plugins[i]
                 local plugin_conf = filter_plugins[i + 1]
@@ -257,5 +257,55 @@ passed
 GET /server_port
 --- response_body_like eval
 qr/1981/
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: set disable = true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+            local ok, err = plugin.check_schema({
+                i = 1, s = "s", t = {1},
+                disable = true,
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: set disable = false
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.example-plugin")
+            local ok, err = plugin.check_schema({
+                i = 1, s = "s", t = {1},
+                disable = true,
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
 --- no_error_log
 [error]

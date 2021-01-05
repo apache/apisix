@@ -18,6 +18,12 @@ local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local ngx_print = ngx.print
 local ngx_header = ngx.header
+local ngx_add_header
+if ngx.config.subsystem == "http" then
+    local ngx_resp = require "ngx.resp"
+    ngx_add_header = ngx_resp.add_header
+end
+
 local error = error
 local select = select
 local type = type
@@ -85,7 +91,7 @@ function _M.say(...)
 end
 
 
-function _M.set_header(...)
+local function set_header(append, ...)
     if ngx.headers_sent then
       error("headers have already been sent", 2)
     end
@@ -98,21 +104,51 @@ function _M.set_header(...)
         end
 
         for k, v in pairs(headers) do
-            ngx_header[k] = v
+            if append then
+                ngx_add_header(k, v)
+            else
+                ngx_header[k] = v
+            end
         end
 
         return
     end
 
     for i = 1, count, 2 do
-        ngx_header[select(i, ...)] = select(i + 1, ...)
+        if append then
+            ngx_add_header(select(i, ...), select(i + 1, ...))
+        else
+            ngx_header[select(i, ...)] = select(i + 1, ...)
+        end
     end
 end
 
 
+function _M.set_header(...)
+    set_header(false, ...)
+end
+
+
+function _M.add_header(...)
+    set_header(true, ...)
+end
+
+
 function _M.get_upstream_status(ctx)
-    -- $upstream_status maybe including mutiple status, only need the last one
+    -- $upstream_status maybe including multiple status, only need the last one
     return tonumber(str_sub(ctx.var.upstream_status or "", -3))
 end
+
+
+function _M.clear_header_as_body_modified()
+    ngx.header.content_length = nil
+    -- in case of upstream content is compressed content
+    ngx.header.content_encoding = nil
+
+    -- clear cache identifier
+    ngx.header.last_modified = nil
+    ngx.header.etag = nil
+end
+
 
 return _M

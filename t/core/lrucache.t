@@ -38,13 +38,13 @@ __DATA__
             end
 
             local obj = core.lrucache.global("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
@@ -52,50 +52,13 @@ GET /t
 --- response_body
 obj: {"idx":1}
 obj: {"idx":1}
-obj: {"idx":2,"_cache_ver":"1"}
+obj: {"idx":2}
 --- no_error_log
 [error]
 
 
 
-=== TEST 2: plugin
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-
-            local idx = 0
-            local function create_obj()
-                idx = idx + 1
-                return {idx = idx}
-            end
-
-            local obj = core.lrucache.plugin("plugin-a", "key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-
-            obj = core.lrucache.plugin("plugin-a", "key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-
-            obj = core.lrucache.plugin("plugin-a", "key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-
-            obj = core.lrucache.plugin("plugin-b", "key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
-        }
-    }
---- request
-GET /t
---- response_body
-obj: {"idx":1}
-obj: {"idx":1}
-obj: {"idx":2,"_cache_ver":"1"}
-obj: {"idx":3,"_cache_ver":"1"}
---- no_error_log
-[error]
-
-
-
-=== TEST 3: new
+=== TEST 2: new
 --- config
     location /t {
         content_by_lua_block {
@@ -110,19 +73,19 @@ obj: {"idx":3,"_cache_ver":"1"}
             local lru_get = core.lrucache.new()
 
             local obj = lru_get("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key", nil, create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = lru_get("key-different", "1", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
@@ -130,15 +93,15 @@ GET /t
 --- response_body
 obj: {"idx":1}
 obj: {"idx":1}
-obj: {"idx":2,"_cache_ver":"1"}
-obj: {"idx":2,"_cache_ver":"1"}
-obj: {"idx":3,"_cache_ver":"1"}
+obj: {"idx":2}
+obj: {"idx":2}
+obj: {"idx":3}
 --- no_error_log
 [error]
 
 
 
-=== TEST 4: cache the non-table object, eg: number or string
+=== TEST 3: cache the non-table object, eg: number or string
 --- config
     location /t {
         content_by_lua_block {
@@ -151,13 +114,13 @@ obj: {"idx":3,"_cache_ver":"1"}
             end
 
             local obj = core.lrucache.global("key", nil, create_num)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", nil, create_num)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             obj = core.lrucache.global("key", "1", create_num)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
@@ -171,14 +134,14 @@ obj: 2
 
 
 
-=== TEST 5: sanity
+=== TEST 4: sanity
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
 
             local function server_release(self)
-                ngx.say("release: ", core.json.encode(self))
+                ngx.say("release: ", require("toolkit.json").encode(self))
             end
 
             local lrucache_server_picker = core.lrucache.new({
@@ -188,26 +151,26 @@ obj: 2
             local t1 = lrucache_server_picker("nnn", "t1",
                 function () return {name = "aaa"} end)
 
-            ngx.say("obj: ", core.json.encode(t1))
+            ngx.say("obj: ", require("toolkit.json").encode(t1))
 
             local t2 = lrucache_server_picker("nnn", "t2",
                 function () return {name = "bbb"} end)
 
-            ngx.say("obj: ", core.json.encode(t2))
+            ngx.say("obj: ", require("toolkit.json").encode(t2))
         }
     }
 --- request
 GET /t
 --- response_body
-obj: {"_cache_ver":"t1","name":"aaa"}
-release: {"_cache_ver":"t1","name":"aaa"}
-obj: {"_cache_ver":"t2","name":"bbb"}
+obj: {"name":"aaa"}
+release: {"name":"aaa"}
+obj: {"name":"bbb"}
 --- no_error_log
 [error]
 
 
 
-=== TEST 6: invalid_stale = true
+=== TEST 5: invalid_stale = true
 --- config
     location /t {
         content_by_lua_block {
@@ -224,27 +187,27 @@ obj: {"_cache_ver":"t2","name":"bbb"}
             })
 
             local obj = lru_get("key", "ver", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
             local obj = lru_get("key", "ver", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
 
             ngx.sleep(0.15)
             local obj = lru_get("key", "ver", create_obj)
-            ngx.say("obj: ", core.json.encode(obj))
+            ngx.say("obj: ", require("toolkit.json").encode(obj))
         }
     }
 --- request
 GET /t
 --- response_body
-obj: {"idx":1,"_cache_ver":"ver"}
-obj: {"idx":1,"_cache_ver":"ver"}
-obj: {"idx":2,"_cache_ver":"ver"}
+obj: {"idx":1}
+obj: {"idx":1}
+obj: {"idx":2}
 --- no_error_log
 [error]
 
 
 
-=== TEST 7: when creating cached objects, use resty-lock to avoid repeated creation.
+=== TEST 6: when creating cached objects, use resty-lock to avoid repeated creation.
 --- config
     location /t {
         content_by_lua_block {
@@ -258,12 +221,12 @@ obj: {"idx":2,"_cache_ver":"ver"}
             end
 
             local lru_get = core.lrucache.new({
-                ttl = 1, count = 256, invalid_stale = true,
+                ttl = 1, count = 256, invalid_stale = true, serial_creating = true,
             })
 
             local function f()
                 local obj = lru_get("key", "ver", create_obj)
-                ngx.say("obj: ", core.json.encode(obj))
+                ngx.say("obj: ", require("toolkit.json").encode(obj))
             end
 
             ngx.thread.spawn(f)
@@ -275,7 +238,48 @@ obj: {"idx":2,"_cache_ver":"ver"}
 --- request
 GET /t
 --- response_body
-obj: {"idx":1,"_cache_ver":"ver"}
-obj: {"idx":1,"_cache_ver":"ver"}
+obj: {"idx":1}
+obj: {"idx":1}
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: different `key` and `ver`, cached same one table
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            local item = {}
+            local idx = 0
+            local function create_obj()
+                idx = idx + 1
+                ngx.say("create obj ", idx, " time")
+                return item
+            end
+
+            local lru_get = core.lrucache.new({
+                ttl = 10, count = 256
+            })
+
+            local obj = lru_get("key", "ver", create_obj)
+            ngx.say("fetch obj: ", obj == item)
+
+            obj = lru_get("key2", "ver2", create_obj)
+            ngx.say("fetch obj: ", obj == item)
+
+            obj = lru_get("key", "ver", create_obj)
+            ngx.say("fetch obj: ", obj == item)
+        }
+    }
+--- request
+GET /t
+--- response_body
+create obj 1 time
+fetch obj: true
+create obj 2 time
+fetch obj: true
+fetch obj: true
 --- no_error_log
 [error]

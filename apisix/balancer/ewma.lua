@@ -11,7 +11,6 @@ local ngx_now = ngx.now
 local math = math
 local pairs = pairs
 local next = next
-local tonumber = tonumber
 
 local _M = {}
 local DECAY_TIME = 10 -- this value is in seconds
@@ -146,9 +145,14 @@ local function _ewma_find(ctx, up_nodes)
 end
 
 
-local function _ewma_after_balance(ctx)
-    local response_time = tonumber(ctx.var.upstream_response_time) or 0
-    local connect_time = tonumber(ctx.var.upstream_connect_time) or 0
+local function _ewma_after_balance(ctx, before_retry)
+    if before_retry then
+        -- don't count tries which fail to complete
+        return nil
+    end
+
+    local response_time = ctx.var.upstream_response_time or 0
+    local connect_time = ctx.var.upstream_connect_time or 0
     local rtt = connect_time + response_time
     local upstream = ctx.var.upstream_addr
 

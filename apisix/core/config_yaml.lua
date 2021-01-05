@@ -18,7 +18,6 @@ local config_local = require("apisix.core.config_local")
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
-local process      = require("ngx.process")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
@@ -28,7 +27,7 @@ local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
 local setmetatable = setmetatable
-local ngx_sleep    = ngx.sleep
+local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
 local sub_str      = string.sub
@@ -56,8 +55,8 @@ local mt = {
 }
 
 
-    local apisix_yaml
-    local apisix_yaml_ctime
+local apisix_yaml
+local apisix_yaml_ctime
 local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
@@ -80,17 +79,10 @@ local function read_apisix_yaml(premature, pre_mtime)
         return
     end
 
-    local found_end_flag
-    for i = 1, 10 do
-        f:seek('end', -i)
-
-        local end_flag = f:read("*a")
-        -- log.info(i, " flag: ", end_flag)
-        if re_find(end_flag, [[#END\s*]], "jo") then
-            found_end_flag = true
-            break
-        end
-    end
+    f:seek('end', -10)
+    local end_flag = f:read("*a")
+    -- log.info("flag: ", end_flag)
+    local found_end_flag = re_find(end_flag, [[#END\s*$]], "jo")
 
     if not found_end_flag then
         f:close()
@@ -148,42 +140,89 @@ local function sync_data(self)
         self.values = nil
     end
 
-    self.values = new_tab(#items, 0)
-    self.values_hash = new_tab(0, #items)
+    if self.single_item then
+        -- treat items as a single item
+        self.values = new_tab(1, 0)
+        self.values_hash = new_tab(0, 1)
 
-    local err
-    for i, item in ipairs(items) do
-        local id = tostring(i)
-        local data_valid = true
-        if type(item) ~= "table" then
-            data_valid = false
-            log.error("invalid item data of [", self.key .. "/" .. id,
-                        "], val: ", json.delay_encode(item),
-                        ", it shoud be a object")
-        end
-
-        local key = item.id or "arr_" .. i
+        local item = items
         local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
-                           key = "/" .. self.key .. "/" .. key}
+                           key = "/" .. self.key}
 
-        if data_valid and self.item_schema then
+        local data_valid = true
+        local err
+        if self.item_schema then
             data_valid, err = check_schema(self.item_schema, item)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.delay_encode(item))
             end
+
+            if data_valid and self.checker then
+                data_valid, err = self.checker(item)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(item))
+                end
+            end
         end
 
         if data_valid then
             insert_tab(self.values, conf_item)
-            local item_id = conf_item.value.id or self.key .. "#" .. id
-            item_id = tostring(item_id)
-            self.values_hash[item_id] = #self.values
-            conf_item.value.id = item_id
+            self.values_hash[self.key] = #self.values
             conf_item.clean_handlers = {}
 
             if self.filter then
                 self.filter(conf_item)
+            end
+        end
+
+    else
+        self.values = new_tab(#items, 0)
+        self.values_hash = new_tab(0, #items)
+
+        local err
+        for i, item in ipairs(items) do
+            local id = tostring(i)
+            local data_valid = true
+            if type(item) ~= "table" then
+                data_valid = false
+                log.error("invalid item data of [", self.key .. "/" .. id,
+                          "], val: ", json.delay_encode(item),
+                          ", it should be an object")
+            end
+
+            local key = item.id or "arr_" .. i
+            local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
+                            key = "/" .. self.key .. "/" .. key}
+
+            if data_valid and self.item_schema then
+                data_valid, err = check_schema(self.item_schema, item)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(item))
+                end
+            end
+
+            if data_valid and self.checker then
+                data_valid, err = self.checker(item)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(item))
+                end
+            end
+
+            if data_valid then
+                insert_tab(self.values, conf_item)
+                local item_id = conf_item.value.id or self.key .. "#" .. id
+                item_id = tostring(item_id)
+                self.values_hash[item_id] = #self.values
+                conf_item.value.id = item_id
+                conf_item.clean_handlers = {}
+
+                if self.filter then
+                    self.filter(conf_item)
+                end
             end
         end
     end
@@ -263,6 +302,8 @@ function _M.new(key, opts)
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
+    local single_item = opts and opts.single_item
+    local checker = opts and opts.checker
 
     -- like /routes and /upstreams, remove first char `/`
     if key then
@@ -272,6 +313,7 @@ function _M.new(key, opts)
     local obj = setmetatable({
         automatic = automatic,
         item_schema = item_schema,
+        checker = checker,
         sync_times = 0,
         running = true,
         conf_version = 0,
@@ -281,6 +323,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         key = key,
+        single_item = single_item,
         filter = filter_fun,
     }, mt)
 
@@ -316,10 +359,7 @@ end
 
 
 function _M.init_worker()
-    if process.type() ~= "worker" and process.type() ~= "single" then
-        return
-    end
-
+    -- sync data in each non-master process
     read_apisix_yaml()
     ngx.timer.every(1, read_apisix_yaml)
 end
