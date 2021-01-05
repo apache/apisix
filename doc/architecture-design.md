@@ -45,7 +45,7 @@
 
 ## APISIX Config
 
-There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument when start APISIX like `apisix start -c /opts/apisix/config.yaml`
+There are two methods to configure APISIX: directly change `conf/config.yaml`, or add file path argument using `-c` or `--config` flag when start APISIX like `apisix start -c /opts/apisix/config.yaml`
 
 For example, set the default listening port of APISIX to 8000, and keep other configurations as default. The configuration in `config.yaml` should be like this:
 
@@ -584,7 +584,7 @@ HTTP/1.1 403
 [Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
 We can register a global [Plugin](#Plugin) with `GlobalRule`:
 
-​```shell
+```shell
 curl -X PUT \
   https://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
