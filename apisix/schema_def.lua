@@ -37,7 +37,7 @@ local id_schema = {
     }
 }
 
-local host_def_pat = "^\\*?[0-9a-zA-Z-.]+$"
+local host_def_pat = "^\\*?[0-9a-zA-Z-._]+$"
 local host_def = {
     type = "string",
     pattern = host_def_pat,
@@ -621,7 +621,8 @@ _M.ssl = {
             items = {
                 type = "string",
                 pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-            }
+            },
+            minItems = 1,
         },
         certs = {
             type = "array",

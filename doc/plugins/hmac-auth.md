@@ -138,6 +138,7 @@ x-custom-header:value
 ### Use the generated signature to try the request
 
 **Note:**
+
 1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS respectively represent the corresponding variables**
 2. **SIGNED_HEADERS is the headers specified by the client to join the encryption calculation. If there are multiple headers, they must be separated by ";": `x-custom-header-a;x-custom-header-b`**
 3. **SIGNATURE needs to use base64 for encryption: `base64_encode(SIGNATURE)`**

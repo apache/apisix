@@ -101,6 +101,7 @@ plugins:                          # plugin list
 Note : the order of the plugins is not related to the order of execution.
 
 If your plugin has a new code directory of its own, you will need to modify the `Makefile` to create directory, such as:
+
 ```
 $(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
 $(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
@@ -180,6 +181,7 @@ An authentication plugin needs to choose a consumer after execution. For example
 To interact with the `consumer` resource, this type of plugin needs to provide a `consumer_schema` to check the `plugins` configuration in the `consumer`.
 
 Here is the consumer configuration for key-auth plugin:
+
 ```json
 {
     "username": "Joe",
@@ -190,9 +192,11 @@ Here is the consumer configuration for key-auth plugin:
     }
 }
 ```
+
 It will be used when you try to create a [Consumer](https://github.com/apache/apisix/blob/master/doc/admin-api.md#consumer)
 
 To validate the configuration, the plugin uses a schema like this:
+
 ```json
 local consumer_schema = {
     type = "object",
@@ -205,6 +209,7 @@ local consumer_schema = {
 ```
 
 Note the difference between key-auth's __check_schema(conf)__ method to example-plugin's:
+
 ```lua
 -- key-auth
 function _M.check_schema(conf, schema_type)
@@ -246,11 +251,11 @@ Write the logic of the plugin in the corresponding phase.
 
 ## write test case
 
-For functions, write and improve the test cases of various dimensions, do a comprehensive test for your plugin ! The
+For functions, write and improve the test cases of various dimensions, do a comprehensive test for your plugin! The
 test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out. APISIX uses
-[****test-nginx****](https://github.com/openresty/test-nginx) as the test framework. A test case,.t file is usually
+[****test-nginx****](https://github.com/openresty/test-nginx) as the test framework. A test case (.t file) is usually
 divided into prologue and data parts by \__data\__. Here we will briefly introduce the data part, that is, the part
-of the real test case. For example, the key-auth plugin :
+of the real test case. For example, the key-auth plugin:
 
 ```perl
 === TEST 1: sanity
@@ -284,6 +289,10 @@ When we request __/t__, which config in the configuration file, the Nginx will c
  complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
 "__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record. The log files for the unit test
 are located in the following folder: 't/servroot/logs'.
+
+The above test case represents a simple scenario. Most scenarios will require multiple steps to validate. To do this, create multiple tests `=== TEST 1`, `=== TEST 2`, and so on. These tests will be executed sequentially, allowing you to break down scenarios into a sequence of atomic steps.
+
+Additionally, there are some convenience testing endpoints which can be found [here](https://github.com/apache/apisix/blob/master/t/lib/server.lua#L36). For example, see [proxy-rewrite](https://github.com/apache/apisix/blob/master/t/plugin/proxy-rewrite.lua). In test 42, the upstream `uri` is made to redirect `/test?new_uri=hello` to `/hello` (which always returns `hello world`). In test 43, the response body is confirmed to equal `hello world`, meaning the proxy-rewrite configuration added with test 42 worked correctly.
 
 Refer the following [document](how-to-build.md#test) to setup the testing framework.
 
@@ -322,6 +331,7 @@ You may need to use [interceptors](plugin-interceptors.md) to protect it.
 If you only want to expose the API to the localhost or intranet, you can expose it via [Control API](./control-api.md).
 
 Take a look at example-plugin plugin:
+
 ```lua
 local function hello()
     local args = ngx.req.get_uri_args()

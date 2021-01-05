@@ -798,8 +798,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"host\" validation failed: failed to match pattern \"^\\\\*?[0-9a-zA-Z-.]+$\" with \"a.*.foo.com\""}
+--- response_body_like
+{"error_msg":"invalid configuration: property \\"host\\" validation failed: failed to match pattern .*
 --- no_error_log
 [error]
 
@@ -831,8 +831,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"host\" validation failed: failed to match pattern \"^\\\\*?[0-9a-zA-Z-.]+$\" with \"*.a.*.foo.com\""}
+--- response_body_like
+{"error_msg":"invalid configuration: property \\"host\\" validation failed: failed to match pattern .*
 --- no_error_log
 [error]
 

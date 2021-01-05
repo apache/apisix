@@ -117,7 +117,9 @@ https://github.com/iresty/lua-resty-radixtree#operator-list
 比如，将 `http://foo.com` 重定向到 `https://foo.com`
 
 有几种不同的方法来实现：
+
 1. 直接使用 `redirect` 插件的 `http_to_https` 功能：
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -170,11 +172,13 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 ```
 
 然后测试下是否生效：
+
 ```shell
 curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
 ```
 
 响应体应该是：
+
 ```
 HTTP/1.1 301 Moved Permanently
 Date: Mon, 18 May 2020 02:56:04 GMT

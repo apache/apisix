@@ -24,6 +24,7 @@
 Turning on the APISIX node in Stand-alone mode will no longer use the default etcd as the configuration center.
 
 This method is more suitable for two types of users:
+
 1. kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
 2. Different configuration centers: There are many implementations of the configuration center, such as Consul, etc., using the full yaml file for intermediate conversion.
 
@@ -223,6 +224,7 @@ ssl:
             IeVtU6fH57Ddn59VPbF20m8RCSkmBvSdcbyBmqlZSBE+fKwCliKl6u/GH0BNAWKz
             r8yiEiskqRmy7P7MY9hDmEbG
             -----END PRIVATE KEY-----
-        sni: "yourdomain.com"
+        snis:
+            - "yourdomain.com"
 #END
 ```
