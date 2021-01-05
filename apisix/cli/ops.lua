@@ -19,7 +19,9 @@ local etcd = require("apisix.cli.etcd")
 local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local profile = require("apisix.core.profile")
 local template = require("resty.template")
+local argparse = require("argparse")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -390,20 +392,18 @@ local function start(env, ...)
         end
     end
 
-    local argparse = require "argparse"
     local parser = argparse()
     parser:argument("_", "Placeholder")
     parser:option("-c --config", "location of customized config.yaml")
     local args = parser:parse()
     local customized_yaml = args["config"]
 
-    local profile = require("apisix.core.profile")
     profile.apisix_home = env.apisix_home .. "/"
     local local_conf_path = profile:yaml_path("config")
 
     if customized_yaml then
-        os.execute("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
-        os.execute("ln " .. customized_yaml .. " " .. local_conf_path)
+        execute("mv " .. local_conf_path .. " " .. local_conf_path .. ".bak")
+        execute("ln " .. customized_yaml .. " " .. local_conf_path)
         print("Use customized yaml: ", customized_yaml)
     end
 
