@@ -16,7 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
-local base_router = require("apisix.http.router.base")
+local base_router = require("apisix.http.route")
 local cached_version
 
 
