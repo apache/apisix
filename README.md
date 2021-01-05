@@ -19,7 +19,7 @@
 
 # Apache APISIX
 
-[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
 <p align="center">
@@ -53,10 +53,8 @@ The technical architecture of Apache APISIX:
 - [Features](#features)
 - [Documentation](#documentation)
 - [Get Started](#get-started)
-- [Dashboard](#dashboard)
 - [Benchmark](#benchmark)
 - [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-- [Open Governance](#open-governance)
 - [Community](#community)
 - [Videos And Articles](#videos-and-articles)
 - [User Stories](#user-stories)
@@ -101,11 +99,12 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
   - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
   - [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+  - [Traffic Split](doc/plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
 
 - **Fine-grained routing**
 
   - [Supports full path matching and prefix matching](doc/router-radixtree.md#how-to-use-libradixtree-in-apisix)
-  - [Support all Nginx built-in variables as conditions for routing](/doc/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), so you can use `cookie`,` args`, etc. as routing conditions to implement canary release, A/B testing, etc.
+  - [Support all Nginx built-in variables as conditions for routing](/doc/router-radixtree.md#how-to-filter-route-by-nginx-builtin-variable), so you can use `cookie`, `args`, etc. as routing conditions to implement canary release, A/B testing, etc.
   - Support [various operators as judgment conditions for routing](https://github.com/iresty/lua-resty-radixtree#operator-list), for example `{"arg_age", ">", 24}`
   - Support [custom route matching function](https://github.com/iresty/lua-resty-radixtree/blob/master/t/filter-fun.t#L10)
   - IPv6: Use IPv6 to match route.
@@ -134,7 +133,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Monitoring And Metrics: [Prometheus](doc/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md).
   - High availability: support to configure multiple etcd addresses in the same cluster.
-  - Dashboard: Built-in dashboard to control APISIX.
+  - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
   - [Stand-alone mode](doc/stand-alone.md): Supports to load route rules from local yaml file, it is more friendly such as under the kubernetes(k8s).
@@ -166,24 +165,31 @@ There are several ways to install the Apache Release version of APISIX:
 1. Source code compilation (applicable to all systems)
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
    - Download the latest source code release package:
+
      ```shell
-     $ mkdir apisix-2.0
-     $ cd apisix-2.0
-     $ wget https://downloads.apache.org/apisix/2.0/apache-apisix-2.0-src.tgz
-     $ tar zxvf apache-apisix-2.0-src.tgz
+     $ mkdir apisix-2.1
+     $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
+     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
      ```
+
    - Install the dependencies：
+
      ```shell
      $ make deps
      ```
+
    - check version of APISIX:
+
      ```shell
      $ ./bin/apisix version
      ```
+
    - start APISIX:
+
      ```shell
      $ ./bin/apisix start
      ```
+
 2. [Docker image](https://hub.docker.com/r/apache/apisix) （applicable to all systems）
 
    By default, the latest Apache release package will be pulled:
@@ -197,14 +203,19 @@ There are several ways to install the Apache Release version of APISIX:
 3. RPM package（only for CentOS 7）
    - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
    - install APISIX：
+
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.0/apisix-2.0-0.el7.noarch.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
    ```
+
    - check version of APISIX:
+
      ```shell
      $ apisix version
      ```
+
    - start APISIX:
+
      ```shell
      $ apisix start
      ```
@@ -249,12 +260,6 @@ There are several ways to install the Apache Release version of APISIX:
 
 For more documents, please refer to [Apache APISIX Document Index](doc/README.md)
 
-## Dashboard
-
-APISIX has built-in support for [Dashboard](https://github.com/apache/apisix-dashboard), which could be directly deployed by docker compose.
-
-The dashboard only allows 127.0.0.1 by default, and you can modify `allow_admin` in `conf/config.yaml` by yourself, to list the list of IPs allowed to access.
-
 ## Benchmark
 
 Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
@@ -283,7 +288,7 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 | :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
 | Belongs to                                                      | Apache Software Foundation                        | Kong Inc.               |
 | Tech Architecture                                               | Nginx + etcd                                      | Nginx + postgres        |
-| Communication channels                                          | Mail list, Wechat group, QQ group, Github, meetup | Github, freenode, forum |
+| Communication channels                                          | Mail list, Wechat group, QQ group, GitHub, meetup | GitHub, freenode, forum |
 | Single-core CPU, QPS(enable limit-count and prometheus plugins) | 18000                                             | 1700                    |
 | Latency                                                         | 0.2 ms                                            | 2 ms                    |
 | Dubbo                                                           | Yes                                               | No                      |
@@ -303,10 +308,6 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
-## Open Governance
-
-[GitHub milestones](https://github.com/apache/apisix/milestones) lay out the path to Apache APISIX's future improvements.
-
 ## Community
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
@@ -320,6 +321,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 ![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## Videos And Articles
+
 - [Apache APISIX: How to implement plugin orchestration in API Gateway](https://www.youtube.com/watch?v=iEegNXOtEhQ)
 - [Improve Apache APISIX observability with Apache Skywalking](https://www.youtube.com/watch?v=DleVJwPs4i4)
 - [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)
@@ -346,7 +348,7 @@ Users are encouraged to add themselves to the [Powered By](doc/powered-by.md) pa
 
 <p align="left">
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200">
-<br/><br/>
+<br><br>
 APISIX enriches the <a href="https://landscape.cncf.io/category=api-gateway&format=card-mode&grouping=category">
 CNCF API Gateway Landscape.</a>
 </p>

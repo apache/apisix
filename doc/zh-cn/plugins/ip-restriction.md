@@ -20,6 +20,7 @@
 - [English](../../plugins/ip-restriction.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -102,4 +103,3 @@ $ curl http://127.0.0.1:2379/v2/keys/apisix/routes/1  -H 'X-API-KEY: edd1c9f0343
 ```
 
 现在就已移除 `ip-restriction` 插件，其它插件的开启和移除也类似。
-

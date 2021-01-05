@@ -26,12 +26,16 @@ local lrucache = core.lrucache.new({
 })
 
 
+local reg = [[(\\\$[0-9a-zA-Z_]+)|]]         -- \$host
+            .. [[\$\{([0-9a-zA-Z_]+)\}|]]    -- ${host}
+            .. [[\$([0-9a-zA-Z_]+)|]]        -- $host
+            .. [[(\$|[^$\\]+)]]              -- $ or others
 local schema = {
     type = "object",
     properties = {
         ret_code = {type = "integer", minimum = 200, default = 302},
-        uri = {type = "string", minLength = 2},
-        http_to_https = {type = "boolean"}, -- default is false
+        uri = {type = "string", minLength = 2, pattern = reg},
+        http_to_https = {type = "boolean"},
     },
     oneOf = {
         {required = {"uri"}},
@@ -51,11 +55,6 @@ local _M = {
 
 
 local function parse_uri(uri)
-
-    local reg = [[ (\\\$[0-9a-zA-Z_]+) | ]]         -- \$host
-                .. [[ \$\{([0-9a-zA-Z_]+)\} | ]]    -- ${host}
-                .. [[ \$([0-9a-zA-Z_]+) | ]]        -- $host
-                .. [[ (\$|[^$\\]+) ]]               -- $ or others
     local iterator, err = re_gmatch(uri, reg, "jiox")
     if not iterator then
         return nil, err
@@ -80,20 +79,7 @@ end
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    if conf.uri then
-        local uri_segs, err = parse_uri(conf.uri)
-        if not uri_segs then
-            return false, err
-        end
-        core.log.info(core.json.delay_encode(uri_segs))
-    end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 

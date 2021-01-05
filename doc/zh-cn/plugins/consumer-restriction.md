@@ -20,6 +20,7 @@
 - [English](../../plugins/consumer-restriction.md)
 
 # 目录
+
   - [简介](#简介)
   - [属性](#属性)
   - [示例](#示例)
@@ -41,6 +42,7 @@
 | rejected_code | integer   | 可选    | 403              | [200,...]                       | 当请求被拒绝时，返回的 HTTP 状态码。|
 
 对于 `type` 字段是个枚举类型，它可以是 `consumer_name` 或 `service_id` 。分别代表以下含义：
+
 * **consumer_name**：把 `consumer` 的 `username` 列入白名单或黑名单（支持单个或多个 consumer）来限制对服务或路线的访问。
 * **service_id**：把 `service` 的 `id` 列入白名单或黑名单（支持一个或多个 service）来限制service的访问，需要结合授权插件一起使用。
 
@@ -51,7 +53,7 @@
 下面是一个示例，在指定的 route 上开启了 `consumer-restriction` 插件，限制 consumer 访问:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack1",
     "plugins": {
@@ -62,7 +64,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl http://127.0.0.1:9080/apisix/admin/consumers/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack2",
     "plugins": {

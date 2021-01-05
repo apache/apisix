@@ -45,7 +45,7 @@ None
 ## API
 
 This plugin will add `/apisix/batch-requests` as the endpoint.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
+You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How To Enable
 
@@ -53,7 +53,7 @@ Default enabled
 
 ## How To Configure
 
-By default, the maximun body size sent to the `/apisix/batch-requests` can't be larger than 1 MiB.
+By default, the maximum body size sent to the `/apisix/batch-requests` can't be larger than 1 MiB.
 You can configure it via `apisix/admin/plugin_metadata/batch-requests`:
 
 ```shell
@@ -67,8 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 | Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| max_body_size       | integer  | required   |  1048576  |    > 0  | the maximun of request body size in bytes |
-
+| max_body_size       | integer  | required   |  1048576  |    > 0  | the maximum of request body size in bytes |
 
 ## Batch API Request/Response
 The plugin will create a API in `apisix` to handle your batch request.
@@ -107,10 +106,11 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 ## Test Plugin
 
 You can pass your request detail to batch API( `/apisix/batch-requests` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
+
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
---d '{
+--data '{
     "headers": {
         "Content-Type": "application/json",
         "admin-jwt":"xxxx"
@@ -132,6 +132,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 ```
 
 response as below：
+
 ```json
 [
     {

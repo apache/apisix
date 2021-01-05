@@ -173,6 +173,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, message, res = t('/apisix/admin/routes',
                  ngx.HTTP_POST,
                  [[{
@@ -213,6 +214,12 @@ GET /t
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
+            local res = assert(etcd.get('/routes/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+
             code, message = t('/apisix/admin/routes/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -239,6 +246,7 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
             local code, message, res = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -273,6 +281,12 @@ GET /t
             end
 
             ngx.say("[push] code: ", code, " message: ", message)
+
+            local res = assert(etcd.get('/routes/1'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -420,7 +434,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"methods\" validation failed: failed to validate item 1: matches non of the enum values"}
+{"error_msg":"invalid configuration: property \"methods\" validation failed: failed to validate item 1: matches none of the enum values"}
 --- no_error_log
 [error]
 
@@ -784,8 +798,8 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"host\" validation failed: failed to match pattern \"^\\\\*?[0-9a-zA-Z-.]+$\" with \"a.*.foo.com\""}
+--- response_body_like
+{"error_msg":"invalid configuration: property \\"host\\" validation failed: failed to match pattern .*
 --- no_error_log
 [error]
 
@@ -817,8 +831,8 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"host\" validation failed: failed to match pattern \"^\\\\*?[0-9a-zA-Z-.]+$\" with \"*.a.*.foo.com\""}
+--- response_body_like
+{"error_msg":"invalid configuration: property \\"host\\" validation failed: failed to match pattern .*
 --- no_error_log
 [error]
 
@@ -997,6 +1011,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+
+            local id = 1
+            local res = assert(etcd.get('/routes/' .. id))
+            local prev_create_time = res.body.node.value.create_time
+            local prev_update_time = res.body.node.value.update_time
+            ngx.sleep(1)
+
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PATCH,
                 [[{
@@ -1015,6 +1037,12 @@ passed
 
             ngx.status = code
             ngx.say(body)
+
+            local res = assert(etcd.get('/routes/' .. id))
+            local create_time = res.body.node.value.create_time
+            assert(prev_create_time == create_time, "create_time mismatched")
+            local update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request

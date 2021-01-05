@@ -74,6 +74,11 @@ local consumer_schema = {
             type = "boolean",
             title = "whether to keep the http request header",
             default = false,
+        },
+        encode_uri_params = {
+            type = "boolean",
+            title = "Whether to escape the uri parameter",
+            default = true,
         }
     },
     required = {"access_key", "secret_key"},
@@ -112,12 +117,12 @@ local function array_to_map(arr)
 end
 
 
-local function remove_headers(...)
+local function remove_headers(ctx, ...)
     local headers = { ... }
     if headers and #headers > 0 then
         for _, header in ipairs(headers) do
             core.log.info("remove_header: ", header)
-            core.request.set_header(header, nil)
+            core.request.set_header(ctx, header, nil)
         end
     end
 end
@@ -125,17 +130,17 @@ end
 
 local create_consumer_cache
 do
-    local consumer_ids = {}
+    local consumer_names = {}
 
     function create_consumer_cache(consumers)
-        core.table.clear(consumer_ids)
+        core.table.clear(consumer_names)
 
         for _, consumer in ipairs(consumers.nodes) do
             core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_ids[consumer.auth_conf.access_key] = consumer
+            consumer_names[consumer.auth_conf.access_key] = consumer
         end
 
-        return consumer_ids
+        return consumer_names
     end
 
 end -- do
@@ -175,6 +180,21 @@ local function get_consumer(access_key)
 end
 
 
+local function get_conf_field(access_key, field_name)
+    local consumer, err = get_consumer(access_key)
+    if err then
+        return false, err
+    end
+
+    return consumer.auth_conf[field_name]
+end
+
+
+local function do_nothing(v)
+    return v
+end
+
+
 local function generate_signature(ctx, secret_key, params)
     local canonical_uri = ctx.var.uri
     local canonical_query_string = ""
@@ -194,14 +214,30 @@ local function generate_signature(ctx, secret_key, params)
         end
         core.table.sort(keys)
 
+        local field_val = get_conf_field(params.access_key, "encode_uri_params")
+        core.log.info("encode_uri_params: ", field_val)
+
+        local encode_or_not = do_nothing
+        if field_val then
+            encode_or_not = escape_uri
+        end
+
         for _, key in pairs(keys) do
             local param = args[key]
+            -- when args without `=<value>`, value is treated as true.
+            -- In order to be compatible with args lacking `=<value>`,
+            -- we need to replace true with an empty string.
+            if type(param) == "boolean" then
+                param = ""
+            end
+
+            -- whether to encode the uri parameters
             if type(param) == "table" then
                 for _, val in pairs(param) do
-                    core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(val))
+                    core.table.insert(query_tab, encode_or_not(key) .. "=" .. encode_or_not(val))
                 end
             else
-                core.table.insert(query_tab, escape_uri(key) .. "=" .. escape_uri(param))
+                core.table.insert(query_tab, encode_or_not(key) .. "=" .. encode_or_not(param))
             end
         end
         canonical_query_string = core.table.concat(query_tab, "&")
@@ -296,16 +332,6 @@ local function validate(ctx, params)
 end
 
 
-local function get_keep_headers(access_key)
-    local consumer, err = get_consumer(access_key)
-    if err then
-        return false, err
-    end
-
-    return consumer.auth_conf.keep_headers
-end
-
-
 local function get_params(ctx)
     local params = {}
     local local_conf = core.config.local_conf()
@@ -359,11 +385,11 @@ local function get_params(ctx)
     params.date  = date or ""
     params.signed_headers = signed_headers and ngx_re.split(signed_headers, ";")
 
-    local keep_headers = get_keep_headers(params.access_key)
+    local keep_headers = get_conf_field(params.access_key, "keep_headers")
     core.log.info("keep_headers: ", keep_headers)
 
     if not keep_headers then
-        remove_headers(signature_key, algorithm_key, signed_headers_key)
+        remove_headers(ctx, signature_key, algorithm_key, signed_headers_key)
     end
 
     core.log.info("params: ", core.json.delay_encode(params))
@@ -384,9 +410,7 @@ function _M.rewrite(conf, ctx)
     end
 
     local consumer_conf = consumer.plugin(plugin_name)
-    ctx.consumer = validated_consumer
-    ctx.consumer_id = validated_consumer.consumer_id
-    ctx.consumer_ver = consumer_conf.conf_version
+    consumer.attach_consumer(ctx, validated_consumer, consumer_conf)
     core.log.info("hit hmac-auth rewrite")
 end
 

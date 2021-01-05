@@ -106,12 +106,14 @@ local function create_checker(upstream, healthcheck_parent)
     if upstream.parent then
         core.table.insert(upstream.parent.clean_handlers, function ()
             core.log.info("try to release checker: ", tostring(checker))
+            checker:clear()
             checker:stop()
         end)
 
     else
         core.table.insert(healthcheck_parent.clean_handlers, function ()
             core.log.info("try to release checker: ", tostring(checker))
+            checker:clear()
             checker:stop()
         end)
     end

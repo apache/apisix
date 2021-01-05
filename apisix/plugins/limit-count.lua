@@ -40,6 +40,7 @@ local schema = {
             type = "string",
             enum = {"remote_addr", "server_addr", "http_x_real_ip",
                     "http_x_forwarded_for", "consumer_name", "service_id"},
+            default = "remote_addr",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 600,
@@ -51,7 +52,7 @@ local schema = {
             default = "local",
         }
     },
-    required = {"count", "time_window", "key"},
+    required = {"count", "time_window"},
     dependencies = {
         policy = {
             oneOf = {
@@ -121,12 +122,6 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
-    end
-
-    if conf.policy == "redis" then
-        if not conf.redis_host then
-            return false, "missing valid redis option host"
-        end
     end
 
     return true

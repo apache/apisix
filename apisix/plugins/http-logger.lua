@@ -21,24 +21,25 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
 local plugin          = require("apisix.plugin")
+
 local ngx      = ngx
 local tostring = tostring
 local pairs    = pairs
-local ipairs = ipairs
+local ipairs   = ipairs
 local str_byte = string.byte
-
+local timer_at = ngx.timer.at
 
 local plugin_name = "http-logger"
+local stale_timer_running = false
 local buffers = {}
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
 })
 
-
 local schema = {
     type = "object",
     properties = {
-        uri = {type = "string"},
+        uri = core.schema.uri_def,
         auth_header = {type = "string", default = ""},
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "http logger"},
@@ -92,6 +93,8 @@ local function send_http_data(conf, log_message)
     local host = url_decoded.host
     local port = url_decoded.port
 
+    core.log.info("sending a batch logs to ", conf.uri)
+
     if ((not port) and url_decoded.scheme == "https") then
         port = 443
     elseif not port then
@@ -115,6 +118,13 @@ local function send_http_data(conf, log_message)
         end
     end
 
+    local content_type
+    if conf.concat_method == "json" then
+        content_type = "application/json"
+    else
+        content_type = "text/plain"
+    end
+
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
         path = url_decoded.path,
@@ -122,7 +132,7 @@ local function send_http_data(conf, log_message)
         body = log_message,
         headers = {
             ["Host"] = url_decoded.host,
-            ["Content-Type"] = "application/json",
+            ["Content-Type"] = content_type,
             ["Authorization"] = conf.auth_header
         }
     })
@@ -151,7 +161,7 @@ local function gen_log_format(metadata)
     end
 
     for k, var_name in pairs(metadata.value.log_format) do
-        if var_name:byte(1, 1) == str_byte("/") then
+        if var_name:byte(1, 1) == str_byte("$") then
             log_format[k] = {true, var_name:sub(2)}
         else
             log_format[k] = {false, var_name}
@@ -159,6 +169,24 @@ local function gen_log_format(metadata)
     end
     core.log.info("log_format: ", core.json.delay_encode(log_format))
     return log_format
+end
+
+
+-- remove stale objects from the memory after timer expires
+local function remove_stale_objects(premature)
+    if premature then
+        return
+    end
+
+    for key, batch in ipairs(buffers) do
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+            core.log.warn("removing batch processor stale object, conf: ",
+                          core.json.delay_encode(key))
+            buffers[key] = nil
+        end
+    end
+
+    stale_timer_running = false
 end
 
 
@@ -192,7 +220,13 @@ function _M.log(conf, ctx)
         entry.route_id = "no-matched"
     end
 
-    local log_buffer = buffers[entry.route_id]
+    if not stale_timer_running then
+        -- run the timer every 30 mins if any log is present
+        timer_at(1800, remove_stale_objects)
+        stale_timer_running = true
+    end
+
+    local log_buffer = buffers[conf]
 
     if log_buffer then
         log_buffer:push(entry)
@@ -202,6 +236,7 @@ function _M.log(conf, ctx)
     -- Generate a function to be executed by the batch processor
     local func = function(entries, batch_max_size)
         local data, err
+
         if conf.concat_method == "json" then
             if batch_max_size == 1 then
                 data, err = core.json.encode(entries[1]) -- encode as single {}
@@ -217,11 +252,16 @@ function _M.log(conf, ctx)
                 for i, entrie in ipairs(entries) do
                     t[i], err = core.json.encode(entrie)
                     if err then
+                        core.log.warn("failed to encode http log: ", err, ", log data: ", entrie)
                         break
                     end
                 end
                 data = core.table.concat(t, "\n") -- encode as multiple string
             end
+
+        else
+            -- defensive programming check
+            err = "unknown concat_method " .. (conf.concat_method or "nil")
         end
 
         if not data then
@@ -238,6 +278,8 @@ function _M.log(conf, ctx)
         max_retry_count = conf.max_retry_count,
         buffer_duration = conf.buffer_duration,
         inactive_timeout = conf.inactive_timeout,
+        route_id = ctx.var.route_id,
+        server_addr = ctx.var.server_addr,
     }
 
     local err
@@ -248,7 +290,7 @@ function _M.log(conf, ctx)
         return
     end
 
-    buffers[entry.route_id] = log_buffer
+    buffers[conf] = log_buffer
     log_buffer:push(entry)
 end
 

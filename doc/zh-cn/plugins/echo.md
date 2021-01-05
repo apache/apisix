@@ -20,6 +20,7 @@
 - [English](../../plugins/echo.md)
 
 # 目录
+
 - [**简介**](#简介)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -29,7 +30,6 @@
 ## 简介
 
 echo 可以帮助用户尽可能全面地了解如何开发APISIX插件。
-
 
 该插件展示了如何在常见的 phase 中实现相应的功能，常见的 phase 包括：init, rewrite, access, balancer, header filer, body filter 以及 log。
 

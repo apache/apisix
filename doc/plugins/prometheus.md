@@ -30,7 +30,7 @@ none.
 ## API
 
 This plugin will add `/apisix/prometheus/metrics` to expose the metrics.
-You may need to use [interceptors](plugin-interceptors.md) to protect it.
+You may need to use [interceptors](../plugin-interceptors.md) to protect it.
 
 ## How to enable it
 
@@ -66,6 +66,7 @@ Then add prometheus plugin:
 ## How to fetch the metric data
 
 We fetch the metric data from the specified url `/apisix/prometheus/metrics`.
+
 ```
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
@@ -89,6 +90,21 @@ And we can check the status at prometheus console:
 
 ![](../../doc/images/plugin/prometheus02.png)
 
+## How to specify export uri
+
+We can change the default export uri in the `plugin_attr` section of `conf/config.yaml`.
+
+| Name         | Type   | Default  | Description                                                          |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | uri to get the prometheus metrics                  |
+
+Here is an example:
+
+```yaml
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
+```
 
 ### Grafana dashboard
 
@@ -110,6 +126,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 * `Bandwidth`: Total Bandwidth (egress/ingress) flowing through apisix. This metric is available per service and as a sum across all services.
 * `etcd reachability`: A gauge type with a value of 0 or 1, representing if etcd can be reached by a apisix or not.
 * `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
+* `Batch process entries`: A gauge type, when we use plugins and the plugin used batch process to send data, such as: sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, then the entries which hasn't been sent in batch process will be counted in the metrics.
 
 Here is the original metric data of apisix:
 
@@ -123,6 +140,14 @@ apisix_bandwidth{type="egress",service="foo.com"} 2379
 apisix_bandwidth{type="ingress",service="127.0.0.2"} 83
 apisix_bandwidth{type="ingress",service="bar.com"} 76
 apisix_bandwidth{type="ingress",service="foo.com"} 988
+# HELP apisix_batch_process_entries batch process remaining entries
+# TYPE apisix_batch_process_entries gauge
+apisix_batch_process_entries{name="http-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="sls-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="tcp-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="udp-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="sys-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="zipkin_report",route_id="9",server_addr="127.0.0.1"} 1
 # HELP apisix_etcd_reachable Config server etcd reachable from Apisix, 0 is unreachable
 # TYPE apisix_etcd_reachable gauge
 apisix_etcd_reachable 1

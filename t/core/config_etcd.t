@@ -47,3 +47,214 @@ GET /t
 qr{failed to fetch data from etcd: connection refused,  etcd key: .*routes}
 --- grep_error_log_out eval
 qr/(failed to fetch data from etcd: connection refused,  etcd key: .*routes\n){1,}/
+
+
+
+=== TEST 2: originate TLS connection to etcd cluster without TLS configuration
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "https://127.0.0.1:2379"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(4)
+            ngx.say("ok")
+        }
+    }
+--- timeout: 5
+--- request
+GET /t
+--- grep_error_log chop
+failed to fetch data from etcd: handshake failed
+--- grep_error_log_out eval
+qr/(failed to fetch data from etcd: handshake failed){1,}/
+
+
+
+=== TEST 3: originate plain connection to etcd cluster which enables TLS
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "http://127.0.0.1:12379"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(4)
+            ngx.say("ok")
+        }
+    }
+--- timeout: 5
+--- request
+GET /t
+--- grep_error_log chop
+failed to fetch data from etcd: closed
+--- grep_error_log_out eval
+qr/(failed to fetch data from etcd: closed){1,}/
+
+
+
+=== TEST 4: originate TLS connection to etcd cluster and verify TLS certificate (default behavior)
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "https://127.0.0.1:12379"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(4)
+            ngx.say("ok")
+        }
+    }
+--- timeout: 5
+--- request
+GET /t
+--- grep_error_log chop
+failed to fetch data from etcd: 18: self signed certificate
+--- grep_error_log_out eval
+qr/(failed to fetch data from etcd: 18: self signed certificate){1,}/
+
+
+
+=== TEST 5: set route(id: 1) to etcd cluster with TLS
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+etcd:
+  host:
+    - "https://127.0.0.1:12379"
+  tls:
+    verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "desc": "new route",
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "desc": "new route",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: get route(id: 1) from etcd cluster with TLS
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
+etcd:
+  host:
+    - "https://127.0.0.1:12379"
+  tls:
+    verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_GET,
+                 nil,
+                [[{
+                    "node": {
+                        "value": {
+                            "methods": [
+                                "GET"
+                            ],
+                            "uri": "/index.html",
+                            "desc": "new route",
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:8080": 1
+                                },
+                                "type": "roundrobin"
+                            }
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "get"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: ensure only one auth request per subsystem for all the etcd sync
+--- yaml_config
+apisix:
+  node_listen: 1984
+etcd:
+  host:
+    - "http://127.0.0.1:1980" -- fake server port
+  timeout: 1
+  user: root                    # root username for etcd
+  password: 5tHkHhYkjr6cQY      # root password for etcd
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.5)
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/etcd auth failed/
+--- grep_error_log_out
+etcd auth failed
+etcd auth failed
+etcd auth failed

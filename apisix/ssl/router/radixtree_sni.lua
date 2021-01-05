@@ -15,18 +15,16 @@
 -- limitations under the License.
 --
 local get_request      = require("resty.core.base").get_request
-local radixtree_new    = require("resty.radixtree").new
+local router_new       = require("apisix.utils.router").new
 local core             = require("apisix.core")
+local apisix_ssl       = require("apisix.ssl")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
 local ipairs	       = ipairs
 local type             = type
 local error            = error
-local str_find         = string.find
-local aes              = require "resty.aes"
-local assert           = assert
+local str_find         = core.string.find
 local str_gsub         = string.gsub
-local ngx_decode_base64 = ngx.decode_base64
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
@@ -62,35 +60,11 @@ local function parse_pem_priv_key(sni, pkey)
 end
 
 
-local function decrypt_priv_pkey(iv, key)
-    if core.string.has_prefix(key, "---") then
-        return key
-    end
-
-    local decrypted = iv:decrypt(ngx_decode_base64(key))
-    if decrypted then
-        return decrypted
-    end
-
-    core.log.error("decrypt ssl key failed. key[", key, "] ")
-end
-
-
 local function create_router(ssl_items)
     local ssl_items = ssl_items or {}
 
     local route_items = core.table.new(#ssl_items, 0)
     local idx = 0
-
-    local local_conf = core.config.local_conf()
-    local iv
-    if local_conf and local_conf.apisix
-       and local_conf.apisix.ssl
-       and local_conf.apisix.ssl.key_encrypt_salt then
-        iv = local_conf.apisix.ssl.key_encrypt_salt
-    end
-    local aes_128_cbc_with_iv = (type(iv)=="string" and #iv == 16) and
-            assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv=iv})) or nil
 
     for _, ssl in config_util.iterate_values(ssl_items) do
         if ssl.value ~= nil and
@@ -109,22 +83,18 @@ local function create_router(ssl_items)
             end
 
             -- decrypt private key
-            if aes_128_cbc_with_iv ~= nil then
-                if ssl.value.key then
-                    local decrypted = decrypt_priv_pkey(aes_128_cbc_with_iv,
-                                                        ssl.value.key)
-                    if decrypted then
-                        ssl.value.key = decrypted
-                    end
+            if ssl.value.key then
+                local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.key)
+                if decrypted then
+                    ssl.value.key = decrypted
                 end
+            end
 
-                if ssl.value.keys then
-                    for i = 1, #ssl.value.keys do
-                        local decrypted = decrypt_priv_pkey(aes_128_cbc_with_iv,
-                                                            ssl.value.keys[i])
-                        if decrypted then
-                            ssl.value.keys[i] = decrypted
-                        end
+            if ssl.value.keys then
+                for i = 1, #ssl.value.keys do
+                    local decrypted = apisix_ssl.aes_decrypt_pkey(ssl.value.keys[i])
+                    if decrypted then
+                        ssl.value.keys[i] = decrypted
                     end
                 end
             end
@@ -148,7 +118,7 @@ local function create_router(ssl_items)
     if #route_items > 1 then
         core.log.info("we have more than 1 ssl certs now")
     end
-    local router, err = radixtree_new(route_items)
+    local router, err = router_new(route_items)
     if not router then
         return nil, err
     end
@@ -202,7 +172,10 @@ function _M.match_and_set(api_ctx)
     local sni
     sni, err = ngx_ssl.server_name()
     if type(sni) ~= "string" then
-        return false, "failed to fetch SSL certificate: " .. (err or "not found")
+        local advise = "please check if the client requests via IP or uses an outdated protocol" ..
+                       ". If you need to report an issue, " ..
+                       "provide a packet capture file of the TLS handshake."
+        return false, "failed to find SNI: " .. (err or advise)
     end
 
     core.log.debug("sni: ", sni)
@@ -218,7 +191,7 @@ function _M.match_and_set(api_ctx)
     if type(api_ctx.matched_sni) == "table" then
         local matched = false
         for _, msni in ipairs(api_ctx.matched_sni) do
-            if sni_rev == msni or not str_find(sni_rev, ".", #msni, true) then
+            if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
                 matched = true
             end
         end
@@ -233,7 +206,7 @@ function _M.match_and_set(api_ctx)
             return false
         end
     else
-        if str_find(sni_rev, ".", #api_ctx.matched_sni, true) then
+        if str_find(sni_rev, ".", #api_ctx.matched_sni) then
             core.log.warn("failed to find any SSL certificate by SNI: ",
                           sni, " matched SNI: ", api_ctx.matched_sni:reverse())
             return false

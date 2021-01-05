@@ -20,6 +20,7 @@
 - [English](../../plugins/request-validation.md)
 
 # 目录
+
 - [**名称**](#名称)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -32,7 +33,6 @@
 `request-validation` 插件用于提前验证请求向上游转发请求，可以验证请求的 `body` 及 `header` 数据。
 
 该插件使用 `Json Schema` 进行数据验证，有关 `Json Schema` 的更多信息，请参阅 [JSON schema](https://github.com/api7/jsonschema)。
-
 
 ## 属性
 
@@ -70,7 +70,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-
 ## 测试插件
 
 ```shell
@@ -81,7 +80,6 @@ curl --header "Content-Type: application/json" \
 ```
 
 如果 `Schema` 验证失败，将返回 `400 bad request` 错误。
-
 
 ## 禁用插件
 
@@ -101,7 +99,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 ## 示例
 
@@ -194,7 +191,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
 }
 ```
-
 
 **数组（Array）验证:**
 

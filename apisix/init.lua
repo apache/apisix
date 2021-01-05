@@ -36,6 +36,11 @@ local type          = type
 local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
+local tonumber      = tonumber
+local control_api_router
+if ngx.config.subsystem == "http" then
+    control_api_router = require("apisix.control.router")
+end
 local load_balancer
 local local_conf
 local dns_resolver
@@ -98,6 +103,8 @@ function _M.http_init_worker()
     load_balancer = require("apisix.balancer").run
     require("apisix.admin.init").init_worker()
 
+    require("apisix.timers").init_worker()
+
     router.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin.init_worker()
@@ -117,6 +124,10 @@ function _M.http_init_worker()
     lru_resolved_domain = core.lrucache.new({
         ttl = dns_resolver_valid, count = 512, invalid_stale = true,
     })
+
+    if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
+        ver_header = "APISIX"
+    end
 end
 
 
@@ -194,6 +205,7 @@ local function parse_domain(host)
         return nil, "failed to parse domain"
     end
 end
+_M.parse_domain = parse_domain
 
 
 local function parse_domain_for_nodes(nodes)
@@ -323,16 +335,11 @@ end
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    -- always fetch table from the table pool, we don't need a reused api_ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     core.ctx.set_vars_meta(api_ctx)
-
-    core.response.set_header("Server", ver_header)
 
     -- load and run global rule
     if router.global_rules and router.global_rules.values
@@ -359,8 +366,8 @@ function _M.http_access_phase()
         api_ctx.global_rules = router.global_rules
     end
 
+    local uri = api_ctx.var.uri
     if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
-        local uri = api_ctx.var.uri
         if str_byte(uri, #uri) == str_byte("/") then
             api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
             core.log.info("remove the end of uri '/', current uri: ",
@@ -368,10 +375,16 @@ function _M.http_access_phase()
         end
     end
 
-    local user_defined_route_matched = router.router_http.match(api_ctx)
-    if not user_defined_route_matched then
-        router.api.match(api_ctx)
+    if router.api.has_route_not_under_apisix() or
+        core.string.has_prefix(uri, "/apisix/")
+    then
+        local matched = router.api.match(api_ctx)
+        if matched then
+            return
+        end
     end
+
+    router.router_http.match(api_ctx)
 
     local route = api_ctx.matched_route
     if not route then
@@ -387,6 +400,7 @@ function _M.http_access_phase()
         return ngx.exec("@grpc_pass")
     end
 
+    local enable_websocket = route.value.enable_websocket
     if route.value.service_id then
         local service = service_fetch(route.value.service_id)
         if not service then
@@ -401,14 +415,20 @@ function _M.http_access_phase()
         api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
         api_ctx.conf_id = route.value.id .. "&" .. service.value.id
         api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
+
+        if enable_websocket == nil then
+            enable_websocket = service.value.enable_websocket
+        end
+
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex
         api_ctx.conf_id = route.value.id
     end
     api_ctx.route_id = route.value.id
+    api_ctx.route_name = route.value.name
 
-    local enable_websocket
     local up_id = route.value.upstream_id
     if up_id then
         local upstreams = core.config.fetch_created_obj("/upstreams")
@@ -416,7 +436,7 @@ function _M.http_access_phase()
             local upstream = upstreams:get(tostring(up_id))
             if not upstream then
                 core.log.error("failed to find upstream by id: " .. up_id)
-                return core.response.exit(500)
+                return core.response.exit(502)
             end
 
             if upstream.has_domain then
@@ -437,6 +457,8 @@ function _M.http_access_phase()
             end
 
             if upstream.value.enable_websocket then
+                core.log.warn("DEPRECATE: enable websocket in upstream will be removed soon. ",
+                              "Please enable it in route/service level.")
                 enable_websocket = true
             end
 
@@ -480,6 +502,7 @@ function _M.http_access_phase()
     if enable_websocket then
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
+        core.log.info("enabled websocket for route: ", route.value.id)
     end
 
     if route.value.script then
@@ -497,6 +520,10 @@ function _M.http_access_phase()
                 api_ctx.consumer,
                 api_ctx
             )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
             if changed then
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(route, api_ctx.plugins)
@@ -610,7 +637,28 @@ local function common_phase(phase_name)
 end
 
 
+local function set_resp_upstream_status(up_status)
+    core.response.set_header("X-APISIX-Upstream-Status", up_status)
+    core.log.info("X-APISIX-Upstream-Status: ", up_status)
+end
+
+
 function _M.http_header_filter_phase()
+    core.response.set_header("Server", ver_header)
+
+    local up_status = get_var("upstream_status")
+    if up_status and #up_status == 3
+       and tonumber(up_status) >= 500
+       and tonumber(up_status) <= 599
+    then
+        set_resp_upstream_status(up_status)
+    elseif up_status and #up_status > 3 then
+        local last_status = str_sub(up_status, -3)
+        if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
+            set_resp_upstream_status(up_status)
+        end
+    end
+
     common_phase("header_filter")
 end
 
@@ -654,8 +702,8 @@ local function healcheck_passive(api_ctx)
         end
     end
 
-    local http_statuses = passive and passive.unhealthy and
-                          passive.unhealthy.http_statuses
+    http_statuses = passive and passive.unhealthy and
+                    passive.unhealthy.http_statuses
     core.log.info("passive.unhealthy.http_statuses: ",
                   core.json.delay_encode(http_statuses))
     if not http_statuses then
@@ -764,6 +812,14 @@ end
 end -- do
 
 
+function _M.http_control()
+    local ok = control_api_router.match(get_var("uri"))
+    if not ok then
+        ngx_exit(404)
+    end
+end
+
+
 function _M.stream_init()
     core.log.info("enter stream_init")
 end
@@ -782,6 +838,10 @@ function _M.stream_init_worker()
 
     router.stream_init_worker()
     plugin.init_worker()
+
+    if core.config == require("apisix.core.config_yaml") then
+        core.config.init_worker()
+    end
 
     load_balancer = require("apisix.balancer").run
 

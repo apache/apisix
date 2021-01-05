@@ -28,6 +28,7 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
+  admin_key: null
 
 plugins:                          # plugin list
   - log-rotate
@@ -39,6 +40,7 @@ plugin_attr:
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);
+    $block->set_value("request", "GET /t");
 });
 
 run_tests;
@@ -64,21 +66,19 @@ __DATA__
                     local content = f:read("*all")
                     f:close()
                     local index = string.find(content, "start xxxxxx")
-                    if index then    
+                    if index then
                         has_split_error_file = true
                     end
                 end
             end
-            
-            if not has_split_error_file or not has_split_error_file then 
+
+            if not has_split_error_file or not has_split_error_file then
                ngx.status = 500
             else
                ngx.status = 200
-            end        
+            end
         }
     }
---- request
-GET /t
 --- error_code eval
 [200]
 --- no_error_log
@@ -95,11 +95,89 @@ GET /t
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
 --- no_error_log
 [error]
 --- error_log
 start xxxxxx
+
+
+
+=== TEST 3: fix: ensure only one timer is running
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.5)
+            local t = require("lib.test_admin").test
+            local code, _, org_body = t('/apisix/admin/plugins/reload',
+                                        ngx.HTTP_PUT)
+
+            ngx.status = code
+            ngx.say(org_body)
+
+            ngx.sleep(1)
+
+            local lfs = require("lfs")
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "__error.log$") then
+                    local f = assert(io.open(ngx.config.prefix() .. "/logs/" .. file_name, "r"))
+                    local content = f:read("*all")
+                    f:close()
+                    local counter = 0
+                    ngx.re.gsub(content, [=[run timer\[plugin#log-rotate\]]=], function()
+                        counter = counter + 1
+                        return ""
+                    end)
+
+                    if counter ~= 1 then
+                        ngx.say("not a single rotater run at the same time: ", file_name)
+                    end
+                end
+            end
+        }
+    }
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: disable log-rotate via hot reload
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = [[
+apisix:
+  node_listen: 1984
+  admin_key: null
+plugins:
+  - prometheus
+            ]]
+            require("lib.test_admin").set_config_yaml(data)
+            local t = require("lib.test_admin").test
+            local code, _, org_body = t('/apisix/admin/plugins/reload',
+                                        ngx.HTTP_PUT)
+
+            ngx.status = code
+            ngx.say(org_body)
+
+            ngx.sleep(1.5)
+
+            local n_split_error_file = 0
+            local lfs = require("lfs")
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "__error.log$") then
+                    n_split_error_file = n_split_error_file + 1
+                end
+            end
+
+            ngx.say(n_split_error_file)
+        }
+    }
+--- response_body
+done
+1
+--- no_error_log
+[error]

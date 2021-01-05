@@ -173,4 +173,61 @@ end
 _M.patch = patch
 
 
+-- Compare two tables as if they are sets (only compare the key part)
+function _M.set_eq(a, b)
+    if nkeys(a) ~= nkeys(b) then
+        return false
+    end
+
+    for k in pairs(a) do
+        if b[k] == nil then
+            return false
+        end
+    end
+
+    return true
+end
+
+
+-- Compare two elements, including their descendants
+local function deep_eq(a, b)
+    local type_a = type(a)
+    local type_b = type(b)
+
+    if type_a ~= 'table' or type_b ~= 'table' then
+        return a == b
+    end
+
+    local n_a = nkeys(a)
+    local n_b = nkeys(b)
+    if n_a ~= n_b then
+        return false
+    end
+
+    for k, v_a in pairs(a) do
+        local v_b = b[k]
+        local eq = deep_eq(v_a, v_b)
+        if not eq then
+            return false
+        end
+    end
+
+    return true
+end
+_M.deep_eq = deep_eq
+
+
+-- pick takes the given attributes out of object
+function _M.pick(obj, attrs)
+    local data = {}
+    for k, v in pairs(obj) do
+        if attrs[k] ~= nil then
+            data[k] = v
+        end
+    end
+
+    return data
+end
+
+
 return _M

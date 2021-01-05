@@ -29,7 +29,7 @@
 
 ## 接口
 
-插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](plugin-interceptors.md)
+插件会增加 `/apisix/prometheus/metrics` 这个接口，你可能需要通过 [interceptors](../../plugin-interceptors.md)
 来保护它。
 
 ## 如何开启插件
@@ -65,11 +65,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## 如何提取指标数据
 
 我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
+
 ```
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
 
-把改uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
+把该uri地址配置到 prometheus 中去,就会自动完成指标数据提取.
 
 例子如下:
 
@@ -87,6 +88,21 @@ scrape_configs:
 
 ![](../../images/plugin/prometheus02.png)
 
+## 如何修改暴露指标的uri
+
+我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的uri
+
+| 名称         | 类型   | 默认值   | 描述                                                  |
+| ------------ | ------ | -------- | -------------------------------------------------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的uri |
+
+配置示例:
+
+```yaml
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
+```
 
 ### Grafana 面板
 
@@ -108,7 +124,7 @@ scrape_configs:
 * `Bandwidth`: 流经apisix的总带宽(可分出口带宽和入口带宽). 每个服务指标或者是所有服务指标的总和都可以统计到。
 * `etcd reachability`: apisix 连接 etcd 的可用性，用 0 和 1来表示。
 * `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。.
-
+* `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin, 那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
 这里是apisix的原始的指标数据集:
 
 ```
@@ -121,6 +137,14 @@ apisix_bandwidth{type="egress",service="foo.com"} 2379
 apisix_bandwidth{type="ingress",service="127.0.0.2"} 83
 apisix_bandwidth{type="ingress",service="bar.com"} 76
 apisix_bandwidth{type="ingress",service="foo.com"} 988
+# HELP apisix_batch_process_entries batch process remaining entries
+# TYPE apisix_batch_process_entries gauge
+apisix_batch_process_entries{name="http-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="sls-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="tcp-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="udp-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="sys-logger",route_id="9",server_addr="127.0.0.1"} 1
+apisix_batch_process_entries{name="zipkin_report",route_id="9",server_addr="127.0.0.1"} 1
 # HELP apisix_etcd_reachable Config server etcd reachable from Apisix, 0 is unreachable
 # TYPE apisix_etcd_reachable gauge
 apisix_etcd_reachable 1
@@ -142,6 +166,7 @@ apisix_nginx_http_current_connections{state="writing"} 1
 # TYPE apisix_nginx_metric_errors_total counter
 apisix_nginx_metric_errors_total 0
 ```
+
 ## 禁用插件
 
 在插件设置页面中删除相应的 json 配置即可禁用 `prometheus` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务。

@@ -48,6 +48,12 @@ env {*name*};
 {% end %}
 {% end %}
 
+# main configuration snippet starts
+{% if main_configuration_snippet then %}
+{* main_configuration_snippet *}
+{% end %}
+# main configuration snippet ends
+
 {% if stream_proxy then %}
 stream {
     lua_package_path  "$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
@@ -61,6 +67,12 @@ stream {
 
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} valid={*dns_resolver_valid*};
     resolver_timeout {*resolver_timeout*};
+
+    # stream configuration snippet starts
+    {% if stream_configuration_snippet then %}
+    {* stream_configuration_snippet *}
+    {% end %}
+    # stream configuration snippet ends
 
     upstream apisix_backend {
         server 127.0.0.1:80;
@@ -111,6 +123,7 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
+    lua_shared_dict internal_status      10m;
     lua_shared_dict plugin-limit-req     10m;
     lua_shared_dict plugin-limit-count   10m;
     lua_shared_dict prometheus-metrics   10m;
@@ -154,6 +167,10 @@ http {
     }
     {% end %}
 
+    {% if enabled_plugins["error-log-logger"] then %}
+        lua_capture_error_log  10m;
+    {% end %}
+
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
 
@@ -171,9 +188,13 @@ http {
     lua_regex_match_limit 100000;
     lua_regex_cache_max_entries 8192;
 
+    {% if http.enable_access_log == false then %}
+    access_log off;
+    {% else %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
 
     access_log {* http.access_log *} main buffer=16384 flush=3;
+    {% end %}
     open_file_cache  max=1000 inactive=60;
     client_max_body_size {* http.client_max_body_size *};
     keepalive_timeout {* http.keepalive_timeout *};
@@ -204,6 +225,12 @@ http {
     {% end %}
     {% end %}
 
+    # http configuration snippet starts
+    {% if http_configuration_snippet then %}
+    {* http_configuration_snippet *}
+    {% end %}
+    # http configuration snippet ends
+
     upstream apisix_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
@@ -228,33 +255,57 @@ http {
         apisix.http_init_worker()
     }
 
+    {% if enable_control then %}
+    server {
+        listen {* control_server_addr *};
+
+        access_log off;
+
+        location / {
+            content_by_lua_block {
+                apisix.http_control()
+            }
+        }
+    }
+    {% end %}
+
     {% if enable_admin and port_admin then %}
     server {
         {%if https_admin then%}
         listen {* port_admin *} ssl;
 
-        {%if admin_api_mtls and admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert ~= "" and
-         admin_api_mtls.admin_ssl_cert_key and admin_api_mtls.admin_ssl_cert_key ~= "" and
-         admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= ""
-        then%}
-        ssl_verify_client on;
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
+        {%if admin_api_mtls.admin_ssl_ca_cert and admin_api_mtls.admin_ssl_ca_cert ~= "" then%}
+        ssl_verify_client on;
         ssl_client_certificate {* admin_api_mtls.admin_ssl_ca_cert *};
-        {% else %}
-        ssl_certificate      cert/apisix_admin_ssl.crt;
-        ssl_certificate_key  cert/apisix_admin_ssl.key;
-        {%end%}
+        {% end %}
 
         ssl_session_cache    shared:SSL:20m;
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
         ssl_prefer_server_ciphers on;
+        {% if ssl.ssl_session_tickets then %}
+        ssl_session_tickets on;
+        {% else %}
+        ssl_session_tickets off;
+        {% end %}
 
         {% else %}
         listen {* port_admin *};
         {%end%}
         log_not_found off;
+
+        # admin configuration snippet starts
+        {% if http_admin_configuration_snippet then %}
+        {* http_admin_configuration_snippet *}
+        {% end %}
+        # admin configuration snippet ends
+
+        set $upstream_scheme             'http';
+        set $upstream_host               $host;
+        set $upstream_uri                '';
+
         location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -318,8 +369,9 @@ http {
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
-        ssl_certificate      cert/apisix.crt;
-        ssl_certificate_key  cert/apisix.key;
+        {% if ssl.enable then %}
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
 
@@ -330,6 +382,22 @@ http {
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
         ssl_prefer_server_ciphers on;
+        {% if ssl.ssl_session_tickets then %}
+        ssl_session_tickets on;
+        {% else %}
+        ssl_session_tickets off;
+        {% end %}
+        {% end %}
+
+        # http server configuration snippet starts
+        {% if http_server_configuration_snippet then %}
+        {* http_server_configuration_snippet *}
+        {% end %}
+        # http server configuration snippet ends
+
+        set $upstream_scheme             'http';
+        set $upstream_host               $host;
+        set $upstream_uri                '';
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
@@ -372,17 +440,16 @@ http {
         }
         {% end %}
 
+        {% if ssl.enable then %}
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
+        {% end %}
 
         location / {
             set $upstream_mirror_host        '';
-            set $upstream_scheme             'http';
-            set $upstream_host               $host;
             set $upstream_upgrade            '';
             set $upstream_connection         '';
-            set $upstream_uri                '';
 
             access_by_lua_block {
                 apisix.http_access_phase()
@@ -393,7 +460,6 @@ http {
             proxy_set_header   Upgrade           $upstream_upgrade;
             proxy_set_header   Connection        $upstream_connection;
             proxy_set_header   X-Real-IP         $remote_addr;
-            proxy_pass_header  Server;
             proxy_pass_header  Date;
 
             ### the following x-forwarded-* headers is to send to upstream server
@@ -498,6 +564,8 @@ http {
                 return 200;
             }
 
+            proxy_http_version 1.1;
+            proxy_set_header Host $upstream_host;
             proxy_pass $upstream_mirror_host$request_uri;
         }
         {% end %}

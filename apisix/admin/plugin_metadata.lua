@@ -103,7 +103,7 @@ function _M.get(key)
         path = path .. "/" .. key
     end
 
-    local res, err = core.etcd.get(path)
+    local res, err = core.etcd.get(path, not key)
     if not res then
         core.log.error("failed to get metadata[", key, "]: ", err)
         return 500, {error_msg = err}

@@ -27,6 +27,19 @@ BEGIN {
 
 use t::APISIX 'no_plan';
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - skywalking
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
+
+    $block;
+});
+
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -92,7 +105,7 @@ passed
 
 
 
-=== TEST 2: tiger skywalking
+=== TEST 2: trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -175,7 +188,7 @@ passed
 
 
 
-=== TEST 5: not tiger skywalking
+=== TEST 5: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body
@@ -239,7 +252,7 @@ passed
 
 
 
-=== TEST 7: not tiger skywalking
+=== TEST 7: not trigger skywalking
 --- request
 GET /opentracing
 --- response_body
