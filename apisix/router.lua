@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local require = require
-local base_router = require("apisix.http.router.base")
+local http_route = require("apisix.http.route")
 local core    = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local error   = error
@@ -83,7 +83,7 @@ local function attach_http_router_common_methods(http_router)
 
     if http_router.init_worker == nil then
         http_router.init_worker = function (filter)
-            http_router.user_routes = base_router.init_worker(filter)
+            http_router.user_routes = http_route.init_worker(filter)
         end
     end
 end
