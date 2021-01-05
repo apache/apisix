@@ -610,9 +610,9 @@ end
 _M.stream_check_schema = stream_check_schema
 
 
-function _M.plugin_checker(item)
+function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        return check_schema(item.plugins, nil, true)
+        return check_schema(item.plugins, schema_type, true)
     end
 
     return true
