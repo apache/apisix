@@ -500,6 +500,30 @@ fi
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
 
+# check customed config.yaml is copied.
+
+git checkout conf/config.yaml
+
+echo "
+apisix:
+    port_admin: 9180
+    https_admin: true
+" > conf/customed_config.yaml
+
+make init
+
+./bin/apisix start -c conf/customed_config.yaml
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    echo "failed: customed config.yaml copied failed"
+    exit 1
+fi
+
+make stop
+
+echo "passed: customed config.yaml copied succeeded"
+
 # log format
 
 git checkout conf/config.yaml
