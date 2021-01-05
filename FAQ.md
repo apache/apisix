@@ -293,6 +293,17 @@ By default, APISIX only listens on port 9080 when handling HTTP requests. If you
 
 2. Reload or restart APISIX
 
+## How does APISIX use etcd to achieve millisecond-level configuration synchronization
+
+etcd provides subscription funtions to monitor whether the specified keyword or directory is changed (for example: [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch), [watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)).
+
+APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
+
+* If there is no data update in the monitoring directory: the process will be blocked until timeout or other errors occurred.
+* If the monitoring directory has data updates: etcd will return the new subscribed data immediately (in milliseconds), and APISIX will update it to the memory cache.
+
+With the help of etcd which incremental notification feature is millisecond-level , APISIX achieve millisecond-level of configuration synchronization.
+
 ## How to customize the APISIX instance id?
 
 By default, APISIX will read the instance id from `conf/apisix.uid`. If it is not found, and no id is configured, APISIX will generate a `uuid` as the instance id.
