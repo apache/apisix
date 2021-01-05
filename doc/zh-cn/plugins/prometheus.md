@@ -65,6 +65,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## 如何提取指标数据
 
 我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
+
 ```
 curl -i http://127.0.0.1:9080/apisix/prometheus/metrics
 ```
@@ -165,6 +166,7 @@ apisix_nginx_http_current_connections{state="writing"} 1
 # TYPE apisix_nginx_metric_errors_total counter
 apisix_nginx_metric_errors_total 0
 ```
+
 ## 禁用插件
 
 在插件设置页面中删除相应的 json 配置即可禁用 `prometheus` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务。
