@@ -80,7 +80,6 @@ will be rejected without redirecting to the ID provider to obtain a valid token.
 The method used to authenticate a request also affects the headers that can be enforced on the request before
 sending it to upstream. The headers that can be enforced are mentioned below in each relevant section.
 
-
 ### Token Introspection
 
 Token introspection helps to validate a request by verifying the token against an Oauth 2 authorization server.
