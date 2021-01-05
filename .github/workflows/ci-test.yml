@@ -26,7 +26,6 @@ jobs:
       SERVER_NAME: ${{ matrix.os_name }}
       OPENRESTY_VERSION: default
 
-
     services:
       etcd:
         image: bitnami/etcd:3.4.0
