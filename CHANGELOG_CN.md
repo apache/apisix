@@ -193,6 +193,7 @@
 - 实现完成 `sys logger` 插件. [#1414](https://github.com/apache/incubator-apisix/pull/1414)
 
 ## 1.2.0
+
 1.2 版本在内核以及插件上带来了非常多的更新。
 
 ### Core
@@ -341,6 +342,7 @@
 - 使用 `lua-resty-jsonschema` 全局替换 `lua-rapidjson` 扩展，`lua-resty-jsonschema` 解析速度更快，更容易编译。
 
 ## 0.8.0
+
 > Released on 2019/09/30
 
 这个版本带来很多新的特性，比如四层协议的代理, 支持 MQTT 协议代理，以及对 ARM 平台的支持, 和代理改写插件等。
