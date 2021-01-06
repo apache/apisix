@@ -140,6 +140,8 @@ done
                 }]]
                 )
 
+        local utils = require("apisix.core.utils")
+        utils.init_dns_proxy({})
             if code >= 300 then
                 ngx.status = code
             end

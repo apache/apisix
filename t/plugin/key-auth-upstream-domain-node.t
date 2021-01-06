@@ -236,6 +236,8 @@ location /t {
             ["apikey"] = "auth-one",
         }
 
+        local utils = require("apisix.core.utils")
+        utils.init_dns_proxy({})
         for i = 1, 3 do
             local code, body = t.test('/index.html',
                 ngx.HTTP_GET,
