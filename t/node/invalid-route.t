@@ -140,26 +140,16 @@ done
                 }]]
                 )
 
-        local utils = require("apisix.core.utils")
-        utils.init_dns_proxy({})
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
+            local utils = require("apisix.core.utils")
+            utils.init_dns_proxy({})
+            code, body = t.test('/server_port',
+                ngx.HTTP_GET,
+                "",
+            )
+            ngx.status = code
         }
     }
 --- request
 GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 6: hit route
---- request
-GET /server_port
 --- error_code: 500
---- error_log
-failed to parse domain: xxxx.invalid
+
