@@ -145,6 +145,9 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local utils = require("apisix.core.utils")
+            -- change the dns server to use resolv.conf
+            utils.init_dns_proxy({})
             local function test()
                 local code, body = t('/hello', ngx.HTTP_GET)
 
