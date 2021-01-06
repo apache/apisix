@@ -675,6 +675,8 @@ nginx_config:
         set $my "var";
     http_admin_configuration_snippet: |
         log_format admin "$request_time $pipe";
+    http_end_configuration_snippet: |
+        server_names_hash_bucket_size 128;
     stream_configuration_snippet: |
         tcp_nodelay off;
 ' > conf/config.yaml
@@ -702,6 +704,18 @@ fi
 grep 'log_format admin "$request_time $pipe";' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: can't inject admin server configuration"
+    exit 1
+fi
+
+grep 'server_names_hash_bucket_size 128;' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http end configuration"
+    exit 1
+fi
+
+grep 'server_names_hash_bucket_size 128;' -A 3 conf/nginx.conf | grep "}" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http end configuration"
     exit 1
 fi
 
