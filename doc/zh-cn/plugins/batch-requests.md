@@ -69,6 +69,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | max_body_size       | integer  | 必选   |  1048576  |    > 0  | 请求体的最大大小，单位为字节。|
 
 ## 批量接口请求/响应
+
 插件会为 `apisix` 创建一个 `/apisix/batch-requests` 的接口来处理你的批量请求。
 
 ### 接口请求参数:
@@ -81,6 +82,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | pipeline | [HttpRequest](#HttpRequest) | 必须   |        |        | Http 请求的详细信息              |
 
 #### HttpRequest
+
 | 参数名     | 类型    | 可选 | 默认值 | 有效值                                                                           | 描述                                                                      |
 | ---------- | ------- | ---- | ------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | version    | string  | 可选 | 1.1    | [1.0, 1.1]                                                                       | 请求用的 `http` 协议版本                                                  |
@@ -92,9 +94,11 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | ssl_verify | boolean | 可选 | false  |                                                                                  | 验证 SSL 证书与主机名是否匹配                                             |
 
 ### 接口响应参数：
+
 返回值为一个 [HttpResponse](#HttpResponse) 的 `数组`。
 
 #### HttpResponse
+
 | 参数名  | 类型    | 描述                |
 | ------- | ------- | ------------------- |
 | status  | integer | Http 请求的状态码   |
