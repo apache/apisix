@@ -115,13 +115,6 @@ end
 _M.init_dns_proxy = init_dns_proxy
 
 
-function _M.set_resolver(resolvers)
-    _M.resolvers = resolvers
-    init_dns_proxy({
-        nameservers = resolvers
-    })
-end
-
 local function rfind_char(s, ch, idx)
     local b = str_byte(ch)
     for i = idx or #s, 1, -1 do

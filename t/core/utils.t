@@ -244,13 +244,11 @@ res:John and \$me
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local resolvers = {"223.5.5.5", "223.6.6.6"}
             local search = {"github.com"}
             local ndots = 5
             core.utils.init_dns_proxy({
                 ndots = ndots,
                 search = search,
-                resolvers = resolvers,
             })
             local host = "docs"
             local ip_info, err = core.utils.dns_parse(host)

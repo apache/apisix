@@ -52,7 +52,7 @@ local function parse_args(args)
     dns_resolver = args and args["dns_resolver"]
     local options = {
         nameservers = dns_resolver,
-        timeout = 2000,
+        timeout = 5000,
         retrans = 5,
     }
     core.utils.init_dns_proxy(options)
