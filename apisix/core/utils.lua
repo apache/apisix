@@ -108,11 +108,19 @@ local function dns_parse(domain)
 end
 _M.dns_parse = dns_parse
 
-function _M.init_dns_proxy(options)
+local function init_dns_proxy(options)
     dns_proxy.client.init(options)
     dns_proxy.inited = true
 end
+_M.init_dns_proxy = init_dns_proxy
 
+
+function _M.set_resolver(resolvers)
+    _M.resolvers = resolvers
+    init_dns_proxy({
+        nameservers = resolvers
+    })
+end
 
 local function rfind_char(s, ch, idx)
     local b = str_byte(ch)
