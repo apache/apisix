@@ -152,4 +152,3 @@ done
 --- request
 GET /t
 --- error_code: 500
-
