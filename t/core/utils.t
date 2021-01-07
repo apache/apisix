@@ -99,8 +99,8 @@ qr/"address":.+,"name":"github.com"/
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ip_info, err = core.utils.dns_parse("github.com")
             core.utils.init_dns_proxy({})
+            local ip_info, err = core.utils.dns_parse("github.com")
             if not ip_info then
                 core.log.error("failed to parse domain: ", host, ", error: ",err)
             end
