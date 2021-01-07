@@ -59,6 +59,7 @@ dependencies = {
     "lua-resty-expr = 1.0.0",
     "graphql = 0.0.2",
     "lua-resty-dns-client = 5.1.1-2",
+    "luasocket = 3.0rc1-2",
 }
 
 build = {

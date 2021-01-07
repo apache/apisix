@@ -14,9 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core   = require("apisix.core")
-local protoc = require("protoc")
-local ipairs = ipairs
+local core        = require("apisix.core")
+local config_util = require("apisix.core.config_util")
+local protoc      = require("protoc")
 local protos
 
 
@@ -31,7 +31,7 @@ local function create_proto_obj(proto_id)
     end
 
     local content
-    for _, proto in ipairs(protos.values) do
+    for _, proto in config_util.iterate_values(protos.values) do
         if proto_id == proto.value.id then
             content = proto.value.content
             break

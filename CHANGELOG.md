@@ -59,6 +59,7 @@
 - fix: check decrypt key to prevent lua thread aborted [#2815](https://github.com/apache/apisix/pull/2815)
 
 ## Not downward compatible features in future versions
+
 -In the 2.3 release, the consumer will only support user names and discard the id. The consumer needs to manually clean up the id field in etcd, otherwise the schema verification will report an error during use
 -In the 2.3 release, opening websocket on upstream will no longer be supported
 -In version 3.0, the data plane and control plane will be separated into two independent ports, that is, the current port 9080 will only process data plane requests, and no longer process admin API requests
