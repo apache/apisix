@@ -151,6 +151,10 @@ local function run_plugin(phase, plugins, api_ctx)
             if phase_func then
                 local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
+                    if code >= 400 then
+                        core.log.warn(plugins[i].name, " exits with http status code ", code)
+                    end
+
                     core.response.exit(code, body)
                 end
             end
