@@ -26,6 +26,12 @@ worker_processes {* worker_processes *};
 worker_cpu_affinity auto;
 {% end %}
 
+# main configuration snippet starts
+{% if main_configuration_snippet then %}
+{* main_configuration_snippet *}
+{% end %}
+# main configuration snippet ends
+
 error_log {* error_log *} {* error_log_level or "warn" *};
 pid logs/nginx.pid;
 
@@ -47,12 +53,6 @@ env APISIX_PROFILE;
 env {*name*};
 {% end %}
 {% end %}
-
-# main configuration snippet starts
-{% if main_configuration_snippet then %}
-{* main_configuration_snippet *}
-{% end %}
-# main configuration snippet ends
 
 {% if stream_proxy then %}
 stream {
@@ -570,5 +570,10 @@ http {
         }
         {% end %}
     }
+    # http end configuration snippet starts
+    {% if http_end_configuration_snippet then %}
+    {* http_end_configuration_snippet *}
+    {% end %}
+    # http end configuration snippet ends
 }
 ]=]
