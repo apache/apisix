@@ -979,3 +979,12 @@ etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
 etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
 
+#check restart with old nginx.pid exist
+export fake_pid=2950
+echo $fake_pid > logs/nginx.pid
+out=$(./bin/apisix start 2>&1 || true)
+if  echo "$out" | grep "APISIX is running"; then
+    echo "failed: start apisix error!"
+    exit 1
+fi
+

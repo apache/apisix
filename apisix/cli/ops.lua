@@ -382,11 +382,19 @@ local function start(env, ...)
     local pid_path = env.apisix_home .. "/logs/nginx.pid"
     local pid = util.read_file(pid_path)
     if pid then
-        local hd = popen("lsof -p " .. pid)
+        local lsof_cmd = "lsof -p " .. pid
+        local hd = popen(lsof_cmd)
         local res = hd:read("*a")
-        if res and res ~= "" then
-            print("APISIX is running...")
-            return
+        if res then
+            if res == "" then
+                print("nginx.pid exists with no Nginx process, file will be overwritten")
+            else
+                print("APISIX is running...")
+                return nil
+            end
+        else
+            print("failed to read the result of command: " .. lsof_cmd)
+            return nil
         end
     end
 
