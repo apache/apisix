@@ -66,7 +66,6 @@ load_stream(): plugins not changed
 
 
 === TEST 2: reload plugins triggers plugin list sync
---- LAST
 --- config
 location /t {
     content_by_lua_block {
