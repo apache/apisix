@@ -105,7 +105,6 @@ local function local_dns_resolver(file_path)
     for line in file:lines() do
         local addr, n = line:gsub("^nameserver%s+([^%s]+)%s*$", "%1")
         if n == 1 then
-            io.stderr:write("DNS: ",addr,"\n")
             table_insert(dns_addrs, addr)
         end
     end
