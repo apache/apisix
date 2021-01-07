@@ -307,7 +307,16 @@ Please modify "admin_key" in conf/config.yaml .
 
     local dns_resolver = sys_conf["dns_resolver"]
     if not dns_resolver or #dns_resolver == 0 then
-        sys_conf["dns_resolver"] = {}
+        local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
+        if not dns_addrs then
+            util.die("failed to import local DNS: ", err, "\n")
+        end
+
+        if #dns_addrs == 0 then
+            util.die("local DNS is empty\n")
+        end
+
+        sys_conf["dns_resolver"] = dns_addrs
     end
 
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
