@@ -269,6 +269,8 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
+--- error_log
+ip-restriction exits with http status code 403
 --- no_error_log
 [error]
 
