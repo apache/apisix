@@ -33,6 +33,7 @@ add_block_preprocessor(sub {
         local balancer = require("apisix.balancer")
         local res = {}
         for i = 1, count or 12 do
+            ctx.balancer_try_count = 0
             local server, err = balancer.pick_server(route, ctx)
             if err then
                 ngx.say("failed: ", err)
