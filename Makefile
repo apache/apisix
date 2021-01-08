@@ -84,7 +84,8 @@ init: default
 .PHONY: run
 run: default
 ifeq ("$(findstring /root, ${PWD})", "/root")
-	@echo "Warning! It is forbidden to run APISIX in the /root directory."
+	@echo "Non-zero exit status: 1"
+	@echo "Error, It is forbidden to run APISIX in the /root directory."
 else ifeq ("$(wildcard logs/nginx.pid)", "")
 	mkdir -p logs
 	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
