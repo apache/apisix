@@ -182,10 +182,6 @@ local function pick_server(route, ctx)
         return nil, "no valid upstream node"
     end
 
-    if ctx.server_picker and ctx.server_picker.after_balance then
-        ctx.server_picker.after_balance(ctx, true)
-    end
-
     if up_conf.timeout then
         local timeout = up_conf.timeout
         local ok, err = set_timeouts(timeout.connect, timeout.send,
@@ -209,18 +205,24 @@ local function pick_server(route, ctx)
     ctx.up_checker = checker
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
-    if checker and ctx.balancer_try_count > 1 then
-        local state, code = get_last_failure()
-        local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
-        local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
-        if state == "failed" then
-            if code == 504 then
-                checker:report_timeout(ctx.balancer_ip, port or ctx.balancer_port, host)
+    if ctx.balancer_try_count > 1 then
+        if ctx.server_picker and ctx.server_picker.after_balance then
+            ctx.server_picker.after_balance(ctx, true)
+        end
+
+        if checker then
+            local state, code = get_last_failure()
+            local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
+            local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
+            if state == "failed" then
+                if code == 504 then
+                    checker:report_timeout(ctx.balancer_ip, port or ctx.balancer_port, host)
+                else
+                    checker:report_tcp_failure(ctx.balancer_ip, port or ctx.balancer_port, host)
+                end
             else
-                checker:report_tcp_failure(ctx.balancer_ip, port or ctx.balancer_port, host)
+                checker:report_http_status(ctx.balancer_ip, port or ctx.balancer_port, host, code)
             end
-        else
-            checker:report_http_status(ctx.balancer_ip, port or ctx.balancer_port, host, code)
         end
     end
 
@@ -250,6 +252,7 @@ local function pick_server(route, ctx)
         err = err or "no valid upstream node"
         return nil, "failed to find valid upstream server, " .. err
     end
+    ctx.balancer_server = server
 
     local res, err = lrucache_addr(server, nil, parse_addr, server)
     ctx.balancer_ip = res.host
