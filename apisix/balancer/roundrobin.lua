@@ -52,11 +52,16 @@ function _M.new(up_nodes, upstream)
         end,
         after_balance = function (ctx, before_retry)
             if not before_retry then
+                if ctx.balancer_tried_servers then
+                    core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
+                    ctx.balancer_tried_servers = nil
+                end
+
                 return nil
             end
 
             if not ctx.balancer_tried_servers then
-                ctx.balancer_tried_servers = {}
+                ctx.balancer_tried_servers = core.tablepool.fetch("balancer_tried_servers", 0, 2)
             end
 
             ctx.balancer_tried_servers[ctx.balancer_server] = true
