@@ -37,11 +37,13 @@
 ## 2.2.0
 
 ### Change
+
 - disable node-status plugin by default [#2968](https://github.com/apache/apisix/pull/2968)
 - k8s_deployment_info is no longer allowed in upstream [#3098](https://github.com/apache/apisix/pull/3098)
 - don't treat route segment with ':' as parameter by default [#3154](https://github.com/apache/apisix/pull/3154)
 
 ### Core
+
 - :sunrise: allow create consumers with multiple auth plugins [#2898](https://github.com/apache/apisix/pull/2898)
 - :sunrise: increase the delay before resync etcd [#2977](https://github.com/apache/apisix/pull/2977)
 - :sunrise: support enable/disable route [#2943](https://github.com/apache/apisix/pull/2943)
@@ -50,6 +52,7 @@
 - :sunrise: add control API [#3048](https://github.com/apache/apisix/pull/3048)
 
 ### Plugin
+
 - :sunrise: feat(limt-count): use 'remote_addr' as default key [#2927](https://github.com/apache/apisix/pull/2927)
 - :sunrise: feat(fault-injection): support Nginx variable in abort.body [#2986](https://github.com/apache/apisix/pull/2986)
 - :sunrise: feat: implement new plugin `server-info` [#2926](https://github.com/apache/apisix/pull/2926)
@@ -60,6 +63,7 @@
 - :sunrise: feat: support var in upstream_uri on proxy-rewrite plugin [#3139](https://github.com/apache/apisix/pull/3139)
 
 ### Bugfix
+
 - basic-auth plugin should run in rewrite phases. [#2905](https://github.com/apache/apisix/pull/2905)
 - fixed the non effective config update in http/udp-logger [#2901](https://github.com/apache/apisix/pull/2901)
 - always necessary to save the data of the limit concurrency, and release the statistical status in the log phase [#2465](https://github.com/apache/apisix/pull/2465)

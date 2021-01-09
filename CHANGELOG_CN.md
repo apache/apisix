@@ -37,11 +37,13 @@
 ## 2.2.0
 
 ### Change
+
 - 默认不启用 node-status 插件 [#2968](https://github.com/apache/apisix/pull/2968)
 - upstreeam 配置中不再允许使用 k8s_deployment_info [#3098](https://github.com/apache/apisix/pull/3098)
 - 默认不再匹配路由中以 ':' 开头的参数变量 [#3154](https://github.com/apache/apisix/pull/3154)
 
 ### Core
+
 - :sunrise: 允许一个 consumer 关联多个认证插件 [#2898](https://github.com/apache/apisix/pull/2898)
 - :sunrise: 增加 etcd 重试间隔，并允许配置 [#2977](https://github.com/apache/apisix/pull/2977)
 - :sunrise: 允许启用或禁用 route [#2943](https://github.com/apache/apisix/pull/2943)
@@ -50,6 +52,7 @@
 - :sunrise: 新增 control API [#3048](https://github.com/apache/apisix/pull/3048)
 
 ### Plugin
+
 - :sunrise: limt-count 中使用 'remote_addr' 作为默认 key [#2927](https://github.com/apache/apisix/pull/2927)
 - :sunrise: 支持在 fault-injection 的 abort.body 中使用变量 [#2986](https://github.com/apache/apisix/pull/2986)
 - :sunrise: 新增插件 `server-info` [#2926](https://github.com/apache/apisix/pull/2926)
@@ -60,6 +63,7 @@
 - :sunrise: proxy-rewrite 支持在 upstream_uri 中使用变量 [#3139](https://github.com/apache/apisix/pull/3139)
 
 ### Bugfix
+
 - basic-auth 应该在 rewrite phase 执行 [#2905](https://github.com/apache/apisix/pull/2905)
 - http/udp-logger 中插件配置运行时变更没有生效 [#2901](https://github.com/apache/apisix/pull/2901)
 - 修复 limit-conn 对象没有被正确释放的问题 [#2465](https://github.com/apache/apisix/pull/2465)
