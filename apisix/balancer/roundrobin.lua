@@ -29,7 +29,7 @@ function _M.new(up_nodes, upstream)
     return {
         upstream = upstream,
         get = function (ctx)
-            if ctx.balancer_tried_servers and nkeys(ctx.balancer_tried_servers) == nodes_count then
+            if ctx.balancer_tried_servers and ctx.balancer_tried_servers_count == nodes_count then
                 return nil, "all upstream servers tried"
             end
 
@@ -65,6 +65,7 @@ function _M.new(up_nodes, upstream)
             end
 
             ctx.balancer_tried_servers[ctx.balancer_server] = true
+            ctx.balancer_tried_servers_count = (ctx.balancer_tried_servers_count or 0) + 1
         end
     }
 end
