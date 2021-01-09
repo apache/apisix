@@ -36,14 +36,14 @@
 
 ## 2.2.0
 
-## Change
+### Change
+
 - disable node-status plugin by default [#2968](https://github.com/apache/apisix/pull/2968)
 - k8s_deployment_info is no longer allowed in upstream [#3098](https://github.com/apache/apisix/pull/3098)
 - don't treat route segment with ':' as parameter by default [#3154](https://github.com/apache/apisix/pull/3154)
 
-## Deprecated
-
 ### Core
+
 - :sunrise: allow create consumers with multiple auth plugins [#2898](https://github.com/apache/apisix/pull/2898)
 - :sunrise: increase the delay before resync etcd [#2977](https://github.com/apache/apisix/pull/2977)
 - :sunrise: support enable/disable route [#2943](https://github.com/apache/apisix/pull/2943)
@@ -51,7 +51,8 @@
 - :sunrise: share etcd auth token [#2932](https://github.com/apache/apisix/pull/2932)
 - :sunrise: add control API [#3048](https://github.com/apache/apisix/pull/3048)
 
-## Plugin
+### Plugin
+
 - :sunrise: feat(limt-count): use 'remote_addr' as default key [#2927](https://github.com/apache/apisix/pull/2927)
 - :sunrise: feat(fault-injection): support Nginx variable in abort.body [#2986](https://github.com/apache/apisix/pull/2986)
 - :sunrise: feat: implement new plugin `server-info` [#2926](https://github.com/apache/apisix/pull/2926)
@@ -61,7 +62,8 @@
 - :sunrise: feat: Make headers to add to request in openid-connect plugin configurable [#2903](https://github.com/apache/apisix/pull/2903)
 - :sunrise: feat: support var in upstream_uri on proxy-rewrite plugin [#3139](https://github.com/apache/apisix/pull/3139)
 
-## Bugfix
+### Bugfix
+
 - basic-auth plugin should run in rewrite phases. [#2905](https://github.com/apache/apisix/pull/2905)
 - fixed the non effective config update in http/udp-logger [#2901](https://github.com/apache/apisix/pull/2901)
 - always necessary to save the data of the limit concurrency, and release the statistical status in the log phase [#2465](https://github.com/apache/apisix/pull/2465)
@@ -83,20 +85,20 @@ For more changes, please refer to [Milestone](https://github.com/apache/apisix/m
 - Added `X-APISIX-Upstream-Status` header to distinguish 5xx errors from upstream or APISIX itself. [#2817](https://github.com/apache/apisix/pull/2817)
 - support Nginx configuration snippet. [#2803](https://github.com/apache/apisix/pull/2803)
 
-## Plugin
+### Plugin
 
 - :sunrise: **Upgrade protocol to support Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). So this version only supports skywalking 8.0 protocol. This plugin is disabled by default, you need to modify config.yaml to enable, which is not backward compatible.
 - :sunrise: add aliyun sls logging plugin.[#2169](https://github.com/apache/apisix/issues/2169)
 - proxy-cache: the cache_zone field in the schema should be optional.[#2776](https://github.com/apache/apisix/pull/2776)
 - fix: validate plugin configuration in the DP [#2856](https://github.com/apache/apisix/pull/2856)
 
-## Bugfix
+### Bugfix
 
 - :bug: fix(etcd): handle etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
 - fix: move `conf/cert` to `t/certs` and disable ssl by default, which is not backward compatible. [#2112](https://github.com/apache/apisix/pull/2112)
 - fix: check decrypt key to prevent lua thread aborted [#2815](https://github.com/apache/apisix/pull/2815)
 
-## Not downward compatible features in future versions
+### Not downward compatible features in future versions
 
 -In the 2.3 release, the consumer will only support user names and discard the id. The consumer needs to manually clean up the id field in etcd, otherwise the schema verification will report an error during use
 -In the 2.3 release, opening websocket on upstream will no longer be supported
@@ -117,7 +119,7 @@ This is release candidate.
 - support multiple ports for http and https listen.[#2409](https://github.com/apache/apisix/pull/2409)
 - implement `core.sleep`.[#2397](https://github.com/apache/apisix/pull/2397)
 
-## Plugin
+### Plugin
 
 - :sunrise: **add AK/SK(HMAC) auth plugin.**[#2192](https://github.com/apache/apisix/pull/2192)
 - :sunrise: add referer-restriction plugin.[#2352](https://github.com/apache/apisix/pull/2352)
@@ -125,7 +127,7 @@ This is release candidate.
 - feat(proxy-cache): store the temporary file under cache directory. [#2317](https://github.com/apache/apisix/pull/2317)
 - feat(http-logger): support for specified the log formats via admin API [#2309](https://github.com/apache/apisix/pull/2309)
 
-## Bugfix
+### Bugfix
 
 - :bug: **`high priority`** When the data plane receives an instruction to delete a resource(router or upstream etc.), it does not properly clean up the cache, resulting in the existing resources cannot be found. This problem only occurs in the case of long and frequent deletion operations.[#2168](https://github.com/apache/apisix/pull/2168)
 - fix routing priority does not take effect.[#2447](https://github.com/apache/apisix/pull/2447)
@@ -135,7 +137,7 @@ This is release candidate.
 
 For more changes, please refer to [Milestone](https://github.com/apache/apisix/milestone/7)
 
-## CVE
+### CVE
 
 - Fixed Admin API default access token vulnerability
 
