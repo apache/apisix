@@ -753,7 +753,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 ```
 
-*地址*：/apisix/admin/plugins/?all=true
+*地址*：/apisix/admin/plugins?all=true
 
 *说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`。
 

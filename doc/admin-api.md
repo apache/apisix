@@ -745,7 +745,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 ```
 
-*API*：/apisix/admin/plugins/?all=true
+*API*：/apisix/admin/plugins?all=true
 
 *Description*: all the attributes of all plugins, each plugin includes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
