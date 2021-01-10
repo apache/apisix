@@ -375,6 +375,10 @@ end
 
 
 local function start(env, ...)
+    if env.is_root_path then
+        util.die("Error: It is forbidden to run APISIX in the /root directory.\n")
+    end
+
     local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
     util.execute_cmd(cmd_logs)
 

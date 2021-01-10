@@ -58,3 +58,21 @@ nameserver 172.27.0.1
 nameserver fe80::215:5dff:fec5:8e1d
 --- response_body
 ["172.27.0.1","fe80::215:5dff:fec5:8e1d"]
+
+
+
+=== TEST 2: It is forbidden to run APISIX under the /root directory(is_root_path is true).
+--- config
+    location /t {
+        content_by_lua_block {
+            local ops = require("apisix.cli.ops")
+            local env = {is_root_path = true}
+            local arg = {"start"}
+            ops.execute(env, arg)
+        }
+    }
+--- request
+GET /t
+--- error_code:
+--- error_log
+Error: It is forbidden to run APISIX in the /root directory.

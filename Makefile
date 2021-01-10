@@ -83,14 +83,10 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
-ifeq ("$(findstring /root, ${PWD})", "/root")
-	@echo "Error: It is forbidden to run APISIX in the /root directory."
-	@exit 1
-else ifeq ("$(wildcard logs/nginx.pid)", "")
-	mkdir -p logs
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
-else
+ifneq ("$(wildcard logs/nginx.pid)", "")
 	@echo "APISIX is running..."
+else
+	./bin/apisix start
 endif
 
 
