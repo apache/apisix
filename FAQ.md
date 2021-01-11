@@ -197,6 +197,7 @@ Server: APISIX web server
 ```
 
 ## How to fix OpenResty Installation Failure on MacOS 10.15
+
 When you install the OpenResty on MacOs 10.15, you may face this error
 
 ```shell

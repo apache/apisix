@@ -233,6 +233,8 @@ local _M = {
 并不是所有插件都有具体配置项，比如 `prometheus` 下是没有任何具体配置项，这时候用一个空的对象
 标识即可。
 
+如果一个请求因为某个插件而被拒绝，会有类似这样的 warn 日志：`ip-restriction exits with http status code 403`。
+
 [查看 APISIX 已支持插件列表](plugins.md)
 
 [返回目录](#目录)

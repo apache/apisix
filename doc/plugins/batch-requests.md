@@ -70,6 +70,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | max_body_size       | integer  | required   |  1048576  |    > 0  | the maximum of request body size in bytes |
 
 ## Batch API Request/Response
+
 The plugin will create a API in `apisix` to handle your batch request.
 
 ### Batch API Request:
@@ -82,6 +83,7 @@ The plugin will create a API in `apisix` to handle your batch request.
 | pipeline | [HttpRequest](#HttpRequest) | required    |         |       | Request's detail                      |
 
 #### HttpRequest
+
 | Name       | Type    | Requirement | Default | Valid                                                                            | Description                                                                                             |
 | ---------- | ------- | ----------- | ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | version    | string  | optional    | 1.1     | [1.0, 1.1]                                                                       | http version                                                                                            |
@@ -93,9 +95,11 @@ The plugin will create a API in `apisix` to handle your batch request.
 | ssl_verify | boolean | optional    | false   |                                                                                  | verify if SSL cert matches hostname.                                                                    |
 
 ### Batch API Response：
+
 Response is `Array` of [HttpResponse](#HttpResponse).
 
 #### HttpResponse
+
 | Name    | Type    | Description           |
 | ------- | ------- | --------------------- |
 | status  | integer | http status code      |

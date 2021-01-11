@@ -38,20 +38,20 @@ traffic-split 插件使用户可以逐步引导各个上游之间的流量百分
 
 ## 属性
 
-| 参数名        | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
-| ------------ | ------------- | ------ | ------ | ------ | -------------------- |
-| rules.match | array[object] | 可选  |        |        | 匹配规则列表  |
-| rules.match.vars | array[array]   | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
-| rules.weighted_upstreams    | array[object] | 可选   |        |        | 上游配置规则列表。 |
-| rules.weighted_upstreams.upstream_id  | string or integer | 可选   |        |        | 通过上游 id 绑定对应上游(暂不支持)。 |
-| rules.weighted_upstreams.upstream     | object | 可选   |        |        | 上游配置信息。 |
-| rules.weighted_upstreams.upstream.type | enum | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
-| rules.weighted_upstreams.upstream.nodes | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
-| rules.weighted_upstreams.upstream.timeout | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
-| rules.weighted_upstreams.upstream.pass_host  | enum | 可选   | "pass"   | ["pass", "node", "rewrite"]  | pass: 透传客户端请求的 host, node: 不透传客户端请求的 host; 使用 upstream node 配置的 host, rewrite: 使用 upstream_host 配置的值重写 host 。 |
-| rules.weighted_upstreams.upstream.name  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
-| rules.weighted_upstreams.upstream.upstream_host | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
-| rules.weighted_upstreams.weight       | integer | 可选   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 weight 之间使用 roundrobin 算法划分。|
+|              参数名             | 类型          | 可选项 | 默认值 | 有效值 | 描述                 |
+| ---------------------- | --------------| ------ | ------ | ------ | -------------------- |
+| rules.match                    | array[object] | 可选  |        |        | 匹配规则列表  |
+| rules.match.vars               | array[array]  | 可选   |        |        | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
+| rules.weighted_upstreams       | array[object] | 可选   |        |        | 上游配置规则列表。 |
+| weighted_upstreams.upstream_id | string / integer | 可选   |        |        | 通过上游 id 绑定对应上游(暂不支持)。 |
+| weighted_upstreams.upstream    | object | 可选   |        |        | 上游配置信息。 |
+| upstream.type                  | enum   | 可选   |   roundrobin |  [roundrobin, chash]      | roundrobin 支持权重的负载，chash 一致性哈希，两者是二选一的(目前只支持 `roundrobin`)。 |
+| upstream.nodes                 | object | 可选   |        |        | 哈希表，内部元素的 key 是上游机器地址 列表，格式为地址 + Port，其中地址部 分可以是 IP 也可以是域名，⽐如 192.168.1.100:80、foo.com:80等。 value 则是节点的权重，特别的，当权重 值为 0 有特殊含义，通常代表该上游节点 失效，永远不希望被选中。 |
+| upstream.timeout               | object | 可选   |  15     |        | 设置连接、发送消息、接收消息的超时时间(时间单位：秒，都默认为 15 秒)。 |
+| upstream.pass_host             | enum   | 可选   | "pass"   | ["pass", "node", "rewrite"]  | pass: 透传客户端请求的 host, node: 不透传客户端请求的 host; 使用 upstream node 配置的 host, rewrite: 使用 upstream_host 配置的值重写 host 。 |
+| `upstream.name`                  | string | 可选   |        |  | 标识上游服务名称、使⽤场景等。 |
+| upstream.upstream_host         | string | 可选   |        |        | 只在 pass_host 配置为 rewrite 时有效。 |
+| weighted_upstreams.weight      | integer | 可选   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 weight 之间使用 roundrobin 算法划分。|
 
 traffic-split 插件主要由 `match` 和 `weighted_upstreams` 两部分组成，`match` 是自定义的条件规则，`weighted_upstreams` 是 upstream 的配置信息。如果配置 `match` 和 `weighted_upstreams` 信息，那么在 `match` 规则校验通过后，会根据 `weighted_upstreams` 中的 `weight` 值；引导插件中各个 upstream 之间的流量比例，否则，所有流量直接到达 `route` 或 `service` 上配置的 `upstream`。当然你也可以只配置 `weighted_upstreams` 部分，这样会直接根据 `weighted_upstreams` 中的 `weight` 值，引导插件中各个 upstream 之间的流量比例。
 

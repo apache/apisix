@@ -152,6 +152,9 @@ nginx_config:                     # config for render the template to generate n
   http_admin_configuration_snippet: |
     # Add custom Nginx admin server configuration to nginx.conf.
     # The configuration should be well indented!
+  http_end_configuration_snippet: |
+    # Add custom Nginx http end configuration to nginx.conf.
+    # The configuration should be well indented!
   stream_configuration_snippet: |
     # Add custom Nginx stream configuration to nginx.conf.
     # The configuration should be well indented!
