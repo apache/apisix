@@ -24,6 +24,7 @@ local string = string
 local table  = table
 local ipairs = ipairs
 local tonumber = tonumber
+local req_read_body = ngx.req.read_body
 
 return function (proto, service, method, pb_option, deadline, default_values)
     core.log.info("proto: ", core.json.delay_encode(proto, true))
@@ -33,7 +34,7 @@ return function (proto, service, method, pb_option, deadline, default_values)
                       .. " end"
     end
 
-    ngx.req.read_body()
+    req_read_body()
 
     if pb_option then
         for _, opt in ipairs(pb_option) do
