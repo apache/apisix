@@ -100,7 +100,7 @@ local function evaluate_permissions(conf, token)
     end
 
     core.log.error("Getting session for Protection API access.")
-    local session = r_session.start({id = "authz/" .. conf.token_endpoint,  storage = "shm"})
+    local session = r_session.start({identifier = "authz/" .. conf.token_endpoint, storage = "shm"})
     core.log.error("Got session for Protection API access.")
 
     if session.data.access_token == nil then
