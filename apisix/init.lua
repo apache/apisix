@@ -657,7 +657,14 @@ function _M.http_header_filter_phase()
     then
         set_resp_upstream_status(up_status)
     elseif up_status and #up_status > 3 then
-        local last_status = str_sub(up_status, -3)
+        -- the up_status can be "502, 502" or "502, 502 : "
+        local last_status
+        if str_byte(up_status, -1) == str_byte(" ") then
+            last_status = str_sub(up_status, -6, -3)
+        else
+            last_status = str_sub(up_status, -3)
+        end
+
         if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
             set_resp_upstream_status(up_status)
         end
