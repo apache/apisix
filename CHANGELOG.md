@@ -47,7 +47,7 @@
 - :sunrise: allow create consumers with multiple auth plugins [#2898](https://github.com/apache/apisix/pull/2898)
 - :sunrise: increase the delay before resync etcd [#2977](https://github.com/apache/apisix/pull/2977)
 - :sunrise: support enable/disable route [#2943](https://github.com/apache/apisix/pull/2943)
-- :sunrise: route accroding to the graphql attributes [#2964](https://github.com/apache/apisix/pull/2964)
+- :sunrise: route according to the graphql attributes [#2964](https://github.com/apache/apisix/pull/2964)
 - :sunrise: share etcd auth token [#2932](https://github.com/apache/apisix/pull/2932)
 - :sunrise: add control API [#3048](https://github.com/apache/apisix/pull/3048)
 
