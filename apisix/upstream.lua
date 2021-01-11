@@ -14,13 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local core = require("apisix.core")
+local discovery = require("apisix.discovery.init").discovery
 local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
 local upstreams
+local healthcheck
+
+
+local lrucache_checker = core.lrucache.new({
+    ttl = 300, count = 256
+})
 
 
 local _M = {}
@@ -52,22 +59,110 @@ end
 _M.set = set_directly
 
 
+local function create_checker(upstream, healthcheck_parent)
+    if healthcheck == nil then
+        healthcheck = require("resty.healthcheck")
+    end
+
+    local checker, err = healthcheck.new({
+        name = "upstream#" .. healthcheck_parent.key,
+        shm_name = "upstream-healthcheck",
+        checks = upstream.checks,
+    })
+
+    if not checker then
+        core.log.error("fail to create healthcheck instance: ", err)
+        return nil
+    end
+
+    local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
+    local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
+    for _, node in ipairs(upstream.nodes) do
+        local ok, err = checker:add_target(node.host, port or node.port, host)
+        if not ok then
+            core.log.error("failed to add new health check target: ", node.host, ":",
+                    port or node.port, " err: ", err)
+        end
+    end
+
+    if upstream.parent then
+        core.table.insert(upstream.parent.clean_handlers, function ()
+            core.log.info("try to release checker: ", tostring(checker))
+            checker:clear()
+            checker:stop()
+        end)
+
+    else
+        core.table.insert(healthcheck_parent.clean_handlers, function ()
+            core.log.info("try to release checker: ", tostring(checker))
+            checker:clear()
+            checker:stop()
+        end)
+    end
+
+    core.log.info("create new checker: ", tostring(checker))
+    return checker
+end
+
+
+local function fetch_healthchecker(upstream, healthcheck_parent, version)
+    if not upstream.checks then
+        return
+    end
+
+    if upstream.checker then
+        return
+    end
+
+    local checker = lrucache_checker(upstream, version,
+                                     create_checker, upstream,
+                                     healthcheck_parent)
+    return checker
+end
+
+
 function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
         core.log.warn("upstream node has been specified, ",
                       "cannot be set repeatedly")
-        return true
+        return
     end
 
     local up_conf = api_ctx.matched_upstream
     if not up_conf then
-        return false, "missing upstream configuration in Route or Service"
+        return 500, "missing upstream configuration in Route or Service"
     end
     -- core.log.info("up_conf: ", core.json.delay_encode(up_conf, true))
 
+    if up_conf.service_name then
+        if not discovery then
+            return 500, "discovery is uninitialized"
+        end
+        if not up_conf.discovery_type then
+            return 500, "discovery server need appoint"
+        end
+
+        local dis = discovery[up_conf.discovery_type]
+        if not dis then
+            return 500, "discovery " .. up_conf.discovery_type .. "is uninitialized"
+        end
+        up_conf.nodes = dis.nodes(up_conf.service_name)
+    end
+
     set_directly(api_ctx, up_conf.type .. "#upstream_" .. tostring(up_conf),
                  api_ctx.conf_version, up_conf, route)
-    return true
+
+    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
+    if nodes_count == 0 then
+        return 502, "no valid upstream node"
+    end
+
+    if nodes_count > 1 then
+        local checker = fetch_healthchecker(up_conf, route, api_ctx.upstream_version)
+        api_ctx.up_checker = checker
+    end
+
+    return
 end
 
 
