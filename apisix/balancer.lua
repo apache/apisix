@@ -87,11 +87,16 @@ local function create_checker(upstream, healthcheck_parent)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
     end
-    local checker = healthcheck.new({
+    local checker, err = healthcheck.new({
         name = "upstream#" .. healthcheck_parent.key,
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
     })
+
+    if not checker then
+        core.log.error("fail to create healthcheck instance: ", err)
+        return
+    end
 
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
