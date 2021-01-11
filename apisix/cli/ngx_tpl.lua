@@ -369,15 +369,15 @@ http {
         {% end %}
         {% end %} {% -- if enable_ipv6 %}
 
+        {% if ssl.ssl_trusted_certificate ~= nil then %}
+        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+        {% end %}
+
         {% if ssl.enable then %}
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
-
-        {% if ssl.ssl_trusted_certificate ~= nil then %}
-        lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
-        {% end %}
 
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
