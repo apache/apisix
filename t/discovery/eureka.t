@@ -86,7 +86,7 @@ routes:
 GET /eureka/apps/APISIX-EUREKA
 --- error_code: 502
 --- error_log eval
-qr/.*failed to pick server: no valid upstream node.*/
+qr/.* no valid upstream node.*/
 
 
 
