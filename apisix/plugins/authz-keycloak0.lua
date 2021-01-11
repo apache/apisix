@@ -20,7 +20,7 @@ local sub_str   = string.sub
 local url       = require "net.url"
 local tostring  = tostring
 local ngx       = ngx
-local plugin_name = "authz-keycloak"
+local plugin_name = "authz-keycloak0"
 local r_session = require("resty.session")
 local openidc = require("resty.openidc")
 
@@ -190,7 +190,7 @@ end
 
 
 function _M.access(conf, ctx)
-    core.log.debug("hit keycloak-auth access")
+    core.log.error("hit keycloak-auth access0")
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
         core.log.error("failed to fetch JWT token: ", err)
