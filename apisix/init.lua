@@ -536,10 +536,10 @@ function _M.http_access_phase()
         run_plugin("access", plugins, api_ctx)
     end
 
-    local ok, err = set_upstream(route, api_ctx)
-    if not ok then
-        core.log.error("failed to parse upstream: ", err)
-        core.response.exit(500)
+    local code, err = set_upstream(route, api_ctx)
+    if code then
+        core.log.error("failed to set upstream: ", err)
+        core.response.exit(code)
     end
 
     set_upstream_host(api_ctx)
@@ -893,8 +893,8 @@ function _M.stream_preread_phase()
 
     run_plugin("preread", plugins, api_ctx)
 
-    local ok, err = set_upstream(matched_route, api_ctx)
-    if not ok then
+    local code, err = set_upstream(matched_route, api_ctx)
+    if code then
         core.log.error("failed to set upstream: ", err)
         return ngx_exit(1)
     end
