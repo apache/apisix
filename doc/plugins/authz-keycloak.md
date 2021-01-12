@@ -49,8 +49,8 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | ssl_verify              | boolean       | optional    | true                                          |                                                 | Verify if SSL cert matches hostname.                                                                                                                        |
 | policy_enforcement_mode | string        | optional    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                     |                                                                                                                                                             |
 
-
 ### Endpoints
+
 Endpoints can optionally be discovered by providing a URL pointing to Keycloak's discovery document for Authorization Services for the realm
 in the `discovery` attribute. The token endpoint URL will then be determined from that document. Alternatively, the token endpoint can be
 specified explicitly via the `token_endpoint` attribute.
