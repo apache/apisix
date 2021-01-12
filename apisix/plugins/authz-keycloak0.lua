@@ -48,7 +48,6 @@ local schema = {
             enum = {"urn:ietf:params:oauth:grant-type:uma-ticket"},
             minLength = 1, maxLength = 100
         },
-        audience = {type = "string", minLength = 1, maxLength = 100},
         timeout = {type = "integer", minimum = 1000, default = 3000},
         policy_enforcement_mode = {
             type = "string",
@@ -320,7 +319,7 @@ local function evaluate_permissions(conf, token, uri, ctx)
         method = "POST",
         body =  ngx.encode_args({
             grant_type = conf.grant_type,
-            audience = conf.audience,
+            audience = conf.client_id,
             response_mode = "decision",
             permission = permissions
         }),
