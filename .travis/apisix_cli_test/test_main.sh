@@ -994,18 +994,16 @@ etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
 
 # It is forbidden to run apisix under the "/root" folder.
-git checkout conf/config.yaml
-
 mkdir /root/apisix
-
 cp -r ./*  /root/apisix
 cd /root/apisix
+
 make init
 
 out=$(make run 2>&1 || true)
 if ! echo "$out" | grep "Error: It is forbidden to run APISIX in the /root directory"; then
-    echo "failed: should echo It is forbidden to run APISIX in the /root directory."
+    echo "failed: should echo It is forbidden to run APISIX in the /root directory"
     exit 1
 fi
 
-echo "pass: successfully prohibit APISIX from running in the /root directory."
+echo "pass: successfully prohibit APISIX from running in the /root directory"
