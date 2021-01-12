@@ -878,9 +878,10 @@ if ! echo "$out" | grep "Error: It is forbidden to run APISIX in the /root direc
     exit 1
 fi
 
-echo "pass: successfully prohibit APISIX from running in the /root directory"
-
 cd -
+
+echo "passed: successfully prohibit APISIX from running in the /root directory"
+
 rm -rf /root/apisix
 
 # check etcd while enable auth
