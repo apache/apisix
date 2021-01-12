@@ -20,8 +20,8 @@ local sub_str   = string.sub
 local url       = require "net.url"
 local tostring  = tostring
 local ngx       = ngx
-local cjson = require("cjson")
-local cjson_s = require("cjson.safe")
+local cjson     = require("cjson")
+local cjson_s   = require("cjson.safe")
 
 local plugin_name = "authz-keycloak0"
 local log = core.log
@@ -60,8 +60,7 @@ local schema = {
         ssl_verify = {type = "boolean", default = true},
         client_id = {type = "string", minLength = 1, maxLength = 100},
         client_secret = {type = "string", minLength = 1, maxLength = 100},
-    },
-    required = {}
+    }
 }
 
 
