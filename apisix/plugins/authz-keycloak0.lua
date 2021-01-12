@@ -84,7 +84,7 @@ local function is_path_protected(conf)
 end
 
 
-local function evaluate_permissions(conf, token, uri)
+local function evaluate_permissions(conf, token, uri, ctx)
     local url_decoded = url.parse(conf.token_endpoint)
     local host = url_decoded.host
     local port = url_decoded.port
@@ -160,11 +160,19 @@ local function evaluate_permissions(conf, token, uri)
     core.log.error("Sending request to token endpoint to obtain access token.")
     local httpc_res, httpc_err = httpc:request_uri(conf.resource_set_endpoint, params)
     core.log.error("Response body: ", httpc_res.body)
-    local json =  = cjson_s.decode('{"ids": ' .. httpc_res.body .. '}')
+    local json = cjson_s.decode('{"ids": ' .. httpc_res.body .. '}')
     for k, id in pairs(json.ids) do
         core.log.error("Matched resource: ", id)
     end
 
+    -- Determine scope.
+    local scope = ctx.var.request_method
+
+    local permissions = {}
+    for k, id in pairs(json.ids) do
+        permissions[#permissions+1] = id .. "#" .. scope
+        core.log.error("Requested permission: ", permissions[#permissions])
+    end
 
 
     local httpc = http.new()
@@ -176,7 +184,7 @@ local function evaluate_permissions(conf, token, uri)
             grant_type = conf.grant_type,
             audience = conf.audience,
             response_mode = "decision",
-            permission = conf.permissions
+            permission = permissions
         }),
         ssl_verify = conf.ssl_verify,
         headers = {
@@ -229,7 +237,7 @@ function _M.access(conf, ctx)
         return 401, {message = "Missing JWT token in request"}
     end
 
-    local status, body = evaluate_permissions(conf, jwt_token, ctx.var.request_uri)
+    local status, body = evaluate_permissions(conf, jwt_token, ctx.var.request_uri, ctx)
     if status then
         return status, body
     end
