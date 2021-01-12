@@ -89,7 +89,7 @@ local function authz_keycloak_cache_get(type, key)
   local value
   if dict then
     value = dict:get(key)
-    if value then log(DEBUG, "cache hit: type=", type, " key=", key) end
+    if value then log.debug("cache hit: type=", type, " key=", key) end
   end
   return value
 end
@@ -116,10 +116,10 @@ end
 -- Set outgoing proxy options.
 local function authz_keycloak_configure_proxy(httpc, proxy_opts)
   if httpc and proxy_opts and type(proxy_opts) == "table" then
-    log(DEBUG, "authz_keycloak_configure_proxy : use http proxy")
+    log.debug("authz_keycloak_configure_proxy : use http proxy")
     httpc:set_proxy_options(proxy_opts)
   else
-    log(DEBUG, "authz_keycloak_configure_proxy : don't use http proxy")
+    log.debug("authz_keycloak_configure_proxy : don't use http proxy")
   end
 end
 
@@ -204,6 +204,24 @@ local function authz_keycloak_ensure_discovered_data(opts)
   return err
 end
 
+local function authz_keycloak_get_endpoint(conf, endpoint)
+    if conf and conf[endpoint] then
+        return conf[endpoint]
+    elseif conf and conf.discovery and type(conf.discovery) == "table"
+        return = conf.discovery[endpoint]
+    end
+
+    return nil
+end
+
+local function authz_keycloak_get_token_endpoint(conf)
+    return authz_keycloak_get_endpoint(conf, "token_endpoint")
+end
+
+local function authz_keycloak_get_resource_registration_endpoint(conf)
+    return authz_keycloak_get_endpoint(conf, "resource_registration_endpoint")
+end
+
 local function evaluate_permissions(conf, token, uri, ctx)
     if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
         return 403
@@ -216,36 +234,15 @@ local function evaluate_permissions(conf, token, uri, ctx)
     end
 
     -- Get token endpoint URL.
-    local token_endpoint
-    if not (conf and (conf.token_endpoint or (conf.discovery and conf.discovery.token_endpoint))) then
+    local token_endpoint = authz_keycloak_get_token_endpoint(conf)
+    if not token_endpoint then
       log.error("No token endpoint supplied.")
       return 500, "No token endpoint supplied."
-    else
-        if conf.token_endpoint then
-            token_endpoint = conf.token_endpoint
-        else
-            token_endpoint = conf.discovery.token_endpoint
-        end
     end
-    log.error("Token endpoint: ", token_endpoint)
-
-    -- Get resource registration endpoint URL.
-    local resource_registration_endpoint
-    if not (conf and (conf.resource_registration_endpoint or (conf.discovery and conf.discovery.resource_registration_endpoint))) then
-      log.error("No resource registration endpoint supplied.")
-      return 500, "No resource registration endpoint supplied."
-    else
-        if conf.token_endpoint then
-            resource_registration_endpoint = conf.resource_registration_endpoint
-        else
-            resource_registration_endpoint = conf.discovery.resource_registration_endpoint
-        end
-    end
-    log.error("Resource registration endpoint: ", resource_registration_endpoint)
+    log.debug("Token endpoint: ", token_endpoint)
 
     -- Get access token for Protection API.
-
-    core.log.error("Getting access token for Protection API.")
+    core.log.error("Getting access token for Protection API from token endpoint.")
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
 
@@ -277,6 +274,14 @@ local function evaluate_permissions(conf, token, uri, ctx)
     core.log.error("Expires in: ", json.expires_in)
     core.log.error("Refresh token: ", json.refresh_token)
     core.log.error("Refresh expires in: ", json.refresh_expires_in)
+
+    -- Get resource registration endpoint URL.
+    local resource_registration_endpoint = authz_keycloak_get_resource_registration_endpoint(conf)
+    if not resource_registration_endpoint then
+      log.error("No resource registration endpoint supplied.")
+      return 500, "No resource registration endpoint supplied."
+    end
+    log.error("Resource registration endpoint: ", resource_registration_endpoint)
 
     -- Get ID of resource trying to access.
     core.log.error("Request URI: ", uri)
