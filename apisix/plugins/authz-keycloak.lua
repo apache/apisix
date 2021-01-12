@@ -17,6 +17,7 @@
 local core      = require("apisix.core")
 local http      = require "resty.http"
 local sub_str   = string.sub
+local type      = type
 local ngx       = ngx
 local cjson     = require("cjson")
 local cjson_s   = require("cjson.safe")
