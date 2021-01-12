@@ -227,6 +227,7 @@ local function evaluate_permissions(conf, token, uri, ctx)
             token_endpoint = conf.discovery.token_endpoint
         end
     end
+    log.error("Token endpoint: ", token_endpoint)
 
     -- Get resource registration endpoint URL.
     local resource_registration_endpoint
@@ -240,6 +241,7 @@ local function evaluate_permissions(conf, token, uri, ctx)
             resource_registration_endpoint = conf.discovery.resource_registration_endpoint
         end
     end
+    log.error("Resource registration endpoint: ", resource_registration_endpoint)
 
     -- Get access token for Protection API.
 
