@@ -428,7 +428,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be sctrictly greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be strictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -511,7 +511,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be sctrictly greater than 0"}
+{"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be strictly greater than 0"}
 --- no_error_log
 [error]
 
@@ -980,8 +980,8 @@ GET /test_concurrency
 --- request
 GET /t
 --- response_body
-property "conn" validation failed: expected 0 to be sctrictly greater than 0
-property "default_conn_delay" validation failed: expected 0 to be sctrictly greater than 0
+property "conn" validation failed: expected 0 to be strictly greater than 0
+property "default_conn_delay" validation failed: expected 0 to be strictly greater than 0
 done
 --- no_error_log
 [error]

@@ -249,7 +249,7 @@ Location: https://www.iresty.com
                         "plugins": {
                             "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpasswrd",
+                                 "auth_value" : "userpassword",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
@@ -269,7 +269,7 @@ Location: https://www.iresty.com
                             "plugins": {
                                "echo": {
                                 "before_body": "before the body modification ",
-                                 "auth_value" : "userpasswrd",
+                                 "auth_value" : "userpassword",
                                 "headers": {
                                     "Location":"https://www.iresty.com"
                                 }
