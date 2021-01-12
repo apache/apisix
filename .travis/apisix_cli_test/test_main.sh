@@ -880,9 +880,8 @@ fi
 
 echo "pass: successfully prohibit APISIX from running in the /root directory"
 
-rm -rf /root/apisix
-#restore directory
 cd -
+rm -rf /root/apisix
 
 # check etcd while enable auth
 git checkout conf/config.yaml
