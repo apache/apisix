@@ -1003,9 +1003,9 @@ cd /root/apisix
 make init
 
 out=$(make run 2>&1 || true)
-if echo "$out" | grep "Error: It is forbidden to run APISIX in the /root directory"; then
-    echo "failed: APISIX cannot be run under the /root folder."
+if ! echo "$out" | grep "Error: It is forbidden to run APISIX in the /root directory"; then
+    echo "failed: should echo It is forbidden to run APISIX in the /root directory."
     exit 1
 fi
 
-echo "APISIX started successfully."
+echo "pass: successfully prohibit APISIX from running in the /root directory."
