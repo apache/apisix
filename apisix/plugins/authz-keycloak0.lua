@@ -58,6 +58,7 @@ local schema = {
         ssl_verify = {type = "boolean", default = true},
         client_id = {type = "string", minLength = 1, maxLength = 100},
         client_secret = {type = "string", minLength = 1, maxLength = 100},
+        resource_set_endpoint = {type = "string", minLength = 1, maxLength = 4096},
     },
     required = {"token_endpoint"}
 }
@@ -83,7 +84,7 @@ local function is_path_protected(conf)
 end
 
 
-local function evaluate_permissions(conf, token)
+local function evaluate_permissions(conf, token, uri)
     local url_decoded = url.parse(conf.token_endpoint)
     local host = url_decoded.host
     local port = url_decoded.port
@@ -99,6 +100,8 @@ local function evaluate_permissions(conf, token)
     if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
         return 403
     end
+
+    -- Get access token for Protection API.
 
     core.log.error("Getting access token for Protection API.")
     local httpc = http.new()
@@ -131,6 +134,34 @@ local function evaluate_permissions(conf, token)
     core.log.error("Access token: ", json.access_token)
     core.log.error("Expires in: ", json.expires_in)
     core.log.error("Refresh token: ", json.refresh_token)
+    core.log.error("Refresh expires in: ", json.refresh_expires_in)
+
+    -- Get ID of resource trying to access.
+    core.log.error("Request URI: ", uri)
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout)
+
+    local params = {
+        method = "GET",
+        query = {uri = uri, matchingUri = "true"},
+        ssl_verify = conf.ssl_verify,
+        headers = {
+            ["Auhtorization"] = json.access_token
+        }
+    }
+
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout
+        params.keepalive_pool = conf.keepalive_pool
+    else
+        params.keepalive = conf.keepalive
+    end
+
+    core.log.error("Sending request to token endpoint to obtain access token.")
+    local httpc_res, httpc_err = httpc:request_uri(conf.resource_set_endpoint, params)
+    core.log.error("Response body: ", httpc_res.body)
+
+
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
@@ -194,7 +225,7 @@ function _M.access(conf, ctx)
         return 401, {message = "Missing JWT token in request"}
     end
 
-    local status, body = evaluate_permissions(conf, jwt_token)
+    local status, body = evaluate_permissions(conf, jwt_token, ctx.var.request_uri)
     if status then
         return status, body
     end
