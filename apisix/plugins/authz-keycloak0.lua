@@ -146,7 +146,7 @@ local function evaluate_permissions(conf, token, uri)
         query = {uri = uri, matchingUri = "true"},
         ssl_verify = conf.ssl_verify,
         headers = {
-            ["Auhtorization"] = json.access_token
+            ["Authorization"] = "Bearer " .. json.access_token
         }
     }
 
@@ -160,6 +160,10 @@ local function evaluate_permissions(conf, token, uri)
     core.log.error("Sending request to token endpoint to obtain access token.")
     local httpc_res, httpc_err = httpc:request_uri(conf.resource_set_endpoint, params)
     core.log.error("Response body: ", httpc_res.body)
+    local json =  = cjson_s.decode('{"ids": ' .. httpc_res.body .. '}')
+    for k, id in pairs(json.ids) do
+        core.log.error("Matched resource: ", id)
+    end
 
 
 
