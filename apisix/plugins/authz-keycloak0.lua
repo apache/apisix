@@ -61,7 +61,7 @@ local schema = {
         client_id = {type = "string", minLength = 1, maxLength = 100},
         client_secret = {type = "string", minLength = 1, maxLength = 100},
     },
-    required = {"token_endpoint"}
+    required = {}
 }
 
 
