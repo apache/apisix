@@ -21,7 +21,7 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INST_BINDIR ?= /usr/bin
 INSTALL ?= install
 UNAME ?= $(shell uname)
-OR_EXEC ?= $(shell which openresty)
+OR_EXEC ?= $(shell which openresty || which nginx)
 LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
 
 SHELL := /bin/bash -o pipefail

@@ -235,6 +235,14 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
+    local dubbo_upstream_multiplex_count = 32
+    if yaml_conf.plugin_attr and yaml_conf.plugin_attr["dubbo-proxy"] then
+        local dubbo_conf = yaml_conf.plugin_attr["dubbo-proxy"]
+        if tonumber(dubbo_conf.upstream_multiplex_count) >= 1 then
+            dubbo_upstream_multiplex_count = dubbo_conf.upstream_multiplex_count
+        end
+    end
+
     -- Using template.render
     local sys_conf = {
         lua_path = env.pkg_path_org,
@@ -244,6 +252,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
+        dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
     }
 
     if not yaml_conf.apisix then
