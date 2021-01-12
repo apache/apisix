@@ -17,8 +17,6 @@
 local core      = require("apisix.core")
 local http      = require "resty.http"
 local sub_str   = string.sub
-local url       = require "net.url"
-local tostring  = tostring
 local ngx       = ngx
 local cjson     = require("cjson")
 local cjson_s   = require("cjson.safe")
@@ -102,9 +100,9 @@ end
 local function authz_keycloak_configure_timeouts(httpc, timeout)
   if timeout then
     if type(timeout) == "table" then
-      local r, e = httpc:set_timeouts(timeout.connect or 0, timeout.send or 0, timeout.read or 0)
+      httpc:set_timeouts(timeout.connect or 0, timeout.send or 0, timeout.read or 0)
     else
-      local r, e = httpc:set_timeout(timeout)
+      httpc:set_timeout(timeout)
     end
   end
 end
@@ -154,7 +152,8 @@ end
 
 
 -- Get the Discovery metadata from the specified URL.
-local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout, exptime, proxy_opts, http_request_decorator)
+local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
+                                       exptime, proxy_opts, http_request_decorator)
   log.debug("authz_keycloak_discover: URL is: " .. url)
 
   local json, err
@@ -197,7 +196,9 @@ local function authz_keycloak_ensure_discovered_data(opts)
   local err
   if type(opts.discovery) == "string" then
     local discovery
-    discovery, err = authz_keycloak_discover(opts.discovery, opts.ssl_verify, opts.keepalive, opts.timeout, opts.jwk_expires_in, opts.proxy_opts, opts.http_request_decorator)
+    discovery, err = authz_keycloak_discover(opts.discovery, opts.ssl_verify, opts.keepalive,
+                                             opts.timeout, opts.jwk_expires_in, opts.proxy_opts,
+                                             opts.http_request_decorator)
     if not err then
       opts.discovery = discovery
     end
