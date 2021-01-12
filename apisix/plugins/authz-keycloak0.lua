@@ -21,8 +21,9 @@ local url       = require "net.url"
 local tostring  = tostring
 local ngx       = ngx
 local plugin_name = "authz-keycloak0"
-local r_session = require("resty.session")
 local openidc = require("resty.openidc")
+local cjson = require("cjson")
+local cjson_s = require("cjson.safe")
 
 
 
@@ -99,41 +100,37 @@ local function evaluate_permissions(conf, token)
         return 403
     end
 
-    core.log.error("Getting session for Protection API access.")
-    local session = r_session.start({identifier = "authz/" .. conf.token_endpoint, storage = "shm"})
-    core.log.error("Got session for Protection API access.")
+    core.log.error("Getting access token for Protection API.")
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout)
 
-    if session.data.access_token == nil then
-        core.log.error("Session doesn't contain an access token yet.")
-        local httpc = http.new()
-        httpc:set_timeout(conf.timeout)
-
-        local params = {
-            method = "POST",
-            body =  ngx.encode_args({
-                grant_type = "client_credentials",
-                client_id = conf.client_id,
-                client_secret = conf.client_secret,
-            }),
-            ssl_verify = conf.ssl_verify,
-            headers = {
-                ["Content-Type"] = "application/x-www-form-urlencoded"
-            }
+    local params = {
+        method = "POST",
+        body =  ngx.encode_args({
+            grant_type = "client_credentials",
+            client_id = conf.client_id,
+            client_secret = conf.client_secret,
+        }),
+        ssl_verify = conf.ssl_verify,
+        headers = {
+            ["Content-Type"] = "application/x-www-form-urlencoded"
         }
+    }
 
-        if conf.keepalive then
-            params.keepalive_timeout = conf.keepalive_timeout
-            params.keepalive_pool = conf.keepalive_pool
-        else
-            params.keepalive = conf.keepalive
-        end
-
-        core.log.error("Sending request to token endpoint to obtain access token.")
-        local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, params)
-        core.log.error("Response body: ", httpc_res.body)
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout
+        params.keepalive_pool = conf.keepalive_pool
+    else
+        params.keepalive = conf.keepalive
     end
 
-    -- local token, err = openidc.access_token(opts, {storage = "shm"})
+    core.log.error("Sending request to token endpoint to obtain access token.")
+    local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, params)
+    core.log.error("Response body: ", httpc_res.body)
+    local json = cjson_s.decode(httpc_res.body)
+    core.log.error("Access token: ", json.access_token)
+    core.log.error("Expires in: ", json.expires_in)
+    core.log.error("Refresh token: ", json.refresh_token)
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
