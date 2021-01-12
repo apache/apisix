@@ -1,0 +1,87 @@
+name: CI Centos7
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test_apisix:
+    name: run ci on centos7
+    runs-on: ubuntu-latest
+
+    services:
+      etcd:
+        image: bitnami/etcd:3.4.0
+        ports:
+          - 2379:2379
+          - 2380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install Redis Cluster
+      run: |
+        docker run -d -p ${MASTER1_PORT}:6379 -p ${MASTER2_PORT}:6380 -p ${MASTER3_PORT}:6381 -p ${SLAVE1_PORT}:6382 -p ${SLAVE2_PORT}:6383 -p ${SLAVE3_PORT}:6384 --name redis-cluster vishnunair/docker-redis-cluster:latest
+      env:
+        MASTER1_PORT: 5000
+        MASTER2_PORT: 5001
+        MASTER3_PORT: 5002
+        SLAVE1_PORT: 5003
+        SLAVE2_PORT: 5004
+        SLAVE3_PORT: 5005
+
+    - name: Running Redis Cluster Test
+      run: |
+        sudo apt-get install -y redis-tools
+        docker ps -a
+        redis-cli -h 127.0.0.1 -p 5000 ping
+        redis-cli -h 127.0.0.1 -p 5000 cluster nodes
+
+    - name: Running etcd server with TLS
+      run: |
+        sudo docker run -d -p 12379:12379 -p 12380:12380 \
+        -e ALLOW_NONE_AUTHENTICATION=yes \
+        -e ETCD_ADVERTISE_CLIENT_URLS=https://0.0.0.0:12379 \
+        -e ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:12379 \
+        -e ETCD_CERT_FILE=/certs/etcd.pem \
+        -e ETCD_KEY_FILE=/certs/etcd.key \
+        -e GITHUB_ACTIONS=true \
+        -e CI=true \
+        -v /home/runner/work/apisix/apisix/t/certs:/certs \
+        bitnami/etcd:3.4.0
+
+    - name: run centos7 docker and mapping apisix into container
+      run: |
+        docker run -itd -v /home/runner/work/apisix/apisix:/tmp/apisix --name centos7Instance --net="host" docker.io/centos:7 /bin/bash
+
+    - name: run other docker containers for test
+      run: |
+        docker run --rm -itd -p 6379:6379 --name apisix_redis redis:3.0-alpine
+        docker run --rm -itd -e HTTP_PORT=8888 -e HTTPS_PORT=9999 -p 8888:8888 -p 9999:9999 mendhak/http-https-echo
+        docker run --rm -itd -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=123456 -p 8090:8080 -p 8443:8443 sshniro/keycloak-apisix
+        docker network create kafka-net --driver bridge
+        docker run --name zookeeper-server -d -p 2181:2181 --network kafka-net -e ALLOW_ANONYMOUS_LOGIN=yes bitnami/zookeeper:3.6.0
+        docker run --name kafka-server1 -d --network kafka-net -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 -e KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092 -p 9092:9092 -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true bitnami/kafka:latest
+        docker run --name eureka -d -p 8761:8761 --env ENVIRONMENT=apisix --env spring.application.name=apisix-eureka --env server.port=8761 --env eureka.instance.ip-address=127.0.0.1 --env eureka.client.registerWithEureka=true --env eureka.client.fetchRegistry=false --env eureka.client.serviceUrl.defaultZone=http://127.0.0.1:8761/eureka/ bitinit/eureka
+        sleep 5
+        docker exec -i kafka-server1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server:2181 --replication-factor 1 --partitions 1 --topic test2
+        docker run --rm --name skywalking -d -p 1234:1234 -p 11800:11800 -p 12800:12800 apache/skywalking-oap-server
+
+    - name: install dependencies
+      run: |
+        docker exec centos7Instance bash -c "cp -r /tmp/apisix ./apisix"
+        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh install_dependencies"
+
+    - name: run test cases
+      run: |
+        docker exec centos7Instance bash -c "./apisix/utils/centos7-ci.sh run_case"
