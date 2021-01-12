@@ -150,6 +150,10 @@ local function authz_keycloak_parse_json_response(response, ignore_body_on_succe
   return res, err
 end
 
+local function decorate_request(http_request_decorator, req)
+  return http_request_decorator and http_request_decorator(req) or req
+end
+
 -- get the Discovery metadata from the specified URL.
 local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout, exptime, proxy_opts, http_request_decorator)
   log.debug("authz_keycloak_discover: URL is: " .. url)
