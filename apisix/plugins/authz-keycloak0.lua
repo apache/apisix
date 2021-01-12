@@ -20,17 +20,20 @@ local sub_str   = string.sub
 local url       = require "net.url"
 local tostring  = tostring
 local ngx       = ngx
-local plugin_name = "authz-keycloak0"
-local openidc = require("resty.openidc")
 local cjson = require("cjson")
 local cjson_s = require("cjson.safe")
+
+local plugin_name = "authz-keycloak0"
+local log = core.log
 
 
 
 local schema = {
     type = "object",
     properties = {
+        discovery = {type = "string", minLength = 1, maxLength = 4096},
         token_endpoint = {type = "string", minLength = 1, maxLength = 4096},
+        resource_registration_endpoint = {type = "string", minLength = 1, maxLength = 4096},
         permissions = {
             type = "array",
             items = {
@@ -58,7 +61,6 @@ local schema = {
         ssl_verify = {type = "boolean", default = true},
         client_id = {type = "string", minLength = 1, maxLength = 100},
         client_secret = {type = "string", minLength = 1, maxLength = 100},
-        resource_set_endpoint = {type = "string", minLength = 1, maxLength = 4096},
     },
     required = {"token_endpoint"}
 }
@@ -83,22 +85,158 @@ local function is_path_protected(conf)
     return true
 end
 
+-- Retrieve value from server-wide cache, if available.
+local function authz_keycloak_cache_get(type, key)
+  local dict = ngx.shared[type]
+  local value
+  if dict then
+    value = dict:get(key)
+    if value then log(DEBUG, "cache hit: type=", type, " key=", key) end
+  end
+  return value
+end
+
+-- Set value in server-wide cache, if available.
+local function authz_keycloak_cache_set(type, key, value, exp)
+  local dict = ngx.shared[type]
+  if dict and (exp > 0) then
+    local success, err, forcible = dict:set(key, value, exp)
+    log.debug("cache set: success=", success, " err=", err, " forcible=", forcible)
+  end
+end
+
+local function authz_keycloak_configure_timeouts(httpc, timeout)
+  if timeout then
+    if type(timeout) == "table" then
+      local r, e = httpc:set_timeouts(timeout.connect or 0, timeout.send or 0, timeout.read or 0)
+    else
+      local r, e = httpc:set_timeout(timeout)
+    end
+  end
+end
+
+-- Set outgoing proxy options.
+local function authz_keycloak_configure_proxy(httpc, proxy_opts)
+  if httpc and proxy_opts and type(proxy_opts) == "table" then
+    log(DEBUG, "authz_keycloak_configure_proxy : use http proxy")
+    httpc:set_proxy_options(proxy_opts)
+  else
+    log(DEBUG, "authz_keycloak_configure_proxy : don't use http proxy")
+  end
+end
+
+-- Parse the JSON result from a call to the OP.
+local function authz_keycloak_parse_json_response(response, ignore_body_on_success)
+  local ignore_body_on_success = ignore_body_on_success or false
+
+  local err
+  local res
+
+  -- Check the response from the OP.
+  if response.status ~= 200 then
+    err = "response indicates failure, status=" .. response.status .. ", body=" .. response.body
+  else
+    if ignore_body_on_success then
+      return nil, nil
+    end
+
+    -- Decode the response and extract the JSON object.
+    res = cjson_s.decode(response.body)
+
+    if not res then
+      err = "JSON decoding failed"
+    end
+  end
+
+  return res, err
+end
+
+-- get the Discovery metadata from the specified URL.
+local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout, exptime, proxy_opts, http_request_decorator)
+  log.debug("authz_keycloak_discover: URL is: " .. url)
+
+  local json, err
+  local v = authz_keycloak_cache_get("discovery", url)
+  if not v then
+
+    log.debug("Discovery data not in cache, making call to discovery endpoint.")
+    -- Make the call to the discovery endpoint.
+    local httpc = http.new()
+    authz_keycloak_configure_timeouts(httpc, timeout)
+    authz_keycloak_configure_proxy(httpc, proxy_opts)
+    local res, error = httpc:request_uri(url, decorate_request(http_request_decorator, {
+      ssl_verify = (ssl_verify ~= "no"),
+      keepalive = (keepalive ~= "no")
+    }))
+    if not res then
+      err = "accessing discovery url (" .. url .. ") failed: " .. error
+      log.error(err)
+    else
+      log.debug("response data: " .. res.body)
+      json, err = authz_keycloak_parse_json_response(res)
+      if json then
+        authz_keycloak_cache_set("discovery", url, cjson.encode(json), exptime or 24 * 60 * 60)
+      else
+        err = "could not decode JSON from Discovery data" .. (err and (": " .. err) or '')
+        log.error(err)
+      end
+    end
+
+  else
+    json = cjson.decode(v)
+  end
+
+  return json, err
+end
+
+-- Turn a discovery url set in the opts dictionary into the discovered information.
+local function authz_keycloak_ensure_discovered_data(opts)
+  local err
+  if type(opts.discovery) == "string" then
+    local discovery
+    discovery, err = authz_keycloak_discover(opts.discovery, opts.ssl_verify, opts.keepalive, opts.timeout, opts.jwk_expires_in, opts.proxy_opts, opts.http_request_decorator)
+    if not err then
+      opts.discovery = discovery
+    end
+  end
+  return err
+end
 
 local function evaluate_permissions(conf, token, uri, ctx)
-    local url_decoded = url.parse(conf.token_endpoint)
-    local host = url_decoded.host
-    local port = url_decoded.port
+    if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
+        return 403
+    end
 
-    if not port then
-        if url_decoded.scheme == "https" then
-            port = 443
+    -- Ensure discovered data.
+    local err = authz_keycloak_ensure_discovered_data(conf)
+    if err then
+      return nil, err
+    end
+
+    -- Get token endpoint URL.
+    local token_endpoint
+    if not (conf and (conf.token_endpoint or (conf.discovery and conf.discovery.token_endpoint))) then
+      log.error("No token endpoint supplied.")
+      return 500, "No token endpoint supplied."
+    else
+        if conf.token_endpoint then
+            token_endpoint = conf.token_endpoint
         else
-            port = 80
+            token_endpoint = conf.discovery.token_endpoint
         end
     end
 
-    if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
-        return 403
+    -- Get resource registration endpoint URL.
+    local resource_registration_endpoint
+    if not (conf and (conf.resource_registration_endpoint or (conf.discovery and conf.discovery.resource_registration_endpoint))) then
+      log.error("No resource registration endpoint supplied.")
+      return 500, "No resource registration endpoint supplied."
+    else
+        if conf.token_endpoint then
+            resource_registration_endpoint = conf.resource_registration_endpoint
+        else
+            resource_registration_endpoint = conf.discovery.resource_registration_endpoint
+        end
     end
 
     -- Get access token for Protection API.
@@ -128,7 +266,7 @@ local function evaluate_permissions(conf, token, uri, ctx)
     end
 
     core.log.error("Sending request to token endpoint to obtain access token.")
-    local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, params)
+    local httpc_res, httpc_err = httpc:request_uri(token_endpoint, params)
     core.log.error("Response body: ", httpc_res.body)
     local json = cjson_s.decode(httpc_res.body)
     core.log.error("Access token: ", json.access_token)
@@ -158,7 +296,7 @@ local function evaluate_permissions(conf, token, uri, ctx)
     end
 
     core.log.error("Sending request to token endpoint to obtain access token.")
-    local httpc_res, httpc_err = httpc:request_uri(conf.resource_set_endpoint, params)
+    local httpc_res, httpc_err = httpc:request_uri(resource_registration_endpoint, params)
     core.log.error("Response body: ", httpc_res.body)
     local json = cjson_s.decode('{"ids": ' .. httpc_res.body .. '}')
     for k, id in pairs(json.ids) do
@@ -200,9 +338,20 @@ local function evaluate_permissions(conf, token, uri, ctx)
         params.keepalive = conf.keepalive
     end
 
-    local httpc_res, httpc_err = httpc:request_uri(conf.token_endpoint, params)
+    local httpc_res, httpc_err = httpc:request_uri(token_endpoint, params)
 
     if not httpc_res then
+        local url_decoded = url.parse(conf.token_endpoint)
+        local host = url_decoded.host
+        local port = url_decoded.port
+
+        if not port then
+            if url_decoded.scheme == "https" then
+                port = 443
+            else
+                port = 80
+            end
+        end
         core.log.error("error while sending authz request to [", host ,"] port[",
                         tostring(port), "] ", httpc_err)
         return 500, httpc_err
