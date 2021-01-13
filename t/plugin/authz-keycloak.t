@@ -30,7 +30,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
-                                   token_endpoint = "https://efactory-security-portal.salzburgresearch.at/",
+                                   token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
                                    grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
                                    })
             if not ok then
@@ -55,7 +55,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
-                                   discovery = "https://efactory-security-portal.salzburgresearch.at/.well-known/uma2-configuration",
+                                   discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
                                    grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
                                    })
             if not ok then
@@ -79,8 +79,8 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({discovery = "https://efactory-security-portal.salzburgresearch.at/.well-known/uma2-configuration",
-                                                 token_endpoint = "https://efactory-security-portal.salzburgresearch.at/",
+            local ok, err = plugin.check_schema({discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
+                                                 token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
                                                  permissions = {"res:customer#scopes:view"},
                                                  timeout = 1000,
                                                  audience = "University",
