@@ -26,7 +26,7 @@
 - [**How To Enable**](#how-to-Enable)
 - [**How To Configure**](#how-to-configure)
 - [**Metadata**](#metadata)
-- [**Batch Api Request/Response**](#batch-api-request/response)
+- [**Batch Api Request/Response**](#batch-api-requestresponse)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
