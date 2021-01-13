@@ -320,13 +320,6 @@ local function sync_data(self)
     local res = dir_res.body.node
     local err_msg = dir_res.body.message
     if err_msg then
-        if err_msg == "The event in requested index is outdated and cleared"
-           and dir_res.body.errorCode == 401 then
-            self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err_msg,
-                     ", need to fully reload")
-            return false
-        end
         return false, err
     end
 
