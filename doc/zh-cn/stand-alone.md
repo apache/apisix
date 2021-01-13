@@ -228,3 +228,70 @@ ssl:
             - "yourdomain.com"
 #END
 ```
+
+#### 配置 global rule
+
+```yaml
+global_rules:
+    -
+        id: 1
+        plugins:
+            response-rewrite:
+                body: "hello\n"
+```
+
+#### 配置 consumer
+
+```yaml
+consumers:
+  - username: jwt
+    plugins:
+        jwt-auth:
+            key: user-key
+            secret: my-secret-key
+```
+
+#### 配置 plugin metadata
+
+```yaml
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+plugin_metadata:
+  - id: http-logger # 注意 id 是插件名称
+    log_format:
+        host: "$host",
+        remote_addr: "$remote_addr"
+```
+
+#### 配置 stream route
+
+```yaml
+stream_routes:
+  - server_addr: 127.0.0.1
+    server_port: 1985
+    id: 1
+    upstream_id: 1
+    plugins:
+      mqtt-proxy:
+        protocol_name: "MQTT"
+        protocol_level: 4
+        upstream:
+          ip: "127.0.0.1"
+          port: 1995
+upstreams:
+  - nodes:
+      "127.0.0.1:1995": 1
+    type: roundrobin
+    id: 1
+```
