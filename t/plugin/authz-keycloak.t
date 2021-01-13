@@ -521,7 +521,7 @@ true
 
 
 
-=== TEST 13: Add htttps endpoint with ssl_verify true (default)
+=== TEST 13: Add https endpoint with ssl_verify true (default)
 --- config
     location /t {
         content_by_lua_block {
