@@ -53,6 +53,9 @@ local metadata_schema = {
     },
     required = {"host", "port"}
 }
+local schema = {
+    type = "object",
+}
 
 
 local log_level = {
@@ -77,6 +80,7 @@ local _M = {
     version = 0.1,
     priority = 1091,
     name = plugin_name,
+    schema = schema,
     metadata_schema = metadata_schema,
 }
 
