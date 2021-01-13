@@ -156,6 +156,10 @@ local function run_plugin(phase, plugins, api_ctx)
             if phase_func then
                 local code, body = phase_func(plugins[i + 1], api_ctx)
                 if code or body then
+                    if code >= 400 then
+                        core.log.warn(plugins[i].name, " exits with http status code ", code)
+                    end
+
                     core.response.exit(code, body)
                 end
             end
@@ -537,10 +541,10 @@ function _M.http_access_phase()
         run_plugin("access", plugins, api_ctx)
     end
 
-    local ok, err = set_upstream(route, api_ctx)
-    if not ok then
-        core.log.error("failed to parse upstream: ", err)
-        core.response.exit(500)
+    local code, err = set_upstream(route, api_ctx)
+    if code then
+        core.log.error("failed to set upstream: ", err)
+        core.response.exit(code)
     end
 
     set_upstream_host(api_ctx)
@@ -658,7 +662,14 @@ function _M.http_header_filter_phase()
     then
         set_resp_upstream_status(up_status)
     elseif up_status and #up_status > 3 then
-        local last_status = str_sub(up_status, -3)
+        -- the up_status can be "502, 502" or "502, 502 : "
+        local last_status
+        if str_byte(up_status, -1) == str_byte(" ") then
+            last_status = str_sub(up_status, -6, -3)
+        else
+            last_status = str_sub(up_status, -3)
+        end
+
         if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
             set_resp_upstream_status(up_status)
         end
@@ -894,8 +905,8 @@ function _M.stream_preread_phase()
 
     run_plugin("preread", plugins, api_ctx)
 
-    local ok, err = set_upstream(matched_route, api_ctx)
-    if not ok then
+    local code, err = set_upstream(matched_route, api_ctx)
+    if code then
         core.log.error("failed to set upstream: ", err)
         return ngx_exit(1)
     end

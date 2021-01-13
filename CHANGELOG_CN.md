@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+- [2.2.0](#220)
 - [2.1.0](#210)
 - [2.0.0](#200)
 - [1.5.0](#150)
@@ -33,6 +34,45 @@
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.2.0
+
+### Change
+
+- 默认不启用 node-status 插件 [#2968](https://github.com/apache/apisix/pull/2968)
+- upstreeam 配置中不再允许使用 k8s_deployment_info [#3098](https://github.com/apache/apisix/pull/3098)
+- 默认不再匹配路由中以 ':' 开头的参数变量 [#3154](https://github.com/apache/apisix/pull/3154)
+
+### Core
+
+- :sunrise: 允许一个 consumer 关联多个认证插件 [#2898](https://github.com/apache/apisix/pull/2898)
+- :sunrise: 增加 etcd 重试间隔，并允许配置 [#2977](https://github.com/apache/apisix/pull/2977)
+- :sunrise: 允许启用或禁用 route [#2943](https://github.com/apache/apisix/pull/2943)
+- :sunrise: 允许通过 graphql 属性进行路由 [#2964](https://github.com/apache/apisix/pull/2964)
+- :sunrise: 共享 etcd 鉴权 token [#2932](https://github.com/apache/apisix/pull/2932)
+- :sunrise: 新增 control API [#3048](https://github.com/apache/apisix/pull/3048)
+
+### Plugin
+
+- :sunrise: limt-count 中使用 'remote_addr' 作为默认 key [#2927](https://github.com/apache/apisix/pull/2927)
+- :sunrise: 支持在 fault-injection 的 abort.body 中使用变量 [#2986](https://github.com/apache/apisix/pull/2986)
+- :sunrise: 新增插件 `server-info` [#2926](https://github.com/apache/apisix/pull/2926)
+- :sunrise: 增加 batch process 指标 [#3070](https://github.com/apache/apisix/pull/3070)
+- :sunrise: 新增 traffic-split 插件 [#2935](https://github.com/apache/apisix/pull/2935)
+- :sunrise: proxy-rewrite 支持在 header 中使用变量 [#3144](https://github.com/apache/apisix/pull/3144)
+- :sunrise: openid-connect 插件增加更多配置项 [#2903](https://github.com/apache/apisix/pull/2903)
+- :sunrise: proxy-rewrite 支持在 upstream_uri 中使用变量 [#3139](https://github.com/apache/apisix/pull/3139)
+
+### Bugfix
+
+- basic-auth 应该在 rewrite phase 执行 [#2905](https://github.com/apache/apisix/pull/2905)
+- http/udp-logger 中插件配置运行时变更没有生效 [#2901](https://github.com/apache/apisix/pull/2901)
+- 修复 limit-conn 对象没有被正确释放的问题 [#2465](https://github.com/apache/apisix/pull/2465)
+- 修复自动生成的 id 可能重复的问题 [#3003](https://github.com/apache/apisix/pull/3003)
+- 修复 OpenResty 1.19 下 ctx 互相影响的问题。**对于使用 OpenResty 1.19 的用户，请尽快升级到该版本。** [#3105](https://github.com/apache/apisix/pull/3105)
+- 修复 route.vars 字段的校验 [#3124](https://github.com/apache/apisix/pull/3124)
+
+更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/10)
+
 ## 2.1.0
 
 ### Core
@@ -45,20 +85,20 @@
 - 增加 `X-APISIX-Upstream-Status` 头来区分 5xx 错误来自上游还是 APISIX 自身。[#2817](https://github.com/apache/apisix/pull/2817)
 - 支持 Nginx 配置片段。[#2803](https://github.com/apache/apisix/pull/2803)
 
-## Plugin
+### Plugin
 
 - :sunrise: **升级协议来 Apache Skywalking 8.0**[#2389](https://github.com/apache/apisix/pull/2389). 这个版本只支持 skywalking 8.0 协议。此插件默认关闭，需要修改 config.yaml 来开启。这是不向下兼容的修改。
 - :sunrise: 新增阿里云 sls 日志服务插件。[#2169](https://github.com/apache/apisix/issues/2169)
 - proxy-cache: cache_zone 字段改为可选.[#2776](https://github.com/apache/apisix/pull/2776)
 - 在数据平面校验插件的配置。[#2856](https://github.com/apache/apisix/pull/2856)
 
-## Bugfix
+### Bugfix
 
 - :bug: fix(etcd): 处理 etcd compaction.[#2687](https://github.com/apache/apisix/pull/2687)
 - 将 `conf/cert` 中的测试证书移动到 `t/certs` 目录中，并且默认关闭 SSL。这是不向下兼容的修改。 [#2112](https://github.com/apache/apisix/pull/2112)
 - 检查 decrypt key 来阻止 lua thread 中断。 [#2815](https://github.com/apache/apisix/pull/2815)
 
-## 不向下兼容特性预告
+### 不向下兼容特性预告
 
 - 在 2.3 发布版本中，consumer 将只支持用户名，废弃 id，consumer需要在 etcd 中手工清理掉 id 字段，不然使用时 schema 校验会报错
 - 在 2.3 发布版本中，将不再支持在 upstream 上开启 websocket
@@ -79,7 +119,7 @@
 - 支持 http 和 https 监听多个端口。[#2409](https://github.com/apache/apisix/pull/2409)
 - 实现 `core.sleep` 函数。[#2397](https://github.com/apache/apisix/pull/2397)
 
-## Plugin
+### Plugin
 
 - :sunrise: **增加 AK/SK(HMAC) 认证插件。**[#2192](https://github.com/apache/apisix/pull/2192)
 - :sunrise: 增加 referer-restriction 插件。[#2352](https://github.com/apache/apisix/pull/2352)
@@ -87,7 +127,7 @@
 - proxy-cache 插件支持存储临时文件。[#2317](https://github.com/apache/apisix/pull/2317)
 - http-logger 插件支持通过 admin API 来指定文件格式。[#2309](https://github.com/apache/apisix/pull/2309)
 
-## Bugfix
+### Bugfix
 
 - :bug: **`高优先级`** 当数据平面接收到删除某一个资源(路由、上游等)的指令时，没有正确的清理缓存，导致存在的资源也会找不到。这个问题在长时间、频繁删除操作的情况下才会出现。[#2168](https://github.com/apache/apisix/pull/2168)
 - 修复路由优先级不生效的问题。[#2447](https://github.com/apache/apisix/pull/2447)
@@ -97,7 +137,7 @@
 
 更多的变动可以参考[里程碑](https://github.com/apache/apisix/milestone/7)
 
-## CVE
+### CVE
 
 - 修复 Admin API 默认访问令牌漏洞
 

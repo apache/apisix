@@ -272,7 +272,6 @@ local nodes_schema = {
                     minimum = 0,
                 }
             },
-            minProperties = 1,
         },
         {
             type = "array",
@@ -688,7 +687,9 @@ _M.global_rule = {
     type = "object",
     properties = {
         id = id_schema,
-        plugins = plugins_schema
+        plugins = plugins_schema,
+        create_time = timestamp_def,
+        update_time = timestamp_def
     },
     required = {"plugins"},
     additionalProperties = false,
