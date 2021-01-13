@@ -95,6 +95,7 @@ local function authz_keycloak_cache_set(type, key, value, exp)
         log.error("cache set: success=", success, " err=", err, " forcible=", forcible)
     else
         log.debug("cache set: success=", success, " err=", err, " forcible=", forcible)
+    end
   end
 end
 
