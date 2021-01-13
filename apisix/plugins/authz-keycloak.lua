@@ -15,12 +15,11 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local json      = require("apisix.core.json")
 local http      = require "resty.http"
 local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
-local cjson     = require("cjson")
-local cjson_s   = require("cjson.safe")
 local plugin_name = "authz-keycloak"
 
 local log = core.log
@@ -55,7 +54,10 @@ local schema = {
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         ssl_verify = {type = "boolean", default = true},
-    }
+    },
+    anyOf = {
+        {required = {"discovery"}},
+        {required = {"token_endpoint"}}}
 }
 
 
@@ -92,7 +94,10 @@ local function authz_keycloak_cache_set(type, key, value, exp)
   local dict = ngx.shared[type]
   if dict and (exp > 0) then
     local success, err, forcible = dict:set(key, value, exp)
-    log.debug("cache set: success=", success, " err=", err, " forcible=", forcible)
+    if err
+        log.err("cache set: success=", success, " err=", err, " forcible=", forcible)
+    else
+        log.debug("cache set: success=", success, " err=", err, " forcible=", forcible)
   end
 end
 
@@ -136,10 +141,10 @@ local function authz_keycloak_parse_json_response(response, ignore_body_on_succe
     end
 
     -- Decode the response and extract the JSON object.
-    res = cjson_s.decode(response.body)
+    res, err = json.decode(response.body)
 
     if not res then
-      err = "JSON decoding failed"
+      err = "JSON decoding failed: " .. err
     end
   end
 
@@ -177,7 +182,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
       log.debug("response data: " .. res.body)
       json, err = authz_keycloak_parse_json_response(res)
       if json then
-        authz_keycloak_cache_set("discovery", url, cjson.encode(json), exptime or 24 * 60 * 60)
+        authz_keycloak_cache_set("discovery", url, json.encode(json), exptime or 24 * 60 * 60)
       else
         err = "could not decode JSON from Discovery data" .. (err and (": " .. err) or '')
         log.error(err)
@@ -185,7 +190,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
     end
 
   else
-    json = cjson.decode(v)
+    json = json.decode(v)
   end
 
   return json, err
