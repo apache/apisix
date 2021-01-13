@@ -55,7 +55,7 @@ local schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         ssl_verify = {type = "boolean", default = true},
     },
-    anyOf = {
+    oneOf = {
         {required = {"discovery"}},
         {required = {"token_endpoint"}}}
 }
