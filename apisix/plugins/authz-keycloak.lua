@@ -128,7 +128,6 @@ end
 
 -- Parse the JSON result from a call to the OP.
 local function authz_keycloak_parse_json_response(response)
-  local ignore_body_on_success = ignore_body_on_success or false
   local err
   local res
 
