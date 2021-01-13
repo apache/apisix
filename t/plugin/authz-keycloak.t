@@ -118,7 +118,7 @@ done
 --- request
 GET /t
 --- response_body
-Neither discovery nor token endpoint given.
+object matches none of the requireds: ["discovery"] or ["token_endpoint"]
 done
 --- no_error_log
 [error]
