@@ -91,8 +91,8 @@ local function authz_keycloak_cache_set(type, key, value, exp)
   local dict = ngx.shared[type]
   if dict and (exp > 0) then
     local success, err, forcible = dict:set(key, value, exp)
-    if err
-        log.err("cache set: success=", success, " err=", err, " forcible=", forcible)
+    if err then
+        log.error("cache set: success=", success, " err=", err, " forcible=", forcible)
     else
         log.debug("cache set: success=", success, " err=", err, " forcible=", forcible)
   end
