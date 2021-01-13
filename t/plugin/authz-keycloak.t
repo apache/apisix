@@ -24,7 +24,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity
+=== TEST 1: sanity (using token endpoint)
 --- config
     location /t {
         content_by_lua_block {
@@ -49,7 +49,32 @@ done
 
 
 
-=== TEST 2: full schema check
+=== TEST 2: sanity (using discovery endpoint)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-keycloak")
+            local ok, err = plugin.check_schema({
+                                   discovery = "https://efactory-security-portal.salzburgresearch.at/.well-known/uma2-configuration",
+                                   grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
+                                   })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 3: full schema check
 --- config
     location /t {
         content_by_lua_block {
@@ -77,7 +102,7 @@ done
 
 
 
-=== TEST 3: token_endpoint and discovery missing
+=== TEST 4: token_endpoint and discovery both missing
 --- config
     location /t {
         content_by_lua_block {
@@ -100,7 +125,7 @@ done
 
 
 
-=== TEST 4: add plugin with view course permissions (using token endpoint)
+=== TEST 5: add plugin with view course permissions (using token endpoint)
 --- config
     location /t {
         content_by_lua_block {
@@ -166,7 +191,7 @@ passed
 
 
 
-=== TEST 5: Get access token for teacher and access view course route
+=== TEST 6: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -214,7 +239,7 @@ true
 
 
 
-=== TEST 6: invalid access token
+=== TEST 7: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +266,7 @@ Invalid bearer token
 
 
 
-=== TEST 7: add plugin with view course permissions (using discovery)
+=== TEST 8: add plugin with view course permissions (using discovery)
 --- config
     location /t {
         content_by_lua_block {
@@ -307,7 +332,7 @@ passed
 
 
 
-=== TEST 8: Get access token for teacher and access view course route
+=== TEST 9: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -355,7 +380,7 @@ true
 
 
 
-=== TEST 9: invalid access token
+=== TEST 10: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -382,7 +407,7 @@ Invalid bearer token
 
 
 
-=== TEST 10: add plugin for delete course route
+=== TEST 11: add plugin for delete course route
 --- config
     location /t {
         content_by_lua_block {
@@ -448,7 +473,7 @@ passed
 
 
 
-=== TEST 11: Get access token for student and delete course
+=== TEST 12: Get access token for student and delete course
 --- config
     location /t {
         content_by_lua_block {
@@ -496,7 +521,7 @@ true
 
 
 
-=== TEST 12: Add htttps endpoint with ssl_verify true (default)
+=== TEST 13: Add htttps endpoint with ssl_verify true (default)
 --- config
     location /t {
         content_by_lua_block {
@@ -562,7 +587,7 @@ passed
 
 
 
-=== TEST 13: TEST with fake token and https endpoint
+=== TEST 14: TEST with fake token and https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -592,7 +617,7 @@ error while sending authz request to [127.0.0.1] port[8443] 18: self signed cert
 
 
 
-=== TEST 14: Add htttps endpoint with ssl_verify false
+=== TEST 15: Add htttps endpoint with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -660,7 +685,7 @@ passed
 
 
 
-=== TEST 15: TEST for https based token verification with ssl_verify false
+=== TEST 16: TEST for https based token verification with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
