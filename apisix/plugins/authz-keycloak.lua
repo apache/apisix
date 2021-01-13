@@ -127,9 +127,8 @@ end
 
 
 -- Parse the JSON result from a call to the OP.
-local function authz_keycloak_parse_json_response(response, ignore_body_on_success)
+local function authz_keycloak_parse_json_response(response)
   local ignore_body_on_success = ignore_body_on_success or false
-
   local err
   local res
 
@@ -137,10 +136,6 @@ local function authz_keycloak_parse_json_response(response, ignore_body_on_succe
   if response.status ~= 200 then
     err = "response indicates failure, status=" .. response.status .. ", body=" .. response.body
   else
-    if ignore_body_on_success then
-      return nil, nil
-    end
-
     -- Decode the response and extract the JSON object.
     res, err = core.json.decode(response.body)
 
