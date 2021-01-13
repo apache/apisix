@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local json      = require("apisix.core.json")
 local http      = require "resty.http"
 local sub_str   = string.sub
 local type      = type
@@ -139,7 +138,7 @@ local function authz_keycloak_parse_json_response(response, ignore_body_on_succe
     end
 
     -- Decode the response and extract the JSON object.
-    res, err = json.decode(response.body)
+    res, err = core.json.decode(response.body)
 
     if not res then
       err = "JSON decoding failed: " .. err
@@ -180,7 +179,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
       log.debug("response data: " .. res.body)
       json, err = authz_keycloak_parse_json_response(res)
       if json then
-        authz_keycloak_cache_set("discovery", url, json.encode(json), exptime or 24 * 60 * 60)
+        authz_keycloak_cache_set("discovery", url, core.json.encode(json), exptime or 24 * 60 * 60)
       else
         err = "could not decode JSON from Discovery data" .. (err and (": " .. err) or '')
         log.error(err)
@@ -188,7 +187,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
     end
 
   else
-    json = json.decode(v)
+    json = core.json.decode(v)
   end
 
   return json, err
