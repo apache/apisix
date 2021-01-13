@@ -54,7 +54,7 @@ local schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         ssl_verify = {type = "boolean", default = true},
     },
-    oneOf = {
+    anyOf = {
         {required = {"discovery"}},
         {required = {"token_endpoint"}}}
 }
@@ -71,6 +71,10 @@ local _M = {
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
+
+
+-- Some auxiliary functions below heavily inspired by the excellent
+-- lua-resty-openidc module; see https://github.com/zmartzone/lua-resty-openidc
 
 
 -- Retrieve value from server-wide cache, if available.
