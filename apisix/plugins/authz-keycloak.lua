@@ -70,9 +70,6 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    if not conf.discovery and not conf.token_endpoint then
-        return false, 'Neither discovery nor token endpoint given.'
-    end
     return core.schema.check(schema, conf)
 end
 
