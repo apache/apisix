@@ -29,6 +29,8 @@ local rawset   = rawset
 local setmetatable = setmetatable
 local type     = type
 local string   = string
+local req_read_body = ngx.req.read_body
+local req_get_post_args = ngx.req.get_post_args
 
 local plugin_name = "wolf-rbac"
 
@@ -327,7 +329,7 @@ end
 local function get_args()
     local ctx = ngx.ctx.api_ctx
     local args, err
-    ngx.req.read_body()
+    req_read_body()
     if string.find(ctx.var.http_content_type or "","application/json",
                    1, true) then
         args, err = json.decode(ngx.req.get_body_data())
@@ -335,7 +337,7 @@ local function get_args()
             core.log.error("json.decode(", ngx.req.get_body_data(), ") failed! ", err)
         end
     else
-        args = ngx.req.get_post_args()
+        args = req_get_post_args()
     end
 
     return args

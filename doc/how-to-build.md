@@ -49,7 +49,7 @@ make deps
 ### Installation via RPM package (CentOS 7)
 
 ```shell
-sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.el7.noarch.rpm
+sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
 ```
 
 ### Installation via Luarocks (macOS not supported)

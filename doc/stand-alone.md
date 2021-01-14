@@ -46,7 +46,7 @@ apisix:
 
 In addition, since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
 
-## How to config rules
+### How to configure rules
 
 All of the rules are stored in one file which named `conf/apisix.yaml`,
 the APISIX will check if this file has any changed every second.
@@ -68,7 +68,7 @@ routes:
 
 *NOTE*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
-#### How to config Router
+### How to configure Router
 
 Single Router：
 
@@ -102,7 +102,7 @@ routes:
 #END
 ```
 
-#### How to config Router + Service
+### How to configure Router + Service
 
 ```yml
 routes:
@@ -119,7 +119,7 @@ services:
 #END
 ```
 
-#### How to config Router + Upstream
+### How to configure Router + Upstream
 
 ```yml
 routes:
@@ -135,7 +135,7 @@ upstreams:
 #END
 ```
 
-#### How to config Router + Service + Upstream
+### How to configure Router + Service + Upstream
 
 ```yml
 routes:
@@ -155,7 +155,7 @@ upstreams:
 #END
 ```
 
-#### How to config Plugins
+### How to configure Plugins
 
 ```yml
 # plugins listed here will be hot reloaded and override the boot configuration
@@ -167,7 +167,7 @@ plugins:
 #END
 ```
 
-#### How to enable SSL
+### How to enable SSL
 
 ```yml
 ssl:
@@ -227,4 +227,71 @@ ssl:
         snis:
             - "yourdomain.com"
 #END
+```
+
+### How to configure global rule
+
+```yaml
+global_rules:
+    -
+        id: 1
+        plugins:
+            response-rewrite:
+                body: "hello\n"
+```
+
+### How to configure consumer
+
+```yaml
+consumers:
+  - username: jwt
+    plugins:
+        jwt-auth:
+            key: user-key
+            secret: my-secret-key
+```
+
+### How to configure plugin metadata
+
+```yaml
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+plugin_metadata:
+  - id: http-logger # note the id is the plugin name
+    log_format:
+        host: "$host",
+        remote_addr: "$remote_addr"
+```
+
+### How to configure stream route
+
+```yaml
+stream_routes:
+  - server_addr: 127.0.0.1
+    server_port: 1985
+    id: 1
+    upstream_id: 1
+    plugins:
+      mqtt-proxy:
+        protocol_name: "MQTT"
+        protocol_level: 4
+        upstream:
+          ip: "127.0.0.1"
+          port: 1995
+upstreams:
+  - nodes:
+      "127.0.0.1:1995": 1
+    type: roundrobin
+    id: 1
 ```

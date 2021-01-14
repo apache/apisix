@@ -53,8 +53,10 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 * Linting/Style
 
-    Use a markdown linting tool to lint the content. The following is a [plugin](https://github.com/apache/apisix/issues/1273)
-    used by our community to lint the docs.
+    For linting both our Markdown and YAML files we use:
+
+    - npm based [markdownlint-cli](https://www.npmjs.com/package/markdownlint-cli)
+    - [yamllint](https://yamllint.readthedocs.io/en/stable/) which can be installed in multiple ways
 
 * Active Voice
 

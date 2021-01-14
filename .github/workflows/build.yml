@@ -59,7 +59,7 @@ jobs:
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Install Redis Cluster
-        if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'
+        if: startsWith(matrix.os_name, 'linux_openresty')
         run: |
           docker run -d -p ${MASTER1_PORT}:6379 -p ${MASTER2_PORT}:6380 -p ${MASTER3_PORT}:6381 -p ${SLAVE1_PORT}:6382 -p ${SLAVE2_PORT}:6383 -p ${SLAVE3_PORT}:6384 --name redis-cluster vishnunair/docker-redis-cluster:latest
         env:
@@ -71,7 +71,7 @@ jobs:
           SLAVE3_PORT: 5005
 
       - name: Running Redis Cluster Test
-        if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'
+        if: startsWith(matrix.os_name, 'linux_openresty')
         run: |
           sudo apt-get install -y redis-tools
           docker ps -a
@@ -79,7 +79,7 @@ jobs:
           redis-cli -h 127.0.0.1 -p 5000 cluster nodes
 
       - name: Running etcd server with TLS
-        if: matrix.os_name == 'linux_openresty' || matrix.os_name == 'linux_openresty_1_17'
+        if: startsWith(matrix.os_name, 'linux_openresty')
         run: |
             sudo docker run -d -p 12379:12379 -p 12380:12380 \
             -e ALLOW_NONE_AUTHENTICATION=yes \

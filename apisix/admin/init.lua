@@ -29,7 +29,7 @@ local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
 local type = type
-
+local req_read_body = ngx.req.read_body
 
 local events
 local MAX_REQ_BODY = 1024 * 1024 * 1.5      -- 1.5 MiB
@@ -219,7 +219,7 @@ local function run_stream()
         core.response.exit(404)
     end
 
-    ngx.req.read_body()
+    req_read_body()
     local req_body = ngx.req.get_body_data()
 
     if req_body then
