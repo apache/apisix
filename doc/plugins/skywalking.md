@@ -103,7 +103,7 @@ plugin_attr:
 
 ## Test Plugin
 
-### Run-Skywalking-Example
+### Run Skywalking Example
 
 #### e.g.
 
