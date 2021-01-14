@@ -369,9 +369,9 @@ local upstream_schema = {
             type        = "boolean",
         },
     },
-    anyOf = {
+    oneOf = {
         {required = {"type", "nodes"}},
-        {required = {"type", "service_name"}},
+        {required = {"type", "service_name", "discovery_type"}},
     },
     additionalProperties = false,
 }
