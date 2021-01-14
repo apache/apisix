@@ -70,6 +70,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ## 测试插件
 
 请求下接口，发现接口已经返回了`CORS`相关的header，代表插件生效
+
 ```shell
 curl http://127.0.0.1:9080/hello -v
 ...
@@ -85,6 +86,7 @@ curl http://127.0.0.1:9080/hello -v
 ## 禁用插件
 
 从配置中移除`cors`插件即可。
+
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {

@@ -53,6 +53,8 @@ nginx_config:
         set $my "var";
     http_admin_configuration_snippet: |
         log_format admin "$request_time $pipe";
+    http_end_configuration_snippet: |
+        server_names_hash_bucket_size 128;
     stream_configuration_snippet: |
         tcp_nodelay off;
 ...

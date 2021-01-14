@@ -88,6 +88,9 @@ apisix:
   router:
     http: 'radixtree_uri'         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
+                                  # radixtree_uri_with_parameter: like radixtree_uri but match uri with parameters,
+                                  #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
+                                  #   more details.
     ssl: 'radixtree_sni'          # radixtree_sni: match route by SNI(base on radixtree)
   # stream_proxy:                 # TCP/UDP proxy
   #   tcp:                        # TCP proxy port list
@@ -148,6 +151,9 @@ nginx_config:                     # config for render the template to generate n
     # The configuration should be well indented!
   http_admin_configuration_snippet: |
     # Add custom Nginx admin server configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_end_configuration_snippet: |
+    # Add custom Nginx http end configuration to nginx.conf.
     # The configuration should be well indented!
   stream_configuration_snippet: |
     # Add custom Nginx stream configuration to nginx.conf.
@@ -245,7 +251,8 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - uri-blocker
   - wolf-rbac
   - zipkin
-  # - server-info
+  - server-info
+  - traffic-split
 
 stream_plugins:
   - mqtt-proxy

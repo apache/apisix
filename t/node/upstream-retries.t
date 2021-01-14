@@ -26,7 +26,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set upstream(id: 1), no retries
+=== TEST 1: set upstream(id: 1), by default retries count = number of nodes
 --- config
     location /t {
         content_by_lua_block {
@@ -209,3 +209,61 @@ GET /hello
 qr/\[error\]/
 --- grep_error_log_out
 [error]
+
+
+
+=== TEST 10: set upstream, retries > number of nodes, only try number of nodes time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:1": 1,
+                        "127.0.0.2:1": 1
+                    },
+                    "retries": 3,
+                    "type": "roundrobin"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: hit routes
+--- request
+GET /hello
+--- error_code: 502
+--- error_log
+all upstream servers tried
+--- grep_error_log eval
+qr/connect\(\) failed/
+--- grep_error_log_out
+connect() failed
+connect() failed
+
+
+
+=== TEST 12: don't retry the same node twice
+--- request
+GET /hello
+--- error_code: 502
+--- error_log_like eval
+qr/proxy request to 127.0.0.1:1
+proxy request to 127.0.0.2:1
+|proxy request to 127.0.0.2:1
+proxy request to 127.0.0.1:1/

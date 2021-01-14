@@ -18,6 +18,7 @@
 -->
 
 The control API can be used to
+
 * expose APISIX internal state
 * control the behavior of a single isolate APISIX data panel
 
@@ -49,6 +50,7 @@ Here is the supported API:
 Introduced since `v2.2`.
 
 Return the jsonschema used by this APISIX instance in the format below:
+
 ```json
 {
     "main": {

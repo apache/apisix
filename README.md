@@ -19,7 +19,7 @@
 
 # Apache APISIX
 
-[![Build Status](https://travis-ci.org/apache/apisix.svg?branch=master)](https://travis-ci.org/apache/apisix)
+[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
 <p align="center">
@@ -99,6 +99,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Health Checks](doc/health-check.md): Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability.
   - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
   - [Proxy Mirror](doc/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
+  - [Traffic Split](doc/plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
 
 - **Fine-grained routing**
 
@@ -164,23 +165,31 @@ There are several ways to install the Apache Release version of APISIX:
 1. Source code compilation (applicable to all systems)
    - Installation runtime dependencies: OpenResty and etcd, and compilation dependencies: luarocks. Refer to [install dependencies documentation](doc/install-dependencies.md)
    - Download the latest source code release package:
+
      ```shell
      $ mkdir apisix-2.1
      $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
      $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
      ```
+
    - Install the dependencies：
+
      ```shell
      $ make deps
      ```
+
    - check version of APISIX:
+
      ```shell
      $ ./bin/apisix version
      ```
+
    - start APISIX:
+
      ```shell
      $ ./bin/apisix start
      ```
+
 2. [Docker image](https://hub.docker.com/r/apache/apisix) （applicable to all systems）
 
    By default, the latest Apache release package will be pulled:
@@ -194,14 +203,19 @@ There are several ways to install the Apache Release version of APISIX:
 3. RPM package（only for CentOS 7）
    - Installation runtime dependencies: OpenResty and etcd, refer to [install dependencies documentation](doc/install-dependencies.md#centos-7)
    - install APISIX：
+
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
    ```
+
    - check version of APISIX:
+
      ```shell
      $ apisix version
      ```
+
    - start APISIX:
+
      ```shell
      $ apisix start
      ```
@@ -307,6 +321,7 @@ Benchmark comparison test [details data](https://gist.github.com/membphis/137db9
 ![contributor-over-time](./doc/images/contributor-over-time.png)
 
 ## Videos And Articles
+
 - [Apache APISIX: How to implement plugin orchestration in API Gateway](https://www.youtube.com/watch?v=iEegNXOtEhQ)
 - [Improve Apache APISIX observability with Apache Skywalking](https://www.youtube.com/watch?v=DleVJwPs4i4)
 - [APISIX technology selection, testing and continuous integration](https://medium.com/@ming_wen/apache-apisixs-technology-selection-testing-and-continuous-integration-313221b02542)

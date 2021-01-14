@@ -57,17 +57,29 @@ __DATA__
                         "service": {"type":"object"},
                         "ssl": {"type":"object"},
                         "stream_route": {"type":"object"},
-                        "upstream": {"type":"object"}
-                    },
+                        "upstream": {"type":"object"},
+                        "upstream_hash_header_schema": {"type":"string"},
+                        "upstream_hash_vars_schema": {"type":"string"},
+                    },]] .. [[
                     "plugins": {
                         "example-plugin": {
                             "version": 0.1,
                             "priority": 0,
-                            "schema": {"type":"object"},
+                            "schema": {
+                                "type":"object",
+                                "properties": {
+                                    "disable": {"type": "boolean"}
+                                }
+                            },
                             "metadata_schema": {"type":"object"}
                         },
                         "mqtt-proxy": {
-                            "schema": {"type":"object"},
+                            "schema": {
+                                "type":"object",
+                                "properties": {
+                                    "disable": {"type": "boolean"}
+                                }
+                            },
                             "priority": 1000
                         },
                         "basic-auth": {

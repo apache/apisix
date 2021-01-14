@@ -15,16 +15,13 @@
 -- limitations under the License.
 --
 local require = require
-local router = require("resty.radixtree")
+local router = require("apisix.utils.router")
 local core = require("apisix.core")
-local http_route = require("apisix.http.route")
 local ipairs = ipairs
 local type = type
-local error = error
 local tab_insert = table.insert
 local loadstring = loadstring
 local pairs = pairs
-local user_routes
 local cached_version
 local host_router
 local only_uri_router
@@ -126,6 +123,7 @@ end
 
     local match_opts = {}
 function _M.match(api_ctx)
+    local user_routes = _M.user_routes
     if not cached_version or cached_version ~= user_routes.conf_version then
         create_radixtree_router(user_routes.values)
         cached_version = user_routes.conf_version
@@ -148,29 +146,6 @@ function _M.match(api_ctx)
 
     local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
     return ok
-end
-
-
-function _M.routes()
-    if not user_routes then
-        return nil, nil
-    end
-
-    return user_routes.values, user_routes.conf_version
-end
-
-
-function _M.init_worker(filter)
-    local err
-    user_routes, err = core.config.new("/routes", {
-            automatic = true,
-            item_schema = core.schema.route,
-            checker = http_route.check_route,
-            filter = filter,
-        })
-    if not user_routes then
-        error("failed to create etcd instance for fetching /routes : " .. err)
-    end
 end
 
 

@@ -103,7 +103,7 @@ local function local_dns_resolver(file_path)
 
     local dns_addrs = {}
     for line in file:lines() do
-        local addr, n = line:gsub("^nameserver%s+(%d+%.%d+%.%d+%.%d+)%s*$", "%1")
+        local addr, n = line:gsub("^nameserver%s+([^%s]+)%s*$", "%1")
         if n == 1 then
             table_insert(dns_addrs, addr)
         end
@@ -112,6 +112,8 @@ local function local_dns_resolver(file_path)
     file:close()
     return dns_addrs
 end
+-- exported for test
+_M.local_dns_resolver = local_dns_resolver
 
 
 local function version()

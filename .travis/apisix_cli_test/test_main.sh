@@ -675,6 +675,8 @@ nginx_config:
         set $my "var";
     http_admin_configuration_snippet: |
         log_format admin "$request_time $pipe";
+    http_end_configuration_snippet: |
+        server_names_hash_bucket_size 128;
     stream_configuration_snippet: |
         tcp_nodelay off;
 ' > conf/config.yaml
@@ -702,6 +704,18 @@ fi
 grep 'log_format admin "$request_time $pipe";' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: can't inject admin server configuration"
+    exit 1
+fi
+
+grep 'server_names_hash_bucket_size 128;' -A 2 conf/nginx.conf | grep "configuration snippet ends" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http end configuration"
+    exit 1
+fi
+
+grep 'server_names_hash_bucket_size 128;' -A 3 conf/nginx.conf | grep "}" > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: can't inject http end configuration"
     exit 1
 fi
 
@@ -925,3 +939,57 @@ if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; th
 fi
 
 echo "passed: Admin API can only be used with etcd config_center"
+
+# Check etcd connect refused
+git checkout conf/config.yaml
+
+echo '
+etcd:
+  host:
+    - "http://127.0.0.1:2389"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "connection refused"; then
+    echo "failed: apisix should echo \"connection refused\""
+    exit 1
+fi
+
+echo "passed: Show connection refused info successfully"
+
+# check etcd auth error
+git checkout conf/config.yaml
+
+export ETCDCTL_API=3
+etcdctl version
+etcdctl --endpoints=127.0.0.1:2379 user add "root:apache-api6"
+etcdctl --endpoints=127.0.0.1:2379 role add root
+etcdctl --endpoints=127.0.0.1:2379 user grant-role root root
+etcdctl --endpoints=127.0.0.1:2379 user get root
+etcdctl --endpoints=127.0.0.1:2379 auth enable
+etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
+
+echo '
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+  timeout: 30
+  user: root
+  password: apache-api7
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "invalid user ID or password"; then
+    echo "failed: should echo \"invalid user ID or password\""
+    exit 1
+fi
+
+echo "passed: show password error successfully"
+
+# clean etcd auth
+etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
+etcdctl --endpoints=127.0.0.1:2379 role delete root
+etcdctl --endpoints=127.0.0.1:2379 user delete root
+

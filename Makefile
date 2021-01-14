@@ -221,6 +221,7 @@ release-src:
 	--exclude logs \
 	--exclude t \
 	--exclude release \
+	--exclude $(RELEASE_SRC).tgz \
 	.
 
 	gpg --batch --yes --armor --detach-sig $(RELEASE_SRC).tgz

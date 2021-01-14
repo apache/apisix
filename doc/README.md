@@ -81,6 +81,7 @@
 * [request-validation](plugins/request-validation.md): Validates requests before forwarding to upstream.
 * [proxy-mirror](plugins/proxy-mirror.md): Provides the ability to mirror client requests.
 * [api-breaker](plugins/api-breaker.md): Circuit Breaker for API that stops requests forwarding to upstream in case of unhealthy state.
+* [traffic-split](plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
 
 ### Monitoring
 

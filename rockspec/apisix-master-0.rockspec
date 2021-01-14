@@ -42,7 +42,7 @@ dependencies = {
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.5",
+    "lua-resty-radixtree = 2.6",
     "lua-protobuf = 0.3.1",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
@@ -58,6 +58,7 @@ dependencies = {
     "resty-redis-cluster = 1.02-4",
     "lua-resty-expr = 1.0.0",
     "graphql = 0.0.2",
+    "luasocket = 3.0rc1-2",
 }
 
 build = {

@@ -20,6 +20,7 @@
 - [English](../../plugins/mqtt-proxy.md)
 
 # 目录
+
 - [**名字**](#名字)
 - [**属性**](#属性)
 - [**如何启用**](#如何启用)
@@ -89,4 +90,5 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 ```shell
 $ curl http://127.0.0.1:2379/v2/keys/apisix/stream_routes/1 -X DELETE
 ```
+
 现在就已经移除了 mqtt-proxy 插件了。

@@ -26,7 +26,7 @@
 - [**How To Enable**](#how-to-Enable)
 - [**How To Configure**](#how-to-configure)
 - [**Metadata**](#metadata)
-- [**Batch Api Request/Response**](#batch-api-request/response)
+- [**Batch Api Request/Response**](#batch-api-requestresponse)
 - [**Test Plugin**](#test-plugin)
 - [**Disable Plugin**](#disable-plugin)
 
@@ -70,6 +70,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | max_body_size       | integer  | required   |  1048576  |    > 0  | the maximum of request body size in bytes |
 
 ## Batch API Request/Response
+
 The plugin will create a API in `apisix` to handle your batch request.
 
 ### Batch API Request:
@@ -82,6 +83,7 @@ The plugin will create a API in `apisix` to handle your batch request.
 | pipeline | [HttpRequest](#HttpRequest) | required    |         |       | Request's detail                      |
 
 #### HttpRequest
+
 | Name       | Type    | Requirement | Default | Valid                                                                            | Description                                                                                             |
 | ---------- | ------- | ----------- | ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | version    | string  | optional    | 1.1     | [1.0, 1.1]                                                                       | http version                                                                                            |
@@ -93,9 +95,11 @@ The plugin will create a API in `apisix` to handle your batch request.
 | ssl_verify | boolean | optional    | false   |                                                                                  | verify if SSL cert matches hostname.                                                                    |
 
 ### Batch API Response：
+
 Response is `Array` of [HttpResponse](#HttpResponse).
 
 #### HttpResponse
+
 | Name    | Type    | Description           |
 | ------- | ------- | --------------------- |
 | status  | integer | http status code      |
@@ -106,6 +110,7 @@ Response is `Array` of [HttpResponse](#HttpResponse).
 ## Test Plugin
 
 You can pass your request detail to batch API( `/apisix/batch-requests` ), `apisix` can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
+
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 --header 'Content-Type: application/json' \
@@ -131,6 +136,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 ```
 
 response as below：
+
 ```json
 [
     {

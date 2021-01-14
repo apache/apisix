@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/redirect.md)
 
 # Summary
+
 - [**Name**](#name)
 - [**Attributes**](#attributes)
 - [**How To Enable**](#how-to-enable)
@@ -105,6 +106,7 @@ We can check the response code and the response header `Location`.
 It shows that the `redirect` plugin is in effect.
 
  Here is an example of redirect HTTP to HTTPS:
+
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
