@@ -520,7 +520,9 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
-|nodes           |必需|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。|`192.168.1.100:80`|
+|nodes           |必需，不能和 `service_name` 一起用|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。|`192.168.1.100:80`|
+|service_name   |必需，不能和 `nodes` 一起用|string|服务发现时使用的服务名，见[集成服务发现注册中心](./discovery.md)|`a-bootiful-client`|
+|discovery_type   |必需，如果设置了 `service_name` |string|服务发现类型，见[集成服务发现注册中心](./discovery.md)|`eureka`|
 |type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
 |key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](../health-check.md)||
