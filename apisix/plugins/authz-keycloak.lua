@@ -28,6 +28,7 @@ local schema = {
     properties = {
         discovery = {type = "string", minLength = 1, maxLength = 4096},
         token_endpoint = {type = "string", minLength = 1, maxLength = 4096},
+        resource_registration_endpoint = {type = "string", minLength = 1, maxLength = 4096},
         permissions = {
             type = "array",
             items = {
@@ -54,10 +55,21 @@ local schema = {
         ssl_verify = {type = "boolean", default = true},
         client_id = {type = "string", minLength = 1, maxLength = 100},
         client_secret = {type = "string", minLength = 1, maxLength = 100},
+        lazy_load_paths = {type = "boolean", default = false},
+        http_method_as_scope = {type = "boolean", default = false},
     },
     anyOf = {
         {required = {"discovery"}},
-        {required = {"token_endpoint"}}}
+        {required = {"token_endpoint"}}
+    },
+    dependencies = {
+        lazy_load_paths = {
+            anyOf = {
+                {required = {"discovery"}},
+                {required = {"resource_registration_endpoint"}}
+            }
+        }
+    }
 }
 
 
@@ -175,7 +187,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
       err = "Accessing discovery url (" .. url .. ") failed: " .. error
       log.error(err)
     else
-      log.debug("response data: " .. res.body)
+      log.debug("Response data: " .. res.body)
       json, err = authz_keycloak_parse_json_response(res)
       if json then
         authz_keycloak_cache_set("discovery", url, core.json.encode(json), exptime or 24 * 60 * 60)
@@ -225,6 +237,11 @@ local function authz_keycloak_get_token_endpoint(conf)
 end
 
 
+local function authz_keycloak_get_resource_registration_endpoint(conf)
+    return authz_keycloak_get_endpoint(conf, "resource_registration_endpoint")
+end
+
+
 -- computes access_token expires_in value (in seconds)
 local function authz_keycloak_access_token_expires_in(opts, expires_in)
   return (expires_in or opts.access_token_expires_in or 300)
@@ -250,6 +267,14 @@ local function authz_keycloak_ensure_sa_access_token(conf)
     local session = authz_keycloak_cache_get("access_tokens", token_endpoint .. ":" .. conf.client_id)
 
     if session then
+        -- Decode session string.
+        session, err = core.json.decode(session)
+
+        if not session then
+            -- Should never happen.
+            return 500, err
+        end
+
         local current_time = ngx.time()
 
         if current_time < session.access_token_expiration then
@@ -259,7 +284,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
         else
             -- Access token has expired.
             log.debug("Access token has expired.")
-            if session.refresh_token and (not session.refresh_token_expiration or current_time < refresh_token_expiration) then
+            if session.refresh_token and (not session.refresh_token_expiration or current_time < session.refresh_token_expiration) then
                 -- Try to get a new access token, using the refresh token.
                 log.debug("Trying to get new access token using refresh token.")
 
@@ -271,6 +296,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                     body =  ngx.encode_args({
                         grant_type = "refresh_token",
                         client_id = conf.client_id,
+                        client_secret = conf.client_secret,
                         refresh_token = session.refresh_token,
                     }),
                     ssl_verify = conf.ssl_verify,
@@ -290,7 +316,6 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                 end
 
                 log.debug("Response data: " .. res.body)
-
                 local json, err = authz_keycloak_parse_json_response(res)
 
                 if not json then
@@ -404,6 +429,54 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 end
 
 
+local function authz_keycloak_resolve_permission(conf, uri, scope, sa_access_token)
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout)
+
+    local params = {
+        method = "GET",
+        query = {uri = uri, matchingUri = "true"},
+        ssl_verify = conf.ssl_verify,
+        headers = {
+            ["Authorization"] = "Bearer " .. sa_access_token
+        }
+    }
+
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout
+        params.keepalive_pool = conf.keepalive_pool
+    else
+        params.keepalive = conf.keepalive
+    end
+
+    local res, err = httpc:request_uri(resource_registration_endpoint, params)
+
+    if not res then
+        err = "Accessing resource registration endpoint url (" .. url .. ") failed: " .. error
+        log.error(err)
+        return nil, err
+    end
+
+    log.debug("Response data: " .. res.body)
+    res.body = '{"resources": ' .. res.body .. '}'
+    local json, err = authz_keycloak_parse_json_response(res)
+
+    if not json then
+      err = "Could not decode JSON from resource registration endpoint" .. (err and (": " .. err) or '.')
+      log.error(err)
+      return nil, err
+    end
+
+    local permission = {}
+    for k, id in pairs(json.resources) do
+        permission[#permission+1] = id .. (scope and ("#" .. scope) or '')
+        core.log.error("Adding permission ", permissions[#permission])
+    end
+
+    return permission
+end
+
+
 local function is_path_protected(conf)
     -- TODO if permissions are empty lazy load paths from Keycloak
     if conf.permissions == nil then
@@ -413,28 +486,59 @@ local function is_path_protected(conf)
 end
 
 
-local function evaluate_permissions(conf, token)
-    if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
-        return 403
-    end
-
+local function evaluate_permissions(conf, ctx, token)
     -- Ensure discovered data.
     local err = authz_keycloak_ensure_discovered_data(conf)
     if err then
       return 500, err
     end
 
-    -- Ensure service account access token.
-    local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
-    if err then
-      return 500, err
+    local permission
+
+    if lazy_load_paths then
+        -- Ensure service account access token.
+        local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
+        if err then
+          return 500, err
+        end
+
+        -- Get resource registration endpoint URL.
+        local resource_registration_endpoint = authz_keycloak_get_resource_registration_endpoint(conf)
+        if not resource_registration_endpoint then
+            err = "Unable to determine registration endpoint."
+            log.error(err)
+            return 500, err
+        end
+        log.error("Resource registration endpoint: ", resource_registration_endpoint)
+
+        -- Determine scope from HTTP method, maybe.
+        local scope
+        if conf.http_method_as_scope then
+            scope = ctx.var.request_method
+        end
+
+        permission, err = authz_keycloak_resolve_permission(conf, ctx.var.request_uri, scope, sa_access_token)
+
+        if permission == nil then
+            return 500, err
+        end
+    else
+        -- Use statically configured permissions.
+        if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
+            return 403
+        end
+    end
+
+    if permission == nil then
+        return 500, "Unable to determine permission to check."
     end
 
     -- Get token endpoint URL.
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
     if not token_endpoint then
-      log.error("Unable to determine token endpoint.")
-      return 500, "Unable to determine token endpoint."
+        err = "Unable to determine token endpoint."
+        log.error(err)
+        return 500, err
     end
     log.debug("Token endpoint: ", token_endpoint)
 
@@ -447,7 +551,7 @@ local function evaluate_permissions(conf, token)
             grant_type = conf.grant_type,
             audience = conf.client_id,
             response_mode = "decision",
-            permission = conf.permissions
+            permission = permission
         }),
         ssl_verify = conf.ssl_verify,
         headers = {
@@ -499,7 +603,7 @@ function _M.access(conf, ctx)
         return 401, {message = "Missing JWT token in request"}
     end
 
-    local status, body = evaluate_permissions(conf, jwt_token)
+    local status, body = evaluate_permissions(conf, ctx, jwt_token)
     if status then
         return status, body
     end
