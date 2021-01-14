@@ -33,7 +33,7 @@ local lrucache_checker = core.lrucache.new({
 local _M = {}
 
 
-local function set_directly(ctx, key, ver, conf, parent)
+local function set_directly(ctx, key, ver, conf)
     if not ctx then
         error("missing argument ctx", 2)
     end
@@ -46,24 +46,22 @@ local function set_directly(ctx, key, ver, conf, parent)
     if not conf then
         error("missing argument conf", 2)
     end
-    if not parent then
-        error("missing argument parent", 2)
-    end
 
     ctx.upstream_conf = conf
     ctx.upstream_version = ver
     ctx.upstream_key = key
-    ctx.upstream_healthcheck_parent = parent
+    ctx.upstream_healthcheck_parent = conf.parent
     return
 end
 _M.set = set_directly
 
 
-local function create_checker(upstream, healthcheck_parent)
+local function create_checker(upstream)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
     end
 
+    local healthcheck_parent = upstream.parent
     local checker, err = healthcheck.new({
         name = "upstream#" .. healthcheck_parent.key,
         shm_name = "upstream-healthcheck",
@@ -85,27 +83,18 @@ local function create_checker(upstream, healthcheck_parent)
         end
     end
 
-    if upstream.parent then
-        core.table.insert(upstream.parent.clean_handlers, function ()
-            core.log.info("try to release checker: ", tostring(checker))
-            checker:clear()
-            checker:stop()
-        end)
-
-    else
-        core.table.insert(healthcheck_parent.clean_handlers, function ()
-            core.log.info("try to release checker: ", tostring(checker))
-            checker:clear()
-            checker:stop()
-        end)
-    end
+    core.table.insert(healthcheck_parent.clean_handlers, function ()
+        core.log.info("try to release checker: ", tostring(checker))
+        checker:clear()
+        checker:stop()
+    end)
 
     core.log.info("create new checker: ", tostring(checker))
     return checker
 end
 
 
-local function fetch_healthchecker(upstream, healthcheck_parent, version)
+local function fetch_healthchecker(upstream, version)
     if not upstream.checks then
         return
     end
@@ -115,8 +104,7 @@ local function fetch_healthchecker(upstream, healthcheck_parent, version)
     end
 
     local checker = lrucache_checker(upstream, version,
-                                     create_checker, upstream,
-                                     healthcheck_parent)
+                                     create_checker, upstream)
     return checker
 end
 
@@ -150,7 +138,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     set_directly(api_ctx, up_conf.type .. "#upstream_" .. tostring(up_conf),
-                 api_ctx.conf_version, up_conf, route)
+                 api_ctx.conf_version, up_conf)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
@@ -158,7 +146,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf, route, api_ctx.upstream_version)
+        local checker = fetch_healthchecker(up_conf, api_ctx.upstream_version)
         api_ctx.up_checker = checker
     end
 
@@ -219,6 +207,7 @@ function _M.init_worker()
                     upstream.value.nodes = new_nodes
                 end
 
+                upstream.value.parent = upstream
                 core.log.info("filter upstream: ", core.json.delay_encode(upstream))
             end,
         })
