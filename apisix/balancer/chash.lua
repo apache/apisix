@@ -39,8 +39,10 @@ local function fetch_chash_hash_key(ctx, upstream)
     elseif hash_on == "cookie" then
         chash_key = ctx.var["cookie_" .. key]
     elseif hash_on == "vars_combinations" then
-        chash_key = core.utils.resolve_var(key, ctx.var);
-        core.log.info("vars_combinations: " .. chash_key)
+        chash_key, err= core.utils.resolve_var(key, ctx.var);
+        if err then
+            core.log.error("could not resolve vars in ", key, " error: ", err)
+        end
     end
 
     if not chash_key then
