@@ -626,6 +626,8 @@ chash_key: "chash_val_4"
 chash_key: "chash_val_5"
 chash_key: "chash_val_6"
 
+
+
 === TEST 13: set route(two upstream node, type chash), hash_on vars_combinations
 --- config
     location /t {
@@ -659,6 +661,8 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 14: hit routes, hash_on custom header combinations
 --- config
