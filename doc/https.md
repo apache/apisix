@@ -31,7 +31,7 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 * `key`: PEM-encoded private key of the SSL key pair.
 * `snis`: Hostname(s) to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
 
-We will use the python script below to simplify the example:
+We will use the Python script below to simplify the example:
 
 ```python
 #!/usr/bin/env python
