@@ -628,7 +628,7 @@ chash_key: "chash_val_6"
 
 
 
-=== TEST 13: set route(two upstream node, type chash), hash_on vars_combinations
+=== TEST 13: set route(two upstream nodes, type chash), hash_on vars_combinations
 --- config
     location /t {
         content_by_lua_block {
