@@ -42,7 +42,6 @@ local schema = {
             enum = {"urn:ietf:params:oauth:grant-type:uma-ticket"},
             minLength = 1, maxLength = 100
         },
-        audience = {type = "string", minLength = 1, maxLength = 100},
         timeout = {type = "integer", minimum = 1000, default = 3000},
         policy_enforcement_mode = {
             type = "string",
@@ -53,6 +52,8 @@ local schema = {
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         ssl_verify = {type = "boolean", default = true},
+        client_id = {type = "string", minLength = 1, maxLength = 100},
+        client_secret = {type = "string", minLength = 1, maxLength = 100},
     },
     anyOf = {
         {required = {"discovery"}},
@@ -171,7 +172,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
       keepalive = (keepalive ~= "no")
     }))
     if not res then
-      err = "accessing discovery url (" .. url .. ") failed: " .. error
+      err = "Accessing discovery url (" .. url .. ") failed: " .. error
       log.error(err)
     else
       log.debug("response data: " .. res.body)
@@ -224,6 +225,92 @@ local function authz_keycloak_get_token_endpoint(conf)
 end
 
 
+-- computes access_token expires_in value (in seconds)
+local function authz_keycloak_access_token_expires_in(opts, expires_in)
+  return (expires_in or opts.access_token_expires_in or 300)
+         - 1 - (opts.access_token_expires_leeway or 0)
+end
+
+
+-- computes refresh_token expires_in value (in seconds)
+local function authz_keycloak_refresh_token_expires_in(opts, expires_in)
+  return (expires_in or opts.refresh_token_expires_in or 3600)
+         - 1 - (opts.refresh_token_expires_leeway or 0)
+end
+
+
+local authz_keycloak_ensure_sa_access_token(conf)
+    local token_endpoint = authz_keycloak_get_token_endpoint(conf)
+
+    if not token_endpoint then
+      log.error("Unable to determine token endpoint.")
+      return 500, "Unable to determine token endpoint."
+    end
+
+    core.log.debug("Getting access token for Protection API from token endpoint.")
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout)
+
+    local params = {
+        method = "POST",
+        body =  ngx.encode_args({
+            grant_type = "client_credentials",
+            client_id = conf.client_id,
+            client_secret = conf.client_secret,
+        }),
+        ssl_verify = conf.ssl_verify,
+        headers = {
+            ["Content-Type"] = "application/x-www-form-urlencoded"
+        }
+    }
+
+    local current_time = ngx.time()
+
+    local res, err = httpc:request_uri(token_endpoint, params)
+
+    if not res then
+        err = "Accessing token endpoint url (" .. url .. ") failed: " .. error
+        log.error(err)
+        return nil, err
+    end
+
+    log.debug("Response data: " .. res.body)
+    json, err = authz_keycloak_parse_json_response(res)
+
+    if not json
+      err = "Could not decode JSON from token endpoint" .. (err and (": " .. err) or '.')
+      log.error(err)
+      return nil, err
+    end
+
+    if not json.access_token then
+        err = "Response does not contain access_token field."
+        log.error(err)
+        return nil, err
+    end
+
+    local session = {}
+
+    -- Save access token.
+    session.access_token = json.access_token
+
+    -- Calculate and save access token expiry time.
+    session.access_token_expiration = current_time
+            + authz_keycloak_access_token_expires_in(conf, json.expires_in)
+
+    -- Save refresh token, maybe.
+    if json.refresh_token ~= nil then
+        session.refresh_token = json.refresh_token
+
+        -- Calculate and save refresh token expiry time.
+        session.refresh_token_expiration = current_time
+                + authz_keycloak_refresh_token_expires_in(conf, json.refresh_expires_in)
+    end
+
+    return session.access_token
+end
+
+
 local function is_path_protected(conf)
     -- TODO if permissions are empty lazy load paths from Keycloak
     if conf.permissions == nil then
@@ -244,6 +331,12 @@ local function evaluate_permissions(conf, token)
       return 500, err
     end
 
+    -- Ensure service account access token.
+    local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
+    if err then
+      return 500, err
+    end
+
     -- Get token endpoint URL.
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
     if not token_endpoint then
@@ -259,7 +352,7 @@ local function evaluate_permissions(conf, token)
         method = "POST",
         body =  ngx.encode_args({
             grant_type = conf.grant_type,
-            audience = conf.audience,
+            audience = conf.client_id,
             response_mode = "decision",
             permission = conf.permissions
         }),
