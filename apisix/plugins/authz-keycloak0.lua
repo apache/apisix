@@ -207,7 +207,7 @@ end
 local function authz_keycloak_get_endpoint(conf, endpoint)
     if conf and conf[endpoint] then
         return conf[endpoint]
-    elseif conf and conf.discovery and type(conf.discovery) == "table"
+    elseif conf and conf.discovery and type(conf.discovery) == "table" then
         return = conf.discovery[endpoint]
     end
 

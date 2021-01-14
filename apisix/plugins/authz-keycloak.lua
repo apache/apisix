@@ -275,7 +275,7 @@ local authz_keycloak_ensure_sa_access_token(conf)
     end
 
     log.debug("Response data: " .. res.body)
-    json, err = authz_keycloak_parse_json_response(res)
+    local json, err = authz_keycloak_parse_json_response(res)
 
     if not json
       err = "Could not decode JSON from token endpoint" .. (err and (": " .. err) or '.')
