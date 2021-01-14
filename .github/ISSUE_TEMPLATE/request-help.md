@@ -9,7 +9,6 @@ assignees: ''
 
 ### Issue description
 
-
 ### Environment
 
 * apisix version (cmd: `apisix version`):

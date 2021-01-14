@@ -14,12 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core     = require("apisix.core")
-local plugin   = require("apisix.plugin")
-local error    = error
-local ipairs   = ipairs
-local pairs    = pairs
-local type     = type
+local core           = require("apisix.core")
+local plugin         = require("apisix.plugin")
+local plugin_checker = require("apisix.plugin").plugin_checker
+local error          = error
+local ipairs         = ipairs
+local pairs          = pairs
+local type           = type
 local consumers
 
 
@@ -91,11 +92,17 @@ function _M.consumers()
 end
 
 
+local function check_consumer(consumer)
+    return plugin_checker(consumer, core.schema.TYPE_CONSUMER)
+end
+
+
 function _M.init_worker()
     local err
     consumers, err = core.config.new("/consumers", {
             automatic = true,
-            item_schema = core.schema.consumer
+            item_schema = core.schema.consumer,
+            checker = check_consumer,
         })
     if not consumers then
         error("failed to create etcd instance for fetching consumers: " .. err)

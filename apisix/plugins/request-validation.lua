@@ -18,6 +18,7 @@ local core          = require("apisix.core")
 local plugin_name   = "request-validation"
 local ngx           = ngx
 local io           = io
+local req_read_body = ngx.req.read_body
 
 local schema = {
     type = "object",
@@ -85,7 +86,7 @@ function _M.rewrite(conf)
     end
 
     if conf.body_schema then
-        ngx.req.read_body()
+        req_read_body()
         local req_body, error
         local body = ngx.req.get_body_data()
 

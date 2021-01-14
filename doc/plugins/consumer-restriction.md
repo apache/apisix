@@ -20,6 +20,7 @@
 - [中文](../zh-cn/plugins/consumer-restriction.md)
 
 # Summary
+
   - [Introduction](#introduction)
   - [Attributes](#attributes)
   - [Example](#example)
@@ -41,6 +42,7 @@ The `consumer-restriction` makes corresponding access restrictions based on diff
 | rejected_code | integer | optional     | 403           | [200,...]                       | The HTTP status code returned when the request is rejected.                                                                         |
 
 For the `type` field is an enumerated type, it can be `consumer_name` or `service_id`. They stand for the following meanings:
+
 * **consumer_name**: Add the `username` of `consumer` to a whitelist or blacklist (supporting single or multiple consumers) to restrict access to services or routes.
 * **service_id**: Add the `id` of the `service` to a whitelist or blacklist (supporting one or more services) to restrict access to the service. It needs to be used in conjunction with authorized plugins.
 

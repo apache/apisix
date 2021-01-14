@@ -27,6 +27,8 @@ local batch_processor_mt = {
 }
 local execute_func
 local create_buffer_timer
+local batch_metrics
+local prometheus = require("apisix.plugins.prometheus.exporter")
 
 
 local schema = {
@@ -131,7 +133,9 @@ function batch_processor:new(func, config)
         entry_buffer = { entries = {}, retry_count = 0},
         is_timer_running = false,
         first_entry_t = 0,
-        last_entry_t = 0
+        last_entry_t = 0,
+        route_id = config.route_id,
+        server_addr = config.server_addr,
     }
 
     return setmetatable(processor, batch_processor_mt)
@@ -146,8 +150,20 @@ function batch_processor:push(entry)
         return
     end
 
+    if not batch_metrics and prometheus.get_prometheus() and self.name
+       and self.route_id and self.server_addr then
+        batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
+                                                          "batch process remaining entries",
+                                                          {"name", "route_id", "server_addr"})
+    end
+
     local entries = self.entry_buffer.entries
     table.insert(entries, entry)
+    -- add batch metric for every route
+    if batch_metrics  then
+        self.label = {self.name, self.route_id, self.server_addr}
+        batch_metrics:set(#entries, self.label)
+    end
 
     if #entries == 1 then
         self.first_entry_t = now()
@@ -173,11 +189,16 @@ function batch_processor:process_buffer()
             "buffercount[", #self.entry_buffer.entries ,"]")
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = { entries = {}, retry_count = 0 }
+        if batch_metrics then
+            self.label = {self.name, self.route_id, self.server_addr}
+            batch_metrics:set(0, self.label)
+        end
     end
 
     for _, batch in ipairs(self.batch_to_process) do
         schedule_func_exec(self, 0, batch)
     end
+
     self.batch_to_process = {}
 end
 

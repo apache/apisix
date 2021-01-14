@@ -102,12 +102,27 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         return
     end
 
-    if plugin.schema and plugin.schema.type == "object" then
-        if not plugin.schema.properties or
-           core.table.nkeys(plugin.schema.properties) == 0
-        then
-            plugin.schema.properties = core.schema.plugin_disable_schema
+    if type(plugin.schema) ~= "table" then
+        core.log.error("invalid plugin [", name, "] schema field")
+        return
+    end
+
+    if not plugin.schema.properties then
+        plugin.schema.properties = {}
+    end
+
+    local properties = plugin.schema.properties
+    local plugin_injected_schema = core.schema.plugin_injected_schema
+
+    if properties['$comment'] ~= plugin_injected_schema['$comment'] then
+        if properties.disable then
+            core.log.error("invalid plugin [", name,
+                           "]: found forbidden 'disable' field in the schema")
+            return
         end
+
+        properties.disable = plugin_injected_schema.disable
+        properties['$comment'] = plugin_injected_schema['$comment']
     end
 
     plugin.name = name
@@ -610,9 +625,9 @@ end
 _M.stream_check_schema = stream_check_schema
 
 
-function _M.plugin_checker(item)
+function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        return check_schema(item.plugins, nil, true)
+        return check_schema(item.plugins, schema_type, true)
     end
 
     return true

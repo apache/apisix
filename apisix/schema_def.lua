@@ -37,7 +37,7 @@ local id_schema = {
     }
 }
 
-local host_def_pat = "^\\*?[0-9a-zA-Z-.]+$"
+local host_def_pat = "^\\*?[0-9a-zA-Z-._]+$"
 local host_def = {
     type = "string",
     pattern = host_def_pat,
@@ -272,7 +272,6 @@ local nodes_schema = {
                     minimum = 0,
                 }
             },
-            minProperties = 1,
         },
         {
             type = "array",
@@ -370,9 +369,9 @@ local upstream_schema = {
             type        = "boolean",
         },
     },
-    anyOf = {
+    oneOf = {
         {required = {"type", "nodes"}},
-        {required = {"type", "service_name"}},
+        {required = {"type", "service_name", "discovery_type"}},
     },
     additionalProperties = false,
 }
@@ -443,15 +442,9 @@ _M.route = {
             items = {
                 description = "Nginx builtin variable name and value",
                 type = "array",
-                items = {
-                    maxItems = 3,
-                    minItems = 2,
-                    anyOf = {
-                        {type = "string",},
-                        {type = "number",},
-                    }
-                }
-            }
+                maxItems = 4,
+                minItems = 2,
+            },
         },
         filter_func = {
             type = "string",
@@ -627,7 +620,8 @@ _M.ssl = {
             items = {
                 type = "string",
                 pattern = [[^\*?[0-9a-zA-Z-.]+$]],
-            }
+            },
+            minItems = 1,
         },
         certs = {
             type = "array",
@@ -693,7 +687,9 @@ _M.global_rule = {
     type = "object",
     properties = {
         id = id_schema,
-        plugins = plugins_schema
+        plugins = plugins_schema,
+        create_time = timestamp_def,
+        update_time = timestamp_def
     },
     required = {"plugins"},
     additionalProperties = false,
@@ -743,8 +739,11 @@ _M.plugins = {
 _M.id_schema = id_schema
 
 
-_M.plugin_disable_schema = {
-    disable = {type = "boolean"}
+_M.plugin_injected_schema = {
+    ["$comment"] = "this is a mark for our injected plugin schema",
+    disable = {
+        type = "boolean",
+    }
 }
 
 

@@ -67,3 +67,5 @@ default.etcd/
 /conf/config-*.yaml
 !/conf/config-default.yaml
 /conf/debug-*.yaml
+# release tar package
+*.tgz

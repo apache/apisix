@@ -26,6 +26,12 @@ worker_processes {* worker_processes *};
 worker_cpu_affinity auto;
 {% end %}
 
+# main configuration snippet starts
+{% if main_configuration_snippet then %}
+{* main_configuration_snippet *}
+{% end %}
+# main configuration snippet ends
+
 error_log {* error_log *} {* error_log_level or "warn" *};
 pid logs/nginx.pid;
 
@@ -47,12 +53,6 @@ env APISIX_PROFILE;
 env {*name*};
 {% end %}
 {% end %}
-
-# main configuration snippet starts
-{% if main_configuration_snippet then %}
-{* main_configuration_snippet *}
-{% end %}
-# main configuration snippet ends
 
 {% if stream_proxy then %}
 stream {
@@ -141,8 +141,10 @@ http {
     lua_shared_dict tracing_buffer       10m; # plugin: skywalking
     lua_shared_dict plugin-api-breaker   10m;
 
-    # for openid-connect plugin
+    # for openid-connect and authz-keycloak plugin
     lua_shared_dict discovery             1m; # cache for discovery metadata documents
+
+    # for openid-connect plugin
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
 
@@ -572,5 +574,10 @@ http {
         }
         {% end %}
     }
+    # http end configuration snippet starts
+    {% if http_end_configuration_snippet then %}
+    {* http_end_configuration_snippet *}
+    {% end %}
+    # http end configuration snippet ends
 }
 ]=]

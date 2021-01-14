@@ -25,6 +25,7 @@
 * [Upstream](#upstream)
 * [SSL](#ssl)
 * [Plugin Metadata](#plugin-metadata)
+* [Plugin](#plugin)
 
 ## Route
 
@@ -37,6 +38,7 @@
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/routes|无|获取资源列表|
 |GET      |/apisix/admin/routes/{id}|无|获取资源|
 |PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/routes     |{...}|创建资源，id 由后台服务自动生成|
@@ -280,6 +282,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/services|无|获取资源列表|
 |GET      |/apisix/admin/services/{id}|无|获取资源|
 |PUT      |/apisix/admin/services/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/services     |{...}|创建资源，id 由后台服务自动生成|
@@ -431,6 +434,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/consumers|无|获取资源列表|
 |GET      |/apisix/admin/consumers/{id}|无|获取资源|
 |PUT      |/apisix/admin/consumers|{...}|创建资源|
 |DELETE   |/apisix/admin/consumers/{id}|无|删除资源|
@@ -502,6 +506,7 @@ Date: Thu, 26 Dec 2019 08:17:49 GMT
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/upstreams|无|获取资源列表|
 |GET      |/apisix/admin/upstreams/{id}|无|获取资源|
 |PUT      |/apisix/admin/upstreams/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/upstreams     |{...}|创建资源，id 由后台服务自动生成|
@@ -515,11 +520,13 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
-|nodes           |必需|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。|`192.168.1.100:80`|
+|nodes           |必需，不能和 `service_name` 一起用|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。|`192.168.1.100:80`|
+|service_name   |必需，不能和 `nodes` 一起用|string|服务发现时使用的服务名，见[集成服务发现注册中心](./discovery.md)|`a-bootiful-client`|
+|discovery_type   |必需，如果设置了 `service_name` |string|服务发现类型，见[集成服务发现注册中心](./discovery.md)|`eureka`|
 |type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
 |key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](../health-check.md)||
-|retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制||
+|retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端可用的 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制。||
 |timeout         |可选|超时时间对象|设置连接、发送消息、接收消息的超时时间||
 |hash_on         |可选|辅助|`hash_on` 支持的类型有 `vars`（Nginx内置变量），`header`（自定义header），`cookie`，`consumer`，默认值为 `vars`|
 |name     |可选 |辅助|标识上游服务名称、使用场景等。||
@@ -657,6 +664,7 @@ HTTP/1.1 200 OK
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
+|GET      |/apisix/admin/ssl|无|获取资源列表|
 |GET      |/apisix/admin/ssl/{id}|无|获取资源|
 |PUT      |/apisix/admin/ssl/{id}|{...}|根据 id 创建资源|
 |POST     |/apisix/admin/ssl     |{...}|创建资源，id 由后台服务自动生成|
@@ -670,10 +678,11 @@ HTTP/1.1 200 OK
 |key|必需|私钥|https 证书私钥||
 |certs|可选|证书字符串数组|当你想给同一个域名配置多个证书时，除了第一个证书需要通过cert传递外，剩下的证书可以通过该参数传递上来||
 |keys|可选|私钥字符串数组|certs 对应的证书私钥，注意要跟 certs 一一对应||
-|sni|必需|匹配规则|https 证书SNI||
+|snis|必需|匹配规则|非空数组形式，可以匹配多个 SNI||
 |labels|可选|匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|status|可选 |辅助| 是否启用此SSL, 缺省 `1`。|`1` 表示启用，`0` 表示禁用|
 
 ssl 对象 json 配置内容：
 
@@ -682,7 +691,7 @@ ssl 对象 json 配置内容：
     "id": "1",          # id
     "cert": "cert",     # 证书
     "key": "key",       # 私钥
-    "sni": "sni"        # host 域名
+    "snis": ["t.com"]   # HTTPS 握手时客户端发送的 SNI
 }
 ```
 
@@ -716,5 +725,44 @@ HTTP/1.1 201 Created
 Date: Thu, 26 Dec 2019 04:19:34 GMT
 Content-Type: text/plain
 ```
+
+[Back to TOC](#目录)
+
+## Plugin
+
+*地址*：/apisix/admin/plugins/{plugin_name}
+
+*说明*: 插件
+
+> 请求方法:
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins/list|无|获取资源列表|
+|GET      |/apisix/admin/plugins/{plugin_name}|无|获取资源|
+
+> body 请求参数：
+
+获取插件 ({plugin_name}) 数据结构的 json object 。
+
+例子:
+
+```shell
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+["zipkin","request-id",...]
+
+$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+```
+
+*地址*：/apisix/admin/plugins?all=true
+
+*说明*: 所有插件的所有属性，每个插件包括 `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`。
+
+> 请求方法:
+
+|Method   |请求 URI|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/plugins?all=true|无|获取资源|
 
 [Back to TOC](#目录)

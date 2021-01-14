@@ -40,7 +40,7 @@ __DATA__
 --- request
 GET /apisix/admin/plugins/list
 --- response_body_like eval
-qr/\["zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","serverless-post-function"\]/
+qr/\["zipkin","request-id","fault-injection","serverless-pre-function","batch-requests","cors","ip-restriction","referer-restriction","uri-blocker","request-validation","openid-connect","wolf-rbac","hmac-auth","basic-auth","jwt-auth","key-auth","consumer-restriction","authz-keycloak","proxy-mirror","proxy-cache","proxy-rewrite","api-breaker","limit-conn","limit-count","limit-req","server-info","traffic-split","redirect","response-rewrite","grpc-transcode","prometheus","echo","http-logger","sls-logger","tcp-logger","kafka-logger","syslog","udp-logger","example-plugin","serverless-post-function"\]/
 --- no_error_log
 [error]
 
@@ -160,5 +160,112 @@ plugins:
             ngx.status = code
         }
     }
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: confirm the name, priority, schema, type and version of plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            for k, v in pairs(res) do
+                if k == "example-plugin" then
+                    ngx.say(json.encode(v))
+                end
+            end
+        }
+    }
+--- response_body eval
+qr/\{"metadata_schema":\{"additionalProperties":false,"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"properties":\{"\$comment":"this is a mark for our injected plugin schema","disable":\{"type":"boolean"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: confirm the plugin of auth type
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local auth_plugins = {}
+            for k, v in pairs(res) do
+                if v.type == "auth" then
+                    local plugin = {}
+                    plugin.name = k
+                    plugin.priority = v.priority
+                    table.insert(auth_plugins, plugin)
+                end
+            end
+
+            table.sort(auth_plugins, function(l, r)
+                return l.priority > r.priority
+            end)
+            ngx.say(json.encode(auth_plugins))
+        }
+    }
+--- response_body eval
+qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"key-auth","priority":2500\}\]/
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: confirm the consumer_schema of plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, message, res = t('/apisix/admin/plugins?all=true',
+                ngx.HTTP_GET
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            local consumer_schema
+            for k, v in pairs(res) do
+                if k == "basic-auth" then
+                    consumer_schema = v.consumer_schema
+                end
+            end
+            ngx.say(json.encode(consumer_schema))
+        }
+    }
+--- response_body eval
+qr/\{"additionalProperties":false,"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 --- no_error_log
 [error]
