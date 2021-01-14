@@ -239,7 +239,7 @@ local function authz_keycloak_refresh_token_expires_in(opts, expires_in)
 end
 
 
-local authz_keycloak_ensure_sa_access_token(conf)
+local function authz_keycloak_ensure_sa_access_token(conf)
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
 
     if not token_endpoint then
@@ -247,64 +247,157 @@ local authz_keycloak_ensure_sa_access_token(conf)
       return 500, "Unable to determine token endpoint."
     end
 
-    core.log.debug("Getting access token for Protection API from token endpoint.")
-    local httpc = http.new()
-    httpc:set_timeout(conf.timeout)
+    local session = authz_keycloak_cache_get("access_tokens", token_endpoint .. ":" .. conf.client_id)
 
-    local params = {
-        method = "POST",
-        body =  ngx.encode_args({
-            grant_type = "client_credentials",
-            client_id = conf.client_id,
-            client_secret = conf.client_secret,
-        }),
-        ssl_verify = conf.ssl_verify,
-        headers = {
-            ["Content-Type"] = "application/x-www-form-urlencoded"
+    if session then
+        local current_time = ngx.time()
+
+        if current_time < session.access_token_expiration then
+            -- Access token is still valid.
+            log.debug("Access token is still valid.")
+            return session.access_token
+        else
+            -- Access token has expired.
+            log.debug("Access token has expired.")
+            if session.refresh_token and (not session.refresh_token_expiration or current_time < refresh_token_expiration) then
+                -- Try to get a new access token, using the refresh token.
+                log.debug("Trying to get new access token using refresh token.")
+
+                local httpc = http.new()
+                httpc:set_timeout(conf.timeout)
+
+                local params = {
+                    method = "POST",
+                    body =  ngx.encode_args({
+                        grant_type = "refresh_token",
+                        client_id = conf.client_id,
+                        refresh_token = session.refresh_token,
+                    }),
+                    ssl_verify = conf.ssl_verify,
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                }
+
+                local current_time = ngx.time()
+
+                local res, err = httpc:request_uri(token_endpoint, params)
+
+                if not res then
+                    err = "Accessing token endpoint url (" .. url .. ") failed: " .. error
+                    log.error(err)
+                    return nil, err
+                end
+
+                log.debug("Response data: " .. res.body)
+
+                local json, err = authz_keycloak_parse_json_response(res)
+
+                if not json then
+                    err = "Could not decode JSON from token endpoint" .. (err and (": " .. err) or '.')
+                    log.error(err)
+                    return nil, err
+                end
+
+                if not json.access_token then
+                    -- Clear session.
+                    log.debug("Answer didn't contain a new access token. Clearing session.")
+                    session = nil
+                else
+                    log.debug("Got new access token.")
+                    -- Save access token.
+                    session.access_token = json.access_token
+
+                    -- Calculate and save access token expiry time.
+                    session.access_token_expiration = current_time
+                            + authz_keycloak_access_token_expires_in(conf, json.expires_in)
+
+                    -- Save refresh token, maybe.
+                    if json.refresh_token ~= nil then
+                        log.debug("Got new refresh token.")
+                        session.refresh_token = json.refresh_token
+
+                        -- Calculate and save refresh token expiry time.
+                        session.refresh_token_expiration = current_time
+                                + authz_keycloak_refresh_token_expires_in(conf, json.refresh_expires_in)
+                    end
+
+                    authz_keycloak_cache_set("access_tokens", token_endpoint .. ":" .. conf.client_id,
+                                           core.json.encode(session), 24 * 60 * 60)
+                end
+            else
+                -- No refresh token available, or it has expired. Clear session.
+                log.debug("No or expired refresh token. Clearing session.")
+                session = nil
+            end
+        end
+    end
+
+    if not session then
+        -- No session available. Create a new one.
+
+        core.log.debug("Getting access token for Protection API from token endpoint.")
+        local httpc = http.new()
+        httpc:set_timeout(conf.timeout)
+
+        local params = {
+            method = "POST",
+            body =  ngx.encode_args({
+                grant_type = "client_credentials",
+                client_id = conf.client_id,
+                client_secret = conf.client_secret,
+            }),
+            ssl_verify = conf.ssl_verify,
+            headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded"
+            }
         }
-    }
 
-    local current_time = ngx.time()
+        local current_time = ngx.time()
 
-    local res, err = httpc:request_uri(token_endpoint, params)
+        local res, err = httpc:request_uri(token_endpoint, params)
 
-    if not res then
-        err = "Accessing token endpoint url (" .. url .. ") failed: " .. error
-        log.error(err)
-        return nil, err
-    end
+        if not res then
+            err = "Accessing token endpoint url (" .. url .. ") failed: " .. error
+            log.error(err)
+            return nil, err
+        end
 
-    log.debug("Response data: " .. res.body)
-    local json, err = authz_keycloak_parse_json_response(res)
+        log.debug("Response data: " .. res.body)
+        local json, err = authz_keycloak_parse_json_response(res)
 
-    if not json
-      err = "Could not decode JSON from token endpoint" .. (err and (": " .. err) or '.')
-      log.error(err)
-      return nil, err
-    end
+        if not json then
+          err = "Could not decode JSON from token endpoint" .. (err and (": " .. err) or '.')
+          log.error(err)
+          return nil, err
+        end
 
-    if not json.access_token then
-        err = "Response does not contain access_token field."
-        log.error(err)
-        return nil, err
-    end
+        if not json.access_token then
+            err = "Response does not contain access_token field."
+            log.error(err)
+            return nil, err
+        end
 
-    local session = {}
+        session = {}
 
-    -- Save access token.
-    session.access_token = json.access_token
+        -- Save access token.
+        session.access_token = json.access_token
 
-    -- Calculate and save access token expiry time.
-    session.access_token_expiration = current_time
-            + authz_keycloak_access_token_expires_in(conf, json.expires_in)
+        -- Calculate and save access token expiry time.
+        session.access_token_expiration = current_time
+                + authz_keycloak_access_token_expires_in(conf, json.expires_in)
 
-    -- Save refresh token, maybe.
-    if json.refresh_token ~= nil then
-        session.refresh_token = json.refresh_token
+        -- Save refresh token, maybe.
+        if json.refresh_token ~= nil then
+            session.refresh_token = json.refresh_token
 
-        -- Calculate and save refresh token expiry time.
-        session.refresh_token_expiration = current_time
-                + authz_keycloak_refresh_token_expires_in(conf, json.refresh_expires_in)
+            -- Calculate and save refresh token expiry time.
+            session.refresh_token_expiration = current_time
+                    + authz_keycloak_refresh_token_expires_in(conf, json.refresh_expires_in)
+        end
+
+        authz_keycloak_cache_set("access_tokens", token_endpoint .. ":" .. conf.client_id,
+                                 core.json.encode(session), 24 * 60 * 60)
     end
 
     return session.access_token

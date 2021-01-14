@@ -146,6 +146,9 @@ http {
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
 
+    # for authz-keycloak
+    lua_shared_dict access_tokens         1m; # cache for service account access tokens
+
     # for custom shared dict
     {% if http.lua_shared_dicts then %}
     {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
