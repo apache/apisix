@@ -50,20 +50,28 @@ The technical architecture of Apache APISIX:
 
 ## Contents
 
-- [Features](#features)
-- [Documentation](#documentation)
-- [Get Started](#get-started)
-- [Benchmark](#benchmark)
-- [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-- [Community](#community)
-- [Videos And Articles](#videos-and-articles)
-- [User Stories](#user-stories)
-- [Who Uses APISIX?](#who-uses-apisix)
-- [Landscape](#landscape)
-- [Logos](#logos)
-- [Contributing](#contributing)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
+- [Apache APISIX](#apache-apisix)
+  - [What's Apache APISIX?](#whats-apache-apisix)
+  - [Contents](#contents)
+  - [Features](#features)
+  - [Documentation](#documentation)
+  - [Get Started](#get-started)
+    - [Configure and Installation](#configure-and-installation)
+    - [For Developer](#for-developer)
+  - [Benchmark](#benchmark)
+  - [Apache APISIX vs Kong](#apache-apisix-vs-kong)
+      - [Both of them have been covered core features of API gateway](#both-of-them-have-been-covered-core-features-of-api-gateway)
+      - [The advantages of Apache APISIX](#the-advantages-of-apache-apisix)
+  - [Community](#community)
+    - [Contributor Over Time](#contributor-over-time)
+  - [Videos And Articles](#videos-and-articles)
+  - [User Stories](#user-stories)
+  - [Who Uses APISIX?](#who-uses-apisix)
+  - [Landscape](#landscape)
+  - [Logos](#logos)
+  - [Contributing](#contributing)
+  - [Acknowledgments](#acknowledgments)
+  - [License](#license)
 
 ## Features
 
@@ -205,7 +213,7 @@ There are several ways to install the Apache Release version of APISIX:
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
    ```
 
    - check version of APISIX:
