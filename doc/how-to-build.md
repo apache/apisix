@@ -109,6 +109,50 @@ Makefile rules:
 Environment variable can be used to configure APISIX. Please take a look at `conf/config.yaml` to
 see how to do it.
 
+### Troubleshooting
+
+**Compile and install luasocket**
+
+If you run `make init` or `make run` after `make deps`, get an issue `Symbol not found: _luaL_openlib`. Maybe it's due to Lua compatibility settings when building luasocket. APISIX is recommended to use LuaJIT or Lua 5.1. If you want to continue to use other Lua version, you should manually compile and install luasocket.
+
+- Download the source code to compile and install luasocket.
+
+```sh
+git clone https://github.com/diegonehab/luasocket.git
+make
+make install
+```
+
+If you get error as below:
+
+```
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -C src linux
+/Applications/Xcode.app/Contents/Developer/usr/bin/make all-unix PLAT=linux
+gcc  -I/usr/include/lua/5.1 -I/usr/include/lua5.1 -DLUASOCKET_NODEBUG -Wall -Wshadow -Wextra -Wimplicit -O2 -ggdb3 -fpic   -c -o luasocket.o luasocket.c
+In file included from luasocket.c:15:
+./luasocket.h:27:10: fatal error: 'lua.h' file not found
+#include "lua.h"
+         ^~~~~~~
+1 error generated.
+make[2]: *** [luasocket.o] Error 1
+make[1]: *** [linux] Error 2
+make: *** [linux] Error 2
+```
+
+Lua.h file was not found at compile time, installed in the system is lua 5.3.5_1, modify the compiler parameters:
+
+```sh
+make LUAINC=/usr/local/Cellar/lua/5.3.5_1/include/lua macosx
+make LUAINC=/usr/local/Cellar/lua/5.3.5_1/include/lua macosx install
+```
+
+- Copy the compiled and installed files to the deps of apisix.
+
+```
+cp /usr/local/lib/lua/5.1/socket/* your-path/apisix/deps/lib/lua/5.1/socket/
+cp /usr/local/lib/lua/5.1/mime/* your-path/apisix/deps/lib/lua/5.1/mime/
+```
+
 ## 4. Test
 
 1. Install perl's package manager `cpanminus` first

@@ -105,6 +105,51 @@ Makefile rules:
     license-check:    Check Lua source code for Apache License
 ```
 
+### 疑难问题解答
+
+**编译并安装 luasocket**
+
+在执行完`make deps`之后，执行`make init`或`make run`时遇到问题`Symbol not found: _luaL_openlib`，可能是在编译  luasocket 时的 lua 兼容性设置导致。APISIX推荐使用 LuaJIT 或 Lua 5.1 版本。如果继续使用 Lua 5.1 之外的版本，则需要使用源码重新编译安装 luasocket。
+
+- 下载 luasocket 的源码编译并安装
+
+```sh
+git clone https://github.com/diegonehab/luasocket.git
+make
+make install
+```
+
+编译及安装过程中可能遇到以下错误：
+
+```
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -C src linux
+/Applications/Xcode.app/Contents/Developer/usr/bin/make all-unix PLAT=linux
+gcc  -I/usr/include/lua/5.1 -I/usr/include/lua5.1 -DLUASOCKET_NODEBUG -Wall -Wshadow -Wextra -Wimplicit -O2 -ggdb3 -fpic   -c -o luasocket.o luasocket.c
+In file included from luasocket.c:15:
+./luasocket.h:27:10: fatal error: 'lua.h' file not found
+#include "lua.h"
+         ^~~~~~~
+1 error generated.
+make[2]: *** [luasocket.o] Error 1
+make[1]: *** [linux] Error 2
+make: *** [linux] Error 2
+
+```
+
+编译时无法找到 lua.h 文件, 查询本地环境 lua 版本及安装位置，修改编译参数:
+
+```sh
+make LUAINC=/usr/local/Cellar/lua/5.3.5_1/include/lua macosx
+make LUAINC=/usr/local/Cellar/lua/5.3.5_1/include/lua macosx install
+```
+
+- 将编译安装好的 luasocket 相关文件拷贝到项目的 `deps` 目录下：
+
+```
+cp /usr/local/lib/lua/5.1/socket/* your-path/apisix/deps/lib/lua/5.1/socket/
+cp /usr/local/lib/lua/5.1/mime/* your-path/apisix/deps/lib/lua/5.1/mime/
+```
+
 ## 4. 运行测试案例
 
 1. 先安装 perl 的包管理器 cpanminus
