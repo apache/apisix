@@ -334,6 +334,7 @@ local upstream_schema = {
               "header",
               "cookie",
               "consumer",
+              "vars_combinations",
             },
         },
         key = {
@@ -391,6 +392,11 @@ _M.upstream_hash_vars_schema = {
 _M.upstream_hash_header_schema = {
     type = "string",
     pattern = [[^[a-zA-Z0-9-_]+$]]
+}
+
+-- validates string only
+_M.upstream_hash_vars_combinations_schema = {
+    type = "string"
 }
 
 
