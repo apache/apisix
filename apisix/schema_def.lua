@@ -739,8 +739,11 @@ _M.plugins = {
 _M.id_schema = id_schema
 
 
-_M.plugin_disable_schema = {
-    disable = {type = "boolean"}
+_M.plugin_injected_schema = {
+    ["$comment"] = "this is a mark for our injected plugin schema",
+    disable = {
+        type = "boolean",
+    }
 }
 
 
