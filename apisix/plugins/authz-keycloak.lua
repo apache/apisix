@@ -430,6 +430,15 @@ end
 
 
 local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
+    -- Get resource registration endpoint URL.
+    local resource_registration_endpoint = authz_keycloak_get_resource_registration_endpoint(conf)
+    if not resource_registration_endpoint then
+        err = "Unable to determine registration endpoint."
+        log.error(err)
+        return 500, err
+    end
+    log.error("Resource registration endpoint: ", resource_registration_endpoint)
+
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
 
@@ -496,15 +505,6 @@ local function evaluate_permissions(conf, ctx, token)
           return 500, err
         end
 
-        -- Get resource registration endpoint URL.
-        local resource_registration_endpoint = authz_keycloak_get_resource_registration_endpoint(conf)
-        if not resource_registration_endpoint then
-            err = "Unable to determine registration endpoint."
-            log.error(err)
-            return 500, err
-        end
-        log.error("Resource registration endpoint: ", resource_registration_endpoint)
-
         -- Resolve URI to resource(s).
         permission, err = authz_keycloak_resolve_permission(conf, ctx.var.request_uri, sa_access_token)
 
@@ -544,6 +544,7 @@ local function evaluate_permissions(conf, ctx, token)
             else
                 -- Doesn't contain scope yet.
                 permission[k] = v .. "#" .. scope
+            end
         end
     end
 
