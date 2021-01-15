@@ -4,6 +4,7 @@
 -- https://github.com/twitter/finagle/blob/1bc837c4feafc0096e43c0e98516a8e1c50c4421
 --   /finagle-core/src/main/scala/com/twitter/finagle/loadbalancer/PeakEwma.scala
 local core = require("apisix.core")
+local nkeys = require("core.table.nkeys")
 local resty_lock = require("resty.lock")
 
 local ngx = ngx
@@ -24,9 +25,6 @@ local lrucache_trans_format = core.lrucache.new({ttl = 300, count = 256})
 
 local ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks",
                                                 {timeout = 0, exptime = 0.1})
-if not ewma_lock then
-    error(ewma_lock_err)
-end
 
 local _M = {name = "ewma"}
 
@@ -90,8 +88,7 @@ local function get_or_update_ewma(upstream, rtt, update)
     end
 
     local now = ngx_now()
-    local last_touched_at = ngx.shared.balancer_ewma_last_touched_at:get(
-                                upstream) or 0
+    local last_touched_at = shm_last_touched_at:get(upstream) or 0
     ewma = decay_ewma(ewma, last_touched_at, rtt, now)
 
     if not update then
@@ -144,7 +141,7 @@ end
 local function _ewma_find(ctx, up_nodes)
     local peers
 
-    if not up_nodes or core.table.nkeys(up_nodes) == 0 then
+    if not up_nodes or nkeys(up_nodes) == 0 then
         return nil, 'up_nodes empty'
     end
 
@@ -193,6 +190,10 @@ end
 function _M.new(up_nodes, upstream)
     if not shm_ewma or not shm_last_touched_at then
         return nil, "dictionary not find"
+    end
+
+    if not ewma_lock then
+        error(ewma_lock_err)
     end
 
     return {
