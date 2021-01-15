@@ -240,14 +240,16 @@ local function set_upstream(upstream_info, ctx)
 
     local ok, err = upstream.check_schema(up_conf)
     if not ok then
+        core.log.error("failed to validate generated upstream: ", err)
         return 500, err
     end
 
     local matched_route = ctx.matched_route
+    up_conf.parent = matched_route
     local upstream_key = up_conf.type .. "#route_" ..
                          matched_route.value.id .. "_" ..upstream_info.vid
     core.log.info("upstream_key: ", upstream_key)
-    upstream.set(ctx, upstream_key, ctx.conf_version, up_conf, matched_route)
+    upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
 
     return
 end
