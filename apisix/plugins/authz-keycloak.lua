@@ -429,7 +429,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 end
 
 
-local function authz_keycloak_resolve_permission(conf, uri, scope, sa_access_token)
+local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
 
@@ -467,13 +467,7 @@ local function authz_keycloak_resolve_permission(conf, uri, scope, sa_access_tok
       return nil, err
     end
 
-    local permission = {}
-    for k, id in pairs(json.resources) do
-        permission[#permission+1] = id .. (scope and ("#" .. scope) or '')
-        core.log.error("Adding permission ", permissions[#permission])
-    end
-
-    return permission
+    return json.resources
 end
 
 
@@ -495,7 +489,7 @@ local function evaluate_permissions(conf, ctx, token)
 
     local permission
 
-    if lazy_load_paths then
+    if conf.lazy_load_paths then
         -- Ensure service account access token.
         local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
         if err then
@@ -511,26 +505,50 @@ local function evaluate_permissions(conf, ctx, token)
         end
         log.error("Resource registration endpoint: ", resource_registration_endpoint)
 
-        -- Determine scope from HTTP method, maybe.
-        local scope
-        if conf.http_method_as_scope then
-            scope = ctx.var.request_method
-        end
+        -- Resolve URI to resource(s).
+        permission, err = authz_keycloak_resolve_permission(conf, ctx.var.request_uri, sa_access_token)
 
-        permission, err = authz_keycloak_resolve_permission(conf, ctx.var.request_uri, scope, sa_access_token)
-
+        -- Check result.
         if permission == nil then
+            -- No result back from resource registration endpoint.
             return 500, err
         end
     else
         -- Use statically configured permissions.
-        if not is_path_protected(conf) and conf.policy_enforcement_mode == "ENFORCING" then
-            return 403
+
+        if conf.permission == nil then
+            -- No static permission configured.
+            return 500, "No static permission configured."
+        end
+
+        permission = conf.permission
+    end
+
+    -- Return 403 if permission is empty and enforcement mode is "ENFORCING".
+    if #permission == 0 and conf.policy_enforcement_mode == "ENFORCING" then
+        return 403
+    end
+
+    -- Determine scope from HTTP method, maybe.
+    local scope
+    if conf.http_method_as_scope then
+        scope = ctx.var.request_method
+    end
+
+    if scope then
+        -- Loop over permissions and add scope.
+        for k, v in pairs(permission) do
+            if v:find("#", 1, true) then
+                -- Already contains scope.
+                permission[k] = v .. ", " .. scope
+            else
+                -- Doesn't contain scope yet.
+                permission[k] = v .. "#" .. scope
         end
     end
 
-    if permission == nil then
-        return 500, "Unable to determine permission to check."
+    for k, v in pairs(permission) do
+        log.debug("Requesting permission ", v, ".")
     end
 
     -- Get token endpoint URL.
