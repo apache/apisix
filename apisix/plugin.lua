@@ -418,8 +418,8 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf))
-    core.log.info("  route conf: ", core.json.delay_encode(route_conf))
+    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
+    core.log.info("  route conf: ", core.json.delay_encode(route_conf, true))
 
     local route_service_key = route_conf.value.id .. "#"
         .. route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex

@@ -32,7 +32,13 @@ local function filter(route)
         return
     end
 
-    if not route.value.upstream or not route.value.upstream.nodes then
+    if not route.value.upstream then
+        return
+    end
+
+    route.value.upstream.parent = route
+
+    if not route.value.upstream.nodes then
         return
     end
 
@@ -64,7 +70,6 @@ local function filter(route)
         route.value.upstream.nodes = new_nodes
     end
 
-    route.value.upstream.parent = route
     core.log.info("filter route: ", core.json.delay_encode(route))
 end
 

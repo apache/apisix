@@ -24,6 +24,7 @@ local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
 local set_upstream  = require("apisix.upstream").set_by_route
+local upstream_util = require("apisix.utils.upstream")
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -32,7 +33,6 @@ local math          = math
 local error         = error
 local ipairs        = ipairs
 local tostring      = tostring
-local type          = type
 local ngx_now       = ngx.now
 local str_byte      = string.byte
 local str_sub       = string.sub
@@ -237,29 +237,6 @@ local function parse_domain_for_nodes(nodes)
 end
 
 
-local function compare_upstream_node(old_t, new_t)
-    if type(old_t) ~= "table" then
-        return false
-    end
-
-    if #new_t ~= #old_t then
-        return false
-    end
-
-    for i = 1, #new_t do
-        local new_node = new_t[i]
-        local old_node = old_t[i]
-        for _, name in ipairs({"host", "port", "weight"}) do
-            if new_node[name] ~= old_node[name] then
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
-
 local function parse_domain_in_up(up)
     local nodes = up.value.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
@@ -268,7 +245,7 @@ local function parse_domain_in_up(up)
     end
 
     local old_dns_value = up.dns_value and up.dns_value.nodes
-    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
     if ok then
         return up
     end
@@ -291,7 +268,7 @@ local function parse_domain_in_route(route)
     end
 
     local old_dns_value = route.dns_value and route.dns_value.upstream.nodes
-    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
     if ok then
         return route
     end
