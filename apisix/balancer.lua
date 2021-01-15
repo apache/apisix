@@ -24,11 +24,7 @@ local set_timeouts     = balancer.set_timeouts
 
 
 local module_name = "balancer"
-local pickers = {
-    roundrobin = require("apisix.balancer.roundrobin"),
-    chash = require("apisix.balancer.chash"),
-    ewma = require("apisix.balancer.ewma")
-}
+local pickers = {}
 
 local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
@@ -79,6 +75,11 @@ end
 
 local function create_server_picker(upstream, checker)
     local picker = pickers[upstream.type]
+    if not picker then
+        pickers[upstream.type] = require("apisix.balancer." .. upstream.type)
+        picker = pickers[upstream.type]
+    end
+
     if picker then
         local up_nodes = fetch_health_nodes(upstream, checker)
         core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))

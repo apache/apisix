@@ -54,6 +54,7 @@ dependencies = {
     "lua-resty-logger-socket = 2.0-0",
     "skywalking-nginx-lua = 0.3-0",
     "base64 = 1.5-2",
+    "binaryheap = 0.4",
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
     "lua-resty-expr = 1.0.0",
