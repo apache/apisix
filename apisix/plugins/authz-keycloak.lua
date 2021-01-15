@@ -265,7 +265,8 @@ local function authz_keycloak_ensure_sa_access_token(conf)
       return 500, "Unable to determine token endpoint."
     end
 
-    local session = authz_keycloak_cache_get("access_tokens", token_endpoint .. ":" .. conf.client_id)
+    local session = authz_keycloak_cache_get("access_tokens", token_endpoint .. ":"
+                                             .. conf.client_id)
 
     if session then
         -- Decode session string.
@@ -285,7 +286,9 @@ local function authz_keycloak_ensure_sa_access_token(conf)
         else
             -- Access token has expired.
             log.debug("Access token has expired.")
-            if session.refresh_token and (not session.refresh_token_expiration or current_time < session.refresh_token_expiration) then
+            if session.refresh_token
+               and (not session.refresh_token_expiration
+                    or current_time < session.refresh_token_expiration) then
                 -- Try to get a new access token, using the refresh token.
                 log.debug("Trying to get new access token using refresh token.")
 
@@ -320,7 +323,8 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                 local json, err = authz_keycloak_parse_json_response(res)
 
                 if not json then
-                    err = "Could not decode JSON from token endpoint" .. (err and (": " .. err) or '.')
+                    err = "Could not decode JSON from token endpoint"
+                          .. (err and (": " .. err) or '.')
                     log.error(err)
                     return nil, err
                 end
@@ -345,11 +349,13 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
                         -- Calculate and save refresh token expiry time.
                         session.refresh_token_expiration = current_time
-                                + authz_keycloak_refresh_token_expires_in(conf, json.refresh_expires_in)
+                                + authz_keycloak_refresh_token_expires_in(conf,
+                                                                          json.refresh_expires_in)
                     end
 
-                    authz_keycloak_cache_set("access_tokens", token_endpoint .. ":" .. conf.client_id,
-                                           core.json.encode(session), 24 * 60 * 60)
+                    authz_keycloak_cache_set("access_tokens",
+                                             token_endpoint .. ":" .. conf.client_id,
+                                             core.json.encode(session), 24 * 60 * 60)
                 end
             else
                 -- No refresh token available, or it has expired. Clear session.
@@ -472,7 +478,8 @@ local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
     local json, err = authz_keycloak_parse_json_response(res)
 
     if not json then
-      err = "Could not decode JSON from resource registration endpoint" .. (err and (": " .. err) or '.')
+      err = "Could not decode JSON from resource registration endpoint"
+            .. (err and (": " .. err) or '.')
       log.error(err)
       return nil, err
     end
@@ -507,7 +514,8 @@ local function evaluate_permissions(conf, ctx, token)
         end
 
         -- Resolve URI to resource(s).
-        permission, err = authz_keycloak_resolve_permission(conf, ctx.var.request_uri, sa_access_token)
+        permission, err = authz_keycloak_resolve_permission(conf, ctx.var.request_uri,
+                                                            sa_access_token)
 
         -- Check result.
         if permission == nil then
