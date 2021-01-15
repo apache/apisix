@@ -487,8 +487,8 @@ res: nil err: connection reset by peer
 qr{\[error\].*while connecting to upstream.*}
 --- grep_error_log_out eval
 qr{.*client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:1960".*
-.*client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:1960".*
 .*client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:1961".*
 .*client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:1961".*
-.*client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:1961".*}
+.*client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:1961".*
+.*client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:1960".*}
 --- timeout: 10
