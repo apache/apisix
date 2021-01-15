@@ -66,6 +66,7 @@ Analogously, the plugin determines the registration endpoint from the discovery 
 `resource_registration_endpoint` overrides, if present.
 
 ### Client ID and Secret
+
 The `client_id` attribute is needed to identify the plugin when interacting with Keycloak.
 If the access is confidential, the `client_secret` attribute needs to contain the client secret.
 
