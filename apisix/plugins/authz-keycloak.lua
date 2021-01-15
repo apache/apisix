@@ -58,6 +58,7 @@ local schema = {
         lazy_load_paths = {type = "boolean", default = false},
         http_method_as_scope = {type = "boolean", default = false},
     },
+    required = {"client_id"},
     anyOf = {
         {required = {"discovery"}},
         {required = {"token_endpoint"}}
@@ -67,7 +68,7 @@ local schema = {
             anyOf = {
                 {required = {"discovery"}},
                 {required = {"resource_registration_endpoint"}}
-            }
+            },
         }
     }
 }
