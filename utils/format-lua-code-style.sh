@@ -21,7 +21,7 @@ set -ex
 
 # format lua code automatically based on git diff changes.
 for item in `git diff --name-only|grep -e ".*.lua$"`
-do 
+do
     # lua-format can be found in https://github.com/Koihik/LuaFormatter.
     lua-format $item -i --no-keep-simple-control-block-one-line --no-keep-simple-function-one-line
 done
