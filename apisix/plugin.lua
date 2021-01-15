@@ -114,7 +114,7 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
     local properties = plugin.schema.properties
     local plugin_injected_schema = core.schema.plugin_injected_schema
 
-    if properties['$comment'] ~= plugin_injected_schema['$comment'] then
+    if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
         if properties.disable then
             core.log.error("invalid plugin [", name,
                            "]: found forbidden 'disable' field in the schema")
@@ -122,7 +122,7 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         end
 
         properties.disable = plugin_injected_schema.disable
-        properties['$comment'] = plugin_injected_schema['$comment']
+        plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
 
     plugin.name = name
