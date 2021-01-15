@@ -908,8 +908,10 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
+        local headers = {}
+        headers["appkey"] = "api-key"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1057,8 +1059,10 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
+        local headers = {}
+        headers["appkey"] = "api-key"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1130,8 +1134,10 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
+        local headers = {}
+        headers["appkey"] = "api-key"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1457,7 +1463,7 @@ location /t {
         local headers = {}
         headers["x-api-appkey"] = "api-key"
         for i = 1, 5 do
-            local _, _, body = t('/server_port', ngx.HTTP_GET, nil, "", headers)
+            local _, _, body = t('/server_port', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
         end
         table.sort(bodys)
