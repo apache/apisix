@@ -72,6 +72,10 @@ endif
 lint: utils
 	./utils/check-lua-code-style.sh
 
+### format:           Format Lua source code
+.PHONY: format
+format:
+	./utils/format-lua-code-style.sh
 
 ### init:             Initialize the runtime environment
 .PHONY: init
