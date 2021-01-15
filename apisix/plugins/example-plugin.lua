@@ -99,7 +99,7 @@ function _M.access(conf, ctx)
 
     local matched_route = ctx.matched_route
     upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
-                 ctx.conf_version, up_conf, matched_route)
+                 ctx.conf_version, up_conf)
     return
 end
 
