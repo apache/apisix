@@ -586,17 +586,27 @@ local function evaluate_permissions(conf, ctx, token)
         params.keepalive = conf.keepalive
     end
 
-    local httpc_res, httpc_err = httpc:request_uri(token_endpoint, params)
+    local res, err = httpc:request_uri(token_endpoint, params)
 
-    if not httpc_res then
-        log.error("error while sending authz request to ", token_endpoint, ": ", httpc_err)
-        return 500, httpc_err
+    if not res then
+        err = "Error while sending authz request to " .. token_endpoint .. ": " .. err
+        log.error(err)
+        return 500, err
     end
 
-    if httpc_res.status >= 400 then
-        log.error("status code: ", httpc_res.status, " msg: ", httpc_res.body)
-        return httpc_res.status, httpc_res.body
+    log.debug("Response status: ", res.status, ", data: ", res.body)
+
+    if res.status == 403 then
+        -- Request denied.
+        log.debug("Request denied.")
+        return res.status, res.body
+    elseif res.status >= 400 then
+        -- Some other error. Log full response.
+        log.error("Token endpoint returned an error: status: ", res.status, ", body: ", res.body)
+        return res.status, res.body
     end
+
+    -- Request accepted.
 end
 
 
