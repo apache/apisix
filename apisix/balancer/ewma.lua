@@ -39,7 +39,7 @@ local function lock(upstream)
   local _, err = ewma_lock:lock(upstream .. LOCK_KEY)
   if err then
     if err ~= "timeout" then
-      ngx.log(ngx.ERR, string.format("EWMA Balancer failed to lock: %s", tostring(err)))
+      core.log.error("EWMA Balancer failed to lock: ", err)
     end
   end
 
@@ -49,7 +49,7 @@ end
 local function unlock()
   local ok, err = ewma_lock:unlock()
   if not ok then
-    ngx.log(ngx.ERR, string.format("EWMA Balancer failed to unlock: %s", tostring(err)))
+    core.log.error("EWMA Balancer failed to unlock: ", err)
   end
 
   return err
@@ -67,18 +67,18 @@ end
 local function store_stats(upstream, ewma, now)
   local success, err, forcible = shm_last_touched_at:set(upstream, now)
   if not success then
-    ngx.log(ngx.WARN, "shm_last_touched_at:set failed " .. err)
+    core.log.warn("shm_last_touched_at:set failed: ", err)
   end
   if forcible then
-    ngx.log(ngx.WARN, "shm_last_touched_at:set valid items forcibly overwritten")
+    core.log.warn("shm_last_touched_at:set valid items forcibly overwritten")
   end
 
   success, err, forcible = shm_ewma:set(upstream, ewma)
   if not success then
-    ngx.log(ngx.WARN, "shm_ewma:set failed " .. err)
+    core.log.warn("shm_ewma:set failed: ", err)
   end
   if forcible then
-    ngx.log(ngx.WARN, "shm_ewma:set valid items forcibly overwritten")
+    core.log.warn("shm_ewma:set valid items forcibly overwritten")
   end
 end
 
@@ -88,7 +88,7 @@ local function get_or_update_ewma(upstream, rtt, update)
     lock_err = lock(upstream)
   end
 
-  local ewma = ngx.shared.balancer_ewma:get(upstream) or 0
+  local ewma = shm_ewma:get(upstream) or 0
   if lock_err ~= nil then
     return ewma, lock_err
   end
