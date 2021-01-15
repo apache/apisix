@@ -153,7 +153,7 @@ local function _ewma_find(ctx, up_nodes)
         return nil, 'up_nodes trans error'
     end
 
-    local endpoint, backendpoint = peers[1], nil
+    local endpoint = peers[1]
 
     if #peers > 1 then
         local a, b = math.random(1, #peers), math.random(1, #peers - 1)
@@ -161,9 +161,10 @@ local function _ewma_find(ctx, up_nodes)
             b = b + 1
         end
 
+        local backendpoint
         endpoint, backendpoint = peers[a], peers[b]
         if score(endpoint) > score(backendpoint) then
-            endpoint, backendpoint = backendpoint, endpoint
+            endpoint = backendpoint
         end
     end
 
