@@ -22,6 +22,7 @@ local ngx       = ngx
 local plugin_name = "authz-keycloak"
 
 local log = core.log
+local pairs = pairs
 
 local schema = {
     type = "object",
