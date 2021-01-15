@@ -69,7 +69,6 @@ __DATA__
 
 
 
-
 === TEST 2: not unwanted data, GET
 --- config
     location /t {
@@ -95,7 +94,6 @@ __DATA__
     }
 --- response_body
 {"action":"get","count":"1","node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
-
 
 
 
