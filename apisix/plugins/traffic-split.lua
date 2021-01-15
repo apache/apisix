@@ -291,7 +291,7 @@ function _M.access(conf, ctx)
                 return 500, err
             end
 
-            match_flag = expr:eval()
+            match_flag = expr:eval(ctx.var)
             if match_flag then
                 break
             end
