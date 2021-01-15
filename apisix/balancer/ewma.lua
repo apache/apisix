@@ -5,15 +5,18 @@
 --   /finagle-core/src/main/scala/com/twitter/finagle/loadbalancer/PeakEwma.scala
 
 local core = require("apisix.core")
+local resty_lock = require("resty.lock")
+
 local ngx = ngx
 local ngx_shared = ngx.shared
 local ngx_now = ngx.now
 local math = math
 local pairs = pairs
-local next = next
+local tostring = tostring
+local string = string
 
-local _M = {}
 local DECAY_TIME = 10 -- this value is in seconds
+local LOCK_KEY = ":ewma_key"
 
 local shm_ewma = ngx_shared.balancer_ewma
 local shm_last_touched_at= ngx_shared.balancer_ewma_last_touched_at
@@ -25,79 +28,101 @@ local lrucache_trans_format = core.lrucache.new({
     ttl = 300, count = 256
 })
 
+local ewma_lock, ewma_lock_err = resty_lock:new("balancer_ewma_locks", {timeout = 0, exptime = 0.1})
+if not ewma_lock then
+  error(ewma_lock_err)
+end
+
+local _M = { name = "ewma" }
+
+local function lock(upstream)
+  local _, err = ewma_lock:lock(upstream .. LOCK_KEY)
+  if err then
+    if err ~= "timeout" then
+      ngx.log(ngx.ERR, string.format("EWMA Balancer failed to lock: %s", tostring(err)))
+    end
+  end
+
+  return err
+end
+
+local function unlock()
+  local ok, err = ewma_lock:unlock()
+  if not ok then
+    ngx.log(ngx.ERR, string.format("EWMA Balancer failed to unlock: %s", tostring(err)))
+  end
+
+  return err
+end
 
 local function decay_ewma(ewma, last_touched_at, rtt, now)
-    local td = now - last_touched_at
-    td = math.max(td, 0)
-    local weight = math.exp(-td / DECAY_TIME)
+  local td = now - last_touched_at
+  td = (td > 0) and td or 0
+  local weight = math.exp(-td/DECAY_TIME)
 
-    ewma = ewma * weight + rtt * (1.0 - weight)
-    return ewma
+  ewma = ewma * weight + rtt * (1.0 - weight)
+  return ewma
 end
-
 
 local function store_stats(upstream, ewma, now)
-    local success, err, forcible = shm_last_touched_at:set(upstream, now)
-    if not success then
-        core.log.error("balancer_ewma_last_touched_at:set failed ", err)
-    end
-    if forcible then
-        core.log.warn("balancer_ewma_last_touched_at:set valid items forcibly overwritten")
-    end
+  local success, err, forcible = shm_last_touched_at:set(upstream, now)
+  if not success then
+    ngx.log(ngx.WARN, "shm_last_touched_at:set failed " .. err)
+  end
+  if forcible then
+    ngx.log(ngx.WARN, "shm_last_touched_at:set valid items forcibly overwritten")
+  end
 
-    success, err, forcible = shm_ewma:set(upstream, ewma)
-    if not success then
-        core.log.error("balancer_ewma:set failed ", err)
-    end
-    if forcible then
-        core.log.warn("balancer_ewma:set valid items forcibly overwritten")
-    end
+  success, err, forcible = shm_ewma:set(upstream, ewma)
+  if not success then
+    ngx.log(ngx.WARN, "shm_ewma:set failed " .. err)
+  end
+  if forcible then
+    ngx.log(ngx.WARN, "shm_ewma:set valid items forcibly overwritten")
+  end
 end
-
 
 local function get_or_update_ewma(upstream, rtt, update)
-    local ewma = shm_ewma:get(upstream) or 0
-    local now = ngx_now()
-    local last_touched_at = shm_last_touched_at:get(upstream) or 0
-    ewma = decay_ewma(ewma, last_touched_at, rtt, now)
+  local lock_err = nil
+  if update then
+    lock_err = lock(upstream)
+  end
 
-    if not update then
-        return ewma
-    end
+  local ewma = ngx.shared.balancer_ewma:get(upstream) or 0
+  if lock_err ~= nil then
+    return ewma, lock_err
+  end
 
-    store_stats(upstream, ewma, now)
+  local now = ngx_now()
+  local last_touched_at = ngx.shared.balancer_ewma_last_touched_at:get(upstream) or 0
+  ewma = decay_ewma(ewma, last_touched_at, rtt, now)
 
-    return ewma
+  if not update then
+    return ewma, nil
+  end
+
+  store_stats(upstream, ewma, now)
+
+  unlock()
+
+  return ewma, nil
 end
 
+local function get_upstream_name(upstream)
+   return upstream.host .. ":" .. upstream.port
+end
 
 local function score(upstream)
-    -- Original implementation used names
-    -- Endpoints don't have names, so passing in host:Port as key instead
-    local upstream_name = upstream.host .. ":" .. upstream.port
-    return get_or_update_ewma(upstream_name, 0, false)
+  -- Original implementation used names
+  -- Endpoints don't have names, so passing in IP:Port as key instead
+  local upstream_name = get_upstream_name(upstream)
+  return get_or_update_ewma(upstream_name, 0, false)
 end
-
-
-local function pick_and_score(peers)
-    local lowest_score_index = 1
-    local lowest_score = score(peers[lowest_score_index])
-    for i = 2, #peers do
-        local new_score = score(peers[i])
-        if new_score < lowest_score then
-            lowest_score_index, lowest_score = i, new_score
-        end
-    end
-
-    return peers[lowest_score_index], lowest_score
-end
-
 
 local function parse_addr(addr)
     local host, port, err = core.utils.parse_addr(addr)
     return {host = host, port = port}, err
 end
-
 
 local function _trans_format(up_nodes)
     -- trans
@@ -119,10 +144,8 @@ local function _trans_format(up_nodes)
     return next(peers) and peers or nil
 end
 
-
 local function _ewma_find(ctx, up_nodes)
     local peers
-    local endpoint
 
     if not up_nodes
        or core.table.nkeys(up_nodes) == 0 then
@@ -135,13 +158,21 @@ local function _ewma_find(ctx, up_nodes)
         return nil, 'up_nodes trans error'
     end
 
+    local endpoint, backendpoint = peers[1], nil
+
     if #peers > 1 then
-        endpoint = pick_and_score(peers)
-    else
-        endpoint = peers[1]
+        local a, b = math.random(1, #peers), math.random(1, #peers-1)
+        if b >= a then
+            b = b+1
+        end
+
+        endpoint, backendpoint = peers[a], peers[b]
+        if score(endpoint) > score(backendpoint) then
+            endpoint, backendpoint = backendpoint, endpoint
+        end
     end
 
-    return endpoint.host .. ":" .. endpoint.port
+    return get_upstream_name(endpoint)
 end
 
 
@@ -163,7 +194,6 @@ local function _ewma_after_balance(ctx, before_retry)
     return get_or_update_ewma(upstream, rtt, true)
 end
 
-
 function _M.new(up_nodes, upstream)
     if not shm_ewma
        or not shm_last_touched_at then
@@ -178,6 +208,5 @@ function _M.new(up_nodes, upstream)
         after_balance = _ewma_after_balance
     }
 end
-
 
 return _M
