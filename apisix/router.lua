@@ -64,6 +64,7 @@ local function filter(route)
         route.value.upstream.nodes = new_nodes
     end
 
+    route.value.upstream.parent = route
     core.log.info("filter route: ", core.json.delay_encode(route))
 end
 

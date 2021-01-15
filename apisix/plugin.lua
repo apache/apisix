@@ -401,11 +401,8 @@ local function merge_service_route(service_conf, route_conf)
     local route_upstream = route_conf.value.upstream
     if route_upstream then
         new_conf.value.upstream = route_upstream
-
-        if route_upstream.checks then
-            route_upstream.parent = route_conf
-        end
-
+        -- when route's upstream override service's upstream,
+        -- the upstream.parent still point to the route
         new_conf.value.upstream_id = nil
         new_conf.has_domain = route_conf.has_domain
     end
