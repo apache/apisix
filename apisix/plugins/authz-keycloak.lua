@@ -526,7 +526,8 @@ local function evaluate_permissions(conf, ctx, token)
 
     -- Return 403 if permission is empty and enforcement mode is "ENFORCING".
     if #permission == 0 and conf.policy_enforcement_mode == "ENFORCING" then
-        return 403
+        -- Return Keycloak-style message for consistency.
+        return 403, '{"error":"access_denied","error_description":"not_authorized"}'
     end
 
     -- Determine scope from HTTP method, maybe.
