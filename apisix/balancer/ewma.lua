@@ -13,6 +13,7 @@ local ngx_now = ngx.now
 local math = math
 local pairs = pairs
 local next = next
+local error = error
 
 local DECAY_TIME = 10 -- this value is in seconds
 local LOCK_KEY = ":ewma_key"
