@@ -270,7 +270,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
     if session then
         -- Decode session string.
-        session, err = core.json.decode(session)
+        local session, err = core.json.decode(session)
 
         if not session then
             -- Should never happen.
@@ -314,7 +314,8 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                 local res, err = httpc:request_uri(token_endpoint, params)
 
                 if not res then
-                    err = "Accessing token endpoint url (" .. url .. ") failed: " .. error
+                    err = "Accessing token endpoint URL (" .. token_endpoint
+                          .. ") failed: " .. err
                     log.error(err)
                     return nil, err
                 end
@@ -390,7 +391,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
         local res, err = httpc:request_uri(token_endpoint, params)
 
         if not res then
-            err = "Accessing token endpoint url (" .. url .. ") failed: " .. error
+            err = "Accessing token endpoint URL (" .. token_endpoint .. ") failed: " .. err
             log.error(err)
             return nil, err
         end
@@ -441,11 +442,11 @@ local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
     local resource_registration_endpoint = authz_keycloak_get_resource_registration_endpoint(conf)
 
     if not resource_registration_endpoint then
-        err = "Unable to determine registration endpoint."
+        local err = "Unable to determine registration endpoint."
         log.error(err)
         return 500, err
     end
-    
+
     log.error("Resource registration endpoint: ", resource_registration_endpoint)
 
     local httpc = http.new()
@@ -470,7 +471,8 @@ local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
     local res, err = httpc:request_uri(resource_registration_endpoint, params)
 
     if not res then
-        err = "Accessing resource registration endpoint url (" .. url .. ") failed: " .. error
+        err = "Accessing resource registration endpoint URL (" .. resource_registration_endpoint
+              .. ") failed: " .. error
         log.error(err)
         return nil, err
     end
@@ -487,15 +489,6 @@ local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
     end
 
     return json.resources
-end
-
-
-local function is_path_protected(conf)
-    -- TODO if permissions are empty lazy load paths from Keycloak
-    if conf.permissions == nil then
-        return false
-    end
-    return true
 end
 
 
