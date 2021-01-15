@@ -270,7 +270,8 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
     if session then
         -- Decode session string.
-        local session, err = core.json.decode(session)
+        local err
+        session, err = core.json.decode(session)
 
         if not session then
             -- Should never happen.
@@ -472,7 +473,7 @@ local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
 
     if not res then
         err = "Accessing resource registration endpoint URL (" .. resource_registration_endpoint
-              .. ") failed: " .. error
+              .. ") failed: " .. err
         log.error(err)
         return nil, err
     end
