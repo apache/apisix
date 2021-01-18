@@ -633,7 +633,8 @@ local function evaluate_permissions(conf, ctx, token)
         return res.status, res.body
     elseif res.status >= 400 then
         -- Some other error. Log full response.
-        log.error('Request denied: Token endpoint returned an error (status: ', res.status, ', body: ', res.body, ').')
+        log.error('Request denied: Token endpoint returned an error (status: ',
+                  res.status, ', body: ', res.body, ').')
         return res.status, res.body
     end
 
