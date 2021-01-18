@@ -252,6 +252,7 @@ _EOC_
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer       10m;    # plugin skywalking
     lua_shared_dict access_tokens         1m; # plugin authz-keycloak
+    lua_shared_dict discovery             1m; # plugin authz-keycloak
     lua_shared_dict plugin-api-breaker   10m;
     lua_capture_error_log                 1m;    # plugin error-log-logger
 
