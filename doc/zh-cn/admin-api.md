@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Global Rule](#global-rule)
 * [Plugin Metadata](#plugin-metadata)
 * [Plugin](#plugin)
 
@@ -701,6 +702,31 @@ ssl 对象 json 配置内容：
     "snis": ["t.com"]   # HTTPS 握手时客户端发送的 SNI
 }
 ```
+
+## Global Rule
+
+*地址*：/apisix/admin/global_rules/{id}
+
+*说明*：设置全局运行的插件。这一类插件在所有路由级别的插件之前优先运行。
+
+> 请求方法：
+
+|名字      |请求 uri|请求 body|说明        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/global_rules|无|获取资源列表|
+|GET      |/apisix/admin/global_rules/{id}|无|获取资源|
+|PUT      |/apisix/admin/global_rules/{id}|{...}|根据 id 创建资源|
+|DELETE   |/apisix/admin/global_rules/{id}|无|删除资源|
+|PATCH    |/apisix/admin/global_rules/{id}|{...}|标准 PATCH ，修改已有 Global Rule 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/global_rules/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Global Rule 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。|
+
+> body 请求参数：
+
+|名字      |可选项   |类型 |说明        |示例|
+|---------|---------|----|-----------|----|
+|plugins  |必需|Plugin|详见 [Plugin](architecture-design.md#plugin) ||
+|create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+|update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 
 ## Plugin Metadata
 
