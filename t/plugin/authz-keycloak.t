@@ -287,11 +287,15 @@ passed
                 else
                     ngx.say(false)
                 end
+
+                ngx.say(res.status)
+                ngx.say(res.body)
+                ngx.say(err)
             else
                 ngx.say(false)
+                ngx.say(res.status)
+                ngx.say(res.body)
             end
-            ngx.say(res.status)
-            ngx.say(res.body)
         }
     }
 --- request
