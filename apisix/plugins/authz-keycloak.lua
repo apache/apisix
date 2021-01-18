@@ -63,18 +63,20 @@ local schema = {
         cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
     },
     allOf = {
+        -- Require discovery or token endpoint.
         {
             anyOf = {
                 {required = {"discovery"}},
                 {required = {"token_endpoint"}}
             }
         },
+        -- If lazy_load_paths is true, require discovery or resource registration endpoint.
         {
             anyOf = {
                 {
                     properties = {
                         lazy_load_paths = {const = false},
-                    }
+                    },
                     required = {"lazy_load_paths"}
                 },
                 {
