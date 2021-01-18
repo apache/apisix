@@ -61,7 +61,7 @@ local schema = {
         lazy_load_paths = {type = "boolean", default = false},
         http_method_as_scope = {type = "boolean", default = false},
     },
-    anyOf {
+    anyOf = {
         {required = {"client_id"}},
         {required = {"audience"}}
     },
