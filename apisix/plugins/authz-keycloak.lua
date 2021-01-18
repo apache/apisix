@@ -552,12 +552,6 @@ local function evaluate_permissions(conf, ctx, token)
         end
     else
         -- Use statically configured permissions.
-
-        if conf.permissions == nil then
-            -- No static permission configured.
-            return 500, "No static permissions configured."
-        end
-
         permission = conf.permissions
     end
 

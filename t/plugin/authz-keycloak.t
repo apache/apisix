@@ -168,7 +168,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({client_id = "University", permissions = {"res:customer#scopes:view"}})
+            local ok, err = plugin.check_schema({})
             if not ok then
                 ngx.say(err)
             end
@@ -186,7 +186,33 @@ done
 
 
 
-=== TEST 7: add plugin with view course permissions (using token endpoint)
+=== TEST 7: resource_registration_endpoint and discovery both missing and lazy_load_paths is true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-keycloak")
+            local ok, err = plugin.check_schema({
+                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
+                                lazy_load_paths = true
+                            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+allOf 2 failed: object matches none of the requireds: ["discovery"] or ["resource_registration_endpoint"]
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: add plugin with view course permissions (using token endpoint)
 --- config
     location /t {
         content_by_lua_block {
@@ -252,7 +278,7 @@ passed
 
 
 
-=== TEST 8: Get access token for teacher and access view course route
+=== TEST 9: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -300,7 +326,7 @@ true
 
 
 
-=== TEST 9: invalid access token
+=== TEST 10: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -327,7 +353,7 @@ Invalid bearer token
 
 
 
-=== TEST 10: add plugin with view course permissions (using discovery)
+=== TEST 11: add plugin with view course permissions (using discovery)
 --- config
     location /t {
         content_by_lua_block {
@@ -393,7 +419,7 @@ passed
 
 
 
-=== TEST 11: Get access token for teacher and access view course route
+=== TEST 12: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -441,7 +467,7 @@ true
 
 
 
-=== TEST 12: invalid access token
+=== TEST 13: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -468,7 +494,7 @@ Invalid bearer token
 
 
 
-=== TEST 13: add plugin for delete course route
+=== TEST 14: add plugin for delete course route
 --- config
     location /t {
         content_by_lua_block {
@@ -534,7 +560,7 @@ passed
 
 
 
-=== TEST 14: Get access token for student and delete course
+=== TEST 15: Get access token for student and delete course
 --- config
     location /t {
         content_by_lua_block {
@@ -582,7 +608,7 @@ true
 
 
 
-=== TEST 15: Add https endpoint with ssl_verify true (default)
+=== TEST 16: Add https endpoint with ssl_verify true (default)
 --- config
     location /t {
         content_by_lua_block {
@@ -648,7 +674,7 @@ passed
 
 
 
-=== TEST 16: TEST with fake token and https endpoint
+=== TEST 17: TEST with fake token and https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -678,7 +704,7 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
 
 
 
-=== TEST 17: Add htttps endpoint with ssl_verify false
+=== TEST 18: Add htttps endpoint with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -746,7 +772,7 @@ passed
 
 
 
-=== TEST 18: TEST for https based token verification with ssl_verify false
+=== TEST 19: TEST for https based token verification with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
