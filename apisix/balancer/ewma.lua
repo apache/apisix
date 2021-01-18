@@ -4,9 +4,9 @@
 -- https://github.com/twitter/finagle/blob/1bc837c4feafc0096e43c0e98516a8e1c50c4421
 --   /finagle-core/src/main/scala/com/twitter/finagle/loadbalancer/PeakEwma.scala
 local core = require("apisix.core")
-local nkeys = require("core.table").nkeys
 local resty_lock = require("resty.lock")
 
+local nkeys = core.table.nkeys
 local ngx = ngx
 local ngx_shared = ngx.shared
 local ngx_now = ngx.now
