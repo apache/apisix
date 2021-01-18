@@ -60,7 +60,7 @@ local schema = {
         client_secret = {type = "string", minLength = 1, maxLength = 100},
         lazy_load_paths = {type = "boolean", default = false},
         http_method_as_scope = {type = "boolean", default = false},
-        cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
+        cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60}
     },
     allOf = {
         -- Require discovery or token endpoint.
@@ -553,12 +553,12 @@ local function evaluate_permissions(conf, ctx, token)
     else
         -- Use statically configured permissions.
 
-        if conf.permission == nil then
+        if conf.permissions == nil then
             -- No static permission configured.
             return 500, "No static permission configured."
         end
 
-        permission = conf.permission
+        permission = conf.permissions
     end
 
     -- Return 403 if permission is empty and enforcement mode is "ENFORCING".
