@@ -30,6 +30,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
+                                   client_id = "foo",
                                    token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
                                    grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
                                    })
@@ -55,6 +56,7 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
+                                   client_id = "foo",
                                    discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
                                    grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
                                    })
@@ -83,7 +85,7 @@ done
                                                  token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
                                                  permissions = {"res:customer#scopes:view"},
                                                  timeout = 1000,
-                                                 audience = "University",
+                                                 client_id = "University",
                                                  grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
                                                  })
             if not ok then
@@ -107,7 +109,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({permissions = {"res:customer#scopes:view"}})
+            local ok, err = plugin.check_schema({client_id = "University", permissions = {"res:customer#scopes:view"}})
             if not ok then
                 ngx.say(err)
             end
@@ -137,7 +139,7 @@ done
                             "authz-keycloak": {
                                 "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#view"],
-                                "audience": "course_management",
+                                "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3000
                             }
@@ -157,7 +159,7 @@ done
                                 "authz-keycloak": {
                                     "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                     "permissions": ["course_resource#view"],
-                                    "audience": "course_management",
+                                    "client_id": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                     "timeout": 3000
                                 }
@@ -278,7 +280,7 @@ Invalid bearer token
                             "authz-keycloak": {
                                 "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
                                 "permissions": ["course_resource#view"],
-                                "audience": "course_management",
+                                "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3000
                             }
@@ -298,7 +300,7 @@ Invalid bearer token
                                 "authz-keycloak": {
                                     "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
                                     "permissions": ["course_resource#view"],
-                                    "audience": "course_management",
+                                    "client_id": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                     "timeout": 3000
                                 }
@@ -419,7 +421,7 @@ Invalid bearer token
                             "authz-keycloak": {
                                 "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#delete"],
-                                "audience": "course_management",
+                                "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3000
                             }
@@ -439,7 +441,7 @@ Invalid bearer token
                                 "authz-keycloak": {
                                     "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
                                     "permissions": ["course_resource#delete"],
-                                    "audience": "course_management",
+                                    "client_id": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                     "timeout": 3000
                                 }
@@ -533,7 +535,7 @@ true
                             "authz-keycloak": {
                                 "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#delete"],
-                                "audience": "course_management",
+                                "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3000
                             }
@@ -553,7 +555,7 @@ true
                                 "authz-keycloak": {
                                     "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
                                     "permissions": ["course_resource#delete"],
-                                    "audience": "course_management",
+                                    "client_id": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                     "timeout": 3000
                                 }
@@ -629,7 +631,7 @@ error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
                             "authz-keycloak": {
                                 "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#delete"],
-                                "audience": "course_management",
+                                "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3000,
                                 "ssl_verify": false
@@ -650,7 +652,7 @@ error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
                                 "authz-keycloak": {
                                     "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
                                     "permissions": ["course_resource#delete"],
-                                    "audience": "course_management",
+                                    "client_id": "course_management",
                                     "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                     "timeout": 3000,
                                     "ssl_verify": false
