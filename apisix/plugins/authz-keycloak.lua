@@ -55,11 +55,16 @@ local schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         ssl_verify = {type = "boolean", default = true},
         client_id = {type = "string", minLength = 1, maxLength = 100},
+        audience = {type = "string", minLength = 1, maxLength = 100,
+                    description = "Deprecated, use `client_id` instead."},
         client_secret = {type = "string", minLength = 1, maxLength = 100},
         lazy_load_paths = {type = "boolean", default = false},
         http_method_as_scope = {type = "boolean", default = false},
     },
-    required = {"client_id"},
+    anyOf {
+        {required = {"client_id"}},
+        {required = {"audience"}}
+    },
     anyOf = {
         {required = {"discovery"}},
         {required = {"token_endpoint"}}
@@ -84,7 +89,25 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    -- Check for deprecated audience attribute and emit warnings if used.
+    if conf.audience then
+        log.warn("Plugin attribute `audience` is deprecated, use `client_id` instead.")
+        if conf.client_id then
+            log.warn("Ignoring `audience` attribute in favor of `client_id`.")
+        end
+    end
     return core.schema.check(schema, conf)
+end
+
+
+-- Return the configured client ID parameter.
+local function authz_keycloak_get_client_id(conf)
+    if conf.client_id then
+        -- Prefer client_id, if given.
+        return client_id
+    end
+
+    return conf.audience
 end
 
 
@@ -259,6 +282,7 @@ end
 
 
 local function authz_keycloak_ensure_sa_access_token(conf)
+    local client_id = authz_keycloak_get_client_id(conf)
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
 
     if not token_endpoint then
@@ -267,7 +291,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
     end
 
     local session = authz_keycloak_cache_get("access_tokens", token_endpoint .. ":"
-                                             .. conf.client_id)
+                                             .. client_id)
 
     if session then
         -- Decode session string.
@@ -301,7 +325,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                     method = "POST",
                     body =  ngx.encode_args({
                         grant_type = "refresh_token",
-                        client_id = conf.client_id,
+                        client_id = client_id,
                         client_secret = conf.client_secret,
                         refresh_token = session.refresh_token,
                     }),
@@ -357,7 +381,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                     end
 
                     authz_keycloak_cache_set("access_tokens",
-                                             token_endpoint .. ":" .. conf.client_id,
+                                             token_endpoint .. ":" .. client_id,
                                              core.json.encode(session), 24 * 60 * 60)
                 end
             else
@@ -379,7 +403,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
             method = "POST",
             body =  ngx.encode_args({
                 grant_type = "client_credentials",
-                client_id = conf.client_id,
+                client_id = client_id,
                 client_secret = conf.client_secret,
             }),
             ssl_verify = conf.ssl_verify,
@@ -431,7 +455,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                     + authz_keycloak_refresh_token_expires_in(conf, json.refresh_expires_in)
         end
 
-        authz_keycloak_cache_set("access_tokens", token_endpoint .. ":" .. conf.client_id,
+        authz_keycloak_cache_set("access_tokens", token_endpoint .. ":" .. client_id,
                                  core.json.encode(session), 24 * 60 * 60)
     end
 
@@ -575,7 +599,7 @@ local function evaluate_permissions(conf, ctx, token)
         method = "POST",
         body =  ngx.encode_args({
             grant_type = conf.grant_type,
-            audience = conf.client_id,
+            audience = authz_keycloak_get_client_id(conf),
             response_mode = "decision",
             permission = permission
         }),
