@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Global Rule](#global-rule)
 * [Plugin Metadata](#plugin-metadata)
 * [Plugin](#plugin)
 
@@ -694,6 +695,31 @@ Config Example:
     "snis": ["t.com"]    # https SNI
 }
 ```
+
+## Global Rule
+
+*API*：/apisix/admin/global_rules/{id}
+
+*Description*: Set plugins which run globally. Those plugins will be run before any Route/Service level plugins.
+
+> Request Methods：
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/global_rules|NULL|Fetch resource list|
+|GET      |/apisix/admin/global_rules/{id}|NULL|Fetch resource|
+|PUT      |/apisix/admin/global_rules/{id}|{...}|Create resource by ID|
+|DELETE   |/apisix/admin/global_rules/{id}|NULL|Remove resource|
+|PATCH    |/apisix/admin/global_rules/{id}|{...}|Standard PATCH. Update some attributes of the existing global rule, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full|
+|PATCH    |/apisix/admin/global_rules/{id}/{path}|{...}|SubPath PATCH, specify the attribute of global rule to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are.|
+
+> Request Body Parameters：
+
+|Parameter|Required|Description|Example|
+|---------|---------|-----------|----|
+|plugins     |True |See [Plugin](architecture-design.md#plugin)||
+|create_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
+|update_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
 
 ## Plugin Metadata
 
