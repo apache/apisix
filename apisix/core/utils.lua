@@ -255,7 +255,7 @@ _M.sleep = sleep
 local resolve_var
 do
     local _ctx
-    local pat = [[(?<!\\)\$(\w+)]]
+    local pat = [[(?<!\\)\$\{?(\w+)\}?]]
 
     local function resolve(m)
         local v = _ctx[m[1]]
