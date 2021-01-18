@@ -674,7 +674,7 @@ GET /t
 --- response_body
 false
 --- error_log
-error while sending authz request to https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token: 18: self signed certificate
+Error while sending authz request to https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token: 18: self signed certificate
 
 
 
