@@ -337,8 +337,6 @@ local function authz_keycloak_ensure_sa_access_token(conf)
                     }
                 }
 
-                local current_time = ngx.time()
-
                 local res, err = httpc:request_uri(token_endpoint, params)
 
                 if not res then
