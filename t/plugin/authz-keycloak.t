@@ -269,6 +269,7 @@ passed
                 })
 
             if res.status == 200 then
+                ngx.say("Got token.")
                 local body = json_decode(res.body)
                 local accessToken = body["access_token"]
 
@@ -289,6 +290,8 @@ passed
             else
                 ngx.say(false)
             end
+            ngx.say(res.status)
+            ngx.say(res.body)
         }
     }
 --- request
@@ -297,6 +300,7 @@ GET /t
 true
 --- no_error_log
 [error]
+[debug]
 
 
 
