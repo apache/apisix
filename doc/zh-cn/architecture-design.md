@@ -28,8 +28,8 @@
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer-1)
-- [**Global Rule**](#Global-Rule)
-- [**Debug mode**](#Debug-mode)
+- [**Global Rule**](#global-rule)
+- [**Debug mode**](#debug-mode)
 
 ## APISIX
 
@@ -593,8 +593,8 @@ HTTP/1.1 403
 
 ## Global Rule
 
-[Plugin](#Plugin) 只能绑定在 [Service](#Service) 或者 [Route](#Route) 上，如果我们需要一个能作用于所有请求的 [Plugin](#Plugin) 该怎么办呢？
-这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#Plugin):
+[Plugin](#plugin) 只能绑定在 [Service](#service) 或者 [Route](#route) 上，如果我们需要一个能作用于所有请求的 [Plugin](#plugin) 该怎么办呢？
+这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](#plugin):
 
 ```shell
 curl -X PUT \
