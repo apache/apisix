@@ -26,11 +26,6 @@ local upstreams
 local healthcheck
 
 
-local lrucache_checker = core.lrucache.new({
-    ttl = 300, count = 256
-})
-
-
 local _M = {}
 
 
@@ -57,12 +52,24 @@ end
 _M.set = set_directly
 
 
+local function release_checker(healthcheck_parent)
+    local checker = healthcheck_parent.checker
+    core.log.info("try to release checker: ", tostring(checker))
+    checker:clear()
+    checker:stop()
+end
+
+
 local function create_checker(upstream)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
     end
 
     local healthcheck_parent = upstream.parent
+    if healthcheck_parent.checker and healthcheck_parent.checker_upstream == upstream then
+        return healthcheck_parent.checker
+    end
+
     local checker, err = healthcheck.new({
         name = "upstream#" .. healthcheck_parent.key,
         shm_name = "upstream-healthcheck",
@@ -84,29 +91,28 @@ local function create_checker(upstream)
         end
     end
 
-    core.table.insert(healthcheck_parent.clean_handlers, function ()
-        core.log.info("try to release checker: ", tostring(checker))
-        checker:clear()
-        checker:stop()
-    end)
+    if healthcheck_parent.checker then
+        core.config_util.cancel_clean_handler(healthcheck_parent,
+                                              healthcheck_parent.checker_idx, true)
+    end
 
     core.log.info("create new checker: ", tostring(checker))
+
+    healthcheck_parent.checker = checker
+    healthcheck_parent.checker_upstream = upstream
+    healthcheck_parent.checker_idx =
+        core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+
     return checker
 end
 
 
-local function fetch_healthchecker(upstream, version)
+local function fetch_healthchecker(upstream)
     if not upstream.checks then
-        return
+        return nil
     end
 
-    if upstream.checker then
-        return
-    end
-
-    local checker = lrucache_checker(upstream, version,
-                                     create_checker, upstream)
-    return checker
+    return create_checker(upstream)
 end
 
 
@@ -164,7 +170,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf, api_ctx.upstream_version)
+        local checker = fetch_healthchecker(up_conf)
         api_ctx.up_checker = checker
     end
 
