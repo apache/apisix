@@ -134,7 +134,12 @@ echo -e "\n\nfake empty apisix server: $worker_cnt worker"
 
 sleep 1
 
-sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
+if [[ "$(uname)" == "Darwin" ]]; then
+    sed  -i "" "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
+else
+    sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
+fi
+
 sudo openresty -p $PWD/benchmark/fake-apisix || exit 1
 
 sleep 1
