@@ -72,12 +72,12 @@ local schema = {
         },
         -- If lazy_load_paths is true, require discovery or resource registration endpoint.
         {
-            if = {
+            ["if"] = {
                 properties = {
                     lazy_load_paths = {const = true},
                 },
             },
-            then = {
+            ["then"] = {
                 anyOf = {
                     {required = {"discovery"}},
                     {required = {"resource_registration_endpoint"}}
