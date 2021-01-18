@@ -205,7 +205,7 @@ done
 --- request
 GET /t
 --- response_body
-allOf 2 failed: object matches none of the requireds: ["discovery"] or ["resource_registration_endpoint"]
+allOf 2 failed: object matches none of the requireds
 done
 --- no_error_log
 [error]
