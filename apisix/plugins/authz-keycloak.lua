@@ -72,14 +72,16 @@ local schema = {
         {
             anyOf = {
                 {
-                    not = {
-                        properties: {
-                            lazy_load_paths: {const = true},
-                            required: {"lazy_load_paths"}
-                        }
-                    },
+                    properties = {
+                        lazy_load_paths = {const = false},
+                    }
+                    required = {"lazy_load_paths"}
                 },
                 {
+                    properties = {
+                        lazy_load_paths = {const = true},
+                    },
+                    required = {"lazy_load_paths"},
                     anyOf = {
                         {required = {"discovery"}},
                         {required = {"resource_registration_endpoint"}}
