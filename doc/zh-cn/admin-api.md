@@ -706,12 +706,12 @@ ssl 对象 json 配置内容：
 
 |名字      |请求 uri|请求 body|说明        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/routes|无|获取资源列表|
-|GET      |/apisix/admin/routes/{id}|无|获取资源|
-|PUT      |/apisix/admin/routes/{id}|{...}|根据 id 创建资源|
-|DELETE   |/apisix/admin/routes/{id}|无|删除资源|
-|PATCH    |/apisix/admin/routes/{id}|{...}|标准 PATCH ，修改已有 Route 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
-|PATCH    |/apisix/admin/routes/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。|
+|GET      |/apisix/admin/global_rules|无|获取资源列表|
+|GET      |/apisix/admin/global_rules/{id}|无|获取资源|
+|PUT      |/apisix/admin/global_rules/{id}|{...}|根据 id 创建资源|
+|DELETE   |/apisix/admin/global_rules/{id}|无|删除资源|
+|PATCH    |/apisix/admin/global_rules/{id}|{...}|标准 PATCH ，修改已有 Route 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为null 即可删除；特别地，当需要修改属性的值为数组时，该属性将全量更新|
+|PATCH    |/apisix/admin/global_rules/{id}/{path}|{...}|SubPath PATCH，通过 {path} 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。|
 
 > body 请求参数：
 

@@ -699,12 +699,12 @@ Config Example:
 
 |Method      |Request URI|Request Body|Description        |
 |---------|-------------------------|--|------|
-|GET      |/apisix/admin/routes|NULL|Fetch resource list|
-|GET      |/apisix/admin/routes/{id}|NULL|Fetch resource|
-|PUT      |/apisix/admin/routes/{id}|{...}|Create resource by ID|
-|DELETE   |/apisix/admin/routes/{id}|NULL|Remove resource|
-|PATCH    |/apisix/admin/routes/{id}|{...}|Standard PATCH. Update some attributes of the existing Route, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full|
-|PATCH    |/apisix/admin/routes/{id}/{path}|{...}|SubPath PATCH, specify the attribute of Route to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are.|
+|GET      |/apisix/admin/global_rules|NULL|Fetch resource list|
+|GET      |/apisix/admin/global_rules/{id}|NULL|Fetch resource|
+|PUT      |/apisix/admin/global_rules/{id}|{...}|Create resource by ID|
+|DELETE   |/apisix/admin/global_rules/{id}|NULL|Remove resource|
+|PATCH    |/apisix/admin/global_rules/{id}|{...}|Standard PATCH. Update some attributes of the existing Route, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full|
+|PATCH    |/apisix/admin/global_rules/{id}/{path}|{...}|SubPath PATCH, specify the attribute of Route to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are.|
 
 > Request Body Parameters：
 
