@@ -17,6 +17,7 @@
 local require = require
 local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
+local upstream_util = require("apisix.utils.upstream")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -132,9 +133,26 @@ function _M.set_by_route(route, api_ctx)
 
         local dis = discovery[up_conf.discovery_type]
         if not dis then
-            return 500, "discovery " .. up_conf.discovery_type .. "is uninitialized"
+            return 500, "discovery " .. up_conf.discovery_type .. " is uninitialized"
         end
-        up_conf.nodes = dis.nodes(up_conf.service_name)
+        local new_nodes = dis.nodes(up_conf.service_name)
+        local same = upstream_util.compare_upstream_node(up_conf.nodes, new_nodes)
+        if not same then
+            up_conf.nodes = new_nodes
+            local new_up_conf = core.table.clone(up_conf)
+            core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
+                          up_conf.discovery_type, ": ",
+                          core.json.delay_encode(new_up_conf, true))
+
+            local parent = up_conf.parent
+            if parent.value.upstream then
+                -- the up_conf comes from route or service
+                parent.value.upstream = new_up_conf
+            else
+                parent.value = new_up_conf
+            end
+            up_conf = new_up_conf
+        end
     end
 
     set_directly(api_ctx, up_conf.type .. "#upstream_" .. tostring(up_conf),
@@ -175,7 +193,13 @@ function _M.init_worker()
             item_schema = core.schema.upstream,
             filter = function(upstream)
                 upstream.has_domain = false
-                if not upstream.value or not upstream.value.nodes then
+                if not upstream.value then
+                    return
+                end
+
+                upstream.value.parent = upstream
+
+                if not upstream.value.nodes then
                     return
                 end
 
@@ -207,7 +231,6 @@ function _M.init_worker()
                     upstream.value.nodes = new_nodes
                 end
 
-                upstream.value.parent = upstream
                 core.log.info("filter upstream: ", core.json.delay_encode(upstream))
             end,
         })

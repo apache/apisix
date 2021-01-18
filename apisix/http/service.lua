@@ -47,7 +47,13 @@ local function filter(service)
         return
     end
 
-    if not service.value.upstream or not service.value.upstream.nodes then
+    if not service.value.upstream then
+        return
+    end
+
+    service.value.upstream.parent = service
+
+    if not service.value.upstream.nodes then
         return
     end
 
@@ -79,7 +85,6 @@ local function filter(service)
         service.value.upstream.nodes = new_nodes
     end
 
-    service.value.upstream.parent = service
     core.log.info("filter service: ", core.json.delay_encode(service))
 end
 
