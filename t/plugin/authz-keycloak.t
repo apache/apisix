@@ -80,7 +80,7 @@ done
             local ok, err = plugin.check_schema({
                                 lazy_load_paths = true,
                                 token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
-                                resource_registrytion_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set"
+                                resource_registration_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set"
                             })
             if not ok then
                 ngx.say(err)
