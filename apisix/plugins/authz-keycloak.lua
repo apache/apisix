@@ -101,7 +101,7 @@ end
 local function authz_keycloak_get_client_id(conf)
     if conf.client_id then
         -- Prefer client_id, if given.
-        return client_id
+        return conf.client_id
     end
 
     return conf.audience
