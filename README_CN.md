@@ -165,9 +165,9 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
    - 下载最新的源码发布包：
 
      ```shell
-     $ mkdir apisix-2.1
-     $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
-     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
+     $ mkdir apisix-2.2
+     $ wget https://downloads.apache.org/apisix/2.2/apache-apisix-2.2-src.tgz
+     $ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
      ```
 
    - 安装运行时依赖的 Lua 库：
