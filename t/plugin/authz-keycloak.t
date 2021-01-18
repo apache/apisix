@@ -24,16 +24,14 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity (using token endpoint)
+=== TEST 1: minimal valid configuration w/o discovery
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
-                                   client_id = "foo",
-                                   token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
-                                   grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
-                                   })
+                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token"
+                            })
             if not ok then
                 ngx.say(err)
             end
@@ -50,16 +48,14 @@ done
 
 
 
-=== TEST 2: sanity (using discovery endpoint)
+=== TEST 2: minimal valid configuration with discovery
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
-                                   client_id = "foo",
-                                   discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
-                                   grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
-                                   })
+                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
+                            })
             if not ok then
                 ngx.say(err)
             end
@@ -76,18 +72,16 @@ done
 
 
 
-=== TEST 3: full schema check
+=== TEST 3: minimal valid configuration w/o discovery when lazy_load_paths=true
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
-                                                 token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
-                                                 permissions = {"res:customer#scopes:view"},
-                                                 timeout = 1000,
-                                                 client_id = "University",
-                                                 grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket"
-                                                 })
+            local ok, err = plugin.check_schema({
+                                lazy_load_paths = true,
+                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
+                                resource_registrytion_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set"
+                            })
             if not ok then
                 ngx.say(err)
             end
@@ -104,7 +98,72 @@ done
 
 
 
-=== TEST 4: token_endpoint and discovery both missing
+=== TEST 4: minimal valid configuration with discovery when lazy_load_paths=true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-keycloak")
+            local ok, err = plugin.check_schema({
+                                lazy_load_paths = true,
+                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
+                            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: full schema check
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-keycloak")
+            local ok, err = plugin.check_schema({
+                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
+                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
+                                resource_registration_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set",
+                                permissions = {"res:customer#scopes:view"},
+                                grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                timeout = 1000,
+                                policy_enforcement_mode = "ENFORCING",
+                                keepalive = true,
+                                keepalive_timeout = 10000,
+                                keepalive_pool = 5,
+                                ssl_verify = false,
+                                client_id = "University",
+                                audience = "University",
+                                client_secret = "secret",
+                                lazy_load_paths = false,
+                                http_method_as_scope = false,
+                                cache_ttl_seconds = 1000
+                            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: token_endpoint and discovery both missing
 --- config
     location /t {
         content_by_lua_block {
@@ -120,14 +179,14 @@ done
 --- request
 GET /t
 --- response_body
-object matches none of the requireds: ["discovery"] or ["token_endpoint"]
+allOf 1 failed: object matches none of the requireds: ["discovery"] or ["token_endpoint"]
 done
 --- no_error_log
 [error]
 
 
 
-=== TEST 5: add plugin with view course permissions (using token endpoint)
+=== TEST 7: add plugin with view course permissions (using token endpoint)
 --- config
     location /t {
         content_by_lua_block {
@@ -193,7 +252,7 @@ passed
 
 
 
-=== TEST 6: Get access token for teacher and access view course route
+=== TEST 8: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +300,7 @@ true
 
 
 
-=== TEST 7: invalid access token
+=== TEST 9: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -268,7 +327,7 @@ Invalid bearer token
 
 
 
-=== TEST 8: add plugin with view course permissions (using discovery)
+=== TEST 10: add plugin with view course permissions (using discovery)
 --- config
     location /t {
         content_by_lua_block {
@@ -334,7 +393,7 @@ passed
 
 
 
-=== TEST 9: Get access token for teacher and access view course route
+=== TEST 11: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -382,7 +441,7 @@ true
 
 
 
-=== TEST 10: invalid access token
+=== TEST 12: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -409,7 +468,7 @@ Invalid bearer token
 
 
 
-=== TEST 11: add plugin for delete course route
+=== TEST 13: add plugin for delete course route
 --- config
     location /t {
         content_by_lua_block {
@@ -475,7 +534,7 @@ passed
 
 
 
-=== TEST 12: Get access token for student and delete course
+=== TEST 14: Get access token for student and delete course
 --- config
     location /t {
         content_by_lua_block {
@@ -523,7 +582,7 @@ true
 
 
 
-=== TEST 13: Add https endpoint with ssl_verify true (default)
+=== TEST 15: Add https endpoint with ssl_verify true (default)
 --- config
     location /t {
         content_by_lua_block {
@@ -589,7 +648,7 @@ passed
 
 
 
-=== TEST 14: TEST with fake token and https endpoint
+=== TEST 16: TEST with fake token and https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -619,7 +678,7 @@ error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
 
 
 
-=== TEST 15: Add htttps endpoint with ssl_verify false
+=== TEST 17: Add htttps endpoint with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -687,7 +746,7 @@ passed
 
 
 
-=== TEST 16: TEST for https based token verification with ssl_verify false
+=== TEST 18: TEST for https based token verification with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
