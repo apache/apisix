@@ -62,16 +62,30 @@ local schema = {
         http_method_as_scope = {type = "boolean", default = false},
         cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
     },
-    anyOf = {
-        {required = {"discovery"}},
-        {required = {"token_endpoint"}}
-    },
-    dependencies = {
-        lazy_load_paths = {
+    allOf = {
+        {
             anyOf = {
                 {required = {"discovery"}},
-                {required = {"resource_registration_endpoint"}}
-            },
+                {required = {"token_endpoint"}}
+            }
+        },
+        {
+            anyOf = {
+                {
+                    not = {
+                        properties: {
+                            lazy_load_paths: {const: true},
+                            required: {"lazy_load_paths"}
+                        }
+                    },
+                },
+                {
+                    anyOf = {
+                        {required = {"discovery"}},
+                        {required = {"resource_registration_endpoint"}}
+                    }
+                }
+            }
         }
     }
 }
