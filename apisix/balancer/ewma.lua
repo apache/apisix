@@ -31,10 +31,8 @@ local _M = {name = "ewma"}
 
 local function lock(upstream)
     local _, err = ewma_lock:lock(upstream .. LOCK_KEY)
-    if err then
-        if err ~= "timeout" then
-            core.log.error("EWMA Balancer failed to lock: ", err)
-        end
+    if err and err ~= "timeout" then
+        core.log.error("EWMA Balancer failed to lock: ", err)
     end
 
     return err
