@@ -520,10 +520,10 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 
 |名字      |可选项   |类型 |说明        |示例|
 |---------|---------|----|-----------|----|
+|type            |必需|枚举||负载均衡算法||
 |nodes           |必需，不能和 `service_name` 一起用|Node|哈希表，内部元素的 key 是上游机器地址列表，格式为`地址 + Port`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重，特别的，当权重值为 `0` 有特殊含义，通常代表该上游节点失效，永远不希望被选中。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。|`192.168.1.100:80`|
 |service_name   |必需，不能和 `nodes` 一起用|string|服务发现时使用的服务名，见[集成服务发现注册中心](./discovery.md)|`a-bootiful-client`|
 |discovery_type   |必需，如果设置了 `service_name` |string|服务发现类型，见[集成服务发现注册中心](./discovery.md)|`eureka`|
-|type            |必需|枚举|`roundrobin` 支持权重的负载，`chash` 一致性哈希，两者是二选一的|`roundrobin`||
 |key             |条件必需|匹配类型|该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自URL的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html)||
 |checks          |可选|health_checker|配置健康检查的参数，详细可参考[health-check](../health-check.md)||
 |retries         |可选|整型|使用底层的 Nginx 重试机制将请求传递给下一个上游，默认启用重试且次数为后端可用的 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制。||
@@ -536,6 +536,13 @@ APISIX 的 Upstream 除了基本的复杂均衡算法选择外，还支持对上
 |labels   |可选 |匹配规则|标识附加属性的键值对|{"version":"v2","build":"16","env":"production"}|
 |create_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
 |update_time|可选|辅助|单位为秒的 epoch 时间戳，如果不指定则自动创建|1602883670|
+
+`type` 可以是以下的一种：
+
+* `roundrobin`: 带权重的 roundrobin
+* `chash`: 一致性哈希
+* `ewma`: 选择延迟最小的节点，计算细节参考 https://en.wikipedia.org/wiki/EWMA_chart
+* `least_conn`: 选择 `(active_conn + 1) / weight` 最小的节点。注意这里的 `active connection` 概念跟 Nginx 的相同：它是当前正在被请求使用的连接。
 
 `hash_on` 比较复杂，这里专门说明下：
 
@@ -557,7 +564,7 @@ upstream 对象 json 配置内容：
         "read":15,
     },
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + Port`
-    "type":"roundrobin",        # chash or roundrobin
+    "type":"roundrobin",
     "checks": {},               # 配置健康检查的参数
     "hash_on": "",
     "key": "",
