@@ -51,7 +51,7 @@ end
 
 local function decay_ewma(ewma, last_touched_at, rtt, now)
     local td = now - last_touched_at
-    td = (td > 0) and td or 0
+    td = math.max(td, 0)
     local weight = math.exp(-td / DECAY_TIME)
 
     ewma = ewma * weight + rtt * (1.0 - weight)
@@ -64,8 +64,7 @@ local function store_stats(upstream, ewma, now)
         core.log.warn("shm_last_touched_at:set failed: ", err)
     end
     if forcible then
-        core.log
-            .warn("shm_last_touched_at:set valid items forcibly overwritten")
+        core.log.warn("shm_last_touched_at:set valid items forcibly overwritten")
     end
 
     success, err, forcible = shm_ewma:set(upstream, ewma)
