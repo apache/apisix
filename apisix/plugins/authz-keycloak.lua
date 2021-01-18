@@ -75,12 +75,12 @@ local schema = {
             anyOf = {
                 {
                     properties = {
-                        lazy_load_paths = {const = false},
+                        lazy_load_paths = {enum = {false}},
                     }
                 },
                 {
                     properties = {
-                        lazy_load_paths = {const = true},
+                        lazy_load_paths = {enum = {true}},
                     },
                     anyOf = {
                         {required = {"discovery"}},
