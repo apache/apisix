@@ -60,6 +60,7 @@ local schema = {
         client_secret = {type = "string", minLength = 1, maxLength = 100},
         lazy_load_paths = {type = "boolean", default = false},
         http_method_as_scope = {type = "boolean", default = false},
+        cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
     },
     anyOf = {
         {required = {"client_id"}},
@@ -215,7 +216,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
       log.debug("Response data: " .. res.body)
       json, err = authz_keycloak_parse_json_response(res)
       if json then
-        authz_keycloak_cache_set("discovery", url, core.json.encode(json), exptime or 24 * 60 * 60)
+        authz_keycloak_cache_set("discovery", url, core.json.encode(json), exptime)
       else
         err = "could not decode JSON from Discovery data" .. (err and (": " .. err) or '')
         log.error(err)
@@ -236,8 +237,8 @@ local function authz_keycloak_ensure_discovered_data(opts)
   if type(opts.discovery) == "string" then
     local discovery
     discovery, err = authz_keycloak_discover(opts.discovery, opts.ssl_verify, opts.keepalive,
-                                             opts.timeout, opts.jwk_expires_in, opts.proxy_opts,
-                                             opts.http_request_decorator)
+                                             opts.timeout, opts.cache_ttl_seconds,
+                                             opts.proxy_opts, opts.http_request_decorator)
     if not err then
       opts.discovery = discovery
     end
@@ -283,6 +284,7 @@ end
 
 local function authz_keycloak_ensure_sa_access_token(conf)
     local client_id = authz_keycloak_get_client_id(conf)
+    local ttl = conf.cache_ttl_seconds
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
 
     if not token_endpoint then
@@ -382,7 +384,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
                     authz_keycloak_cache_set("access_tokens",
                                              token_endpoint .. ":" .. client_id,
-                                             core.json.encode(session), 24 * 60 * 60)
+                                             core.json.encode(session), ttl)
                 end
             else
                 -- No refresh token available, or it has expired. Clear session.
@@ -456,7 +458,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
         end
 
         authz_keycloak_cache_set("access_tokens", token_endpoint .. ":" .. client_id,
-                                 core.json.encode(session), 24 * 60 * 60)
+                                 core.json.encode(session), ttl)
     end
 
     return session.access_token
