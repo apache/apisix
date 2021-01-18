@@ -511,7 +511,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 |Name    |Optional|Description|
 |-------         |-----|------|
-|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash,`ewma` minimum latency ,pick one of them.see https://en.wikipedia.org/wiki/EWMA_chart for details|
+|type            |required|the balancer algorithm|
 |nodes           |required, can't be used with `service_name` |Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
 |service_name    |required, can't be used with `nodes` |the name of service used in the service discovery, see [discovery](discovery.md) for more details|
 |discovery_type |required, if `server_name` is used | the type of service discovery, see [discovery](discovery.md) for more details|
@@ -527,6 +527,13 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |labels|optional |Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
+
+`type` can be one of:
+
+* `roundrobin`: roundrobin with weight
+* `chash`: consistent hash
+* `ewma`: pick one of node which has minimum latency. See https://en.wikipedia.org/wiki/EWMA_chart for details.
+* `least_conn`: pick node which has the lowest `(active_conn + 1) / weight`. Note the `active connection` concept is the same with Nginx: it is a connection in used by a request.
 
 `hash_on` can be set to different types:
 
@@ -549,7 +556,7 @@ Config Example:
         "read":15,
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
-    "type":"roundrobin",        # chash or roundrobin
+    "type":"roundrobin",
     "checks": {},               # Health check parameters
     "hash_on": "",
     "key": "",
