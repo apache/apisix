@@ -63,10 +63,6 @@ local schema = {
         cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
     },
     anyOf = {
-        {required = {"client_id"}},
-        {required = {"audience"}}
-    },
-    anyOf = {
         {required = {"discovery"}},
         {required = {"token_endpoint"}}
     },
