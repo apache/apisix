@@ -132,6 +132,7 @@ http {
     lua_shared_dict worker-events        10m;
     lua_shared_dict lrucache-lock        10m;
     lua_shared_dict skywalking-tracing-buffer    100m;
+    lua_shared_dict access_tokens         1m; # for authz-keycloak: cache for service account access tokens
     lua_shared_dict balancer_ewma        10m;
     lua_shared_dict balancer_ewma_locks  10m;
     lua_shared_dict balancer_ewma_last_touched_at 10m;
@@ -146,8 +147,6 @@ http {
     lua_shared_dict jwks                  1m; # cache for JWKs
     lua_shared_dict introspection        10m; # cache for JWT verification results
 
-    # for authz-keycloak
-    lua_shared_dict access_tokens         1m; # cache for service account access tokens
 
     # for custom shared dict
     {% if http.lua_shared_dicts then %}
