@@ -713,4 +713,4 @@ GET /t
 --- response_body
 false
 --- error_log
-status code: 401 msg: {"error":"HTTP 401 Unauthorized"}
+Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}

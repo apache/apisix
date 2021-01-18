@@ -624,12 +624,16 @@ local function evaluate_permissions(conf, ctx, token)
     log.debug("Response status: ", res.status, ", data: ", res.body)
 
     if res.status == 403 then
-        -- Request denied.
-        log.debug("Request denied.")
+        -- Request permanently denied, e.g. due to lacking permissions.
+        log.debug('Request denied: HTTP 403 Forbidden. Body: ', res.body)
+        return res.status, res.body
+    elseif res.status == 401 then
+        -- Request temporarily denied, e.g access token not valid.
+        log.debug('Request denied: HTTP 401 Unauthorized. Body: ', res.body)
         return res.status, res.body
     elseif res.status >= 400 then
         -- Some other error. Log full response.
-        log.error("Token endpoint returned an error: status: ", res.status, ", body: ", res.body)
+        log.error('Request denied: Token endpoint returned an error (status: ', res.status, ', body: ', res.body, ').')
         return res.status, res.body
     end
 
