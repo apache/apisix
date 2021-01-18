@@ -74,7 +74,7 @@ local schema = {
                 {
                     not = {
                         properties: {
-                            lazy_load_paths: {const: true},
+                            lazy_load_paths: {const = true},
                             required: {"lazy_load_paths"}
                         }
                     },
