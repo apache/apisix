@@ -63,7 +63,7 @@ local function fetch_health_nodes(upstream, checker)
     end
 
     if core.table.nkeys(up_nodes) == 0 then
-        core.log.warn("all upstream nodes is unhealth, use default")
+        core.log.warn("all upstream nodes is unhealthy, use default")
         for _, node in ipairs(nodes) do
             up_nodes[node.host .. ":" .. node.port] = node.weight
         end
