@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,16 +17,15 @@
 # limitations under the License.
 #
 
-set -ex
+set -x -euo pipefail
 
-luacheck -q apisix t/lib
-
-find apisix -name '*.lua' ! -wholename 'apisix/cli/ngx_tpl.lua' -exec ./utils/lj-releng {} + > \
+find t -name '*.t' -exec ./utils/reindex {} + > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 
-grep -E "ERROR.*.lua:" /tmp/check.log > /tmp/error.log || true
+grep "done." /tmp/check.log > /tmp/error.log || true
 if [ -s /tmp/error.log ]; then
     echo "=====bad style====="
-    cat /tmp/check.log
+    cat /tmp/error.log
+    echo "you need to run 'reindex' to fix them. Read CONTRIBUTING.md for more details."
     exit 1
 fi
