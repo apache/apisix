@@ -157,7 +157,7 @@ dubbo success
 
 
 
-=== TEST 5: work with comsumer
+=== TEST 5: work with consumer
 --- yaml_config
 apisix:
     node_listen: 1984
