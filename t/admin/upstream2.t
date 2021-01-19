@@ -78,7 +78,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_PUT,
                  [[{
                     "nodes": {
@@ -101,7 +101,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/upstreams/1","value":{"hash_on":"vars","id":"1","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
+{"action":"set","node":{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
 
 
 
@@ -111,7 +111,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_PATCH,
                  [[{
                     "nodes": {
@@ -134,7 +134,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/upstreams/1","value":{"hash_on":"vars","id":"1","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
 
 
 
@@ -144,7 +144,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_GET
                 )
 
@@ -161,7 +161,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":"1","node":{"key":"/apisix/upstreams/1","value":{"hash_on":"vars","id":"1","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
+{"action":"get","count":"1","node":{"key":"/apisix/upstreams/unwanted","value":{"hash_on":"vars","id":"unwanted","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
 
 
 
@@ -171,7 +171,7 @@ __DATA__
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/upstreams/1',
+            local code, message, res = t('/apisix/admin/upstreams/unwanted',
                  ngx.HTTP_DELETE
                 )
 
@@ -186,7 +186,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/upstreams/1","node":{}}
+{"action":"delete","deleted":"1","key":"/apisix/upstreams/unwanted","node":{}}
 
 
 
