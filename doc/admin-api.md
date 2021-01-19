@@ -73,7 +73,7 @@
 |upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
 |upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
 |service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
-|service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
+|service_protocol|False|Upstream protocol type|only `grpc`|Must set `grpc` if using `gRPC proxy` or `gRPC transcode`. |
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 |status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
