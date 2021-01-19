@@ -950,6 +950,8 @@ true
                 else
                     ngx.say(false)
                 end
+                ngx.say(res.status)
+                ngx.say(res.body)
             else
                 ngx.say(false)
             end
