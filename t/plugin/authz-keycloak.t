@@ -868,7 +868,7 @@ passed
 
 
 
-=== TEST 21: Get access token for teacher and access view course route
+=== TEST 21: Get access token for teacher and access view course route.
 --- config
     location /t {
         content_by_lua_block {
@@ -916,7 +916,7 @@ true
 
 
 
-=== TEST 22: Get access token for student and access view course route
+=== TEST 22: Get access token for student and access view course route.
 --- config
     location /t {
         content_by_lua_block {
@@ -964,7 +964,7 @@ true
 
 
 
-=== TEST 23: Get access token for teacher and delete course
+=== TEST 23: Get access token for teacher and delete course.
 --- config
     location /t {
         content_by_lua_block {
@@ -1012,7 +1012,7 @@ true
 
 
 
-=== TEST 24: Get access token for student and delete course
+=== TEST 24: Get access token for student and try to delete course. Should fail.
 --- config
     location /t {
         content_by_lua_block {

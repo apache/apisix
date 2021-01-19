@@ -138,7 +138,7 @@ script() {
 
     make lint && make license-check || exit 1
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
-    PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t/plugin/authz-keycloak.t
+    PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
 }
 
 after_success() {
