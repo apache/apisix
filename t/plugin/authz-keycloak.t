@@ -799,3 +799,69 @@ GET /t
 false
 --- error_log
 Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
+
+
+
+=== TEST 20: add plugin with lazy_load_paths and http_method_as_scope
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "lazy_load_paths": true,
+                                "http_method_as_scope": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/course/*"
+                }]],
+                [[{
+                    "node": {
+                        "value": {
+                            "plugins": {
+                                "authz-keycloak": {
+                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
+                                    "client_id": "course_management",
+                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                    "lazy_load_paths": true,
+                                    "http_method_as_scope": true
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1982": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/course/*"
+                        },
+                        "key": "/apisix/routes/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
