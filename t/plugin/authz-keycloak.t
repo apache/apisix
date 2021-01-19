@@ -825,7 +825,7 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/course/*"
+                        "uri": "/course/foo"
                 }]],
                 [[{
                     "node": {
@@ -845,7 +845,7 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
                                 },
                                 "type": "roundrobin"
                             },
-                            "uri": "/course/*"
+                            "uri": "/course/foo"
                         },
                         "key": "/apisix/routes/1"
                     },
