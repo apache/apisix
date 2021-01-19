@@ -65,9 +65,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     ],
     "plugins": {
         "skywalking": {
-            "endpoint": "http://10.110.149.175:12800",
-            "sample_ratio": 1,
-            "service_name": "APISIX_SERVER"
+            "sample_ratio": 1
         }
     },
     "upstream": {
