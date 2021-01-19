@@ -485,7 +485,7 @@ local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
         return 500, err
     end
 
-    log.error("Resource registration endpoint: ", resource_registration_endpoint)
+    log.debug("Resource registration endpoint: ", resource_registration_endpoint)
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
