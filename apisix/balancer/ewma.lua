@@ -59,7 +59,7 @@ end
 local function store_stats(upstream, ewma, now)
     local success, err, forcible = shm_last_touched_at:set(upstream, now)
     if not success then
-        core.log.warn("shm_last_touched_at:set failed: ", err)
+        core.log.error("shm_last_touched_at:set failed: ", err)
     end
     if forcible then
         core.log.warn("shm_last_touched_at:set valid items forcibly overwritten")
@@ -67,7 +67,7 @@ local function store_stats(upstream, ewma, now)
 
     success, err, forcible = shm_ewma:set(upstream, ewma)
     if not success then
-        core.log.warn("shm_ewma:set failed: ", err)
+        core.log.error("shm_ewma:set failed: ", err)
     end
     if forcible then
         core.log.warn("shm_ewma:set valid items forcibly overwritten")
