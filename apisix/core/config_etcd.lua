@@ -324,13 +324,6 @@ local function sync_data(self)
     end
 
     if not res then
-        if err == "The event in requested index is outdated and cleared" then
-            self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err,
-                     ", need to fully reload")
-            return false
-        end
-
         return false, err
     end
 

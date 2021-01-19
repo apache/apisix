@@ -24,6 +24,7 @@
 * [Consumer](#consumer)
 * [Upstream](#upstream)
 * [SSL](#ssl)
+* [Global Rule](#global-rule)
 * [Plugin Metadata](#plugin-metadata)
 * [Plugin](#plugin)
 
@@ -72,7 +73,7 @@
 |upstream |False |Upstream|Enabled Upstream configuration, see [Upstream](architecture-design.md#upstream) for more||
 |upstream_id|False |Upstream|Enabled upstream id, see [Upstream](architecture-design.md#upstream) for more ||
 |service_id|False |Service|Binded Service configuration, see [Service](architecture-design.md#service) for more ||
-|service_protocol|False|Upstream protocol type|only `grpc` and `http` are supported|`http` is the default value; Must set `grpc` if using `gRPC proxy` or `gRPC transcode`|
+|service_protocol|False|Upstream protocol type|only `grpc`|Must set `grpc` if using `gRPC proxy` or `gRPC transcode`. |
 |labels   |False |Match Rules|Key/value pairs to specify attributes|{"version":"v2","build":"16","env":"production"}|
 |enable_websocket|False|Auxiliary| enable `websocket`(boolean), default `false`.||
 |status          |False|Auxiliary| enable this route, default `1`.|`1` to enable, `0` to disable|
@@ -511,7 +512,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 
 |Name    |Optional|Description|
 |-------         |-----|------|
-|type            |required|`roundrobin` supports the weight of the load, `chash` consistency hash,`ewma` minimum latency ,pick one of them.see https://en.wikipedia.org/wiki/EWMA_chart for details|
+|type            |required|the balancer algorithm|
 |nodes           |required, can't be used with `service_name` |Hash table, the key of the internal element is the upstream machine address list, the format is `Address + Port`, where the address part can be IP or domain name, such as `192.168.1.100:80`, `foo.com:80`, etc. Value is the weight of the node. In particular, when the weight value is `0`, it has a special meaning, which usually means that the upstream node is invalid and never wants to be selected. The `nodes` can be empty, which means it is a placeholder and will be filled later. Clients use such an upstream will get 502 response. |
 |service_name    |required, can't be used with `nodes` |the name of service used in the service discovery, see [discovery](discovery.md) for more details|
 |discovery_type |required, if `server_name` is used | the type of service discovery, see [discovery](discovery.md) for more details|
@@ -528,12 +529,20 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 |create_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 |update_time|optional| epoch timestamp in second, like `1602883670`, will be created automatically if missing|
 
+`type` can be one of:
+
+* `roundrobin`: roundrobin with weight
+* `chash`: consistent hash
+* `ewma`: pick one of node which has minimum latency. See https://en.wikipedia.org/wiki/EWMA_chart for details.
+* `least_conn`: pick node which has the lowest `(active_conn + 1) / weight`. Note the `active connection` concept is the same with Nginx: it is a connection in used by a request.
+
 `hash_on` can be set to different types:
 
 1. when it is `vars`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html), without the prefix '$'.
 1. when it is `header`, the `key` is required. It is equal to "http_`key`".
 1. when it is `cookie`, the `key` is required. It is equal to "cookie_`key`".
 1. when it is `consumer`, the `key` is optional. The key is the `consumer_name` set by authentication plugin.
+1. when it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
 1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
 
 Config Example:
@@ -548,7 +557,7 @@ Config Example:
         "read":15,
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
-    "type":"roundrobin",        # chash or roundrobin
+    "type":"roundrobin",
     "checks": {},               # Health check parameters
     "hash_on": "",
     "key": "",
@@ -686,6 +695,31 @@ Config Example:
     "snis": ["t.com"]    # https SNI
 }
 ```
+
+## Global Rule
+
+*API*：/apisix/admin/global_rules/{id}
+
+*Description*: Set plugins which run globally. Those plugins will be run before any Route/Service level plugins.
+
+> Request Methods：
+
+|Method      |Request URI|Request Body|Description        |
+|---------|-------------------------|--|------|
+|GET      |/apisix/admin/global_rules|NULL|Fetch resource list|
+|GET      |/apisix/admin/global_rules/{id}|NULL|Fetch resource|
+|PUT      |/apisix/admin/global_rules/{id}|{...}|Create resource by ID|
+|DELETE   |/apisix/admin/global_rules/{id}|NULL|Remove resource|
+|PATCH    |/apisix/admin/global_rules/{id}|{...}|Standard PATCH. Update some attributes of the existing global rule, and other attributes not involved will remain as they are; if you want to delete an attribute, set the value of the attribute Set to null to delete; especially, when the value of the attribute is an array, the attribute will be updated in full|
+|PATCH    |/apisix/admin/global_rules/{id}/{path}|{...}|SubPath PATCH, specify the attribute of global rule to be updated through {path}, update the value of this attribute in full, and other attributes that are not involved will remain as they are.|
+
+> Request Body Parameters：
+
+|Parameter|Required|Description|Example|
+|---------|---------|-----------|----|
+|plugins     |True |See [Plugin](architecture-design.md#plugin)||
+|create_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
+|update_time|False|epoch timestamp in second, will be created automatically if missing | 1602883670|
 
 ## Plugin Metadata
 

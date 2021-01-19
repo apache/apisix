@@ -114,7 +114,7 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
     local properties = plugin.schema.properties
     local plugin_injected_schema = core.schema.plugin_injected_schema
 
-    if properties['$comment'] ~= plugin_injected_schema['$comment'] then
+    if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
         if properties.disable then
             core.log.error("invalid plugin [", name,
                            "]: found forbidden 'disable' field in the schema")
@@ -122,7 +122,7 @@ local function load_plugin(name, plugins_list, is_stream_plugin)
         end
 
         properties.disable = plugin_injected_schema.disable
-        properties['$comment'] = plugin_injected_schema['$comment']
+        plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
 
     plugin.name = name
@@ -401,11 +401,8 @@ local function merge_service_route(service_conf, route_conf)
     local route_upstream = route_conf.value.upstream
     if route_upstream then
         new_conf.value.upstream = route_upstream
-
-        if route_upstream.checks then
-            route_upstream.parent = route_conf
-        end
-
+        -- when route's upstream override service's upstream,
+        -- the upstream.parent still point to the route
         new_conf.value.upstream_id = nil
         new_conf.has_domain = route_conf.has_domain
     end
@@ -421,8 +418,8 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf))
-    core.log.info("  route conf: ", core.json.delay_encode(route_conf))
+    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
+    core.log.info("  route conf: ", core.json.delay_encode(route_conf, true))
 
     local route_service_key = route_conf.value.id .. "#"
         .. route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
@@ -493,12 +490,12 @@ end
 
 
 function _M.init_worker()
-    _M.load()
-
     -- some plugins need to be initialized in init* phases
     if ngx.config.subsystem == "http" then
         require("apisix.plugins.prometheus.exporter").init()
     end
+
+    _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()

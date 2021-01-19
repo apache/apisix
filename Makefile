@@ -65,12 +65,17 @@ ifeq ("$(wildcard utils/lj-releng)", "")
 	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
+ifeq ("$(wildcard utils/reindex)", "")
+	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
+	chmod a+x utils/reindex
+endif
 
 
-### lint:             Lint Lua source code
+### lint:             Lint source code
 .PHONY: lint
 lint: utils
 	./utils/check-lua-code-style.sh
+	./utils/check-test-code-style.sh
 
 
 ### init:             Initialize the runtime environment
@@ -83,11 +88,10 @@ init: default
 ### run:              Start the apisix server
 .PHONY: run
 run: default
-ifeq ("$(wildcard logs/nginx.pid)", "")
-	mkdir -p logs
-	$(OR_EXEC) -p $$PWD/ -c $$PWD/conf/nginx.conf
-else
+ifneq ("$(wildcard logs/nginx.pid)", "")
 	@echo "APISIX is running..."
+else
+	./bin/apisix start
 endif
 
 

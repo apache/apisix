@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,21 +17,15 @@
 # limitations under the License.
 #
 
-MD001: false
-MD004: false
-MD005: false
-MD006: false
-MD007: false
-MD010: false
-MD013: false
-MD014: false
-MD024: false
-MD026: false
-MD029: false
-MD033: false
-MD034: false
-MD036: false
-MD040: false
-MD041: false
-MD045: false
-MD046: false
+set -x -euo pipefail
+
+find t -name '*.t' -exec ./utils/reindex {} + > \
+    /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
+
+grep "done." /tmp/check.log > /tmp/error.log || true
+if [ -s /tmp/error.log ]; then
+    echo "=====bad style====="
+    cat /tmp/error.log
+    echo "you need to run 'reindex' to fix them. Read CONTRIBUTING.md for more details."
+    exit 1
+fi

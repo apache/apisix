@@ -72,7 +72,6 @@ __DATA__
 
 
 
-
 === TEST 2: not unwanted data, PUT
 --- config
     location /t {
@@ -103,7 +102,6 @@ __DATA__
     }
 --- response_body
 {"action":"set","node":{"key":"/apisix/upstreams/1","value":{"hash_on":"vars","id":"1","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","type":"roundrobin"}}}
-
 
 
 
@@ -246,6 +244,7 @@ passed
     }
 --- response_body
 passed
+
 
 
 === TEST 8: hit empty nodes upstream

@@ -908,8 +908,10 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
+        local headers = {}
+        headers["appkey"] = "api-key"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1057,8 +1059,10 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
+        local headers = {}
+        headers["appkey"] = "api-key"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1130,8 +1134,10 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin").test
         local bodys = {}
+        local headers = {}
+        headers["appkey"] = "api-key"
         for i = 1, 5 do
-            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET)
+            local _, _, body = t('/server_port?name=jack&age=36', ngx.HTTP_GET, "", nil, headers)
             bodys[i] = body
         end
         table.sort(bodys)
@@ -1394,5 +1400,153 @@ qr/additional properties forbidden, found additional_properties/
 GET /t
 --- response_body eval
 qr/property "rules" validation failed: failed to validate item 1: additional properties forbidden, found additional_properties/
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: the request header contains horizontal lines("-")
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["http_x-api-appkey", "==", "api-key"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}, {"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weight": 4},
+                                        {"weight": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 41: `match` rule passed
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        local headers = {}
+        headers["x-api-appkey"] = "api-key"
+        for i = 1, 5 do
+            local _, _, body = t('/server_port', ngx.HTTP_GET, "", nil, headers)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1981, 1981, 1982, 1982
+--- no_error_log
+[error]
+
+
+
+=== TEST 42: request args and request headers contain horizontal lines("-")
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "uri": "/server_port",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "match": [
+                                        {
+                                            "vars": [["arg_x-api-name", "==", "jack"], ["arg_x-api-age", ">", "23"],["http_x-api-appkey", "~~", "[a-z]{1,5}"]]
+                                        }
+                                    ],
+                                    "weighted_upstreams": [
+                                        {"upstream": {"name": "upstream_A", "type": "roundrobin", "nodes": [{"host":"127.0.0.1", "port":1981, "weight": 2}, {"host":"127.0.0.1", "port":1982, "weight": 2}]}, "weight": 4},
+                                        {"weight": 1}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 43: `match` rule passed
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local bodys = {}
+        local headers = {}
+        headers["x-api-appkey"] = "hello"
+        for i = 1, 5 do
+            local _, _, body = t('/server_port?x-api-name=jack&x-api-age=36', ngx.HTTP_GET, "", nil, headers)
+            bodys[i] = body
+        end
+        table.sort(bodys)
+        ngx.say(table.concat(bodys, ", "))
+    }
+}
+--- request
+GET /t
+--- response_body
+1980, 1981, 1981, 1982, 1982
 --- no_error_log
 [error]

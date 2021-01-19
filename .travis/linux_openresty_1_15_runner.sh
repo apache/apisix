@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,21 +16,6 @@
 # limitations under the License.
 #
 
-MD001: false
-MD004: false
-MD005: false
-MD006: false
-MD007: false
-MD010: false
-MD013: false
-MD014: false
-MD024: false
-MD026: false
-MD029: false
-MD033: false
-MD034: false
-MD036: false
-MD040: false
-MD041: false
-MD045: false
-MD046: false
+
+export OPENRESTY_VERSION=1.15.8.2
+. ./.travis/linux_openresty_runner.sh

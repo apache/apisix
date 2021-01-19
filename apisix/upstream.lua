@@ -17,6 +17,7 @@
 local require = require
 local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
+local upstream_util = require("apisix.utils.upstream")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -25,15 +26,10 @@ local upstreams
 local healthcheck
 
 
-local lrucache_checker = core.lrucache.new({
-    ttl = 300, count = 256
-})
-
-
 local _M = {}
 
 
-local function set_directly(ctx, key, ver, conf, parent)
+local function set_directly(ctx, key, ver, conf)
     if not ctx then
         error("missing argument ctx", 2)
     end
@@ -46,22 +42,32 @@ local function set_directly(ctx, key, ver, conf, parent)
     if not conf then
         error("missing argument conf", 2)
     end
-    if not parent then
-        error("missing argument parent", 2)
-    end
 
     ctx.upstream_conf = conf
     ctx.upstream_version = ver
     ctx.upstream_key = key
-    ctx.upstream_healthcheck_parent = parent
+    ctx.upstream_healthcheck_parent = conf.parent
     return
 end
 _M.set = set_directly
 
 
-local function create_checker(upstream, healthcheck_parent)
+local function release_checker(healthcheck_parent)
+    local checker = healthcheck_parent.checker
+    core.log.info("try to release checker: ", tostring(checker))
+    checker:clear()
+    checker:stop()
+end
+
+
+local function create_checker(upstream)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
+    end
+
+    local healthcheck_parent = upstream.parent
+    if healthcheck_parent.checker and healthcheck_parent.checker_upstream == upstream then
+        return healthcheck_parent.checker
     end
 
     local checker, err = healthcheck.new({
@@ -85,39 +91,28 @@ local function create_checker(upstream, healthcheck_parent)
         end
     end
 
-    if upstream.parent then
-        core.table.insert(upstream.parent.clean_handlers, function ()
-            core.log.info("try to release checker: ", tostring(checker))
-            checker:clear()
-            checker:stop()
-        end)
-
-    else
-        core.table.insert(healthcheck_parent.clean_handlers, function ()
-            core.log.info("try to release checker: ", tostring(checker))
-            checker:clear()
-            checker:stop()
-        end)
+    if healthcheck_parent.checker then
+        core.config_util.cancel_clean_handler(healthcheck_parent,
+                                              healthcheck_parent.checker_idx, true)
     end
 
     core.log.info("create new checker: ", tostring(checker))
+
+    healthcheck_parent.checker = checker
+    healthcheck_parent.checker_upstream = upstream
+    healthcheck_parent.checker_idx =
+        core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+
     return checker
 end
 
 
-local function fetch_healthchecker(upstream, healthcheck_parent, version)
+local function fetch_healthchecker(upstream)
     if not upstream.checks then
-        return
+        return nil
     end
 
-    if upstream.checker then
-        return
-    end
-
-    local checker = lrucache_checker(upstream, version,
-                                     create_checker, upstream,
-                                     healthcheck_parent)
-    return checker
+    return create_checker(upstream)
 end
 
 
@@ -144,13 +139,30 @@ function _M.set_by_route(route, api_ctx)
 
         local dis = discovery[up_conf.discovery_type]
         if not dis then
-            return 500, "discovery " .. up_conf.discovery_type .. "is uninitialized"
+            return 500, "discovery " .. up_conf.discovery_type .. " is uninitialized"
         end
-        up_conf.nodes = dis.nodes(up_conf.service_name)
+        local new_nodes = dis.nodes(up_conf.service_name)
+        local same = upstream_util.compare_upstream_node(up_conf.nodes, new_nodes)
+        if not same then
+            up_conf.nodes = new_nodes
+            local new_up_conf = core.table.clone(up_conf)
+            core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
+                          up_conf.discovery_type, ": ",
+                          core.json.delay_encode(new_up_conf, true))
+
+            local parent = up_conf.parent
+            if parent.value.upstream then
+                -- the up_conf comes from route or service
+                parent.value.upstream = new_up_conf
+            else
+                parent.value = new_up_conf
+            end
+            up_conf = new_up_conf
+        end
     end
 
     set_directly(api_ctx, up_conf.type .. "#upstream_" .. tostring(up_conf),
-                 api_ctx.conf_version, up_conf, route)
+                 api_ctx.conf_version, up_conf)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
@@ -158,7 +170,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf, route, api_ctx.upstream_version)
+        local checker = fetch_healthchecker(up_conf)
         api_ctx.up_checker = checker
     end
 
@@ -187,7 +199,13 @@ function _M.init_worker()
             item_schema = core.schema.upstream,
             filter = function(upstream)
                 upstream.has_domain = false
-                if not upstream.value or not upstream.value.nodes then
+                if not upstream.value then
+                    return
+                end
+
+                upstream.value.parent = upstream
+
+                if not upstream.value.nodes then
                     return
                 end
 

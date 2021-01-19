@@ -863,6 +863,27 @@ fi
 
 echo "pass: uninitialized variable not found during writing access log (port_admin set)"
 
+# It is forbidden to run apisix under the "/root" directory.
+git checkout conf/config.yaml
+
+mkdir /root/apisix
+
+cp -r ./*  /root/apisix
+cd /root/apisix
+make init
+
+out=$(make run 2>&1 || true)
+if ! echo "$out" | grep "Error: It is forbidden to run APISIX in the /root directory"; then
+    echo "failed: should echo It is forbidden to run APISIX in the /root directory"
+    exit 1
+fi
+
+cd -
+
+echo "passed: successfully prohibit APISIX from running in the /root directory"
+
+rm -rf /root/apisix
+
 # check etcd while enable auth
 git checkout conf/config.yaml
 
@@ -992,4 +1013,3 @@ echo "passed: show password error successfully"
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
 etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
-
