@@ -865,3 +865,195 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 21: Get access token for teacher and access view course route
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/course/foo"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. accessToken,
+                    }
+                 })
+
+                if res.status == 200 then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: Get access token for student and access view course route
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/course/foo"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. accessToken,
+                    }
+                 })
+
+                if res.status == 200 then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: Get access token for teacher and delete course
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/course/foo"
+                local res, err = httpc:request_uri(uri, {
+                    method = "DELETE",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. accessToken,
+                    }
+                 })
+
+                if res.status == 200 then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: Get access token for student and delete course
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            if res.status == 200 then
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/course/foo"
+                local res, err = httpc:request_uri(uri, {
+                    method = "DELETE",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. accessToken,
+                    }
+                 })
+
+                if res.status == 403 then
+                    ngx.say(true)
+                else
+                    ngx.say(false)
+                end
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+--- error_log
+{"error":"access_denied","error_description":"not_authorized"}
