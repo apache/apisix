@@ -64,7 +64,7 @@
 |upstream |`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 Upstream 配置，详见 [Upstream](architecture-design.md#upstream)||
 |upstream_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Upstream|启用的 upstream id，详见 [Upstream](architecture-design.md#upstream)||
 |service_id|`plugins`、`script`、`upstream`/`upstream_id`、`service_id`至少选择一个 |Service|绑定的 Service 配置，详见 [Service](architecture-design.md#service)||
-|service_protocol|可选|上游协议类型|只可以是 "grpc", "http" 二选一。|默认 "http"，使用gRPC proxy 或gRPC transcode 时，必须用"grpc"|
+|service_protocol|可选|上游协议类型|只可以是 "grpc"|启用 `gRPC proxy` 或 `gRPC transcode` 插件时，必须用 "grpc"|
 |name     |可选 |辅助   |标识路由名称|route-xxxx|
 |desc     |可选 |辅助   |标识描述、使用场景等。|客户 xxxx|
 |host     |可选 |匹配规则|当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。|"foo.com"|
