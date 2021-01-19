@@ -16,6 +16,10 @@
 --
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
+local get_routes = require("apisix.router").http_routes
+local get_services = require("apisix.http.service").services
+local upstream_mod = require("apisix.upstream")
+local get_upstreams = upstream_mod.upstreams
 
 
 local _M = {}
@@ -49,11 +53,62 @@ function _M.schema()
 end
 
 
+local function iter_and_add_checker(infos, values, src)
+    if not values then
+        return
+    end
+
+    for _, value in core.config_util.iterate_values(values) do
+        if value.checker then
+            local checker = value.checker
+            local upstream = value.checker_upstream
+            local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
+            local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
+            local nodes = upstream.nodes
+            local health_nodes = core.table.new(#nodes, 0)
+            for _, node in ipairs(nodes) do
+                local ok = checker:get_target_status(node.host, port or node.port, host)
+                if ok then
+                    core.table.insert(health_nodes, node)
+                end
+            end
+
+            local conf = value.value
+            core.table.insert(infos, {
+                name = upstream_mod.get_healthchecker_name(value),
+                src_id = conf.id,
+                src_type = src,
+                nodes = nodes,
+                health_nodes = health_nodes,
+            })
+        end
+    end
+end
+
+
+function _M.healthcheck()
+    local infos = {}
+    local routes = get_routes()
+    iter_and_add_checker(infos, routes, "routes")
+    local services = get_services()
+    iter_and_add_checker(infos, services, "services")
+    local upstreams = get_upstreams()
+    iter_and_add_checker(infos, upstreams, "upstreams")
+    return 200, infos
+end
+
+
 return {
     -- /v1/schema
     {
         methods = {"GET"},
         uris = {"/schema"},
         handler = _M.schema,
+    },
+    -- /v1/healthcheck
+    {
+        methods = {"GET"},
+        uris = {"/healthcheck"},
+        handler = _M.healthcheck,
     }
 }

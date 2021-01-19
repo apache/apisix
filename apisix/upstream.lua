@@ -60,6 +60,12 @@ local function release_checker(healthcheck_parent)
 end
 
 
+local function get_healthchecker_name(value)
+    return "upstream#" .. value.key
+end
+_M.get_healthchecker_name = get_healthchecker_name
+
+
 local function create_checker(upstream)
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
@@ -71,7 +77,7 @@ local function create_checker(upstream)
     end
 
     local checker, err = healthcheck.new({
-        name = "upstream#" .. healthcheck_parent.key,
+        name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
     })
