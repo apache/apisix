@@ -333,9 +333,10 @@ local function get_args()
     req_read_body()
     if string.find(ctx.var.http_content_type or "","application/json",
                    1, true) then
-        args, err = json.decode(req_get_body_data())
+        local req_body = req_get_body_data()
+        args, err = json.decode(req_body)
         if err then
-            core.log.error("json.decode(", req_get_body_data(), ") failed! ", err)
+            core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
         args = req_get_post_args()
