@@ -16,8 +16,8 @@
 # limitations under the License.
 #
 
-. ./.travis/common.sh
 
+<<<<<<< HEAD
 before_install() {
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
     docker pull redis:3.0-alpine
@@ -164,3 +164,7 @@ after_success)
     after_success "$@"
     ;;
 esac
+=======
+export OPENRESTY_VERSION=source
+. ./.travis/linux_openresty_common_runner.sh
+>>>>>>> master_upstream

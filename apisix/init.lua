@@ -25,6 +25,7 @@ local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
 local set_upstream  = require("apisix.upstream").set_by_route
 local upstream_util = require("apisix.utils.upstream")
+local ctxdump       = require("resty.ctxdump")
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -34,6 +35,7 @@ local error         = error
 local ipairs        = ipairs
 local tostring      = tostring
 local ngx_now       = ngx.now
+local ngx_var       = ngx.var
 local str_byte      = string.byte
 local str_sub       = string.sub
 local tonumber      = tonumber
@@ -520,6 +522,16 @@ function _M.http_access_phase()
     end
 
     set_upstream_host(api_ctx)
+
+    if api_ctx.dubbo_proxy_enabled then
+        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
+        return ngx.exec("@dubbo_pass")
+    end
+end
+
+
+function _M.dubbo_access_phase()
+    ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
 end
 
 
@@ -598,14 +610,26 @@ local function common_phase(phase_name)
     end
 
     if api_ctx.global_rules then
+        local orig_conf_type = api_ctx.conf_type
+        local orig_conf_version = api_ctx.conf_version
+        local orig_conf_id = api_ctx.conf_id
+
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = api_ctx.global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
+            api_ctx.conf_type = "global_rule"
+            api_ctx.conf_version = global_rule.modifiedIndex
+            api_ctx.conf_id = global_rule.value.id
+
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
             run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
+
+        api_ctx.conf_type = orig_conf_type
+        api_ctx.conf_version = orig_conf_version
+        api_ctx.conf_id = orig_conf_id
     end
 
     if api_ctx.script_obj then
