@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +17,37 @@
 # limitations under the License.
 #
 
+. ./.travis/apisix_cli_test/common.sh
 
-export OPENRESTY_VERSION=1.17.8.2
-. ./.travis/linux_openresty_common_runner.sh
+# enable dubbo
+echo '
+plugins:
+    - dubbo-proxy
+' > conf/config.yaml
+
+make init
+
+if ! grep "location @dubbo_pass " conf/nginx.conf > /dev/null; then
+    echo "failed: dubbo location not found in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found dubbo location in nginx.conf"
+
+# dubbo multiplex configuration
+echo '
+plugins:
+    - dubbo-proxy
+plugin_attr:
+    dubbo-proxy:
+        upstream_multiplex_count: 16
+' > conf/config.yaml
+
+make init
+
+if ! grep "multi 16;" conf/nginx.conf > /dev/null; then
+    echo "failed: dubbo multiplex configuration not found in nginx.conf"
+    exit 1
+fi
+
+echo "passed: found dubbo multiplex configuration in nginx.conf"

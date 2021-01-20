@@ -59,6 +59,15 @@ jobs:
       - name: Linux Before install
         run: sudo ./.travis/${{ matrix.os_name }}_runner.sh before_install
 
+      - name: Start Dubbo Backend
+        if: matrix.os_name == 'linux_openresty'
+        run: |
+          sudo apt install -y maven
+          cd t/lib/dubbo-backend
+          mvn package
+          cd dubbo-backend-provider/target
+          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+
       - name: Install Redis Cluster
         if: startsWith(matrix.os_name, 'linux_openresty')
         run: |
