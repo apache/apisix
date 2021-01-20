@@ -23,15 +23,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
 <p align="center">
-  <a href="https://github.com/apache/apisix">English</a> •
-  <a href="https://github.com/apache/apisix/blob/master/README_CN.md">中文</a>
-</p>
-
-<p align="center">
-  <a href="https://apisix.apache.org/">Website</a> •
-  <a href="https://github.com/apache/apisix/tree/master/doc">Docs</a> •
-  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a> •
-  <a href="https://twitter.com/apacheapisix">Twitter</a>
+  <a href="https://github.com/apache/apisix-ingress-controller">k8s ingress controller</a> •
+  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a>
 </p>
 
 ## What's Apache APISIX?
@@ -48,22 +41,41 @@ The technical architecture of Apache APISIX:
 
 ![](doc/images/apisix.png)
 
+## Community
+
+- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
+- QQ Group - 578997126
+- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
+- [bilibili video](https://space.bilibili.com/551921247)
+- **Good first issues**:
+  - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+
 ## Contents
 
-- [Features](#features)
-- [Documentation](#documentation)
-- [Get Started](#get-started)
-- [Benchmark](#benchmark)
-- [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-- [Community](#community)
-- [Videos And Articles](#videos-and-articles)
-- [User Stories](#user-stories)
-- [Who Uses APISIX?](#who-uses-apisix)
-- [Landscape](#landscape)
-- [Logos](#logos)
-- [Contributing](#contributing)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
+- [Apache APISIX](#apache-apisix)
+  - [What's Apache APISIX?](#whats-apache-apisix)
+  - [Community](#community)
+  - [Contents](#contents)
+  - [Features](#features)
+  - [Documentation](#documentation)
+  - [Get Started](#get-started)
+    - [Configure and Installation](#configure-and-installation)
+    - [For Developer](#for-developer)
+  - [Benchmark](#benchmark)
+  - [Apache APISIX vs Kong](#apache-apisix-vs-kong)
+      - [Both of them have been covered core features of API gateway](#both-of-them-have-been-covered-core-features-of-api-gateway)
+      - [The advantages of Apache APISIX](#the-advantages-of-apache-apisix)
+    - [Contributor Over Time](#contributor-over-time)
+  - [Videos And Articles](#videos-and-articles)
+  - [User Stories](#user-stories)
+  - [Who Uses APISIX?](#who-uses-apisix)
+  - [Landscape](#landscape)
+  - [Logos](#logos)
+  - [Acknowledgments](#acknowledgments)
+  - [License](#license)
 
 ## Features
 
@@ -308,14 +320,6 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
-## Community
-
-- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
-- QQ Group - 578997126, 552030619
-- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
-- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
-- [bilibili video](https://space.bilibili.com/551921247)
-
 ### Contributor Over Time
 
 ![contributor-over-time](./doc/images/contributor-over-time.png)
@@ -357,12 +361,6 @@ CNCF API Gateway Landscape.</a>
 
 - [Apache APISIX logo(PNG)](logos/apache-apisix.png)
 - [Apache APISIX logo source](https://apache.org/logos/#apisix)
-
-## Contributing
-
-We welcome all kinds of contributions from the open-source community, individuals and partners.
-
-- [Contributing Guide](CONTRIBUTING.md)
 
 ## Acknowledgments
 

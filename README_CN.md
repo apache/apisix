@@ -23,15 +23,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
 <p align="center">
-  <a href="https://github.com/apache/apisix">English</a> •
-  <a href="https://github.com/apache/apisix/blob/master/README_CN.md">中文</a>
-</p>
-
-<p align="center">
-  <a href="https://apisix.apache.org/">官方网站</a> •
-  <a href="https://github.com/apache/apisix/tree/master/doc">文档</a> •
-  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a> •
-  <a href="https://twitter.com/apacheapisix">Twitter</a>
+  <a href="https://github.com/apache/apisix-ingress-controller">k8s ingress controller</a> •
+  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a>
 </p>
 
 ## Apache APISIX 是什么？
@@ -45,6 +38,18 @@ Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 
 Apache APISIX 的技术架构如下图所示：
 
 ![](doc/images/apisix.png)
+
+## 社区
+
+- 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
+- QQ 群 - 578997126
+- [Slack](http://s.apache.org/slack-invite) - 加入 `#apisix` 频道以便与成员交流。
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
+- [哔哩哔哩](https://space.bilibili.com/551921247)
+- **新手任务列表**
+  - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ## 目录
 
@@ -306,13 +311,6 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
-## 社区
-
-- 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
-- QQ 群 - 578997126 或 552030619
-- [Slack](http://s.apache.org/slack-invite) - 加入 `#apisix` 频道以便与成员交流。
-- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
-- [哔哩哔哩](https://space.bilibili.com/551921247)
 
 ### 贡献者变化
 
