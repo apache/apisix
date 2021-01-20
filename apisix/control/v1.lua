@@ -20,6 +20,7 @@ local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local upstream_mod = require("apisix.upstream")
 local get_upstreams = upstream_mod.upstreams
+local ipairs = ipairs
 
 
 local _M = {}
