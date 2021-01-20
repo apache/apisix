@@ -242,6 +242,18 @@ http {
         keepalive 320;
     }
 
+    {% if enabled_plugins["dubbo-proxy"] then %}
+    upstream apisix_dubbo_backend {
+        server 0.0.0.1;
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        multi {* dubbo_upstream_multiplex_count *};
+        keepalive 320;
+    }
+    {% end %}
+
     init_by_lua_block {
         require "resty.core"
         apisix = require("apisix")
@@ -400,6 +412,13 @@ http {
         set $upstream_scheme             'http';
         set $upstream_host               $host;
         set $upstream_uri                '';
+        set $ctx_ref                     '';
+
+        {% if enabled_plugins["dubbo-proxy"] then %}
+        set $dubbo_service_name          '';
+        set $dubbo_service_version       '';
+        set $dubbo_method                '';
+        {% end %}
 
         {% if with_module_status then %}
         location = /apisix/nginx_status {
@@ -557,6 +576,30 @@ http {
                 apisix.http_log_phase()
             }
         }
+
+        {% if enabled_plugins["dubbo-proxy"] then %}
+        location @dubbo_pass {
+            access_by_lua_block {
+                apisix.dubbo_access_phase()
+            }
+
+            dubbo_pass_all_headers on;
+            dubbo_pass_body on;
+            dubbo_pass $dubbo_service_name $dubbo_service_version $dubbo_method apisix_dubbo_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+        {% end %}
 
         {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
