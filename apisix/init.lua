@@ -610,14 +610,26 @@ local function common_phase(phase_name)
     end
 
     if api_ctx.global_rules then
+        local orig_conf_type = api_ctx.conf_type
+        local orig_conf_version = api_ctx.conf_version
+        local orig_conf_id = api_ctx.conf_id
+
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = api_ctx.global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
+            api_ctx.conf_type = "global_rule"
+            api_ctx.conf_version = global_rule.modifiedIndex
+            api_ctx.conf_id = global_rule.value.id
+
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
             run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
+
+        api_ctx.conf_type = orig_conf_type
+        api_ctx.conf_version = orig_conf_version
+        api_ctx.conf_id = orig_conf_id
     end
 
     if api_ctx.script_obj then
