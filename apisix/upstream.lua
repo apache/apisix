@@ -237,7 +237,7 @@ function _M.init_worker()
                     upstream.value.nodes = new_nodes
                 end
 
-                core.log.info("filter upstream: ", core.json.delay_encode(upstream))
+                core.log.info("filter upstream: ", core.json.delay_encode(upstream, true))
             end,
         })
     if not upstreams then

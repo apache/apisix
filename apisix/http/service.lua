@@ -85,7 +85,7 @@ local function filter(service)
         service.value.upstream.nodes = new_nodes
     end
 
-    core.log.info("filter service: ", core.json.delay_encode(service))
+    core.log.info("filter service: ", core.json.delay_encode(service, true))
 end
 
 
