@@ -23,6 +23,9 @@
 
 APISIX的健康检查使用[lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck)实现，你可以在upstream中使用它。
 
+注意只有在 upstream 被请求时才会开始健康检查。
+如果一个 upstream 被配置但没有被请求，那么就不会有健康检查。
+
 下面是一个检查检查的例子：
 
 ```shell
@@ -105,3 +108,5 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     * `passive.unhealthy.tcp_failures`: 如果TCP通讯失败次数超过 `tcp_failures` 次，则将upstream节点设置为 `unhealthy` 状态。
     * `passive.unhealthy.timeouts`: 如果被动健康检查超时次数超过 `timeouts` 次，则将upstream节点设置为 `unhealthy` 状态。
     * `passive.unhealthy.http_failures`: 如果被动健康检查的HTTP请求失败（由 `passive.unhealthy.http_statuses` 定义）的次数超过 `http_failures`次，则将upstream节点设置为 `unhealthy` 状态。
+
+健康检查信息可以通过 [控制接口](./control_api.md) 中的 `GET /v1/healthcheck` 接口得到。

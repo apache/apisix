@@ -87,6 +87,14 @@ upstreams:
                 return a.host < b.host
             end)
             ngx.say(json.encode(res))
+
+            local code, body, res = t.test('/v1/healthcheck/upstreams/1',
+                ngx.HTTP_GET)
+            res = json.decode(res)
+            table.sort(res.nodes, function(a, b)
+                return a.host < b.host
+            end)
+            ngx.say(json.encode(res))
         }
     }
 --- grep_error_log eval
@@ -95,7 +103,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '(127.0.0.2:1988)'
 unhealthy TCP increment (2/2) for '(127.0.0.2:1988)'
 --- response_body
-[{"health_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}]
+[{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}]
+{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.2","port":1988,"weight":1}],"src_id":"1","src_type":"upstreams"}
 
 
 
@@ -141,6 +150,14 @@ routes:
                 return a.port < b.port
             end)
             ngx.say(json.encode(res))
+
+            local code, body, res = t.test('/v1/healthcheck/routes/1',
+                ngx.HTTP_GET)
+            res = json.decode(res)
+            table.sort(res.nodes, function(a, b)
+                return a.port < b.port
+            end)
+            ngx.say(json.encode(res))
         }
     }
 --- grep_error_log eval
@@ -149,7 +166,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"health_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"routes"}]
+[{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"routes"}]
+{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"routes"}
 
 
 
@@ -200,6 +218,14 @@ services:
                 return a.port < b.port
             end)
             ngx.say(json.encode(res))
+
+            local code, body, res = t.test('/v1/healthcheck/services/1',
+                ngx.HTTP_GET)
+            res = json.decode(res)
+            table.sort(res.nodes, function(a, b)
+                return a.port < b.port
+            end)
+            ngx.say(json.encode(res))
         }
     }
 --- grep_error_log eval
@@ -208,7 +234,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"health_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"services"}]
+[{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"services"}]
+{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"weight":1},{"host":"127.0.0.1","port":1988,"weight":1}],"src_id":"1","src_type":"services"}
 
 
 
@@ -224,3 +251,21 @@ unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
     }
 --- response_body
 {}
+
+
+
+=== TEST 5: no checker
+--- request
+GET /v1/healthcheck/routes/1
+--- error_code: 404
+--- response_body
+{"error_msg":"routes[1] not found"}
+
+
+
+=== TEST 6: invalid src type
+--- request
+GET /v1/healthcheck/route/1
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid src type route"}
