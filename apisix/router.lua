@@ -70,7 +70,7 @@ local function filter(route)
         route.value.upstream.nodes = new_nodes
     end
 
-    core.log.info("filter route: ", core.json.delay_encode(route))
+    core.log.info("filter route: ", core.json.delay_encode(route, true))
 end
 
 

@@ -19,6 +19,13 @@
 
 set -x -euo pipefail
 
+find t -name '*.t' -exec grep -E "\-\-\-\s+(SKIP|ONLY|LAST)$" {} + > /tmp/error.log || true
+if [ -s /tmp/error.log ]; then
+    echo "Forbidden directives to found. Bypass test cases without reason are not allowed."
+    cat /tmp/error.log
+    exit 1
+fi
+
 find t -name '*.t' -exec ./utils/reindex {} + > \
     /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
 

@@ -154,7 +154,6 @@ create_obj_fun(): upstream nodes:
 
 
 === TEST 3: create new server picker when nodes change, up_conf doesn't come from upstream
---- ONLY
 --- apisix_yaml
 routes:
   -

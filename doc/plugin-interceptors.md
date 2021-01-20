@@ -41,7 +41,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/prometheus -H 'X-API-K
             }
         }
     ]
-}
+}'
 ```
 
 You can see that the interceptors are configured like the plugins. The `name` is

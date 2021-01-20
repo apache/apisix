@@ -91,6 +91,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Multi protocols**
 
   - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
+  - [Dubbo Proxy](doc/plugins/dubbo-proxy.md): Dynamic HTTP to Dubbo proxy.
   - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
   - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
   - [gRPC transcoding](doc/plugins/grpc-transcode.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
@@ -179,9 +180,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.1
-     $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
-     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
+     $ mkdir apisix-2.2
+     $ wget https://downloads.apache.org/apisix/2.2/apache-apisix-2.2-src.tgz
+     $ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
      ```
 
    - Install the dependencies：

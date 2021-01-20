@@ -330,8 +330,22 @@ passed
 
 
 === TEST 10: hit prometheus route
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1) -- wait for data synced
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/prometheus/metrics',
+                ngx.HTTP_GET)
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
+GET /t
 --- error_code: 403
 
 
