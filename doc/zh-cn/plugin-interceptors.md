@@ -38,7 +38,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/prometheus -H 'X-API-K
             }
         }
     ]
-}
+}'
 ```
 
 我们能看到配置 interceptors 就像配置 plugin 一样：name 是 interceptor 的名称，而 conf 是它的配置。
