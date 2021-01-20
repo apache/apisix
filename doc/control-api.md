@@ -79,3 +79,102 @@ Return the jsonschema used by this APISIX instance in the format below:
 For `plugins` part, only enabled plugins will be returned. Some plugins may lack
 of fields like `consumer_schema` or `type`, it is dependended by the plugin's
 definition.
+
+### GET /v1/healthcheck
+
+Introduced since `v2.3`.
+
+Return current [health check](health-check.md) status in the format below:
+
+```json
+[
+    {
+        "healthy_nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "weight": 1
+            }
+        ],
+        "name": "upstream#/upstreams/1",
+        "nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "weight": 1
+            },
+            {
+                "host": "127.0.0.2",
+                "port": 1988,
+                "weight": 1
+            }
+        ],
+        "src_id": "1",
+        "src_type": "upstreams"
+    },
+    {
+        "healthy_nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "weight": 1
+            }
+        ],
+        "name": "upstream#/routes/1",
+        "nodes": [
+            {
+                "host": "127.0.0.1",
+                "port": 1980,
+                "weight": 1
+            },
+            {
+                "host": "127.0.0.1",
+                "port": 1988,
+                "weight": 1
+            }
+        ],
+        "src_id": "1",
+        "src_type": "routes"
+    }
+]
+```
+
+Each entry contains fields below:
+
+* src_type: where the health checker comes from. The value is one of `["routes", "services", "upstreams"]`.
+* src_id: the id of object which creates the health checker. For example, if Upstream
+object with id 1 creates a health checker, the `src_type` is `upstreams` and the `src_id` is `1`.
+* name: the name of the health checker.
+* nodes: the target nodes of the health checker.
+* healthy_nodes: the healthy node known by the health checker.
+
+User can also use `/v1/healthcheck/$src_type/$src_id` can get the status of a health checker.
+
+For example, `GET /v1/healthcheck/upstreams/1` returns:
+
+```json
+{
+    "healthy_nodes": [
+        {
+            "host": "127.0.0.1",
+            "port": 1980,
+            "weight": 1
+        }
+    ],
+    "name": "upstream#/upstreams/1",
+    "nodes": [
+        {
+            "host": "127.0.0.1",
+            "port": 1980,
+            "weight": 1
+        },
+        {
+            "host": "127.0.0.2",
+            "port": 1988,
+            "weight": 1
+        }
+    ],
+    "src_id": "1",
+    "src_type": "upstreams"
+}
+```
