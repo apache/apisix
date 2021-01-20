@@ -15,11 +15,59 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local expr = require("resty.expr.v1")
 
 local sleep = core.sleep
 local random = math.random
 
 local plugin_name   = "fault-injection"
+
+
+local vars_schema = {
+    type = "array",
+    items = {
+        type = "array",
+        items = {
+            {
+                type = "string",
+                minLength = 1,
+                maxLength = 100
+            },
+            {
+                type = "string",
+                minLength = 1,
+                maxLength = 2
+            }
+        },
+        additionalItems = {
+            anyOf = {
+                {type = "string"},
+                {type = "number"},
+                {type = "boolean"},
+                {
+                    type = "array",
+                    items = {
+                        anyOf = {
+                            {
+                                type = "string",
+                                minLength = 1, maxLength = 100
+                            },
+                            {
+                                type = "number"
+                            },
+                            {
+                                type = "boolean"
+                            }
+                        }
+                    },
+                    uniqueItems = true
+                }
+            }
+        },
+        minItems = 0,
+        maxItems = 10
+    }
+}
 
 
 local schema = {
@@ -30,7 +78,8 @@ local schema = {
             properties = {
                 http_status = {type = "integer", minimum = 200},
                 body = {type = "string", minLength = 0},
-                percentage = {type = "integer", minimum = 0, maximum = 100}
+                percentage = {type = "integer", minimum = 0, maximum = 100},
+                vars = vars_schema
             },
             required = {"http_status"},
         },
@@ -38,7 +87,8 @@ local schema = {
             type = "object",
             properties = {
                 duration = {type = "number", minimum = 0},
-                percentage = {type = "integer", minimum = 0, maximum = 100}
+                percentage = {type = "integer", minimum = 0, maximum = 100},
+                vars = vars_schema
             },
             required = {"duration"},
         }
@@ -64,6 +114,16 @@ local function sample_hit(percentage)
 end
 
 
+local function vars_match(rules, ctx)
+    local expr, err = expr.new(rules)
+    if err then
+        core.log.error("vars expression does not match: ", err)
+        return nil, err
+    end
+    return expr:eval(ctx.var), nil
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -77,11 +137,30 @@ end
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    if conf.delay and sample_hit(conf.delay.percentage) then
+    local err
+    local abort_vars = true
+    if conf.abort and conf.abort.vars then
+        abort_vars, err = vars_match(conf.abort.vars, ctx)
+        if err then
+            return 500, err
+        end
+    end
+    core.log.info("abort_vars: ", abort_vars)
+
+    local delay_vars = true
+    if conf.delay and conf.delay.vars then
+        delay_vars, err = vars_match(conf.delay.vars, ctx)
+        if err then
+            return 500, err
+        end
+    end
+    core.log.info("delay_vars: ", delay_vars)
+
+    if conf.delay and sample_hit(conf.delay.percentage) and delay_vars then
         sleep(conf.delay.duration)
     end
 
-    if conf.abort and sample_hit(conf.abort.percentage) then
+    if conf.abort and sample_hit(conf.abort.percentage) and abort_vars then
         return conf.abort.http_status, core.utils.resolve_var(conf.abort.body, ctx.var)
     end
 end

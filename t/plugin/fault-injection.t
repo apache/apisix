@@ -741,3 +741,78 @@ GET /hello
 --- response_body
 --- no_error_log
 [error]
+
+
+
+=== TEST 24: set route and configure the vars rule in abort(There is only one vars rule, and the operator is `==`.)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "fault-injection": {
+                                   "abort": {
+                                        "http_status": 403,
+                                        "body": "Fault Injection!\n",
+                                        "vars": [
+                                            [ "arg_name","==","jack" ]
+                                        ]
+                                   }
+                               }
+                           },
+                           "upstream": {
+                               "nodes": {
+                                   "127.0.0.1:1980": 1
+                               },
+                               "type": "roundrobin"
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+--- no_error_log
+[error]
+--- LAST
+
+
+=== TEST 21: hit route(Missing request parameter name.)
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: hit route(The rule of vars failed to match.)
+--- request
+GET /hello?name=jakc
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- LAST
+
+
+=== TEST 23: hit route(The rules of vars match successfully.)
+--- request
+GET /hello?name=jack
+--- error_code: 403
+--- response_body
+Fault Injection!
+--- no_error_log
+[error]
