@@ -19,6 +19,14 @@
 
 # Apache APISIX
 
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="90px" align="right" />
+
+**Apache APISIX** 是一个动态、实时、高性能的 API 网关，
+提供负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。
+
+你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量，
+也可以当做 k8s ingress controller 来使用。
+
 [![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
@@ -26,14 +34,6 @@
   <a href="https://github.com/apache/apisix-ingress-controller">k8s ingress controller</a> •
   <a href="https://github.com/apache/apisix-dashboard">Dashboard</a>
 </p>
-
-## Apache APISIX 是什么？
-
-Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 网络库和 etcd 实现，
-提供负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。
-
-你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量，
-也可以当做 k8s ingress controller 来使用。
 
 Apache APISIX 的技术架构如下图所示：
 
@@ -50,23 +50,6 @@ Apache APISIX 的技术架构如下图所示：
   - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-
-## 目录
-
-- [特性](#特性)
-- [文档](#文档)
-- [立刻开始](#立刻开始)
-- [性能测试](#性能测试)
-- [Apache APISIX 和 Kong 的比较](#apache-apisix-和-kong-的比较)
-- [社区](#社区)
-- [视频和文章](#视频和文章)
-- [用户实际使用案例](#用户实际使用案例)
-- [APISIX 的用户有哪些？](#apisix-的用户有哪些)
-- [全景图](#全景图)
-- [Logo](#logo)
-- [贡献](#贡献)
-- [致谢](#致谢)
-- [协议](#协议)
 
 ## 特性
 

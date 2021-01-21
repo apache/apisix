@@ -19,6 +19,16 @@
 
 # Apache APISIX
 
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="90px" align="right" />
+
+**Apache APISIX** is a dynamic, real-time, high-performance API gateway.
+
+APISIX provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
+
+You can use Apache APISIX to handle traditional north-south traffic,
+as well as east-west traffic between services.
+It can also be used as a k8s ingress controller.
+
 [![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
@@ -26,16 +36,6 @@
   <a href="https://github.com/apache/apisix-ingress-controller">k8s ingress controller</a> •
   <a href="https://github.com/apache/apisix-dashboard">Dashboard</a>
 </p>
-
-## What's Apache APISIX?
-
-Apache APISIX is a dynamic, real-time, high-performance API gateway, based on the Nginx library and etcd.
-
-APISIX provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
-
-You can use Apache APISIX to handle traditional north-south traffic,
-as well as east-west traffic between services.
-It can also be used as a k8s ingress controller.
 
 The technical architecture of Apache APISIX:
 
@@ -52,30 +52,6 @@ The technical architecture of Apache APISIX:
   - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-
-## Contents
-
-- [Apache APISIX](#apache-apisix)
-  - [What's Apache APISIX?](#whats-apache-apisix)
-  - [Community](#community)
-  - [Contents](#contents)
-  - [Features](#features)
-  - [Documentation](#documentation)
-  - [Get Started](#get-started)
-    - [Configure and Installation](#configure-and-installation)
-    - [For Developer](#for-developer)
-  - [Benchmark](#benchmark)
-  - [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-      - [Both of them have been covered core features of API gateway](#both-of-them-have-been-covered-core-features-of-api-gateway)
-      - [The advantages of Apache APISIX](#the-advantages-of-apache-apisix)
-    - [Contributor Over Time](#contributor-over-time)
-  - [Videos And Articles](#videos-and-articles)
-  - [User Stories](#user-stories)
-  - [Who Uses APISIX?](#who-uses-apisix)
-  - [Landscape](#landscape)
-  - [Logos](#logos)
-  - [Acknowledgments](#acknowledgments)
-  - [License](#license)
 
 ## Features
 
