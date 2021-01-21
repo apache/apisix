@@ -171,7 +171,7 @@ done
                                 http_method_as_scope = false,
                                 timeout = 1000,
                                 ssl_verify = false,
-                                cache_ttl_seconds = 1000
+                                cache_ttl_seconds = 1000,
                                 keepalive = true,
                                 keepalive_timeout = 10000,
                                 keepalive_pool = 5
