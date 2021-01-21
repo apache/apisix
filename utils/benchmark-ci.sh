@@ -22,17 +22,17 @@ set -ex
 
 install_dependencies() {
     # add OpenResty source
-    wget -qO - https://openresty.org/package/pubkey.gpg | apt-key add -
-    apt-get update
-    apt-get -y install software-properties-common
-    add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
-    apt-get update
+    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+    sudo apt-get update
+    sudo apt-get -y install software-properties-common
+    sudo add-apt-repository -y "deb http://openresty.org/package/ubuntu $(lsb_release -sc) main"
+    sudo apt-get update
 
     # install OpenResty and some compilation tools
-    apt-get install -y git openresty curl luarocks
+    sudo apt-get install -y git openresty curl luarocks
 
     # install wrk
-    apt-get install build-essential libssl-dev git -y
+    sudo apt-get install -y build-essential libssl-dev
     git clone https://github.com/wg/wrk.git wrk
     cd wrk
     make
