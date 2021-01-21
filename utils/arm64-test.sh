@@ -20,7 +20,6 @@
 
 set -ex
 
-export PATH=/usr/local/openresty-debug/nginx/sbin:/usr/local/openresty-debug/bin:$PATH
 yum install -y wget tar curl git which
 
 # install lua-devel
