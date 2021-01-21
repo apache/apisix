@@ -162,7 +162,7 @@ end
 
 
 -- Configure request parameters.
-local function authz_keycloak_configure_params(params, conf):
+local function authz_keycloak_configure_params(params, conf)
     -- Keepalive options.
     if conf.keepalive then
         params.keepalive_timeout = conf.keepalive_timeout
