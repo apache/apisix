@@ -233,7 +233,7 @@ end
 
 
 -- Get the Discovery metadata from the specified URL.
-local function authz_keycloak_discover(conf):
+local function authz_keycloak_discover(conf)
     log.debug("authz_keycloak_discover: URL is: " .. conf.discovery)
 
     local json, err
