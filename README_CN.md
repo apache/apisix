@@ -19,49 +19,32 @@
 
 # Apache APISIX
 
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
+
 [![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-<p align="center">
-  <a href="https://github.com/apache/apisix">English</a> •
-  <a href="https://github.com/apache/apisix/blob/master/README_CN.md">中文</a>
-</p>
-
-<p align="center">
-  <a href="https://apisix.apache.org/">官方网站</a> •
-  <a href="https://github.com/apache/apisix/tree/master/doc">文档</a> •
-  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a> •
-  <a href="https://twitter.com/apacheapisix">Twitter</a>
-</p>
-
-## Apache APISIX 是什么？
-
-Apache APISIX 是一个动态、实时、高性能的 API 网关，基于 Nginx 网络库和 etcd 实现，
+**Apache APISIX** 是一个动态、实时、高性能的 API 网关，
 提供负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。
 
 你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量，
-也可以当做 k8s ingress controller 来使用。
+也可以当做 [k8s ingress controller](https://github.com/apache/apisix-ingress-controller) 来使用。
 
 Apache APISIX 的技术架构如下图所示：
 
 ![](doc/images/apisix.png)
 
-## 目录
+## 社区
 
-- [特性](#特性)
-- [文档](#文档)
-- [立刻开始](#立刻开始)
-- [性能测试](#性能测试)
-- [Apache APISIX 和 Kong 的比较](#apache-apisix-和-kong-的比较)
-- [社区](#社区)
-- [视频和文章](#视频和文章)
-- [用户实际使用案例](#用户实际使用案例)
-- [APISIX 的用户有哪些？](#apisix-的用户有哪些)
-- [全景图](#全景图)
-- [Logo](#logo)
-- [贡献](#贡献)
-- [致谢](#致谢)
-- [协议](#协议)
+- 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
+- QQ 群 - 578997126
+- [Slack](http://s.apache.org/slack-invite) - 加入 `#apisix` 频道以便与成员交流。
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
+- [哔哩哔哩](https://space.bilibili.com/551921247)
+- **新手任务列表**
+  - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ## 特性
 
@@ -141,15 +124,12 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - [故障注入](doc/zh-cn/plugins/fault-injection.md)
   - [REST Admin API](doc/zh-cn/admin-api.md): 使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
   - 外部日志记录器：将访问日志导出到外部日志管理工具。([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
+  - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **高度可扩展**
   - [自定义插件](doc/zh-cn/plugin-develop.md): 允许挂载常见阶段，例如`init`, `rewrite`，`access`，`balancer`,`header filer`，`body filter` 和 `log` 阶段。
   - 自定义负载均衡算法：可以在 `balancer` 阶段使用自定义负载均衡算法。
   - 自定义路由: 支持用户自己实现路由算法。
-
-## 文档
-
-[Apache APISIX 文档索引](doc/README.md)
 
 ## 立刻开始
 
@@ -307,13 +287,6 @@ CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubun
 
 性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
-## 社区
-
-- 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
-- QQ 群 - 578997126 或 552030619
-- [Slack](http://s.apache.org/slack-invite) - 加入 `#apisix` 频道以便与成员交流。
-- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
-- [哔哩哔哩](https://space.bilibili.com/551921247)
 
 ### 贡献者变化
 

@@ -19,51 +19,34 @@
 
 # Apache APISIX
 
+<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
+
 [![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 
-<p align="center">
-  <a href="https://github.com/apache/apisix">English</a> •
-  <a href="https://github.com/apache/apisix/blob/master/README_CN.md">中文</a>
-</p>
-
-<p align="center">
-  <a href="https://apisix.apache.org/">Website</a> •
-  <a href="https://github.com/apache/apisix/tree/master/doc">Docs</a> •
-  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a> •
-  <a href="https://twitter.com/apacheapisix">Twitter</a>
-</p>
-
-## What's Apache APISIX?
-
-Apache APISIX is a dynamic, real-time, high-performance API gateway, based on the Nginx library and etcd.
+**Apache APISIX** is a dynamic, real-time, high-performance API gateway.
 
 APISIX provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
 You can use Apache APISIX to handle traditional north-south traffic,
 as well as east-west traffic between services.
-It can also be used as a k8s ingress controller.
+It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
 
 The technical architecture of Apache APISIX:
 
 ![](doc/images/apisix.png)
 
-## Contents
+## Community
 
-- [Features](#features)
-- [Documentation](#documentation)
-- [Get Started](#get-started)
-- [Benchmark](#benchmark)
-- [Apache APISIX vs Kong](#apache-apisix-vs-kong)
-- [Community](#community)
-- [Videos And Articles](#videos-and-articles)
-- [User Stories](#user-stories)
-- [Who Uses APISIX?](#who-uses-apisix)
-- [Landscape](#landscape)
-- [Logos](#logos)
-- [Contributing](#contributing)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
+- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
+- QQ Group - 578997126
+- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
+- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
+- [bilibili video](https://space.bilibili.com/551921247)
+- **Good first issues**:
+  - [Apache APISIX](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX ingress controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  - [Apache APISIX dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ## Features
 
@@ -143,15 +126,12 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Fault Injection](doc/plugins/fault-injection.md)
   - [REST Admin API](doc/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
   - External Loggers: Export access logs to external log management tools. ([HTTP Logger](doc/plugins/http-logger.md), [TCP Logger](doc/plugins/tcp-logger.md), [Kafka Logger](doc/plugins/kafka-logger.md), [UDP Logger](doc/plugins/udp-logger.md))
+  - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **Highly scalable**
   - [Custom plugins](doc/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filer`, `body filter` and `log`, also allows to hook the `balancer` stage.
   - Custom load balancing algorithms: You can use custom load balancing algorithms during the `balancer` phase.
   - Custom routing: Support users to implement routing algorithms themselves.
-
-## Documentation
-
-[Document Indexing for Apache APISIX](doc/README.md)
 
 ## Get Started
 
@@ -309,14 +289,6 @@ Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 
 
 Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
 
-## Community
-
-- Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe the mailing list.
-- QQ Group - 578997126, 552030619
-- [Slack Workspace](http://s.apache.org/slack-invite) - join `#apisix` on our Slack to meet the team and ask questions
-- ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
-- [bilibili video](https://space.bilibili.com/551921247)
-
 ### Contributor Over Time
 
 ![contributor-over-time](./doc/images/contributor-over-time.png)
@@ -358,12 +330,6 @@ CNCF API Gateway Landscape.</a>
 
 - [Apache APISIX logo(PNG)](logos/apache-apisix.png)
 - [Apache APISIX logo source](https://apache.org/logos/#apisix)
-
-## Contributing
-
-We welcome all kinds of contributions from the open-source community, individuals and partners.
-
-- [Contributing Guide](CONTRIBUTING.md)
 
 ## Acknowledgments
 
