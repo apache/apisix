@@ -108,7 +108,7 @@ script() {
     ./bin/apisix init_etcd
     ./bin/apisix start
 
-    #start again  --> fail
+    #start again  --> fial
     res=`./bin/apisix start`
     if [ "$res" != "APISIX is running..." ]; then
         echo "failed: APISIX runs repeatedly"
