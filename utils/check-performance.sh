@@ -61,14 +61,18 @@ run_apisix() {
 }
 
 run_test() {
+    # wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
+    for((i=1;i<=100;i++));  
+    do   
     wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
+    grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}
+    sleep 10
+    done 
 }
 
-check_result(){
+check_result() {
     result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}`
-
-    if [[ $result>100 ]];then
-        echo "Error!"
+    if [[ $result<100 ]];then
         exit 125
     fi
 }
