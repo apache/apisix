@@ -31,11 +31,10 @@ jobs:
 
     - name: install
       run: |
-        pwd
-        ls
-        ~/work/apisix/apisix/utils/benchmark-ci.sh install_dependencies
-        ~/work/apisix/apisix/utils/benchmark-ci.sh run_apisix
+        ~/work/apisix/apisix/utils/check-performance.sh install_dependencies
+        ~/work/apisix/apisix/utils/check-performance.sh run_apisix
 
-    - name: run benchmark
+    - name: test
       run: |
-        wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html
+        ~/work/apisix/apisix/utils/check-performance.sh run_test
+        ~/work/apisix/apisix/utils/check-performance.sh check_result

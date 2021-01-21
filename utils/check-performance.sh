@@ -60,6 +60,18 @@ run_apisix() {
     }'
 }
 
+run_test() {
+    wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
+}
+
+check_result(){
+    result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}`
+
+    if [[ $result>100 ]];then
+        echo "Error!"
+        exit 125
+    fi
+}
 
 case_opt=$1
 case $case_opt in
@@ -68,5 +80,11 @@ case $case_opt in
         ;;
     (run_apisix)
         run_apisix
+        ;;
+    (run_test)
+        run_test
+        ;;
+    (check_result)
+        check_result
         ;;
 esac
