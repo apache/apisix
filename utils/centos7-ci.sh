@@ -71,7 +71,7 @@ run_case() {
     cd apisix
 
     # run test cases
-    prove -Itest-nginx/lib -I./ -r t/plugin/authz-keycloak.t
+    prove -Itest-nginx/lib -I./ -r t/
 }
 
 case_opt=$1
