@@ -52,6 +52,7 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | http_method_as_scope           | boolean       | optional    | false                                         |                                                                    | Map HTTP request type to scope of same name and add to all permissions requested.                                                                           |
 | timeout                        | integer       | optional    | 3000                                          | [1000, ...]                                                        | Timeout(ms) for the http connection with the Identity Server.                                                                                               |
 | ssl_verify                     | boolean       | optional    | true                                          |                                                                    | Verify if SSL cert matches hostname.                                                                                                                        |
+| cache_ttl_seconds              | integer       | optional    | 24 * 60 * 60, i.e. 24h                        | positive integer >= 1                                              | The maximum period in seconds up to which the plugin caches discovery documents and tokens, used by the plugin to authenticate to Keycloak.                 |
 
 ### Discovery and Endpoints
 
