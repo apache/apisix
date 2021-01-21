@@ -36,7 +36,7 @@ install_dependencies() {
     git clone https://github.com/wg/wrk.git wrk
     cd wrk
     make
-    cp wrk /usr/local/bin
+    sudo cp wrk /usr/local/bin
 }
 
 run_apisix() {
