@@ -58,7 +58,7 @@ dependencies = {
     "binaryheap = 0.4",
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
-    "lua-resty-expr = 1.0.0",
+    "lua-resty-expr = 1.1.0",
     "graphql = 0.0.2",
     "luasocket = 3.0rc1-2",
 }
