@@ -285,41 +285,48 @@ local function authz_keycloak_ensure_discovered_data(conf)
 end
 
 
+-- Get an endpoint from the configuration.
 local function authz_keycloak_get_endpoint(conf, endpoint)
     if conf and conf[endpoint] then
+        -- Use explicit entry.
         return conf[endpoint]
     elseif conf and conf.discovery and type(conf.discovery) == "table" then
+        -- Use discovery data.
         return conf.discovery[endpoint]
     end
 
+    -- Unable to obtain endpoint.
     return nil
 end
 
 
+-- Return the token endpoint from the configuration.
 local function authz_keycloak_get_token_endpoint(conf)
     return authz_keycloak_get_endpoint(conf, "token_endpoint")
 end
 
 
+-- Return the resource registration endpoint from the configuration.
 local function authz_keycloak_get_resource_registration_endpoint(conf)
     return authz_keycloak_get_endpoint(conf, "resource_registration_endpoint")
 end
 
 
--- computes access_token expires_in value (in seconds)
+-- Return access_token expires_in value (in seconds).
 local function authz_keycloak_access_token_expires_in(conf, expires_in)
     return (expires_in or conf.access_token_expires_in or 300)
            - 1 - (conf.access_token_expires_leeway or 0)
 end
 
 
--- computes refresh_token expires_in value (in seconds)
+-- Return refresh_token expires_in value (in seconds).
 local function authz_keycloak_refresh_token_expires_in(conf, expires_in)
     return (expires_in or conf.refresh_token_expires_in or 3600)
            - 1 - (conf.refresh_token_expires_leeway or 0)
 end
 
 
+-- Ensure a valid service account access token is available for the configured client.
 local function authz_keycloak_ensure_sa_access_token(conf)
     local client_id = authz_keycloak_get_client_id(conf)
     local ttl = conf.cache_ttl_seconds
@@ -501,7 +508,8 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 end
 
 
-local function authz_keycloak_resolve_permission(conf, uri, sa_access_token)
+-- Resolve a URI to one or more resource IDs.
+local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
     -- Get resource registration endpoint URL.
     local resource_registration_endpoint = authz_keycloak_get_resource_registration_endpoint(conf)
 
@@ -566,8 +574,8 @@ local function evaluate_permissions(conf, ctx, token)
         end
 
         -- Resolve URI to resource(s).
-        permission, err = authz_keycloak_resolve_permission(conf, ctx.var.request_uri,
-                                                            sa_access_token)
+        permission, err = authz_keycloak_resolve_resource(conf, ctx.var.request_uri,
+                                                          sa_access_token)
 
         -- Check result.
         if permission == nil then
