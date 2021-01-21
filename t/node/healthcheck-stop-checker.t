@@ -146,7 +146,7 @@ create new checker: table: 0x
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            local code, _, body = t('/apisix/admin/upstreams/1',
+            local code, _, body = t('/apisix/admin/upstreams/stopchecker',
                 "PUT",
                 [[{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/status","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":2}}}}]]
             )
@@ -160,7 +160,7 @@ create new checker: table: 0x
             -- release the clean handler of previous test
             local code, _, body = t('/apisix/admin/routes/1',
                 "PUT",
-                [[{"uri":"/server_port","upstream_id":1}]]
+                [[{"uri":"/server_port","upstream_id":"stopchecker"}]]
             )
 
             if code > 300 then
@@ -181,7 +181,7 @@ create new checker: table: 0x
             ngx.sleep(0.5)
 
             -- update
-            code, _, body = t('/apisix/admin/upstreams/1',
+            code, _, body = t('/apisix/admin/upstreams/stopchecker',
                 "PUT",
                 [[{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/void","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":1}}}}]]
             )
@@ -210,7 +210,7 @@ create new checker: table: 0x
                 return
             end
 
-            code, _, body = t('/apisix/admin/upstreams/1', "DELETE")
+            code, _, body = t('/apisix/admin/upstreams/stopchecker', "DELETE")
 
             if code > 300 then
                 ngx.status = code
