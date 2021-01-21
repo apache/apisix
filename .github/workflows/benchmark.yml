@@ -38,4 +38,4 @@ jobs:
 
     - name: run benchmark
       run: |
-        wrk -c100 -d60 --latency http://127.0.0.1:9080/index.html
+        wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html
