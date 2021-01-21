@@ -74,13 +74,11 @@ GET /not_found
 
 
 
-=== TEST 3: hit routes
+=== TEST 3: hit route, but the upstream does not exist
 --- request
 GET /hello
---- error_code_like: ^(?:50\d)$
+--- error_code: 503
 --- response_body eval
 qr/503 Service Temporarily Unavailable/
---- grep_error_log eval
-qr/\[error\].*/
---- grep_error_log_out eval
+--- error_log eval
 qr/missing upstream configuration in Route or Service/
