@@ -31,6 +31,8 @@ jobs:
 
     - name: install
       run: |
+        pwd
+        ls
         ./apisix/utils/benchmark-ci.sh install_dependencies
         ./apisix/utils/benchmark-ci.sh run_apisix
 
