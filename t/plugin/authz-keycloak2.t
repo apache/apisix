@@ -24,7 +24,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 14: add plugin with view course permissions (using token endpoint)
+=== TEST 1: add plugin with view course permissions (using token endpoint)
 --- config
     location /t {
         content_by_lua_block {
@@ -90,7 +90,7 @@ passed
 
 
 
-=== TEST 15: Get access token for teacher and access view course route
+=== TEST 2: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -138,7 +138,7 @@ true
 
 
 
-=== TEST 16: invalid access token
+=== TEST 3: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -165,7 +165,7 @@ Invalid bearer token
 
 
 
-=== TEST 17: add plugin with view course permissions (using discovery)
+=== TEST 4: add plugin with view course permissions (using discovery)
 --- config
     location /t {
         content_by_lua_block {
@@ -231,7 +231,7 @@ passed
 
 
 
-=== TEST 18: Get access token for teacher and access view course route
+=== TEST 5: Get access token for teacher and access view course route
 --- config
     location /t {
         content_by_lua_block {
@@ -279,7 +279,7 @@ true
 
 
 
-=== TEST 19: invalid access token
+=== TEST 6: invalid access token
 --- config
     location /t {
         content_by_lua_block {
@@ -306,7 +306,7 @@ Invalid bearer token
 
 
 
-=== TEST 20: add plugin for delete course route
+=== TEST 7: add plugin for delete course route
 --- config
     location /t {
         content_by_lua_block {
@@ -372,7 +372,7 @@ passed
 
 
 
-=== TEST 21: Get access token for student and delete course
+=== TEST 8: Get access token for student and delete course
 --- config
     location /t {
         content_by_lua_block {
@@ -420,7 +420,7 @@ true
 
 
 
-=== TEST 22: add plugin with lazy_load_paths and http_method_as_scope
+=== TEST 9: add plugin with lazy_load_paths and http_method_as_scope
 --- config
     location /t {
         content_by_lua_block {
@@ -486,7 +486,7 @@ passed
 
 
 
-=== TEST 23: Get access token for teacher and access view course route.
+=== TEST 10: Get access token for teacher and access view course route.
 --- config
     location /t {
         content_by_lua_block {
@@ -534,7 +534,7 @@ true
 
 
 
-=== TEST 24: Get access token for student and access view course route.
+=== TEST 11: Get access token for student and access view course route.
 --- config
     location /t {
         content_by_lua_block {
@@ -582,7 +582,7 @@ true
 
 
 
-=== TEST 25: Get access token for teacher and delete course.
+=== TEST 12: Get access token for teacher and delete course.
 --- config
     location /t {
         content_by_lua_block {
@@ -630,7 +630,7 @@ true
 
 
 
-=== TEST 26: Get access token for student and try to delete course. Should fail.
+=== TEST 13: Get access token for student and try to delete course. Should fail.
 --- config
     location /t {
         content_by_lua_block {
@@ -678,7 +678,7 @@ true
 
 
 
-=== TEST 27: add plugin with lazy_load_paths and http_method_as_scope (using audience)
+=== TEST 14: add plugin with lazy_load_paths and http_method_as_scope (using audience)
 --- config
     location /t {
         content_by_lua_block {
@@ -744,7 +744,7 @@ passed
 
 
 
-=== TEST 28: Get access token for teacher and access view course route.
+=== TEST 15: Get access token for teacher and access view course route.
 --- config
     location /t {
         content_by_lua_block {
@@ -792,7 +792,7 @@ true
 
 
 
-=== TEST 29: Get access token for student and access view course route.
+=== TEST 16: Get access token for student and access view course route.
 --- config
     location /t {
         content_by_lua_block {
