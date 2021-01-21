@@ -500,7 +500,7 @@ fi
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
 
-# check customed config.yaml is copied.
+# check customized config.yaml is copied and reverted.
 
 git checkout conf/config.yaml
 
@@ -511,21 +511,31 @@ apisix:
         admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
     port_admin: 9180
     https_admin: true
-" > conf/customed_config.yaml
+" > conf/customized_config.yaml
 
 make init
 
-./bin/apisix start -c conf/customed_config.yaml
+./bin/apisix start -c conf/customized_config.yaml
 
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
-    echo "failed: customed config.yaml copied failed"
+    echo "failed: customized config.yaml copied failed"
+    exit 1
+fi
+# to revert the customized config and start a new one
+make stop
+
+./bin/apisix start
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ $code -eq 200 ]; then
+    echo "failed: customized config.yaml reverted failed"
     exit 1
 fi
 
 make stop
 
-echo "passed: customed config.yaml copied succeeded"
+echo "passed: customized config.yaml copied and reverted succeeded"
 
 # log format
 

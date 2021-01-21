@@ -431,6 +431,12 @@ end
 
 
 local function stop(env)
+    local local_conf_path = profile:yaml_path("config")
+    local bak_exist = io_open(local_conf_path .. ".bak")
+    if bak_exist then
+        execute("rm " .. local_conf_path)
+        execute("mv " .. local_conf_path .. ".bak " .. local_conf_path)
+    end
     local cmd = env.openresty_args .. [[ -s stop]]
     execute(cmd)
 end
