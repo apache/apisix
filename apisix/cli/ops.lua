@@ -237,6 +237,14 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
+    local dubbo_upstream_multiplex_count = 32
+    if yaml_conf.plugin_attr and yaml_conf.plugin_attr["dubbo-proxy"] then
+        local dubbo_conf = yaml_conf.plugin_attr["dubbo-proxy"]
+        if tonumber(dubbo_conf.upstream_multiplex_count) >= 1 then
+            dubbo_upstream_multiplex_count = dubbo_conf.upstream_multiplex_count
+        end
+    end
+
     -- Using template.render
     local sys_conf = {
         lua_path = env.pkg_path_org,
@@ -246,6 +254,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         error_log = {level = "warn"},
         enabled_plugins = enabled_plugins,
+        dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
     }
 
     if not yaml_conf.apisix then
@@ -377,6 +386,13 @@ end
 
 
 local function start(env, ...)
+    -- Because the worker process started by apisix has "nobody" permission,
+    -- it cannot access the `/root` directory. Therefore, it is necessary to
+    -- prohibit APISIX from running in the /root directory.
+    if env.is_root_path then
+        util.die("Error: It is forbidden to run APISIX in the /root directory.\n")
+    end
+
     local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
     util.execute_cmd(cmd_logs)
 

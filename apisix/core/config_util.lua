@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core_tab = require("apisix.core.table")
 local setmetatable = setmetatable
 local type = type
 
@@ -39,6 +40,28 @@ end
 function _M.iterate_values(tab)
     local iter = setmetatable({idx = 0}, {__call = _iterate_values})
     return iter, tab, 0
+end
+
+
+-- Add a clean handler to a runtime configuration item.
+-- The clean handler will be called when the item is deleted from configuration
+-- or cancelled. Note that Nginx worker exit doesn't trigger the clean handler.
+-- Retuen an index so that we can cancel it later.
+function _M.add_clean_handler(item, func)
+    local idx = #item.clean_handlers + 1
+    item.clean_handlers[idx] = func
+    return idx
+end
+
+
+-- cancel a clean handler added by add_clean_handler.
+-- If `fire` is true, call the clean handler.
+function _M.cancel_clean_handler(item, idx, fire)
+    local f = item.clean_handlers[idx]
+    core_tab.remove(item.clean_handlers, idx)
+    if fire then
+        f(item)
+    end
 end
 
 

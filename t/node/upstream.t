@@ -300,7 +300,7 @@ qr/"Host": "httpbin.org"/
 
 
 
-=== TEST 13: set upstream(id: 1, using `rewrite` mode to pass upstream host)
+=== TEST 13: set upstream(using `rewrite` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -333,7 +333,7 @@ passed
 
 
 
-=== TEST 14: set route(id: 1, using `rewrite` mode to pass upstream host)
+=== TEST 14: set route(using `rewrite` mode to pass upstream host)
 --- config
     location /t {
         content_by_lua_block {
@@ -371,39 +371,12 @@ qr/host: httpbin.org/
 
 
 
-=== TEST 16: set route(upstream deleted)
+=== TEST 16: delete upstream in used
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/uri",
-                    "upstream_id": "1"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 17: delete upstream
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
+            ngx.sleep(0.5) -- wait for data synced
             local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_DELETE
                 )
@@ -411,21 +384,13 @@ passed
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say(body)
+            ngx.print(body)
         }
     }
 --- request
 GET /t
+--- error_code: 400
 --- response_body
-passed
+{"error_msg":"can not delete this upstream, route [1] is still using it now"}
 --- no_error_log
 [error]
-
-
-
-=== TEST 18: hit route
---- request
-GET /uri
---- error_code: 502
---- error_log
-failed to find upstream by id: 1

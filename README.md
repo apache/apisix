@@ -79,6 +79,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Multi protocols**
 
   - [TCP/UDP Proxy](doc/stream-proxy.md): Dynamic TCP/UDP proxy.
+  - [Dubbo Proxy](doc/plugins/dubbo-proxy.md): Dynamic HTTP to Dubbo proxy.
   - [Dynamic MQTT Proxy](doc/plugins/mqtt-proxy.md): Supports to load balance MQTT by `client_id`, both support MQTT [3.1.\*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html), [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
   - [gRPC proxy](doc/grpc-proxy.md): Proxying gRPC traffic.
   - [gRPC transcoding](doc/plugins/grpc-transcode.md): Supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON.
@@ -167,9 +168,9 @@ There are several ways to install the Apache Release version of APISIX:
    - Download the latest source code release package:
 
      ```shell
-     $ mkdir apisix-2.1
-     $ wget https://downloads.apache.org/apisix/2.1/apache-apisix-2.1-src.tgz
-     $ tar zxvf apache-apisix-2.1-src.tgz -C apisix-2.1
+     $ mkdir apisix-2.2
+     $ wget https://downloads.apache.org/apisix/2.2/apache-apisix-2.2-src.tgz
+     $ tar zxvf apache-apisix-2.2-src.tgz -C apisix-2.2
      ```
 
    - Install the dependencies：
@@ -205,7 +206,7 @@ There are several ways to install the Apache Release version of APISIX:
    - install APISIX：
 
    ```shell
-   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.1/apisix-2.1-0.el7.noarch.rpm
+   $ sudo yum install -y https://github.com/apache/apisix/releases/download/2.2/apisix-2.2-0.x86_64.rpm
    ```
 
    - check version of APISIX:
@@ -264,7 +265,7 @@ For more documents, please refer to [Apache APISIX Document Index](doc/README.md
 
 Using AWS's 8 core server, APISIX's QPS reach to 140,000 with a latency of only 0.2 ms.
 
-[benckmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
+[Benchmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
 
 ## Apache APISIX vs Kong
 

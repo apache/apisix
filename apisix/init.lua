@@ -24,6 +24,8 @@ local admin_init    = require("apisix.admin.init")
 local get_var       = require("resty.ngxvar").fetch
 local router        = require("apisix.router")
 local set_upstream  = require("apisix.upstream").set_by_route
+local upstream_util = require("apisix.utils.upstream")
+local ctxdump       = require("resty.ctxdump")
 local ipmatcher     = require("resty.ipmatcher")
 local ngx           = ngx
 local get_method    = ngx.req.get_method
@@ -32,8 +34,8 @@ local math          = math
 local error         = error
 local ipairs        = ipairs
 local tostring      = tostring
-local type          = type
 local ngx_now       = ngx.now
+local ngx_var       = ngx.var
 local str_byte      = string.byte
 local str_sub       = string.sub
 local tonumber      = tonumber
@@ -237,29 +239,6 @@ local function parse_domain_for_nodes(nodes)
 end
 
 
-local function compare_upstream_node(old_t, new_t)
-    if type(old_t) ~= "table" then
-        return false
-    end
-
-    if #new_t ~= #old_t then
-        return false
-    end
-
-    for i = 1, #new_t do
-        local new_node = new_t[i]
-        local old_node = old_t[i]
-        for _, name in ipairs({"host", "port", "weight"}) do
-            if new_node[name] ~= old_node[name] then
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
-
 local function parse_domain_in_up(up)
     local nodes = up.value.nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
@@ -268,7 +247,7 @@ local function parse_domain_in_up(up)
     end
 
     local old_dns_value = up.dns_value and up.dns_value.nodes
-    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
     if ok then
         return up
     end
@@ -291,7 +270,7 @@ local function parse_domain_in_route(route)
     end
 
     local old_dns_value = route.dns_value and route.dns_value.upstream.nodes
-    local ok = compare_upstream_node(old_dns_value, new_nodes)
+    local ok = upstream_util.compare_upstream_node(old_dns_value, new_nodes)
     if ok then
         return route
     end
@@ -536,13 +515,23 @@ function _M.http_access_phase()
         run_plugin("access", plugins, api_ctx)
     end
 
-    local ok, err = set_upstream(route, api_ctx)
-    if not ok then
-        core.log.error("failed to parse upstream: ", err)
-        core.response.exit(500)
+    local code, err = set_upstream(route, api_ctx)
+    if code then
+        core.log.error("failed to set upstream: ", err)
+        core.response.exit(code)
     end
 
     set_upstream_host(api_ctx)
+
+    if api_ctx.dubbo_proxy_enabled then
+        ngx_var.ctx_ref = ctxdump.stash_ngx_ctx()
+        return ngx.exec("@dubbo_pass")
+    end
+end
+
+
+function _M.dubbo_access_phase()
+    ngx.ctx = ctxdump.apply_ngx_ctx(ngx_var.ctx_ref)
 end
 
 
@@ -621,14 +610,26 @@ local function common_phase(phase_name)
     end
 
     if api_ctx.global_rules then
+        local orig_conf_type = api_ctx.conf_type
+        local orig_conf_version = api_ctx.conf_version
+        local orig_conf_id = api_ctx.conf_id
+
         local plugins = core.tablepool.fetch("plugins", 32, 0)
         local values = api_ctx.global_rules.values
         for _, global_rule in config_util.iterate_values(values) do
+            api_ctx.conf_type = "global_rule"
+            api_ctx.conf_version = global_rule.modifiedIndex
+            api_ctx.conf_id = global_rule.value.id
+
             core.table.clear(plugins)
             plugins = plugin.filter(global_rule, plugins)
             run_plugin(phase_name, plugins, api_ctx)
         end
         core.tablepool.release("plugins", plugins)
+
+        api_ctx.conf_type = orig_conf_type
+        api_ctx.conf_version = orig_conf_version
+        api_ctx.conf_id = orig_conf_id
     end
 
     if api_ctx.script_obj then
@@ -657,7 +658,14 @@ function _M.http_header_filter_phase()
     then
         set_resp_upstream_status(up_status)
     elseif up_status and #up_status > 3 then
-        local last_status = str_sub(up_status, -3)
+        -- the up_status can be "502, 502" or "502, 502 : "
+        local last_status
+        if str_byte(up_status, -1) == str_byte(" ") then
+            last_status = str_sub(up_status, -6, -3)
+        else
+            last_status = str_sub(up_status, -3)
+        end
+
         if tonumber(last_status) >= 500 and tonumber(last_status) <= 599 then
             set_resp_upstream_status(up_status)
         end
@@ -893,8 +901,8 @@ function _M.stream_preread_phase()
 
     run_plugin("preread", plugins, api_ctx)
 
-    local ok, err = set_upstream(matched_route, api_ctx)
-    if not ok then
+    local code, err = set_upstream(matched_route, api_ctx)
+    if code then
         core.log.error("failed to set upstream: ", err)
         return ngx_exit(1)
     end

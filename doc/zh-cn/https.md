@@ -33,7 +33,7 @@ SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允�
 * `key`: SSL 密钥对的私钥，pem 格式
 * `snis`: SSL 证书所指定的一个或多个域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
-为了简化示例，我们会使用下面的 python 脚本:
+为了简化示例，我们会使用下面的 Python 脚本:
 
 ```python
 #!/usr/bin/env python

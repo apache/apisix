@@ -53,7 +53,10 @@ proxy_temp
 fastcgi_temp
 client_body_temp
 utils/lj-releng
+utils/reindex
 default.etcd/
+t/lib/dubbo-backend/dubbo-backend-interface/target/
+t/lib/dubbo-backend/dubbo-backend-provider/target/
 .idea/
 *.iml
 \.*

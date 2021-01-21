@@ -195,8 +195,8 @@ SECRET="the shared secret key here"
 MESSAGE="this is signature string"
 
 # to lowercase hexits
-echo -n $MESSAGE | openssl dgst -sha256 -hmac $SECRET
+echo -e $MESSAGE | openssl dgst -sha256 -hmac $SECRET
 
 # to base64
-echo -n $MESSAGE | openssl dgst -sha256 -hmac $SECRET -binary | base64
+echo -e $MESSAGE | openssl dgst -sha256 -hmac $SECRET -binary | base64
 ```

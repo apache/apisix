@@ -22,6 +22,9 @@
 Health Check of APISIX is based on [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck),
 you can use it for upstream.
 
+Note that we only start the health check when the upstream is hit by a request.
+There won't be any health check if an upstream is configured but isn't in used.
+
 The following is an example of health check:
 
 ```shell
@@ -105,3 +108,5 @@ contains: `active` or `passive`.
   * `passive.unhealthy.tcp_failures`: Number of TCP failures in proxied traffic to consider a target unhealthy, as observed by passive health checks.
   * `passive.unhealthy.timeouts`: Number of timeouts in proxied traffic to consider a target unhealthy, as observed by passive health checks.
   * `passive.unhealthy.http_failures`: Number of HTTP failures in proxied traffic (as defined by `passive.unhealthy.http_statuses`) to consider a target unhealthy, as observed by passive health checks.
+
+The health check status can be fetched via `GET /v1/healthcheck` in [control API](./control-api.md).

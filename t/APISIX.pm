@@ -28,6 +28,7 @@ no_root_location(); # avoid generated duplicate 'location /'
 worker_connections(128);
 
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 
 sub read_file($) {
     my $infile = shift;
@@ -128,6 +129,50 @@ if ($profile) {
     $apisix_file = "apisix.yaml";
     $debug_file = "debug.yaml";
     $config_file = "config.yaml";
+}
+
+
+my $dubbo_upstream = "";
+my $dubbo_location = "";
+my $version = eval { `$nginx_binary -V 2>&1` };
+if ($version =~ m/\/mod_dubbo/) {
+    $dubbo_upstream = <<_EOC_;
+    upstream apisix_dubbo_backend {
+        server 0.0.0.1;
+        balancer_by_lua_block {
+            apisix.http_balancer_phase()
+        }
+
+        multi 1;
+        keepalive 320;
+    }
+
+_EOC_
+
+    $dubbo_location = <<_EOC_;
+        location \@dubbo_pass {
+            access_by_lua_block {
+                apisix.dubbo_access_phase()
+            }
+
+            dubbo_pass_all_headers on;
+            dubbo_pass_body on;
+            dubbo_pass \$dubbo_service_name \$dubbo_service_version \$dubbo_method apisix_dubbo_backend;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+        }
+
+_EOC_
 }
 
 
@@ -269,6 +314,8 @@ _EOC_
         keepalive 32;
     }
 
+    $dubbo_upstream
+
     init_by_lua_block {
         $init_by_lua_block
     }
@@ -362,6 +409,10 @@ _EOC_
         set \$upstream_scheme             'http';
         set \$upstream_host               \$host;
         set \$upstream_uri                '';
+        set \$ctx_ref                     '';
+        set \$dubbo_service_name          '';
+        set \$dubbo_service_version       '';
+        set \$dubbo_method                '';
 
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
@@ -458,6 +509,8 @@ _EOC_
                 apisix.http_log_phase()
             }
         }
+
+        $dubbo_location
 
         location = /proxy_mirror {
             internal;

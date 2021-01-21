@@ -323,7 +323,7 @@ local upstream_schema = {
         type = {
             description = "algorithms of load balancing",
             type = "string",
-            enum = {"chash", "roundrobin", "ewma"}
+            enum = {"chash", "roundrobin", "ewma", "least_conn"}
         },
         checks = health_checker,
         hash_on = {
@@ -334,6 +334,7 @@ local upstream_schema = {
               "header",
               "cookie",
               "consumer",
+              "vars_combinations",
             },
         },
         key = {
@@ -369,9 +370,9 @@ local upstream_schema = {
             type        = "boolean",
         },
     },
-    anyOf = {
+    oneOf = {
         {required = {"type", "nodes"}},
-        {required = {"type", "service_name"}},
+        {required = {"type", "service_name", "discovery_type"}},
     },
     additionalProperties = false,
 }
@@ -391,6 +392,11 @@ _M.upstream_hash_vars_schema = {
 _M.upstream_hash_header_schema = {
     type = "string",
     pattern = [[^[a-zA-Z0-9-_]+$]]
+}
+
+-- validates string only
+_M.upstream_hash_vars_combinations_schema = {
+    type = "string"
 }
 
 
@@ -739,8 +745,11 @@ _M.plugins = {
 _M.id_schema = id_schema
 
 
-_M.plugin_disable_schema = {
-    disable = {type = "boolean"}
+_M.plugin_injected_schema = {
+    ["$comment"] = "this is a mark for our injected plugin schema",
+    disable = {
+        type = "boolean",
+    }
 }
 
 

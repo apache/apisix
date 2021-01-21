@@ -49,7 +49,7 @@ apisix:
 此外由于目前 Admin API 都是基于 etcd 配置中心解决方案，当开启 Stand-alone 模式后，
 Admin API 将不再被允许使用。
 
-## 如何配置规则
+### 如何配置规则
 
 所有的路由规则均存放在 `conf/apisix.yaml` 这一个文件中，APISIX 会以每秒（默认）频率检查文件是否有变化，如果有变化，则会检查文件末尾是否能找到 `#END` 结尾，找到后则重新加载文件更新到内存。
 
@@ -135,7 +135,7 @@ upstreams:
 #END
 ```
 
-#### 配置 Router + Service + Upstream
+### 配置 Router + Service + Upstream
 
 ```yml
 routes:
@@ -155,7 +155,7 @@ upstreams:
 #END
 ```
 
-#### 配置 Plugins
+### 配置 Plugins
 
 ```yml
 # 列出的插件会被热加载并覆盖掉启动时的配置
@@ -167,7 +167,7 @@ plugins:
 #END
 ```
 
-#### 启用 SSL
+### 启用 SSL
 
 ```yml
 ssl:
@@ -227,4 +227,71 @@ ssl:
         snis:
             - "yourdomain.com"
 #END
+```
+
+### 配置 global rule
+
+```yaml
+global_rules:
+    -
+        id: 1
+        plugins:
+            response-rewrite:
+                body: "hello\n"
+```
+
+### 配置 consumer
+
+```yaml
+consumers:
+  - username: jwt
+    plugins:
+        jwt-auth:
+            key: user-key
+            secret: my-secret-key
+```
+
+### 配置 plugin metadata
+
+```yaml
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+plugin_metadata:
+  - id: http-logger # 注意 id 是插件名称
+    log_format:
+        host: "$host",
+        remote_addr: "$remote_addr"
+```
+
+### 配置 stream route
+
+```yaml
+stream_routes:
+  - server_addr: 127.0.0.1
+    server_port: 1985
+    id: 1
+    upstream_id: 1
+    plugins:
+      mqtt-proxy:
+        protocol_name: "MQTT"
+        protocol_level: 4
+        upstream:
+          ip: "127.0.0.1"
+          port: 1995
+upstreams:
+  - nodes:
+      "127.0.0.1:1995": 1
+    type: roundrobin
+    id: 1
 ```

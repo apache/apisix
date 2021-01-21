@@ -58,7 +58,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
         "hmac-auth": {
             "access_key": "user-key",
             "secret_key": "my-secret-key",
-            "clock_skew": 10,
+            "clock_skew": 0,
             "signed_headers": ["User-Agent", "Accept-Language", "x-custom-a"]
         }
     }
@@ -125,24 +125,83 @@ HeaderKey2 + ":" + HeaderValue2 + "\n"\+
 HeaderKeyN + ":" + HeaderValueN + "\n"
 ```
 
-拼接后的示例：
+**签名字符串拼接示例**
+
+以下面请求为例：
+
+```shell
+$ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
+-H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
+-H "x-custom-a: test" \
+-H "User-Agent: curl/7.29.0"
+```
+
+根据`签名生成公式`生成的 `signing_string` 为：
 
 ```plain
-GET
-/hello
-
-your-access-key
-Mon, 28 Sep 2020 06:48:57 GMT
-x-custom-header:value
+"GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT
+User-Agent:curl/7.29.0
+x-custom-a:test
+"
 ```
+
+注意：最后一个请求头也需要 + `\n`。
+
+**生成签名**
+
+使用 Python 来生成签名 `SIGNATURE`：
+
+```python
+import hashlib
+import hmac
+import base64
+
+secret = bytes('my-secret-key', 'utf-8')
+message = bytes("""GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT
+User-Agent:curl/7.29.0
+x-custom-a:test
+""", 'utf-8')
+
+hash = hmac.new(secret, message, hashlib.sha256)
+
+# to lowercase base64
+print(base64.b64encode(hash.digest()))
+```
+
+Type      |                        Hash                  |
+----------|----------------------------------------------|
+SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
 ### 使用生成好的签名进行请求尝试
 
-**注:**
+```shell
+$ curl -i "http://127.0.0.1:9080/index.html?name=james&age=36" \
+-H "X-HMAC-SIGNATURE: 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg=" \
+-H "X-HMAC-ALGORITHM: hmac-sha256" \
+-H "X-HMAC-ACCESS-KEY: user-key" \
+-H "Date: Tue, 19 Jan 2021 11:33:20 GMT" \
+-H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
+-H "x-custom-a: test" \
+-H "User-Agent: curl/7.29.0"
 
-1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
-2. **SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`**
-3. **SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`**
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Tue, 19 Jan 2021 11:33:20 GMT
+Server: APISIX/2.2
+......
+```
+
+**下面是签名信息的两种组装形式**
 
 * 签名信息拼一起放到请求头 `Authorization` 字段中：
 
@@ -172,6 +231,12 @@ Accept-Ranges: bytes
 <!DOCTYPE html>
 <html lang="cn">
 ```
+
+**注:**
+
+1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
+2. **SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`**
+3. **SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`**
 
 ## 自定义 header 名称
 
@@ -221,7 +286,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 ## 签名生成示例
 
-以 HMAC SHA256 为例，介绍一下各种语言的签名生成示例。
+以 HMAC SHA256 为例，介绍一下各种语言的签名生成示例。需要注意各种语言中对签名字符串的换行符的处理方式，这很容易导致出现 `{"message":"Invalid signature"}` 的问题。
 
 示例入参说明:
 
