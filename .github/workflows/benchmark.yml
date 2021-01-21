@@ -1,0 +1,39 @@
+name: Benchmark
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test_apisix:
+    name: Benchmark
+    runs-on: ubuntu-latest
+
+    services:
+      etcd:
+        image: bitnami/etcd:3.4.0
+        ports:
+          - 2379:2379
+          - 2380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: install
+      run: |
+        ./apisix/utils/benchmark-ci.sh install_dependencies
+        ./apisix/utils/benchmark-ci.sh run_apisix
+
+    - name: run benchmark
+      run: |
+        wrk -c100 -d60 --latency http://127.0.0.1:9080/index.html
