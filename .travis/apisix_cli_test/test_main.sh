@@ -528,7 +528,7 @@ make stop
 ./bin/apisix start
 
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
-if [ $code -eq 200 ]; then
+if [ ! $code -eq 0 ]; then
     echo "failed: customized config.yaml reverted failed"
     exit 1
 fi
