@@ -51,9 +51,9 @@ run_apisix() {
     -X PUT -d '
     {
     "uri": "/index.html",
-    "upstream": { 
+    "upstream": {
         "type": "roundrobin",
-        "nodes": { 
+        "nodes": {
             "127.0.0.1:80": 1
         }
     }

@@ -1,4 +1,4 @@
-name: Benchmark
+name: Check performance
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test_apisix:
-    name: Benchmark
+    name: Check performance
     runs-on: ubuntu-latest
 
     services:
