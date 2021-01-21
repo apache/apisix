@@ -57,10 +57,10 @@ local schema = {
         http_method_as_scope = {type = "boolean", default = false},
         timeout = {type = "integer", minimum = 1000, default = 3000},
         ssl_verify = {type = "boolean", default = true},
-        cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60}
+        cache_ttl_seconds = {type = "integer", minimum = 1, default = 24 * 60 * 60},
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
-        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+        keepalive_pool = {type = "integer", minimum = 1, default = 5}
     },
     allOf = {
         -- Require discovery or token endpoint.
