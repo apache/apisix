@@ -81,7 +81,7 @@ local remote_addr_def = {
 local label_value_def = {
     description = "value of label",
     type = "string",
-    pattern = [[^[a-zA-Z0-9-_.]+$]],
+    pattern = [[^\S+$]],
     maxLength = 64,
     minLength = 1
 }
