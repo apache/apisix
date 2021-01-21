@@ -219,7 +219,7 @@ local function authz_keycloak_discover(url, ssl_verify, keepalive, timeout,
     authz_keycloak_configure_proxy(httpc, proxy_opts)
     local res, error = httpc:request_uri(url, decorate_request(http_request_decorator, {
       ssl_verify = (ssl_verify ~= "no"),
-      keepalive = (keepalive ~= "no")
+      keepalive = keepalive
     }))
     if not res then
       err = "Accessing discovery url (" .. url .. ") failed: " .. error
