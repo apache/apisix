@@ -21,19 +21,14 @@
 
 <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="90px" align="right" />
 
+[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
+
 **Apache APISIX** 是一个动态、实时、高性能的 API 网关，
 提供负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。
 
 你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量，
-也可以当做 k8s ingress controller 来使用。
-
-[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
-
-<p align="center">
-  <a href="https://github.com/apache/apisix-ingress-controller">k8s ingress controller</a> •
-  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a>
-</p>
+也可以当做 [k8s ingress controller](https://github.com/apache/apisix-ingress-controller) 来使用。
 
 Apache APISIX 的技术架构如下图所示：
 

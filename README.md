@@ -21,21 +21,16 @@
 
 <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="90px" align="right" />
 
+[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
+
 **Apache APISIX** is a dynamic, real-time, high-performance API gateway.
 
 APISIX provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
 You can use Apache APISIX to handle traditional north-south traffic,
 as well as east-west traffic between services.
-It can also be used as a k8s ingress controller.
-
-[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
-
-<p align="center">
-  <a href="https://github.com/apache/apisix-ingress-controller">k8s ingress controller</a> •
-  <a href="https://github.com/apache/apisix-dashboard">Dashboard</a>
-</p>
+It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
 
 The technical architecture of Apache APISIX:
 
