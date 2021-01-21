@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
-      - run: markdownlint '**/*.md' --ignore node_modules
+      - run: markdownlint '**/*.md'
   yamllint:
     name: 🍺 YAML
     runs-on: ubuntu-latest
