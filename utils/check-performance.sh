@@ -45,6 +45,7 @@ run_apisix() {
     make init
     sed -i 's/worker_processes auto;/worker_processes 1;/g' ~/work/apisix/apisix/conf/nginx.conf
     make run
+    cat ~/work/apisix/apisix/conf/nginx.conf
 
     # create route
     curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
