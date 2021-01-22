@@ -68,22 +68,18 @@ run_test() {
         result_array[i]=$result
         sleep 10
     done
+    IFS=$'\n' result_array=($(sort -n <<<"${result_array[*]}")); unset IFS
     printf "[%s]\n" "${result_array[*]}"
-    result_array=($(sort <<<"${result_array[*]}"))
-    unset result_array[0]
-    unset result_array[8]
-    printf "[%s]\n" "${result_array[*]}"
-
     length=${#result_array[*]}
     sum=0
-    for (( i=0;i<${#result_array[*]};i++))
+    # remove the highest and lowest values 
+    for(( i=1;i<$length-1;i++));
     do
-            let sum=sum+${result_array[$i]}
+        let sum=sum+${result_array[$i]}
     done
-    echo $length
-    echo $sum
+    length=`expr $length - 2`
     result=`expr $sum / $length`
-    if [[ $result<18943 ]];then
+    if [[ $result<18000 ]];then
         printf "result: %s\n" "$result"
         exit 125
     fi

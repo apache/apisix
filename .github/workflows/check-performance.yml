@@ -34,6 +34,6 @@ jobs:
         ~/work/apisix/apisix/utils/check-performance.sh install_dependencies
         ~/work/apisix/apisix/utils/check-performance.sh run_apisix
 
-    - name: test
+    - name: run test
       run: |
         ~/work/apisix/apisix/utils/check-performance.sh run_test
