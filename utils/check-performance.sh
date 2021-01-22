@@ -43,6 +43,7 @@ run_apisix() {
     export PATH=/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin:$PATH
     make deps
     make init
+    sed -i '/worker_processes auto;/worker_processes 1;/g' ~/work/apisix/apisix/conf/nginx.conf
     make run
 
     # create route
@@ -64,7 +65,7 @@ run_test() {
     for((i=0;i<10;i++));
     do
         wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
-        result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}`
+        result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print int($2)'}`
         result_array[i]=$result
         sleep 10
     done
@@ -72,7 +73,7 @@ run_test() {
     printf "[%s]\n" "${result_array[*]}"
     length=${#result_array[*]}
     sum=0
-    # remove the highest and lowest values 
+    # remove the highest and lowest values
     for(( i=1;i<$length-1;i++));
     do
         let sum=sum+${result_array[$i]}
