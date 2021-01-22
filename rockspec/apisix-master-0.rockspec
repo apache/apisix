@@ -31,6 +31,7 @@ description = {
 }
 
 dependencies = {
+    "lua-resty-ctxdump = 0.1-0",
     "lua-resty-template = 1.9",
     "lua-resty-etcd = 1.4.3",
     "lua-resty-balancer = 0.02rc5",
@@ -42,7 +43,7 @@ dependencies = {
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.6",
+    "lua-resty-radixtree = 2.6.1",
     "lua-protobuf = 0.3.1",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
@@ -57,7 +58,7 @@ dependencies = {
     "binaryheap = 0.4",
     "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
-    "lua-resty-expr = 1.0.0",
+    "lua-resty-expr = 1.1.0",
     "graphql = 0.0.2",
     "luasocket = 3.0rc1-2",
 }

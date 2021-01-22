@@ -112,3 +112,18 @@ global_rules:
                     - /h*
 #END
 --- error_code: 403
+
+
+
+=== TEST 4: common phase without matched route
+--- apisix_yaml
+global_rules:
+    -
+        id: 1
+        plugins:
+            cors:
+                allow_origins: "a.com,b.com"
+#END
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200

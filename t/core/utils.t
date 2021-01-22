@@ -217,6 +217,9 @@ close: 1 nil}
                 "$you and $me",
                 "$eva and $me",
                 "$you and \\$me",
+                "${you}_${me}",
+                "${you}${me}",
+                "${you}$me",
             }
             local ctx = {
                 you = "John",
@@ -239,3 +242,6 @@ res:tell David to
 res:John and David
 res: and David
 res:John and \$me
+res:John_David
+res:JohnDavid
+res:JohnDavid

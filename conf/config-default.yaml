@@ -215,6 +215,7 @@ plugins:                          # plugin list (sorted in alphabetical order)
   - batch-requests
   - consumer-restriction
   - cors
+  # - dubbo-proxy
   - echo
   # - error-log-logger
   # - example-plugin
@@ -270,3 +271,5 @@ plugin_attr:
   server-info:
     report_interval: 60  # server info report interval (unit: second)
     report_ttl: 3600     # live time for server info in etcd (unit: second)
+  dubbo-proxy:
+    upstream_multiplex_count: 32

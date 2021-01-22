@@ -30,8 +30,8 @@
 - [**Upstream**](#upstream)
 - [**Router**](#router)
 - [**Consumer**](#consumer-1)
-- [**Global Rule**](#Global-Rule)
-- [**Debug mode**](#Debug-mode)
+- [**Global Rule**](#global-rule)
+- [**Debug mode**](#debug-mode)
 
 ## APISIX
 
@@ -581,8 +581,8 @@ HTTP/1.1 403
 
 ## Global Rule
 
-[Plugin](#Plugin) just can be binded to [Service](#Service) or [Route](#Route), if we want a [Plugin](#Plugin) work on all requests, how to do it?
-We can register a global [Plugin](#Plugin) with `GlobalRule`:
+[Plugin](#plugin) just can be binded to [Service](#service) or [Route](#route), if we want a [Plugin](#plugin) work on all requests, how to do it?
+We can register a global [Plugin](#plugin) with `GlobalRule`:
 
 ```shell
 curl -X PUT \
