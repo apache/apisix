@@ -73,9 +73,7 @@ run_test() {
     unset result_array[0]
     unset result_array[8]
     printf "[%s]\n" "${result_array[*]}"
-}
 
-check_result() {
     length=${#result_array[*]}
     sum=0
     for (( i=0;i<${#result_array[*]};i++))
@@ -101,8 +99,5 @@ case $case_opt in
         ;;
     (run_test)
         run_test
-        ;;
-    (check_result)
-        check_result
         ;;
 esac

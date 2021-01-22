@@ -37,4 +37,3 @@ jobs:
     - name: test
       run: |
         ~/work/apisix/apisix/utils/check-performance.sh run_test
-        ~/work/apisix/apisix/utils/check-performance.sh check_result
