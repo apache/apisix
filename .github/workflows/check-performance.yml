@@ -29,7 +29,7 @@ jobs:
       with:
         submodules: recursive
 
-    - name: install
+    - name: install environment
       run: |
         ~/work/apisix/apisix/utils/check-performance.sh install_dependencies
         ~/work/apisix/apisix/utils/check-performance.sh run_apisix

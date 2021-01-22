@@ -20,8 +20,6 @@
 
 set -ex
 
-result_array=()
-
 install_dependencies() {
     # add OpenResty source
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
@@ -52,19 +50,19 @@ run_apisix() {
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -X PUT -d '
     {
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
+        "uri": "/index.html",
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:80": 1
+            }
         }
-    }
     }'
 }
 
 run_test() {
-    for((i=0;i<10;i++));  
-    do   
+    for((i=0;i<10;i++));
+    do
         wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
         result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}`
         result_array[i]=$result
@@ -73,7 +71,7 @@ run_test() {
     printf "[%s]\n" "${result_array[*]}"
     result_array=($(sort <<<"${result_array[*]}"))
     unset result_array[0]
-    unset result_array[9]
+    unset result_array[8]
     printf "[%s]\n" "${result_array[*]}"
 }
 
