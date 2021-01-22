@@ -28,45 +28,49 @@ local vars_schema = {
     items = {
         type = "array",
         items = {
-            {
-                type = "string",
-                minLength = 1,
-                maxLength = 100
-            },
-            {
-                type = "string",
-                minLength = 1,
-                maxLength = 2
-            }
-        },
-        additionalItems = {
-            anyOf = {
-                {type = "string"},
-                {type = "number"},
-                {type = "boolean"},
+            type = "array",
+            items = {
                 {
-                    type = "array",
-                    items = {
-                        anyOf = {
-                            {
-                                type = "string",
-                                minLength = 1, maxLength = 100
-                            },
-                            {
-                                type = "number"
-                            },
-                            {
-                                type = "boolean"
-                            }
-                        }
-                    },
-                    uniqueItems = true
+                    type = "string",
+                    minLength = 1,
+                    maxLength = 100
+                },
+                {
+                    type = "string",
+                    minLength = 1,
+                    maxLength = 2
                 }
-            }
-        },
-        minItems = 0,
-        maxItems = 10
-    }
+            },
+            additionalItems = {
+                anyOf = {
+                    {type = "string"},
+                    {type = "number"},
+                    {type = "boolean"},
+                    {
+                        type = "array",
+                        items = {
+                            anyOf = {
+                                {
+                                    type = "string",
+                                    minLength = 1, maxLength = 100
+                                },
+                                {
+                                    type = "number"
+                                },
+                                {
+                                    type = "boolean"
+                                }
+                            }
+                        },
+                        uniqueItems = true
+                    }
+                }
+            },
+            minItems = 0,
+            maxItems = 10
+        }
+    },
+    maxItems = 20
 }
 
 
@@ -114,13 +118,22 @@ local function sample_hit(percentage)
 end
 
 
-local function vars_match(rules, ctx)
-    local expr, err = expr.new(rules)
-    if err then
-        core.log.error("vars expression does not match: ", err)
-        return nil, err
+local function vars_match(vars, ctx)
+    local match_result
+    for _, var in ipairs(vars) do
+        local expr, err = expr.new(var)
+        if err then
+            core.log.error("vars expression does not match: ", err)
+            return nil, err
+        end
+
+        match_result = expr:eval(ctx.var)
+        if match_result then
+            break
+        end
     end
-    return expr:eval(ctx.var), nil
+
+    return match_result, nil
 end
 
 

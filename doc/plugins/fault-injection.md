@@ -30,12 +30,42 @@ Fault injection plugin, this plugin can be used with other plugins and will be e
 | abort.http_status | integer | required    |         | [200, ...] | user-specified http code returned to the client. |
 | abort.body        | string  | optional    |         |            | response data returned to the client. Nginx variable can be used inside, like `client addr: $remote_addr\n`           |
 | abort.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be aborted.            |
-| abort.vars        | array[] | optional    |         |            | The rules for executing fault injection will only be executed when the rules are matched. `vars` is a list of one or more {var, operator, val} elements, like this: {{var, operator, val}, {var, operator, val}, ...}}. For example: {"arg_name", "==", "json"}, which means that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For the specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list).  |
+| abort.vars        | array[] | optional    |         |            | The rules for executing fault injection will only be executed when the rules are matched. `vars` is a list consisting of one or more [[var, operator, val]] elements, like this: [[[var, operator, val],[var, operator, val]], ...]. For example: [[["arg_name", "==", "json"]]], indicating that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list).  |
 | delay.duration    | number  | required    |         |            | delay time (can be decimal).                     |
 | delay.percentage  | integer | optional    |         | [0, 100]   | percentage of requests to be delayed.            |
-| delay.vars        | array[] | optional    |         |            | Execute the request delay rule, and the request will be delayed only after the rule matches. `vars` is a list of one or more {var, operator, val} elements, like this: {{var, operator, val}, {var, operator, val}, ...}}. For example: {"arg_name", "==", "json"}, which means that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For the specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list).  |
+| delay.vars        | array[] | optional    |         |            | Execute the request delay rule, and the request will be delayed only after the rule matches. `vars` is a list consisting of one or more [[var, operator, val]] elements, like this: [[[var, operator, val],[var, operator, val]], ...]. For example: [[["arg_name", "==", "json"]]], indicating that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list).  |
 
 Note: One of `abort` and `delay` must be specified.
+
+`vars` is composed of a three-level array structure, as shown below:
+
+```json
+array[
+    array[
+        array[]
+    ],
+    array[
+        array[]
+    ],
+    ......
+]
+```
+
+It can implement the `and/or` relationship between rules flexibly, such as the following three expressions:
+
+```json
+[
+    [
+        [ "arg_name","==","jack" ],
+        [ "arg_age","==",18 ]
+    ],
+    [
+        [ "arg_name2","==","allen" ]
+    ]
+]
+```
+
+Indicates that the relationship between the first two expressions is `and`, and the relationship between the first two expressions and the third expression is `or`.
 
 ## How To Enable
 
@@ -132,7 +162,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
                     "http_status": 403,
                     "body": "Fault Injection!\n",
                     "vars": [
-                        [ "arg_name","==","jack" ]
+                        [
+                            [ "arg_name","==","jack" ]
+                        ]
                     ]
             }
         }
@@ -152,7 +184,7 @@ Test plugin：
 1. The vars rule fails to match, and the request returns upstream response data:
 
 ```shell
-$ curl http://127.0.0.1:9080/hello?name=allen -i
+$ curl "http://127.0.0.1:9080/hello?name=allen" -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -166,7 +198,7 @@ hello
 2. The vars rule is successfully matched and fault injection is performed:
 
 ```shell
-$ curl http://127.0.0.1:9080/hello?name=jack -i
+$ curl "http://127.0.0.1:9080/hello?name=jack" -i
 HTTP/1.1 403 Forbidden
 Date: Wed, 20 Jan 2021 07:23:37 GMT
 Content-Type: text/plain; charset=utf-8
@@ -187,7 +219,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
             "delay": {
                 "duration": 2,
                 "vars": [
-                    [ "arg_name","==","jack" ]
+                    [
+                        [ "arg_name","==","jack" ]
+                    ]
                 ]
             }
         }
@@ -202,10 +236,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
+Test plugin：
+
 1. The vars rule fails to match and the request is not delayed:
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=allen -i
+$ time curl "http://127.0.0.1:9080/hello?name=allen" -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -223,7 +259,8 @@ sys     0m0.003s
 2. The vars rule is successfully matched, and the request is delayed for two seconds:
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=jack -iHTTP/1.1 200 OK
+$ time curl "http://127.0.0.1:9080/hello?name=jack" -i
+HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
 Connection: keep-alive
@@ -248,13 +285,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
                 "http_status": 403,
                 "body": "Fault Injection!\n",
                 "vars": [
-                    [ "arg_name","==","jack" ]
+                    [
+                        [ "arg_name","==","jack" ]
+                    ]
                 ]
             },
             "delay": {
                 "duration": 2,
                 "vars": [
-                    [ "http_age","==","18" ]
+                    [
+                        [ "http_age","==","18" ]
+                    ]
                 ]
             }
         }
@@ -269,10 +310,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
+Test plugin：
+
 1. The vars rules of abort and delay fail to match:
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=allen -H 'age: 20' -i
+$ time curl "http://127.0.0.1:9080/hello?name=allen" -H 'age: 20' -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -290,7 +333,7 @@ sys     0m0.003s
 2. The abort vars rule fails to match, no fault injection is performed, but the request is delayed:
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=allen -H 'age: 18' -i
+$ time curl "http://127.0.0.1:9080/hello?name=allen" -H 'age: 18' -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -308,7 +351,7 @@ sys     0m0.006s
 3. The vars rule of delay fails to match, the request is not delayed, but fault injection is performed:
 
 ```shell
-time curl http://127.0.0.1:9080/hello?name=jack -H 'age: 20' -i
+$ time curl "http://127.0.0.1:9080/hello?name=jack" -H 'age: 20' -i
 HTTP/1.1 403 Forbidden
 Date: Wed, 20 Jan 2021 08:20:18 GMT
 Content-Type: text/plain; charset=utf-8
@@ -326,7 +369,7 @@ sys     0m0.004s
 4. The vars rules of abort and delay parameters match successfully, perform fault injection, and delay the request:
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=jack -H 'age: 18' -i
+$ time curl "http://127.0.0.1:9080/hello?name=jack" -H 'age: 18' -i
 HTTP/1.1 403 Forbidden
 Date: Wed, 20 Jan 2021 08:21:17 GMT
 Content-Type: text/plain; charset=utf-8
@@ -339,6 +382,84 @@ Fault Injection!
 real    0m2.006s
 user    0m0.001s
 sys     0m0.005s
+```
+
+Example 6: Enable the `fault-injection` plugin for a specific route, and specify the vars rule of the abort parameter (the relationship of `or`).
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "fault-injection": {
+            "abort": {
+                "http_status": 403,
+                "body": "Fault Injection!\n",
+                "vars": [
+                    [
+                        ["arg_name","==","jack"],
+                        ["arg_age","!","<",18]
+                    ],
+                    [
+                        ["http_apikey","==","apisix-key"]
+                    ]
+                ]
+            }
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/hello"
+}'
+```
+
+Indicates that when the request parameters name and age satisfy both `name == "jack"` and `age >= 18`, fault injection is performed. Or when the request header apikey satisfies `apikey == "apisix-key"`, fault injection is performed.
+
+Test plugin：
+
+1. The request parameter name and age match successfully, and the request header `apikey` is missing, and fault injection is performed:
+
+```shell
+$ curl "http://127.0.0.1:9080/hello?name=jack&age=19" -i
+HTTP/1.1 403 Forbidden
+Date: Fri, 22 Jan 2021 11:05:46 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.2
+
+Fault Injection!
+```
+
+2. The request header `apikey` is successfully matched, and the request parameters are missing, and fault injection is performed:
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H "apikey: apisix-key" -i
+HTTP/1.1 403 Forbidden
+Date: Fri, 22 Jan 2021 11:08:34 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.2
+
+Fault Injection!
+```
+
+3. Both request parameters and request headers fail to match, and fault injection is not performed:
+
+```shell
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 200 OK
+Content-Type: application/octet-stream
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Fri, 22 Jan 2021 11:11:17 GMT
+Server: APISIX/2.2
+
+hello
 ```
 
 ## Disable Plugin

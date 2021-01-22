@@ -744,21 +744,26 @@ GET /hello
 
 
 
-=== TEST 24: set route and configure the vars rule in abort(There is only one vars rule, and the operator is `==`.)
+=== TEST 24: set route and configure the vars rule in abort
 --- config
        location /t {
            content_by_lua_block {
                local t = require("lib.test_admin").test
                local code, body = t('/apisix/admin/routes/1',
                     ngx.HTTP_PUT,
-                    [[{
+                    [=[{
                            "plugins": {
                                "fault-injection": {
                                    "abort": {
                                         "http_status": 403,
                                         "body": "Fault Injection!\n",
                                         "vars": [
-                                            [ "arg_name","==","jack" ]
+                                            [
+                                                [ "arg_name","==","jack" ]
+                                            ],
+                                            [
+                                                [ "arg_age","==",18 ]
+                                            ]
                                         ]
                                    }
                                }
@@ -770,7 +775,7 @@ GET /hello
                                "type": "roundrobin"
                            },
                            "uri": "/hello"
-                   }]]
+                   }]=]
                    )
                if code >= 300 then
                    ngx.status = code
@@ -785,10 +790,10 @@ GET /t
 passed
 --- no_error_log
 [error]
---- LAST
 
 
-=== TEST 21: hit route(Missing request parameter name.)
+
+=== TEST 21: hit route(Missing request parameter)
 --- request
 GET /hello
 --- response_body
@@ -800,12 +805,12 @@ hello world
 
 === TEST 22: hit route(The rule of vars failed to match.)
 --- request
-GET /hello?name=jakc
+GET /hello?name=allen
 --- response_body
 hello world
 --- no_error_log
 [error]
---- LAST
+
 
 
 === TEST 23: hit route(The rules of vars match successfully.)

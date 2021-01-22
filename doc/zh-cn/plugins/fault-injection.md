@@ -30,12 +30,42 @@
 | abort.http_status | integer | 必需   |        | [200, ...] | 返回给客户端的 http 状态码 |
 | abort.body        | string  | 可选   |        |            | 返回给客户端的响应数据。支持使用 Nginx 变量，如 `client addr: $remote_addr\n`|
 | abort.percentage  | integer | 可选   |        | [0, 100]   | 将被中断的请求占比         |
-| abort.vars        | array[] | 可选   |        |            | 执行故障注入的规则，当规则匹配通过后才会执行故障注。`vars` 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。  |
+| abort.vars        | array[] | 可选   |        |            | 执行故障注入的规则，当规则匹配通过后才会执行故障注。`vars` 由一个或多个[[var, operator, val]]元素组成的列表，类似这样：[[[var, operator, val],[var, operator, val]], ...]。例如：[[["arg_name", "==", "json"]]]，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。  |
 | delay.duration    | number  | 必需   |        |            | 延迟时间，可以指定小数     |
 | delay.percentage  | integer | 可选   |        | [0, 100]   | 将被延迟的请求占比         |
-| delay.vars        | array[] | 可选   |        | [0, 100]   | 执行请求延迟的规则，当规则匹配通过后才会延迟请求。`vars` 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。    |
+| delay.vars        | array[] | 可选   |        |            | 执行请求延迟的规则，当规则匹配通过后才会延迟请求。`vars` 由一个或多个[[var, operator, val]]元素组成的列表，类似这样：[[[var, operator, val],[var, operator, val]], ...]。例如：[[["arg_name", "==", "json"]]]，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。操作符的具体用法请看 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。   |
 
 注：参数 abort 和 delay 至少要存在一个。
+
+`vars` 是由三层数组的结构组成，如下所示：
+
+```json
+array[
+    array[
+        array[]
+    ],
+    array[
+        array[]
+    ],
+    ......
+]
+```
+
+它可以灵活的实现规则之间的 `and/or` 关系，例如下面的三个表达式：
+
+```json
+[
+    [
+        [ "arg_name","==","jack" ],
+        [ "arg_age","==",18 ]
+    ],
+    [
+        [ "arg_name2","==","allen" ]
+    ]
+]
+```
+
+表示前两个表达式之间的关系是 `and` ，而前两个和第三个表达式之间的关系是 `or`。
 
 ## 示例
 
@@ -132,7 +162,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
                     "http_status": 403,
                     "body": "Fault Injection!\n",
                     "vars": [
-                        [ "arg_name","==","jack" ]
+                        [
+                            [ "arg_name","==","jack" ]
+                        ]
                     ]
             }
         }
@@ -152,7 +184,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 1、vars 规则匹配失败，请求返回上游响应数据：
 
 ```shell
-$ curl http://127.0.0.1:9080/hello?name=allen -i
+$ curl "http://127.0.0.1:9080/hello?name=allen" -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -166,7 +198,7 @@ hello
 2、vars 规则匹配成功，执行故障注入：
 
 ```shell
-$ curl http://127.0.0.1:9080/hello?name=jack -i
+$ curl "http://127.0.0.1:9080/hello?name=jack" -i
 HTTP/1.1 403 Forbidden
 Date: Wed, 20 Jan 2021 07:23:37 GMT
 Content-Type: text/plain; charset=utf-8
@@ -187,7 +219,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
             "delay": {
                 "duration": 2,
                 "vars": [
-                    [ "arg_name","==","jack" ]
+                    [
+                        [ "arg_name","==","jack" ]
+                    ]
                 ]
             }
         }
@@ -202,10 +236,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
+测试：
+
 1、vars 规则匹配失败，不延迟请求：
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=allen -i
+$ time "curl http://127.0.0.1:9080/hello?name=allen" -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -223,7 +259,8 @@ sys     0m0.003s
 2、vars 规则匹配成功，延迟请求两秒：
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=jack -iHTTP/1.1 200 OK
+$ time curl "http://127.0.0.1:9080/hello?name=jack" -i
+HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
 Connection: keep-alive
@@ -248,13 +285,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
                 "http_status": 403,
                 "body": "Fault Injection!\n",
                 "vars": [
-                    [ "arg_name","==","jack" ]
+                    [
+                        [ "arg_name","==","jack" ]
+                    ]
                 ]
             },
             "delay": {
                 "duration": 2,
                 "vars": [
-                    [ "http_age","==","18" ]
+                    [
+                        [ "http_age","==","18" ]
+                    ]
                 ]
             }
         }
@@ -269,10 +310,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
+测试：
+
 1、abort 和 delay 的 vars 规则匹配失败：
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=allen -H 'age: 20' -i
+$ time curl "http://127.0.0.1:9080/hello?name=allen" -H 'age: 20' -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -290,7 +333,7 @@ sys     0m0.003s
 2、abort 的 vars 规则匹配失败，不执行故障注入，但延迟请求：
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=allen -H 'age: 18' -i
+$ time curl "http://127.0.0.1:9080/hello?name=allen" -H 'age: 18' -i
 HTTP/1.1 200 OK
 Content-Type: application/octet-stream
 Transfer-Encoding: chunked
@@ -308,7 +351,7 @@ sys     0m0.006s
 3、delay 的 vars 规则匹配失败，不延迟请求，但执行故障注入：
 
 ```shell
-time curl http://127.0.0.1:9080/hello?name=jack -H 'age: 20' -i
+$ time curl "http://127.0.0.1:9080/hello?name=jack" -H 'age: 20' -i
 HTTP/1.1 403 Forbidden
 Date: Wed, 20 Jan 2021 08:20:18 GMT
 Content-Type: text/plain; charset=utf-8
@@ -326,7 +369,7 @@ sys     0m0.004s
 4、abort 和 delay 参数的 vars 规则匹配成功，执行故障注入，并延迟请求：
 
 ```shell
-$ time curl http://127.0.0.1:9080/hello?name=jack -H 'age: 18' -i
+$ time curl "http://127.0.0.1:9080/hello?name=jack" -H 'age: 18' -i
 HTTP/1.1 403 Forbidden
 Date: Wed, 20 Jan 2021 08:21:17 GMT
 Content-Type: text/plain; charset=utf-8
@@ -339,6 +382,84 @@ Fault Injection!
 real    0m2.006s
 user    0m0.001s
 sys     0m0.005s
+```
+
+示例6：为特定路由启用 `fault-injection` 插件，并指定 abort 参数的 vars 规则（`or` 的关系）。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "fault-injection": {
+            "abort": {
+                "http_status": 403,
+                "body": "Fault Injection!\n",
+                "vars": [
+                    [
+                        ["arg_name","==","jack"],
+                        ["arg_age","!","<",18]
+                    ],
+                    [
+                        ["http_apikey","==","apisix-key"]
+                    ]
+                ]
+            }
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    },
+    "uri": "/hello"
+}'
+```
+
+表示当请求参数 name 和 age 同时满足 `name == "jack"`、`age >= 18` 时，执行故障注入。或请求头 apikey 满足 `apikey == "apisix-key"` 时，执行故障注入。
+
+测试：
+
+1、请求参数 name 和 age 匹配成功，缺少请求头 `apikey`， 执行故障注入：
+
+```shell
+$ curl "http://127.0.0.1:9080/hello?name=jack&age=19" -i
+HTTP/1.1 403 Forbidden
+Date: Fri, 22 Jan 2021 11:05:46 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.2
+
+Fault Injection!
+```
+
+2、请求头 `apikey` 匹配成功，缺少请求参数，执行故障注入：
+
+```shell
+$ curl http://127.0.0.1:9080/hello -H "apikey: apisix-key" -i
+HTTP/1.1 403 Forbidden
+Date: Fri, 22 Jan 2021 11:08:34 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/2.2
+
+Fault Injection!
+```
+
+3、请求参数与请求头都匹配失败，不执行故障注入：
+
+```shell
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 200 OK
+Content-Type: application/octet-stream
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Fri, 22 Jan 2021 11:11:17 GMT
+Server: APISIX/2.2
+
+hello
 ```
 
 ### 禁用插件
