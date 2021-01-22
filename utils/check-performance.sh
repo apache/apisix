@@ -20,6 +20,8 @@
 
 set -ex
 
+result_array=()
+
 install_dependencies() {
     # add OpenResty source
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
@@ -61,18 +63,32 @@ run_apisix() {
 }
 
 run_test() {
-    # wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
-    for((i=1;i<=100;i++));  
+    for((i=0;i<10;i++));  
     do   
-    wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
-    grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}
-    sleep 10
-    done 
+        wrk -c100 -d30 --latency http://127.0.0.1:9080/index.html > ~/work/apisix/apisix/utils/performance.log
+        result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}`
+        result_array[i]=$result
+        sleep 10
+    done
+    printf "[%s]\n" "${result_array[*]}"
+    result_array=($(sort <<<"${result_array[*]}"))
+    unset result_array[0]
+    unset result_array[9]
+    printf "[%s]\n" "${result_array[*]}"
 }
 
 check_result() {
-    result=`grep "^Requests/sec:" ~/work/apisix/apisix/utils/performance.log | awk {'print $2'}`
-    if [[ $result<100 ]];then
+    length=${#result_array[*]}
+    sum=0
+    for (( i=0;i<${#result_array[*]};i++))
+    do
+            let sum=sum+${result_array[$i]}
+    done
+    echo $length
+    echo $sum
+    result=`expr $sum / $length`
+    if [[ $result<18943 ]];then
+        printf "result: %s\n" "$result"
         exit 125
     fi
 }
