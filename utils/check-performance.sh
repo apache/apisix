@@ -43,7 +43,7 @@ run_apisix() {
     export PATH=/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin:$PATH
     make deps
     make init
-    sed -i '/worker_processes auto;/worker_processes 1;/g' ~/work/apisix/apisix/conf/nginx.conf
+    sed -i 's/worker_processes auto;/worker_processes 1;/g' ~/work/apisix/apisix/conf/nginx.conf
     make run
 
     # create route
@@ -69,6 +69,7 @@ run_test() {
         result_array[i]=$result
         sleep 10
     done
+    # sort the array
     IFS=$'\n' result_array=($(sort -n <<<"${result_array[*]}")); unset IFS
     printf "[%s]\n" "${result_array[*]}"
     length=${#result_array[*]}
