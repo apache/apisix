@@ -120,7 +120,34 @@ GET /hello
 
 
 
-=== TEST 6: delete global rule
+=== TEST 6: not limited
+--- request
+GET /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: not limited
+--- request
+GET /hello
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: internal api should not be forbidden
+--- request
+GET /apisix/nginx_status
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 9: delete global rule
 --- config
     location /t {
         content_by_lua_block {
