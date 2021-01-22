@@ -43,7 +43,7 @@ run_apisix() {
     export PATH=/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin:$PATH
     make deps
     make init
-    sed -i 's/auto;/1;/g' ~/work/apisix/apisix/conf/nginx.conf
+    sed -i 's/worker_processes: auto/worker_processes: 1/g' ~/work/apisix/apisix/conf/config-default.yaml
     make run
     cat ~/work/apisix/apisix/conf/nginx.conf
 
