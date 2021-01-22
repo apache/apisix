@@ -98,3 +98,32 @@ consumers:
 --- request
 GET /apisix/plugin/jwt/sign?key=user-key
 --- error_code: 200
+
+
+
+=== TEST 4: consummer restriction
+--- apisix_yaml
+consumers:
+  - username: jack
+    plugins:
+        key-auth:
+            key: user-key
+routes:
+    - id: 1
+      methods:
+          - POST
+      uri: "/hello"
+      plugins:
+          key-auth:
+          consumer-restriction:
+              whitelist:
+                  - jack
+      upstream:
+          type: roundrobin
+          nodes:
+              "127.0.0.1:1980": 1
+#END
+--- more_headers
+apikey: user-key
+--- request
+POST /hello
