@@ -122,7 +122,7 @@ GET /hello
 
 === TEST 6: not limited
 --- request
-GET /hello
+GET /apisix/nginx_status
 --- error_code: 200
 --- no_error_log
 [error]
@@ -131,7 +131,7 @@ GET /hello
 
 === TEST 7: not limited
 --- request
-GET /hello
+GET /apisix/nginx_status
 --- error_code: 200
 --- no_error_log
 [error]
