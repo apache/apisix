@@ -19,6 +19,7 @@ local expr = require("resty.expr.v1")
 
 local sleep = core.sleep
 local random = math.random
+local ipairs = ipairs
 
 local plugin_name   = "fault-injection"
 
