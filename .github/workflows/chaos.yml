@@ -1,11 +1,17 @@
 name: Chaos
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+
+    - name: setup go
+      uses: actions/setup-go@v2.1.3
+      with:
+        go-version: '1.13'
 
     - name: Creating kind cluster 
       uses: helm/kind-action@v1.0.0-rc.1
@@ -20,24 +26,30 @@ jobs:
         kubectl version
     - uses: actions/checkout@v2
 
-    - name: Deploy an application
+    #TODO: should not use personal repo, while it's hard to modify an archived repo. Could we use api7's repo
+    - name: Deploy Etcd Operator
       run: |
-        kubectl apply -f https://raw.githubusercontent.com/chaos-mesh/apps/master/ping/busybox-statefulset.yaml
-        
-    - name: Check pods
-      run: |
-        kubectl get pods -n chaos-testing
-        sleep 5
-        kubectl get pods -n busybox
-        
-    - name: Run chaos mesh action
-      uses: chaos-mesh/chaos-mesh-action@master
-      env:
-        CFG_BASE64: YXBpVmVyc2lvbjogY2hhb3MtbWVzaC5vcmcvdjFhbHBoYTEKa2luZDogTmV0d29ya0NoYW9zCm1ldGFkYXRhOgogIG5hbWU6IG5ldHdvcmstZGVsYXkKICBuYW1lc3BhY2U6IGJ1c3lib3gKc3BlYzoKICBhY3Rpb246IGRlbGF5ICMgdGhlIHNwZWNpZmljIGNoYW9zIGFjdGlvbiB0byBpbmplY3QKICBtb2RlOiBhbGwKICBzZWxlY3RvcjoKICAgIHBvZHM6CiAgICAgIGJ1c3lib3g6CiAgICAgICAgLSBidXN5Ym94LTAKICBkZWxheToKICAgIGxhdGVuY3k6ICIxMG1zIgogIGR1cmF0aW9uOiAiNXMiCiAgc2NoZWR1bGVyOgogICAgY3JvbjogIkBldmVyeSAxMHMiCiAgZGlyZWN0aW9uOiB0bwogIHRhcmdldDoKICAgIHNlbGVjdG9yOgogICAgICBwb2RzOgogICAgICAgIGJ1c3lib3g6CiAgICAgICAgICAtIGJ1c3lib3gtMQogICAgbW9kZTogYWxsCg==
-        CHAOS_MESH_VERSION: v1.0.0
-        #CFG_FILE: https://raw.githubusercontent.com/chaos-mesh/chaos-mesh-action/master/chaos-test.yaml
+        git clone https://github.com/yiyiyimu/etcd-operator.git --depth 1
+        cd etcd-operator
+        example/rbac/create_role.sh
+        kubectl create -f example/deployment.yaml
+        while [[ $(kubectl get pods -l app=etcd-operator -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "Waiting for pod running" && sleep 10; done
+        kubectl create -f example/example-etcd-cluster.yaml
+        while [[ $(kubectl get pods -l app=etcd -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True True True" ]]; do echo "Waiting for pod running" && sleep 10; done
 
-    - name: Verification
+    - name: Deploy APISIX
       run: |
-        echo "do some verification"
-        kubectl exec busybox-0 -it -n busybox -- ping -c 30 busybox-1.busybox.busybox.svc
+        cd ${{ github.repository }}
+        example/rbac/create_role.sh
+        kubectl create configmap apisix-gw-config.yaml --from-file=../conf/config.yaml
+        kubectl apply -f deployment.yaml
+        kubectl apply -f service.yaml
+        while [[ $(kubectl get pods -l app=apisix-gw -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True True" ]]; do echo "Waiting for pod running" && sleep 10; done
+
+    - name: Deploy Chaos mesh
+      run: |
+        curl -sSL https://mirrors.chaos-mesh.org/v1.1.1/install.sh | bash
+        
+    - name: run test
+      working-directory: ./t/chaos-test
+      run: go test -v
